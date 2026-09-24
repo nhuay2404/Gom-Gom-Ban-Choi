@@ -68,17 +68,28 @@ export function slideDirectional(board, width, height, source, delta) {
 
 // Gom: mọi cụm liền kề cùng nhóm có từ `size` món trở lên sẽ biến mất khỏi bàn.
 export function clearMatches(board, width, height, size = 4) {
-  const seen = new Set(), cleared = [], groups = [];
+  const seen = new Set(), cleared = [], groups = [], clusters = [];
   board.forEach((cell, index) => {
     if (!cell || seen.has(index)) return;
     const cluster = connectedGroup(board, width, height, index);
     cluster.forEach(i => seen.add(i));
-    if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); }
+    if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); clusters.push(cluster); }
   });
-  if (!cleared.length) return { board, cleared, groups };
+  if (!cleared.length) return { board, cleared, groups, clusters };
   const nextBoard = board.slice();
   cleared.forEach(index => { nextBoard[index] = null; });
-  return { board: nextBoard, cleared, groups };
+  return { board: nextBoard, cleared, groups, clusters };
+}
+
+// Điểm tụ của cụm khi gom: ô vừa đặt nằm trong cụm, ưu tiên ô gần tâm cụm nhất.
+export function mergeTarget(cluster, placed, width) {
+  const candidates = cluster.filter(index => placed.includes(index));
+  const pool = candidates.length ? candidates : cluster;
+  const distance = (a, b) => Math.abs(Math.floor(a / width) - Math.floor(b / width)) + Math.abs(a % width - b % width);
+  return pool.reduce((best, index) => {
+    const total = cluster.reduce((sum, other) => sum + distance(index, other), 0);
+    return total < best.total ? { index, total } : best;
+  }, { index: pool[0], total: Infinity }).index;
 }
 
 export function rotateOffsets(offsets) {

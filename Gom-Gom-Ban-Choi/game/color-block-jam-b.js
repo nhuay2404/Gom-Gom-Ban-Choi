@@ -1,4 +1,4 @@
-import { clearMatches, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
+import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
 const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 3;
@@ -121,7 +121,7 @@ function popIn(container, delay = 0) {
 }
 
 function rotateActive() {
-  if (state.over || state.active.items.length < 2) return;
+  if (state.over || state.animating || state.active.items.length < 2) return;
   state.active.offsets = rotateOffsets(state.active.offsets);
   state.preview = null;
   render();
@@ -130,7 +130,7 @@ function rotateActive() {
 }
 
 function holdActive() {
-  if (state.over || state.heldThisTurn) return;
+  if (state.over || state.animating || state.heldThisTurn) return;
   const previous = state.hold;
   state.hold = state.active;
   state.active = previous || drawCard();
@@ -144,14 +144,85 @@ function canPlaceAnywhere(card) {
 }
 
 function placeAt(anchor) {
-  if (state.over) return;
+  if (state.over || state.animating) return;
   const result = placeCard(state.board, W, H, anchor, state.active);
   if (result.error) return render(result.error, true);
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
   const match = clearMatches(result.board, W, H, MATCH_SIZE);
+  if (!match.cleared.length || reduceMotion.matches) return finishTurn(result, match);
+  // Hiện thẻ vừa đặt trên bàn trước, rồi mới chạy anim mèo vươn người + cụm lại.
+  state.board = result.board;
+  state.justPlaced = new Set(result.indices);
+  state.animating = true;
+  state.preview = null;
+  render('');
+  $('active-card').classList.add('waiting');
+  const gained = match.cleared.length * POINTS_PER_CLEARED;
+  const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
+  setTimeout(() => animateMerges(merges, gained).then(() => {
+    state.animating = false;
+    finishTurn(result, match);
+  }), 260); // chờ anim rơi của block vừa đặt
+}
+
+function cellEl(index) {
+  return document.querySelector(`.cell[data-index="${index}"]`);
+}
+
+// Pha 1: mèo kéo dài thân về phía điểm tụ. Pha 2: trượt vào điểm tụ và nhỏ dần; điểm tụ phồng lên rồi biến mất.
+function animateMerges(merges, gained) {
+  const animations = [];
+  merges.forEach(({ cluster, target }) => {
+    const targetCell = cellEl(target);
+    if (!targetCell) return;
+    cluster.forEach(index => {
+      const cell = cellEl(index);
+      if (!cell) return;
+      cell.classList.add('merging');
+      if (index === target) {
+        animations.push(cell.animate([
+          { transform: 'none', opacity: 1 },
+          { transform: 'scale(.9, 1.1)', opacity: 1, offset: .42 },
+          { transform: 'scale(1.32)', opacity: 1, offset: .78 },
+          { transform: 'scale(0)', opacity: 0 },
+        ], { duration: 700, easing: 'ease-in-out', fill: 'forwards' }));
+        return;
+      }
+      const dx = targetCell.offsetLeft - cell.offsetLeft, dy = targetCell.offsetTop - cell.offsetTop;
+      const horizontal = Math.abs(dx) >= Math.abs(dy);
+      // Kéo dài theo trục hướng về điểm tụ, neo ở phía xa để thân "vươn" tới.
+      cell.style.transformOrigin = horizontal ? (dx > 0 ? 'left center' : 'right center') : (dy > 0 ? 'center top' : 'center bottom');
+      const stretch = horizontal ? 'scale(1.55, .8)' : 'scale(.8, 1.55)';
+      animations.push(cell.animate([
+        { transform: 'none', opacity: 1 },
+        { transform: stretch, opacity: 1, offset: .42 },
+        { transform: `translate(${dx * .55}px, ${dy * .55}px) ${stretch}`, opacity: 1, offset: .62 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
+      ], { duration: 700, easing: 'cubic-bezier(.45, 0, .3, 1)', fill: 'forwards' }));
+    });
+    showMergeScore(targetCell, Math.round(gained * cluster.length / merges.reduce((n, m) => n + m.cluster.length, 0)));
+  });
+  return Promise.all(animations.map(animation => animation.finished));
+}
+
+function showMergeScore(cell, points) {
+  const wrap = document.querySelector('.board-wrap');
+  const box = wrap.getBoundingClientRect(), rect = cell.getBoundingClientRect();
+  const pop = document.createElement('span');
+  pop.className = 'merge-pop';
+  pop.textContent = `+${points}`;
+  pop.style.left = `${rect.left + rect.width / 2 - box.left}px`;
+  pop.style.top = `${rect.top + rect.height / 2 - box.top}px`;
+  wrap.append(pop);
+  pop.addEventListener('animationend', () => pop.remove());
+}
+
+function finishTurn(result, match) {
   const gained = match.cleared.length * POINTS_PER_CLEARED;
   state.board = match.board;
-  state.justPlaced = new Set(result.indices);
+  // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
+  state.justPlaced = match.cleared.length && !reduceMotion.matches ? null : new Set(result.indices);
+  $('active-card').classList.remove('waiting');
   state.score += gained;
   const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} điểm.` : '';
   state.moves--;
@@ -190,7 +261,7 @@ function dragAnchorFromGhost(ghost) {
 }
 
 function startCardDrag(event) {
-  if (state.over || event.button !== 0) return;
+  if (state.over || state.animating || event.button !== 0) return;
   event.preventDefault();
   const source = $('active-card');
   source.setPointerCapture(event.pointerId);

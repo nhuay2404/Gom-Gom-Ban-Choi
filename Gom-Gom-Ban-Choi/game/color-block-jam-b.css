@@ -112,3 +112,9 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 @media(prefers-reduced-motion:reduce){.cat .eyes,.drag-ghost .cat{animation:none}}/* Thả trượt khỏi bàn: thẻ hiện lại mượt thay vì bật sáng tức thì */
 .piece-card{transition:opacity .22s ease}
 .cat .eyes.no-blink{animation:none}
+/* ===== Gom 3: mèo vươn người rồi cụm vào điểm tụ ===== */
+.board-wrap{position:relative}
+.cell.merging{z-index:3;pointer-events:none}
+.piece-card.waiting{opacity:.3}
+.merge-pop{position:absolute;z-index:20;transform:translate(-50%,-50%);color:#fff8d6;font-size:22px;font-weight:900;letter-spacing:-.5px;text-shadow:0 2px 0 #b8741f,0 0 10px #ffcf5a;pointer-events:none;animation:merge-pop 1s .3s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes merge-pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}25%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}75%{opacity:1;transform:translate(-50%,-120%) scale(1)}100%{opacity:0;transform:translate(-50%,-160%) scale(.9)}}

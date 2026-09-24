@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clearMatches, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { clearMatches, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -205,6 +205,16 @@ test('match 3: cụm 3 món cùng nhóm bị xóa, cụm 2 món thì không', ()
   const result = clearMatches(board, W, H, 3);
   assert.deepEqual(result.cleared.sort((a, b) => a - b), [0, 1, 6]);
   assert.equal(result.board.filter(Boolean).length, 2);
+});
+
+test('điểm tụ là ô vừa đặt trong cụm, ưu tiên ô ở giữa cụm', () => {
+  // Cụm ngang 0-1-2, vừa đặt ô 1 và 2 -> ô 1 nằm giữa nên là điểm tụ.
+  assert.equal(mergeTarget([0, 1, 2], [1, 2], W), 1);
+  // Chỉ vừa đặt ô 2 ở đầu cụm -> vẫn tụ về ô 2.
+  assert.equal(mergeTarget([0, 1, 2], [2], W), 2);
+  const board = Array(W * H).fill(null);
+  [0, 1, 2].forEach(index => { board[index] = { group: 'gray' }; });
+  assert.deepEqual(clearMatches(board, W, H, 3).clusters.map(c => c.sort((a, b) => a - b)), [[0, 1, 2]]);
 });
 
 test('xoay thẻ chữ L bốn lần trở về hình ban đầu', () => {
