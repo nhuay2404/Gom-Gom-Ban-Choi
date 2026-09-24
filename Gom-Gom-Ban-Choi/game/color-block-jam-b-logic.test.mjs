@@ -198,6 +198,15 @@ test('cụm 4 món cùng nhóm liền kề bị xóa, cụm 3 món thì không',
   assert.equal(result.board.filter(Boolean).length, 3);
 });
 
+test('match 3: cụm 3 món cùng nhóm bị xóa, cụm 2 món thì không', () => {
+  const board = Array(W * H).fill(null);
+  [0, 1, 6].forEach(index => { board[index] = { group: 'orange' }; });
+  [20, 21].forEach(index => { board[index] = { group: 'gray' }; });
+  const result = clearMatches(board, W, H, 3);
+  assert.deepEqual(result.cleared.sort((a, b) => a - b), [0, 1, 6]);
+  assert.equal(result.board.filter(Boolean).length, 2);
+});
+
 test('xoay thẻ chữ L bốn lần trở về hình ban đầu', () => {
   const original = [[0, 0], [1, 0], [1, 1]];
   let rotated = original;
