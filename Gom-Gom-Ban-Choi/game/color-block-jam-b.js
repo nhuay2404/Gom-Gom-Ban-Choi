@@ -1,5 +1,5 @@
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
-import { categories, catGroups, randomMood, addArt as addCatArt } from './cats.mjs';
+import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
 const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 3;
 const $ = id => document.getElementById(id);
@@ -21,7 +21,7 @@ const startingBlocks = [
 const shapeBag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'triple', 'single', 'domino', 'single', 'domino'];
 
 function item(group) {
-  return { group, name: categories[group].name, mood: randomMood() };
+  return { group, name: categories[group].name };
 }
 
 function randomGroup() {
@@ -54,7 +54,7 @@ function drawCard() {
 }
 
 function addArt(element, object) {
-  addCatArt(element, object.group, object.mood);
+  addCatArt(element, object.group);
 }
 
 function normalizePreview(offsets) {

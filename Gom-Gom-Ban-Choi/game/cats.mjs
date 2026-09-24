@@ -1,18 +1,14 @@
 // Art mèo dùng chung cho các chế độ Gom Gom: 6 loại, vẽ bằng SVG.
-// Tai + kiểu mắt cố định theo loại (để nhận diện nhóm); biểu cảm (mood) khác nhau theo từng con.
+// Mỗi loại có tai, kiểu mắt và một biểu cảm (mood) riêng, không loại nào trùng loại nào.
 export const categories = {
-  orange: { name: 'Mèo cam', color: '#f39a45', fur: '#f5a04e', side: '#c9702a', stripe: '#d9772f', belly: '#ffe3bf', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle' },
-  gray: { name: 'Mèo xám', color: '#a9adb5', fur: '#aeb2ba', side: '#7c818b', stripe: '#6c717a', belly: '#f6f6f4', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot' },
-  white: { name: 'Mèo trắng', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval' },
-  tuxedo: { name: 'Mèo mun', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit' },
-  siamese: { name: 'Mèo Xiêm', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris' },
-  tabby: { name: 'Mèo mướp', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit' },
+  orange: { name: 'Mèo cam', color: '#f39a45', fur: '#f5a04e', side: '#c9702a', stripe: '#d9772f', belly: '#ffe3bf', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle', mood: 'grin' },
+  gray: { name: 'Mèo xám', color: '#a9adb5', fur: '#aeb2ba', side: '#7c818b', stripe: '#6c717a', belly: '#f6f6f4', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot', mood: 'happy' },
+  white: { name: 'Mèo trắng', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
+  tuxedo: { name: 'Mèo mun', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
+  siamese: { name: 'Mèo Xiêm', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
+  tabby: { name: 'Mèo mướp', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
 };
 export const catGroups = Object.keys(categories);
-
-// Biểu cảm tích cực; 'smile' là mặc định, các mood khác xuất hiện ngẫu nhiên.
-export const moods = ['smile', 'smile', 'smile', 'happy', 'wink', 'blep', 'grin', 'sparkly'];
-export const randomMood = () => moods[Math.floor(Math.random() * moods.length)];
 
 const BODY = 'M8 60 Q8 30 30 27 L70 27 Q92 30 92 60 L92 78 Q92 91 78 91 L22 91 Q8 91 8 78Z';
 // Tai trái [viền ngoài, lòng tai]; tai phải được lật gương.
@@ -59,8 +55,8 @@ function face(cat, group, mood, ink) {
   return `<g class="eyes${mood === 'happy' ? ' no-blink' : ''}">${eyes}</g>${mouth}`;
 }
 
-function catSvg(group, mood) {
-  const cat = categories[group], id = `cat-${group}`;
+function catSvg(group) {
+  const cat = categories[group], id = `cat-${group}`, mood = cat.mood;
   const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
   const [earOuter, earInner] = EARS[cat.ears];
   const mirror = 'transform="matrix(-1 0 0 1 100 0)"';
@@ -106,16 +102,11 @@ function catSvg(group, mood) {
   </svg>`;
 }
 
-const markupCache = new Map();
-export function catMarkup(group, mood = 'smile') {
-  const key = `${group}:${mood}`;
-  if (!markupCache.has(key)) markupCache.set(key, catSvg(group, mood));
-  return markupCache.get(key);
-}
+export const catMarkup = Object.fromEntries(catGroups.map(group => [group, catSvg(group)]));
 
-export function addArt(element, group, mood = 'smile') {
+export function addArt(element, group) {
   element.title = categories[group].name;
-  element.insertAdjacentHTML('beforeend', catMarkup(group, mood));
+  element.insertAdjacentHTML('beforeend', catMarkup[group]);
   // Mỗi con chớp mắt lệch nhịp nhau.
   element.style.setProperty('--blink-delay', `-${(Math.random() * 6).toFixed(2)}s`);
   element.style.setProperty('--blink-dur', `${(4 + Math.random() * 3).toFixed(2)}s`);
