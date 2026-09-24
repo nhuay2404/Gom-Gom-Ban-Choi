@@ -1,0 +1,104 @@
+function neighbor(index, delta, width, height) {
+  const next = index + delta;
+  if (next < 0 || next >= width * height) return -1;
+  if (Math.abs(delta) === 1 && Math.floor(index / width) !== Math.floor(next / width)) return -1;
+  return next;
+}
+
+export function connectedGroup(board, width, height, source) {
+  const group = board[source]?.group;
+  if (!group) return [];
+  const visited = new Set([source]), pending = [source];
+  while (pending.length) {
+    const current = pending.pop();
+    for (const direction of [1, -1, width, -width]) {
+      const next = neighbor(current, direction, width, height);
+      if (next < 0 || visited.has(next) || board[next]?.group !== group) continue;
+      visited.add(next); pending.push(next);
+    }
+  }
+  return [...visited];
+}
+
+export function findLineMatch(board, width, height, size = 4) {
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col <= width - size; col++) {
+      const indices = Array.from({ length: size }, (_, offset) => row * width + col + offset);
+      const group = board[indices[0]]?.group;
+      if (group && indices.every(index => board[index]?.group === group)) return { group, indices, axis: 'horizontal' };
+    }
+  }
+  for (let col = 0; col < width; col++) {
+    for (let row = 0; row <= height - size; row++) {
+      const indices = Array.from({ length: size }, (_, offset) => (row + offset) * width + col);
+      const group = board[indices[0]]?.group;
+      if (group && indices.every(index => board[index]?.group === group)) return { group, indices, axis: 'vertical' };
+    }
+  }
+  return null;
+}
+
+export function slideDirectional(board, width, height, source, delta) {
+  if (![1, -1, width, -width].includes(delta)) return { error: 'Chỉ được vuốt ngang hoặc dọc.' };
+  const indices = connectedGroup(board, width, height, source);
+  if (!indices.length) return { error: 'Không có thẻ để vuốt.' };
+  const component = new Set(indices);
+  const blocked = new Set();
+  const destinations = new Map(indices.map(index => [index, neighbor(index, delta, width, height)]));
+  for (const index of indices) {
+    const destination = destinations.get(index);
+    if (destination < 0 || (board[destination] && !component.has(destination))) blocked.add(index);
+  }
+  let changed;
+  do {
+    changed = false;
+    for (const index of indices) {
+      if (blocked.has(index)) continue;
+      if (blocked.has(destinations.get(index))) { blocked.add(index); changed = true; }
+    }
+  } while (changed);
+  const moving = indices.filter(index => !blocked.has(index));
+  if (!moving.length) return { error: 'Cả cụm đều bị chặn.' };
+  const nextBoard = board.slice();
+  const tiles = moving.map(index => board[index]);
+  moving.forEach(index => { nextBoard[index] = null; });
+  moving.forEach((index, i) => { nextBoard[destinations.get(index)] = tiles[i]; });
+  return { board: nextBoard, moved: moving.length, blocked: blocked.size };
+}
+
+export function rotateOffsets(offsets) {
+  const rotated = offsets.map(([row, col]) => [col, -row]);
+  const minRow = Math.min(...rotated.map(([row]) => row));
+  const minCol = Math.min(...rotated.map(([, col]) => col));
+  return rotated.map(([row, col]) => [row - minRow, col - minCol]);
+}
+
+export function placementIndices(board, width, height, anchor, offsets) {
+  const anchorRow = Math.floor(anchor / width), anchorCol = anchor % width;
+  const indices = [];
+  for (const [rowOffset, colOffset] of offsets) {
+    const row = anchorRow + rowOffset, col = anchorCol + colOffset;
+    if (row < 0 || row >= height || col < 0 || col >= width) return null;
+    const index = row * width + col;
+    if (board[index]) return null;
+    indices.push(index);
+  }
+  return indices;
+}
+
+export function placeCard(board, width, height, anchor, card) {
+  const indices = placementIndices(board, width, height, anchor, card.offsets);
+  if (!indices) return { error: 'Thẻ không vừa vị trí này.' };
+  const nextBoard = board.slice();
+  indices.forEach((index, offset) => { nextBoard[index] = { ...card.items[offset], locked: true }; });
+  let adjacency = 0;
+  const placed = new Set(indices);
+  indices.forEach(index => {
+    const cell = nextBoard[index];
+    for (const delta of [1, -1, width, -width]) {
+      const other = neighbor(index, delta, width, height);
+      if (other >= 0 && !placed.has(other) && nextBoard[other]?.group === cell.group) adjacency++;
+    }
+  });
+  return { board: nextBoard, indices, score: indices.length * 10 + adjacency * 5 };
+}
