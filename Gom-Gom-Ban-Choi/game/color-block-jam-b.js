@@ -169,8 +169,20 @@ function cellEl(index) {
   return document.querySelector(`.cell[data-index="${index}"]`);
 }
 
-// Pha 1: mèo kéo dài thân về phía điểm tụ. Pha 2: trượt vào điểm tụ và nhỏ dần; điểm tụ phồng lên rồi biến mất.
-function animateMerges(merges, gained) {
+const LIFT_MS = 560, MERGE_MS = 420;
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Pha 1: mèo bị nhấc bổng lên, lộ bụng + chân sau lủng lẳng (CSS .lifted).
+// Pha 2: cả cụm trượt vào mèo vừa đặt và nhỏ dần; mèo đích phồng lên rồi biến mất.
+async function animateMerges(merges, gained) {
+  const total = merges.reduce((n, m) => n + m.cluster.length, 0);
+  merges.forEach(({ cluster }) => cluster.forEach((index, order) => {
+    const cell = cellEl(index);
+    if (!cell) return;
+    cell.classList.add('merging', 'lifted');
+    cell.style.setProperty('--lift-delay', `${order * 50}ms`);
+  }));
+  await wait(LIFT_MS);
   const animations = [];
   merges.forEach(({ cluster, target }) => {
     const targetCell = cellEl(target);
@@ -178,33 +190,25 @@ function animateMerges(merges, gained) {
     cluster.forEach(index => {
       const cell = cellEl(index);
       if (!cell) return;
-      cell.classList.add('merging');
       if (index === target) {
         animations.push(cell.animate([
           { transform: 'none', opacity: 1 },
-          { transform: 'scale(.9, 1.1)', opacity: 1, offset: .42 },
-          { transform: 'scale(1.32)', opacity: 1, offset: .78 },
+          { transform: 'scale(1.3)', opacity: 1, offset: .65 },
           { transform: 'scale(0)', opacity: 0 },
-        ], { duration: 700, easing: 'ease-in-out', fill: 'forwards' }));
+        ], { duration: MERGE_MS + 120, easing: 'ease-in-out', fill: 'forwards' }));
         return;
       }
       const dx = targetCell.offsetLeft - cell.offsetLeft, dy = targetCell.offsetTop - cell.offsetTop;
-      const horizontal = Math.abs(dx) >= Math.abs(dy);
-      // Kéo dài theo trục hướng về điểm tụ, neo ở phía xa để thân "vươn" tới.
-      cell.style.transformOrigin = horizontal ? (dx > 0 ? 'left center' : 'right center') : (dy > 0 ? 'center top' : 'center bottom');
-      const stretch = horizontal ? 'scale(1.55, .8)' : 'scale(.8, 1.55)';
       animations.push(cell.animate([
         { transform: 'none', opacity: 1 },
-        { transform: stretch, opacity: 1, offset: .42 },
-        { transform: `translate(${dx * .55}px, ${dy * .55}px) ${stretch}`, opacity: 1, offset: .62 },
+        { transform: `translate(${dx * .8}px, ${dy * .8}px) scale(.7)`, opacity: 1, offset: .75 },
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
-      ], { duration: 700, easing: 'cubic-bezier(.45, 0, .3, 1)', fill: 'forwards' }));
+      ], { duration: MERGE_MS, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }));
     });
-    showMergeScore(targetCell, Math.round(gained * cluster.length / merges.reduce((n, m) => n + m.cluster.length, 0)));
+    showMergeScore(targetCell, Math.round(gained * cluster.length / total));
   });
-  return Promise.all(animations.map(animation => animation.finished));
+  await Promise.all(animations.map(animation => animation.finished));
 }
-
 function showMergeScore(cell, points) {
   const wrap = document.querySelector('.board-wrap');
   const box = wrap.getBoundingClientRect(), rect = cell.getBoundingClientRect();

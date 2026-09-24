@@ -117,4 +117,13 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .cell.merging{z-index:3;pointer-events:none}
 .piece-card.waiting{opacity:.3}
 .merge-pop{position:absolute;z-index:20;transform:translate(-50%,-50%);color:#fff8d6;font-size:22px;font-weight:900;letter-spacing:-.5px;text-shadow:0 2px 0 #b8741f,0 0 10px #ffcf5a;pointer-events:none;animation:merge-pop 1s .3s cubic-bezier(.2,.9,.3,1.2) both}
-@keyframes merge-pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}25%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}75%{opacity:1;transform:translate(-50%,-120%) scale(1)}100%{opacity:0;transform:translate(-50%,-160%) scale(.9)}}
+@keyframes merge-pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}25%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}75%{opacity:1;transform:translate(-50%,-120%) scale(1)}100%{opacity:0;transform:translate(-50%,-160%) scale(.9)}}/* Mèo bị nhấc bổng trước khi gom: nhô lên, lộ bụng + chân sau, đung đưa, mặt nhăn */
+.cell.locked .cat{transition:transform .32s cubic-bezier(.3,1.6,.5,1) var(--lift-delay,0ms)}
+.cell.lifted .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-42%) scale(1.1,1.14)}
+.cell.lifted .cat .hang{visibility:visible}
+.cell.lifted .cat .base,.cell.lifted .cat .ground{visibility:hidden}
+.cell.lifted .cat .calm{display:none}
+.cell.lifted .cat .annoyed{display:inline}
+.cell.lifted .cat .blush{opacity:.85}
+.cell.lifted .cat .hang{transform-box:view-box;transform-origin:50% 70%;animation:cat-dangle .5s ease-in-out var(--lift-delay,0ms) infinite alternate}
+@keyframes cat-dangle{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}

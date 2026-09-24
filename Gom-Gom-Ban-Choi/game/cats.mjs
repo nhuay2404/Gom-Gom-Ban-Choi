@@ -67,6 +67,20 @@ function catSvg(group) {
   const ears = `<g stroke="${shade(cat.mask || cat.fur, .1)}" stroke-width="5" stroke-linejoin="round">
       <path d="${earOuter}" fill="${earFill}"/><path d="${earOuter}" fill="${earFill}" ${mirror}/></g>
     <path d="${earInner}" fill="${innerFill}"/><path d="${earInner}" fill="${innerFill}" ${mirror}/>`;
+  // Thân dưới lúc bị nhấc bổng: bụng + 2 chân sau lủng lẳng + đuôi. Mặc định ẩn (visibility là presentation
+  // attribute nên CSS của từng chế độ có thể bật lên).
+  const leg = cat.mask || cat.fur;
+  const hang = `<g class="hang" visibility="hidden">
+      <path d="M78 104 Q98 112 93 132" fill="none" stroke="${shade(leg, -.08)}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M17 72 L83 72 Q88 102 75 122 Q50 131 25 122 Q12 102 17 72Z" fill="url(#${id}-fur)" stroke="${shade(cat.fur, -.12)}" stroke-width="2"/>
+      <ellipse cx="50" cy="104" rx="19" ry="16" fill="${cat.belly}"/>
+      <g fill="${leg}" stroke="${shade(leg, -.15)}" stroke-width="1.5">
+        <rect x="27" y="112" width="15" height="22" rx="7.5"/><rect x="58" y="112" width="15" height="22" rx="7.5"/></g>
+      <ellipse cx="34.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/><ellipse cx="65.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/>
+      <g fill="#f4a3b3"><ellipse cx="34.5" cy="133" rx="3" ry="2"/><ellipse cx="65.5" cy="133" rx="3" ry="2"/>
+        <circle cx="30.5" cy="130" r="1.3"/><circle cx="34.5" cy="129" r="1.3"/><circle cx="38.5" cy="130" r="1.3"/>
+        <circle cx="61.5" cy="130" r="1.3"/><circle cx="65.5" cy="129" r="1.3"/><circle cx="69.5" cy="130" r="1.3"/></g>
+    </g>`;
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
       <radialGradient id="${id}-fur" cx=".36" cy=".3" r=".85">
@@ -76,9 +90,10 @@ function catSvg(group) {
         <stop offset="0" stop-color="${cat.side}"/><stop offset="1" stop-color="${shade(cat.side, -.3)}"/>
       </linearGradient>
     </defs>
-    <ellipse cx="50" cy="101" rx="40" ry="5" fill="#10240b" opacity=".22"/>
+    <ellipse class="ground" cx="50" cy="101" rx="40" ry="5" fill="#10240b" opacity=".22"/>
     ${cat.ears === 'fold' ? '' : ears}
-    <path d="${BODY}" transform="translate(0 9)" fill="url(#${id}-side)" stroke="url(#${id}-side)" stroke-width="6" stroke-linejoin="round"/>
+    ${hang}
+    <path class="base" d="${BODY}" transform="translate(0 9)" fill="url(#${id}-side)" stroke="url(#${id}-side)" stroke-width="6" stroke-linejoin="round"/>
     <path d="${BODY}" fill="url(#${id}-fur)" stroke="${shade(cat.fur, .1)}" stroke-width="6" stroke-linejoin="round"/>
     ${cat.ears === 'fold' ? ears : ''}
     ${stripes}
