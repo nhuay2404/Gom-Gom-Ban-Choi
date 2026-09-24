@@ -66,6 +66,21 @@ export function slideDirectional(board, width, height, source, delta) {
   return { board: nextBoard, moved: moving.length, blocked: blocked.size };
 }
 
+// Gom: mọi cụm liền kề cùng nhóm có từ `size` món trở lên sẽ biến mất khỏi bàn.
+export function clearMatches(board, width, height, size = 4) {
+  const seen = new Set(), cleared = [], groups = [];
+  board.forEach((cell, index) => {
+    if (!cell || seen.has(index)) return;
+    const cluster = connectedGroup(board, width, height, index);
+    cluster.forEach(i => seen.add(i));
+    if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); }
+  });
+  if (!cleared.length) return { board, cleared, groups };
+  const nextBoard = board.slice();
+  cleared.forEach(index => { nextBoard[index] = null; });
+  return { board: nextBoard, cleared, groups };
+}
+
 export function rotateOffsets(offsets) {
   const rotated = offsets.map(([row, col]) => [col, -row]);
   const minRow = Math.min(...rotated.map(([row]) => row));

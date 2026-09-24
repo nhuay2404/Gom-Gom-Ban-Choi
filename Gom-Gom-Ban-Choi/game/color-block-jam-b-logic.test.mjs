@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { clearMatches, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -186,6 +186,16 @@ test('màn 4 có bảy batch và đường giải 31 lượt trên bàn 8x5', ()
   }
   assert.equal(moves, 31);
   assert.equal(board.filter(cell => cell?.group).length, 0);
+});
+
+test('cụm 4 món cùng nhóm liền kề bị xóa, cụm 3 món thì không', () => {
+  const board = Array(W * H).fill(null);
+  [0, 1, 2, 7].forEach(index => { board[index] = { group: 'animals' }; });
+  [20, 21, 22].forEach(index => { board[index] = { group: 'fruit' }; });
+  const result = clearMatches(board, W, H);
+  assert.deepEqual(result.cleared.sort((a, b) => a - b), [0, 1, 2, 7]);
+  assert.deepEqual(result.groups, ['animals']);
+  assert.equal(result.board.filter(Boolean).length, 3);
 });
 
 test('xoay thẻ chữ L bốn lần trở về hình ban đầu', () => {
