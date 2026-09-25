@@ -169,7 +169,7 @@ function cellEl(index) {
   return document.querySelector(`.cell[data-index="${index}"]`);
 }
 
-const LIFT_MS = 560, MERGE_MS = 420;
+const LIFT_MS = 560, MERGE_MS = 420, WIN_PAUSE_MS = 800;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // Pha 1: mèo bị nhấc bổng lên, lộ bụng + chân sau lủng lẳng (CSS .lifted).
@@ -214,6 +214,7 @@ async function celebrateWin(message) {
   const cells = [...document.querySelectorAll('.cell.locked')];
   if (!reduceMotion.matches && cells.length) {
     state.animating = true;
+    await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
     cells.forEach((cell, order) => {
       cell.classList.add('merging', 'lifted');
       cell.style.setProperty('--lift-delay', `${order * 40}ms`);
