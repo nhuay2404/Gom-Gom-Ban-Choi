@@ -1,5 +1,5 @@
 import {
-  clearMatches, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
+  boardNeeds, clearMatches, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
 } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
@@ -36,37 +36,45 @@ function randomGroup() {
 const REPLAN_AT = 6; // bàn còn <= 6 mèo: lập lại cả hàng mỗi lượt cho khớp bàn hiện tại
 
 function randomCard(board) {
+  const remaining = remainingCats(board);
   let shapeName = shapeBag[state.bagIndex++ % shapeBag.length];
   if (shapeName === 'triple') shapeName = state.bagIndex % 24 < 12 ? 'line' : 'elbow';
-  // Ưu tiên loại mèo đang có trên bàn để hạn chế sinh thêm loại mới khó dọn.
+  // Bàn vơi (<= 6 mèo): thẻ ngẫu nhiên chỉ 1-2 con, chỉ loại đang có trên bàn -> không làm bàn bừa thêm.
+  const calm = remaining <= REPLAN_AT;
+  if (calm && shapes[shapeName].length > 2) shapeName = 'domino';
   const onBoard = [...new Set(board.filter(Boolean).map(cell => cell.group))];
-  const pick = () => (onBoard.length && Math.random() < .75 ? onBoard[Math.floor(Math.random() * onBoard.length)] : randomGroup());
+  const loyalty = calm ? 1 : .75; // ưu tiên loại mèo đang có trên bàn để hạn chế sinh loại mới khó dọn
+  const pick = () => (onBoard.length && Math.random() < loyalty ? onBoard[Math.floor(Math.random() * onBoard.length)] : randomGroup());
   return { offsets: shapes[shapeName].map(point => point.slice()), items: shapes[shapeName].map(() => item(pick())) };
 }
 
+// Đặt thử một thẻ có ích lên bàn giả lập (đúng chỗ AI đã định cho nó).
+function applyPlan(sim, card) {
+  const placed = placeCard(sim.board, W, H, card.planAnchor, card);
+  if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
+}
+
+// AI chọn thẻ tiếp theo theo: số mèo còn trên bàn, số lượt tối thiểu còn cần (mỗi cụm 1 lượt)
+// so với số lượt còn lại. Có thẻ gom được nhiều cụm một lúc thì ưu tiên.
 function planCard(sim) {
-  if (Math.random() < helpChance(remainingCats(sim.board), state.initialCats)) {
+  const needs = boardNeeds(sim.board, W, H);
+  const chance = helpChance(remainingCats(sim.board), state.initialCats, sim.movesLeft, needs.turns);
+  sim.movesLeft--;
+  if (Math.random() < chance) {
     const help = findHelpfulCard(sim.board, W, H);
     if (help) {
-      const card = { offsets: help.card.offsets, items: help.card.groups.map(item), helpful: true };
-      const placed = placeCard(sim.board, W, H, help.anchor, card);
-      if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
+      const card = { offsets: help.card.offsets, items: help.card.groups.map(item), helpful: true, planAnchor: help.anchor };
+      applyPlan(sim, card);
       return card;
     }
   }
   return randomCard(sim.board);
 }
 
-// Bàn giả lập = bàn thật + các thẻ có ích đang chờ trong hàng đã được "đặt thử".
+// Bàn giả lập = bàn thật + các thẻ có ích đang chờ trong hàng đã được "đặt thử"; kèm số lượt còn lại.
 function simulateQueue(cards) {
-  const sim = { board: state.board.slice() };
-  cards.forEach(card => {
-    if (!card.helpful) return;
-    const help = findHelpfulCard(sim.board, W, H);
-    if (!help) return;
-    const placed = placeCard(sim.board, W, H, help.anchor, card);
-    if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
-  });
+  const sim = { board: state.board.slice(), movesLeft: state.moves - cards.length };
+  cards.forEach(card => { if (card.helpful && card.planAnchor !== undefined) applyPlan(sim, card); });
   return sim;
 }
 

@@ -165,35 +165,69 @@ function emptyNeighbors(board, width, height, cluster) {
   return [...out];
 }
 
-// Thẻ "có ích": đặt vào là gom được ngay một cụm (cặp + 1 con, hoặc con lẻ + 2 con cùng loại).
-// Trả về { card: { offsets, groups }, anchor } hoặc null nếu bàn không có chỗ hợp.
-export function findHelpfulCard(board, width, height, rng = Math.random) {
-  const clusters = clustersOf(board, width, height).filter(c => c.cells.length < 3);
-  // Ưu tiên cụm 2 (chỉ cần 1 con), rồi tới cụm 1; trộn ngẫu nhiên trong cùng mức.
-  clusters.sort((a, b) => (b.cells.length - a.cells.length) || (rng() - .5));
-  for (const cluster of clusters) {
-    const spots = emptyNeighbors(board, width, height, cluster).sort(() => rng() - .5);
-    if (cluster.cells.length === 2 && spots.length) {
-      return { card: { offsets: [[0, 0]], groups: [cluster.group] }, anchor: spots[0] };
-    }
-    for (const spot of spots) {
-      for (const delta of [1, width, -1, -width].sort(() => rng() - .5)) {
-        const other = inBoard(spot, delta, width, height);
-        if (other < 0 || board[other] || cluster.cells.includes(other)) continue;
-        const [first, second] = spot < other ? [spot, other] : [other, spot];
-        const horizontal = Math.abs(delta) === 1;
-        return { card: { offsets: horizontal ? [[0, 0], [0, 1]] : [[0, 0], [1, 0]], groups: [cluster.group, cluster.group] }, anchor: first };
-      }
-    }
-  }
-  return null;
+// Thẻ domino đặt ở 2 ô a, b (kề nhau) -> offsets + anchor chuẩn hoá (anchor = ô trên-trái).
+function dominoAt(a, b, groupA, groupB, width) {
+  const [first, second, gFirst, gSecond] = a < b ? [a, b, groupA, groupB] : [b, a, groupB, groupA];
+  const horizontal = second - first === 1;
+  return { card: { offsets: horizontal ? [[0, 0], [0, 1]] : [[0, 0], [1, 0]], groups: [gFirst, gSecond] }, anchor: first };
 }
 
-// Tỉ lệ ra thẻ có ích: bàn càng vơi càng cao (30% lúc đầu -> 100% khi còn <= 4 mèo).
-export function helpChance(remaining, initial) {
+// Thẻ "có ích" = đặt vào là gom được ngay. Liệt kê mọi ứng viên rồi ĐẶT THỬ từng thẻ, chọn thẻ gom
+// được nhiều mèo nhất:
+//  - 1 con cùng loại ghép vào một cặp;
+//  - 2 con cùng loại ghép với một con lẻ;
+//  - "gom đôi": 2 con khác loại, mỗi con ghép vào một cặp khác nhau -> một lượt dọn 2 cụm.
+// Trả về { card: { offsets, groups }, anchor, cleared } hoặc null.
+export function findHelpfulCard(board, width, height, rng = Math.random) {
+  const clusters = clustersOf(board, width, height).filter(c => c.cells.length < 3);
+  const candidates = [];
+  const pairSpots = new Map(); // ô trống -> loại của cặp mà ô đó kề
+  clusters.forEach(cluster => {
+    const spots = emptyNeighbors(board, width, height, cluster);
+    if (cluster.cells.length === 2) {
+      spots.forEach(spot => {
+        candidates.push({ card: { offsets: [[0, 0]], groups: [cluster.group] }, anchor: spot });
+        if (!pairSpots.has(spot)) pairSpots.set(spot, cluster.group);
+      });
+    } else {
+      spots.forEach(spot => DIRS(width).forEach(delta => {
+        const other = inBoard(spot, delta, width, height);
+        if (other >= 0 && !board[other]) candidates.push(dominoAt(spot, other, cluster.group, cluster.group, width));
+      }));
+    }
+  });
+  pairSpots.forEach((groupA, a) => DIRS(width).forEach(delta => {
+    const b = inBoard(a, delta, width, height);
+    if (b > a && pairSpots.has(b) && pairSpots.get(b) !== groupA) candidates.push(dominoAt(a, b, groupA, pairSpots.get(b), width));
+  }));
+  let best = null;
+  candidates.forEach(candidate => {
+    const card = { offsets: candidate.card.offsets, items: candidate.card.groups.map(group => ({ group })) };
+    const placed = placeCard(board, width, height, candidate.anchor, card);
+    if (placed.error) return;
+    const cleared = clearMatches(placed.board, width, height, 3).cleared.length;
+    // Điểm = số mèo dọn được sau lượt (đã trừ mèo mới thêm vào), phá hoà ngẫu nhiên.
+    const value = cleared - candidate.card.groups.length + rng() * .5;
+    if (cleared >= 3 && (!best || value > best.value)) best = { ...candidate, cleared, value };
+  });
+  return best && { card: best.card, anchor: best.anchor, cleared: best.cleared };
+}
+
+// Việc còn lại trên bàn: mỗi cụm cần ít nhất 1 thẻ nữa (cặp thiếu 1 con, con lẻ thiếu 2 con).
+export function boardNeeds(board, width, height) {
+  const clusters = clustersOf(board, width, height);
+  return { turns: clusters.length, cats: clusters.reduce((sum, c) => sum + Math.max(0, 3 - c.cells.length), 0) };
+}
+
+// Tỉ lệ ra thẻ có ích, tính theo:
+//  - tiến độ: bàn càng vơi càng cao (30% lúc đầu -> 100% khi còn <= 4 mèo);
+//  - áp lực lượt: số lượt tối thiểu còn cần gần bằng số lượt còn lại -> chỉ ra thẻ có ích.
+export function helpChance(remaining, initial, movesLeft = Infinity, turnsNeeded = 0) {
   if (remaining <= 4) return 1;
+  if (turnsNeeded >= movesLeft - 1) return 1;
   const progress = 1 - remaining / Math.max(initial, 1);
-  return Math.min(1, Math.max(.3, .3 + progress * .9));
+  const pressure = Number.isFinite(movesLeft) ? Math.max(0, turnsNeeded / Math.max(movesLeft, 1) - .4) : 0;
+  return Math.min(1, Math.max(.3, .3 + progress * .9 + pressure));
 }
 
 // Bàn khởi đầu: vài cặp cùng loại đứng cạnh nhau (thiếu 1 là gom) + vài con lẻ; không có cụm >= 3.

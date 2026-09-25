@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clearMatches, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { boardNeeds, clearMatches, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -272,4 +272,27 @@ test('tỉ lệ thẻ có ích tăng khi bàn vơi, 100% khi còn <= 4 mèo', ()
   assert.ok(helpChance(10, 10) < helpChance(6, 10));
   assert.equal(helpChance(4, 10), 1);
   assert.equal(helpChance(0, 10), 1);
+});
+test('AI ưu tiên thẻ gom đôi: một thẻ dọn được 2 cặp khác loại', () => {
+  // Hàng 0: a a . . b b  -> domino [a, b] đặt ở ô 2-3 dọn cả hai cặp.
+  const board = Array(36).fill(null);
+  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
+  [4, 5].forEach(i => { board[i] = { group: 'b' }; });
+  const help = findHelpfulCard(board, 6, 6);
+  assert.deepEqual(help.card.groups, ['a', 'b']);
+  assert.equal(help.anchor, 2);
+  assert.equal(help.cleared, 6);
+});
+
+test('bàn cần bao nhiêu lượt: mỗi cụm một lượt', () => {
+  const board = Array(36).fill(null);
+  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
+  board[20] = { group: 'b' };
+  assert.deepEqual(boardNeeds(board, 6, 6), { turns: 2, cats: 3 });
+});
+
+test('sắp hết lượt so với việc còn lại thì chỉ ra thẻ có ích', () => {
+  assert.equal(helpChance(10, 10, 5, 5), 1);
+  assert.ok(helpChance(10, 10, 20, 5) < 1);
+  assert.ok(helpChance(10, 10, 8, 6) > helpChance(10, 10, 20, 6));
 });
