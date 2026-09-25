@@ -181,4 +181,11 @@ dialog p{color:#8a6440}
 @keyframes joy-twinkle{to{transform:scale(1.35) rotate(18deg);opacity:.7}}
 /* Kéo thẻ: bỏ anim tự lắc; JS mô phỏng vật lý (thân nghiêng theo vận tốc, chân/đuôi đung đưa như con lắc) */
 .drag-ghost .cat{animation:none;transform-origin:50% 8%}
-.drag-ghost .cat .hang{animation:none;transform-box:view-box;transform-origin:50% 68%}
+.drag-ghost .cat .hang{animation:none;transform-box:view-box;transform-origin:50% 68%}/* Thẻ đang bóc nằm chính giữa; ô gửi tạm nhỏ lại, nằm bên phải */
+.draw-area{grid-template-columns:1fr auto 1fr;gap:12px;padding:0}
+.card-column{grid-column:2}
+.hold-column{grid-column:3;justify-self:start;align-self:center;gap:5px}
+.hold-slot{width:66px;height:66px;--card-w:66px;--card-h:66px;--pad:12px;--gap:2px;border-radius:12px}
+.hold-slot .piece-grid{--cell:min(26px,calc((var(--card-w) - var(--pad) - var(--gap) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((var(--card-h) - var(--pad) - var(--gap) * (var(--piece-rows) - 1)) / var(--piece-rows)))}
+.hold-plus{font-size:26px}
+.hold-column .section-label{font-size:9px}
