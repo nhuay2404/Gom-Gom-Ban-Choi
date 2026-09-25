@@ -401,7 +401,8 @@ function renderCards() {
 
 function paintPreview() {
   document.querySelectorAll('.cell.preview,.cell.preview-invalid').forEach(cell => cell.classList.remove('preview', 'preview-invalid'));
-  state.preview?.forEach(index => document.querySelector(`.cell[data-index="${index}"]`)?.classList.add('preview'));
+  // Chỉ tô ô trống; ô đã có mèo không bao giờ nhận hiệu ứng xem trước.
+  state.preview?.forEach(index => document.querySelector(`.cell.empty[data-index="${index}"]`)?.classList.add('preview'));
   if (!state.preview && state.previewAnchor !== null) document.querySelector(`.cell[data-index="${state.previewAnchor}"]`)?.classList.add('preview-invalid');
 }
 
