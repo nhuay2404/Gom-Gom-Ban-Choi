@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { QUEUE_TUNING, bestClearingMove, createQueuePlanner, boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { clearMatches, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -246,99 +246,4 @@ test('đặt thẻ nhiều object sẽ khóa tất cả và cộng điểm liề
   assert.deepEqual(result.indices, [1, 5, 6]);
   assert.equal(result.score, 35);
   assert.ok(result.indices.every(index => result.board[index].locked));
-});
-
-test('bàn khởi đầu: có đủ cặp, không có cụm >= 3 gom được ngay', () => {
-  for (let run = 0; run < 50; run++) {
-    const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f'], { pairs: 3, singles: 4 });
-    assert.equal(remainingCats(board), 10);
-    assert.equal(clearMatches(board, 6, 6, 3).cleared.length, 0);
-  }
-});
-
-test('thẻ có ích đặt đúng chỗ gợi ý thì gom được ngay', () => {
-  for (let run = 0; run < 100; run++) {
-    const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f']);
-    const help = findHelpfulCard(board, 6, 6);
-    assert.ok(help, 'bàn khởi đầu luôn có thẻ có ích');
-    const card = { offsets: help.card.offsets, items: help.card.groups.map(group => ({ group })) };
-    const placed = placeCard(board, 6, 6, help.anchor, card);
-    assert.ok(!placed.error, placed.error);
-    assert.ok(clearMatches(placed.board, 6, 6, 3).cleared.length >= 3);
-  }
-});
-
-test('tỉ lệ thẻ có ích tăng khi bàn vơi, 100% khi còn <= 4 mèo', () => {
-  assert.ok(helpChance(10, 10) < helpChance(6, 10));
-  assert.equal(helpChance(QUEUE_TUNING.sureHelpAt, 10), 1);
-  assert.equal(helpChance(0, 10), 1);
-});
-test('AI ưu tiên thẻ gom đôi: một thẻ dọn được 2 cặp khác loại', () => {
-  // Hàng 0: a a . . b b  -> domino [a, b] đặt ở ô 2-3 dọn cả hai cặp.
-  const board = Array(36).fill(null);
-  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
-  [4, 5].forEach(i => { board[i] = { group: 'b' }; });
-  const help = findHelpfulCard(board, 6, 6);
-  assert.deepEqual(help.card.groups, ['a', 'b']);
-  assert.equal(help.anchor, 2);
-  assert.equal(help.cleared, 6);
-});
-
-test('bàn cần bao nhiêu lượt: mỗi cụm một lượt', () => {
-  const board = Array(36).fill(null);
-  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
-  board[20] = { group: 'b' };
-  assert.deepEqual(boardNeeds(board, 6, 6), { turns: 2, cats: 3 });
-});
-
-test('sắp hết lượt so với việc còn lại thì chỉ ra thẻ có ích', () => {
-  const lenient = { ...QUEUE_TUNING, rescue: 1 };
-  assert.equal(helpChance(10, 10, 5, 5, lenient), 1);
-  assert.equal(helpChance(10, 10, 5, 5), Math.max(QUEUE_TUNING.rescue, QUEUE_TUNING.baseHelp));
-  assert.ok(helpChance(10, 10, 20, 5) < 1);
-  assert.ok(helpChance(10, 10, 8, 6) > helpChance(10, 10, 20, 6));
-});
-test('khả năng gom: cụm có mèo chờ sẵn trong thẻ đang bóc thì cao, cụm chưa có hàng thì thấp', () => {
-  const board = Array(36).fill(null);
-  [0, 1].forEach(i => { board[i] = { group: 'a' }; });   // cặp a
-  [24, 25].forEach(i => { board[i] = { group: 'b' }; }); // cặp b
-  const { odds } = clearOdds(board, 6, 6, [{ groups: ['a'], weight: .85 }]);
-  assert.equal(odds[0], .85);
-  assert.ok(odds[24] < .2);
-  assert.ok(expectedLeftover(board, odds) > 1.5 && expectedLeftover(board, odds) < 2.2);
-});
-
-test('AI không ra thẻ trùng cho cụm đã có hàng, mà cứu cụm còn lại', () => {
-  const board = Array(36).fill(null);
-  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
-  [24, 25].forEach(i => { board[i] = { group: 'b' }; });
-  const { odds } = clearOdds(board, 6, 6, [{ groups: ['a'], weight: .85 }]);
-  for (let run = 0; run < 30; run++) {
-    const help = findHelpfulCard(board, 6, 6, Math.random, odds);
-    assert.ok(help.card.groups.includes('b'), `nhắm nhầm: ${help.card.groups}`);
-  }
-});
-test('tình huống thật: thẻ đang bóc là mèo trắng cho cặp trắng -> hàng chờ không được ra mèo trắng', () => {
-  // Cặp trắng (0,4)-(1,4), mướp lẻ (1,5), xám lẻ (5,5); thẻ đang bóc = 1 mèo trắng.
-  const board = Array(36).fill(null);
-  board[4] = { group: 'white' }; board[10] = { group: 'white' }; board[11] = { group: 'tabby' }; board[35] = { group: 'gray' };
-  const active = { offsets: [[0, 0]], items: [{ group: 'white' }] };
-  const afterActive = bestClearingMove(board, 6, 6, active);
-  assert.ok(afterActive && afterActive.cleared === 3, 'mèo trắng đang bóc phải gom được cặp trắng');
-  for (let run = 0; run < 100; run++) {
-    const help = findHelpfulCard(afterActive.board, 6, 6);
-    assert.ok(!help.card.groups.includes('white'), `ra thừa mèo trắng: ${help.card.groups}`);
-  }
-  const { odds } = clearOdds(board, 6, 6, [{ groups: ['white'], weight: .85 }]);
-  for (let run = 0; run < 100; run++) {
-    assert.ok(!findHelpfulCard(board, 6, 6, Math.random, odds).card.groups.includes('white'));
-  }
-});
-test('hàng thẻ AI: thẻ ngẫu nhiên "junk" không gom được gì ngay khi bàn còn đông', () => {
-  const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f']);
-  const game = { board, deck: [], hold: null, moves: 20, initialCats: 10, bagIndex: 0 };
-  const planner = createQueuePlanner({ width: 6, height: 6, groups: ['a', 'b', 'c', 'd', 'e', 'f'], tuning: { ...QUEUE_TUNING, junk: 1, baseHelp: 0, slope: 0, rescue: 0, sureHelpAt: -1, pressure: 99 } });
-  let junk = 0;
-  for (let i = 0; i < 40; i++) if (!bestClearingMove(game.board, 6, 6, planner.draw(game))) junk++;
-  assert.ok(junk >= 36, `chỉ ${junk}/40 thẻ không gom được`);
 });

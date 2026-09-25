@@ -1,37 +1,59 @@
-import {
-  QUEUE_TUNING, clearMatches, createQueuePlanner, generateStartBoard, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
-} from './color-block-jam-b-logic.mjs';
+import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
-// Thắng: dọn sạch mọi mèo trên bàn trong giới hạn lượt.
-const W = 6, H = 6, PREVIEW_COUNT = 1;
+// Thắng: đạt điểm mục tiêu trong giới hạn lượt.
+const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 1;
 const $ = id => document.getElementById(id);
 const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10;
+const shapes = {
+  single: [[0, 0]],
+  domino: [[0, 0], [0, 1]],
+  line: [[0, 0], [0, 1], [0, 2]],
+  elbow: [[0, 0], [1, 0], [1, 1]],
+};
 
 let state, cardDrag = null;
+const startingBlocks = [
+  [0, 0, 'orange'], [0, 5, 'gray'], [2, 2, 'white'],
+  [3, 4, 'tabby'], [5, 0, 'orange'], [5, 5, 'siamese'],
+];
+// Tỉ lệ hình thẻ: nhiều thẻ 1 ô để dễ lấp chỗ trống và gom nhóm.
+// Mỗi 12 thẻ chỉ có 1 thẻ 3 ô (xen kẽ chữ I / chữ L).
+const shapeBag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'triple', 'single', 'domino', 'single', 'domino'];
+
 function item(group) {
   return { group, name: categories[group].name };
 }
 
-// Các màn: bàn khởi đầu (cặp cùng loại thiếu 1 là gom + con lẻ), giới hạn lượt, độ khó hàng thẻ AI.
-// Độ khó đã chạy thử bằng bot chơi tham lam (1500 ván): Màn 1 thắng ~100% (~6 lượt), Màn 2 ~85% (~12 lượt).
-const LEVELS = [
-  { layout: { pairs: 3, singles: 4 }, turns: 20, tuning: QUEUE_TUNING },
-  { layout: { pairs: 3, singles: 6 }, turns: 20,
-    tuning: { ...QUEUE_TUNING, baseHelp: .08, slope: .65, sureHelpAt: 2, loyalty: .45, rescue: .2, junk: .75, bigCards: 2, pressure: .5 } },
-];
-const LEVEL_KEY = 'gomgom-rotate-level';
-function storedLevel() {
-  try { return Math.min(LEVELS.length - 1, Math.max(0, Number(localStorage.getItem(LEVEL_KEY)) || 0)); } catch { return 0; }
-}
-function storeLevel(level) {
-  try { localStorage.setItem(LEVEL_KEY, String(level)); } catch { /* chế độ riêng tư: bỏ qua */ }
+function randomGroup() {
+  return catGroups[Math.floor(Math.random() * catGroups.length)];
 }
 
-// Hàng thẻ AI (logic ở color-block-jam-b-logic.mjs): lập theo mèo trên bàn + mèo trong tay + khả năng
-// gom từng con; bàn càng vơi càng ra thẻ có ích. Mỗi màn có tuning riêng.
-let planner;
-const drawCard = () => planner.draw(state);
+function shuffled(values) {
+  const result = values.slice();
+  for (let index = result.length - 1; index > 0; index--) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [result[index], result[target]] = [result[target], result[index]];
+  }
+  return result;
+}
+
+function buildDeck() {
+  const cards = [];
+  for (let index = 0; index < 24; index++) {
+    let shapeName = shapeBag[index % shapeBag.length];
+    if (shapeName === 'triple') shapeName = index < shapeBag.length ? 'line' : 'elbow';
+    const items = shapes[shapeName].map(() => item(randomGroup()));
+    cards.push({ offsets: shapes[shapeName].map(point => point.slice()), items });
+  }
+  return shuffled(cards);
+}
+
+function drawCard() {
+  if (state.deck.length <= PREVIEW_COUNT) state.deck.push(...buildDeck());
+  return state.deck.shift();
+}
+
 function addArt(element, object) {
   addCatArt(element, object.group);
 }
@@ -326,7 +348,6 @@ async function celebrateWin(message) {
   state.animating = false;
   state.board = state.board.map(() => null);
   render(message);
-  offerNextLevel();
 }
 function showMergeScore(cell, points) {
   const wrap = document.querySelector('.board-wrap');
@@ -351,16 +372,15 @@ function finishTurn(result, match) {
   state.moves--;
   state.heldThisTurn = false;
   state.preview = null;
-  const left = remainingCats(state.board);
-  if (left === 0) {
+  if (state.score >= TARGET_SCORE) {
     state.over = true;
-    const message = `Dọn sạch bàn! Thắng với ${state.score} điểm, còn dư ${state.moves} lượt ✨`;
+    const message = `Bạn thắng với ${state.score} điểm! ✨`;
     render(message);
     return celebrateWin(message);
   }
   if (state.moves === 0) {
     state.over = true;
-    return render(`Hết lượt — trên bàn còn ${left} mèo chưa gom.`, true);
+    return render(`Hết lượt — bạn đạt ${state.score}/${TARGET_SCORE} điểm.` , true);
   }
   state.active = drawCard();
   const fit = canPlaceAnywhere(state.active);
@@ -524,7 +544,7 @@ function finishCardDrag(event) {
 
 function render(message = '', error = false) {
   $('score').textContent = state.score;
-  $('highscore').textContent = remainingCats(state.board); // số mèo còn trên bàn
+  $('highscore').textContent = TARGET_SCORE;
   $('moves').textContent = state.moves;
   $('message').textContent = message;
   $('message').classList.toggle('error', error);
@@ -628,29 +648,12 @@ function paintInvalid() {
   if (!state.preview && state.previewAnchor !== null) document.querySelector(`.cell[data-index="${state.previewAnchor}"]`)?.classList.add('preview-invalid');
 }
 
-function newGame(level = state?.level ?? storedLevel()) {
-  const config = LEVELS[level];
-  planner = createQueuePlanner({ width: W, height: H, groups: catGroups, matchSize: MATCH_SIZE, preview: PREVIEW_COUNT, tuning: config.tuning, makeItem: item });
-  const board = generateStartBoard(W, H, catGroups, config.layout)
-    .map(cell => cell && { ...item(cell.group), locked: true, starting: true });
-  state = {
-    level, board, deck: [], bagIndex: 0, initialCats: remainingCats(board), active: null, hold: null, heldThisTurn: false,
-    score: 0, moves: config.turns, over: false, preview: null, previewAnchor: null,
-  };
-  storeLevel(level);
-  $('level').textContent = `Màn ${level + 1}`;
-  $('next-level').hidden = true;
+function newGame() {
+  const board = Array(W * H).fill(null);
+  startingBlocks.forEach(([row, col, name]) => { board[row * W + col] = { ...item(name), locked: true, starting: true }; });
+  state = { board, deck: buildDeck(), active: null, hold: null, heldThisTurn: false, score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null };
   state.active = drawCard();
-  render(`Màn ${level + 1}: dọn sạch bàn trong ${config.turns} lượt!`);
-}
-
-// Thắng một màn: mở nút sang màn tiếp theo (màn cuối thì nút chơi lại màn đó).
-function offerNextLevel() {
-  const next = state.level + 1 < LEVELS.length ? state.level + 1 : null;
-  const button = $('next-level');
-  button.textContent = next === null ? 'Chơi lại màn này' : `Sang Màn ${next + 1} ▶`;
-  button.onclick = () => newGame(next ?? state.level);
-  button.hidden = false;
+  render(`Đạt ${TARGET_SCORE} điểm trong ${TURN_LIMIT} lượt!`);
 }
 
 $('active-card').onpointerdown = startCardDrag;
@@ -664,6 +667,6 @@ $('active-card').onkeydown = event => {
 $('hold').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); holdActive(); }
 };
-$('restart').onclick = () => newGame();
+$('restart').onclick = newGame;
 $('help').onclick = () => $('help-dialog').showModal();
 newGame();
