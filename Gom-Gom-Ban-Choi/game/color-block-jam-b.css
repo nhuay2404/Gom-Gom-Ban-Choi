@@ -80,8 +80,6 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .can-rotate .rotate-hint{opacity:1}
 .rotate-tip{color:#29421c;font-size:10px;font-weight:800;opacity:.8;min-height:14px}
 .card-rotator:not(.can-rotate)+.rotate-tip{visibility:hidden}
-.piece-card.spin .piece-grid{animation:card-spin .28s cubic-bezier(.3,1.4,.5,1)}
-@keyframes card-spin{from{transform:rotate(-90deg) scale(.85)}to{transform:none}}
 @media(prefers-reduced-motion:no-preference){.can-rotate .rotate-hint.left svg{animation:nudge-l 1.6s ease-in-out infinite}.can-rotate .rotate-hint.right svg{animation:nudge-r 1.6s ease-in-out infinite}}
 @keyframes nudge-l{50%{transform:rotate(-25deg)}}
 @keyframes nudge-r{50%{transform:rotate(25deg)}}/* Bóng kéo: chỉ hiện các block, không có khung slot */

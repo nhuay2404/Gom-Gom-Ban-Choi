@@ -122,11 +122,36 @@ function popIn(container, delay = 0) {
 
 function rotateActive() {
   if (state.over || state.animating || state.active.items.length < 2) return;
+  // Ghi vị trí từng mèo trước khi xoay (đang giữa anim thì lấy đúng chỗ đang hiện -> bấm liên tục vẫn liền mạch).
+  const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
   state.active.offsets = rotateOffsets(state.active.offsets);
   state.preview = null;
   render();
-  const card = $('active-card');
-  card.classList.remove('spin'); void card.offsetWidth; card.classList.add('spin');
+  animateRotation(before);
+}
+
+// Mỗi mèo chạy theo cung tròn quanh tâm thẻ (như cả thẻ quay 90° thuận chiều) từ chỗ cũ tới chỗ mới;
+// mèo vẫn đứng thẳng, chỉ nghiêng theo đà. Khung đầu trùng vị trí cũ nên không bị chớp.
+function animateRotation(before) {
+  if (reduceMotion.matches) return;
+  const card = $('active-card'), pieces = [...card.querySelectorAll('.piece-object')];
+  const pivot = centerOf(card.getBoundingClientRect());
+  pieces.forEach((piece, index) => {
+    const from = before[index];
+    if (!from) return;
+    const to = centerOf(piece.getBoundingClientRect());
+    const v0 = { x: from.x - pivot.x, y: from.y - pivot.y }, v1 = { x: to.x - pivot.x, y: to.y - pivot.y };
+    const r0 = Math.hypot(v0.x, v0.y), r1 = Math.hypot(v1.x, v1.y);
+    const a0 = Math.atan2(v0.y, v0.x);
+    const steps = 8, keyframes = [];
+    for (let step = 0; step <= steps; step++) {
+      const t = step / steps, angle = a0 + Math.PI / 2 * t, radius = r0 + (r1 - r0) * t;
+      const x = pivot.x + Math.cos(angle) * radius - to.x, y = pivot.y + Math.sin(angle) * radius - to.y;
+      const tilt = Math.sin(t * Math.PI) * 14;
+      keyframes.push({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${tilt.toFixed(1)}deg) scale(${(1 + Math.sin(t * Math.PI) * .06).toFixed(3)})` });
+    }
+    piece.animate(keyframes, { duration: 340, easing: 'cubic-bezier(.35, 0, .25, 1)' });
+  });
 }
 
 function holdActive() {
@@ -526,7 +551,6 @@ function renderCards() {
   const cameFromHold = activeChanged && hold.renderedCard === state.active;
   const queueShifted = activeChanged && !cameFromHold && slots[0].renderedCard === state.active;
   const activeFrom = cameFromHold ? gridRect(hold) : queueShifted ? gridRect(slots[0]) : null;
-  if (activeChanged) active.classList.remove('spin');
   const holdFrom = holdChanged && state.hold === active.renderedCard ? gridRect(active) : null;
   const slotFrom = queueShifted ? slots.map((_, i) => gridRect(slots[i + 1])) : [];
 
