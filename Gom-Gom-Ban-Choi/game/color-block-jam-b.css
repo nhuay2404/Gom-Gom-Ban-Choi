@@ -201,4 +201,7 @@ dialog p{color:#8a6440}
 .rotate-hint{animation:none}
 .card-rotator.vertical .rotate-hint{width:58%;max-width:104px}
 .card-rotator.vertical .rotate-hint.left{top:50%;left:auto;right:30px;transform:translate(50%,-50%) rotate(90deg)}
-.card-rotator.vertical .rotate-hint.right{top:50%;bottom:auto;left:30px;right:auto;transform:translate(-50%,-50%) rotate(-90deg)}
+.card-rotator.vertical .rotate-hint.right{top:50%;bottom:auto;left:30px;right:auto;transform:translate(-50%,-50%) rotate(-90deg)}/* Khung thẻ đang bóc luôn giữ nguyên: không mờ, không anim, không tối khi bấm. Chỉ mèo bên trong mờ khi đang kéo. */
+#active-card,#active-card:disabled,#active-card.dragging,#active-card.waiting{opacity:1;transition:none;filter:none;transform:none;animation:none}
+#active-card:not(:disabled):active{filter:none}
+#active-card.dragging .piece-grid{opacity:.28}
