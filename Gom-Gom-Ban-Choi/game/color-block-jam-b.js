@@ -303,23 +303,46 @@ function finishTurn(result, match) {
   render(fit ? clearedText || 'Đã đặt thẻ. Gom 3 mèo cùng loại để ghi điểm.' : `${clearedText} Thẻ mới không còn chỗ đặt — hãy dùng Gửi tạm.`.trim(), !fit);
 }
 
-function cellAt(x, y) {
-  const cell = document.elementFromPoint(x, y)?.closest('.cell');
-  return cell ? Number(cell.dataset.index) : null;
+const centerOf = rect => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+
+// Tâm các ô bàn (chụp một lần lúc bắt đầu kéo; bàn không dịch chuyển trong lúc kéo).
+function measureCells() {
+  const rects = [...$('board').querySelectorAll(':scope > .cell')].map(cell => cell.getBoundingClientRect());
+  return { centers: rects.map(centerOf), size: Math.max(...rects.map(rect => rect.width)) };
 }
 
-// Anchor = góc trên-trái của hình, suy ra từ món đầu tiên của bóng thẻ đang nằm trên một ô.
+// Ô gần nhất với một điểm, kể cả khi điểm rơi vào khe giữa các ô; quá xa bàn thì trả null.
+function nearestCell(point, cells) {
+  let best = null, bestDistance = Infinity;
+  cells.centers.forEach((center, index) => {
+    const distance = Math.hypot(center.x - point.x, center.y - point.y);
+    if (distance < bestDistance) { bestDistance = distance; best = index; }
+  });
+  return bestDistance <= cells.size * .75 ? best : null;
+}
+
+// Anchor = góc trên-trái của hình, suy ra từ con mèo đang được cầm: lấy ô gần nhất với
+// chỗ con mèo đó đang hiện (tâm hình mèo, không phải tâm khung vì mèo bị nhấc cao lên).
 function dragAnchorFromGhost(ghost) {
-  const pieces = ghost.querySelectorAll('.piece-object');
-  for (let i = 0; i < pieces.length; i++) {
-    const rect = pieces[i].getBoundingClientRect();
-    const cell = cellAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    if (cell === null) continue;
-    const [rowOffset, colOffset] = state.active.offsets[i];
-    const row = Math.floor(cell / W) - rowOffset, col = cell % W - colOffset;
-    return { anchor: row >= 0 && col >= 0 ? row * W + col : null, hovered: cell };
-  }
-  return { anchor: null, hovered: null };
+  const piece = ghost.querySelectorAll('.piece-object')[cardDrag.grabbed];
+  const art = piece?.querySelector('.cat') || piece;
+  if (!art) return { anchor: null, hovered: null };
+  const hovered = nearestCell(centerOf(art.getBoundingClientRect()), cardDrag.cells);
+  if (hovered === null) return { anchor: null, hovered: null };
+  const [rowOffset, colOffset] = state.active.offsets[cardDrag.grabbed];
+  const row = Math.floor(hovered / W) - rowOffset, col = hovered % W - colOffset;
+  return { anchor: row >= 0 && col >= 0 ? row * W + col : null, hovered };
+}
+
+// Con mèo trong thẻ gần điểm chạm nhất = con đang được cầm.
+function grabbedPiece(x, y) {
+  let best = 0, bestDistance = Infinity;
+  $('active-card').querySelectorAll('.piece-object').forEach((piece, index) => {
+    const center = centerOf(piece.getBoundingClientRect());
+    const distance = Math.hypot(center.x - x, center.y - y);
+    if (distance < bestDistance) { bestDistance = distance; best = index; }
+  });
+  return best;
 }
 
 function startCardDrag(event) {
@@ -331,6 +354,7 @@ function startCardDrag(event) {
   cardDrag = {
     pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, ghost: null, anchor: null,
     grabX: event.clientX - rect.left, grabY: event.clientY - rect.top, width: rect.width, height: rect.height,
+    grabbed: grabbedPiece(event.clientX, event.clientY), cells: null,
   };
   source.classList.add('dragging');
 }
@@ -352,6 +376,7 @@ function moveCardDrag(event) {
     const boardCell = document.querySelector('.cell[data-index="14"]')?.getBoundingClientRect();
     const piece = $('active-card').querySelector('.piece-object')?.getBoundingClientRect();
     if (boardCell && piece?.width) cardDrag.ghost.style.transform = `scale(${(boardCell.width / piece.width).toFixed(3)})`;
+    cardDrag.cells = measureCells();
   }
   cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
