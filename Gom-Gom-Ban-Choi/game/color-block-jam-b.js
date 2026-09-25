@@ -416,11 +416,22 @@ function moveCardDrag(event) {
     const piece = $('active-card').querySelector('.piece-object')?.getBoundingClientRect();
     if (boardCell && piece?.width) cardDrag.ghost.style.transform = `scale(${(boardCell.width / piece.width).toFixed(3)})`;
     cardDrag.cells = measureCells();
+    cardDrag.holdRect = $('hold').getBoundingClientRect();
     cardDrag.physics = startDragPhysics(cardDrag.ghost);
   }
   feedDragPhysics(cardDrag.physics, event.clientX);
   cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
+  // Kéo vào ô Gửi tạm: ưu tiên hơn bàn, sáng ô lên để báo thả được.
+  const hold = cardDrag.holdRect;
+  cardDrag.overHold = event.clientX >= hold.left - 8 && event.clientX <= hold.right + 8
+    && event.clientY >= hold.top - 8 && event.clientY <= hold.bottom + 8;
+  $('hold').classList.toggle('drop-target', cardDrag.overHold && !state.heldThisTurn);
+  $('hold').classList.toggle('drop-blocked', cardDrag.overHold && state.heldThisTurn);
+  if (cardDrag.overHold) {
+    cardDrag.anchor = null; state.preview = null; state.previewAnchor = null;
+    return paintPreview();
+  }
   const { anchor, hovered } = dragAnchorFromGhost(cardDrag.ghost);
   const indices = anchor === null ? null : placementIndices(state.board, W, H, anchor, state.active.offsets);
   cardDrag.anchor = indices ? anchor : null;
@@ -431,14 +442,18 @@ function moveCardDrag(event) {
 
 function finishCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
-  const { ghost, anchor, physics } = cardDrag;
+  const { ghost, anchor, physics, overHold } = cardDrag;
   if (physics) cancelAnimationFrame(physics.frame);
   ghost?.remove();
   cardDrag = null;
   $('active-card').classList.remove('dragging');
+  $('hold').classList.remove('drop-target', 'drop-blocked');
   state.preview = null; state.previewAnchor = null;
   paintPreview();
   if (!ghost) return event.type === 'pointerup' && rotateActive(); // chạm không kéo = xoay
+  if (overHold && event.type === 'pointerup') {
+    return state.heldThisTurn ? render('Mỗi lượt chỉ gửi tạm một lần.', true) : holdActive();
+  }
   if (anchor !== null) placeAt(anchor);
   else render('Thả thẻ vào các ô sáng hợp lệ trên bàn.', true);
 }
@@ -562,7 +577,10 @@ document.addEventListener('pointercancel', finishCardDrag);
 $('active-card').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); rotateActive(); }
 };
-$('hold').onclick = holdActive;
+// Gửi tạm bằng cách kéo thẻ thả vào ô; bàn phím vẫn dùng Enter/Space để không mất khả năng truy cập.
+$('hold').onkeydown = event => {
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); holdActive(); }
+};
 $('restart').onclick = newGame;
 $('help').onclick = () => $('help-dialog').showModal();
 newGame();

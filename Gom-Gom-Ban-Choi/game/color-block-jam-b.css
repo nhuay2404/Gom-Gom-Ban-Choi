@@ -188,4 +188,7 @@ dialog p{color:#8a6440}
 .hold-slot{width:66px;height:66px;--card-w:66px;--card-h:66px;--pad:12px;--gap:2px;border-radius:12px}
 .hold-slot .piece-grid{--cell:min(26px,calc((var(--card-w) - var(--pad) - var(--gap) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((var(--card-h) - var(--pad) - var(--gap) * (var(--piece-rows) - 1)) / var(--piece-rows)))}
 .hold-plus{font-size:26px}
-.hold-column .section-label{font-size:9px}
+.hold-column .section-label{font-size:9px}/* Kéo thẻ vào Gửi tạm */
+.hold-slot{cursor:default;transition:transform .15s cubic-bezier(.3,1.6,.5,1),box-shadow .15s}
+.hold-slot.drop-target{transform:scale(1.12);box-shadow:0 0 0 3px #3fbf8f,0 0 18px #9ff0d4,0 4px 0 var(--cream-deep);opacity:1}
+.hold-slot.drop-blocked{transform:scale(1.04);box-shadow:0 0 0 3px #d9534f,0 4px 0 var(--cream-deep)}
