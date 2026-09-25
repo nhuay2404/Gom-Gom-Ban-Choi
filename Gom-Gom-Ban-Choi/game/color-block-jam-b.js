@@ -148,7 +148,11 @@ function layoutHints(vertical, animate = false) {
   if (!hints.length || !card.width) return;
   const from = hintAngle;
   if ((((hintAngle % 180) + 180) % 180 === 90) !== vertical) hintAngle += 90;
-  const arrowHeight = hints[0].getBoundingClientRect().height ? hints[0].offsetHeight : card.width * .3;
+  // Thẻ 3 mèo: mũi tên nhỏ lại và mèo co vào vùng bên trong vòng mũi tên, không bị đè.
+  const crowded = state.active.items.length >= 3;
+  hints.forEach(hint => hint.classList.toggle('small', crowded));
+  const arrowHeight = hints[0].offsetHeight || card.width * .3;
+  fitInsideHints(crowded && !state.over, vertical, card, arrowHeight);
   hints.forEach((hint, index) => {
     const offset = index === 0 ? 0 : 180;
     hint.style.transform = hintTransform(hintAngle + offset, card, arrowHeight);
@@ -158,6 +162,17 @@ function layoutHints(vertical, animate = false) {
       ({ transform: hintTransform(from + (hintAngle - from) * step / steps + offset, card, arrowHeight) })),
     { duration: ROTATE_MS, easing: 'cubic-bezier(.35, 0, .25, 1)' });
   });
+}
+
+// Chừa 2 dải cho mũi tên (trên/dưới khi ngang, trái/phải khi dọc) rồi cho lưới mèo co vừa phần giữa.
+function fitInsideHints(enabled, vertical, card, arrowHeight) {
+  const active = $('active-card');
+  ['--card-w', '--card-h', '--pad'].forEach(name => active.style.removeProperty(name));
+  if (!enabled) return;
+  const band = arrowHeight * .78 + 4; // phần mũi tên thực sự vẽ ra, cộng khoảng hở
+  active.style.setProperty('--pad', '10px');
+  active.style.setProperty('--card-w', `${Math.round(vertical ? card.width - band * 2 : card.width)}px`);
+  active.style.setProperty('--card-h', `${Math.round(vertical ? card.height : card.height - band * 2)}px`);
 }
 
 // Mỗi mèo chạy theo cung tròn quanh tâm thẻ (như cả thẻ quay 90° thuận chiều) từ chỗ cũ tới chỗ mới;
