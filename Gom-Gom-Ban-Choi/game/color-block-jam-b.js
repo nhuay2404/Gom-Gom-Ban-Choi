@@ -250,7 +250,7 @@ function holdActive() {
   state.active = previous || drawCard();
   state.heldThisTurn = true;
   state.preview = null;
-  render(previous ? 'Đã đổi với thẻ gửi tạm.' : 'Đã gửi tạm thẻ này.');
+  render();
 }
 
 function canPlaceAnywhere(card) {
@@ -415,7 +415,7 @@ function finishTurn(result, match) {
   }
   state.active = drawCard();
   const fit = canPlaceAnywhere(state.active);
-  render(fit ? clearedText || 'Đã đặt thẻ. Gom 3 mèo cùng loại để ghi điểm.' : `${clearedText} Thẻ mới không còn chỗ đặt — hãy dùng Gửi tạm.`.trim(), !fit);
+  render(fit ? clearedText : `${clearedText} Hết chỗ đặt — kéo vào Gửi tạm.`.trim(), !fit);
 }
 
 const centerOf = rect => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
@@ -570,14 +570,14 @@ function finishCardDrag(event) {
     return state.heldThisTurn ? render('Mỗi lượt chỉ gửi tạm một lần.', true) : holdActive();
   }
   if (anchor !== null) placeAt(anchor);
-  else render('Thả thẻ vào các ô sáng hợp lệ trên bàn.', true);
+  else render(); // thả ra ngoài bàn = huỷ kéo, không cần báo
 }
 
 function render(message = '', error = false) {
   $('score').textContent = state.score;
   $('highscore').textContent = remainingCats(state.board); // số mèo còn trên bàn
   $('moves').textContent = state.moves;
-  $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn để đặt.');
+  $('message').textContent = message;
   $('message').classList.toggle('error', error);
   renderBoard();
   renderCards();
@@ -687,7 +687,7 @@ function newGame() {
     score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null,
   };
   state.active = drawCard();
-  render(`Dọn sạch ${state.initialCats} mèo trên bàn trong ${TURN_LIMIT} lượt!`);
+  render(`Dọn sạch bàn trong ${TURN_LIMIT} lượt!`);
 }
 
 $('active-card').onpointerdown = startCardDrag;
