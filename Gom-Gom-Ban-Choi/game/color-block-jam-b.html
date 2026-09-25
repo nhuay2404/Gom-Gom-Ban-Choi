@@ -13,7 +13,7 @@
   <main class="shell">
     <header class="topbar">
       <button id="restart" class="round-button" aria-label="Chơi lại" title="Chơi lại">↻</button>
-      <h1>Gom Gom</h1>
+      <h1>Gom Gom<small id="level">Màn 1</small></h1>
       <button id="help" class="round-button" aria-label="Cách chơi" title="Cách chơi">?</button>
     </header>
     <section class="scorebar" aria-label="Thông tin lượt chơi">
@@ -23,6 +23,7 @@
     </section>
     <section class="board-wrap" aria-label="Bàn chơi"><div id="board" class="board"></div></section>
     <p id="message" class="message" role="status"></p>
+    <button id="next-level" class="next-level" hidden>Sang Màn 2 ▶</button>
     <section class="draw-area" aria-label="Thẻ đang bóc">
       <div class="card-column">
         <span class="section-label">Thẻ đang bóc</span>

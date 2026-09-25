@@ -273,8 +273,8 @@ export function boardNeeds(board, width, height) {
 //  bigCards   : trong 12 thẻ ngẫu nhiên có bao nhiêu thẻ 3 ô
 //  junk       : xác suất thẻ ngẫu nhiên được chọn sao cho KHÔNG gom được gì ngay (bắt người chơi tự xếp)
 //  rescue     : khi sắp hết lượt (số cụm chưa có hàng >= lượt còn lại - 1), tỉ lệ AI ra thẻ cứu
-// Mức hiện tại: bot chơi tham lam thắng ~77% trong 20 lượt (mô phỏng 1500 ván); cuối ván vẫn luôn giúp.
-export const QUEUE_TUNING = { baseHelp: .05, slope: .6, sureHelpAt: 2, pressure: .6, loyalty: .4, calmAt: 6, bigCards: 2, rescue: .15, junk: .85 };
+// Mặc định = Màn 1 (dễ, bot tham lam thắng ~100%). Các màn khó hơn truyền tuning riêng.
+export const QUEUE_TUNING = { baseHelp: .3, slope: .9, sureHelpAt: 4, pressure: .4, loyalty: .75, calmAt: 6, bigCards: 1, rescue: 1, junk: 0 };
 
 export function helpChance(remaining, initial, movesLeft = Infinity, turnsNeeded = 0, tuning = QUEUE_TUNING) {
   if (remaining <= tuning.sureHelpAt) return 1;
