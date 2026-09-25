@@ -1,11 +1,11 @@
 :root{color-scheme:light;font-synthesis:none;--cream:#fff5d8;--ink:#394521;--slot-fill:#365b3040;--slot-edge:#45672f85;--card-fill:#fff7e8;--card-edge:#829a5a;--selected:#076b63;font-family:"Avenir Next",Nunito,ui-rounded,system-ui,-apple-system,sans-serif;color:#34401d;background:#78a63d}
 *{box-sizing:border-box}
-body{margin:0;min-width:320px;min-height:100dvh;background:radial-gradient(at top,#fbc3cf,#e98ea2 75%)}
+body{margin:0;min-width:320px;min-height:100dvh;background:radial-gradient(at top,#c2e69a,#8cc45e 75%)}
 button{font:inherit;color:inherit;cursor:pointer;background:0 0;border:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .14s,box-shadow .14s,opacity .14s}
 button:not(:disabled):active{filter:brightness(.96)}
 button:focus-visible{outline:3px solid #075f60;outline-offset:3px}
 button:disabled{opacity:.43;cursor:default}
-.shell{width:min(480px,100%);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#f7a9b8 url('./skins/farm-pop/pinkbackground.png') 50%/100% 100% no-repeat}
+.shell{width:min(480px,100%);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#a8d77a url('./skins/farm-pop/pinkbackground.png') 50%/100% 100% no-repeat}
 @media(width>=600px){.shell{box-shadow:0 0 80px #35532135}}
 .topbar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:12px;height:63px;margin-bottom:6px}
 .topbar h1{margin:0;text-align:center;color:#fffdee;font-size:31px;font-weight:900;letter-spacing:-1.6px;line-height:.9;text-shadow:0 2px #46783348;transform:rotate(-5deg)}
@@ -146,7 +146,7 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 @keyframes preview-bob{to{opacity:.8}}/* ===== Theme vàng kem cho board + UI (trên nền hồng) ===== */
 :root{--cream-1:#fff8e4;--cream-2:#ffecb8;--cream-3:#f6d88f;--cream-edge:#e2bd72;--cream-deep:#c79a4f;--cream-ink:#6b4523}
 body{color:var(--cream-ink)}
-.topbar h1{color:#fffaf0;text-shadow:0 2px 0 #e38aa0,0 4px 10px #c9607a55}
+.topbar h1{color:#fffaf0;text-shadow:0 2px 0 #6fa84a,0 4px 10px #3f6e2a55}
 .round-button{background:linear-gradient(var(--cream-1),var(--cream-2));color:var(--cream-ink);box-shadow:0 3px 0 var(--cream-deep),0 5px 8px #8a4b3a33}
 .round-button:hover{background:linear-gradient(#fffdf4,var(--cream-2))}
 .scorebar div{background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 3px 0 var(--cream-deep),0 6px 10px #8a4b3a26;color:var(--cream-ink)}
