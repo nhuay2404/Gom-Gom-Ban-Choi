@@ -167,15 +167,25 @@ function layoutHints(vertical, animate = false) {
   });
 }
 
-// Chừa 2 dải cho mũi tên (trên/dưới khi ngang, trái/phải khi dọc) rồi cho lưới mèo co vừa phần giữa.
-function fitInsideHints(enabled, vertical, card, arrowHeight) {
-  const active = $('active-card');
-  ['--card-w', '--card-h', '--pad'].forEach(name => active.style.removeProperty(name));
+// Thẻ 3 mèo: một cỡ mèo CỐ ĐỊNH, là cỡ lớn nhất vẫn vừa mọi hướng thẻ sẽ gặp khi xoay (mũi tên
+// chiếm 2 dải trên/dưới hoặc hai bên) -> xoay không bị to nhỏ. Thẻ chữ I: mũi tên luôn cùng hướng thẻ;
+// thẻ vuông (chữ L): mũi tên đổi luân phiên nên xét cả hai.
+function fitInsideHints(enabled, _vertical, card, arrowHeight) {
+  const grid = $('active-card').querySelector('.piece-grid');
+  if (!grid) return;
+  grid.style.removeProperty('--cell');
   if (!enabled) return;
-  const band = arrowHeight * .78 + 4; // phần mũi tên thực sự vẽ ra, cộng khoảng hở
-  active.style.setProperty('--pad', '10px');
-  active.style.setProperty('--card-w', `${Math.round(vertical ? card.width - band * 2 : card.width)}px`);
-  active.style.setProperty('--card-h', `${Math.round(vertical ? card.height : card.height - band * 2)}px`);
+  const band = arrowHeight * .78 + 4, pad = 10, gap = 4;
+  const fit = (rows, cols, arrowsOnSides) => {
+    const width = card.width - (arrowsOnSides ? band * 2 : 0), height = card.height - (arrowsOnSides ? 0 : band * 2);
+    return Math.min(44, (width - pad - gap * (cols - 1)) / cols, (height - pad - gap * (rows - 1)) / rows);
+  };
+  const { rows, cols } = normalizePreview(state.active.offsets);
+  const long = Math.max(rows, cols), short = Math.min(rows, cols);
+  const cell = rows === cols
+    ? Math.min(fit(rows, cols, false), fit(rows, cols, true))
+    : Math.min(fit(short, long, false), fit(long, short, true));
+  grid.style.setProperty('--cell', `${Math.floor(cell)}px`);
 }
 
 // Mỗi mèo chạy theo cung tròn quanh tâm thẻ (như cả thẻ quay 90° thuận chiều) từ chỗ cũ tới chỗ mới;
