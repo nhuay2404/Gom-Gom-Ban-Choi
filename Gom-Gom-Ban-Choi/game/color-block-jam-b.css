@@ -213,4 +213,6 @@ dialog p{color:#8a6440}
 #active-card.dragging .piece-grid,#active-card .piece-grid{opacity:1}/* Chỉ xem trước 2 thẻ tiếp theo */
 .next-cards{grid-template-columns:repeat(2,minmax(0,1fr))}/* Mèo bị nhấc lúc gom: nâng cao hẳn khỏi bàn (gần mắt hơn mọi mèo đang đứng ở hàng dưới) để không bị che */
 .cell.merge-ghost.lifted .cat{transform:translateZ(90px) rotateX(calc(var(--tilt) * -1)) translateY(-50%) scale(1.22,1.28)}
-.cell.merge-ghost{transform-style:preserve-3d}
+.cell.merge-ghost{transform-style:preserve-3d}/* Chỉ xem trước 1 thẻ tiếp theo: một ô, căn giữa */
+.next-area{justify-content:center}
+.next-cards{grid-template-columns:minmax(0,150px);flex:0 1 150px}
