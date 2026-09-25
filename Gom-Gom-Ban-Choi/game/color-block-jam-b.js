@@ -126,8 +126,38 @@ function rotateActive() {
   const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
   state.active.offsets = rotateOffsets(state.active.offsets);
   state.preview = null;
+  state.animateHints = true; // render() sẽ cho mũi tên trượt theo cung thay vì nhảy
   render();
+  state.animateHints = false;
   animateRotation(before);
+}
+
+// Mũi tên gợi ý xoay nằm trên quỹ đạo quanh tâm thẻ: góc 0° = mép trên (chỉ phải), 180° = mép dưới.
+// Đổi ngang <-> dọc thì cả vòng quay thêm 90° thuận chiều, nên mũi tên trượt theo cung tròn và tự đổi hướng.
+let hintAngle = 0;
+const ROTATE_MS = 340;
+function hintTransform(angle, card, arrowHeight) {
+  const rad = angle * Math.PI / 180;
+  const radiusY = card.height / 2 - arrowHeight / 2 - 3, radiusX = card.width / 2 - arrowHeight / 2 - 5;
+  const radius = radiusY * Math.cos(rad) ** 2 + radiusX * Math.sin(rad) ** 2; // quỹ đạo dẹt theo khung chữ nhật
+  return `translate(-50%, -50%) rotate(${angle.toFixed(2)}deg) translateY(${(-radius).toFixed(2)}px)`;
+}
+function layoutHints(vertical, animate = false) {
+  const hints = [...document.querySelectorAll('.card-rotator .rotate-hint')];
+  const card = $('active-card').getBoundingClientRect();
+  if (!hints.length || !card.width) return;
+  const from = hintAngle;
+  if ((((hintAngle % 180) + 180) % 180 === 90) !== vertical) hintAngle += 90;
+  const arrowHeight = hints[0].getBoundingClientRect().height ? hints[0].offsetHeight : card.width * .3;
+  hints.forEach((hint, index) => {
+    const offset = index === 0 ? 0 : 180;
+    hint.style.transform = hintTransform(hintAngle + offset, card, arrowHeight);
+    if (!animate || from === hintAngle || reduceMotion.matches) return;
+    const steps = 10;
+    hint.animate(Array.from({ length: steps + 1 }, (_, step) =>
+      ({ transform: hintTransform(from + (hintAngle - from) * step / steps + offset, card, arrowHeight) })),
+    { duration: ROTATE_MS, easing: 'cubic-bezier(.35, 0, .25, 1)' });
+  });
 }
 
 // Mỗi mèo chạy theo cung tròn quanh tâm thẻ (như cả thẻ quay 90° thuận chiều) từ chỗ cũ tới chỗ mới;
@@ -495,7 +525,7 @@ function render(message = '', error = false) {
   document.querySelector('.card-rotator').classList.toggle('can-rotate', !state.over && state.active.items.length > 1);
   // Thẻ dọc (nhiều hàng hơn cột) -> mũi tên xoay dựng dọc hai bên.
   const shape = normalizePreview(state.active.offsets);
-  document.querySelector('.card-rotator').classList.toggle('vertical', shape.rows > shape.cols);
+  layoutHints(shape.rows > shape.cols, state.animateHints);
   $('hold').disabled = state.over || state.heldThisTurn;
 }
 

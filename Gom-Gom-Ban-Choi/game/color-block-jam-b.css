@@ -206,4 +206,6 @@ dialog p{color:#8a6440}
 #active-card:not(:disabled):active{filter:none}
 #active-card.dragging .piece-grid{opacity:.28}/* Mèo luôn nằm trên mũi tên gợi ý xoay (mũi tên vẫn trên nền khay) */
 #active-card .piece-grid{position:relative;z-index:3}
-.rotate-hint{z-index:2}
+.rotate-hint{z-index:2}/* Mũi tên đặt theo quỹ đạo quanh tâm thẻ (JS set transform); bỏ vị trí top/left cố định cũ */
+.card-rotator .rotate-hint,.card-rotator .rotate-hint.left,.card-rotator .rotate-hint.right,
+.card-rotator.vertical .rotate-hint.left,.card-rotator.vertical .rotate-hint.right{top:50%;left:50%;right:auto;bottom:auto;width:60%;max-width:none;margin:0}
