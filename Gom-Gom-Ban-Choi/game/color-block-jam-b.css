@@ -137,4 +137,10 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .hold-slot .piece-object{border-radius:7px}/* filter ép phẳng 3D -> mèo bị dẹt. Nhấp nháy ô xem trước bằng box-shadow thay vì filter. */
 @media(prefers-reduced-motion:no-preference){.cell.preview{animation:preview-glow .65s ease-in-out infinite alternate}}
 @keyframes preview-glow{to{box-shadow:inset 0 0 0 2px var(--selected),0 0 20px #bff7e2}}
-.cell.locked,.cell.locked.preview{filter:none}
+.cell.locked,.cell.locked.preview{filter:none}/* Xem trước khi kéo: mèo mờ đứng đúng ô sẽ được đặt */
+.cell.empty{position:relative}
+.preview-cat{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;opacity:.6;transform-style:preserve-3d}
+.preview-cat .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.12);transform-origin:50% 95%;filter:drop-shadow(0 3px 3px #1d361240)}
+.preview-cat .cat .eyes{animation:none}
+@media(prefers-reduced-motion:no-preference){.preview-cat{animation:preview-bob .7s ease-in-out infinite alternate}}
+@keyframes preview-bob{to{opacity:.8}}
