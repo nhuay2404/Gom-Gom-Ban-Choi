@@ -128,3 +128,102 @@ export function placeCard(board, width, height, anchor, card) {
   });
   return { board: nextBoard, indices, score: indices.length * 10 + adjacency * 5 };
 }
+
+// ===== Màn chơi "dọn sạch bàn" + hàng thẻ AI =====
+
+const DIRS = (width) => [1, -1, width, -width];
+function inBoard(index, delta, width, height) {
+  const next = index + delta;
+  if (next < 0 || next >= width * height) return -1;
+  if (Math.abs(delta) === 1 && Math.floor(index / width) !== Math.floor(next / width)) return -1;
+  return next;
+}
+
+export function remainingCats(board) {
+  return board.filter(Boolean).length;
+}
+
+// Các cụm liền kề cùng loại đang có trên bàn.
+export function clustersOf(board, width, height) {
+  const seen = new Set(), result = [];
+  board.forEach((cell, index) => {
+    if (!cell || seen.has(index)) return;
+    const cells = connectedGroup(board, width, height, index);
+    cells.forEach(i => seen.add(i));
+    result.push({ group: cell.group, cells });
+  });
+  return result;
+}
+
+// Các ô trống kề một cụm.
+function emptyNeighbors(board, width, height, cluster) {
+  const own = new Set(cluster.cells), out = new Set();
+  cluster.cells.forEach(index => DIRS(width).forEach(delta => {
+    const next = inBoard(index, delta, width, height);
+    if (next >= 0 && !board[next] && !own.has(next)) out.add(next);
+  }));
+  return [...out];
+}
+
+// Thẻ "có ích": đặt vào là gom được ngay một cụm (cặp + 1 con, hoặc con lẻ + 2 con cùng loại).
+// Trả về { card: { offsets, groups }, anchor } hoặc null nếu bàn không có chỗ hợp.
+export function findHelpfulCard(board, width, height, rng = Math.random) {
+  const clusters = clustersOf(board, width, height).filter(c => c.cells.length < 3);
+  // Ưu tiên cụm 2 (chỉ cần 1 con), rồi tới cụm 1; trộn ngẫu nhiên trong cùng mức.
+  clusters.sort((a, b) => (b.cells.length - a.cells.length) || (rng() - .5));
+  for (const cluster of clusters) {
+    const spots = emptyNeighbors(board, width, height, cluster).sort(() => rng() - .5);
+    if (cluster.cells.length === 2 && spots.length) {
+      return { card: { offsets: [[0, 0]], groups: [cluster.group] }, anchor: spots[0] };
+    }
+    for (const spot of spots) {
+      for (const delta of [1, width, -1, -width].sort(() => rng() - .5)) {
+        const other = inBoard(spot, delta, width, height);
+        if (other < 0 || board[other] || cluster.cells.includes(other)) continue;
+        const [first, second] = spot < other ? [spot, other] : [other, spot];
+        const horizontal = Math.abs(delta) === 1;
+        return { card: { offsets: horizontal ? [[0, 0], [0, 1]] : [[0, 0], [1, 0]], groups: [cluster.group, cluster.group] }, anchor: first };
+      }
+    }
+  }
+  return null;
+}
+
+// Tỉ lệ ra thẻ có ích: bàn càng vơi càng cao (30% lúc đầu -> 100% khi còn <= 4 mèo).
+export function helpChance(remaining, initial) {
+  if (remaining <= 4) return 1;
+  const progress = 1 - remaining / Math.max(initial, 1);
+  return Math.min(1, Math.max(.3, .3 + progress * .9));
+}
+
+// Bàn khởi đầu: vài cặp cùng loại đứng cạnh nhau (thiếu 1 là gom) + vài con lẻ; không có cụm >= 3.
+export function generateStartBoard(width, height, groups, { pairs = 3, singles = 4 } = {}, rng = Math.random) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const board = Array(width * height).fill(null);
+    const pick = () => groups[Math.floor(rng() * groups.length)];
+    let ok = true;
+    const freeSpot = () => {
+      for (let tries = 0; tries < 60; tries++) {
+        const index = Math.floor(rng() * width * height);
+        if (!board[index]) return index;
+      }
+      return -1;
+    };
+    for (let i = 0; i < pairs && ok; i++) {
+      const group = pick(), a = freeSpot();
+      const b = a < 0 ? -1 : DIRS(width).map(d => inBoard(a, d, width, height)).filter(n => n >= 0 && !board[n]).sort(() => rng() - .5)[0];
+      if (a < 0 || b === undefined || b < 0) { ok = false; break; }
+      board[a] = { group }; board[b] = { group };
+    }
+    for (let i = 0; i < singles && ok; i++) {
+      const index = freeSpot();
+      if (index < 0) { ok = false; break; }
+      board[index] = { group: pick() };
+    }
+    if (!ok) continue;
+    const sizes = clustersOf(board, width, height).map(c => c.cells.length);
+    if (Math.max(...sizes) >= 3 || sizes.filter(s => s === 2).length < pairs) continue;
+    return board;
+  }
+  throw new Error('Không tạo được bàn khởi đầu');
+}

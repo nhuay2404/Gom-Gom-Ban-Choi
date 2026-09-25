@@ -1,7 +1,10 @@
-import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
+import {
+  clearMatches, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
+} from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
-const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 3;
+// Thắng: dọn sạch mọi mèo trên bàn trong giới hạn lượt.
+const W = 6, H = 6, TURN_LIMIT = 20, PREVIEW_COUNT = 3;
 const $ = id => document.getElementById(id);
 const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10;
 const shapes = {
@@ -12,10 +15,8 @@ const shapes = {
 };
 
 let state, cardDrag = null;
-const startingBlocks = [
-  [0, 0, 'orange'], [0, 5, 'gray'], [2, 2, 'white'],
-  [3, 4, 'tabby'], [5, 0, 'orange'], [5, 5, 'siamese'],
-];
+// Bàn khởi đầu: vài cặp cùng loại (thiếu 1 là gom) + vài con lẻ.
+const START_LAYOUT = { pairs: 3, singles: 4 };
 // Tỉ lệ hình thẻ: nhiều thẻ 1 ô để dễ lấp chỗ trống và gom nhóm.
 // Mỗi 12 thẻ chỉ có 1 thẻ 3 ô (xen kẽ chữ I / chữ L).
 const shapeBag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'triple', 'single', 'domino', 'single', 'domino'];
@@ -28,29 +29,59 @@ function randomGroup() {
   return catGroups[Math.floor(Math.random() * catGroups.length)];
 }
 
-function shuffled(values) {
-  const result = values.slice();
-  for (let index = result.length - 1; index > 0; index--) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
+// ===== Hàng thẻ AI =====
+// Thẻ được lập theo tình trạng bàn chứ không xáo sẵn. Bàn càng vơi, càng nhiều thẻ "có ích" (đặt vào
+// là gom được ngay) để người chơi về đích nhanh. Kế hoạch chạy trên bàn giả lập: mỗi thẻ có ích trong
+// hàng được "đặt thử" lên đó, nên các thẻ sau nhắm cụm khác chứ không trùng một cụm.
+const REPLAN_AT = 6; // bàn còn <= 6 mèo: lập lại cả hàng mỗi lượt cho khớp bàn hiện tại
+
+function randomCard(board) {
+  let shapeName = shapeBag[state.bagIndex++ % shapeBag.length];
+  if (shapeName === 'triple') shapeName = state.bagIndex % 24 < 12 ? 'line' : 'elbow';
+  // Ưu tiên loại mèo đang có trên bàn để hạn chế sinh thêm loại mới khó dọn.
+  const onBoard = [...new Set(board.filter(Boolean).map(cell => cell.group))];
+  const pick = () => (onBoard.length && Math.random() < .75 ? onBoard[Math.floor(Math.random() * onBoard.length)] : randomGroup());
+  return { offsets: shapes[shapeName].map(point => point.slice()), items: shapes[shapeName].map(() => item(pick())) };
 }
 
-function buildDeck() {
-  const cards = [];
-  for (let index = 0; index < 24; index++) {
-    let shapeName = shapeBag[index % shapeBag.length];
-    if (shapeName === 'triple') shapeName = index < shapeBag.length ? 'line' : 'elbow';
-    const items = shapes[shapeName].map(() => item(randomGroup()));
-    cards.push({ offsets: shapes[shapeName].map(point => point.slice()), items });
+function planCard(sim) {
+  if (Math.random() < helpChance(remainingCats(sim.board), state.initialCats)) {
+    const help = findHelpfulCard(sim.board, W, H);
+    if (help) {
+      const card = { offsets: help.card.offsets, items: help.card.groups.map(item), helpful: true };
+      const placed = placeCard(sim.board, W, H, help.anchor, card);
+      if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
+      return card;
+    }
   }
-  return shuffled(cards);
+  return randomCard(sim.board);
+}
+
+// Bàn giả lập = bàn thật + các thẻ có ích đang chờ trong hàng đã được "đặt thử".
+function simulateQueue(cards) {
+  const sim = { board: state.board.slice() };
+  cards.forEach(card => {
+    if (!card.helpful) return;
+    const help = findHelpfulCard(sim.board, W, H);
+    if (!help) return;
+    const placed = placeCard(sim.board, W, H, help.anchor, card);
+    if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
+  });
+  return sim;
+}
+
+// ahead: thẻ đã rút ra nhưng chưa đặt (thẻ đang bóc) - cũng được tính vào bàn giả lập.
+function refillQueue(ahead = []) {
+  if (remainingCats(state.board) <= REPLAN_AT) state.deck = [];
+  const sim = simulateQueue([...ahead, ...state.deck]);
+  while (state.deck.length < PREVIEW_COUNT) state.deck.push(planCard(sim));
 }
 
 function drawCard() {
-  if (state.deck.length <= PREVIEW_COUNT) state.deck.push(...buildDeck());
-  return state.deck.shift();
+  if (!state.deck.length) refillQueue();
+  const card = state.deck.shift();
+  refillQueue([card]);
+  return card;
 }
 
 function addArt(element, object) {
@@ -371,15 +402,16 @@ function finishTurn(result, match) {
   state.moves--;
   state.heldThisTurn = false;
   state.preview = null;
-  if (state.score >= TARGET_SCORE) {
+  const left = remainingCats(state.board);
+  if (left === 0) {
     state.over = true;
-    const message = `Bạn thắng với ${state.score} điểm! ✨`;
+    const message = `Dọn sạch bàn! Thắng với ${state.score} điểm, còn dư ${state.moves} lượt ✨`;
     render(message);
     return celebrateWin(message);
   }
   if (state.moves === 0) {
     state.over = true;
-    return render(`Hết lượt — bạn đạt ${state.score}/${TARGET_SCORE} điểm.` , true);
+    return render(`Hết lượt — trên bàn còn ${left} mèo chưa gom.`, true);
   }
   state.active = drawCard();
   const fit = canPlaceAnywhere(state.active);
@@ -543,7 +575,7 @@ function finishCardDrag(event) {
 
 function render(message = '', error = false) {
   $('score').textContent = state.score;
-  $('highscore').textContent = TARGET_SCORE;
+  $('highscore').textContent = remainingCats(state.board); // số mèo còn trên bàn
   $('moves').textContent = state.moves;
   $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn để đặt.');
   $('message').classList.toggle('error', error);
@@ -648,11 +680,14 @@ function paintInvalid() {
 }
 
 function newGame() {
-  const board = Array(W * H).fill(null);
-  startingBlocks.forEach(([row, col, name]) => { board[row * W + col] = { ...item(name), locked: true, starting: true }; });
-  state = { board, deck: buildDeck(), active: null, hold: null, heldThisTurn: false, score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null };
+  const board = generateStartBoard(W, H, catGroups, START_LAYOUT)
+    .map(cell => cell && { ...item(cell.group), locked: true, starting: true });
+  state = {
+    board, deck: [], bagIndex: 0, initialCats: remainingCats(board), active: null, hold: null, heldThisTurn: false,
+    score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null,
+  };
   state.active = drawCard();
-  render('Gom 3 mèo cùng loại liền kề để xóa chúng khỏi bàn.');
+  render(`Dọn sạch ${state.initialCats} mèo trên bàn trong ${TURN_LIMIT} lượt!`);
 }
 
 $('active-card').onpointerdown = startCardDrag;

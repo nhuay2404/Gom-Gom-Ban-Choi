@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clearMatches, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { clearMatches, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -246,4 +246,30 @@ test('đặt thẻ nhiều object sẽ khóa tất cả và cộng điểm liề
   assert.deepEqual(result.indices, [1, 5, 6]);
   assert.equal(result.score, 35);
   assert.ok(result.indices.every(index => result.board[index].locked));
+});
+
+test('bàn khởi đầu: có đủ cặp, không có cụm >= 3 gom được ngay', () => {
+  for (let run = 0; run < 50; run++) {
+    const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f'], { pairs: 3, singles: 4 });
+    assert.equal(remainingCats(board), 10);
+    assert.equal(clearMatches(board, 6, 6, 3).cleared.length, 0);
+  }
+});
+
+test('thẻ có ích đặt đúng chỗ gợi ý thì gom được ngay', () => {
+  for (let run = 0; run < 100; run++) {
+    const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f']);
+    const help = findHelpfulCard(board, 6, 6);
+    assert.ok(help, 'bàn khởi đầu luôn có thẻ có ích');
+    const card = { offsets: help.card.offsets, items: help.card.groups.map(group => ({ group })) };
+    const placed = placeCard(board, 6, 6, help.anchor, card);
+    assert.ok(!placed.error, placed.error);
+    assert.ok(clearMatches(placed.board, 6, 6, 3).cleared.length >= 3);
+  }
+});
+
+test('tỉ lệ thẻ có ích tăng khi bàn vơi, 100% khi còn <= 4 mèo', () => {
+  assert.ok(helpChance(10, 10) < helpChance(6, 10));
+  assert.equal(helpChance(4, 10), 1);
+  assert.equal(helpChance(0, 10), 1);
 });
