@@ -131,4 +131,7 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .drag-ghost .cat .hang{visibility:visible;transform-box:view-box;transform-origin:50% 70%;animation:cat-dangle .5s ease-in-out infinite alternate}
 .drag-ghost .cat .base,.drag-ghost .cat .ground{visibility:hidden}
 .drag-ghost .cat{animation:none;transform:translateY(-38%) scale(1.05,1.1);filter:drop-shadow(0 10px 8px #1d361266)}
-.drag-ghost .piece-object:nth-child(2n) .cat .hang{animation-delay:-.25s}
+.drag-ghost .piece-object:nth-child(2n) .cat .hang{animation-delay:-.25s}/* Ô gửi tạm: block mèo tự co cho vừa khung (giống thẻ đang bóc) */
+.hold-slot{--card-w:94px;--card-h:94px;--pad:18px;--gap:3px;overflow:hidden}
+.hold-slot .piece-grid{transform:none;--cell:min(34px,calc((var(--card-w) - var(--pad) - var(--gap) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((var(--card-h) - var(--pad) - var(--gap) * (var(--piece-rows) - 1)) / var(--piece-rows)));grid-template-columns:repeat(var(--piece-cols),var(--cell));grid-template-rows:repeat(var(--piece-rows),var(--cell));gap:var(--gap);padding-top:3px}
+.hold-slot .piece-object{border-radius:7px}
