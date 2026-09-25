@@ -334,6 +334,45 @@ function dragAnchorFromGhost(ghost) {
   return { anchor: row >= 0 && col >= 0 ? row * W + col : null, hovered };
 }
 
+// Vật lý bóng kéo: thân mèo (bị xách gáy) là lò xo nghiêng theo vận tốc kéo; chân sau + đuôi là
+// con lắc, bị gia tốc của tay "hất" rồi tự đung đưa tắt dần. Không có anim lặp sẵn nào.
+function startDragPhysics(ghost) {
+  const cats = [...ghost.querySelectorAll('.cat')].map((cat, index) => ({
+    cat, hang: cat.querySelector('.hang'), k: 1 + index * .12, tilt: 0, tiltV: 0, swing: 0, swingV: 0,
+  }));
+  const phys = { cats, vx: 0, lastVx: 0, lastX: null, lastT: 0, frame: 0, time: performance.now() };
+  const step = now => {
+    const dt = Math.min(.05, (now - phys.time) / 1000) || .016;
+    phys.time = now;
+    phys.vx *= Math.exp(-dt * 9); // tay dừng -> vận tốc về 0
+    const ax = (phys.vx - phys.lastVx) / dt;
+    phys.lastVx = phys.vx;
+    cats.forEach(item => {
+      const target = Math.max(-26, Math.min(26, phys.vx * .028 * item.k));
+      item.tiltV += (-150 * (item.tilt - target) - 13 * item.tiltV) * dt;
+      item.tilt += item.tiltV * dt;
+      const swing = item.swing * Math.PI / 180;
+      item.swingV += (-70 * Math.sin(swing) * 180 / Math.PI - 2.6 * item.swingV + ax * .045 * item.k) * dt;
+      item.swingV = Math.max(-900, Math.min(900, item.swingV));
+      item.swing = Math.max(-55, Math.min(55, item.swing + item.swingV * dt));
+      item.cat.style.transform = `translateY(-38%) scale(1.05, 1.1) rotate(${item.tilt.toFixed(2)}deg)`;
+      if (item.hang) item.hang.style.transform = `rotate(${(item.swing - item.tilt * .6).toFixed(2)}deg)`;
+    });
+    phys.frame = requestAnimationFrame(step);
+  };
+  if (!reduceMotion.matches) phys.frame = requestAnimationFrame(step);
+  return phys;
+}
+
+function feedDragPhysics(phys, x) {
+  const now = performance.now();
+  if (phys.lastX !== null && now > phys.lastT) {
+    const raw = (x - phys.lastX) / ((now - phys.lastT) / 1000);
+    phys.vx = phys.vx * .55 + Math.max(-4000, Math.min(4000, raw)) * .45;
+  }
+  phys.lastX = x; phys.lastT = now;
+}
+
 // Con mèo trong thẻ gần điểm chạm nhất = con đang được cầm.
 function grabbedPiece(x, y) {
   let best = 0, bestDistance = Infinity;
@@ -377,7 +416,9 @@ function moveCardDrag(event) {
     const piece = $('active-card').querySelector('.piece-object')?.getBoundingClientRect();
     if (boardCell && piece?.width) cardDrag.ghost.style.transform = `scale(${(boardCell.width / piece.width).toFixed(3)})`;
     cardDrag.cells = measureCells();
+    cardDrag.physics = startDragPhysics(cardDrag.ghost);
   }
+  feedDragPhysics(cardDrag.physics, event.clientX);
   cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
   const { anchor, hovered } = dragAnchorFromGhost(cardDrag.ghost);
@@ -390,7 +431,8 @@ function moveCardDrag(event) {
 
 function finishCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
-  const { ghost, anchor } = cardDrag;
+  const { ghost, anchor, physics } = cardDrag;
+  if (physics) cancelAnimationFrame(physics.frame);
   ghost?.remove();
   cardDrag = null;
   $('active-card').classList.remove('dragging');

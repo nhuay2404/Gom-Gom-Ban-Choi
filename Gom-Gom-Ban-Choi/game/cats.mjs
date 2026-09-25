@@ -124,6 +124,15 @@ function catSvg(group) {
       <path d="M43 72 Q46.5 68 50 71.5 Q53.5 68 57 72" stroke="${ink}" stroke-width="2"/>
       <path d="M84 30 Q88 37 84 40 Q80 37 84 30Z" fill="#9fdcf7" stroke="#5fb4dd" stroke-width="1.2"/>
     </g>
+    <g class="joy" visibility="hidden">
+      <g fill="none" stroke="${group === 'tuxedo' ? '#f3e7cf' : ink}" stroke-width="3.2" stroke-linecap="round">
+        <path d="M30 59 Q37 49 44 59M56 59 Q63 49 70 59"/></g>
+      <path d="M40 67 Q50 83 60 67Z" fill="#b8475a" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M44.5 73 Q50 79 55.5 73" fill="#f28ba0"/>
+      <ellipse cx="25" cy="67" rx="7.5" ry="4.2" fill="#ff7f96" opacity=".75"/><ellipse cx="75" cy="67" rx="7.5" ry="4.2" fill="#ff7f96" opacity=".75"/>
+      <g fill="#ffd84d" stroke="#fff" stroke-width=".8">
+        <path d="M11 30 L13 35 L18 37 L13 39 L11 44 L9 39 L4 37 L9 35Z"/><path d="M90 24 L91.5 28 L95.5 29.5 L91.5 31 L90 35 L88.5 31 L84.5 29.5 L88.5 28Z"/></g>
+    </g>
     <path d="M46.8 63.5 L53.2 63.5 L50 67Z" fill="#ef8595"/>
     <g stroke="${cat.side}" stroke-width="1.5">
       <ellipse cx="33" cy="91" rx="10" ry="6.5" fill="${cat.paw}"/><ellipse cx="67" cy="91" rx="10" ry="6.5" fill="${cat.paw}"/>

@@ -174,4 +174,11 @@ dialog p{color:#8a6440}
 .cell.locked .cat{backface-visibility:hidden}/* Bóng mèo khi gom: phủ đúng chỗ ô cũ, không nhận chạm -> người chơi vẫn đặt thẻ tiếp được */
 .board{position:relative}
 .board-fx{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;z-index:4}
-.merge-ghost{position:absolute;margin:0;pointer-events:none;will-change:transform,opacity}
+.merge-ghost{position:absolute;margin:0;pointer-events:none;will-change:transform,opacity}/* Gom / thắng: mèo sướng rơn (mắt ^^, cười toe, má hồng, sao lấp lánh) thay vì mặt nhăn */
+.merge-ghost .cat .joy{visibility:visible}
+.cell.merge-ghost .cat .calm,.cell.merge-ghost .cat .annoyed,.cell.merge-ghost .cat .blush,.cell.merge-ghost.lifted .cat .calm,.cell.merge-ghost.lifted .cat .annoyed,.cell.merge-ghost.lifted .cat .blush{display:none}
+@media(prefers-reduced-motion:no-preference){.merge-ghost.lifted .cat .joy g:last-child{animation:joy-twinkle .45s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}}
+@keyframes joy-twinkle{to{transform:scale(1.35) rotate(18deg);opacity:.7}}
+/* Kéo thẻ: bỏ anim tự lắc; JS mô phỏng vật lý (thân nghiêng theo vận tốc, chân/đuôi đung đưa như con lắc) */
+.drag-ghost .cat{animation:none;transform-origin:50% 8%}
+.drag-ghost .cat .hang{animation:none;transform-box:view-box;transform-origin:50% 68%}
