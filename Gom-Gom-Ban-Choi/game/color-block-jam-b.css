@@ -171,4 +171,7 @@ dialog p{color:#8a6440}
 .cell.lifted .cat{will-change:transform}
 .board.busy .cat .eyes{animation-play-state:paused}
 .board.flying .cat .hang{animation:none}
-.cell.locked .cat{backface-visibility:hidden}
+.cell.locked .cat{backface-visibility:hidden}/* Bóng mèo khi gom: phủ đúng chỗ ô cũ, không nhận chạm -> người chơi vẫn đặt thẻ tiếp được */
+.board{position:relative}
+.board-fx{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;z-index:4}
+.merge-ghost{position:absolute;margin:0;pointer-events:none;will-change:transform,opacity}

@@ -150,74 +150,94 @@ function placeAt(anchor) {
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
   const match = clearMatches(result.board, W, H, MATCH_SIZE);
   if (!match.cleared.length || reduceMotion.matches) return finishTurn(result, match);
-  // Hiện thẻ vừa đặt trên bàn trước, rồi mới chạy anim mèo vươn người + cụm lại.
-  state.board = result.board;
-  state.justPlaced = new Set(result.indices);
-  state.animating = true;
-  state.preview = null;
-  render('');
-  $('active-card').classList.add('waiting');
+  // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
+  // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
   const gained = match.cleared.length * POINTS_PER_CLEARED;
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
-  // Chờ đúng lúc mèo vừa đặt rơi xong (thay vì hẹn giờ cứng) rồi mới nhấc bổng + gom.
-  const landed = result.indices.map(index => cellEl(index)?.getAnimations().find(a => a.animationName === 'block-drop')?.finished);
-  Promise.all(landed.filter(Boolean)).catch(() => {}).then(() => animateMerges(merges, gained)).then(() => {
-    state.animating = false;
-    finishTurn(result, match);
-  });
+  const ghosts = spawnMergeGhosts(merges, result);
+  const done = animateMerges(ghosts, merges, gained);
+  pendingMerges.add(done);
+  done.finally(() => pendingMerges.delete(done));
+  finishTurn(result, match);
 }
 
 function cellEl(index) {
   return document.querySelector(`.cell[data-index="${index}"]`);
 }
 
-const LIFT_MS = 560, MERGE_MS = 420, WIN_PAUSE_MS = 800;
+const LIFT_MS = 560, MERGE_MS = 420, WIN_PAUSE_MS = 800, DROP_MS = 340;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const pendingMerges = new Set();
+
+function fxLayer() {
+  let layer = $('board').querySelector(':scope > .board-fx');
+  if (!layer) { layer = document.createElement('div'); layer.className = 'board-fx'; $('board').append(layer); }
+  return layer;
+}
+
+// Bóng mèo: bản sao mèo của cụm, đặt đúng vị trí ô (toạ độ trong board nên theo cả độ nghiêng 3D).
+function spawnMergeGhosts(merges, result) {
+  const placed = new Set(result.indices), layer = fxLayer(), ghosts = new Map();
+  merges.forEach(({ cluster }) => cluster.forEach(index => {
+    const cell = cellEl(index), object = result.board[index];
+    if (!cell || !object) return;
+    const ghost = document.createElement('span');
+    ghost.className = `cell locked ${object.group} merge-ghost${placed.has(index) ? ' drop' : ''}`;
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    ghost.style.setProperty('--group-color', categories[object.group].color);
+    addArt(ghost, object);
+    layer.append(ghost);
+    ghosts.set(index, ghost);
+  }));
+  return ghosts;
+}
 
 // Pha 1: mèo bị nhấc bổng lên, lộ bụng + chân sau lủng lẳng (CSS .lifted).
 // Pha 2: cả cụm trượt vào mèo vừa đặt và nhỏ dần; mèo đích phồng lên rồi biến mất.
-async function animateMerges(merges, gained) {
+async function animateMerges(ghosts, merges, gained) {
   const total = merges.reduce((n, m) => n + m.cluster.length, 0);
-  $('board').classList.add('busy');
+  await wait(DROP_MS); // mèo vừa đặt rơi xong đã
   merges.forEach(({ cluster }) => cluster.forEach((index, order) => {
-    const cell = cellEl(index);
-    if (!cell) return;
-    cell.classList.add('merging', 'lifted');
-    cell.style.setProperty('--lift-delay', `${order * 50}ms`);
+    const ghost = ghosts.get(index);
+    if (!ghost) return;
+    ghost.classList.add('lifted');
+    ghost.style.setProperty('--lift-delay', `${order * 50}ms`);
   }));
   await wait(LIFT_MS);
   const animations = [];
   merges.forEach(({ cluster, target }) => {
-    const targetCell = cellEl(target);
-    if (!targetCell) return;
+    const targetGhost = ghosts.get(target);
+    if (!targetGhost) return;
     cluster.forEach(index => {
-      const cell = cellEl(index);
-      if (!cell) return;
+      const ghost = ghosts.get(index);
+      if (!ghost) return;
       if (index === target) {
-        animations.push(cell.animate([
+        animations.push(ghost.animate([
           { transform: 'none', opacity: 1 },
           { transform: 'scale(1.3)', opacity: 1, offset: .65 },
           { transform: 'scale(0)', opacity: 0 },
         ], { duration: MERGE_MS + 120, easing: 'ease-in-out', fill: 'forwards' }));
         return;
       }
-      const dx = targetCell.offsetLeft - cell.offsetLeft, dy = targetCell.offsetTop - cell.offsetTop;
-      animations.push(cell.animate([
+      const dx = targetGhost.offsetLeft - ghost.offsetLeft, dy = targetGhost.offsetTop - ghost.offsetTop;
+      animations.push(ghost.animate([
         { transform: 'none', opacity: 1 },
         { transform: `translate(${dx * .8}px, ${dy * .8}px) scale(.7)`, opacity: 1, offset: .75 },
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ], { duration: MERGE_MS, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }));
     });
-    showMergeScore(targetCell, Math.round(gained * cluster.length / total));
+    showMergeScore(targetGhost, Math.round(gained * cluster.length / total));
   });
-  await Promise.all(animations.map(animation => animation.finished));
-  $('board').classList.remove('busy');
+  await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
+  ghosts.forEach(ghost => ghost.remove());
 }
-// Thắng: mọi mèo còn lại lần lượt bị nhấc bổng rồi bay vút lên, bàn trống trơn.
+
+// Thắng: chờ các anim gom còn dở xong, rồi mọi mèo còn lại bị nhấc bổng và bay vút lên, bàn trống trơn.
 async function celebrateWin(message) {
-  const cells = [...document.querySelectorAll('.cell.locked')];
+  state.animating = true;
+  await Promise.all([...pendingMerges]);
+  const cells = [...document.querySelectorAll('#board > .cell.locked')];
   if (!reduceMotion.matches && cells.length) {
-    state.animating = true;
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
     $('board').classList.add('busy', 'flying');
     cells.forEach((cell, order) => {
@@ -231,12 +251,11 @@ async function celebrateWin(message) {
       { transform: `translateY(-${260 + (order % 3) * 40}px) scale(.6) rotate(${order % 2 ? 14 : -14}deg)`, opacity: 0 },
     ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished));
     $('board').classList.remove('busy', 'flying');
-    state.animating = false;
   }
+  state.animating = false;
   state.board = state.board.map(() => null);
   render(message);
 }
-
 function showMergeScore(cell, points) {
   const wrap = document.querySelector('.board-wrap');
   const box = wrap.getBoundingClientRect(), rect = cell.getBoundingClientRect();
@@ -253,8 +272,8 @@ function finishTurn(result, match) {
   const gained = match.cleared.length * POINTS_PER_CLEARED;
   state.board = match.board;
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
-  state.justPlaced = match.cleared.length && !reduceMotion.matches ? null : new Set(result.indices);
-  $('active-card').classList.remove('waiting');
+  // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
+  state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   state.score += gained;
   const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} điểm.` : '';
   state.moves--;
@@ -365,7 +384,7 @@ function render(message = '', error = false) {
 // nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
 function renderBoard() {
   const board = $('board');
-  if (board.children.length !== W * H) {
+  if (board.querySelectorAll(':scope > .cell').length !== W * H) {
     board.replaceChildren(...Array.from({ length: W * H }, (_, index) => {
       const cell = document.createElement('button');
       cell.dataset.index = index;
@@ -374,7 +393,7 @@ function renderBoard() {
     }));
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
-  [...board.children].forEach((cell, index) => {
+  board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
     const object = state.board[index] || null;
     if (cell.renderedObject === object) return;
     cell.renderedObject = object;
