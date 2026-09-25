@@ -211,4 +211,6 @@ dialog p{color:#8a6440}
 .card-rotator.vertical .rotate-hint.left,.card-rotator.vertical .rotate-hint.right{top:50%;left:50%;right:auto;bottom:auto;width:60%;max-width:none;margin:0}/* Thẻ 3 mèo: mũi tên nhỏ hơn để chừa chỗ cho mèo */
 .card-rotator .rotate-hint.small{width:50%}/* Bấm để xoay hay kéo thì mèo trong thẻ đang bóc vẫn rõ nét, không mờ */
 #active-card.dragging .piece-grid,#active-card .piece-grid{opacity:1}/* Chỉ xem trước 2 thẻ tiếp theo */
-.next-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+.next-cards{grid-template-columns:repeat(2,minmax(0,1fr))}/* Mèo bị nhấc lúc gom: nâng cao hẳn khỏi bàn (gần mắt hơn mọi mèo đang đứng ở hàng dưới) để không bị che */
+.cell.merge-ghost.lifted .cat{transform:translateZ(90px) rotateX(calc(var(--tilt) * -1)) translateY(-50%) scale(1.22,1.28)}
+.cell.merge-ghost{transform-style:preserve-3d}
