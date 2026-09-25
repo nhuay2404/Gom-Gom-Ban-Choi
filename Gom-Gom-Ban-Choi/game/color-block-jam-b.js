@@ -177,9 +177,13 @@ function fxLayer() {
 
 // Bóng mèo: bản sao mèo của cụm, đặt đúng vị trí ô (toạ độ trong board nên theo cả độ nghiêng 3D).
 function spawnMergeGhosts(merges, result) {
-  const placed = new Set(result.indices), layer = fxLayer(), ghosts = new Map();
-  merges.forEach(({ cluster }) => cluster.forEach(index => {
-    const cell = cellEl(index), object = result.board[index];
+  return spawnGhosts(merges.flatMap(({ cluster }) => cluster), result.board, new Set(result.indices));
+}
+
+function spawnGhosts(indices, board, placed = new Set()) {
+  const layer = fxLayer(), ghosts = new Map();
+  indices.forEach(index => {
+    const cell = cellEl(index), object = board[index];
     if (!cell || !object) return;
     const ghost = document.createElement('span');
     ghost.className = `cell locked ${object.group} merge-ghost${placed.has(index) ? ' drop' : ''}`;
@@ -188,7 +192,7 @@ function spawnMergeGhosts(merges, result) {
     addArt(ghost, object);
     layer.append(ghost);
     ghosts.set(index, ghost);
-  }));
+  });
   return ghosts;
 }
 
@@ -236,20 +240,25 @@ async function animateMerges(ghosts, merges, gained) {
 async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
-  const cells = [...document.querySelectorAll('#board > .cell.locked')];
-  if (!reduceMotion.matches && cells.length) {
+  const occupied = state.board.map((object, index) => object && index).filter(index => index !== null && index !== false);
+  if (!reduceMotion.matches && occupied.length) {
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
+    // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
+    const ghosts = [...spawnGhosts(occupied, state.board).values()];
+    state.board = state.board.map(() => null);
+    render(message);
     $('board').classList.add('busy', 'flying');
-    cells.forEach((cell, order) => {
-      cell.classList.add('merging', 'lifted');
-      cell.style.setProperty('--lift-delay', `${order * 40}ms`);
+    ghosts.forEach((ghost, order) => {
+      ghost.classList.add('lifted');
+      ghost.style.setProperty('--lift-delay', `${order * 40}ms`);
     });
-    await wait(LIFT_MS + cells.length * 40);
-    await Promise.all(cells.map((cell, order) => cell.animate([
+    await wait(LIFT_MS + ghosts.length * 40);
+    await Promise.all(ghosts.map((ghost, order) => ghost.animate([
       { transform: 'none', opacity: 1 },
       { transform: 'translateY(-30px) scale(1.05)', opacity: 1, offset: .3 },
       { transform: `translateY(-${260 + (order % 3) * 40}px) scale(.6) rotate(${order % 2 ? 14 : -14}deg)`, opacity: 0 },
-    ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished));
+    ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished.catch(() => {})));
+    ghosts.forEach(ghost => ghost.remove());
     $('board').classList.remove('busy', 'flying');
   }
   state.animating = false;
