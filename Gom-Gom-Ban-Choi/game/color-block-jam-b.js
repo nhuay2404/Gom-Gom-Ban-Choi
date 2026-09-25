@@ -314,6 +314,10 @@ function moveCardDrag(event) {
       transformOrigin: `${cardDrag.grabX}px ${cardDrag.grabY}px`,
     });
     document.body.append(cardDrag.ghost);
+    // Mèo trong bóng kéo có cùng cỡ với mèo trên bàn: scale theo tỉ lệ ô bàn / ô trong thẻ (neo ở điểm cầm).
+    const boardCell = document.querySelector('.cell[data-index="14"]')?.getBoundingClientRect();
+    const piece = $('active-card').querySelector('.piece-object')?.getBoundingClientRect();
+    if (boardCell && piece?.width) cardDrag.ghost.style.transform = `scale(${(boardCell.width / piece.width).toFixed(3)})`;
   }
   cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
