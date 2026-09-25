@@ -98,7 +98,7 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 @keyframes block-drop{from{transform:translateY(-38px);opacity:0}to{transform:none;opacity:1}}.cell{transform-style:preserve-3d}
 .cell.locked .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.12)}
 .piece-object .cat{transform:scale(1.08)}/* Board thu nhỏ, căn giữa */
-.board-wrap{width:min(84%,360px);margin-inline:auto}/* ===== Mèo: chớp mắt + khó chịu khi bị nhấc lên ===== */
+.board-wrap{width:min(96%,430px);margin-inline:auto}/* ===== Mèo: chớp mắt + khó chịu khi bị nhấc lên ===== */
 .cat .eyes{transform-box:fill-box;transform-origin:50% 60%;animation:cat-blink var(--blink-dur,5s) var(--blink-delay,0s) infinite}
 .cat .blush{opacity:.45;transition:opacity .2s}
 .cat .annoyed{display:none}
