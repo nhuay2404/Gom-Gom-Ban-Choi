@@ -344,7 +344,7 @@ function render(message = '', error = false) {
   $('moves').textContent = state.moves;
   $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn để đặt.');
   $('message').classList.toggle('error', error);
-  const board = $('board'); board.replaceChildren();
+  const board = $('board'); board.replaceChildren(); state.previewKey = '';
   for (let index = 0; index < W * H; index++) {
     const cell = document.createElement('button');
     const object = state.board[index];
@@ -401,6 +401,22 @@ function paintPreview() {
   document.querySelectorAll('.cell.preview,.cell.preview-invalid').forEach(cell => cell.classList.remove('preview', 'preview-invalid'));
   // Chỉ tô ô trống; ô đã có mèo không bao giờ nhận hiệu ứng xem trước.
   state.preview?.forEach(index => document.querySelector(`.cell.empty[data-index="${index}"]`)?.classList.add('preview'));
+  // Xem trước: hiện mờ đúng con mèo sẽ nằm ở từng ô (thứ tự indices = thứ tự món trong thẻ).
+  const key = state.preview ? state.preview.join(',') + '|' + state.active.items.map(i => i.group).join(',') : '';
+  if (key === state.previewKey) return paintInvalid();
+  state.previewKey = key;
+  document.querySelectorAll('.cell .preview-cat').forEach(el => el.remove());
+  state.preview?.forEach((index, i) => {
+    const cell = document.querySelector(`.cell.empty[data-index="${index}"]`);
+    const item = state.active.items[i];
+    if (!cell || !item) return;
+    const holder = document.createElement('span'); holder.className = 'preview-cat';
+    addArt(holder, item); cell.append(holder);
+  });
+  paintInvalid();
+}
+
+function paintInvalid() {
   if (!state.preview && state.previewAnchor !== null) document.querySelector(`.cell[data-index="${state.previewAnchor}"]`)?.classList.add('preview-invalid');
 }
 
