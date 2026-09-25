@@ -197,6 +197,10 @@ dialog p{color:#8a6440}
 .rotate-hint.left{top:3px;left:50%;right:auto;transform:translateX(-50%)}
 .rotate-hint.right{bottom:3px;left:50%;right:auto;transform:translateX(-50%) rotate(180deg)}
 .can-rotate .rotate-hint{opacity:.55}
-@media(prefers-reduced-motion:no-preference){.can-rotate .rotate-hint.left{animation:hint-sway-top 1.8s ease-in-out infinite}.can-rotate .rotate-hint.right{animation:hint-sway-bottom 1.8s ease-in-out infinite}}
-@keyframes hint-sway-top{50%{transform:translateX(-50%) rotate(8deg)}}
-@keyframes hint-sway-bottom{50%{transform:translateX(-50%) rotate(188deg)}}
+
+
+/* Mũi tên đứng yên. Thẻ dọc: 2 mũi tên dựng dọc hai bên (phải chỉ xuống, trái chỉ lên) - vẫn là vòng xoay thuận chiều */
+.rotate-hint{animation:none}
+.card-rotator.vertical .rotate-hint{width:58%;max-width:104px}
+.card-rotator.vertical .rotate-hint.left{top:50%;left:auto;right:30px;transform:translate(50%,-50%) rotate(90deg)}
+.card-rotator.vertical .rotate-hint.right{top:50%;bottom:auto;left:30px;right:auto;transform:translate(-50%,-50%) rotate(-90deg)}

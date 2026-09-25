@@ -468,6 +468,9 @@ function render(message = '', error = false) {
   renderCards();
   $('active-card').disabled = state.over;
   document.querySelector('.card-rotator').classList.toggle('can-rotate', !state.over && state.active.items.length > 1);
+  // Thẻ dọc (nhiều hàng hơn cột) -> mũi tên xoay dựng dọc hai bên.
+  const shape = normalizePreview(state.active.offsets);
+  document.querySelector('.card-rotator').classList.toggle('vertical', shape.rows > shape.cols);
   $('hold').disabled = state.over || state.heldThisTurn;
 }
 
