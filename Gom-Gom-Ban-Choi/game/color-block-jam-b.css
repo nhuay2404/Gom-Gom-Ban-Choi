@@ -165,3 +165,10 @@ dialog{background:var(--cream-1);border-color:var(--cream-edge);color:var(--crea
 dialog p{color:#8a6440}
 .close-help{color:var(--cream-ink)}
 .merge-pop{color:#fffaf0;text-shadow:0 2px 0 #d9722a,0 0 10px #ffd27a}
+/* ===== Hiệu năng anim: không filter trên mèo 3D, báo trước cho GPU, bớt anim SVG khi đang bận ===== */
+.board .cat,.cell.lifted .cat,.preview-cat .cat{filter:none}
+.cell.drop,.cell.merging{will-change:transform,opacity}
+.cell.lifted .cat{will-change:transform}
+.board.busy .cat .eyes{animation-play-state:paused}
+.board.flying .cat .hang{animation:none}
+.cell.locked .cat{backface-visibility:hidden}
