@@ -143,4 +143,25 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .preview-cat .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.12);transform-origin:50% 95%;filter:drop-shadow(0 3px 3px #1d361240)}
 .preview-cat .cat .eyes{animation:none}
 @media(prefers-reduced-motion:no-preference){.preview-cat{animation:preview-bob .7s ease-in-out infinite alternate}}
-@keyframes preview-bob{to{opacity:.8}}
+@keyframes preview-bob{to{opacity:.8}}/* ===== Theme vàng kem cho board + UI (trên nền hồng) ===== */
+:root{--cream-1:#fff8e4;--cream-2:#ffecb8;--cream-3:#f6d88f;--cream-edge:#e2bd72;--cream-deep:#c79a4f;--cream-ink:#6b4523}
+body{color:var(--cream-ink)}
+.topbar h1{color:#fffaf0;text-shadow:0 2px 0 #e38aa0,0 4px 10px #c9607a55}
+.round-button{background:linear-gradient(var(--cream-1),var(--cream-2));color:var(--cream-ink);box-shadow:0 3px 0 var(--cream-deep),0 5px 8px #8a4b3a33}
+.round-button:hover{background:linear-gradient(#fffdf4,var(--cream-2))}
+.scorebar div{background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 3px 0 var(--cream-deep),0 6px 10px #8a4b3a26;color:var(--cream-ink)}
+.scorebar strong{color:#e0792a;text-shadow:0 1px 0 #fff}
+.board{background:linear-gradient(#fff1c7,#f7dc9a);box-shadow:0 12px 0 #dcb66a,0 14px 0 #c3994e,0 26px 28px #8a4b3a40,inset 0 2px 0 #fffbea}
+.cell{background:linear-gradient(#efce85,#f6dea6);box-shadow:inset 0 5px 7px #b7874280,inset 0 -1px 0 #fff4d2}
+.cell.empty:hover{background:linear-gradient(#f5d894,#fbe7b8)}
+.message{color:var(--cream-ink);text-shadow:0 1px 0 #fff6}
+.message.error{color:#c0392b}
+.section-label,.rotate-tip{color:var(--cream-ink);text-shadow:0 1px 0 #fff8}
+.piece-card,.next-slot{background:linear-gradient(#f3d58f,#f9e4b2);border:1px solid var(--cream-edge);box-shadow:inset 0 5px 8px #b7874266,0 2px 0 #fff3cf}
+.hold-slot{background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 4px 0 var(--cream-deep),0 6px 10px #8a4b3a26}
+.hold-plus{color:#d38a3a}
+.rotate-hint{background:var(--cream-1);color:var(--cream-ink);box-shadow:0 2px 0 var(--cream-deep),0 4px 8px #8a4b3a40}
+dialog{background:var(--cream-1);border-color:var(--cream-edge);color:var(--cream-ink)}
+dialog p{color:#8a6440}
+.close-help{color:var(--cream-ink)}
+.merge-pop{color:#fffaf0;text-shadow:0 2px 0 #d9722a,0 0 10px #ffd27a}
