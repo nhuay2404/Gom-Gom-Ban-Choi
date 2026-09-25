@@ -1,5 +1,5 @@
 import {
-  boardNeeds, clearMatches, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
+  clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
 } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
@@ -54,27 +54,42 @@ function applyPlan(sim, card) {
   if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
 }
 
-// AI chọn thẻ tiếp theo theo: số mèo còn trên bàn, số lượt tối thiểu còn cần (mỗi cụm 1 lượt)
-// so với số lượt còn lại. Có thẻ gom được nhiều cụm một lúc thì ưu tiên.
+// Độ chắc chắn mèo trong tay sẽ được dùng: thẻ đang bóc > hàng chờ > ô gửi tạm.
+const HAND_WEIGHT = { active: .85, queue: .7, hold: .6 };
+const groupsOf = card => card.items.map(cell => cell.group);
+
+// AI chọn thẻ tiếp theo dựa trên: mèo trên bàn + mèo đang trong tay (thẻ đang bóc, ô gửi tạm, hàng chờ).
+// clearOdds ước lượng khả năng từng con mèo trên bàn được gom; AI ưu tiên cứu cụm ít khả năng được gom,
+// không ra thẻ trùng cho cụm đã có mèo chờ sẵn. Tỉ lệ ra thẻ có ích tính theo số mèo "dự kiến còn sót"
+// và số cụm chưa có hàng so với số lượt còn lại.
 function planCard(sim) {
-  const needs = boardNeeds(sim.board, W, H);
-  const chance = helpChance(remainingCats(sim.board), state.initialCats, sim.movesLeft, needs.turns);
+  const { odds, clusters } = clearOdds(sim.board, W, H, sim.pending);
+  const leftover = expectedLeftover(sim.board, odds);
+  const unserved = clusters.filter(cluster => cluster.odds < .5).length;
+  const chance = helpChance(leftover, state.initialCats, sim.movesLeft, unserved);
   sim.movesLeft--;
   if (Math.random() < chance) {
-    const help = findHelpfulCard(sim.board, W, H);
+    const help = findHelpfulCard(sim.board, W, H, Math.random, odds);
     if (help) {
       const card = { offsets: help.card.offsets, items: help.card.groups.map(item), helpful: true, planAnchor: help.anchor };
       applyPlan(sim, card);
       return card;
     }
   }
-  return randomCard(sim.board);
+  const card = randomCard(sim.board);
+  sim.pending.push({ groups: groupsOf(card), weight: HAND_WEIGHT.queue });
+  return card;
 }
 
-// Bàn giả lập = bàn thật + các thẻ có ích đang chờ trong hàng đã được "đặt thử"; kèm số lượt còn lại.
+// Bàn giả lập = bàn thật + các thẻ có ích đang chờ đã được "đặt thử"; mèo còn lại trong tay (thẻ đang
+// bóc, ô gửi tạm, thẻ không-có-ích trong hàng) được ghi vào pending để AI tính khả năng gom.
 function simulateQueue(cards) {
-  const sim = { board: state.board.slice(), movesLeft: state.moves - cards.length };
-  cards.forEach(card => { if (card.helpful && card.planAnchor !== undefined) applyPlan(sim, card); });
+  const sim = { board: state.board.slice(), movesLeft: state.moves - cards.length, pending: [] };
+  cards.forEach((card, index) => {
+    if (card.helpful && card.planAnchor !== undefined) return applyPlan(sim, card);
+    sim.pending.push({ groups: groupsOf(card), weight: index === 0 ? HAND_WEIGHT.active : HAND_WEIGHT.queue });
+  });
+  if (state.hold) sim.pending.push({ groups: groupsOf(state.hold), weight: HAND_WEIGHT.hold });
   return sim;
 }
 

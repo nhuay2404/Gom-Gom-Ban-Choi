@@ -178,7 +178,9 @@ function dominoAt(a, b, groupA, groupB, width) {
 //  - 2 con cùng loại ghép với một con lẻ;
 //  - "gom đôi": 2 con khác loại, mỗi con ghép vào một cặp khác nhau -> một lượt dọn 2 cụm.
 // Trả về { card: { offsets, groups }, anchor, cleared } hoặc null.
-export function findHelpfulCard(board, width, height, rng = Math.random) {
+// odds (tuỳ chọn, từ clearOdds): ưu tiên cứu các cụm còn ít khả năng được gom - cụm đã có mèo chờ sẵn
+// trong tay người chơi thì không ra thẻ trùng cho nó nữa.
+export function findHelpfulCard(board, width, height, rng = Math.random, odds = null) {
   const clusters = clustersOf(board, width, height).filter(c => c.cells.length < 3);
   const candidates = [];
   const pairSpots = new Map(); // ô trống -> loại của cặp mà ô đó kề
@@ -205,12 +207,49 @@ export function findHelpfulCard(board, width, height, rng = Math.random) {
     const card = { offsets: candidate.card.offsets, items: candidate.card.groups.map(group => ({ group })) };
     const placed = placeCard(board, width, height, candidate.anchor, card);
     if (placed.error) return;
-    const cleared = clearMatches(placed.board, width, height, 3).cleared.length;
-    // Điểm = số mèo dọn được sau lượt (đã trừ mèo mới thêm vào), phá hoà ngẫu nhiên.
-    const value = cleared - candidate.card.groups.length + rng() * .5;
-    if (cleared >= 3 && (!best || value > best.value)) best = { ...candidate, cleared, value };
+    const clearedCells = clearMatches(placed.board, width, height, 3).cleared;
+    const cleared = clearedCells.length;
+    // "Cứu được bao nhiêu": mèo cũ trên bàn được dọn, mỗi con tính theo (1 - khả năng nó vốn được gom).
+    const rescued = clearedCells.reduce((sum, index) => sum + (board[index] ? 1 - (odds ? odds[index] : 0) : 0), 0);
+    if (cleared < 3 || rescued <= .05) return;
+    // Điểm = mèo cũ được cứu (x2) + số mèo dọn được sau lượt (đã trừ mèo mới thêm vào), phá hoà ngẫu nhiên.
+    const value = rescued * 2 + cleared - candidate.card.groups.length + rng() * .5;
+    if (!best || value > best.value) best = { ...candidate, cleared, value };
   });
   return best && { card: best.card, anchor: best.anchor, cleared: best.cleared };
+}
+
+// Xác suất từng ô mèo trên bàn sẽ được gom, xét cả mèo người chơi đang có trong tay (thẻ đang bóc,
+// ô gửi tạm, hàng chờ). pending = [{ groups: [...], weight }] - weight = độ chắc chắn nguồn đó sẽ được
+// dùng (thẻ đang bóc cao nhất). Mỗi con mèo trong tay được "giao" cho một cụm cùng loại còn thiếu và còn
+// chỗ đặt bên cạnh. Cụm được giao đủ -> xác suất = độ chắc của nguồn yếu nhất; giao một phần -> vừa;
+// chưa có gì -> thấp. Trả về { odds: xác suất theo từng ô, clusters: [{ group, cells, need, odds }] }.
+const BASE_ODDS = .12;
+export function clearOdds(board, width, height, pending = []) {
+  const clusters = clustersOf(board, width, height)
+    .map(cluster => ({ ...cluster, need: Math.max(0, 3 - cluster.cells.length), sources: [],
+      open: emptyNeighbors(board, width, height, cluster).length > 0 }));
+  pending.forEach(({ groups, weight }) => groups.forEach(group => {
+    const target = clusters
+      .filter(c => c.group === group && c.open && c.sources.length < c.need)
+      .sort((a, b) => b.cells.length - a.cells.length)[0]; // cụm gần xong nhận trước
+    if (target) target.sources.push(weight);
+  }));
+  const odds = board.map(() => 0);
+  clusters.forEach(cluster => {
+    const covered = cluster.sources.length;
+    cluster.odds = !cluster.need ? 1
+      : covered >= cluster.need ? Math.min(...cluster.sources)
+      : covered ? BASE_ODDS + (Math.max(...cluster.sources) - BASE_ODDS) * covered / cluster.need * .6
+      : BASE_ODDS;
+    cluster.cells.forEach(index => { odds[index] = cluster.odds; });
+  });
+  return { odds, clusters };
+}
+
+// Số mèo "dự kiến còn sót" = tổng (1 - xác suất được gom) của mọi mèo trên bàn.
+export function expectedLeftover(board, odds) {
+  return board.reduce((sum, cell, index) => sum + (cell ? 1 - odds[index] : 0), 0);
 }
 
 // Việc còn lại trên bàn: mỗi cụm cần ít nhất 1 thẻ nữa (cặp thiếu 1 con, con lẻ thiếu 2 con).
@@ -222,6 +261,7 @@ export function boardNeeds(board, width, height) {
 // Tỉ lệ ra thẻ có ích, tính theo:
 //  - tiến độ: bàn càng vơi càng cao (30% lúc đầu -> 100% khi còn <= 4 mèo);
 //  - áp lực lượt: số lượt tối thiểu còn cần gần bằng số lượt còn lại -> chỉ ra thẻ có ích.
+// remaining có thể là số mèo "dự kiến còn sót" (expectedLeftover) thay vì số mèo thô.
 export function helpChance(remaining, initial, movesLeft = Infinity, turnsNeeded = 0) {
   if (remaining <= 4) return 1;
   if (turnsNeeded >= movesLeft - 1) return 1;

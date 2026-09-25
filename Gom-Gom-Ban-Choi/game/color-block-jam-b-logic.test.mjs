@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { boardNeeds, clearMatches, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -295,4 +295,24 @@ test('sắp hết lượt so với việc còn lại thì chỉ ra thẻ có íc
   assert.equal(helpChance(10, 10, 5, 5), 1);
   assert.ok(helpChance(10, 10, 20, 5) < 1);
   assert.ok(helpChance(10, 10, 8, 6) > helpChance(10, 10, 20, 6));
+});
+test('khả năng gom: cụm có mèo chờ sẵn trong thẻ đang bóc thì cao, cụm chưa có hàng thì thấp', () => {
+  const board = Array(36).fill(null);
+  [0, 1].forEach(i => { board[i] = { group: 'a' }; });   // cặp a
+  [24, 25].forEach(i => { board[i] = { group: 'b' }; }); // cặp b
+  const { odds } = clearOdds(board, 6, 6, [{ groups: ['a'], weight: .85 }]);
+  assert.equal(odds[0], .85);
+  assert.ok(odds[24] < .2);
+  assert.ok(expectedLeftover(board, odds) > 1.5 && expectedLeftover(board, odds) < 2.2);
+});
+
+test('AI không ra thẻ trùng cho cụm đã có hàng, mà cứu cụm còn lại', () => {
+  const board = Array(36).fill(null);
+  [0, 1].forEach(i => { board[i] = { group: 'a' }; });
+  [24, 25].forEach(i => { board[i] = { group: 'b' }; });
+  const { odds } = clearOdds(board, 6, 6, [{ groups: ['a'], weight: .85 }]);
+  for (let run = 0; run < 30; run++) {
+    const help = findHelpfulCard(board, 6, 6, Math.random, odds);
+    assert.ok(help.card.groups.includes('b'), `nhắm nhầm: ${help.card.groups}`);
+  }
 });
