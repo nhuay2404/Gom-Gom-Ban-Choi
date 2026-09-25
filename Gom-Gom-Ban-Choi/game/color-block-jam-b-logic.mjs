@@ -263,12 +263,25 @@ export function boardNeeds(board, width, height) {
 //  - tiến độ: bàn càng vơi càng cao (30% lúc đầu -> 100% khi còn <= 4 mèo);
 //  - áp lực lượt: số lượt tối thiểu còn cần gần bằng số lượt còn lại -> chỉ ra thẻ có ích.
 // remaining có thể là số mèo "dự kiến còn sót" (expectedLeftover) thay vì số mèo thô.
-export function helpChance(remaining, initial, movesLeft = Infinity, turnsNeeded = 0) {
-  if (remaining <= 4) return 1;
-  if (turnsNeeded >= movesLeft - 1) return 1;
+// Núm vặn độ khó của hàng thẻ AI (dùng chung cho game và bản mô phỏng cân bằng).
+//  baseHelp   : tỉ lệ thẻ có ích lúc đầu ván
+//  slope      : tỉ lệ tăng thêm theo tiến độ dọn bàn (0 -> 1)
+//  sureHelpAt : số mèo "dự kiến còn sót" từ mức này trở xuống thì luôn ra thẻ có ích
+//  pressure   : còn ít lượt so với số cụm chưa có hàng -> tăng tỉ lệ (ngưỡng tỉ số cụm / lượt)
+//  loyalty    : xác suất mèo trong thẻ ngẫu nhiên thuộc loại đang có trên bàn
+//  calmAt     : bàn còn <= mức này: thẻ ngẫu nhiên chỉ 1-2 con, chỉ loại có trên bàn; lập lại cả hàng mỗi lượt
+//  bigCards   : trong 12 thẻ ngẫu nhiên có bao nhiêu thẻ 3 ô
+//  junk       : xác suất thẻ ngẫu nhiên được chọn sao cho KHÔNG gom được gì ngay (bắt người chơi tự xếp)
+//  rescue     : khi sắp hết lượt (số cụm chưa có hàng >= lượt còn lại - 1), tỉ lệ AI ra thẻ cứu
+// Mức hiện tại: bot chơi tham lam thắng ~77% trong 20 lượt (mô phỏng 1500 ván); cuối ván vẫn luôn giúp.
+export const QUEUE_TUNING = { baseHelp: .05, slope: .6, sureHelpAt: 2, pressure: .6, loyalty: .4, calmAt: 6, bigCards: 2, rescue: .15, junk: .85 };
+
+export function helpChance(remaining, initial, movesLeft = Infinity, turnsNeeded = 0, tuning = QUEUE_TUNING) {
+  if (remaining <= tuning.sureHelpAt) return 1;
+  if (turnsNeeded >= movesLeft - 1) return Math.max(tuning.rescue, tuning.baseHelp);
   const progress = 1 - remaining / Math.max(initial, 1);
-  const pressure = Number.isFinite(movesLeft) ? Math.max(0, turnsNeeded / Math.max(movesLeft, 1) - .4) : 0;
-  return Math.min(1, Math.max(.3, .3 + progress * .9 + pressure));
+  const pressure = Number.isFinite(movesLeft) ? Math.max(0, turnsNeeded / Math.max(movesLeft, 1) - tuning.pressure) : 0;
+  return Math.min(1, Math.max(tuning.baseHelp, tuning.baseHelp + progress * tuning.slope + pressure));
 }
 
 // Bàn khởi đầu: vài cặp cùng loại đứng cạnh nhau (thiếu 1 là gom) + vài con lẻ; không có cụm >= 3.
@@ -317,4 +330,95 @@ export function bestClearingMove(board, width, height, card, size = 3) {
     }
   }
   return best && { board: best.board, cleared: best.cleared };
+}
+// ===== Bộ lập hàng thẻ AI (thuần, không phụ thuộc DOM) =====
+const SHAPES = { single: [[0, 0]], domino: [[0, 0], [0, 1]], line: [[0, 0], [0, 1], [0, 2]], elbow: [[0, 0], [1, 0], [1, 1]] };
+// Độ chắc chắn mèo trong tay sẽ được dùng: thẻ đang bóc > hàng chờ > ô gửi tạm.
+const HAND_WEIGHT = { active: .85, queue: .7, hold: .6 };
+
+function shapeBagFor(bigCards) {
+  const bag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'domino', 'domino'];
+  for (let i = 0; i < bigCards; i++) bag[7 - i * 3 < 0 ? i : 7 - i * 3] = 'triple';
+  return bag;
+}
+
+// game = { board, deck, hold, moves, initialCats, bagIndex }. Hàng thẻ lập theo: mèo trên bàn + mèo
+// trong tay (thẻ đang bóc, ô gửi tạm, hàng chờ) + khả năng gom từng con (clearOdds).
+export function createQueuePlanner({ width, height, groups, matchSize = 3, preview = 1, tuning = QUEUE_TUNING, rng = Math.random, makeItem = group => ({ group }) }) {
+  const bag = shapeBagFor(tuning.bigCards);
+  const groupsOf = card => card.items.map(cell => cell.group);
+  const pickAny = () => groups[Math.floor(rng() * groups.length)];
+
+  function randomCard(game, board) {
+    if (tuning.junk && rng() < tuning.junk && remainingCats(board) > tuning.calmAt) {
+      for (let tries = 0; tries < 20; tries++) {
+        const card = rawRandomCard(game, board);
+        if (!bestClearingMove(board, width, height, card, matchSize)) return card;
+      }
+    }
+    return rawRandomCard(game, board);
+  }
+
+  function rawRandomCard(game, board) {
+    let shape = bag[game.bagIndex++ % bag.length];
+    if (shape === 'triple') shape = game.bagIndex % 24 < 12 ? 'line' : 'elbow';
+    const calm = remainingCats(board) <= tuning.calmAt;
+    if (calm && SHAPES[shape].length > 2) shape = 'domino';
+    const onBoard = [...new Set(board.filter(Boolean).map(cell => cell.group))];
+    const loyalty = calm ? 1 : tuning.loyalty;
+    const pick = () => (onBoard.length && rng() < loyalty ? onBoard[Math.floor(rng() * onBoard.length)] : pickAny());
+    return { offsets: SHAPES[shape].map(point => point.slice()), items: SHAPES[shape].map(() => makeItem(pick())) };
+  }
+
+  // Đặt thử một thẻ trong tay lên bàn giả lập bằng nước gom tốt nhất hiện tại (không tin vị trí cũ).
+  function applyPlan(sim, card) {
+    const move = bestClearingMove(sim.board, width, height, card, matchSize);
+    if (move) sim.board = move.board;
+    return Boolean(move);
+  }
+
+  function planCard(game, sim) {
+    const { odds, clusters } = clearOdds(sim.board, width, height, sim.pending);
+    const leftover = expectedLeftover(sim.board, odds);
+    const unserved = clusters.filter(cluster => cluster.odds < .5).length;
+    const chance = helpChance(leftover, game.initialCats, sim.movesLeft, unserved, tuning);
+    sim.movesLeft--;
+    if (rng() < chance) {
+      const help = findHelpfulCard(sim.board, width, height, rng, odds);
+      if (help) {
+        const card = { offsets: help.card.offsets, items: help.card.groups.map(makeItem), helpful: true };
+        applyPlan(sim, card);
+        return card;
+      }
+    }
+    const card = randomCard(game, sim.board);
+    sim.pending.push({ groups: groupsOf(card), weight: HAND_WEIGHT.queue });
+    return card;
+  }
+
+  function simulate(game, cards) {
+    const sim = { board: game.board.slice(), movesLeft: game.moves - cards.length, pending: [] };
+    cards.forEach((card, index) => {
+      if (applyPlan(sim, card)) return;
+      sim.pending.push({ groups: groupsOf(card), weight: index === 0 ? HAND_WEIGHT.active : HAND_WEIGHT.queue });
+    });
+    if (game.hold) sim.pending.push({ groups: groupsOf(game.hold), weight: HAND_WEIGHT.hold });
+    return sim;
+  }
+
+  // ahead: thẻ đã rút ra nhưng chưa đặt (thẻ đang bóc) - cũng được tính vào bàn giả lập.
+  function refill(game, ahead = []) {
+    if (remainingCats(game.board) <= tuning.calmAt) game.deck = [];
+    const sim = simulate(game, [...ahead, ...game.deck]);
+    while (game.deck.length < preview) game.deck.push(planCard(game, sim));
+  }
+
+  function draw(game) {
+    if (!game.deck.length) refill(game);
+    const card = game.deck.shift();
+    refill(game, [card]);
+    return card;
+  }
+
+  return { refill, draw };
 }
