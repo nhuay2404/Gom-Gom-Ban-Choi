@@ -341,7 +341,7 @@ function render(message = '', error = false) {
   $('score').textContent = state.score;
   $('highscore').textContent = TARGET_SCORE;
   $('moves').textContent = state.moves;
-  $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn, hoặc chạm một ô để đặt.');
+  $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn để đặt.');
   $('message').classList.toggle('error', error);
   const board = $('board'); board.replaceChildren();
   for (let index = 0; index < W * H; index++) {
@@ -350,12 +350,9 @@ function render(message = '', error = false) {
     cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
     if (object && state.justPlaced?.has(index)) cell.classList.add('drop');
     cell.dataset.index = index;
-    cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, chạm để đặt`);
+    cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, trống`);
     if (object) { cell.style.setProperty('--group-color', categories[object.group].color); addArt(cell, object); }
-    else {
-      cell.onclick = () => placeAt(index);
-      cell.onpointerenter = () => { state.preview = placementIndices(state.board, W, H, index, state.active.offsets); paintPreview(); };
-    }
+
     board.append(cell);
   }
   board.onpointerleave = () => { state.preview = null; paintPreview(); };
