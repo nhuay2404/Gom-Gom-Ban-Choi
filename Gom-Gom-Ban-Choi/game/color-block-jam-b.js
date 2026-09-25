@@ -1,5 +1,5 @@
 import {
-  clearMatches, createQueuePlanner, generateStartBoard, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
+  bestClearingMove, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
 } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
@@ -7,18 +7,111 @@ import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 const W = 6, H = 6, TURN_LIMIT = 20, PREVIEW_COUNT = 1;
 const $ = id => document.getElementById(id);
 const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10;
+const shapes = {
+  single: [[0, 0]],
+  domino: [[0, 0], [0, 1]],
+  line: [[0, 0], [0, 1], [0, 2]],
+  elbow: [[0, 0], [1, 0], [1, 1]],
+};
 
 let state, cardDrag = null;
 // Bàn khởi đầu: vài cặp cùng loại (thiếu 1 là gom) + vài con lẻ.
 const START_LAYOUT = { pairs: 3, singles: 4 };
+// Tỉ lệ hình thẻ: nhiều thẻ 1 ô để dễ lấp chỗ trống và gom nhóm.
+// Mỗi 12 thẻ chỉ có 1 thẻ 3 ô (xen kẽ chữ I / chữ L).
+const shapeBag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'triple', 'single', 'domino', 'single', 'domino'];
+
 function item(group) {
   return { group, name: categories[group].name };
 }
 
-// Hàng thẻ AI (logic ở color-block-jam-b-logic.mjs): lập theo mèo trên bàn + mèo trong tay + khả năng
-// gom từng con; bàn càng vơi càng ra thẻ có ích. Độ khó chỉnh ở QUEUE_TUNING.
-const planner = createQueuePlanner({ width: W, height: H, groups: catGroups, matchSize: MATCH_SIZE, preview: PREVIEW_COUNT, makeItem: item });
-const drawCard = () => planner.draw(state);
+function randomGroup() {
+  return catGroups[Math.floor(Math.random() * catGroups.length)];
+}
+
+// ===== Hàng thẻ AI =====
+// Thẻ được lập theo tình trạng bàn chứ không xáo sẵn. Bàn càng vơi, càng nhiều thẻ "có ích" (đặt vào
+// là gom được ngay) để người chơi về đích nhanh. Kế hoạch chạy trên bàn giả lập: mỗi thẻ có ích trong
+// hàng được "đặt thử" lên đó, nên các thẻ sau nhắm cụm khác chứ không trùng một cụm.
+const REPLAN_AT = 6; // bàn còn <= 6 mèo: lập lại cả hàng mỗi lượt cho khớp bàn hiện tại
+
+function randomCard(board) {
+  const remaining = remainingCats(board);
+  let shapeName = shapeBag[state.bagIndex++ % shapeBag.length];
+  if (shapeName === 'triple') shapeName = state.bagIndex % 24 < 12 ? 'line' : 'elbow';
+  // Bàn vơi (<= 6 mèo): thẻ ngẫu nhiên chỉ 1-2 con, chỉ loại đang có trên bàn -> không làm bàn bừa thêm.
+  const calm = remaining <= REPLAN_AT;
+  if (calm && shapes[shapeName].length > 2) shapeName = 'domino';
+  const onBoard = [...new Set(board.filter(Boolean).map(cell => cell.group))];
+  const loyalty = calm ? 1 : .75; // ưu tiên loại mèo đang có trên bàn để hạn chế sinh loại mới khó dọn
+  const pick = () => (onBoard.length && Math.random() < loyalty ? onBoard[Math.floor(Math.random() * onBoard.length)] : randomGroup());
+  return { offsets: shapes[shapeName].map(point => point.slice()), items: shapes[shapeName].map(() => item(pick())) };
+}
+
+// Đặt thử một thẻ có ích lên bàn giả lập (đúng chỗ AI đã định cho nó).
+// Không tin vị trí đã định lúc lập kế hoạch (bàn có thể đã đổi, người chơi có thể đã xoay thẻ):
+// tìm lại nước gom tốt nhất trên bàn giả lập hiện tại. Trả về true nếu thẻ gom được.
+function applyPlan(sim, card) {
+  const move = bestClearingMove(sim.board, W, H, card, MATCH_SIZE);
+  if (move) sim.board = move.board;
+  return Boolean(move);
+}
+
+// Độ chắc chắn mèo trong tay sẽ được dùng: thẻ đang bóc > hàng chờ > ô gửi tạm.
+const HAND_WEIGHT = { active: .85, queue: .7, hold: .6 };
+const groupsOf = card => card.items.map(cell => cell.group);
+
+// AI chọn thẻ tiếp theo dựa trên: mèo trên bàn + mèo đang trong tay (thẻ đang bóc, ô gửi tạm, hàng chờ).
+// clearOdds ước lượng khả năng từng con mèo trên bàn được gom; AI ưu tiên cứu cụm ít khả năng được gom,
+// không ra thẻ trùng cho cụm đã có mèo chờ sẵn. Tỉ lệ ra thẻ có ích tính theo số mèo "dự kiến còn sót"
+// và số cụm chưa có hàng so với số lượt còn lại.
+function planCard(sim) {
+  const { odds, clusters } = clearOdds(sim.board, W, H, sim.pending);
+  const leftover = expectedLeftover(sim.board, odds);
+  const unserved = clusters.filter(cluster => cluster.odds < .5).length;
+  const chance = helpChance(leftover, state.initialCats, sim.movesLeft, unserved);
+  sim.movesLeft--;
+  if (Math.random() < chance) {
+    const help = findHelpfulCard(sim.board, W, H, Math.random, odds);
+    if (help) {
+      const card = { offsets: help.card.offsets, items: help.card.groups.map(item), helpful: true, planAnchor: help.anchor };
+      applyPlan(sim, card);
+      return card;
+    }
+  }
+  const card = randomCard(sim.board);
+  sim.pending.push({ groups: groupsOf(card), weight: HAND_WEIGHT.queue });
+  return card;
+}
+
+// Bàn giả lập = bàn thật + các thẻ có ích đang chờ đã được "đặt thử"; mèo còn lại trong tay (thẻ đang
+// bóc, ô gửi tạm, thẻ không-có-ích trong hàng) được ghi vào pending để AI tính khả năng gom.
+function simulateQueue(cards) {
+  const sim = { board: state.board.slice(), movesLeft: state.moves - cards.length, pending: [] };
+  cards.forEach((card, index) => {
+    // Mọi thẻ trong tay (kể cả thẻ ngẫu nhiên) mà gom được trên bàn hiện tại thì "đặt thử" luôn;
+    // không gom được thì ghi vào pending để clearOdds tính khả năng gom.
+    if (applyPlan(sim, card)) return;
+    sim.pending.push({ groups: groupsOf(card), weight: index === 0 ? HAND_WEIGHT.active : HAND_WEIGHT.queue });
+  });
+  if (state.hold) sim.pending.push({ groups: groupsOf(state.hold), weight: HAND_WEIGHT.hold });
+  return sim;
+}
+
+// ahead: thẻ đã rút ra nhưng chưa đặt (thẻ đang bóc) - cũng được tính vào bàn giả lập.
+function refillQueue(ahead = []) {
+  if (remainingCats(state.board) <= REPLAN_AT) state.deck = [];
+  const sim = simulateQueue([...ahead, ...state.deck]);
+  while (state.deck.length < PREVIEW_COUNT) state.deck.push(planCard(sim));
+}
+
+function drawCard() {
+  if (!state.deck.length) refillQueue();
+  const card = state.deck.shift();
+  refillQueue([card]);
+  return card;
+}
+
 function addArt(element, object) {
   addCatArt(element, object.group);
 }

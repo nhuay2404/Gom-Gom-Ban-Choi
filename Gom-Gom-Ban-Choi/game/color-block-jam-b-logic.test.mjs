@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { QUEUE_TUNING, bestClearingMove, createQueuePlanner, boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { bestClearingMove, boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -270,7 +270,7 @@ test('thẻ có ích đặt đúng chỗ gợi ý thì gom được ngay', () =>
 
 test('tỉ lệ thẻ có ích tăng khi bàn vơi, 100% khi còn <= 4 mèo', () => {
   assert.ok(helpChance(10, 10) < helpChance(6, 10));
-  assert.equal(helpChance(QUEUE_TUNING.sureHelpAt, 10), 1);
+  assert.equal(helpChance(4, 10), 1);
   assert.equal(helpChance(0, 10), 1);
 });
 test('AI ưu tiên thẻ gom đôi: một thẻ dọn được 2 cặp khác loại', () => {
@@ -292,9 +292,7 @@ test('bàn cần bao nhiêu lượt: mỗi cụm một lượt', () => {
 });
 
 test('sắp hết lượt so với việc còn lại thì chỉ ra thẻ có ích', () => {
-  const lenient = { ...QUEUE_TUNING, rescue: 1 };
-  assert.equal(helpChance(10, 10, 5, 5, lenient), 1);
-  assert.equal(helpChance(10, 10, 5, 5), Math.max(QUEUE_TUNING.rescue, QUEUE_TUNING.baseHelp));
+  assert.equal(helpChance(10, 10, 5, 5), 1);
   assert.ok(helpChance(10, 10, 20, 5) < 1);
   assert.ok(helpChance(10, 10, 8, 6) > helpChance(10, 10, 20, 6));
 });
@@ -333,12 +331,4 @@ test('tình huống thật: thẻ đang bóc là mèo trắng cho cặp trắng 
   for (let run = 0; run < 100; run++) {
     assert.ok(!findHelpfulCard(board, 6, 6, Math.random, odds).card.groups.includes('white'));
   }
-});
-test('hàng thẻ AI: thẻ ngẫu nhiên "junk" không gom được gì ngay khi bàn còn đông', () => {
-  const board = generateStartBoard(6, 6, ['a', 'b', 'c', 'd', 'e', 'f']);
-  const game = { board, deck: [], hold: null, moves: 20, initialCats: 10, bagIndex: 0 };
-  const planner = createQueuePlanner({ width: 6, height: 6, groups: ['a', 'b', 'c', 'd', 'e', 'f'], tuning: { ...QUEUE_TUNING, junk: 1, baseHelp: 0, slope: 0, rescue: 0, sureHelpAt: -1, pressure: 99 } });
-  let junk = 0;
-  for (let i = 0; i < 40; i++) if (!bestClearingMove(game.board, 6, 6, planner.draw(game))) junk++;
-  assert.ok(junk >= 36, `chỉ ${junk}/40 thẻ không gom được`);
 });
