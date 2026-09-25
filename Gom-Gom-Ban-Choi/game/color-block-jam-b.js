@@ -387,6 +387,7 @@ function renderBoard() {
   if (board.querySelectorAll(':scope > .cell').length !== W * H) {
     board.replaceChildren(...Array.from({ length: W * H }, (_, index) => {
       const cell = document.createElement('button');
+      cell.className = 'cell';
       cell.dataset.index = index;
       cell.renderedObject = undefined;
       return cell;
