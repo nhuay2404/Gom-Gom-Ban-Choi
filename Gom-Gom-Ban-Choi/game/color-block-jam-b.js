@@ -209,6 +209,27 @@ async function animateMerges(merges, gained) {
   });
   await Promise.all(animations.map(animation => animation.finished));
 }
+// Thắng: mọi mèo còn lại lần lượt bị nhấc bổng rồi bay vút lên, bàn trống trơn.
+async function celebrateWin(message) {
+  const cells = [...document.querySelectorAll('.cell.locked')];
+  if (!reduceMotion.matches && cells.length) {
+    state.animating = true;
+    cells.forEach((cell, order) => {
+      cell.classList.add('merging', 'lifted');
+      cell.style.setProperty('--lift-delay', `${order * 40}ms`);
+    });
+    await wait(LIFT_MS + cells.length * 40);
+    await Promise.all(cells.map((cell, order) => cell.animate([
+      { transform: 'none', opacity: 1 },
+      { transform: 'translateY(-30px) scale(1.05)', opacity: 1, offset: .3 },
+      { transform: `translateY(-${260 + (order % 3) * 40}px) scale(.6) rotate(${order % 2 ? 14 : -14}deg)`, opacity: 0 },
+    ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished));
+    state.animating = false;
+  }
+  state.board = state.board.map(() => null);
+  render(message);
+}
+
 function showMergeScore(cell, points) {
   const wrap = document.querySelector('.board-wrap');
   const box = wrap.getBoundingClientRect(), rect = cell.getBoundingClientRect();
@@ -234,7 +255,9 @@ function finishTurn(result, match) {
   state.preview = null;
   if (state.score >= TARGET_SCORE) {
     state.over = true;
-    return render(`Bạn thắng với ${state.score} điểm! ✨`);
+    const message = `Bạn thắng với ${state.score} điểm! ✨`;
+    render(message);
+    return celebrateWin(message);
   }
   if (state.moves === 0) {
     state.over = true;
