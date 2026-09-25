@@ -11,7 +11,7 @@ export const categories = {
 export const catGroups = Object.keys(categories);
 
 // Tăng độ đậm màu (saturation) cho mọi màu của mèo; màu gần như không sắc (trắng, xám) gần như giữ nguyên.
-const SATURATION = 1.35;
+const SATURATION = 1.7;
 function saturate(hex, factor = SATURATION) {
   let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
