@@ -159,10 +159,12 @@ function placeAt(anchor) {
   $('active-card').classList.add('waiting');
   const gained = match.cleared.length * POINTS_PER_CLEARED;
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
-  setTimeout(() => animateMerges(merges, gained).then(() => {
+  // Chờ đúng lúc mèo vừa đặt rơi xong (thay vì hẹn giờ cứng) rồi mới nhấc bổng + gom.
+  const landed = result.indices.map(index => cellEl(index)?.getAnimations().find(a => a.animationName === 'block-drop')?.finished);
+  Promise.all(landed.filter(Boolean)).catch(() => {}).then(() => animateMerges(merges, gained)).then(() => {
     state.animating = false;
     finishTurn(result, match);
-  }), 260); // chờ anim rơi của block vừa đặt
+  });
 }
 
 function cellEl(index) {
@@ -176,6 +178,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 // Pha 2: cả cụm trượt vào mèo vừa đặt và nhỏ dần; mèo đích phồng lên rồi biến mất.
 async function animateMerges(merges, gained) {
   const total = merges.reduce((n, m) => n + m.cluster.length, 0);
+  $('board').classList.add('busy');
   merges.forEach(({ cluster }) => cluster.forEach((index, order) => {
     const cell = cellEl(index);
     if (!cell) return;
@@ -208,6 +211,7 @@ async function animateMerges(merges, gained) {
     showMergeScore(targetCell, Math.round(gained * cluster.length / total));
   });
   await Promise.all(animations.map(animation => animation.finished));
+  $('board').classList.remove('busy');
 }
 // Thắng: mọi mèo còn lại lần lượt bị nhấc bổng rồi bay vút lên, bàn trống trơn.
 async function celebrateWin(message) {
@@ -215,6 +219,7 @@ async function celebrateWin(message) {
   if (!reduceMotion.matches && cells.length) {
     state.animating = true;
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
+    $('board').classList.add('busy', 'flying');
     cells.forEach((cell, order) => {
       cell.classList.add('merging', 'lifted');
       cell.style.setProperty('--lift-delay', `${order * 40}ms`);
@@ -225,6 +230,7 @@ async function celebrateWin(message) {
       { transform: 'translateY(-30px) scale(1.05)', opacity: 1, offset: .3 },
       { transform: `translateY(-${260 + (order % 3) * 40}px) scale(.6) rotate(${order % 2 ? 14 : -14}deg)`, opacity: 0 },
     ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished));
+    $('board').classList.remove('busy', 'flying');
     state.animating = false;
   }
   state.board = state.board.map(() => null);
@@ -348,24 +354,45 @@ function render(message = '', error = false) {
   $('moves').textContent = state.moves;
   $('message').textContent = message || (state.over ? '' : 'Kéo thẻ lên bàn để đặt.');
   $('message').classList.toggle('error', error);
-  const board = $('board'); board.replaceChildren(); state.previewKey = '';
-  for (let index = 0; index < W * H; index++) {
-    const cell = document.createElement('button');
-    const object = state.board[index];
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
-    if (object && state.justPlaced?.has(index)) cell.classList.add('drop');
-    cell.dataset.index = index;
-    cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, trống`);
-    if (object) { cell.style.setProperty('--group-color', categories[object.group].color); addArt(cell, object); }
-
-    board.append(cell);
-  }
-  board.onpointerleave = () => { state.preview = null; paintPreview(); };
-  state.justPlaced = null;
+  renderBoard();
   renderCards();
   $('active-card').disabled = state.over;
   document.querySelector('.card-rotator').classList.toggle('can-rotate', !state.over && state.active.items.length > 1);
   $('hold').disabled = state.over || state.heldThisTurn;
+}
+
+// Ô bàn được giữ cố định; chỉ ô nào đổi mèo mới dựng lại. Không xoá/dựng lại cả 36 ô mỗi lần vẽ
+// nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
+function renderBoard() {
+  const board = $('board');
+  if (board.children.length !== W * H) {
+    board.replaceChildren(...Array.from({ length: W * H }, (_, index) => {
+      const cell = document.createElement('button');
+      cell.dataset.index = index;
+      cell.renderedObject = undefined;
+      return cell;
+    }));
+    board.onpointerleave = () => { state.preview = null; paintPreview(); };
+  }
+  [...board.children].forEach((cell, index) => {
+    const object = state.board[index] || null;
+    if (cell.renderedObject === object) return;
+    cell.renderedObject = object;
+    cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
+    cell.replaceChildren();
+    cell.removeAttribute('style');
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
+    cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, trống`);
+    if (!object) return;
+    cell.style.setProperty('--group-color', categories[object.group].color);
+    addArt(cell, object);
+    if (state.justPlaced?.has(index) && !reduceMotion.matches) {
+      cell.classList.add('drop');
+      cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
+    }
+  });
+  state.previewKey = '';
+  state.justPlaced = null;
 }
 
 function nextSlots() {
