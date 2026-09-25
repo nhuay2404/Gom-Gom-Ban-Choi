@@ -191,4 +191,12 @@ dialog p{color:#8a6440}
 .hold-column .section-label{font-size:9px}/* Kéo thẻ vào Gửi tạm */
 .hold-slot{cursor:default;transition:transform .15s cubic-bezier(.3,1.6,.5,1),box-shadow .15s}
 .hold-slot.drop-target{transform:scale(1.12);box-shadow:0 0 0 3px #3fbf8f,0 0 18px #9ff0d4,0 4px 0 var(--cream-deep);opacity:1}
-.hold-slot.drop-blocked{transform:scale(1.04);box-shadow:0 0 0 3px #d9534f,0 4px 0 var(--cream-deep)}
+.hold-slot.drop-blocked{transform:scale(1.04);box-shadow:0 0 0 3px #d9534f,0 4px 0 var(--cream-deep)}/* Gợi ý xoay: 2 mũi tên PNG cong nằm trong khung thẻ đang bóc (trên chỉ phải, dưới xoay 180°) */
+.card-rotator{position:relative}
+.rotate-hint{top:auto;bottom:auto;left:50%;right:auto;width:64%;height:auto;aspect-ratio:2/1;margin:0;border-radius:0;background:url('./skins/farm-pop/arrow.png') center/contain no-repeat;box-shadow:none;z-index:2;opacity:0;transition:opacity .2s}
+.rotate-hint.left{top:3px;left:50%;right:auto;transform:translateX(-50%)}
+.rotate-hint.right{bottom:3px;left:50%;right:auto;transform:translateX(-50%) rotate(180deg)}
+.can-rotate .rotate-hint{opacity:.55}
+@media(prefers-reduced-motion:no-preference){.can-rotate .rotate-hint.left{animation:hint-sway-top 1.8s ease-in-out infinite}.can-rotate .rotate-hint.right{animation:hint-sway-bottom 1.8s ease-in-out infinite}}
+@keyframes hint-sway-top{50%{transform:translateX(-50%) rotate(8deg)}}
+@keyframes hint-sway-bottom{50%{transform:translateX(-50%) rotate(188deg)}}
