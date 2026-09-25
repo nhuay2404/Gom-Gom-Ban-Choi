@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { bestClearingMove, boardNeeds, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, remainingCats, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
 
 const W = 5, H = 5;
 function scene() {
@@ -314,5 +314,21 @@ test('AI không ra thẻ trùng cho cụm đã có hàng, mà cứu cụm còn l
   for (let run = 0; run < 30; run++) {
     const help = findHelpfulCard(board, 6, 6, Math.random, odds);
     assert.ok(help.card.groups.includes('b'), `nhắm nhầm: ${help.card.groups}`);
+  }
+});
+test('tình huống thật: thẻ đang bóc là mèo trắng cho cặp trắng -> hàng chờ không được ra mèo trắng', () => {
+  // Cặp trắng (0,4)-(1,4), mướp lẻ (1,5), xám lẻ (5,5); thẻ đang bóc = 1 mèo trắng.
+  const board = Array(36).fill(null);
+  board[4] = { group: 'white' }; board[10] = { group: 'white' }; board[11] = { group: 'tabby' }; board[35] = { group: 'gray' };
+  const active = { offsets: [[0, 0]], items: [{ group: 'white' }] };
+  const afterActive = bestClearingMove(board, 6, 6, active);
+  assert.ok(afterActive && afterActive.cleared === 3, 'mèo trắng đang bóc phải gom được cặp trắng');
+  for (let run = 0; run < 100; run++) {
+    const help = findHelpfulCard(afterActive.board, 6, 6);
+    assert.ok(!help.card.groups.includes('white'), `ra thừa mèo trắng: ${help.card.groups}`);
+  }
+  const { odds } = clearOdds(board, 6, 6, [{ groups: ['white'], weight: .85 }]);
+  for (let run = 0; run < 100; run++) {
+    assert.ok(!findHelpfulCard(board, 6, 6, Math.random, odds).card.groups.includes('white'));
   }
 });

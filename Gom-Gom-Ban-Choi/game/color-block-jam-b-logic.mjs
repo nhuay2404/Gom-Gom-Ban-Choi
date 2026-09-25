@@ -211,9 +211,10 @@ export function findHelpfulCard(board, width, height, rng = Math.random, odds = 
     const cleared = clearedCells.length;
     // "Cứu được bao nhiêu": mèo cũ trên bàn được dọn, mỗi con tính theo (1 - khả năng nó vốn được gom).
     const rescued = clearedCells.reduce((sum, index) => sum + (board[index] ? 1 - (odds ? odds[index] : 0) : 0), 0);
-    if (cleared < 3 || rescued <= .05) return;
+    // Chỉ cứu mèo đã gần chắc được gom (mèo chờ sẵn trong tay) thì không đáng -> bỏ.
+    if (cleared < 3 || rescued <= .3) return;
     // Điểm = mèo cũ được cứu (x2) + số mèo dọn được sau lượt (đã trừ mèo mới thêm vào), phá hoà ngẫu nhiên.
-    const value = rescued * 2 + cleared - candidate.card.groups.length + rng() * .5;
+    const value = rescued * 4 + cleared - candidate.card.groups.length + rng() * .5;
     if (!best || value > best.value) best = { ...candidate, cleared, value };
   });
   return best && { card: best.card, anchor: best.anchor, cleared: best.cleared };
@@ -300,4 +301,20 @@ export function generateStartBoard(width, height, groups, { pairs = 3, singles =
     return board;
   }
   throw new Error('Không tạo được bàn khởi đầu');
+}
+// Nước gom tốt nhất cho một thẻ trên bàn hiện tại (thử cả 4 hướng xoay, mọi vị trí). Dùng khi AI
+// "đặt thử" thẻ đang bóc / thẻ trong hàng: không tin vị trí đã định từ lúc lập kế hoạch vì bàn có thể
+// đã đổi. Trả về { board (đã gom), cleared } hoặc null nếu thẻ không gom được gì.
+export function bestClearingMove(board, width, height, card, size = 3) {
+  let best = null, offsets = card.offsets;
+  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
+    for (let anchor = 0; anchor < width * height; anchor++) {
+      if (!placementIndices(board, width, height, anchor, offsets)) continue;
+      const placed = placeCard(board, width, height, anchor, { offsets, items: card.items });
+      const match = clearMatches(placed.board, width, height, size);
+      const value = match.cleared.length - card.items.length;
+      if (match.cleared.length >= size && (!best || value > best.value)) best = { board: match.board, cleared: match.cleared.length, value };
+    }
+  }
+  return best && { board: best.board, cleared: best.cleared };
 }

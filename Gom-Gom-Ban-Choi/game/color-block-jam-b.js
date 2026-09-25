@@ -1,5 +1,5 @@
 import {
-  clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
+  bestClearingMove, clearMatches, clearOdds, expectedLeftover, findHelpfulCard, generateStartBoard, helpChance, mergeTarget, placementIndices, placeCard, remainingCats, rotateOffsets,
 } from './color-block-jam-b-logic.mjs';
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
@@ -49,9 +49,12 @@ function randomCard(board) {
 }
 
 // Đặt thử một thẻ có ích lên bàn giả lập (đúng chỗ AI đã định cho nó).
+// Không tin vị trí đã định lúc lập kế hoạch (bàn có thể đã đổi, người chơi có thể đã xoay thẻ):
+// tìm lại nước gom tốt nhất trên bàn giả lập hiện tại. Trả về true nếu thẻ gom được.
 function applyPlan(sim, card) {
-  const placed = placeCard(sim.board, W, H, card.planAnchor, card);
-  if (!placed.error) sim.board = clearMatches(placed.board, W, H, MATCH_SIZE).board;
+  const move = bestClearingMove(sim.board, W, H, card, MATCH_SIZE);
+  if (move) sim.board = move.board;
+  return Boolean(move);
 }
 
 // Độ chắc chắn mèo trong tay sẽ được dùng: thẻ đang bóc > hàng chờ > ô gửi tạm.
@@ -86,7 +89,9 @@ function planCard(sim) {
 function simulateQueue(cards) {
   const sim = { board: state.board.slice(), movesLeft: state.moves - cards.length, pending: [] };
   cards.forEach((card, index) => {
-    if (card.helpful && card.planAnchor !== undefined) return applyPlan(sim, card);
+    // Mọi thẻ trong tay (kể cả thẻ ngẫu nhiên) mà gom được trên bàn hiện tại thì "đặt thử" luôn;
+    // không gom được thì ghi vào pending để clearOdds tính khả năng gom.
+    if (applyPlan(sim, card)) return;
     sim.pending.push({ groups: groupsOf(card), weight: index === 0 ? HAND_WEIGHT.active : HAND_WEIGHT.queue });
   });
   if (state.hold) sim.pending.push({ groups: groupsOf(state.hold), weight: HAND_WEIGHT.hold });
