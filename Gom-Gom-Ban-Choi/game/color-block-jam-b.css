@@ -209,4 +209,5 @@ dialog p{color:#8a6440}
 .rotate-hint{z-index:2}/* Mũi tên đặt theo quỹ đạo quanh tâm thẻ (JS set transform); bỏ vị trí top/left cố định cũ */
 .card-rotator .rotate-hint,.card-rotator .rotate-hint.left,.card-rotator .rotate-hint.right,
 .card-rotator.vertical .rotate-hint.left,.card-rotator.vertical .rotate-hint.right{top:50%;left:50%;right:auto;bottom:auto;width:60%;max-width:none;margin:0}/* Thẻ 3 mèo: mũi tên nhỏ hơn để chừa chỗ cho mèo */
-.card-rotator .rotate-hint.small{width:50%}
+.card-rotator .rotate-hint.small{width:50%}/* Bấm để xoay hay kéo thì mèo trong thẻ đang bóc vẫn rõ nét, không mờ */
+#active-card.dragging .piece-grid,#active-card .piece-grid{opacity:1}

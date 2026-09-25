@@ -147,12 +147,15 @@ function layoutHints(vertical, animate = false) {
   const card = $('active-card').getBoundingClientRect();
   if (!hints.length || !card.width) return;
   const from = hintAngle;
-  if ((((hintAngle % 180) + 180) % 180 === 90) !== vertical) hintAngle += 90;
+  const arrowsVertical = () => ((hintAngle % 180) + 180) % 180 === 90;
+  // Bấm xoay: vòng mũi tên luôn quay thêm 90° (kể cả thẻ chữ L 3 mèo vốn không đổi ngang/dọc).
+  // Thẻ mới: đặt thẳng theo hình thẻ (ngang -> trên/dưới, dọc -> hai bên).
+  if (animate || arrowsVertical() !== vertical) hintAngle += 90;
   // Thẻ 3 mèo: mũi tên nhỏ lại và mèo co vào vùng bên trong vòng mũi tên, không bị đè.
   const crowded = state.active.items.length >= 3;
   hints.forEach(hint => hint.classList.toggle('small', crowded));
   const arrowHeight = hints[0].offsetHeight || card.width * .3;
-  fitInsideHints(crowded && !state.over, vertical, card, arrowHeight);
+  fitInsideHints(crowded && !state.over, arrowsVertical(), card, arrowHeight);
   hints.forEach((hint, index) => {
     const offset = index === 0 ? 0 : 180;
     hint.style.transform = hintTransform(hintAngle + offset, card, arrowHeight);
