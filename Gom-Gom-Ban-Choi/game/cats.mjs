@@ -10,6 +10,23 @@ export const categories = {
 };
 export const catGroups = Object.keys(categories);
 
+// Tăng độ đậm màu (saturation) cho mọi màu của mèo; màu gần như không sắc (trắng, xám) gần như giữ nguyên.
+const SATURATION = 1.35;
+function saturate(hex, factor = SATURATION) {
+  let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  if (!d) return hex;
+  let s = l > .5 ? d / (2 - max - min) : d / (max + min);
+  let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h /= 6; s = Math.min(1, s * factor);
+  const q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const hue = t => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+  return '#' + [h + 1 / 3, h, h - 1 / 3].map(t => Math.round(hue(t) * 255).toString(16).padStart(2, '0')).join('');
+}
+for (const cat of Object.values(categories)) {
+  for (const key of ['color', 'fur', 'side', 'stripe', 'belly', 'paw', 'eye', 'mask']) if (cat[key]) cat[key] = saturate(cat[key]);
+}
+
 const BODY = 'M8 60 Q8 30 30 27 L70 27 Q92 30 92 60 L92 78 Q92 91 78 91 L22 91 Q8 91 8 78Z';
 // Tai trái [viền ngoài, lòng tai]; tai phải được lật gương.
 const EARS = {
