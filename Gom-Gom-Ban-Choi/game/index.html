@@ -4,53 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#8e263d">
-  <meta name="description" content="Gom Gom Rotate — xoay và đặt thẻ để chinh phục highscore.">
-  <title>Gom Gom Rotate</title>
+  <meta name="description" content="Gom Gom Solitaire — đào mèo trong các cột, gom 3 con giống nhau, gom đủ loại mèo mục tiêu để qua màn.">
+  <title>Gom Gom Solitaire</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-  <link rel="stylesheet" href="./color-block-jam-b.css">
-  <link rel="stylesheet" href="./color-block-jam-b-layout.css">
-  <script type="module" src="./color-block-jam-b.js"></script>
+  <link rel="stylesheet" href="./gom-gom-solitaire.css">
+  <script type="module" src="./gom-gom-solitaire.js"></script>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <button id="restart" class="round-button" aria-label="Chơi lại" title="Chơi lại">↻</button>
-      <h1>Gom Gom</h1>
+      <h1>Gom Gom <small>Màn <span id="level">1</span></small></h1>
       <button id="help" class="round-button" aria-label="Cách chơi" title="Cách chơi">?</button>
     </header>
-    <section class="scorebar" aria-label="Thông tin lượt chơi">
-      <div><span>Điểm</span><strong id="score">0</strong></div>
-      <div><span>Mục tiêu</span><strong id="highscore">180</strong></div>
-      <div><span>Lượt</span><strong id="moves">12</strong></div>
+    <p id="goal" class="goal" aria-live="polite"></p>
+
+    <section class="board" aria-label="Bàn chơi">
+      <div class="columns-wrap">
+        <div id="columns" class="columns"></div>
+        <div class="choose-sign" aria-hidden="true">Chọn loại mèo muốn gom</div>
+      </div>
+      <div id="field" class="field" aria-label="Bãi cỏ"></div>
     </section>
-    <section class="board-wrap" aria-label="Bàn chơi"><div id="board" class="board"></div></section>
+
+    <section id="baskets" class="baskets" aria-label="Giỏ mục tiêu"></section>
+
+    <section id="parking-row" class="parking-row" aria-label="Hàng chờ">
+      <span class="section-label">Hàng chờ</span>
+      <div id="parking" class="parking"></div>
+    </section>
+    <section class="tray-wrap" aria-label="Khay 7 ô">
+      <div id="tray" class="tray"></div>
+    </section>
     <p id="message" class="message" role="status"></p>
-    <section class="draw-area" aria-label="Thẻ đang bóc">
-      <div class="card-column">
-        <span class="section-label">Thẻ đang bóc</span>
-        <div class="card-rotator">
-          <span class="rotate-hint left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15a7 7 0 1 1 3 5"/><path d="M2.5 11.5 6 15.5l4-3"/></svg></span>
-          <button id="active-card" class="piece-card" aria-label="Chạm để xoay thẻ, kéo để đặt lên bàn"></button>
-          <span class="rotate-hint right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 15a7 7 0 1 0-3 5"/><path d="M21.5 11.5 18 15.5l-4-3"/></svg></span>
-        </div>
-        <span class="rotate-tip">Chạm thẻ để xoay</span>
-      </div>
-      <div class="hold-column">
-        <span class="section-label">Gửi tạm</span>
-        <button id="hold" class="hold-slot" aria-label="Gửi tạm hoặc lấy thẻ đã giữ"><span>+</span></button>
-      </div>
-    </section>
-    <section class="next-area" aria-label="Thẻ sắp tới">
-      <span class="section-label">Sắp tới</span>
-      <div id="next-cards" class="next-cards"></div>
-    </section>
+
+    <nav class="boosters" aria-label="Trợ giúp">
+      <button id="booster-undo" class="booster"><span class="booster-icon">↶</span>Hoàn tác<span class="booster-count">3</span></button>
+      <button id="booster-shuffle" class="booster"><span class="booster-icon">⇄</span>Xáo<span class="booster-count">1</span></button>
+      <button id="booster-moveOut" class="booster"><span class="booster-icon">⇪</span>Gỡ ra<span class="booster-count">1</span></button>
+    </nav>
   </main>
+
   <dialog id="help-dialog">
     <form method="dialog"><button class="round-button close-help" aria-label="Đóng">×</button></form>
     <h2>Cách chơi</h2>
-    <p>Mỗi lượt chỉ bóc một thẻ. Thẻ có thể chứa 1–3 món theo hình đơn, chữ I hoặc chữ L.</p>
-    <p>Chạm vào thẻ đang bóc để xoay, sau đó kéo thẻ lên bàn. Các ô sáng cho biết vị trí thẻ sẽ được đặt.</p>
-    <p>Dùng “Gửi tạm” để cất một thẻ và đổi với thẻ đang bóc. Có 6 loại mèo: cam, xám, trắng, mun, Xiêm và mướp. Chỉ khi gom 3 mèo cùng loại liền kề (chúng sẽ biến mất) bạn mới được điểm. Xem trước 3 thẻ sắp tới để tính nước. Đạt điểm mục tiêu trước khi hết lượt để thắng.</p>
+    <p><b>Chọn mục tiêu:</b> đầu màn, chạm một con mèo để chọn loại muốn gom. Mọi con cùng loại đang ngửa bay ngay vào giỏ.</p>
+    <p><b>Đào:</b> mỗi cột là một chồng thẻ úp, chỉ lấy được con ở đáy cột. Lấy ra thì lộ con tiếp theo. Mèo trên bãi cỏ lấy được hết, lấy rồi không có mèo mới lấp vào.</p>
+    <p><b>Gom:</b> mèo mục tiêu vào thẳng giỏ. Mèo khác vào khay 7 ô, tự xếp cạnh con cùng loại; đủ 3 con giống nhau thì biến mất.</p>
+    <p><b>Thắng</b> khi gom đủ mèo mục tiêu. <b>Thua</b> khi khay đầy 7 con. Trợ giúp: Hoàn tác, Xáo lại bàn, Gỡ 3 con đầu khay ra hàng chờ.</p>
+  </dialog>
+
+  <dialog id="result-dialog" class="result">
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <div class="result-actions">
+      <button id="result-revive" class="pill primary">Hồi sinh</button>
+      <button id="result-undo" class="pill">Hoàn tác</button>
+      <button id="result-next" class="pill primary">Màn tiếp</button>
+      <button id="result-retry" class="pill">Chơi lại</button>
+    </div>
   </dialog>
 </body>
 </html>
