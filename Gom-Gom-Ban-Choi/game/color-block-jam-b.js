@@ -4,7 +4,7 @@ import {
 import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
 
 // Thắng: dọn sạch mọi mèo trên bàn trong giới hạn lượt.
-const W = 6, H = 6, TURN_LIMIT = 20, PREVIEW_COUNT = 3;
+const W = 6, H = 6, TURN_LIMIT = 20, PREVIEW_COUNT = 2;
 const $ = id => document.getElementById(id);
 const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10;
 const shapes = {
