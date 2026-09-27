@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clearMatches, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './color-block-jam-b-logic.mjs';
+import { clearMatches, mergeTarget, findLineMatch, placeCard, placementIndices, rotateOffsets, slideDirectional } from './board-rules.mjs';
 
 const W = 5, H = 5;
 function scene() {

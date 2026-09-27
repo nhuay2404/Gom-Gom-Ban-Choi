@@ -34,7 +34,7 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `game/` | Bản game đã đóng gói, chạy thẳng, không cần build |
+| `game/` | Bản game Gom Gom Rotate, chạy thẳng, không cần build (chi tiết từng file ở bảng dưới) |
 | `server.mjs` | Máy chủ tĩnh tối giản, chỉ dùng Node.js, không phụ thuộc thư viện nào |
 | `Choi-Gom-Gom.bat` | Trình chạy cho Windows |
 | `Choi-Gom-Gom.command` | Trình chạy cho macOS |
@@ -43,7 +43,29 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `tai-lieu/3-Bao-cao-curve-20-man.md` | Số liệu 20 màn, sinh tự động từ dữ liệu đã đóng băng |
 | `tai-lieu/bieu-do/` | Sáu biểu đồ SVG đi kèm báo cáo |
 
-## Luật chơi tóm tắt
+### Bên trong `game/`
+
+| File | Nội dung |
+|---|---|
+| `index.html` | Trang game: thanh điểm, bàn chơi, thẻ đang bóc, ô gửi tạm, thẻ sắp tới, hộp hướng dẫn |
+| `gom-gom.js` | Vòng chơi chính: kéo thả, xoay thẻ, gửi tạm, tính điểm + combo, thắng/thua và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim) |
+| `board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, chọn điểm hợp nhất |
+| `board-rules.test.mjs` | Kiểm thử luật bàn, chạy bằng `node --test game/board-rules.test.mjs` |
+| `cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
+| `gom-gom.css` | Giao diện và hiệu ứng: theme vàng kem, thẻ, mũi tên xoay, anim |
+| `board-grid.css` | Lưới 6×6 của bàn chơi |
+| `favicon.svg` | Icon tab trình duyệt |
+| `skins/farm-pop/` | Ảnh skin: `background-pink.png` (nền), `rotate-arrow.png` (mũi tên xoay), `decor-sprites.png` + `decor-sprites-mask.png` (sprite trang trí) |
+
+## Luật chơi tóm tắt (Gom Gom Rotate)
+
+Bàn 6×6. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120. Gom liên tiếp nhiều lượt tạo combo, mỗi bậc +10% điểm, tối đa x1,5. Đạt 120 điểm trong 20 lượt là thắng.
+
+Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
+
+## Luật chơi bản gốc (theo tài liệu thiết kế)
+
+Các tài liệu trong `tai-lieu/` mô tả bản Gom Gom gốc (mã nguồn ở thư mục `gomgom`), không phải bản Rotate trong `game/`. Tóm tắt bản gốc:
 
 Gom bốn thẻ cùng chủ đề nằm liền nhau trên một hàng ngang. Bàn có 4 cột và 5 hàng. Chỉ lấy được thẻ trên cùng mỗi cột nguồn. Cụm 2 đến 3 thẻ di chuyển nguyên khối. Mỗi lần chuyển thẻ tốn một lượt; thả sai không mất lượt.
 

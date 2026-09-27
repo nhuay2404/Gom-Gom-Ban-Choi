@@ -1,10 +1,19 @@
-import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './color-block-jam-b-logic.mjs';
-import { categories, catGroups, addArt as addCatArt } from './cats.mjs';
+import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
+import { categories, catGroups, addArt as addCatArt } from './cat-art.mjs';
 
 // Thắng: đạt điểm mục tiêu trong giới hạn lượt.
 const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 1;
 const $ = id => document.getElementById(id);
-const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10;
+const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10, DRAG_BOOST = 1.6, DRAG_SHRINK_RANGE = 110;
+// Hệ số theo cỡ cụm: gom 3 giữ mốc 30 điểm, cụm càng to thưởng càng đậm để đáng mạo hiểm chờ.
+// 3 -> 30 · 4 -> 50 · 5 -> 80 · 6+ -> 120 (cụm 7+ vẫn x2).
+const MATCH_MULTIPLIER = { 3: 1, 4: 1.25, 5: 1.6, 6: 2 };
+// Combo: gom liên tiếp nhiều lượt, mỗi bậc +10% điểm (lượt gom đầu x1), tối đa x1.5. Lượt không gom -> về 0.
+const COMBO_STEP = 0.1, COMBO_MAX = 1.5;
+const comboMultiplier = combo => Math.min(1 + Math.max(combo - 1, 0) * COMBO_STEP, COMBO_MAX);
+const nextCombo = match => match.clusters.length ? (state.combo || 0) + 1 : 0;
+const clusterPoints = (size, combo = 1) => Math.round(size * POINTS_PER_CLEARED * (MATCH_MULTIPLIER[Math.min(size, 6)] ?? 1) * comboMultiplier(combo));
+const matchPoints = (clusters, combo) => clusters.reduce((sum, cluster) => sum + clusterPoints(cluster.length, combo), 0);
 const shapes = {
   single: [[0, 0]],
   domino: [[0, 0], [0, 1]],
@@ -152,11 +161,11 @@ function layoutHints(vertical, animate = false) {
   // Bấm xoay: vòng mũi tên luôn quay thêm 90° (kể cả thẻ chữ L 3 mèo vốn không đổi ngang/dọc).
   // Thẻ mới: đặt thẳng theo hình thẻ (ngang -> trên/dưới, dọc -> hai bên).
   if (animate || arrowsVertical() !== vertical) hintAngle += 90;
-  // Thẻ 3 mèo: mũi tên nhỏ lại và mèo co vào vùng bên trong vòng mũi tên, không bị đè.
+  // Thẻ 3 mèo: mũi tên nhỏ lại. Mọi thẻ: mèo co vào vùng bên trong vòng mũi tên, không đè mũi tên.
   const crowded = state.active.items.length >= 3;
   hints.forEach(hint => hint.classList.toggle('small', crowded));
   const arrowHeight = hints[0].offsetHeight || card.width * .3;
-  fitInsideHints(crowded && !state.over, arrowsVertical(), card, arrowHeight);
+  fitInsideHints(!state.over && state.active.items.length > 1, arrowsVertical(), card, arrowHeight);
   hints.forEach((hint, index) => {
     const offset = index === 0 ? 0 : 180;
     hint.style.transform = hintTransform(hintAngle + offset, card, arrowHeight);
@@ -179,7 +188,7 @@ function fitInsideHints(enabled, _vertical, card, arrowHeight) {
   const band = arrowHeight * .78 + 4, pad = 10, gap = 4;
   const fit = (rows, cols, arrowsOnSides) => {
     const width = card.width - (arrowsOnSides ? band * 2 : 0), height = card.height - (arrowsOnSides ? 0 : band * 2);
-    return Math.min(44, (width - pad - gap * (cols - 1)) / cols, (height - pad - gap * (rows - 1)) / rows);
+    return Math.min(68, (width - pad - gap * (cols - 1)) / cols, (height - pad - gap * (rows - 1)) / rows);
   };
   const { rows, cols } = normalizePreview(state.active.offsets);
   const long = Math.max(rows, cols), short = Math.min(rows, cols);
@@ -213,12 +222,39 @@ function animateRotation(before) {
   });
 }
 
+// Thả mèo vào ô gửi tạm: mèo rơi từ trên xuống, nảy nhẹ (không co giãn), ô lún xuống rồi bật lại, khói phì ra hai bên.
+let holdDropped = false;
+function dropIntoHold(hold) {
+  if (reduceMotion.matches) return;
+  hold.querySelector('.piece-grid')?.animate([
+    { translate: '0 -34px', opacity: 0 },
+    { translate: '0 4px', opacity: 1, offset: .55 },
+    { translate: '0 -5px', offset: .78 },
+    { translate: '0 0', opacity: 1 },
+  ], { duration: 420, easing: 'cubic-bezier(.5, 0, .5, 1)' });
+  hold.animate([
+    { translate: '0 0' }, { translate: '0 4px', offset: .5 }, { translate: '0 -2px', offset: .78 }, { translate: '0 0' },
+  ], { duration: 420, delay: 120, easing: 'ease-out' });
+  const puff = document.createElement('span');
+  puff.className = 'hold-puff';
+  for (let i = 0; i < 6; i++) {
+    const blob = document.createElement('i');
+    blob.style.setProperty('--dx', `${(i % 2 ? 1 : -1) * (18 + Math.random() * 22)}px`);
+    blob.style.setProperty('--dy', `${-(2 + Math.random() * 12)}px`);
+    blob.style.setProperty('--s', (0.9 + Math.random() * 0.6).toFixed(2));
+    puff.append(blob);
+  }
+  hold.parentElement.append(puff);
+  const box = hold.getBoundingClientRect(), parent = hold.parentElement.getBoundingClientRect();
+  puff.style.cssText = `left:${box.left - parent.left}px;top:${box.top - parent.top}px;width:${box.width}px;height:${box.height}px`;
+  setTimeout(() => puff.remove(), 1000);
+}
+
 function holdActive() {
-  if (state.over || state.animating || state.heldThisTurn) return;
+  if (state.over || state.animating) return;
   const previous = state.hold;
   state.hold = state.active;
   state.active = previous || drawCard();
-  state.heldThisTurn = true;
   state.preview = null;
   render();
 }
@@ -236,10 +272,10 @@ function placeAt(anchor) {
   if (!match.cleared.length || reduceMotion.matches) return finishTurn(result, match);
   // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
   // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
-  const gained = match.cleared.length * POINTS_PER_CLEARED;
+  const combo = nextCombo(match);
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
   const ghosts = spawnMergeGhosts(merges, result);
-  const done = animateMerges(ghosts, merges, gained);
+  const done = animateMerges(ghosts, merges, combo);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
   finishTurn(result, match);
@@ -259,6 +295,28 @@ function fxLayer() {
   return layer;
 }
 
+// Khói phì ra khi mèo đáp xuống ô: vài cụm bụi tròn toả ra hai bên đáy ô rồi tan.
+const PUFF_COUNT = 8;
+function spawnPuff(cell) {
+  const puff = document.createElement('span');
+  puff.className = 'land-puff';
+  puff.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+  for (let i = 0; i < PUFF_COUNT; i++) {
+    const side = i % 2 ? 1 : -1, spread = 0.5 + Math.random() * 0.6;
+    const blob = document.createElement('i');
+    blob.style.setProperty('--dx', `${side * spread * cell.offsetWidth * 0.7}px`);
+    blob.style.setProperty('--dy', `${-(2 + Math.random() * 18)}px`);
+    blob.style.setProperty('--s', (1 + Math.random() * 0.7).toFixed(2));
+    blob.style.animationDelay = `${Math.random() * 40}ms`;
+    puff.append(blob);
+  }
+  // Khói nằm trên các ô khác nhưng dưới mèo vừa đặt (mèo được nhấc lên trục Z trong lúc khói bay).
+  fxLayer().append(puff);
+  cell.classList.add('puff-top');
+  setTimeout(() => cell.classList.remove('puff-top'), 1000);
+  setTimeout(() => puff.remove(), 1000);
+}
+
 // Bóng mèo: bản sao mèo của cụm, đặt đúng vị trí ô (toạ độ trong board nên theo cả độ nghiêng 3D).
 function spawnMergeGhosts(merges, result) {
   return spawnGhosts(merges.flatMap(({ cluster }) => cluster), result.board, new Set(result.indices));
@@ -276,14 +334,14 @@ function spawnGhosts(indices, board, placed = new Set()) {
     addArt(ghost, object);
     layer.append(ghost);
     ghosts.set(index, ghost);
+    if (placed.has(index)) spawnPuff(ghost);
   });
   return ghosts;
 }
 
 // Pha 1: mèo bị nhấc bổng lên, lộ bụng + chân sau lủng lẳng (CSS .lifted).
 // Pha 2: cả cụm trượt vào mèo vừa đặt và nhỏ dần; mèo đích phồng lên rồi biến mất.
-async function animateMerges(ghosts, merges, gained) {
-  const total = merges.reduce((n, m) => n + m.cluster.length, 0);
+async function animateMerges(ghosts, merges, combo) {
   await wait(DROP_MS); // mèo vừa đặt rơi xong đã
   merges.forEach(({ cluster }) => cluster.forEach((index, order) => {
     const ghost = ghosts.get(index);
@@ -314,7 +372,7 @@ async function animateMerges(ghosts, merges, gained) {
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ], { duration: MERGE_MS, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }));
     });
-    showMergeScore(targetGhost, Math.round(gained * cluster.length / total));
+    showMergeScore(targetGhost, clusterPoints(cluster.length, combo));
   });
   await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
   ghosts.forEach(ghost => ghost.remove());
@@ -328,26 +386,67 @@ async function celebrateWin(message) {
   if (!reduceMotion.matches && occupied.length) {
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
     // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
-    const ghosts = [...spawnGhosts(occupied, state.board).values()];
+    const ghostMap = spawnGhosts(occupied, state.board), ghosts = [...ghostMap.values()];
+    const rowOf = new Map([...ghostMap].map(([index, ghost]) => [ghost, Math.floor(index / W)]));
     state.board = state.board.map(() => null);
     render(message);
     $('board').classList.add('busy', 'flying');
-    ghosts.forEach((ghost, order) => {
+    // Pha 1: sóng từ hàng trên xuống, từng hàng lần lượt bị nhấc bổng và bay vọt lên rồi lơ lửng.
+    const RISE = 46, WAVE_MS = 90;
+    await Promise.all(ghosts.map(ghost => {
+      const delay = rowOf.get(ghost) * WAVE_MS;
       ghost.classList.add('lifted');
-      ghost.style.setProperty('--lift-delay', `${order * 40}ms`);
-    });
-    await wait(LIFT_MS + ghosts.length * 40);
-    await Promise.all(ghosts.map((ghost, order) => ghost.animate([
-      { transform: 'none', opacity: 1 },
-      { transform: 'translateY(-30px) scale(1.05)', opacity: 1, offset: .3 },
-      { transform: `translateY(-${260 + (order % 3) * 40}px) scale(.6) rotate(${order % 2 ? 14 : -14}deg)`, opacity: 0 },
-    ], { duration: 620, delay: order * 45, easing: 'cubic-bezier(.5, 0, .8, .4)', fill: 'forwards' }).finished.catch(() => {})));
+      ghost.style.setProperty('--lift-delay', `${delay}ms`);
+      return ghost.animate([
+        { translate: '0 0' },
+        { translate: `0 ${-RISE * 1.25}px`, offset: .65 },
+        { translate: `0 ${-RISE}px` },
+      ], { duration: 460, delay, easing: 'cubic-bezier(.3, 1.2, .5, 1)', fill: 'forwards' }).finished.catch(() => {});
+    }));
+    await wait(160); // cả bàn lơ lửng một nhịp rồi mới chụm lại
+    // Pha 2: mọi mèo cùng lúc bay vào tâm board, giữ nguyên hình dạng (không co giãn). Thân dưới lủng lẳng
+    // chuyển động theo quán tính như con lắc: lấy đà thì thân lệch về phía tâm, lao đi thì thân bị kéo lùi lại,
+    // tới nơi phanh gấp thì thân văng tới trước. Tới tâm các mèo chồng lên nhau, co lại và hợp nhất thành một chớp sáng.
+    const cx = $('board').offsetWidth / 2, cy = $('board').offsetHeight / 2, FLY_MS = 820;
+    const far = Math.max(1, ...ghosts.map(ghost => Math.abs(cx - ghost.offsetLeft - ghost.offsetWidth / 2)));
+    setTimeout(() => spawnFusion(cx, cy), FLY_MS * .86);
+    await Promise.all(ghosts.flatMap(ghost => {
+      const dx = cx - ghost.offsetLeft - ghost.offsetWidth / 2, dy = cy - ghost.offsetTop - ghost.offsetHeight / 2 + RISE; // tính từ chỗ đang lơ lửng
+      const at = (k, scale = 1) => `translate(${dx * k}px, ${dy * k}px) scale(${scale})`;
+      const fly = ghost.animate([
+        { transform: at(0), opacity: 1, easing: 'cubic-bezier(.3, 0, .5, 1)' },
+        { transform: at(-.06), opacity: 1, offset: .25, easing: 'cubic-bezier(.55, 0, .85, .45)' },
+        { transform: at(.9, .8), opacity: 1, offset: .78, easing: 'cubic-bezier(.2, .6, .4, 1)' },
+        { transform: at(1, .62), opacity: 1, offset: .88 },
+        { transform: at(1, .35), opacity: 0 },
+      ], { duration: FLY_MS, fill: 'forwards' });
+      // Con lắc: góc lệch tỉ lệ khoảng bay ngang, dấu ngược chiều gia tốc.
+      const hang = ghost.querySelector('.cat .hang'), swing = 26 * (0.35 + 0.65 * Math.abs(dx) / far) * Math.sign(dx || 1);
+      const body = hang?.animate([
+        { rotate: '0deg' },
+        { rotate: `${swing * .5}deg`, offset: .22 },
+        { rotate: `${-swing}deg`, offset: .55 },
+        { rotate: `${-swing * .8}deg`, offset: .76 },
+        { rotate: `${swing * .9}deg`, offset: .88 },
+        { rotate: `${-swing * .3}deg` },
+      ], { duration: FLY_MS, easing: 'ease-in-out', fill: 'forwards' });
+      return [fly.finished.catch(() => {}), body?.finished.catch(() => {})];
+    }));
     ghosts.forEach(ghost => ghost.remove());
     $('board').classList.remove('busy', 'flying');
   }
   state.animating = false;
   state.board = state.board.map(() => null);
   render(message);
+}
+// Chớp sáng hợp nhất ở tâm board khi mọi mèo chụm lại.
+function spawnFusion(x, y) {
+  const flash = document.createElement('span');
+  flash.className = 'win-fusion';
+  flash.style.left = `${x}px`;
+  flash.style.top = `${y}px`;
+  fxLayer().append(flash);
+  flash.addEventListener('animationend', () => flash.remove());
 }
 function showMergeScore(cell, points) {
   const wrap = document.querySelector('.board-wrap');
@@ -362,15 +461,15 @@ function showMergeScore(cell, points) {
 }
 
 function finishTurn(result, match) {
-  const gained = match.cleared.length * POINTS_PER_CLEARED;
+  state.combo = nextCombo(match);
+  const gained = matchPoints(match.clusters, state.combo);
   state.board = match.board;
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   state.score += gained;
-  const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} điểm.` : '';
+  const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}!${state.combo >= 2 ? ` Combo x${state.combo}` : ''} +${gained} điểm.` : '';
   state.moves--;
-  state.heldThisTurn = false;
   state.preview = null;
   if (state.score >= TARGET_SCORE) {
     state.over = true;
@@ -495,14 +594,20 @@ function moveCardDrag(event) {
       transformOrigin: `${cardDrag.grabX}px ${cardDrag.grabY}px`,
     });
     document.body.append(cardDrag.ghost);
-    // Mèo trong bóng kéo có cùng cỡ với mèo trên bàn: scale theo tỉ lệ ô bàn / ô trong thẻ (neo ở điểm cầm).
+    // Cỡ gốc của bóng kéo = cỡ mèo trên bàn (tỉ lệ ô bàn / ô trong thẻ, neo ở điểm cầm); xa bàn thì phóng to thêm.
     const boardCell = document.querySelector('.cell[data-index="14"]')?.getBoundingClientRect();
     const piece = $('active-card').querySelector('.piece-object')?.getBoundingClientRect();
-    if (boardCell && piece?.width) cardDrag.ghost.style.transform = `scale(${(boardCell.width / piece.width).toFixed(3)})`;
+    cardDrag.baseScale = boardCell && piece?.width ? boardCell.width / piece.width : 1;
+    cardDrag.boardRect = $('board').getBoundingClientRect();
     cardDrag.cells = measureCells();
     cardDrag.holdRect = $('hold').getBoundingClientRect();
     cardDrag.physics = startDragPhysics(cardDrag.ghost);
   }
+  // Xa bàn: mèo to DRAG_BOOST lần cho dễ nhìn; càng gần bàn càng co về đúng cỡ ô để không che grid + ô xem trước.
+  const board = cardDrag.boardRect, gapY = Math.max(0, event.clientY - board.bottom, board.top - event.clientY);
+  const gapX = Math.max(0, board.left - event.clientX, event.clientX - board.right);
+  const far = Math.min(1, Math.hypot(gapX, gapY) / DRAG_SHRINK_RANGE);
+  cardDrag.ghost.style.transform = `scale(${(cardDrag.baseScale * (1 + (DRAG_BOOST - 1) * far)).toFixed(3)})`;
   feedDragPhysics(cardDrag.physics, event.clientX);
   cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
@@ -510,8 +615,7 @@ function moveCardDrag(event) {
   const hold = cardDrag.holdRect;
   cardDrag.overHold = event.clientX >= hold.left - 8 && event.clientX <= hold.right + 8
     && event.clientY >= hold.top - 8 && event.clientY <= hold.bottom + 8;
-  $('hold').classList.toggle('drop-target', cardDrag.overHold && !state.heldThisTurn);
-  $('hold').classList.toggle('drop-blocked', cardDrag.overHold && state.heldThisTurn);
+  $('hold').classList.toggle('drop-target', cardDrag.overHold);
   if (cardDrag.overHold) {
     cardDrag.anchor = null; state.preview = null; state.previewAnchor = null;
     return paintPreview();
@@ -531,12 +635,13 @@ function finishCardDrag(event) {
   ghost?.remove();
   cardDrag = null;
   $('active-card').classList.remove('dragging');
-  $('hold').classList.remove('drop-target', 'drop-blocked');
+  $('hold').classList.remove('drop-target');
   state.preview = null; state.previewAnchor = null;
   paintPreview();
   if (!ghost) return event.type === 'pointerup' && rotateActive(); // chạm không kéo = xoay
   if (overHold && event.type === 'pointerup') {
-    return state.heldThisTurn ? render('Mỗi lượt chỉ gửi tạm một lần.', true) : holdActive();
+    holdDropped = true; // thả tay vào ô: mèo rơi xuống ô thay vì bay từ thẻ đang bóc sang
+    return holdActive();
   }
   if (anchor !== null) placeAt(anchor);
   else render(); // thả ra ngoài bàn = huỷ kéo, không cần báo
@@ -555,7 +660,7 @@ function render(message = '', error = false) {
   // Thẻ dọc (nhiều hàng hơn cột) -> mũi tên xoay dựng dọc hai bên.
   const shape = normalizePreview(state.active.offsets);
   layoutHints(shape.rows > shape.cols, state.animateHints);
-  $('hold').disabled = state.over || state.heldThisTurn;
+  $('hold').disabled = state.over;
 }
 
 // Ô bàn được giữ cố định; chỉ ô nào đổi mèo mới dựng lại. Không xoá/dựng lại cả 36 ô mỗi lần vẽ
@@ -587,6 +692,7 @@ function renderBoard() {
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
       cell.classList.add('drop');
       cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
+      spawnPuff(cell);
     }
   });
   state.previewKey = '';
@@ -617,7 +723,11 @@ function renderCards() {
     if (activeFrom) flyFrom(active, activeFrom);
     else if (activeChanged) popIn(active);
   }
-  if (renderCard(hold, state.hold, true) && holdFrom) flyFrom(hold, holdFrom);
+  if (renderCard(hold, state.hold, true)) {
+    if (holdDropped) dropIntoHold(hold);
+    else if (holdFrom) flyFrom(hold, holdFrom);
+  }
+  holdDropped = false;
   slots.forEach((slot, i) => {
     if (!renderCard(slot, upcoming[i], true)) return;
     if (slotFrom[i]) flyFrom(slot, slotFrom[i], 300);
@@ -651,7 +761,7 @@ function paintInvalid() {
 function newGame() {
   const board = Array(W * H).fill(null);
   startingBlocks.forEach(([row, col, name]) => { board[row * W + col] = { ...item(name), locked: true, starting: true }; });
-  state = { board, deck: buildDeck(), active: null, hold: null, heldThisTurn: false, score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null };
+  state = { board, deck: buildDeck(), active: null, hold: null, score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null };
   state.active = drawCard();
   render(`Đạt ${TARGET_SCORE} điểm trong ${TURN_LIMIT} lượt!`);
 }
@@ -667,6 +777,37 @@ $('active-card').onkeydown = event => {
 $('hold').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); holdActive(); }
 };
+// Chạm vào mèo trên bàn: mèo cười phấn khích, nhún nhẹ (không co giãn) và vài trái tim nhỏ bay lên.
+$('board').addEventListener('pointerdown', event => {
+  const cell = event.target.closest('.cell.locked');
+  if (!cell || cell.classList.contains('merge-ghost') || state.animating) return;
+  petCat(cell);
+});
+function petCat(cell) {
+  cell.classList.remove('petted');
+  void cell.offsetWidth; // chạm liên tiếp thì chạy lại anim
+  cell.classList.add('petted');
+  clearTimeout(cell.petTimer);
+  cell.petTimer = setTimeout(() => cell.classList.remove('petted'), 1100);
+  if (reduceMotion.matches) return;
+  const layer = fxLayer();
+  for (let i = 0; i < 4; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'pet-heart';
+    heart.textContent = '♥';
+    heart.style.left = `${cell.offsetLeft + cell.offsetWidth * (.3 + Math.random() * .4)}px`;
+    heart.style.top = `${cell.offsetTop + cell.offsetHeight * .25}px`;
+    heart.style.setProperty('--dx', `${(Math.random() - .5) * 36}px`);
+    heart.style.setProperty('--rot', `${(Math.random() - .5) * 40}deg`);
+    heart.style.animationDelay = `${i * 110}ms`;
+    heart.style.fontSize = `${12 + Math.random() * 7}px`;
+    layer.append(heart);
+    heart.addEventListener('animationend', () => heart.remove());
+  }
+}
+
+// Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm (đang có thẻ) = đổi thẻ đó về ô đang bóc.
+$('hold').onclick = () => { if (state.hold) holdActive(); };
 $('restart').onclick = newGame;
 $('help').onclick = () => $('help-dialog').showModal();
 newGame();
