@@ -1,31 +1,29 @@
-// Art mèo dùng chung cho các chế độ Gom Gom: 6 loại, vẽ bằng SVG.
+// Art mèo dùng chung cho các chế độ Gom Gom: 16 loại (Rotate dùng 6 loại gốc), vẽ bằng SVG.
 // Mỗi loại có tai, kiểu mắt và một biểu cảm (mood) riêng, không loại nào trùng loại nào.
 export const categories = {
-  orange: { name: 'Mèo cam', color: '#f39a45', fur: '#f5a04e', side: '#c9702a', stripe: '#d9772f', belly: '#ffe3bf', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle', mood: 'grin' },
-  gray: { name: 'Mèo xám', color: '#a9adb5', fur: '#aeb2ba', side: '#7c818b', stripe: '#6c717a', belly: '#f6f6f4', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot', mood: 'happy' },
-  white: { name: 'Mèo trắng', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
+  orange: { name: 'Mèo cam', color: '#f07a1a', fur: '#f07a1a', side: '#b0500a', stripe: '#b54f08', belly: '#ffd9ad', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle', mood: 'grin' },
+  gray: { name: 'Mèo xám', color: '#78808e', fur: '#78808e', side: '#4f5663', stripe: '#3f4550', belly: '#e9ebee', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot', mood: 'happy' },
+  white: { name: 'Mèo trắng', color: '#ffffff', fur: '#ffffff', side: '#c4b9ab', belly: '#ffffff', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
   tuxedo: { name: 'Mèo mun', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
-  siamese: { name: 'Mèo Xiêm', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
-  tabby: { name: 'Mèo mướp', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
+  siamese: { name: 'Mèo Xiêm', color: '#e3c08e', fur: '#e3c08e', side: '#a8804f', mask: '#3e2416', belly: '#f5e3c6', paw: '#3e2416', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
+  tabby: { name: 'Mèo mướp', color: '#8a5a2e', fur: '#8a5a2e', side: '#5a3717', stripe: '#3a220c', belly: '#e3c49a', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
 };
+// 6 loại gốc: bản Rotate chỉ dùng nhóm này.
 export const catGroups = Object.keys(categories);
-
-// Tăng độ đậm màu (saturation) cho mọi màu của mèo; màu gần như không sắc (trắng, xám) gần như giữ nguyên.
-const SATURATION = 1.35;
-function saturate(hex, factor = SATURATION) {
-  let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
-  if (!d) return hex;
-  let s = l > .5 ? d / (2 - max - min) : d / (max + min);
-  let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
-  h /= 6; s = Math.min(1, s * factor);
-  const q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
-  const hue = t => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
-  return '#' + [h + 1 / 3, h, h - 1 / 3].map(t => Math.round(hue(t) * 255).toString(16).padStart(2, '0')).join('');
-}
-for (const cat of Object.values(categories)) {
-  for (const key of ['color', 'fur', 'side', 'stripe', 'belly', 'paw', 'eye', 'mask']) if (cat[key]) cat[key] = saturate(cat[key]);
-}
+// 10 loại thêm cho Solitaire (tổng 16). dark = lông tối, nét mặt vẽ màu sáng; patches = mảng lông tam thể.
+Object.assign(categories, {
+  calico: { name: 'Mèo tam thể', color: '#fff4e2', fur: '#fff4e2', side: '#cdb896', patches: ['#f07a1a', '#231d1f'], belly: '#ffffff', paw: '#fffaf1', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'iris', mood: 'happy' },
+  black: { name: 'Mèo đen', color: '#3b3640', fur: '#2a262e', side: '#141216', dark: true, belly: '#2a262e', paw: '#3a353f', eye: '#8fd14f', ears: 'tall', eyeStyle: 'slit', mood: 'smile' },
+  cream: { name: 'Mèo kem', color: '#f6c94e', fur: '#f6c94e', side: '#c4931c', belly: '#fff0c2', paw: '#fff4d6', eye: '#6b4a2a', ears: 'round', eyeStyle: 'sparkle', mood: 'blep' },
+  blue: { name: 'Mèo Nga xanh', color: '#3f6fc4', fur: '#3f6fc4', side: '#274b8f', belly: '#c9d8f2', paw: '#d9e2ee', eye: '#6fc36b', ears: 'wide', eyeStyle: 'oval', mood: 'wink' },
+  pink: { name: 'Mèo hồng', color: '#f25c9e', fur: '#f25c9e', side: '#b93472', belly: '#ffd6e8', paw: '#fff0f4', eye: '#7a3350', ears: 'small', eyeStyle: 'dot', mood: 'grin' },
+  red: { name: 'Mèo đỏ', color: '#d8321a', fur: '#d8321a', side: '#8f1c0a', stripe: '#86180a', belly: '#ffcbb8', paw: '#ffd9c2', eye: '#f2c14e', ears: 'fold', eyeStyle: 'sparkle', mood: 'sparkly' },
+  choco: { name: 'Mèo sô-cô-la', color: '#5c311c', fur: '#5c311c', side: '#381a0c', dark: true, belly: '#b88762', paw: '#c9a184', eye: '#f0a93a', ears: 'round', eyeStyle: 'iris', mood: 'grin' },
+  lilac: { name: 'Mèo tím', color: '#8e5fe0', fur: '#8e5fe0', side: '#5e36aa', belly: '#e4d8fa', paw: '#f2ecfb', eye: '#4b2f7a', ears: 'pointy', eyeStyle: 'oval', mood: 'blep' },
+  mint: { name: 'Mèo bạc hà', color: '#1fbf8a', fur: '#1fbf8a', side: '#128060', stripe: '#0d6f52', belly: '#d4f7ea', paw: '#effbf5', eye: '#2f5c4a', ears: 'tall', eyeStyle: 'dot', mood: 'happy' },
+  golden: { name: 'Mèo vàng', color: '#f5b800', fur: '#f5b800', side: '#b07f00', mask: '#7a3f00', belly: '#fff0b8', paw: '#7a3f00', eye: '#3aa0d8', ears: 'small', eyeStyle: 'sparkle', mood: 'wink' },
+});
+export const allCatGroups = Object.keys(categories);
 
 const BODY = 'M8 60 Q8 30 30 27 L70 27 Q92 30 92 60 L92 78 Q92 91 78 91 L22 91 Q8 91 8 78Z';
 // Tai trái [viền ngoài, lòng tai]; tai phải được lật gương.
@@ -57,7 +55,7 @@ const closedEye = (x, ink) => `<path d="M${x - 6} 58 Q${x} 51 ${x + 6} 58" fill=
 const starEye = (x, color) => `<path d="M${x} 50 L${x + 2} 55 L${x + 7} 57 L${x + 2} 59 L${x} 64 L${x - 2} 59 L${x - 7} 57 L${x - 2} 55Z" fill="${color}" stroke="#fff" stroke-width=".8"/>`;
 
 function face(cat, group, mood, ink) {
-  const lineInk = group === 'tuxedo' ? '#f3e7cf' : ink;
+  const lineInk = group === 'tuxedo' || cat.dark ? '#f3e7cf' : ink;
   const eyes = {
     happy: closedEye(37, lineInk) + closedEye(63, lineInk),
     wink: openEye(cat, 37) + closedEye(63, lineInk),
@@ -74,7 +72,7 @@ function face(cat, group, mood, ink) {
 
 function catSvg(group) {
   const cat = categories[group], id = `cat-${group}`, mood = cat.mood;
-  const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
+  const ink = cat.dark ? '#f3e7cf' : cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
   const [earOuter, earInner] = EARS[cat.ears];
   const mirror = 'transform="matrix(-1 0 0 1 100 0)"';
   const earFill = cat.mask || `url(#${id}-fur)`;
@@ -101,7 +99,7 @@ function catSvg(group) {
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
       <radialGradient id="${id}-fur" cx=".36" cy=".3" r=".85">
-        <stop offset="0" stop-color="${shade(cat.fur, .28)}"/><stop offset=".55" stop-color="${cat.fur}"/><stop offset="1" stop-color="${shade(cat.fur, -.2)}"/>
+        <stop offset="0" stop-color="${shade(cat.fur, .14)}"/><stop offset=".55" stop-color="${cat.fur}"/><stop offset="1" stop-color="${shade(cat.fur, -.2)}"/>
       </radialGradient>
       <linearGradient id="${id}-side" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="${cat.side}"/><stop offset="1" stop-color="${shade(cat.side, -.3)}"/>
@@ -114,12 +112,13 @@ function catSvg(group) {
     <path d="${BODY}" fill="url(#${id}-fur)" stroke="${shade(cat.fur, .1)}" stroke-width="6" stroke-linejoin="round"/>
     ${cat.ears === 'fold' ? ears : ''}
     ${stripes}
+    ${cat.patches ? `<ellipse cx="27" cy="42" rx="15" ry="11" fill="${cat.patches[0]}" opacity=".95"/><ellipse cx="74" cy="38" rx="12" ry="9" fill="${cat.patches[1]}" opacity=".95"/>` : ''}
     ${cat.muzzle ? `<path d="M50 50 C66 50 76 62 76 76 L76 91 L24 91 L24 76 C24 62 34 50 50 50Z" fill="${cat.belly}"/>` : `<ellipse cx="50" cy="80" rx="24" ry="11" fill="${cat.belly}" opacity=".9"/>`}
     ${cat.mask ? `<ellipse cx="50" cy="63" rx="19" ry="14" fill="${cat.mask}" opacity=".85"/>` : ''}
     <path d="M8 70 Q8 90 22 91 L78 91 Q92 90 92 70 Q92 86 78 88 L22 88 Q8 86 8 70Z" fill="#000" opacity=".1"/>
     <ellipse cx="26" cy="67" rx="6" ry="3.4" fill="#ff8fa0" class="blush"/><ellipse cx="74" cy="67" rx="6" ry="3.4" fill="#ff8fa0" class="blush"/>
     <g class="calm">${face(cat, group, mood, ink)}</g>
-    <g class="annoyed" fill="none" stroke="${group === 'tuxedo' ? '#f3e7cf' : ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <g class="annoyed" fill="none" stroke="${group === 'tuxedo' || cat.dark ? '#f3e7cf' : ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M31 52 L40 57 L31 62M69 52 L60 57 L69 62"/>
       <path d="M43 72 Q46.5 68 50 71.5 Q53.5 68 57 72" stroke="${ink}" stroke-width="2"/>
       <path d="M84 30 Q88 37 84 40 Q80 37 84 30Z" fill="#9fdcf7" stroke="#5fb4dd" stroke-width="1.2"/>
@@ -134,7 +133,7 @@ function catSvg(group) {
   </svg>`;
 }
 
-export const catMarkup = Object.fromEntries(catGroups.map(group => [group, catSvg(group)]));
+export const catMarkup = Object.fromEntries(allCatGroups.map(group => [group, catSvg(group)]));
 
 export function addArt(element, group) {
   element.title = categories[group].name;

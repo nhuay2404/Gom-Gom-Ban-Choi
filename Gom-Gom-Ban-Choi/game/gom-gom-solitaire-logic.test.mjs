@@ -84,18 +84,18 @@ test('gom đủ mục tiêu là thắng', () => {
   assert.equal(state.status, 'won');
 });
 
-test('khay đầy 7 con không có bộ 3 là thua', () => {
-  const tray = ['b', 'b', 'c', 'c', 'd', 'd'].map((breed, index) => cat(100 + index, breed));
+test('khay đầy 8 con không có bộ 3 là thua', () => {
+  const tray = ['b', 'b', 'c', 'c', 'd', 'd', 'f'].map((breed, index) => cat(100 + index, breed));
   const { state } = pick(playing({ tray, columns: [[cat(12, 'e')]] }), { zone: 'column', index: 0 });
   assert.equal(state.tray.length, TRAY_SIZE);
   assert.equal(state.status, 'lost');
 });
 
-test('con thứ 7 tạo bộ 3 thì không thua', () => {
-  const tray = ['b', 'b', 'c', 'c', 'd', 'd'].map((breed, index) => cat(100 + index, breed));
+test('con thứ 8 tạo bộ 3 thì không thua', () => {
+  const tray = ['b', 'b', 'c', 'c', 'd', 'd', 'f'].map((breed, index) => cat(100 + index, breed));
   const { state } = pick(playing({ tray }), { zone: 'field', index: 0 });
   assert.equal(state.status, 'playing');
-  assert.equal(state.tray.length, 4);
+  assert.equal(state.tray.length, 5);
 });
 
 test('Gỡ ra cứu ván thua và con trong hàng chờ quay lại khay được', () => {
@@ -117,4 +117,15 @@ test('Xáo giữ nguyên số mèo trên bàn và tự gom mục tiêu vừa ng�
   assert.equal(remainingOnBoard(state) + state.collected, before);
   const visible = [...state.field.filter(Boolean), ...state.columns.map(column => column.at(-1)).filter(Boolean)];
   assert.ok(visible.every(card => card.breed !== 'b'));
+});
+
+test('quota riêng cho từng loại phụ: 16 loại, bàn 10 cột lệch số lượng vẫn khớp', () => {
+  const many = Array.from({ length: 16 }, (_, index) => `k${index}`);
+  const quotas = Array.from({ length: 15 }, (_, index) => index < 5 ? 6 : 3);
+  const cfg = { breeds: many, depths: Array(10).fill(4).map((depth, index) => depth + (index < 8 ? 1 : 0)), fieldRows: 3, fieldCols: 10, targetTotal: 18, othersTotal: quotas };
+  const start = createLevel(cfg, mulberry32(9));
+  const { state } = chooseTarget(start, start.field[0].breed, mulberry32(10));
+  assert.equal(state.collected + (countBreeds(state)[state.target] ?? 0), 18);
+  const others = many.filter(name => name !== state.target).map(name => countBreeds(state)[name]).sort((a, b) => a - b);
+  assert.deepEqual(others, [...quotas].sort((a, b) => a - b));
 });
