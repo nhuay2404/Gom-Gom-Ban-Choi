@@ -229,3 +229,43 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .tabbar{width:min(380px,calc(100% - 24px));bottom:calc(10px + env(safe-area-inset-bottom))}
 .tab{min-height:56px;justify-content:center}
 @media(max-height:680px){.home-stage .home-logo{font-size:26px;top:8px}.home-buttons .pill-button.big{min-height:60px;font-size:26px}.home-level{font-size:16px}}
+.room-canvas.carrying{cursor:grabbing}
+.deco-item .thumb-3d{width:86%;aspect-ratio:1;object-fit:contain;display:block;background:radial-gradient(circle at 50% 58%,#ffffffcc 0 45%,#fff0 70%);box-shadow:none;border-radius:16px}
+.deco-item.locked .thumb-3d{filter:grayscale(.6)}
+
+/* ===== Bảng vào màn theo độ khó (tier): chill · normal · hard · boss ===== */
+.level-dialog{--tier:#3fa55f}
+.level-dialog[data-tier="chill"]{--tier:#2f9e8f;background:linear-gradient(#f2fff8,#dff5ea)}
+.level-dialog[data-tier="hard"]{--tier:#e0602f;background:linear-gradient(#fff4e8,#ffe1c7);border-color:#f2a46b}
+.level-dialog[data-tier="boss"]{--tier:#ffcf5a;background:radial-gradient(circle at 50% 0%,#6b2238,#2d0f1c 75%);border:2px solid #ffcf5a;color:#fff3dc}
+.level-dialog[data-tier] .level-number{color:var(--tier)}
+.level-dialog[data-tier="boss"] .level-number{font-size:22px;letter-spacing:2px;text-shadow:0 2px 0 #0006}
+.level-dialog[data-tier="hard"]::backdrop{background:#5a2a1080}
+.level-dialog[data-tier="boss"]::backdrop{background:radial-gradient(circle,#4a0f1f99,#12040acc)}
+.intro-tier{display:inline-flex;align-items:center;gap:6px;margin:0 auto 8px;padding:5px 14px 5px 10px;border-radius:999px;
+  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--tier);box-shadow:0 3px 0 #0003}
+.intro-tier svg{width:20px;height:20px;fill:#fff;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round}
+.level-dialog[data-tier="chill"] .intro-tier svg{fill:none;stroke-width:2.2}
+.level-dialog[data-tier="boss"] .intro-tier{color:#2d0f1c;font-size:18px;padding:7px 18px 7px 12px}
+.level-dialog[data-tier="boss"] .intro-tier svg{fill:#2d0f1c;stroke:#2d0f1c}
+.intro-mechanics{display:flex;justify-content:center;gap:10px;margin:10px 0 4px}
+.intro-mechanics .mechanic{position:relative;width:46px;height:46px;display:grid;place-items:center}
+.intro-mechanics .mechanic svg{width:100%;height:100%}
+.intro-mechanics .mechanic b{position:absolute;top:-8px;right:-14px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;background:#e8617f;box-shadow:0 2px 0 #b8435f;transform:rotate(8deg)}
+.level-dialog[data-tier="boss"] .pill-button:not(.ghost){background:linear-gradient(#ff7a6b,#d9362b);box-shadow:0 4px 0 #8f1f18,0 6px 12px #0006}
+.level-dialog[data-tier="boss"] .pill-button.ghost{background:#ffffff1f;color:#fff3dc;box-shadow:0 4px 0 #0005}
+@media(prefers-reduced-motion:no-preference){
+  .level-dialog[data-tier="boss"][open]{animation:boss-enter .6s cubic-bezier(.3,1.4,.5,1)}
+  .level-dialog[data-tier="boss"][open] .intro-tier{animation:boss-badge 1.4s ease-in-out .6s infinite}
+  .level-dialog[data-tier="hard"][open]{animation:hard-enter .45s cubic-bezier(.3,1.5,.5,1)}
+  .intro-mechanics .mechanic.new{animation:mech-pop .5s cubic-bezier(.3,1.6,.5,1) .15s both}
+}
+@keyframes boss-enter{0%{transform:scale(.6);opacity:0}45%{transform:scale(1.06) rotate(-1.5deg);opacity:1}60%{transform:rotate(1.5deg)}75%{transform:rotate(-1deg)}100%{transform:none}}
+@keyframes boss-badge{50%{transform:scale(1.08);box-shadow:0 3px 0 #0003,0 0 18px #ffcf5a}}
+@keyframes hard-enter{from{transform:translateY(18px) scale(.92);opacity:0}}
+@keyframes mech-pop{from{transform:scale(.3)}}
+/* Bản đồ: màu nút theo cấp độ */
+.map-node.tier-chill b{background:radial-gradient(circle at 35% 30%,#9ce8d6,#2f9e8f);box-shadow:inset 0 -4px 0 #1f7266}
+.map-node.tier-hard b{background:radial-gradient(circle at 35% 30%,#ffc08a,#e0602f);box-shadow:inset 0 -4px 0 #a8421f}
+.map-node.tier-boss b{background:radial-gradient(circle at 35% 30%,#b94a66,#4a1426);box-shadow:inset 0 -4px 0 #2d0f1c,0 0 0 3px #ffcf5a}
+.map-node.tier-boss{background:linear-gradient(#fff1d6,#ffd9a0)}

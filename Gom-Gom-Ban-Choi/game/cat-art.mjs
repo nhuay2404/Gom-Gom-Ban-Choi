@@ -72,6 +72,31 @@ function face(cat, group, mood, ink) {
   return `<g class="eyes${mood === 'happy' ? ' no-blink' : ''}">${eyes}</g>${mouth}`;
 }
 
+// Riêng đôi mắt (SVG, cùng hệ toạ độ 100×106 với art trên bàn chơi) cho mèo 3D trong phòng Deco,
+// để mắt 3D giống hệt mèo 2D: cùng kiểu mắt từng giống và cùng biểu cảm mặc định (xám nhắm cười, trắng mắt sao, mun nháy mắt).
+//   open    = mắt mặc định trên bàn chơi      focus  = mắt mở đúng kiểu của giống, to hơn chút
+//   blink   = mắt ép dẹt (như anim chớp 2D)    half   = lim dim
+//   sleep   = mắt buồn ngủ khi AFK             happy  = mắt ^^ khi gom     annoyed = mắt > < khi bị nhấc
+export function eyesMarkup(group, kind = 'open') {
+  const cat = categories[group];
+  const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
+  const line = group === 'tuxedo' ? '#f3e7cf' : ink;
+  const stroke = (d, width) => `<path d="${d}" fill="none" stroke="${line}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const squash = (markup, sy) => `<g transform="translate(0 57) scale(1 ${sy}) translate(0 -57)">${markup}</g>`;
+  const both = eye => eye(37) + eye(63);
+  const calm = face(cat, group, cat.mood, ink).match(/<g class="eyes[^"]*">([\s\S]*?)<\/g>/)[1];
+  const open = both(x => openEye(cat, x));
+  switch (kind) {
+    case 'focus': return [37, 63].map(x => `<g transform="translate(${x} 57) scale(1.18) translate(${-x} -57)">${openEye(cat, x)}</g>`).join('');
+    case 'blink': return cat.mood === 'happy' ? calm : squash(calm, .08);
+    case 'half': return cat.mood === 'happy' ? calm : squash(calm, .5) + stroke('M30 54.5 L44 54.5M56 54.5 L70 54.5', 2.4);
+    case 'sleep': return stroke('M31 58 Q37 63.5 43 58M57 58 Q63 63.5 69 58', 3);
+    case 'happy': return stroke('M30 59 Q37 49 44 59M56 59 Q63 49 70 59', 3.2);
+    case 'annoyed': return stroke('M31 52 L40 57 L31 62M69 52 L60 57 L69 62', 3);
+    default: return calm;
+  }
+}
+
 // Biểu cảm khi sắp hết lượt: mỗi con một kiểu (JS gắn data-low trên mèo để chọn). Mặc định ẩn.
 // Khi người chơi AFK thì mọi con đều buồn ngủ (sleepy, gắn body.afk).
 export const LOW_MOVE_MOODS = ['sad', 'worried', 'crying', 'disappointed', 'sulky'];

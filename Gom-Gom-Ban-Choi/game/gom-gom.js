@@ -1020,7 +1020,16 @@ function saveProgress(progress) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch {}
 }
 const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.filter(Boolean).length + 1);
-const levelTag = level => (level.boss ? ' · Boss' : level.hard ? ' · Hard' : level.breather ? ' · Chill' : '');
+// Cấp độ khó (levels.mjs: tier) hiện ở bảng vào màn và bản đồ. Màn normal không gắn nhãn.
+const TIERS = {
+  chill: { label: 'Chill', icon: '<svg viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14Zm0 0 7-7"/></svg>' },
+  hard: { label: 'Hard', icon: '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/></svg>' },
+  boss: { label: 'Boss', icon: '<svg viewBox="0 0 24 24"><path d="M4 18 3 7l5 4 4-6 4 6 5-4-1 11Z M5 21h14"/></svg>' },
+};
+const levelTier = level => level.tier || 'normal';
+const levelTag = level => (TIERS[levelTier(level)] ? ` · ${TIERS[levelTier(level)].label}` : '');
+// Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
+const levelMechanics = level => ['crate', 'metal'].filter(kind => level.board.join('').includes(kind === 'crate' ? 'X' : 'M'));
 const starText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 
 function showMap() {
@@ -1028,7 +1037,7 @@ function showMap() {
   $('map-list').replaceChildren(...LEVELS.map((level, index) => {
     const node = document.createElement('button');
     const stars = progress.stars[index] || 0, locked = index >= open;
-    node.className = `map-node${locked ? ' locked' : ''}${index === open - 1 && !stars ? ' current' : ''}${level.hard ? ' hard' : ''}`;
+    node.className = `map-node${locked ? ' locked' : ''}${index === open - 1 && !stars ? ' current' : ''}${TIERS[levelTier(level)] ? ` tier-${levelTier(level)}` : ''}`;
     node.disabled = locked;
     node.innerHTML = `<b>${locked ? '🔒' : index + 1}</b><span class="map-stars">${locked ? '' : starText(stars)}</span>`
       + `<small>${level.name}${levelTag(level)}</small>`;
@@ -1046,7 +1055,8 @@ const TABS = ['home', 'deco', 'shop'];
 const menuOpen = () => TABS.some(tab => !$(tab).hidden);
 const totalStars = () => loadProgress().stars.reduce((sum, n) => sum + (n || 0), 0);
 let deco = loadDeco(totalStars());
-let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
+let room3d = null;
+let decoThumbnail = null; // chụp model 3D làm ảnh cho ô đồ (có sau khi nạp Three.js) // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
 let decoCat = 'furniture', decoPick = null;
 
 function hideMenus() {
@@ -1134,14 +1144,16 @@ document.addEventListener('click', event => {
 const roomHint = $('deco-room').querySelector('.room-hint');
 const homeHint = $('home-room').querySelector('.room-hint');
 buildFlatRooms();
-import('./deco-room.mjs').then(({ createRoom }) => {
+import('./deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
+  decoThumbnail = thumbnail;
   $('home-room').replaceChildren(homeHint);
   $('deco-room').replaceChildren(roomHint);
   $('home-room').classList.add('is-3d');
   $('deco-room').classList.add('is-3d');
   const open = TABS.find(tab => !$(tab).hidden);
   if (open) mountRoom(open);
+  if (open === 'deco') renderDeco(); // thay quả cầu màu bằng ảnh chụp model
 }).catch(error => console.warn('3D room unavailable, using the flat room.', error));
 
 // ===== Deco: mua / đặt đồ, đổi tường, sàn, chọn mèo. Chọn món = xem trước ngay trong phòng. =====
@@ -1154,7 +1166,9 @@ function renderDeco() {
     const node = document.createElement('button');
     node.className = `deco-item ${status}${decoPick === entry ? ' picked' : ''}`;
     node.dataset.id = entry.id;
-    const thumb = entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>` : `<span class="thumb" style="--c:${entry.color}"></span>`;
+    const thumb = entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>`
+      : decoThumbnail ? `<img class="thumb thumb-3d" src="${decoThumbnail(entry)}" alt="">`
+      : `<span class="thumb" style="--c:${entry.color}"></span>`;
     const tag = status === 'locked' ? `🔒 Level ${entry.lock}` : status === 'using' ? (FURNISHING(entry) ? 'In room' : 'Using')
       : status === 'owned' ? (entry.cat === 'cats' ? 'Add' : 'Owned') : `<i class="ico-coin"></i>${entry.price}`;
     node.innerHTML = `${thumb}<span>${entry.name}</span><em>${tag}</em>`;
@@ -1260,9 +1274,16 @@ function startLevel(index, skipIntro = false) {
   $('map').hidden = true;
   newGame(index);
   if (skipIntro) return renderTutorial();
-  $('intro-number').textContent = `Level ${index + 1}${levelTag(level)}`;
-  $('intro-dialog').classList.toggle('hard', !!level.hard);
-  $('intro-dialog').showModal();
+  // Bảng vào màn "móc" người chơi bằng bố cục theo độ khó: nhãn cấp độ + màu nền; boss nền tối, bảng rung, nút đỏ.
+  const tier = levelTier(level), dialog = $('intro-dialog'), badge = $('intro-tier');
+  dialog.dataset.tier = tier;
+  badge.hidden = !TIERS[tier];
+  if (TIERS[tier]) badge.innerHTML = `${TIERS[tier].icon}<span>${TIERS[tier].label}</span>`;
+  $('intro-number').textContent = `Level ${index + 1}`;
+  const mechanics = levelMechanics(level);
+  $('intro-mechanics').hidden = !mechanics.length;
+  $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${kind === 'crate' ? 'Crates' : 'Metal blocks'}">${kind === 'crate' ? CRATE_SVG : METAL_SVG}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
+  dialog.showModal();
   renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
 }
 $('intro-dialog').addEventListener('close', () => renderTutorial());

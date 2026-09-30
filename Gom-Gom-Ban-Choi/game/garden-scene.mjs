@@ -34,14 +34,35 @@ function flower(color, x, z, h = .28) {
 }
 
 export const GARDEN_BUILD = {
+  // Bồn hoa là mặt đất đi được (mép thấp, mèo không lún chân). Mèo giẫm qua thì hoa rạp ra hai bên rồi bật lại.
+  // room-cats.mjs ghi vị trí mèo vào userData.walkers mỗi frame.
   flowers() {
-    const bed = group(at(cyl(.72, .78, .1, '#8a5a3a', 32), 0, .05, 0));
+    const bed = group(at(cyl(.72, .76, .035, '#8a5a3a', 48), 0, .0175, 0));
+    const flowers = [];
     for (let i = 0; i < 16; i++) {
       const a = i * 2.4, r = .15 + (i % 4) * .15;
-      bed.add(flower(FLOWER_COLORS[i % FLOWER_COLORS.length], Math.cos(a) * r, Math.sin(a) * r, .22 + (i % 3) * .06));
+      const f = flower(FLOWER_COLORS[i % FLOWER_COLORS.length], Math.cos(a) * r, Math.sin(a) * r, .22 + (i % 3) * .06);
+      f.position.y = .035;
+      f.userData.bend = { x: 0, z: 0 };
+      bed.add(f);
+      flowers.push(f);
     }
-    bed.userData.sway = bed.children.slice(1);
-    bed.userData.update = t => bed.userData.sway.forEach((f, i) => { f.rotation.z = Math.sin(t * 1.6 + i) * .07; });
+    bed.userData.walkers = [];
+    const local = new THREE.Vector3();
+    bed.userData.update = t => {
+      const walkers = bed.userData.walkers.map(p => bed.worldToLocal(local.set(p.x, 0, p.z)).clone());
+      flowers.forEach((f, i) => {
+        let bx = 0, bz = 0;
+        for (const w of walkers) { // rạp ra xa mèo, càng gần càng rạp mạnh
+          const dx = f.position.x - w.x, dz = f.position.z - w.z, d = Math.hypot(dx, dz);
+          if (d < .4) { const k = (1 - d / .4) * 1.1; bx += dz / (d || 1) * k; bz -= dx / (d || 1) * k; }
+        }
+        f.userData.bend.x += (bx - f.userData.bend.x) * .25; // theo kịp nhanh, bật lại mềm
+        f.userData.bend.z += (bz - f.userData.bend.z) * .25;
+        f.rotation.x = f.userData.bend.x;
+        f.rotation.z = Math.sin(t * 1.6 + i) * .07 + f.userData.bend.z;
+      });
+    };
     return bed;
   },
   stump() {
@@ -153,15 +174,26 @@ export function groundTexture(entry) {
 }
 
 // Hàng rào quanh vườn, dựng lại khi đổi kiểu. Thấp nên không cần mờ đi như tường phòng.
-export function buildFence(entry) {
+// `half` = nửa cạnh khoảnh vườn (mặc định cả vườn; thumbnail Deco dùng khoảnh nhỏ).
+export function buildFence(entry, half = HALF) {
   const fence = new THREE.Group();
-  const side = (build) => [[0, -HALF - .05, 0], [0, HALF + .05, Math.PI], [-HALF - .05, 0, Math.PI / 2], [HALF + .05, 0, -Math.PI / 2]]
+  const span = half * 2;
+  const side = (build) => [[0, -half - .05, 0], [0, half + .05, Math.PI], [-half - .05, 0, Math.PI / 2], [half + .05, 0, -Math.PI / 2]]
     .forEach(([x, z, rot]) => { const g = build(); g.position.set(x, 0, z); g.rotation.y = rot; fence.add(g); });
-  if (entry.id === 'fence-hedge') side(() => group(at(rbox(HALF * 2 + .2, .6, .32, .14, entry.color), 0, .3, 0)));
-  else if (entry.id === 'fence-stone') side(() => { const g = group(); for (let i = 0; i < 9; i++) g.add(at(rbox(.66, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), -2.7 + i * .675, .18, 0)); return g; });
+  if (entry.id === 'fence-hedge') side(() => group(at(rbox(span + .2, .6, .32, .14, entry.color), 0, .3, 0)));
+  else if (entry.id === 'fence-stone') side(() => {
+    const g = group(), n = Math.max(2, Math.round(span / .675)), step = span / n;
+    for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), -half + step * (i + .5), .18, 0));
+    return g;
+  });
   else side(() => {
-    const g = group(at(box(HALF * 2 + .2, .06, .04, entry.color), 0, .42, 0), at(box(HALF * 2 + .2, .06, .04, entry.color), 0, .2, 0));
-    for (let i = 0; i <= 12; i++) { const post = at(rbox(.12, .6, .05, .02, entry.color), -3 + i * .5, .3, .02); g.add(post); if (entry.id === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), -3 + i * .5, .64, .02).rotateY(Math.PI / 4)); }
+    const g = group(at(box(span + .2, .06, .04, entry.color), 0, .42, 0), at(box(span + .2, .06, .04, entry.color), 0, .2, 0));
+    const n = Math.max(2, Math.round(span / .5)), step = span / n;
+    for (let i = 0; i <= n; i++) {
+      const x = -half + i * step;
+      g.add(at(rbox(.12, .6, .05, .02, entry.color), x, .3, .02));
+      if (entry.id === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), x, .64, .02).rotateY(Math.PI / 4));
+    }
     return g;
   });
   fence.traverse(node => { if (node.isMesh) node.castShadow = false; });

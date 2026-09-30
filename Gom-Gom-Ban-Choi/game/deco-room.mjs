@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createCatLife } from './room-cats.mjs';
+import { playSound } from './sound.mjs';
 import { CATALOG, itemById, zoneState } from './deco-data.mjs';
 import { GARDEN_PLACES, GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies } from './garden-scene.mjs';
 
@@ -152,6 +153,63 @@ function floorTexture(entry) {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
+}
+
+// ---------- Thumbnail cho ô đồ trong Deco: chụp chính model 3D của món đó ----------
+// Renderer nhỏ riêng (192×192), mỗi món chụp một lần rồi lưu lại dạng ảnh; đồ đạc chụp góc 3/4, tự canh khung.
+let thumbKit = null;
+const thumbCache = {};
+function thumbStudio() {
+  if (thumbKit) return thumbKit;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1);
+  renderer.setSize(192, 192, false);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight('#fff8e8', '#e0b98a', 2.2));
+  const sun = new THREE.DirectionalLight('#fff1d6', 1.9);
+  sun.position.set(3, 7, 5);
+  scene.add(sun);
+  const camera = new THREE.PerspectiveCamera(28, 1, .05, 60);
+  return (thumbKit = { renderer, scene, camera });
+}
+const slab = (w, d, top, edge = '#c79a5f') => {
+  const node = mesh(new THREE.BoxGeometry(w, .12, d), mat(edge));
+  node.material = [mat(edge), mat(edge), top, mat(edge), mat(edge), mat(edge)];
+  node.position.y = -.06;
+  return node;
+};
+function thumbSubject(entry) {
+  if (entry.cat === 'furniture') return BUILD[entry.id]();
+  if (entry.cat === 'floors') { // tấm sàn / nền đúng texture
+    const top = mat('#ffffff', { roughness: .9, map: entry.zone === 'garden' ? groundTexture(entry) : floorTexture(entry) });
+    return group(slab(1.6, 1.6, top));
+  }
+  if (entry.zone === 'garden') { // khoảnh vườn nhỏ có đúng kiểu rào
+    return group(slab(1.7, 1.7, mat('#9fd46a', { roughness: .95 }), '#8a6a45'), buildFence(entry, .75));
+  }
+  // tường phòng khách: góc phòng nhỏ với đúng màu tường, sàn gỗ, chân tường trắng, ô cửa sổ
+  const wall = mat(entry.color), trim = mat('#ffffff');
+  return group(slab(1.5, 1.5, mat('#e4b574'), '#c79a5f'),
+    at(box(1.5, 1.2, .08, wall), 0, .6, -.71), at(box(.08, 1.2, 1.5, wall), -.71, .6, 0),
+    at(box(1.5, .1, .03, trim), 0, .05, -.66), at(box(.03, .1, 1.5, trim), -.66, .05, 0),
+    at(new THREE.Mesh(new THREE.PlaneGeometry(.42, .5), new THREE.MeshBasicMaterial({ color: '#cfeaff' })), .25, .72, -.665));
+}
+export function thumbnail(entry) {
+  if (thumbCache[entry.id]) return thumbCache[entry.id];
+  const { renderer, scene, camera } = thumbStudio();
+  const subject = thumbSubject(entry);
+  subject.userData.update?.(0);
+  scene.add(subject);
+  subject.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(subject), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+  const radius = size.length() / 2, distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * .82;
+  camera.position.copy(center).add(new THREE.Vector3(.75, .62, 1).normalize().multiplyScalar(distance));
+  camera.lookAt(center);
+  renderer.render(scene, camera);
+  thumbCache[entry.id] = renderer.domElement.toDataURL('image/png');
+  scene.remove(subject);
+  subject.traverse(node => { if (node.isMesh) { node.geometry.dispose(); [].concat(node.material).forEach(m => { m.map?.dispose(); m.dispose(); }); } });
+  return thumbCache[entry.id];
 }
 
 export function createRoom() {
@@ -312,18 +370,66 @@ export function createRoom() {
     turn = { from, to, start: performance.now() };
   }
 
-  // Chạm mèo (không phải kéo xoay) để cưng: mặt vui, nhảy, tim bay.
-  const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
-  let down = null;
-  renderer.domElement.addEventListener('pointerdown', event => { down = { x: event.clientX, y: event.clientY }; });
-  renderer.domElement.addEventListener('pointerup', event => {
-    if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 6) return;
+  // Chạm mèo:
+  //   chạm nhanh          -> cưng (mặt vui, nảy, tim bay)
+  //   giữ ~0.35 s rồi kéo -> nhấc mèo lên, mèo lơ lửng ngay dưới ngón tay, thả tay thì mèo rơi xuống chỗ đó
+  // Trong lúc nhấc mèo: khoá xoay/zoom camera (vẫn để OrbitControls theo dõi ngón tay cho khỏi lệch trạng thái).
+  const HOLD_MS = 350, MOVE_TOLERANCE = 8;
+  const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), hit = new THREE.Vector3();
+  const carryPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -cats.carryHeight);
+  let down = null, holdTimer = 0, carrying = null;
+  const aim = event => {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
+    return rect;
+  };
+  // Điểm trên mặt phẳng ngang ở độ cao mèo đang lơ lửng: thân mèo hiện đúng dưới ngón tay.
+  const carryPoint = event => { aim(event); return raycaster.ray.intersectPlane(carryPlane, hit) ? hit : null; };
+  function startCarry(cat, event) {
+    carrying = { cat, id: event.pointerId };
+    controls.enableRotate = false; controls.enableZoom = false; controls.autoRotate = false; turn = null;
+    const p = carryPoint(event);
+    cats.pickUp(cat, p?.x ?? cat.x, p?.z ?? cat.z);
+    playSound('pick');
+    navigator.vibrate?.(12);
+    renderer.domElement.classList.add('carrying');
+  }
+  function endCarry() {
+    if (!carrying) return;
+    cats.drop(carrying.cat);
+    playSound('draw');
+    carrying = null;
+    controls.enableRotate = true; controls.enableZoom = true;
+    renderer.domElement.classList.remove('carrying');
+  }
+  renderer.domElement.addEventListener('pointerdown', event => {
+    down = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    clearTimeout(holdTimer);
+    aim(event);
     const cat = cats.hit(raycaster);
-    if (cat) { cat.pet(); spawnHearts(event.clientX - rect.left, event.clientY - rect.top); }
+    if (cat && !carrying) holdTimer = setTimeout(() => { if (down?.id === event.pointerId) startCarry(cat, event); }, HOLD_MS);
   });
+  renderer.domElement.addEventListener('pointermove', event => {
+    if (carrying && event.pointerId === carrying.id) {
+      const p = carryPoint(event);
+      if (p) cats.carryTo(carrying.cat, p.x, p.z);
+      return;
+    }
+    if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > MOVE_TOLERANCE) clearTimeout(holdTimer); // đang xoay phòng
+  });
+  const release = event => {
+    clearTimeout(holdTimer);
+    if (carrying && event.pointerId === carrying.id) { endCarry(); down = null; return; }
+    if (event.type === 'pointerup' && down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
+      const rect = aim(event);
+      const cat = cats.hit(raycaster);
+      if (cat) { cat.pet(); spawnHearts(event.clientX - rect.left, event.clientY - rect.top); }
+    }
+    down = null;
+  };
+  renderer.domElement.addEventListener('pointerup', release);
+  renderer.domElement.addEventListener('pointercancel', release);
   function spawnHearts(x, y) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || !container) return;
     for (let i = 0; i < 4; i++) {

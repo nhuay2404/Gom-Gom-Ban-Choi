@@ -1,13 +1,20 @@
-// 10 màn đầu của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
+// 20 màn của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
 // (bộ mô phỏng tools/simulate-levels.mjs dùng chung file này để cân độ khó).
 //
-// Nhịp (beat) theo khuôn "dạy -> luyện -> biến tấu -> thử thách", độ khó răng cưa (lên, thả nhẹ, lên cao hơn):
-//   1 Kéo thả + gom 3 (tutorial ép nước)   2 Xoay thẻ (tutorial)       3 Gom to = điểm to (tutorial)
-//   4 Ô gửi tạm (tutorial)                  5 Luyện tập (nghỉ)          6 Thêm loại mèo
-//   7 Thẻ 3 mèo (tip)                       8 Bàn chật (đỉnh nhỏ)        9 Thêm loại mèo (thả nhẹ)
-//  10 Thử thách chương (Khó)
+// Tiến trình (độ khó răng cưa: lên dần, thả ở màn nghỉ, lên cao hơn ở boss):
+//   1–2  Tutorial: kéo thả + gom 3 · xoay thẻ + ô Hold + mẹo gom to (hết tutorial sau màn 2)
+//   3–4  Chơi bình thường, chưa có vật cản
+//   5    Giới thiệu thùng gỗ (barrel)        6–7  Thùng gỗ trong màn (+ mèo mướp)
+//   8    Giới thiệu khối kim loại, kiêm màn nghỉ (breather)
+//   9    Kim loại + thùng gỗ (+ mèo Xiêm)    10   BOSS chương 1 (đủ 6 giống, cả hai vật cản)
+//   11–18 Xào lại cơ chế: không vật cản -> thùng -> kim loại -> cả hai, hai vòng, vòng sau khó hơn
+//   19   Màn nghỉ                           20   BOSS chương 2
 //
-// Bàn: 6 chuỗi x 6 ký tự, '.' là ô trống, 'X' là thùng gỗ (chặn ô, vỡ khi gom mèo sát bên). Ký tự mèo:
+// `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
+// `introduces` = cơ chế mới của màn ('crate' | 'metal'), bảng vào màn gắn nhãn NEW.
+//
+// Bàn: 6 chuỗi x 6 ký tự, '.' ô trống, 'X' thùng gỗ (chặn ô, vỡ khi gom mèo sát bên), 'M' khối kim loại
+// (chặn ô, không bao giờ vỡ). Ký tự mèo:
 export const LETTERS = { O: 'orange', G: 'gray', W: 'white', K: 'tuxedo', S: 'siamese', T: 'tabby' };
 
 // Thẻ viết gọn: 'O' đơn · 'OG' đôi ngang · 'O|G' đôi dọc · 'I:OGW' ba ngang · 'V:OGW' ba dọc · 'L:OGW' chữ L.
@@ -17,8 +24,9 @@ const SHAPES = {
 };
 
 export const LEVELS = [
+  // ===== Chương 1: vườn =====
   {
-    name: 'Hello, Kitty', feature: 'Drag & match 3',
+    name: 'Hello, Kitty', feature: 'Drag & match 3', tier: 'normal',
     moves: 4, target: 60, cats: 'OG',
     board: ['......', '......', '..OO..', '......', '.GG...', '......'],
     deck: ['O', 'G', 'O', 'G'],
@@ -28,153 +36,134 @@ export const LEVELS = [
     ],
   },
   {
-    name: 'Round and Round', feature: 'Rotate cards',
-    moves: 5, target: 60, cats: 'OGW',
-    board: ['......', '.G.W..', '.W.G..', '.GOW..', '......', '......'],
-    deck: ['OO', 'W|W'],
+    // Tutorial cuối: xoay thẻ -> cất thẻ vào Hold -> mẹo gom to -> lấy thẻ từ Hold ra.
+    name: 'Round and Round', feature: 'Rotate & Hold', tier: 'normal',
+    moves: 6, target: 90, cats: 'OGW',
+    board: ['...GG.', '.W....', '.G....', 'OW....', '....WW', '......'],
+    deck: ['OO', 'W', 'G', 'G'],
     tutorial: [
-      { type: 'rotate', offsets: SHAPES.dominoV, text: 'The horizontal card won\'t fit the gap. Tap the card to rotate it!' },
-      { type: 'drag', anchor: 8, text: 'A perfect fit! Drag it into the gap.' },
-      { type: 'drag', anchor: 8, text: 'Match 4 white cats at once for more points!' },
+      { type: 'rotate', offsets: SHAPES.dominoV, text: 'This card is sideways and won\'t fit the gap. Tap the card to rotate it!' },
+      { type: 'drag', anchor: 6, text: 'A perfect fit! Drag it into the gap to match 3 orange cats.' },
+      { type: 'hold', text: 'This white cat doesn\'t fit yet. Drag it into the Hold slot to save it for later.' },
+      { type: 'drag', anchor: 5, text: 'Now match 3 gray cats!' },
+      { type: 'info', text: 'Tip: bigger matches score more! 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 points.' },
+      { type: 'tapHold', text: 'Tap the Hold slot to bring the white cat back.' },
+      { type: 'drag', anchor: 27, text: 'Match 3 white cats! You can use Hold as often as you like.' },
     ],
   },
   {
-    name: 'Go Big', feature: 'Big match = big score',
-    moves: 8, target: 170, cats: 'OGW', assist: 0.5,
-    board: ['......', '......', 'OO.OO.', '......', '..GW..', '..WG..'],
-    deck: ['O'],
+    name: 'Go Big', feature: 'Free play', tier: 'normal',
+    moves: 10, target: 170, cats: 'OGW', assist: 0.5,
+    board: ['......', '.O..G.', '......', '..WW..', '......', '.G..O.'],
+    deck: [],
+  },
+  {
+    name: 'Triple Cards', feature: 'More 3-cat cards', tier: 'normal',
+    moves: 12, target: 280, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
+    board: ['O....W', '..GG..', '......', '.W..O.', '..OW..', 'G....G'],
+    deck: [],
+  },
+  {
+    name: 'Crates', feature: 'Crates block cells', tier: 'normal', introduces: 'crate',
+    moves: 12, target: 180, cats: 'OGW', assist: 0.45,
+    board: ['......', '.X....', '..G.X.', 'X.G...', '...X.O', 'W.X..O'],
+    deck: ['G'],
     tutorial: [
-      { type: 'drag', anchor: 14, text: 'The more cats you match, the higher the score. Make 5 orange cats!' },
-      { type: 'info', text: 'Match 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 points. Now play on your own!' },
+      { type: 'info', text: 'Crates block cells, so cats can\'t sit on them. Match cats next to a crate to break it!' },
+      { type: 'drag', anchor: 8, free: true, text: 'Match 3 gray cats next to the crate to break it!' },
     ],
   },
   {
-    name: 'Hold Slot', feature: 'Hold a card',
-    moves: 10, target: 120, cats: 'OGW', assist: 0.5,
-    board: ['......', '......', '..OO..', '......', '...WW.', '......'],
-    // Thẻ thứ 3 (xám) phải khác mèo trắng đang cất, để lúc chạm Gửi tạm là một lần đổi thẻ thật sự.
-    deck: ['W', 'O', 'G'],
-    tutorial: [
-      { type: 'hold', text: 'The next card fits better! Drag the white cat into the Hold slot.' },
-      { type: 'drag', anchor: 16, text: 'The orange cat fits perfectly. Drag it onto the glowing cell!' },
-      { type: 'tapHold', text: 'Tap the Hold slot to take the white cat back.' },
-      { type: 'drag', anchor: 29, text: 'Match 3 white cats! You can use Hold as many times as you like.' },
-    ],
-  },
-  {
-    name: 'Practice', feature: 'Free play',
-    moves: 16, target: 200, cats: 'OGW', assist: 0.4, // dư lượt: màn luyện tay
-    board: ['O....G', '......', '..WW..', '......', 'G....O', '......'],
+    name: 'Crate Garden', feature: 'Crates + tabby cat', tier: 'normal',
+    moves: 14, target: 260, cats: 'OGWT', assist: 0.4,
+    board: ['X..O..', '.GG..X', '..X.W.', 'W...X.', '.X.T..', 'T..X.O'],
     deck: [],
   },
   {
-    name: 'Tabby Cat', feature: '4th cat breed',
-    moves: 16, target: 220, cats: 'OGWT', assist: 0.4, // dư lượt: làm quen giống mèo thứ 4
-    board: ['OO....', '......', '...GG.', '......', 'WW....', '....TT'],
-    deck: ['T'],
-    tutorial: [
-      { type: 'info', text: 'The tabby cat joins! 4 breeds are harder to match, so check the next cards and plan ahead.' },
-      { type: 'drag', anchor: 33, free: true, text: 'Say hi to the newcomer: match 3 tabby cats!' },
-    ],
-  },
-  {
-    name: 'Crates', feature: 'Crates block cells',
-    moves: 14, target: 310, cats: 'OGWT', assist: 0.4, shapes: { single: 4, domino: 4, triple: 3 },
-    board: ['.....O', 'T.X..X', 'T..G..', 'X..GXX', '.XXX.X', 'WX..XW'],
-    deck: ['L:GGT'],
-    tutorial: [
-      { type: 'info', text: 'Crates block cells, so cats can\'t be placed on them! Match cats next to a crate to break it.' },
-      { type: 'drag', anchor: 3, free: true, text: 'Match 4 gray cats next to the crate to break it!' },
-    ],
-  },
-  {
-    name: 'Tight Board', feature: 'Make room',
-    moves: 12, target: 340, cats: 'OGWT', assist: 0.3,
-    board: ['OGW.TO', 'GW..OT', 'T.OG.W', 'WT.GO.', '.OWT.G', 'GT..WO'],
-    deck: [],
-    tutorial: [{ type: 'info', text: 'Tight board! Make room first — if you run out of space, you lose.' }],
-  },
-  {
-    name: 'Cat House', feature: 'Siamese cat',
-    moves: 20, target: 270, cats: 'OGWTS', assist: 0.45, // dư lượt: nghỉ trước màn khó
-    board: ['SS....', '......', '..O..G', '..O..G', '......', 'W....T'],
-    deck: ['S'],
-  },
-  {
-    name: 'Grand Challenge', feature: 'All 6 breeds', hard: true,
-    moves: 18, target: 410, cats: 'OGWTSK', assist: 0.4,
-    board: ['K.O..S', 'K.O.T.', '..WW.T', 'G.....', 'G.SS.K', '..T..O'],
-    deck: [],
-  },
-  // ===== Chương 2 (màn 11–20, phòng khách): khối kim loại 'M' chiếm ô, không bao giờ vỡ =====
-  // Nhịp: 11 dạy (tutorial) -> 12 luyện -> 13 trộn thùng gỗ -> 14 tường chia bàn -> 15 nghỉ
-  //       -> 16 mê cung -> 17 bàn chật -> 18 nghỉ -> 19 cửa sắt (trước boss) -> 20 BOSS.
-  {
-    name: 'Metal Block', feature: 'Metal blocks never break',
-    moves: 8, target: 120, cats: 'OGW', assist: 0.5,
-    board: ['......', '.MM...', 'O..G..', 'O.MG..', '......', 'W...W.'],
-    deck: ['O', 'G'],
-    tutorial: [
-      { type: 'info', text: 'New obstacle: metal blocks! Like crates, they take up a cell. Unlike crates, they never break.' },
-      { type: 'drag', anchor: 24, text: 'Match 3 orange cats right next to the metal. See? It stays put.' },
-      { type: 'drag', anchor: 27, free: true, text: 'Plan your matches around the metal. Match 3 gray cats!' },
-    ],
-  },
-  {
-    name: 'Steel Corners', feature: 'Work around metal',
-    moves: 17, target: 240, cats: 'OGWT', assist: 0.45, // dư lượt: luyện kim loại
-    board: ['M....M', '..OO..', '.G..G.', '.G..G.', '..TT..', 'M....M'],
+    name: 'Tight Crates', feature: 'Crowded + crates', tier: 'hard',
+    moves: 12, target: 270, cats: 'OGWT', assist: 0.35,
+    board: ['OGX.TO', 'G..WX.', 'X.OG.W', '.TX.O.', 'W.GX.T', '.T..XO'],
     deck: [],
   },
   {
-    name: 'Crate & Steel', feature: 'Crates break, metal stays',
-    moves: 18, target: 270, cats: 'OGWT', assist: 0.4, // dư lượt: làm quen thùng gỗ + kim loại
-    board: ['X.M..X', '.O..O.', 'MXGG..', '..W.XM', '.O..W.', 'X..M.X'],
-    deck: [],
-  },
-  {
-    name: 'Divided', feature: 'A metal wall splits the board',
-    moves: 14, target: 230, cats: 'OGWT', assist: 0.4,
-    board: ['..M...', '.O.M.G', '..M...', '...M..', '.G.M.O', '..M..T'],
-    deck: [],
-  },
-  {
-    name: 'Sunny Nap', feature: 'Take a breather', breather: true,
-    moves: 19, target: 210, cats: 'OGW', assist: 0.5, // dư lượt: breather
+    name: 'Steel Nap', feature: 'Metal never breaks', tier: 'chill', introduces: 'metal',
+    moves: 18, target: 240, cats: 'OGWT', assist: 0.5,
     board: ['......', '.M..M.', '..OO..', '..WW..', '.M..M.', '......'],
     deck: [],
+    tutorial: [{ type: 'info', text: 'New: metal blocks! Like crates they take up a cell, but they never break. Plan around them.' }],
   },
   {
-    name: 'Steel Maze', feature: 'Five breeds + metal maze',
-    moves: 15, target: 230, cats: 'OGWTS', assist: 0.4,
-    board: ['M.M..M', '..O.G.', 'M..M..', '.W..M.', '..M..T', 'S..M..'],
+    name: 'Iron & Oak', feature: 'Metal + crates', tier: 'hard',
+    moves: 16, target: 300, cats: 'OGWTS', assist: 0.4,
+    board: ['X.M..X', '.O..O.', 'MXGG..', '..W.XM', '.O..T.', 'X..M.X'],
     deck: [],
   },
   {
-    name: 'Tight Steel', feature: 'Crowded + metal',
-    moves: 14, target: 240, cats: 'OGWTS', assist: 0.35,
-    board: ['OGM.TO', 'G..WM.', 'M.OG.W', '.TM.O.', 'W.GM.S', '.S.T.M'],
-    deck: [],
-    tutorial: [{ type: 'info', text: 'Crowded and full of steel! Clear space early, or you\'ll run out of room.' }],
-  },
-  {
-    name: 'Tea Break', feature: 'Take a breather', breather: true,
-    moves: 20, target: 230, cats: 'OGWT', assist: 0.5, // dư lượt: breather
-    board: ['......', '.OO.M.', '.M....', '....M.', '.M.GG.', '......'],
+    name: 'Garden Fortress', feature: 'Boss', tier: 'boss',
+    moves: 20, target: 370, cats: 'OGWTSK', assist: 0.4,
+    board: ['MX..XM', 'X.OG.X', '.K..S.', '.TW.K.', 'X.S..X', 'MX..XM'],
     deck: [],
   },
+  // ===== Chương 2: phòng khách — xào lại cơ chế, hai vòng: trống -> thùng -> kim loại -> cả hai =====
   {
-    name: 'Iron Gate', feature: 'All 6 breeds + steel',
+    name: 'Fresh Start', feature: 'No obstacles', tier: 'normal',
+    moves: 14, target: 240, cats: 'OGWTS', assist: 0.45,
+    board: ['O....G', '..T...', '.W..S.', '..SW..', '...T..', 'G....O'],
+    deck: [],
+  },
+  {
+    name: 'Crate Scatter', feature: 'Crates', tier: 'normal',
+    moves: 15, target: 240, cats: 'OGWTS', assist: 0.4,
+    board: ['.X..X.', 'X.O..G', '..TX..', '.S..W.', 'G..X.T', '.X..X.'],
+    deck: [],
+  },
+  {
+    name: 'Steel Corners', feature: 'Metal', tier: 'normal',
+    moves: 15, target: 280, cats: 'OGWTS', assist: 0.4,
+    board: ['M....M', '..OO..', '.G..G.', '.S..S.', '..TT..', 'M....M'],
+    deck: [],
+  },
+  {
+    name: 'Crate & Steel', feature: 'Crates + metal', tier: 'hard',
+    moves: 16, target: 270, cats: 'OGWTSK', assist: 0.4,
+    board: ['X.M..X', '.O..K.', 'MXGG..', '..W.XM', '.K..W.', 'X..M.X'],
+    deck: [],
+  },
+  {
+    name: 'Open Field', feature: 'No obstacles, 6 breeds', tier: 'normal',
+    moves: 14, target: 290, cats: 'OGWTSK', assist: 0.4,
+    board: ['K.O..S', '..O.T.', '.WW..T', 'G.....', 'G.S..K', '..T..O'],
+    deck: [],
+  },
+  {
+    name: 'Crate Maze', feature: 'Lots of crates', tier: 'hard',
+    moves: 16, target: 260, cats: 'OGWTSK', assist: 0.4,
+    board: ['X...X.', '.O.G..', '..S.X.', 'XW.K..', '..T..X', '.X...O'],
+    deck: [],
+  },
+  {
+    name: 'Divided', feature: 'A metal wall splits the board', tier: 'hard',
+    moves: 15, target: 240, cats: 'OGWTSK', assist: 0.4,
+    board: ['..M...', '.O.M.G', '..M..S', '.K.M..', '.G.M.O', '..M..T'],
+    deck: [],
+  },
+  {
+    name: 'Iron Gate', feature: 'Crates + metal', tier: 'hard',
     moves: 18, target: 300, cats: 'OGWTSK', assist: 0.4,
     board: ['M.X.XM', '.O..G.', 'X.MM.X', '..W.K.', '.S.XT.', 'M..O.M'],
     deck: [],
   },
   {
-    name: 'Steel Fortress', feature: 'Boss level', hard: true, boss: true,
-    moves: 20, target: 350, cats: 'OGWTSK', assist: 0.4,
+    name: 'Tea Break', feature: 'Take a breather', tier: 'chill',
+    moves: 20, target: 290, cats: 'OGWT', assist: 0.5,
+    board: ['......', '.OO.M.', '.M....', '....M.', '.M.GG.', '......'],
+    deck: [],
+  },
+  {
+    name: 'Steel Fortress', feature: 'Boss', tier: 'boss',
+    moves: 22, target: 380, cats: 'OGWTSK', assist: 0.4,
     board: ['MM..MM', 'M.OG.M', '.X..X.', '.TK.S.', 'M.W..M', 'MM..MM'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'Boss level: the Steel Fortress! Use every trick: rotate, hold, and big matches.' }],
   },
 ];
 

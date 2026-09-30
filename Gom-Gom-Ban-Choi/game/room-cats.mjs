@@ -4,7 +4,7 @@
 // (đi tới -> nhảy lên -> xoay vòng -> nằm ngủ ...) mà vẫn ngắt được bất cứ lúc nào (cưng mèo, AFK, dời đồ).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { categories } from './cat-art.mjs';
+import { categories, eyesMarkup } from './cat-art.mjs';
 
 const W = .6, H = .54, D = .62, LEG = .1, ROOM = 2.5, TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -12,20 +12,34 @@ const chance = p => Math.random() < p;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const angDiff = (a, b) => ((((b - a) % TAU) + TAU + Math.PI) % TAU) - Math.PI;
 const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.exp(-rate * dt));
+// Lò xo tắt dần: obj[key] chạy về đích với độ cứng k và tỉ lệ tắt zeta (vận tốc lưu ở obj[key + 'V']).
+// zeta < 1 thì hơi vọt qua rồi về, như thịt mềm; đây là thứ làm chuyển động hết "cứng".
+function spring(obj, key, target, k, zeta, dt) {
+  const vKey = key + 'V', v = obj[vKey] || 0;
+  const accel = k * (target - obj[key]) - 2 * zeta * Math.sqrt(k) * v;
+  obj[vKey] = v + accel * dt;
+  obj[key] += obj[vKey] * dt;
+}
+// [độ cứng, tỉ lệ tắt] cho từng tư thế: đổi tư thế to (nằm, cuộn) thì chậm và êm, chân/tay thì nhanh và nảy.
+const POSE_SPRING = {
+  sit: [70, .8], lie: [55, .85], curl: [28, .9], stretch: [85, .7], roll: [40, .75], lean: [110, .7],
+  paw: [320, .55], groom: [170, .65], knead: [130, .7], tailUp: [36, .6],
+};
+const CARRY_H = .95; // độ cao mèo lơ lửng khi bị nhấc
+const STRIDE_WALK = .34, STRIDE_RUN = .78; // quãng đường cho một chu kỳ bước (chân không trượt trên sàn)
 
 // Chỗ đứng / ngồi của mèo với từng món (toạ độ trong không gian của món đồ; +z của món hướng vào giữa phòng).
 // `r` = bán kính vật cản khi mèo đi quanh.
 const FURNITURE = {
   catbed: { r: .75 }, armchair: { r: .8 }, cattree: { r: .65 }, table: { r: .62 }, shelf: { r: .9 },
   yarn: { r: .5 }, plant: { r: .45 }, tank: { r: .8 }, lamp: { r: .38 }, rug: { r: 0 },
-  // vườn
-  flowers: { r: .75 }, stump: { r: .45 }, catnip: { r: .45 }, lantern: { r: .28 }, sandbox: { r: .62 },
+  // vườn (bồn hoa r = 0: mặt đất đi được, không phải vật cản)
+  flowers: { r: 0 }, stump: { r: .45 }, catnip: { r: .45 }, lantern: { r: .28 }, sandbox: { r: .62 },
   cathouse: { r: .75 }, pond: { r: 1 }, hammock: { r: .7 }, birdbath: { r: .36 }, bench: { r: .75 },
 };
 const WINDOW = { x: -1.6, z: -2.5 }; // cửa sổ vòm trên tường sau
 
 // ---------- Mặt mèo: vẽ bằng canvas, tách lớp "mặt" (bụng, mõm, miệng) và lớp "mắt" để mắt liếc được ----------
-const INK = breed => (breed === 'tuxedo' ? '#f3e7cf' : '#3a2a22');
 const textures = {};
 function canvasTexture(key, draw) {
   if (textures[key]) return textures[key];
@@ -62,29 +76,24 @@ function faceTexture(breed, mouth) {
     if (mouth === 'zig') { g.beginPath(); g.moveTo(.42, .68); g.lineTo(.46, .655); g.lineTo(.5, .68); g.lineTo(.54, .655); g.lineTo(.58, .68); g.stroke(); }
   });
 }
+// Mắt: vẽ thẳng SVG mắt của mèo 2D (cat-art.mjs) lên canvas, nên mắt 3D giống hệt mèo trên bàn chơi.
+// Khung nhìn 80×72 bắt đầu ở (10, 20) của art 2D = đúng vùng mặt, khớp vị trí mũi/má/miệng của lớp mặt.
+const EYE_KINDS = ['open', 'focus', 'blink', 'half', 'sleep', 'happy', 'annoyed'];
 function eyesTexture(breed, eyes) {
-  return canvasTexture(`eyes:${breed}:${eyes}`, g => {
-    const cat = categories[breed], ink = INK(breed);
-    g.strokeStyle = ink; g.lineWidth = .028;
-    [.33, .67].forEach((x, side) => {
-      const y = .46;
-      const line = draw => { g.beginPath(); draw(); g.stroke(); };
-      if (eyes === 'blink') return line(() => { g.moveTo(x - .06, y); g.quadraticCurveTo(x, y + .02, x + .06, y); });
-      if (eyes === 'sleep') return line(() => { g.moveTo(x - .06, y - .01); g.quadraticCurveTo(x, y + .04, x + .06, y - .01); });
-      if (eyes === 'happy') return line(() => { g.moveTo(x - .06, y + .025); g.quadraticCurveTo(x, y - .05, x + .06, y + .025); });
-      if (eyes === 'annoyed') return line(() => { const s = side ? -1 : 1; g.moveTo(x - .045 * s, y - .04); g.lineTo(x + .04 * s, y); g.lineTo(x - .045 * s, y + .04); });
-      const big = eyes === 'focus';
-      const iris = cat.eyeStyle === 'dot' || cat.eyeStyle === 'oval' || cat.eyeStyle === 'sparkle' ? '#2b2230' : cat.eye;
-      ellipse(g, x, y, big ? .085 : .062, big ? .092 : .075, iris);
-      if (cat.eyeStyle === 'slit' && !big) ellipse(g, x, y, .016, .062, '#1d1618');
-      if (cat.eyeStyle === 'iris' || big) ellipse(g, x, y + .005, big ? .058 : .034, big ? .064 : .04, '#1d1618');
-      ellipse(g, x + .022, y - .028, big ? .026 : .02, big ? .028 : .022, '#fff');
-      ellipse(g, x - .02, y + .03, .01, .011, '#ffffffcc');
-      if (eyes === 'half') { g.fillStyle = cat.mask || cat.fur; g.fillRect(x - .1, y - .11, .2, .1); line(() => { g.moveTo(x - .07, y - .01); g.lineTo(x + .07, y - .01); }); }
-    });
-  });
-}
-function zTexture() {
+  const key = `eyes:${breed}:${eyes}`;
+  if (textures[key]) return textures[key];
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 460;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  textures[key] = texture;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 20 80 72" width="512" height="460" preserveAspectRatio="none">${eyesMarkup(breed, eyes)}</svg>`;
+  const image = new Image();
+  image.onload = () => { canvas.getContext('2d').drawImage(image, 0, 0, 512, 460); texture.needsUpdate = true; };
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return texture;
+}function zTexture() {
   return canvasTexture('zzz', g => {
     g.strokeStyle = '#7a8fd6'; g.lineWidth = .1;
     g.beginPath(); g.moveTo(.28, .25); g.lineTo(.72, .25); g.lineTo(.28, .75); g.lineTo(.72, .75); g.stroke();
@@ -93,6 +102,7 @@ function zTexture() {
 
 // ---------- Bộ khung một con mèo ----------
 function buildRig(breed) {
+  EYE_KINDS.forEach(kind => eyesTexture(breed, kind)); // nạp sẵn mọi kiểu mắt: lần chớp đầu không bị trống
   const cat = categories[breed];
   const fur = new THREE.MeshStandardMaterial({ color: cat.fur, roughness: .75 });
   const accent = new THREE.MeshStandardMaterial({ color: cat.mask || cat.fur, roughness: .75 });
@@ -154,8 +164,9 @@ function buildRig(breed) {
     const foot = mesh(new RoundedBoxGeometry(.15, .05, .16, 4, .025), paw);
     foot.position.set(0, -(LEG + .03) + .025, .01);
     hip.add(leg, foot);
-    hopper.add(hip); // cùng nhánh với thân: nảy / nhún / nhảy thì chân đi theo, không bị tách rời
-    return { hip, front: sz > 0 };
+    // Gắn vào roller (cùng nhánh với thân): thân nghiêng / lắc / nảy thì chân theo, không choãi ra ngoài thân.
+    roller.add(hip);
+    return { hip, leg, foot, front: sz > 0 };
   });
 
   const z = new THREE.Sprite(new THREE.SpriteMaterial({ map: zTexture(), transparent: true, depthWrite: false }));
@@ -172,7 +183,7 @@ class Cat {
     this.breed = breed;
     this.rig = buildRig(breed);
     this.x = x; this.z = z; this.y = 0;
-    this.heading = rand(0, TAU);
+    this.heading = rand(0, TAU); this.yaw = this.heading; // heading = hướng logic; yaw = hướng hiển thị bám theo bằng lò xo
     this.speed = 0; this.gait = rand(0, TAU); this.running = false;
     this.pose = { sit: 0, lie: 0, curl: 0, stretch: 0, roll: 0, lean: 0, paw: 0, groom: 0, knead: 0, tailUp: .4 };
     this.goal = { ...this.pose };
@@ -180,6 +191,8 @@ class Cat {
     this.sleeping = false; this.surface = null; this.airY = 0; this.squash = 0;
     this.nextBlink = rand(1, 4); this.nextEar = rand(1, 5); this.earTwitch = 0; this.tailSpeed = 1.6; this.tailWag = .25;
     this.petUntil = 0; this.purr = 0; this.busyWith = null;
+    this.move = 0; this.lid = 1; this.earFlop = 0; this.swayF = 0; this.swayL = 0; this.lean = 0; this.lastY = 0; this.airK = null; this.hopY = 0;
+    this.tailZ = [0, 0, 0, 0, 0]; this.tailX = [0, 0, 0, 0, 0]; this.phase = rand(0, TAU);
     this.brain = this.life();
     this.rig.root.userData.cat = this;
     world.scene.add(this.rig.root);
@@ -196,20 +209,23 @@ class Cat {
     this.goal = { sit: 0, lie: 0, curl: 0, stretch: 0, roll: 0, lean: 0, paw: 0, groom: 0, knead: 0, tailUp, ...presets[name], ...extra };
   }
   face(eyes, mouth = 'calm') { this.eyes = eyes; this.mouth = mouth; }
-  interruptible() { return !this.busyWith && !this.sleeping && this.y < .01 && !this.social; }
+  interruptible() { return !this.busyWith && !this.sleeping && this.y < .01 && !this.social && !this.carried; }
   interrupt(brain) { const old = this.brain; this.brain = brain; old?.return(); }
 
   // ----- Các nhịp cơ bản (generator, yield = chờ frame sau) -----
   *wait(seconds) { for (let t = 0; t < seconds; t += this.world.dt) yield; }
   *turnTo(heading, rate = 5) {
-    while (Math.abs(angDiff(this.heading, heading)) > .06) { this.turnToward(heading, rate); this.stepGait(.35); yield; }
+    while (Math.abs(angDiff(this.heading, heading)) > .04) { this.turnToward(heading, rate); this.stepGait(.45); yield; }
+    // chờ thân (yaw) quay kịp rồi mới làm việc tiếp, để không vừa quay vừa làm
+    for (let t = 0; t < .4 && Math.abs(angDiff(this.yaw, this.heading)) > .08; t += this.world.dt) yield;
   }
   turnToward(heading, rate) {
     const diff = angDiff(this.heading, heading);
     this.heading += clamp(diff, -rate * this.world.dt, rate * this.world.dt);
   }
   facing(x, z) { return Math.atan2(x - this.x, z - this.z); }
-  stepGait(amount) { this.gait += this.world.dt * 10 * amount; this.walkAmount = amount; }
+  // Bước tại chỗ (lúc xoay người): nhịp chân chậm, chân nhấc thấp.
+  stepGait(amount) { this.gait += this.world.dt * 7 * amount; this.shuffle = Math.max(this.shuffle || 0, amount); }
 
   *walkTo(tx, tz, { run = false, near = .08, ignore = null, maxTime = 8 } = {}) {
     this.setPose('stand', { tailUp: run ? .9 : this.goal.tailUp });
@@ -243,31 +259,38 @@ class Cat {
       this.speed = damp(this.speed, top * align * slow, 6, dt);
       this.x = clamp(this.x + Math.sin(this.heading) * this.speed * dt, -ROOM, ROOM);
       this.z = clamp(this.z + Math.cos(this.heading) * this.speed * dt, -ROOM, ROOM);
-      this.stepGait(this.speed / (run ? 1.3 : .72));
+      this.gait += (this.speed * dt / (run ? STRIDE_RUN : STRIDE_WALK)) * TAU;
       yield;
     }
     this.speed = 0; this.running = false;
   }
 
-  // Nhảy: nhún người lấy đà -> bay theo cung -> tiếp đất nhún nhẹ.
+  // Nhảy: hạ người lấy đà (cao thì hạ sâu + lắc mông) -> vươn người bật lên -> bay parabol,
+  // chân sau duỗi ra sau, chân trước vươn tới đón đất -> tiếp đất nhún nảy, tai cụp.
   *jumpTo(tx, ty, tz) {
     yield* this.turnTo(this.facing(tx, tz), 7);
-    this.setPose('crouch');
-    yield* this.wait(.28);
-    const x0 = this.x, y0 = this.y, z0 = this.z, rise = Math.max(0, ty - y0);
-    const duration = .42 + Math.hypot(tx - x0, tz - z0) * .12 + rise * .12;
-    this.setPose('stand', { stretch: .5 });
+    const x0 = this.x, y0 = this.y, z0 = this.z, rise = Math.max(0, ty - y0), drop = Math.max(0, y0 - ty);
+    const dist = Math.hypot(tx - x0, tz - z0);
+    this.setPose('crouch', { lie: .55 + Math.min(.3, rise * .18) });
+    this.wriggle = rise > .6 ? 1 : 0;
+    yield* this.wait(.24 + Math.min(.32, rise * .16));
+    this.wriggle = 0;
+    this.squash = -.45; this.squashV = 0; // vươn dài người lúc bật
+    this.setPose('stand', { stretch: .3 });
+    const duration = .36 + dist * .1 + rise * .11 + drop * .05, apex = .18 + rise * .28 + dist * .07;
     for (let t = 0; t < duration; t += this.world.dt) {
-      const k = t / duration, e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
-      this.x = x0 + (tx - x0) * e; this.z = z0 + (tz - z0) * e;
-      this.y = y0 + (ty - y0) * e + Math.sin(Math.PI * k) * (.35 + rise * .35);
-      this.airPitch = (k < .5 ? -.35 : .3) * Math.sin(Math.PI * k);
+      const k = Math.min(1, t / duration), across = k * .75 + k * k * (3 - 2 * k) * .25;
+      this.x = x0 + (tx - x0) * across; this.z = z0 + (tz - z0) * across;
+      this.y = y0 + (ty - y0) * k + 4 * apex * k * (1 - k);
+      this.airK = k;
+      this.airPitch = -(.5 - k) * .95 * Math.sin(Math.PI * k); // ngửa lúc lên, chúi lúc xuống
       yield;
     }
-    this.x = tx; this.y = ty; this.z = tz; this.airPitch = 0;
-    this.squash = 1;
+    this.x = tx; this.y = ty; this.z = tz; this.airPitch = 0; this.airK = null;
+    this.squash = .75 + Math.min(.4, drop * .2); this.squashV = 0; // tiếp đất: nhún rồi nảy lại
+    this.earFlopV = (this.earFlopV || 0) + 14;
     this.setPose('stand');
-    yield* this.wait(.2);
+    yield* this.wait(.24);
   }
   *getDown() {
     const from = this.surface ? this.world.center(this.surface) : { x: this.x, z: this.z, r: .6 };
@@ -616,12 +639,13 @@ class Cat {
     if (!fly) return;
     this.face('focus'); this.tailSpeed = 5; this.goal.tailUp = .3;
     for (let i = 0; i < 3; i++) {
-      const p = fly.position;
-      yield* this.walkTo(clamp(p.x, -ROOM, ROOM), clamp(p.z, -ROOM, ROOM), { near: .55, maxTime: 2.5 });
+      // Điểm tới / điểm vồ luôn dời ra khỏi đồ đạc: không bao giờ nhắm vào chỗ không tới được (trước đây gây đứng hình).
+      const p = this.world.reachable(fly.position.x, fly.position.z);
+      yield* this.walkTo(p.x, p.z, { near: .55, maxTime: 2.5 });
       yield* this.turnTo(this.facing(fly.position.x, fly.position.z), 8);
       this.setPose('crouch'); this.wriggle = 1; yield* this.wait(rand(.5, .9)); this.wriggle = 0;
-      const q = fly.position;
-      yield* this.jumpTo(clamp(q.x, -ROOM, ROOM) - Math.sin(this.heading) * .2, 0, clamp(q.z, -ROOM, ROOM) - Math.cos(this.heading) * .2);
+      const q = this.world.reachable(fly.position.x - Math.sin(this.heading) * .2, fly.position.z - Math.cos(this.heading) * .2);
+      yield* this.jumpTo(q.x, 0, q.z);
       this.goal.paw = 1; fly.scare(); yield* this.wait(.3); this.goal.paw = 0;
     }
     this.tailSpeed = 1.6; this.setPose('sit'); this.face('happy', 'chew');
@@ -718,90 +742,195 @@ class Cat {
     yield* this.yawnStretch();
     yield* this.life();
   }
+  // Bị người chơi nhấc lên: lơ lửng theo ngón tay, thân lắc như con lắc; thả tay thì rơi xuống chỗ trống gần nhất,
+  // nhún khi chạm đất, vẩy người rồi liếm lông (mèo thật hay làm vậy sau khi bị bế).
+  *beCarried() {
+    this.release(); this.surface = null; this.sleeping = false; this.speed = 0; this.social = null; this.partner = null;
+    this.face('annoyed'); this.setPose('stand', { tailUp: 0 }); this.tailWag = .6; this.tailSpeed = 4;
+    const lifted = this.world.time;
+    while (this.carried) {
+      const dt = this.world.dt;
+      spring(this, 'x', this.carryX, 140, .8, dt);
+      spring(this, 'z', this.carryZ, 140, .8, dt);
+      spring(this, 'y', CARRY_H, 90, .7, dt);
+      if (this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('half'); // bế lâu thì lim dim chịu trận
+      yield;
+    }
+    this.tailWag = .25; this.tailSpeed = 1.6;
+    const land = this.world.landingSpot(this), x0 = this.x, z0 = this.z, y0 = Math.max(this.y, .01);
+    let vy = 0;
+    while (this.y > 0) {
+      vy -= 14 * this.world.dt;
+      this.y = Math.max(0, this.y + vy * this.world.dt);
+      const k = 1 - this.y / y0;
+      this.x = x0 + (land.x - x0) * k; this.z = z0 + (land.z - z0) * k;
+      yield;
+    }
+    this.xV = this.zV = this.yV = 0;
+    this.squash = .9; this.squashV = 0; this.earFlopV = (this.earFlopV || 0) + 16;
+    this.face('annoyed');
+    yield* this.wait(.35);
+    this.wriggle = 1; yield* this.wait(.45); this.wriggle = 0; // vẩy người
+    this.face('open');
+    this.setPose('sit');
+    yield* this.groom();
+    yield* this.life();
+  }
   pet() {
     this.petUntil = this.world.time + 1.3;
     if (this.sleeping) return; // ngủ say: chỉ mỉm cười, không dậy
   }
 
-  // ----- Mỗi frame -----
+  // ----- Mỗi frame: não chạy trước, rồi thân thể đi theo bằng lò xo -----
   update(dt, t) {
     const petting = t < this.petUntil;
     if (!petting) this.brain?.next();
     const pose = this.pose, goal = this.goal, rig = this.rig;
-    for (const key in goal) pose[key] = damp(pose[key], goal[key], 7, dt);
-    this.look = damp(this.look, this.lookGoal, 8, dt);
-    this.squash = damp(this.squash, 0, 9, dt);
-    if (this.walkAmount) { this.walkAmount = damp(this.walkAmount, 0, 10, dt); }
+    for (const key in goal) { const [k, z] = POSE_SPRING[key] || [80, .8]; spring(pose, key, goal[key], k, z, dt); }
+    spring(this, 'look', this.lookGoal, 90, .8, dt);
+    spring(this, 'squash', 0, 170, .32, dt);           // nhún/giãn: tắt ít nên nảy 1–2 nhịp
+    spring(this, 'earFlop', 0, 120, .35, dt);
+    spring(this, 'yaw', this.yaw + angDiff(this.yaw, this.heading), 150, .85, dt);
+    const turnRate = this.yawV || 0;
+    // Con lắc khi bị nhấc: vận tốc kéo (theo hướng thân) làm thân nghiêng ngược lại rồi đung đưa tắt dần.
+    const vx = this.xV || 0, vz = this.zV || 0, cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+    const forward = this.carried ? vx * sy + vz * cy : 0, lateral = this.carried ? vx * cy - vz * sy : 0;
+    spring(this, 'swayF', clamp(-forward * .16, -.5, .5), 45, .28, dt);
+    spring(this, 'swayL', clamp(lateral * .16, -.5, .5), 45, .28, dt);
+    const moveGoal = clamp(this.speed / .72, 0, 2.4) + (this.shuffle || 0) * .5;
+    this.shuffle = 0;
+    spring(this, 'move', moveGoal, 60, .95, dt);
+    const accel = (this.speed - (this.lastSpeed || 0)) / Math.max(dt, 1e-3);
+    this.lastSpeed = this.speed;
+    this.lean = damp(this.lean, clamp(accel * .045, -.14, .14), 7, dt);
+    const vy = (this.y - this.lastY) / Math.max(dt, 1e-3);
+    this.lastY = this.y;
 
-    // Nét mặt: đang cưng thì vui; tự chớp mắt; tai giật
+    // Cưng: 2 cú nảy parabol, mỗi lần chạm đất nhún một cái
+    let hop = 0;
+    if (petting && !this.sleeping) {
+      const e = 1.3 - (this.petUntil - t), seg = e % .5, k = seg / .42;
+      hop = e < 1 && k < 1 ? .2 * 4 * k * (1 - k) : 0;
+      if (this.hopY > 0 && hop === 0) { this.squash = .55; this.squashV = 0; this.earFlopV = (this.earFlopV || 0) + 8; }
+    }
+    this.hopY = hop;
+
+    // ---- Mặt: mí mắt khép dần rồi mới nhắm; tự chớp; mắt liếc ----
     let eyes = this.eyes, mouth = this.mouth;
     if (petting) { eyes = this.sleeping ? 'sleep' : 'happy'; mouth = this.sleeping ? 'calm' : 'open'; }
     this.nextBlink -= dt;
-    if (this.nextBlink < 0 && (eyes === 'open' || eyes === 'focus')) { eyes = 'blink'; if (this.nextBlink < -.13) this.nextBlink = rand(2.5, 6); }
+    const canBlink = eyes === 'open' || eyes === 'focus';
+    const blinking = canBlink && this.nextBlink < 0;
+    if (this.nextBlink < -.16) this.nextBlink = chance(.2) ? rand(.15, .3) : rand(2.5, 6); // thỉnh thoảng chớp đôi
+    spring(this, 'lid', blinking ? 0 : 1, 900, 1, dt);
+    if (canBlink && this.lid < .45) eyes = 'blink';
     const faceTex = faceTexture(this.breed, mouth), eyesTex = eyesTexture(this.breed, eyes);
     if (rig.faceMat.map !== faceTex) { rig.faceMat.map = faceTex; rig.faceMat.needsUpdate = true; }
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
     rig.eyes.position.x = this.look * .035;
+    rig.eyes.scale.y = eyes === 'blink' || !canBlink ? 1 : clamp(this.lid, .2, 1);
+
+    // ---- Tai: giật bằng xung lò xo, cụp khi tiếp đất, dỏng khi tập trung, cụp khi bực ----
     this.nextEar -= dt;
-    if (this.nextEar < 0) { this.earTwitch = 1; this.earSide = chance(.5) ? 0 : 1; this.nextEar = rand(2, 7); }
-    this.earTwitch = damp(this.earTwitch, 0, 12, dt);
-    rig.ears.forEach((ear, i) => { ear.rotation.z = (i ? .18 : -.18) + (i === this.earSide ? this.earTwitch * .5 * (i ? 1 : -1) : 0) - (this.eyes === 'annoyed' ? (i ? -.5 : .5) : 0); });
-
-    // Vị trí + thân
-    rig.root.position.set(this.x, this.y, this.z);
-    rig.root.rotation.y = this.heading;
-    const hopT = petting ? Math.abs(Math.sin((this.petUntil - t) / 1.3 * Math.PI * 2)) : 0;
-    const purr = (this.purr || (petting ? 1 : 0)) ? Math.sin(t * 90) * .004 : 0;
-    const walk = this.walkAmount || 0;
-    const bob = Math.abs(Math.sin(this.gait)) * .025 * Math.min(1, walk);
-    const breathe = Math.sin(t * (this.sleeping ? 1.8 : 2.8) + this.x) * (this.sleeping ? .03 : .012);
-    rig.hopper.position.y = (this.sleeping ? 0 : hopT * .22) + bob + purr;
-    rig.hopper.scale.set(1 + this.squash * .12, 1 - this.squash * .2 + breathe, 1 + this.squash * .08);
-    rig.roller.rotation.z = pose.roll * 1.3 + (this.wriggle ? Math.sin(t * 22) * .09 : 0) + pose.curl * .12;
-    rig.roller.position.y = pose.roll * .2;
-    rig.pivot.position.y = LEG * (1 - pose.lie) + pose.stretch * .1 - pose.lie * .02;
-    rig.pivot.rotation.x = -pose.sit * .42 + pose.stretch * .32 + pose.lean * .22 + (this.airPitch || 0) - pose.groom * .15;
-    rig.pivot.position.z = -D / 2 + pose.lean * .1;
-    rig.pivot.rotation.y = pose.curl * .35;
-    rig.body.scale.y = 1 - pose.lie * .1;
-
-    // Chân: đi = chéo cặp, chạy = phi nước đại; ngồi/nằm = co lại
-    rig.legs.forEach((leg, i) => {
-      const diagonal = i === 0 || i === 3 ? 0 : Math.PI;
-      const phase = this.running ? (leg.front ? 0 : Math.PI * .7) : diagonal;
-      let swing = Math.sin(this.gait + phase) * .7 * Math.min(1.2, walk);
-      let lift = 0;
-      if (leg.front && i === 1) { swing -= pose.paw * 1.6 + pose.groom * 1.9; lift = pose.paw * .12 + pose.groom * .18; }
-      if (leg.front && pose.knead > .1) { swing -= Math.max(0, Math.sin(t * 5 + i * Math.PI)) * .6 * pose.knead; }
-      leg.hip.rotation.x = swing;
-      // Khi bay, thân chúi/ngửa quanh mép sau: khớp chân dời theo đúng chỗ thân ở trên nó.
-      const fromPivot = leg.front ? D * .8 : D * .2;
-      const air = -Math.sin(this.airPitch || 0) * fromPivot;
-      leg.hip.position.y = LEG + .03 + lift + air + pose.stretch * .1 + (leg.front ? pose.sit * .2 + pose.groom * .05 - pose.stretch * .1 : 0);
-      const tuck = leg.front ? pose.lie * (1 - pose.roll * .5) : Math.max(pose.lie, pose.sit * .85);
-      leg.hip.scale.y = Math.max(.12, 1 - tuck * .88 + (leg.front ? pose.sit * 1.1 - pose.stretch * .5 : 0));
-      leg.hip.position.z = (leg.front ? 1 : -1) * D * .3 + (leg.front ? pose.stretch * .1 + pose.lean * .08 : 0);
+    if (this.nextEar < 0) { this.earSide = chance(.5) ? 0 : 1; this.earTwitchV = (this.earTwitchV || 0) + 22; this.nextEar = rand(2, 7); }
+    spring(this, 'earTwitch', 0, 380, .28, dt);
+    const annoyed = this.eyes === 'annoyed', focus = this.eyes === 'focus';
+    rig.ears.forEach((ear, i) => {
+      const side = i ? 1 : -1;
+      ear.rotation.z = -side * .18 + (i === this.earSide ? this.earTwitch * .045 * side : 0) + (annoyed ? side * .5 : 0);
+      ear.rotation.x = -this.earFlop * .05 + (focus ? .18 : 0) - (this.sleeping ? .15 : 0);
     });
 
-    // Đuôi: dựng khi vui, sóng khi đi, quấn quanh người khi ngủ cuộn tròn
-    const wagSpeed = this.tailSpeed * (petting ? 2 : 1);
-    rig.tail.forEach((joint, i) => {
-      const wave = Math.sin(t * wagSpeed - i * .7) * this.tailWag * (1 + i * .25);
-      if (i === 0) {
-        joint.rotation.x = -(2.45 - pose.tailUp * 1.9) * (1 - pose.curl) - pose.curl * 1.5;
-        joint.rotation.z = wave + pose.curl * 1.2;
-      } else {
-        joint.rotation.x = (pose.tailUp > .7 ? -.18 : .12) * (1 - pose.curl) + (i === 4 && pose.tailUp > .7 ? .5 : 0);
-        joint.rotation.z = wave * .6 + pose.curl * .55;
+    // ---- Thân ----
+    const move = Math.max(0, this.move), amp = Math.min(1.2, move), run = this.running;
+    const g = this.gait;
+    const walkBob = run ? (1 - Math.cos(g)) / 2 * .075 * amp : (1 - Math.cos(2 * g)) / 2 * .022 * amp;
+    const sway = run ? 0 : Math.sin(g) * .035 * amp;
+    const gaitPitch = run ? Math.sin(g) * .11 * amp : Math.sin(2 * g) * .014 * amp;
+    const idle = move < .1 && !this.sleeping ? Math.sin(t * .7 + this.phase) * .018 : 0; // dồn trọng tâm khi đứng/ngồi yên
+    const breathe = Math.sin(t * (this.sleeping ? 1.6 : 2.6) + this.phase) * (this.sleeping ? .03 : .011);
+    const purr = (this.purr || (petting ? 1 : 0)) ? Math.sin(t * 90) * .004 : 0;
+
+    rig.root.position.set(this.x, this.y, this.z);
+    rig.root.rotation.y = this.yaw;
+    rig.hopper.position.y = hop + walkBob + purr;
+    const s = this.squash; // dương = nhún bẹp, âm = vươn dài
+    rig.hopper.scale.set(1 + s * .12 - breathe * .3, 1 - s * .2 + breathe, 1 + s * .08 - s * (s < 0 ? .15 : 0));
+    const turnLean = clamp(-turnRate * .045 * (.35 + amp), -.2, .2);
+    rig.roller.rotation.z = this.swayL + pose.roll * 1.3 + (this.wriggle ? Math.sin(t * 20) * .09 : 0) + pose.curl * .12 + sway + turnLean + idle;
+    rig.roller.position.y = pose.roll * .2;
+    // Ngồi kiểu mèo thật: mông hạ sát sàn, ngực nhổm nhẹ -> chân trước gần như giữ độ dài, trông tròn trịa.
+    rig.pivot.position.y = LEG * (1 - Math.max(clamp(pose.lie, 0, 1), clamp(pose.sit, 0, 1) * .9)) + pose.stretch * .1 - pose.lie * .02;
+    rig.pivot.rotation.x = -clamp(pose.sit, 0, 1) * .24 + pose.stretch * .32 + pose.lean * .22 + (this.airPitch || 0) - pose.groom * .15 + gaitPitch + this.lean + this.swayF;
+    rig.pivot.position.z = -D / 2 + pose.lean * .1;
+    rig.pivot.rotation.y = 0;
+    rig.roller.rotation.y = pose.curl * .35 + this.look * .12; // xoay cả thân lẫn chân theo hướng nhìn
+    rig.body.scale.y = 1 - pose.lie * .1;
+
+    // ---- Chân: đi = chéo cặp, chạy = phi nước đại; nhấc bàn chân khi đưa về trước; trên không duỗi/đón ----
+    const air = this.airK;
+    const sit = clamp(pose.sit, 0, 1);
+    const pitch = rig.pivot.rotation.x, pivotY = rig.pivot.position.y, pivotZ = rig.pivot.position.z;
+    const bodyLift = H / 2 * (1 - rig.body.scale.y); // thân co lại khi nằm: đáy thân nhích lên
+    const groundY = -rig.roller.position.y;          // mặt sàn trong hệ toạ độ roller
+    rig.legs.forEach((leg, i) => {
+      const diagonal = i === 0 || i === 3 ? 0 : Math.PI;
+      const phase = run ? (leg.front ? 0 : Math.PI * .75) + (i % 2) * .25 : diagonal;
+      const cyc = g + phase;
+      let swing = Math.sin(cyc) * (run ? .85 : .55) * amp;
+      let lift = Math.max(0, Math.cos(cyc)) * (run ? .05 : .035) * amp;
+      if (air !== null) { // bật lên: chân sau đạp duỗi ra sau; gần đất: chân trước vươn đón
+        swing = leg.front ? -.95 * air + .3 * (1 - air) : .85 * (1 - air) - .2 * air;
+        lift = 0;
       }
+      if (this.carried) { swing = this.swayF * 1.6 + Math.sin(t * 3 + i) * .08; lift = 0; } // chân thõng đung đưa
+      if (leg.front && i === 1) { swing -= pose.paw * 1.6 + pose.groom * 1.9; lift += pose.paw * .12 + pose.groom * .18; }
+      if (leg.front && pose.knead > .1) { const press = Math.max(0, Math.sin(t * 5 + i * Math.PI)); swing -= press * .6 * pose.knead; lift += press * .03 * pose.knead; }
+      leg.hip.rotation.x = swing;
+      // Khớp chân luôn gắn đúng đáy thân: tính điểm đáy thân nằm ngay trên chân từ TỔNG độ chúi của thân
+      // (ngồi, vươn, cúi, chúi khi bay, lắc khi bị nhấc...), nên tư thế nào chân cũng không hở khỏi thân.
+      // Chân và thân cùng nằm trong roller nên cùng hệ toạ độ; thân quay quanh pivot (mép sau-dưới).
+      const hipZ = (leg.front ? 1 : -1) * D * .3 + (leg.front ? pose.stretch * .1 + pose.lean * .08 : 0);
+      const cosP = Math.cos(pitch), along = clamp((hipZ - pivotZ) / (Math.abs(cosP) > .2 ? cosP : .2), 0, D);
+      const bottomY = pivotY - Math.sin(pitch) * along + bodyLift;
+      leg.hip.position.set(leg.hip.position.x, bottomY + .03 + lift, hipZ);
+      // Độ dài chân: chỉ kéo ống chân, bàn chân giữ nguyên cỡ và luôn nằm ở đáy (không kéo méo góc bo).
+      //   bị nhấc -> thõng dài; đang bay -> dài bình thường; trên sàn -> vừa đúng chạm đất (trừ phần co chân khi nằm/ngồi).
+      const full = LEG + .03;
+      const lie = clamp(pose.lie, 0, 1);
+      const tuck = leg.front ? lie * (1 - clamp(pose.roll, 0, 1) * .5) : Math.max(lie, sit * .9);
+      const reach = (bottomY + .03 - groundY) / full; // độ dài để bàn chân vừa chạm sàn (không tính phần nhấc chân)
+      const len = this.carried ? 1.3 : air !== null ? 1 : clamp(reach * (1 - tuck * .85), .15, 2.2);
+      leg.leg.scale.y = len; leg.leg.position.y = -full * len / 2;
+      leg.foot.position.y = -full * len + .025;
+      leg.hip.scale.y = 1;
+    });
+
+    // ---- Đuôi: mỗi đốt một lò xo, càng về chóp càng mềm; văng ngược khi quay người và khi nhảy ----
+    const wagSpeed = this.tailSpeed * (petting ? 2 : 1);
+    const stream = clamp(vy * .22, -.7, .7);
+    rig.tail.forEach((joint, i) => {
+      const wave = Math.sin(t * wagSpeed - i * .75) * this.tailWag * (1 + i * .25);
+      const inertia = -turnRate * .1 * (1 + i * .35) - (run ? Math.sin(g) * .08 : 0);
+      const zGoal = (i === 0 ? wave + pose.curl * 1.2 : wave * .6 + pose.curl * .55) + inertia;
+      const xGoal = i === 0
+        ? (this.carried ? -2.95 + this.swayF * .8 : -(2.45 - pose.tailUp * 1.9) * (1 - pose.curl) - pose.curl * 1.5 + stream)
+        : (pose.tailUp > .7 ? -.18 : .12) * (1 - pose.curl) + (i === 4 && pose.tailUp > .7 ? .5 : 0) + stream * .25;
+      const k = 160 / (1 + i * .55), zeta = .42 + i * .04;
+      const zs = { v: this.tailZ[i], vV: this.tailZV?.[i] || 0 }, xs = { v: this.tailX[i], vV: this.tailXV?.[i] || 0 };
+      spring(zs, 'v', zGoal, k, zeta, dt); spring(xs, 'v', xGoal, k, zeta + .1, dt);
+      (this.tailZV ||= [])[i] = zs.vV; (this.tailXV ||= [])[i] = xs.vV;
+      this.tailZ[i] = zs.v; this.tailX[i] = xs.v;
+      joint.rotation.z = zs.v; joint.rotation.x = xs.v;
     });
 
     // Zzz
     rig.z.visible = this.sleeping;
     if (this.sleeping) {
-      const k = (t * .45 + this.x) % 1;
-      rig.z.position.set(.25 + k * .15, H + .25 + k * .45, D * .6);
+      const k = (t * .45 + this.phase) % 1;
+      rig.z.position.set(.25 + k * .15 + Math.sin(k * 6) * .03, H + .25 + k * .45, D * .6);
       rig.z.material.opacity = Math.sin(k * Math.PI);
+      rig.z.scale.set(.2 + k * .12, .18 + k * .11, 1);
     }
   }
 }
@@ -843,6 +972,17 @@ export function createCatLife(ctx) {
         if (!world.obstacles().some(ob => Math.hypot(x - ob.x, WINDOW.z - ob.z) < ob.r + .42)) return { x, z: WINDOW.z };
       }
       return null;
+    },
+    // Chỗ đáp khi thả mèo: đúng điểm thả, trừ khi trùng đồ đạc thì dời ra mép đồ gần nhất.
+    landingSpot(cat) { return world.reachable(cat.x, cat.z); },
+    // Điểm gần (x, z) nhất mà mèo đứng được: trong phòng và ngoài mọi vật cản.
+    reachable(px, pz) {
+      let x = clamp(px, -ROOM, ROOM), z = clamp(pz, -ROOM, ROOM);
+      for (const ob of world.obstacles()) {
+        const dx = x - ob.x, dz = z - ob.z, d = Math.hypot(dx, dz) || 1e-4, reach = ob.r + W * .45;
+        if (d < reach) { x = clamp(ob.x + dx / d * reach, -ROOM, ROOM); z = clamp(ob.z + dz / d * reach, -ROOM, ROOM); }
+      }
+      return { x, z };
     },
     center(id) { const node = furniture[id]; return { x: node.position.x, z: node.position.z, r: FURNITURE[id]?.r || .5 }; },
     freeSpot(cat) {
@@ -994,6 +1134,14 @@ export function createCatLife(ctx) {
   }
 
   return {
+    carryHeight: CARRY_H,
+    pickUp(cat, x, z) {
+      cat.carried = true; cat.petUntil = 0;
+      cat.carryX = clamp(x, -ROOM, ROOM); cat.carryZ = clamp(z, -ROOM, ROOM);
+      cat.interrupt(cat.beCarried());
+    },
+    carryTo(cat, x, z) { cat.carryX = clamp(x, -ROOM, ROOM); cat.carryZ = clamp(z, -ROOM, ROOM); },
+    drop(cat) { cat.carried = false; },
     setCats(breeds) {
       const keep = [];
       breeds.forEach(breed => {
@@ -1010,6 +1158,7 @@ export function createCatLife(ctx) {
     // Món đồ bị gỡ khi mèo đang ngồi trên / đang dùng: mèo rơi xuống sàn rồi làm việc khác.
     furnitureChanged() {
       world.cats.forEach(cat => {
+        if (cat.carried) return;
         const using = cat.busyWith && furniture[cat.busyWith] && !furniture[cat.busyWith].visible;
         if (!using && !(cat.surface && !furniture[cat.surface]?.visible)) return;
         cat.release();
@@ -1025,7 +1174,7 @@ export function createCatLife(ctx) {
     },
     update(dt, t, afk) {
       world.dt = Math.min(dt, .05); world.time = t;
-      if (afk && !world.afk) world.cats.forEach(cat => cat.interrupt(cat.nap()));
+      if (afk && !world.afk) world.cats.forEach(cat => { if (!cat.carried) cat.interrupt(cat.nap()); });
       world.afk = afk;
       for (let i = tweens.length - 1; i >= 0; i--) {
         const tw = tweens[i];
@@ -1036,6 +1185,7 @@ export function createCatLife(ctx) {
       }
       restoreToys();
       restoreBird();
+      if (furniture.flowers?.visible) furniture.flowers.userData.walkers = world.cats.filter(cat => cat.y < .05); // hoa rạp khi mèo giẫm qua
       world.cats.forEach(cat => cat.update(world.dt, t));
       separate();
     },
