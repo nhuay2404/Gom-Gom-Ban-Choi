@@ -261,3 +261,15 @@ test('thùng gỗ chặn ô, không bị tính vào cụm và vỡ khi gom sát 
   assert.equal(result.board[W + 1], null);
   assert.ok(result.board[4 * W + 4]?.block);
 });
+
+test('khối kim loại chặn ô nhưng không vỡ khi gom sát bên, thùng gỗ cạnh đó vẫn vỡ', () => {
+  const board = Array(W * W).fill(null);
+  const cat = { group: 'orange' };
+  board[0] = cat; board[1] = cat; board[2] = cat; // hàng 0: 3 mèo cam -> gom
+  board[W] = { block: true, metal: true }; // dưới mèo đầu: kim loại
+  board[W + 2] = { block: true }; // dưới mèo cuối: thùng gỗ
+  const result = clearMatches(board, W, W, 3);
+  assert.deepEqual(result.broken, [W + 2]);
+  assert.ok(result.board[W]?.metal);
+  assert.equal(result.board[W + 2], null);
+});

@@ -39,9 +39,9 @@ export function findLineMatch(board, width, height, size = 4) {
 }
 
 export function slideDirectional(board, width, height, source, delta) {
-  if (![1, -1, width, -width].includes(delta)) return { error: 'Chỉ được vuốt ngang hoặc dọc.' };
+  if (![1, -1, width, -width].includes(delta)) return { error: 'You can only swipe horizontally or vertically.' };
   const indices = connectedGroup(board, width, height, source);
-  if (!indices.length) return { error: 'Không có thẻ để vuốt.' };
+  if (!indices.length) return { error: 'No cards to swipe.' };
   const component = new Set(indices);
   const blocked = new Set();
   const destinations = new Map(indices.map(index => [index, neighbor(index, delta, width, height)]));
@@ -58,7 +58,7 @@ export function slideDirectional(board, width, height, source, delta) {
     }
   } while (changed);
   const moving = indices.filter(index => !blocked.has(index));
-  if (!moving.length) return { error: 'Cả cụm đều bị chặn.' };
+  if (!moving.length) return { error: 'The whole group is blocked.' };
   const nextBoard = board.slice();
   const tiles = moving.map(index => board[index]);
   moving.forEach(index => { nextBoard[index] = null; });
@@ -69,6 +69,7 @@ export function slideDirectional(board, width, height, source, delta) {
 // Gom: mọi cụm liền kề cùng nhóm có từ `size` món trở lên sẽ biến mất khỏi bàn.
 // Thùng gỗ ({ block: true }, không có group) chiếm ô, không bao giờ nằm trong cụm; ô bị gom nằm sát thùng
 // (trên/dưới/trái/phải) thì thùng vỡ theo. `broken` = các ô thùng vừa vỡ.
+// Khối kim loại ({ block: true, metal: true }) cũng chiếm ô nhưng không bao giờ vỡ.
 export function clearMatches(board, width, height, size = 4) {
   const seen = new Set(), cleared = [], groups = [], clusters = [];
   board.forEach((cell, index) => {
@@ -83,7 +84,7 @@ export function clearMatches(board, width, height, size = 4) {
     nextBoard[index] = null;
     for (const delta of [1, -1, width, -width]) {
       const other = neighbor(index, delta, width, height);
-      if (other >= 0 && board[other]?.block) broken.add(other);
+      if (other >= 0 && board[other]?.block && !board[other].metal) broken.add(other);
     }
   });
   broken.forEach(index => { nextBoard[index] = null; });
@@ -123,7 +124,7 @@ export function placementIndices(board, width, height, anchor, offsets) {
 
 export function placeCard(board, width, height, anchor, card) {
   const indices = placementIndices(board, width, height, anchor, card.offsets);
-  if (!indices) return { error: 'Thẻ không vừa vị trí này.' };
+  if (!indices) return { error: 'The card doesn\'t fit here.' };
   const nextBoard = board.slice();
   indices.forEach((index, offset) => { nextBoard[index] = { ...card.items[offset], locked: true }; });
   let adjacency = 0;

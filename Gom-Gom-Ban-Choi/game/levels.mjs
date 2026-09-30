@@ -18,97 +18,169 @@ const SHAPES = {
 
 export const LEVELS = [
   {
-    name: 'Chào mèo nhỏ', feature: 'Kéo thả & gom 3',
+    name: 'Hello, Kitty', feature: 'Drag & match 3',
     moves: 4, target: 60, cats: 'OG',
     board: ['......', '......', '..OO..', '......', '.GG...', '......'],
     deck: ['O', 'G', 'O', 'G'],
     tutorial: [
-      { type: 'drag', anchor: 16, text: 'Kéo mèo cam vào ô sáng để ghép đủ 3 con!' },
-      { type: 'drag', anchor: 27, text: 'Tuyệt! Giờ gom 3 mèo xám nhé.' },
+      { type: 'drag', anchor: 16, text: 'Drag the orange cat onto the glowing cell to make 3!' },
+      { type: 'drag', anchor: 27, text: 'Great! Now match 3 gray cats.' },
     ],
   },
   {
-    name: 'Xoay xoay', feature: 'Xoay thẻ',
+    name: 'Round and Round', feature: 'Rotate cards',
     moves: 5, target: 60, cats: 'OGW',
     board: ['......', '.G.W..', '.W.G..', '.GOW..', '......', '......'],
     deck: ['OO', 'W|W'],
     tutorial: [
-      { type: 'rotate', offsets: SHAPES.dominoV, text: 'Thẻ nằm ngang không lọt khe. Chạm vào thẻ để xoay!' },
-      { type: 'drag', anchor: 8, text: 'Vừa khít rồi! Kéo vào khe nào.' },
-      { type: 'drag', anchor: 8, text: 'Gom 4 mèo trắng một lúc để được nhiều điểm hơn!' },
+      { type: 'rotate', offsets: SHAPES.dominoV, text: 'The horizontal card won\'t fit the gap. Tap the card to rotate it!' },
+      { type: 'drag', anchor: 8, text: 'A perfect fit! Drag it into the gap.' },
+      { type: 'drag', anchor: 8, text: 'Match 4 white cats at once for more points!' },
     ],
   },
   {
-    name: 'Gom thật to', feature: 'Cụm lớn = điểm lớn',
+    name: 'Go Big', feature: 'Big match = big score',
     moves: 8, target: 170, cats: 'OGW', assist: 0.5,
     board: ['......', '......', 'OO.OO.', '......', '..GW..', '..WG..'],
     deck: ['O'],
     tutorial: [
-      { type: 'drag', anchor: 14, text: 'Gom càng nhiều mèo, điểm càng cao. Ghép 5 mèo cam nào!' },
-      { type: 'info', text: 'Gom 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 điểm. Giờ bạn tự chơi nhé!' },
+      { type: 'drag', anchor: 14, text: 'The more cats you match, the higher the score. Make 5 orange cats!' },
+      { type: 'info', text: 'Match 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 points. Now play on your own!' },
     ],
   },
   {
-    name: 'Ô gửi tạm', feature: 'Gửi tạm thẻ',
+    name: 'Hold Slot', feature: 'Hold a card',
     moves: 10, target: 120, cats: 'OGW', assist: 0.5,
     board: ['......', '......', '..OO..', '......', '...WW.', '......'],
-    deck: ['W', 'O'],
+    // Thẻ thứ 3 (xám) phải khác mèo trắng đang cất, để lúc chạm Gửi tạm là một lần đổi thẻ thật sự.
+    deck: ['W', 'O', 'G'],
     tutorial: [
-      { type: 'hold', text: 'Thẻ sau hợp hơn! Kéo mèo trắng vào ô Gửi tạm để cất.' },
-      { type: 'drag', anchor: 16, text: 'Mèo cam vừa khít. Kéo vào ô sáng!' },
-      { type: 'tapHold', text: 'Chạm ô Gửi tạm để lấy mèo trắng ra.' },
-      { type: 'drag', anchor: 29, text: 'Gom 3 mèo trắng! Gửi tạm dùng bao nhiêu lần cũng được.' },
+      { type: 'hold', text: 'The next card fits better! Drag the white cat into the Hold slot.' },
+      { type: 'drag', anchor: 16, text: 'The orange cat fits perfectly. Drag it onto the glowing cell!' },
+      { type: 'tapHold', text: 'Tap the Hold slot to take the white cat back.' },
+      { type: 'drag', anchor: 29, text: 'Match 3 white cats! You can use Hold as many times as you like.' },
     ],
   },
   {
-    name: 'Luyện tay', feature: 'Tự chơi',
-    moves: 12, target: 200, cats: 'OGW', assist: 0.4,
+    name: 'Practice', feature: 'Free play',
+    moves: 16, target: 200, cats: 'OGW', assist: 0.4, // dư lượt: màn luyện tay
     board: ['O....G', '......', '..WW..', '......', 'G....O', '......'],
     deck: [],
   },
   {
-    name: 'Mèo mướp', feature: 'Loại mèo thứ 4',
-    moves: 12, target: 220, cats: 'OGWT', assist: 0.4,
+    name: 'Tabby Cat', feature: '4th cat breed',
+    moves: 16, target: 220, cats: 'OGWT', assist: 0.4, // dư lượt: làm quen giống mèo thứ 4
     board: ['OO....', '......', '...GG.', '......', 'WW....', '....TT'],
     deck: ['T'],
     tutorial: [
-      { type: 'info', text: 'Mèo mướp gia nhập! 4 loại mèo sẽ khó ghép hơn, nhớ nhìn thẻ sắp tới để tính nước.' },
-      { type: 'drag', anchor: 33, free: true, text: 'Chào bạn mới: gom 3 mèo mướp nào!' },
+      { type: 'info', text: 'The tabby cat joins! 4 breeds are harder to match, so check the next cards and plan ahead.' },
+      { type: 'drag', anchor: 33, free: true, text: 'Say hi to the newcomer: match 3 tabby cats!' },
     ],
   },
   {
-    name: 'Thùng gỗ', feature: 'Thùng gỗ chặn ô',
+    name: 'Crates', feature: 'Crates block cells',
     moves: 14, target: 310, cats: 'OGWT', assist: 0.4, shapes: { single: 4, domino: 4, triple: 3 },
     board: ['.....O', 'T.X..X', 'T..G..', 'X..GXX', '.XXX.X', 'WX..XW'],
     deck: ['L:GGT'],
     tutorial: [
-      { type: 'info', text: 'Thùng gỗ chặn ô, không đặt mèo lên được! Gom mèo sát bên thùng để phá nó.' },
-      { type: 'drag', anchor: 3, free: true, text: 'Gom 4 mèo xám cạnh thùng để phá thùng nào!' },
+      { type: 'info', text: 'Crates block cells, so cats can\'t be placed on them! Match cats next to a crate to break it.' },
+      { type: 'drag', anchor: 3, free: true, text: 'Match 4 gray cats next to the crate to break it!' },
     ],
   },
   {
-    name: 'Bàn chật', feature: 'Dọn chỗ',
+    name: 'Tight Board', feature: 'Make room',
     moves: 12, target: 340, cats: 'OGWT', assist: 0.3,
     board: ['OGW.TO', 'GW..OT', 'T.OG.W', 'WT.GO.', '.OWT.G', 'GT..WO'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'Bàn chật! Dọn chỗ trước, hết chỗ đặt là thua đấy.' }],
+    tutorial: [{ type: 'info', text: 'Tight board! Make room first — if you run out of space, you lose.' }],
   },
   {
-    name: 'Nhà đông mèo', feature: 'Mèo Xiêm',
-    moves: 16, target: 270, cats: 'OGWTS', assist: 0.45,
+    name: 'Cat House', feature: 'Siamese cat',
+    moves: 20, target: 270, cats: 'OGWTS', assist: 0.45, // dư lượt: nghỉ trước màn khó
     board: ['SS....', '......', '..O..G', '..O..G', '......', 'W....T'],
     deck: ['S'],
   },
   {
-    name: 'Thử thách lớn', feature: 'Đủ 6 loại mèo', hard: true,
+    name: 'Grand Challenge', feature: 'All 6 breeds', hard: true,
     moves: 18, target: 410, cats: 'OGWTSK', assist: 0.4,
     board: ['K.O..S', 'K.O.T.', '..WW.T', 'G.....', 'G.SS.K', '..T..O'],
     deck: [],
   },
+  // ===== Chương 2 (màn 11–20, phòng khách): khối kim loại 'M' chiếm ô, không bao giờ vỡ =====
+  // Nhịp: 11 dạy (tutorial) -> 12 luyện -> 13 trộn thùng gỗ -> 14 tường chia bàn -> 15 nghỉ
+  //       -> 16 mê cung -> 17 bàn chật -> 18 nghỉ -> 19 cửa sắt (trước boss) -> 20 BOSS.
+  {
+    name: 'Metal Block', feature: 'Metal blocks never break',
+    moves: 8, target: 120, cats: 'OGW', assist: 0.5,
+    board: ['......', '.MM...', 'O..G..', 'O.MG..', '......', 'W...W.'],
+    deck: ['O', 'G'],
+    tutorial: [
+      { type: 'info', text: 'New obstacle: metal blocks! Like crates, they take up a cell. Unlike crates, they never break.' },
+      { type: 'drag', anchor: 24, text: 'Match 3 orange cats right next to the metal. See? It stays put.' },
+      { type: 'drag', anchor: 27, free: true, text: 'Plan your matches around the metal. Match 3 gray cats!' },
+    ],
+  },
+  {
+    name: 'Steel Corners', feature: 'Work around metal',
+    moves: 17, target: 240, cats: 'OGWT', assist: 0.45, // dư lượt: luyện kim loại
+    board: ['M....M', '..OO..', '.G..G.', '.G..G.', '..TT..', 'M....M'],
+    deck: [],
+  },
+  {
+    name: 'Crate & Steel', feature: 'Crates break, metal stays',
+    moves: 18, target: 270, cats: 'OGWT', assist: 0.4, // dư lượt: làm quen thùng gỗ + kim loại
+    board: ['X.M..X', '.O..O.', 'MXGG..', '..W.XM', '.O..W.', 'X..M.X'],
+    deck: [],
+  },
+  {
+    name: 'Divided', feature: 'A metal wall splits the board',
+    moves: 14, target: 230, cats: 'OGWT', assist: 0.4,
+    board: ['..M...', '.O.M.G', '..M...', '...M..', '.G.M.O', '..M..T'],
+    deck: [],
+  },
+  {
+    name: 'Sunny Nap', feature: 'Take a breather', breather: true,
+    moves: 19, target: 210, cats: 'OGW', assist: 0.5, // dư lượt: breather
+    board: ['......', '.M..M.', '..OO..', '..WW..', '.M..M.', '......'],
+    deck: [],
+  },
+  {
+    name: 'Steel Maze', feature: 'Five breeds + metal maze',
+    moves: 15, target: 230, cats: 'OGWTS', assist: 0.4,
+    board: ['M.M..M', '..O.G.', 'M..M..', '.W..M.', '..M..T', 'S..M..'],
+    deck: [],
+  },
+  {
+    name: 'Tight Steel', feature: 'Crowded + metal',
+    moves: 14, target: 240, cats: 'OGWTS', assist: 0.35,
+    board: ['OGM.TO', 'G..WM.', 'M.OG.W', '.TM.O.', 'W.GM.S', '.S.T.M'],
+    deck: [],
+    tutorial: [{ type: 'info', text: 'Crowded and full of steel! Clear space early, or you\'ll run out of room.' }],
+  },
+  {
+    name: 'Tea Break', feature: 'Take a breather', breather: true,
+    moves: 20, target: 230, cats: 'OGWT', assist: 0.5, // dư lượt: breather
+    board: ['......', '.OO.M.', '.M....', '....M.', '.M.GG.', '......'],
+    deck: [],
+  },
+  {
+    name: 'Iron Gate', feature: 'All 6 breeds + steel',
+    moves: 18, target: 300, cats: 'OGWTSK', assist: 0.4,
+    board: ['M.X.XM', '.O..G.', 'X.MM.X', '..W.K.', '.S.XT.', 'M..O.M'],
+    deck: [],
+  },
+  {
+    name: 'Steel Fortress', feature: 'Boss level', hard: true, boss: true,
+    moves: 20, target: 350, cats: 'OGWTSK', assist: 0.4,
+    board: ['MM..MM', 'M.OG.M', '.X..X.', '.TK.S.', 'M.W..M', 'MM..MM'],
+    deck: [],
+    tutorial: [{ type: 'info', text: 'Boss level: the Steel Fortress! Use every trick: rotate, hold, and big matches.' }],
+  },
 ];
 
 export function parseBoard(rows) {
-  return rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : { group: LETTERS[ch], locked: true, starting: true }));
+  return rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
+    : { group: LETTERS[ch], locked: true, starting: true }));
 }
 
 export function parseCard(spec) {

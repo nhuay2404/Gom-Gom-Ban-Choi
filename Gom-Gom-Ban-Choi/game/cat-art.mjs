@@ -1,12 +1,12 @@
 // Art mèo dùng chung cho các chế độ Gom Gom: 6 loại, vẽ bằng SVG.
 // Mỗi loại có tai, kiểu mắt và một biểu cảm (mood) riêng, không loại nào trùng loại nào.
 export const categories = {
-  orange: { name: 'Mèo cam', color: '#f39a45', fur: '#f5a04e', side: '#c9702a', stripe: '#d9772f', belly: '#ffe3bf', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle', mood: 'grin' },
-  gray: { name: 'Mèo xám', color: '#a9adb5', fur: '#aeb2ba', side: '#7c818b', stripe: '#6c717a', belly: '#f6f6f4', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot', mood: 'happy' },
-  white: { name: 'Mèo trắng', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
-  tuxedo: { name: 'Mèo mun', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
-  siamese: { name: 'Mèo Xiêm', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
-  tabby: { name: 'Mèo mướp', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
+  orange: { name: 'Orange cat', color: '#f39a45', fur: '#f5a04e', side: '#c9702a', stripe: '#d9772f', belly: '#ffe3bf', paw: '#ffe3bf', eye: '#3a2a22', ears: 'pointy', eyeStyle: 'sparkle', mood: 'grin' },
+  gray: { name: 'Gray cat', color: '#a9adb5', fur: '#aeb2ba', side: '#7c818b', stripe: '#6c717a', belly: '#f6f6f4', paw: '#f6f6f4', eye: '#3a3a3a', ears: 'round', eyeStyle: 'dot', mood: 'happy' },
+  white: { name: 'White cat', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
+  tuxedo: { name: 'Tuxedo cat', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
+  siamese: { name: 'Siamese cat', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
+  tabby: { name: 'Tabby cat', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
 };
 export const catGroups = Object.keys(categories);
 
@@ -72,8 +72,9 @@ function face(cat, group, mood, ink) {
   return `<g class="eyes${mood === 'happy' ? ' no-blink' : ''}">${eyes}</g>${mouth}`;
 }
 
-// Biểu cảm khi người chơi AFK: mỗi con một kiểu (JS gắn data-afk trên ô để chọn). Mặc định ẩn.
-export const AFK_MOODS = ['sad', 'worried', 'crying', 'disappointed', 'sulky'];
+// Biểu cảm khi sắp hết lượt: mỗi con một kiểu (JS gắn data-low trên mèo để chọn). Mặc định ẩn.
+// Khi người chơi AFK thì mọi con đều buồn ngủ (sleepy, gắn body.afk).
+export const LOW_MOVE_MOODS = ['sad', 'worried', 'crying', 'disappointed', 'sulky'];
 function afkFaces(cat, group, ink) {
   const line = group === 'tuxedo' ? '#f3e7cf' : ink;
   const stroke = `fill="none" stroke="${line}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"`;
@@ -81,6 +82,11 @@ function afkFaces(cat, group, ink) {
   const frown = `<path d="M43 73 Q50 67 57 73" ${stroke}/>`;
   const tear = (x, delay) => `<path class="afk-tear" style="animation-delay:${delay}s" d="M${x} 63 Q${x + 3} 67 ${x} 69.5 Q${x - 3} 67 ${x} 62Z" fill="#8fd3f7" stroke="#4fa9d9" stroke-width=".8"/>`;
   return {
+    // Buồn ngủ: mắt nhắm lim dim (vòng cung úp xuống), miệng tròn ngáp nhỏ, chữ z bay lên.
+    sleepy: `<path d="M31 58 Q37 63.5 43 58M57 58 Q63 63.5 69 58" ${stroke} stroke-width="3"/>
+      <ellipse cx="50" cy="72" rx="3.4" ry="3" fill="#b8475a" stroke="${line}" stroke-width="1.6"/>
+      <g class="afk-z" fill="none" stroke="#7a8fd6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M76 26 h8 l-8 9 h8"/><path class="z2" d="M86 12 h6 l-6 7 h6"/></g>`,
     // Buồn: mày xụ, mắt rưng rưng (giọt lệ đọng), miệng mếu.
     sad: `<path d="M29 48 L41 45M71 48 L59 45" ${stroke}/>${eyes}
       <ellipse cx="37" cy="63" rx="4" ry="1.8" fill="#bfe8ff" opacity=".9"/><ellipse cx="63" cy="63" rx="4" ry="1.8" fill="#bfe8ff" opacity=".9"/>${frown}`,

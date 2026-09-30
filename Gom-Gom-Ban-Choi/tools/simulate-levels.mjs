@@ -1,4 +1,4 @@
-// Mô phỏng 10 màn bằng bot tham lam (xét mọi hướng xoay, mọi ô, có dùng Gửi tạm) để cân độ khó.
+// Mô phỏng mọi màn bằng bot tham lam (xét mọi hướng xoay, mọi ô, có dùng Gửi tạm) để cân độ khó.
 // Chạy: node tools/simulate-levels.mjs [số ván mỗi màn]
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
 import { LEVELS, parseBoard, parseCard, makeDealer, starsFor } from '../game/levels.mjs';

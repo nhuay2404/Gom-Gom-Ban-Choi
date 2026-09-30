@@ -1,54 +1,152 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#8e263d">
-  <meta name="description" content="Gom Gom Rotate — xoay và đặt thẻ để chinh phục highscore.">
+  <meta name="description" content="Gom Gom Rotate — rotate and place cards to beat the high score.">
   <title>Gom Gom Rotate</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@700;800;900&display=swap">
   <link rel="stylesheet" href="./gom-gom.css">
   <link rel="stylesheet" href="./board-grid.css">
+  <link rel="stylesheet" href="./ui-portrait.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./gom-gom.js"></script>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 3.5 20.5 11V20.5H14.5V14h-5v6.5h-6Z"/></symbol>
+    <symbol id="i-deco" viewBox="0 0 24 24"><path d="M6 11V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3M3 14a2 2 0 0 1 4 0v1.5h10V14a2 2 0 0 1 4 0v5.5H3ZM6 19.5V21M18 19.5V21"/></symbol>
+    <symbol id="i-shop" viewBox="0 0 24 24"><path d="M5 8.5h14l-1.2 12H6.2ZM9 8.5V7a3 3 0 0 1 6 0v1.5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4.5 3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2Z M9 4.5v13M15 6.5v13"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM16 9.5l5 5M21 9.5l-5 5"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+  </svg>
+
+  <!-- ===== Màn chơi (bố cục L2: HUD gọn, bàn lớn, dock ngón cái) ===== -->
   <main class="shell">
     <header class="topbar">
-      <button id="open-map" class="round-button" aria-label="Bản đồ màn" title="Bản đồ màn">☰</button>
-      <h1>Gom Gom <small id="level-title">Màn 1</small></h1>
-      <button id="restart" class="round-button" aria-label="Chơi lại màn này" title="Chơi lại">↻</button>
+      <button id="open-map" class="round-button icon" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
+      <h1 id="level-title">Level 1</h1>
+      <div class="top-actions"><button class="round-button icon sound-toggle" aria-pressed="true"></button>
+      <button id="restart" class="round-button" aria-label="Restart this level" title="Restart">↻</button></div>
     </header>
-    <section class="scorebar" aria-label="Thông tin lượt chơi">
-      <div><span>Điểm</span><strong id="score">0</strong></div>
-      <div><span>Mục tiêu</span><strong id="highscore">120</strong></div>
-      <div><span>Lượt</span><strong id="moves">20</strong></div>
+    <section class="hud" aria-label="Game info">
+      <div class="progress" role="img" aria-label="Score progress">
+        <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
+        <span class="progress-text"><strong id="score">0</strong> / <span id="highscore">120</span></span>
+      </div>
+      <div class="moves-box"><span>Moves</span><strong id="moves">20</strong></div>
     </section>
-    <section class="board-wrap" aria-label="Bàn chơi"><div id="board" class="board"></div></section>
-    <p id="message" class="message" role="status"></p>
-    <section class="draw-area" aria-label="Thẻ đang bóc">
+    <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
+    <p class="message-row"><span id="message" class="message" role="status"></span></p>
+    <section class="dock draw-area" aria-label="Cards">
+      <div class="hold-column">
+        <button id="hold" class="hold-slot" aria-label="Hold a card or take back the held card"><span>+</span></button>
+        <span class="dock-label">Hold</span>
+      </div>
       <div class="card-column">
-        <span class="section-label">Thẻ đang bóc</span>
         <div class="card-rotator">
           <span class="rotate-hint left" aria-hidden="true"></span>
-          <button id="active-card" class="piece-card" aria-label="Chạm để xoay thẻ, kéo để đặt lên bàn"></button>
+          <button id="active-card" class="piece-card" aria-label="Tap to rotate the card, drag to place it on the board"></button>
           <span class="rotate-hint right" aria-hidden="true"></span>
         </div>
       </div>
-      <div class="hold-column">
-        <span class="section-label">Gửi tạm</span>
-        <button id="hold" class="hold-slot" aria-label="Gửi tạm hoặc lấy thẻ đã giữ"><span>+</span></button>
+      <div class="next-column next-area" aria-label="Upcoming card">
+        <div id="next-cards" class="next-cards"></div>
+        <span class="dock-label">Next</span>
       </div>
     </section>
-    <section class="next-area" aria-label="Thẻ sắp tới">
-      <span class="section-label">Sắp tới</span>
-      <div id="next-cards" class="next-cards"></div>
-    </section>
   </main>
+
+  <!-- ===== Home / Deco / Shop: các tab có thanh điều hướng nổi ===== -->
+  <!-- Home cho chơi một tay: trên = chỉ xem (xu, sao), giữa = phòng mèo (kéo xoay, chạm cưng), dưới = nút chơi trong tầm ngón cái -->
+  <section id="home" class="screen home" hidden>
+    <header class="screen-top home-top">
+      <div class="wallet"><span class="pill-stat" aria-label="Stars"><i class="ico-star">★</i><b id="home-stars">0</b></span><span class="pill-stat" aria-label="Coins"><i class="ico-coin"></i><b id="home-coins">0</b></span></div>
+      <div class="top-actions"><button class="round-button small icon sound-toggle" aria-pressed="true"></button>
+      <button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button></div>
+    </header>
+    <div class="home-stage">
+      <h1 class="home-logo">Gom Gom</h1>
+      <div id="home-zone" class="zone-switch" role="tablist" aria-label="Area">
+        <button role="tab" data-zone="garden">Garden</button>
+        <button role="tab" data-zone="living">Living room</button>
+      </div>
+      <div id="home-room" class="room home-room"><span class="room-hint">Drag to spin · tap a cat</span></div>
+    </div>
+    <div class="home-actions">
+      <p class="home-level"><span id="home-level">Level 1</span><span id="home-level-stars" class="level-card-stars">☆☆☆</span></p>
+      <div class="home-buttons">
+        <button id="home-play" class="pill-button big">Play</button>
+        <button id="home-journey" class="square-button" aria-label="All levels"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Levels</span></button>
+      </div>
+    </div>
+  </section>
+  <section id="deco" class="screen deco" hidden>
+    <header class="screen-top">
+      <h2 class="screen-title">Deco</h2>
+      <span class="pill-stat"><i class="ico-coin"></i><b id="deco-coins">0</b></span>
+    </header>
+    <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">
+        <button role="tab" data-zone="garden">Garden</button>
+        <button role="tab" data-zone="living">Living room</button>
+      </div>
+    <div id="deco-room" class="room deco-view"><span class="room-hint">Drag to rotate · pinch to zoom</span></div>
+    <div id="deco-action" class="deco-action">
+      <span id="deco-selected" class="deco-selected">Pick an item to preview it in your room</span>
+      <button id="deco-do" class="pill-button" hidden>Buy</button>
+    </div>
+    <div class="chips" role="tablist" aria-label="Categories">
+      <button class="chip on" role="tab" aria-selected="true" data-cat="furniture">Furniture</button>
+      <button class="chip" role="tab" aria-selected="false" data-cat="walls">Walls</button>
+      <button class="chip" role="tab" aria-selected="false" data-cat="floors">Floors</button>
+      <button class="chip" role="tab" aria-selected="false" data-cat="cats">Cats</button>
+    </div>
+    <div id="deco-grid" class="item-grid"></div>
+  </section>
+
+  <section id="shop" class="screen shop" hidden>
+    <header class="screen-top">
+      <h2 class="screen-title">Shop</h2>
+      <span class="pill-stat"><i class="ico-coin"></i><b id="shop-coins">0</b></span>
+    </header>
+    <button class="featured soon">
+      <span class="featured-tag">Starter pack</span>
+      <strong>Coins, a cozy rug and 5 boosters</strong>
+      <span class="price">$1.99</span>
+    </button>
+    <h3 class="shop-head">Boosters</h3>
+    <div class="booster-row">
+      <button class="booster soon"><b>+3</b><span>Extra moves</span><em><i class="ico-coin"></i>80</em></button>
+      <button class="booster soon"><b>×2</b><span>Second hold</span><em><i class="ico-coin"></i>60</em></button>
+      <button class="booster soon"><b>?</b><span>Hint</span><em><i class="ico-coin"></i>50</em></button>
+    </div>
+    <h3 class="shop-head">Coins</h3>
+    <div class="coin-list">
+      <button class="coin-pack soon"><span><i class="ico-coin"></i>500</span><em>$0.99</em></button>
+      <button class="coin-pack soon"><span><i class="ico-coin"></i>1,200</span><em>$1.99</em></button>
+      <button class="coin-pack soon"><span><i class="ico-coin"></i>3,000</span><em>$4.99</em></button>
+    </div>
+    <p class="soon-note">The shop is coming soon. Nothing here charges you yet.</p>
+  </section>
+
+  <nav id="tabbar" class="tabbar" aria-label="Main" hidden>
+    <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><use href="#i-deco"/></svg><span>Deco</span></button>
+    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-shop"/></svg><span>Shop</span></button>
+  </nav>
+  <div id="toast" class="toast" role="status" hidden></div>
+
   <!-- Bản đồ hành trình: 10 màn, mở khoá lần lượt, sao tốt nhất của từng màn -->
   <section id="map" class="map" hidden>
     <header class="map-head">
-      <h2>Hành trình</h2>
-      <button id="help" class="round-button" aria-label="Cách chơi" title="Cách chơi">?</button>
+      <button id="map-back" class="round-button icon" aria-label="Back to Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2>Journey</h2>
+      <button id="help" class="round-button" aria-label="How to play" title="How to play">?</button>
     </header>
     <div id="map-list" class="map-list"></div>
   </section>
@@ -63,38 +161,33 @@
     <div id="tutorial-bubble" class="tutorial-bubble" role="status">
       <span id="tutorial-avatar" class="tutorial-avatar" aria-hidden="true"></span>
       <p id="tutorial-text"></p>
-      <button id="tutorial-next" class="pill-button">Tiếp tục</button>
+      <button id="tutorial-next" class="pill-button">Continue</button>
     </div>
   </div>
   <dialog id="intro-dialog" class="level-dialog">
-    <p id="intro-number" class="level-number">Màn 1</p>
-    <h2 id="intro-name">Chào mèo nhỏ</h2>
-    <p id="intro-feature" class="level-feature">Mới: Kéo thả</p>
-    <div class="level-goal">
-      <div><span>Mục tiêu</span><strong id="intro-target">60</strong><em>điểm</em></div>
-      <div><span>Trong</span><strong id="intro-moves">4</strong><em>lượt</em></div>
-    </div>
+    <p id="intro-number" class="level-number">Level 1</p>
     <form method="dialog" class="level-actions">
-      <button id="intro-map" type="button" class="pill-button ghost">Bản đồ</button>
-      <button class="pill-button">Chơi</button>
+      <button id="intro-map" type="button" class="pill-button ghost">Map</button>
+      <button class="pill-button">Play</button>
     </form>
   </dialog>
   <dialog id="result-dialog" class="level-dialog">
-    <div id="result-stars" class="result-stars"></div>
-    <h2 id="result-title">Qua màn!</h2>
-    <p id="result-score" class="level-feature">0 điểm</p>
+    <h2 id="result-title">Level complete!</h2>
+    <p id="result-stars" class="result-stars" aria-label="Stars"></p>
+    <p id="result-score" class="level-feature">0 points</p>
+    <p id="result-coins" class="result-coins" hidden></p>
     <div class="level-actions">
-      <button id="result-map" class="pill-button ghost">Bản đồ</button>
-      <button id="result-retry" class="pill-button">Chơi lại</button>
-      <button id="result-next" class="pill-button">Màn tiếp</button>
+      <button id="result-map" class="pill-button ghost">Home</button>
+      <button id="result-retry" class="pill-button">Retry</button>
+      <button id="result-next" class="pill-button">Next level</button>
     </div>
   </dialog>
   <dialog id="help-dialog">
-    <form method="dialog"><button class="round-button close-help" aria-label="Đóng">×</button></form>
-    <h2>Cách chơi</h2>
-    <p>Mỗi lượt chỉ bóc một thẻ. Thẻ có thể chứa 1–3 món theo hình đơn, chữ I hoặc chữ L.</p>
-    <p>Chạm vào thẻ đang bóc để xoay, sau đó kéo thẻ lên bàn. Các ô sáng cho biết vị trí thẻ sẽ được đặt.</p>
-    <p>Kéo thẻ thả vào ô “Gửi tạm” để cất thẻ đó (hoặc đổi với thẻ đang cất), không giới hạn số lần. Chạm vào ô “Gửi tạm” để lấy thẻ đã cất về. Có 6 loại mèo: cam, xám, trắng, mun, Xiêm và mướp. Chỉ khi gom 3 mèo cùng loại liền kề (chúng sẽ biến mất) bạn mới được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120 điểm. Xem trước thẻ tiếp theo để tính nước. Thùng gỗ chặn ô, không đặt mèo lên được; gom mèo sát bên thùng để phá nó. Mỗi màn có mục tiêu điểm và số lượt riêng; hết lượt hoặc hết chỗ đặt là thua.</p>
+    <form method="dialog"><button class="round-button close-help" aria-label="Close">×</button></form>
+    <h2>How to play</h2>
+    <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
+    <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
+    <p>Drag a card into the “Hold” slot to stash it (or swap it with the stashed card), as often as you like. Tap the “Hold” slot to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose.</p>
   </dialog>
 </body>
 </html>

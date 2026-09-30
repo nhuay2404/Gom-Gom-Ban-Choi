@@ -255,27 +255,42 @@ dialog p{color:#8a6440}
   background:radial-gradient(circle at 38% 35%,#fff 0 35%,#f3ead8 70%,#e6d9bf00 100%);opacity:0;
   animation:land-puff .6s .22s cubic-bezier(.2,.7,.3,1) forwards}
 @media(prefers-reduced-motion:reduce){.hold-puff{display:none}}
-/* ===== AFK: mèo lộ biểu cảm khi người chơi bỏ đi 3 giây ===== */
+/* ===== AFK 3 giây: mèo buồn ngủ · sắp hết lượt (body.low-moves): mèo buồn/lo, ô Moves cảnh báo ===== */
 /* Chuyển mặt mượt: mặt thường và mặt AFK cùng mờ dần/hiện dần (crossfade), mặt mới hơi trồi lên khi hiện. */
 .cat .calm,.cat .blush{transition:opacity .45s ease}
 .cat .afk{visibility:visible;opacity:0;translate:0 1.5px;transition:opacity .45s ease,translate .45s cubic-bezier(.3,1.4,.5,1)}
-body.afk .cat[data-afk] .calm,body.afk .cat[data-afk] .blush{opacity:0}
-body.afk .cat[data-afk=sad] .afk-sad,body.afk .cat[data-afk=worried] .afk-worried,body.afk .cat[data-afk=crying] .afk-crying,
-body.afk .cat[data-afk=disappointed] .afk-disappointed,body.afk .cat[data-afk=sulky] .afk-sulky{opacity:1;translate:0 0;transition-delay:.12s}
+body.afk .cat .calm,body.afk .cat .blush,body.low-moves .cat[data-low] .calm,body.low-moves .cat[data-low] .blush{opacity:0}
+body.afk .cat .afk-sleepy,body.low-moves:not(.afk) .cat[data-low=sad] .afk-sad,body.low-moves:not(.afk) .cat[data-low=worried] .afk-worried,body.low-moves:not(.afk) .cat[data-low=crying] .afk-crying,
+body.low-moves:not(.afk) .cat[data-low=disappointed] .afk-disappointed,body.low-moves:not(.afk) .cat[data-low=sulky] .afk-sulky{opacity:1;translate:0 0;transition-delay:.12s}
 @media(prefers-reduced-motion:no-preference){
-  body.afk .cat[data-afk=crying] .afk-tear{animation:afk-tear 1.4s ease-in .5s infinite backwards;transform-box:fill-box;transform-origin:50% 0}
-  body.afk .cat[data-afk=worried] .afk-sweat{animation:afk-sweat 1.6s ease-in-out infinite alternate}
-  body.afk .cat[data-afk=crying]{animation:afk-sob .35s ease-in-out infinite alternate}
-  body.afk .cat[data-afk=worried]{animation:afk-shiver .12s linear infinite alternate}
-  body.afk .cat[data-afk=sad],body.afk .cat[data-afk=disappointed]{animation:afk-droop 2.4s ease-in-out infinite alternate}}
+  body.low-moves:not(.afk) .cat[data-low=crying] .afk-tear{animation:afk-tear 1.4s ease-in .5s infinite backwards;transform-box:fill-box;transform-origin:50% 0}
+  body.low-moves:not(.afk) .cat[data-low=worried] .afk-sweat{animation:afk-sweat 1.6s ease-in-out infinite alternate}
+  body.low-moves:not(.afk) .cat[data-low=crying]{animation:afk-sob .35s ease-in-out infinite alternate}
+  body.low-moves:not(.afk) .cat[data-low=worried]{animation:afk-shiver .12s linear infinite alternate}
+  body.low-moves:not(.afk) .cat[data-low=sad],body.low-moves:not(.afk) .cat[data-low=disappointed]{animation:afk-droop 2.4s ease-in-out infinite alternate}}
 .cat .afk-glint{transform-box:fill-box;transform-origin:center}
-@media(prefers-reduced-motion:no-preference){body.afk .cat[data-afk=crying] .afk-glint{animation:afk-glint 1.1s ease-in-out infinite alternate}body.afk .cat[data-afk=crying] .afk-glint.b{animation-delay:-.4s}body.afk .cat[data-afk=crying] .afk-glint.c{animation-delay:-.7s}}
+@media(prefers-reduced-motion:no-preference){body.low-moves:not(.afk) .cat[data-low=crying] .afk-glint{animation:afk-glint 1.1s ease-in-out infinite alternate}body.low-moves:not(.afk) .cat[data-low=crying] .afk-glint.b{animation-delay:-.4s}body.low-moves:not(.afk) .cat[data-low=crying] .afk-glint.c{animation-delay:-.7s}}
 @keyframes afk-glint{from{scale:.75;opacity:.75}to{scale:1.15;opacity:1}}
 @keyframes afk-tear{0%{translate:0 0;opacity:0}15%{opacity:1}100%{translate:0 22px;opacity:0}}
 @keyframes afk-sweat{to{translate:0 3px}}
 @keyframes afk-sob{to{translate:0 1.5px}}
 @keyframes afk-shiver{from{translate:-.6px 0}to{translate:.6px 0}}
 @keyframes afk-droop{to{translate:0 2px;rotate:-2deg}}
+body.afk .cat .afk-sleepy{opacity:1;translate:0 0;transition-delay:.12s}
+.cat .afk-z path{opacity:0}
+@media(prefers-reduced-motion:no-preference){
+  body.afk .cat .afk-z path{animation:afk-z 2.2s ease-in-out infinite}
+  body.afk .cat .afk-z .z2{animation-delay:.7s}
+  body.afk .cat{animation:afk-breathe 2.6s ease-in-out infinite alternate}}
+@media(prefers-reduced-motion:reduce){body.afk .cat .afk-z path{opacity:1}}
+@keyframes afk-z{0%{opacity:0;translate:-2px 4px}25%{opacity:1}100%{opacity:0;translate:4px -8px}}
+@keyframes afk-breathe{to{translate:0 1.5px}}
+/* Sắp hết lượt: ô Moves cam (còn ~30%) rồi đỏ + đập nhịp (còn 3 lượt cuối). */
+.scorebar div.warn strong{color:#e8781e}
+.scorebar div.danger{border-color:#d9442f;background:linear-gradient(#ffe6df,#ffcfc4)}
+.scorebar div.danger strong{color:#d9301c}
+@media(prefers-reduced-motion:no-preference){.scorebar div.danger strong{display:inline-block;animation:moves-pulse .9s ease-in-out infinite}}
+@keyframes moves-pulse{50%{transform:scale(1.28)}}
 /* ===== Màn chơi: tiêu đề màn trên topbar ===== */
 .topbar h1 small{display:block;margin-top:4px;font-size:13px;letter-spacing:0;color:var(--cream-ink);text-shadow:none;background:var(--cream-1);border-radius:999px;padding:3px 10px;width:max-content;margin-inline:auto;box-shadow:0 2px 0 var(--cream-deep)}
 .pill-button{min-width:112px;padding:12px 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:900;color:#fff;cursor:pointer;
@@ -334,14 +349,15 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 .level-goal span,.level-goal em{font-size:11px;font-weight:800;font-style:normal;text-transform:uppercase;opacity:.75}
 .level-goal strong{font-size:30px;font-weight:900;color:#e0772f;line-height:1.1}
 .level-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.result-stars{display:flex;justify-content:center;gap:6px;margin:-4px 0 4px;font-size:46px;line-height:1}
-.result-stars span{color:#e6d6b0;text-shadow:0 2px 0 #c9b58a}
-.result-stars span:nth-child(2){font-size:58px;translate:0 -8px}
-.result-stars span.on{color:#ffc93c;text-shadow:0 3px 0 #d48a1a,0 0 14px #ffd76a;animation:star-pop .5s cubic-bezier(.3,1.7,.5,1) both}
-@keyframes star-pop{from{scale:0;rotate:-40deg;opacity:0}}
-@media(prefers-reduced-motion:reduce){.tutorial-ring,.map-node.current b,.result-stars span.on{animation:none}}
+@media(prefers-reduced-motion:reduce){.tutorial-ring,.map-node.current b{animation:none}}
 /* ===== Thùng gỗ: ô chặn, vỡ khi gom mèo sát bên ===== */
 .cell.block{padding:1px;border:0;background:none;box-shadow:none;cursor:default}
 .cell.block .crate{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 2px #6b3f1c55)}
 .crate-ghost{position:absolute;z-index:3}
 .crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:linear-gradient(#e7ad6e,#b97237);box-shadow:0 1px 0 #6d4020;pointer-events:none}
+/* Vui vẻ (chạm mèo / gom) thắng mọi biểu cảm buồn: ẩn mặt buồn/ngủ, giữ nhịp nhảy vui thay vì rung/khóc. */
+.cell.petted .cat .afk,.cell.merge-ghost .cat .afk{display:none}
+@media(prefers-reduced-motion:no-preference){
+  body.low-moves:not(.afk) .cell.petted .cat[data-low]{animation:pet-hop .5s cubic-bezier(.3,1.5,.5,1) 2}
+  body.low-moves:not(.afk) .cell.merge-ghost .cat[data-low]{animation:none}
+}

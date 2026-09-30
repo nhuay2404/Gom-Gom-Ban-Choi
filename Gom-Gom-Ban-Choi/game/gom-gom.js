@@ -1,7 +1,9 @@
 import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, clusterPoints, matchPoints } from './scoring.mjs';
-import { categories, catMarkup, addArt as addCatArt, AFK_MOODS } from './cat-art.mjs';
+import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './cat-art.mjs';
 import { LEVELS, parseBoard, makeDealer, starsFor } from './levels.mjs';
+import { playSound, soundOn, setSound } from './sound.mjs';
+import { COINS_PER_STAR, ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco } from './deco-data.mjs';
 
 // Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
 const W = 6, H = 6, PREVIEW_COUNT = 1;
@@ -90,6 +92,7 @@ function popIn(container, delay = 0) {
 function rotateActive() {
   if (state.over || state.animating || state.active.items.length < 2) return;
   if (!tutorialAllows('rotate')) return;
+  playSound('pick');
   // Ghi vị trí từng mèo trước khi xoay (đang giữa anim thì lấy đúng chỗ đang hiện -> bấm liên tục vẫn liền mạch).
   const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
   state.active.offsets = rotateOffsets(state.active.offsets);
@@ -211,8 +214,9 @@ function dropIntoHold(hold) {
 
 function holdActive() {
   if (state.over || state.animating) return;
-  if (!tutorialAllows('hold')) return render('Làm theo hướng dẫn nhé!', true);
+  if (!tutorialAllows('hold')) return render('Follow the tutorial!', true);
   const previous = state.hold;
+  playSound('draw');
   state.hold = state.active;
   state.active = previous || drawCard();
   state.preview = null;
@@ -231,13 +235,13 @@ function canPlaceAnywhere(card) {
 // Thua vì hết chỗ: cả thẻ đang bóc lẫn thẻ gửi tạm đều không vừa bàn (ô gửi tạm trống thì vẫn còn đường rút thẻ).
 function checkStuck() {
   if (state.over || canPlaceAnywhere(state.active) || !state.hold || canPlaceAnywhere(state.hold)) return false;
-  endLevel(false, 'Hết chỗ đặt!');
+  endLevel(false, 'No room left!');
   return true;
 }
 
 function placeAt(anchor) {
   if (state.over || state.animating) return;
-  if (!tutorialAllows('place', anchor)) return render('Kéo vào ô sáng nhé!', true);
+  if (!tutorialAllows('place', anchor)) return render('Drag onto the glowing cell!', true);
   const result = placeCard(state.board, W, H, anchor, state.active);
   if (result.error) return render(result.error, true);
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
@@ -264,6 +268,18 @@ const CRATE_SVG = `<svg class="crate" viewBox="0 0 100 100" aria-hidden="true">
   <path d="M20 18L80 74M80 18L20 74" stroke="#b97237" stroke-width="3" stroke-linecap="round" opacity=".5"/>
   <g fill="#6d4020"><circle cx="16" cy="14" r="3"/><circle cx="84" cy="14" r="3"/><circle cx="16" cy="78" r="3"/><circle cx="84" cy="78" r="3"/></g>
   <rect x="10" y="7" width="80" height="6" rx="3" fill="#f2c28a" opacity=".6"/>
+</svg>`;
+
+// Khối kim loại (chương 2): ô chặn như thùng gỗ nhưng không bao giờ vỡ. Thép xám, đinh tán, vệt sáng.
+const METAL_SVG = `<svg class="crate metal-block" viewBox="0 0 100 100" aria-hidden="true">
+  <defs><linearGradient id="metal-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3e8ee"/><stop offset=".5" stop-color="#aab4c0"/><stop offset="1" stop-color="#8793a1"/></linearGradient></defs>
+  <rect x="6" y="10" width="88" height="84" rx="12" fill="#56606c"/>
+  <rect x="6" y="4" width="88" height="84" rx="12" fill="url(#metal-face)"/>
+  <rect x="16" y="14" width="68" height="64" rx="6" fill="none" stroke="#7a8592" stroke-width="3"/>
+  <path d="M24 70L70 22" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".45"/>
+  <path d="M36 72L76 32" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".3"/>
+  <g fill="#6c7784" stroke="#dfe5ec" stroke-width="1.5"><circle cx="16" cy="14" r="4"/><circle cx="84" cy="14" r="4"/><circle cx="16" cy="78" r="4"/><circle cx="84" cy="78" r="4"/></g>
+  <rect x="10" y="7" width="80" height="5" rx="2.5" fill="#fff" opacity=".55"/>
 </svg>`;
 
 // Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
@@ -401,7 +417,7 @@ async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
   const occupied = state.board.map((object, index) => object?.group ? index : null).filter(index => index !== null);
-  breakCrates(state.board.map((object, index) => object?.block ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
+  breakCrates(state.board.map((object, index) => object?.block && !object.metal ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
   if (!reduceMotion.matches && occupied.length) {
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
     // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
@@ -486,22 +502,25 @@ function finishTurn(result, match) {
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   state.score += gained;
-  const crateText = match.broken?.length ? ` Phá ${match.broken.length} thùng!` : '';
-  const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} điểm.${crateText}` : '';
+  if (match.clusters.length) playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
+  else playSound('pick');
+  const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}` : '';
   state.moves--;
   state.preview = null;
   tutorialDone('place');
   if (state.score >= state.level.target) {
     state.over = true;
     state.active = drawCard(); // không để thẻ vừa đặt nằm lại trong ô đang bóc
-    const message = `Bạn thắng với ${state.score} điểm! ✨`;
+    const message = `You win with ${state.score} points! ✨`;
     render(message);
+    setTimeout(() => playSound('complete'), 380); // sau tiếng gom cuối
     return celebrateWin(message).then(() => endLevel(true));
   }
-  if (state.moves === 0) return endLevel(false, 'Hết lượt!');
+  if (state.moves === 0) return endLevel(false, 'Out of moves!');
   state.active = drawCard();
   const fit = canPlaceAnywhere(state.active);
-  render(fit ? clearedText : `${clearedText} Hết chỗ đặt — kéo vào Gửi tạm.`.trim(), !fit);
+  render(`${fit ? clearedText : `${clearedText} No room left — drag a card into Hold.`} ${lowMovesText()}`.trim(), !fit);
   checkStuck();
 }
 
@@ -606,6 +625,7 @@ function moveCardDrag(event) {
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
   document.body.classList.add('card-dragging');
   if (!cardDrag.ghost) {
+    playSound('pick');
     cardDrag.ghost = $('active-card').cloneNode(true);
     cardDrag.ghost.removeAttribute('id');
     cardDrag.ghost.className = 'piece-card drag-ghost';
@@ -672,8 +692,11 @@ function finishCardDrag(event) {
 function render(message = '', error = false) {
   $('score').textContent = state.score;
   $('highscore').textContent = state.level.target;
-  $('level-title').textContent = `Màn ${state.levelIndex + 1}`;
+  $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('moves').textContent = state.moves;
+  const progress = Math.min(1, state.score / state.level.target);
+  $('score-fill').style.width = `${progress * 100}%`;
+  $('score-fill').parentElement.parentElement.classList.toggle('full', progress >= 1);
   $('message').textContent = message;
   $('message').classList.toggle('error', error);
   renderBoard();
@@ -684,6 +707,7 @@ function render(message = '', error = false) {
   const shape = normalizePreview(state.active.offsets);
   layoutHints(shape.rows > shape.cols, state.animateHints);
   $('hold').disabled = state.over;
+  renderLowMoves();
 }
 
 // Ô bàn được giữ cố định; chỉ ô nào đổi mèo mới dựng lại. Không xoá/dựng lại cả 36 ô mỗi lần vẽ
@@ -708,13 +732,13 @@ function renderBoard() {
     cell.replaceChildren();
     cell.removeAttribute('style');
     if (object?.block) {
-      cell.className = 'cell block';
-      cell.setAttribute('aria-label', 'Thùng gỗ, gom mèo sát bên để phá');
-      cell.innerHTML = CRATE_SVG;
+      cell.className = `cell block${object.metal ? ' metal' : ''}`;
+      cell.setAttribute('aria-label', object.metal ? 'Metal block, it never breaks' : 'Crate, match cats next to it to break it');
+      cell.innerHTML = object.metal ? METAL_SVG : CRATE_SVG;
       return;
     }
     cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
-    cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, trống`);
+    cell.setAttribute('aria-label', object ? `${object.name}, locked` : `Cell ${index + 1}, empty`);
     if (!object) return;
     cell.style.setProperty('--group-color', categories[object.group].color);
     addArt(cell, object);
@@ -795,7 +819,7 @@ function newGame(levelIndex = state?.levelIndex ?? 0) {
     tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
   };
   state.active = drawCard();
-  render(`Đạt ${level.target} điểm trong ${level.moves} lượt!`);
+  render(`Reach ${level.target} points in ${level.moves} moves!`);
   renderTutorial();
 }
 
@@ -841,19 +865,34 @@ function petCat(cell) {
 
 // Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm (đang có thẻ) = đổi thẻ đó về ô đang bóc.
 $('hold').onclick = () => { if (state.hold) holdActive(); };
-// AFK: 3 giây không thao tác thì mèo lộ biểu cảm (buồn, lo lắng, khóc, thất vọng, dỗi), mỗi con một kiểu.
+// AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
 // Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.
-const AFK_MS = 3000;
+const AFK_MS = 5000;
 let afkTimer = 0;
 function goAfk() {
   if (state.over || state.animating || cardDrag) return armAfk();
-  const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
-  // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
-  const offset = Math.floor(Math.random() * AFK_MOODS.length);
-  cats.forEach((cat, i) => { cat.dataset.afk = AFK_MOODS[(i * 3 + offset + Math.floor(Math.random() * 2)) % AFK_MOODS.length]; });
   document.body.classList.add('afk');
 }
-function armAfk() {
+
+// Sắp hết lượt: ô Moves đổi màu + đập nhịp, mèo lộ biểu cảm buồn/lo (mỗi con một kiểu), thông báo ở vài lượt cuối.
+const LOW_CATS_AT = 2, LOW_MSG_AT = 3;
+function lowMovesText() {
+  if (state.over || state.moves > LOW_MSG_AT || state.moves < 1) return '';
+  return state.moves === 1 ? 'Last move!' : `${state.moves} moves left!`;
+}
+function renderLowMoves() {
+  const left = state.moves, live = !state.over && left > 0;
+  const box = $('moves').parentElement;
+  box.classList.toggle('danger', live && left <= LOW_MSG_AT);
+  box.classList.toggle('warn', live && left > LOW_MSG_AT && left <= Math.ceil(state.level.moves * 0.3));
+  const low = live && left <= LOW_CATS_AT;
+  document.body.classList.toggle('low-moves', low);
+  if (!low) return;
+  const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
+  // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
+  const offset = Math.floor(Math.random() * LOW_MOVE_MOODS.length);
+  cats.forEach((cat, i) => { if (!cat.dataset.low) cat.dataset.low = LOW_MOVE_MOODS[(i * 3 + offset + Math.floor(Math.random() * 2)) % LOW_MOVE_MOODS.length]; });
+}function armAfk() {
   document.body.classList.remove('afk');
   clearTimeout(afkTimer);
   afkTimer = setTimeout(goAfk, AFK_MS);
@@ -906,7 +945,7 @@ function tutorialHoles(step) {
 function renderTutorial() {
   const layer = $('tutorial'), step = tutorialStep();
   layer.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
-  if (!step || state.over || $('intro-dialog').open || !$('map').hidden) {
+  if (!step || state.over || $('intro-dialog').open || !$('map').hidden || menuOpen()) {
     layer.hidden = true;
     return;
   }
@@ -981,6 +1020,7 @@ function saveProgress(progress) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch {}
 }
 const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.filter(Boolean).length + 1);
+const levelTag = level => (level.boss ? ' · Boss' : level.hard ? ' · Hard' : level.breather ? ' · Chill' : '');
 const starText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 
 function showMap() {
@@ -991,23 +1031,236 @@ function showMap() {
     node.className = `map-node${locked ? ' locked' : ''}${index === open - 1 && !stars ? ' current' : ''}${level.hard ? ' hard' : ''}`;
     node.disabled = locked;
     node.innerHTML = `<b>${locked ? '🔒' : index + 1}</b><span class="map-stars">${locked ? '' : starText(stars)}</span>`
-      + `<small>${level.name}${level.hard ? ' · Khó' : ''}</small>`;
+      + `<small>${level.name}${levelTag(level)}</small>`;
     node.onclick = () => { $('map').hidden = true; startLevel(index); };
     return node;
   }));
+  hideMenus();
   $('map').hidden = false;
   $('tutorial').hidden = true;
   document.querySelector('.map-node.current')?.scrollIntoView({ block: 'center' });
 }
 
-function startLevel(index) {
+// ===== Home / Deco / Shop: các tab dùng chung thanh điều hướng nổi, chỉ hiện ngoài màn chơi =====
+const TABS = ['home', 'deco', 'shop'];
+const menuOpen = () => TABS.some(tab => !$(tab).hidden);
+const totalStars = () => loadProgress().stars.reduce((sum, n) => sum + (n || 0), 0);
+let deco = loadDeco(totalStars());
+let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
+let decoCat = 'furniture', decoPick = null;
+
+function hideMenus() {
+  TABS.forEach(tab => { $(tab).hidden = true; });
+  $('tabbar').hidden = true;
+  decoPick = null;
+  room3d?.stop();
+}
+function refreshWallet() {
+  ['home-coins', 'deco-coins', 'shop-coins'].forEach(id => { $(id).textContent = deco.coins.toLocaleString('en-US'); });
+}
+function showTab(tab) {
+  TABS.forEach(name => { $(name).hidden = name !== tab; });
+  $('tabbar').hidden = false;
+  $('tabbar').querySelectorAll('.tab').forEach(button => {
+    if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  $('map').hidden = true;
+  $('tutorial').hidden = true;
+  const progress = loadProgress();
+  refreshWallet();
+  $('home-stars').textContent = totalStars();
+  const next = unlockedCount(progress) - 1;
+  $('home-level').textContent = `Level ${next + 1}`;
+  $('home-level-stars').textContent = starText(progress.stars[next] || 0);
+  if (tab !== 'deco') decoPick = null;
+  if (tab === 'deco') renderDeco();
+  renderZoneSwitch();
+  mountRoom(tab);
+  $(tab).scrollTop = 0;
+}
+function mountRoom(tab) {
+  if (!room3d) return;
+  if (tab === 'shop') return room3d.stop();
+  room3d.apply(previewDeco(deco, tab === 'deco' ? decoPick : null));
+  room3d.mount($(`${tab}-room`), { autoRotate: tab === 'home', resetView: tab === 'home' });
+}
+$('tabbar').addEventListener('click', event => {
+  const tab = event.target.closest('.tab');
+  if (tab) { playSound('pick'); showTab(tab.dataset.tab); }
+});
+
+// Phòng CSS phẳng (dự phòng khi không nạp được 3D): tranh, cửa sổ, chậu cây, thảm và mèo; chạm mèo để cưng.
+function buildRoom(room, cats) {
+  room.innerHTML = '<span class="room-frame"></span><span class="room-window"></span><span class="room-plant"></span><span class="room-rug"></span><div class="room-cats"></div>';
+  room.querySelector('.room-cats').append(...cats.map(group => {
+    const cat = document.createElement('button');
+    cat.className = 'room-cat';
+    cat.setAttribute('aria-label', `Pet the ${categories[group].name.toLowerCase()}`);
+    addCatArt(cat, group);
+    return cat;
+  }));
+}
+function buildFlatRooms() {
+  buildRoom($('home-room'), deco.cats.slice(0, 3));
+  buildRoom($('deco-room'), deco.cats.slice(0, 3));
+}
+function petRoomCat(cat) {
+  cat.classList.remove('petted');
+  void cat.offsetWidth;
+  cat.classList.add('petted');
+  clearTimeout(cat.petTimer);
+  cat.petTimer = setTimeout(() => cat.classList.remove('petted'), 1100);
+  if (reduceMotion.matches) return;
+  const room = cat.closest('.room'), box = room.getBoundingClientRect(), rect = cat.getBoundingClientRect();
+  for (let i = 0; i < 4; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'pet-heart';
+    heart.textContent = '♥';
+    heart.style.left = `${rect.left - box.left + rect.width * (.3 + Math.random() * .4)}px`;
+    heart.style.top = `${rect.top - box.top + rect.height * .2}px`;
+    heart.style.setProperty('--dx', `${(Math.random() - .5) * 40}px`);
+    heart.style.setProperty('--rot', `${(Math.random() - .5) * 40}deg`);
+    heart.style.animationDelay = `${i * 110}ms`;
+    heart.style.fontSize = `${14 + Math.random() * 8}px`;
+    room.append(heart);
+    heart.addEventListener('animationend', () => heart.remove());
+  }
+}
+document.addEventListener('click', event => {
+  const cat = event.target.closest('.room-cat');
+  if (cat) petRoomCat(cat);
+});
+const roomHint = $('deco-room').querySelector('.room-hint');
+const homeHint = $('home-room').querySelector('.room-hint');
+buildFlatRooms();
+import('./deco-room.mjs').then(({ createRoom }) => {
+  room3d = createRoom();
+  $('home-room').replaceChildren(homeHint);
+  $('deco-room').replaceChildren(roomHint);
+  $('home-room').classList.add('is-3d');
+  $('deco-room').classList.add('is-3d');
+  const open = TABS.find(tab => !$(tab).hidden);
+  if (open) mountRoom(open);
+}).catch(error => console.warn('3D room unavailable, using the flat room.', error));
+
+// ===== Deco: mua / đặt đồ, đổi tường, sàn, chọn mèo. Chọn món = xem trước ngay trong phòng. =====
+const FURNISHING = entry => entry.cat === 'furniture' || entry.cat === 'cats';
+function renderDeco() {
+  const unlocked = unlockedCount(loadProgress());
+  $('deco').querySelectorAll('.chip').forEach(chip => { chip.textContent = ZONES[deco.zone].cats[chip.dataset.cat]; });
+  $('deco-grid').replaceChildren(...catalogFor(deco.zone, decoCat).map(entry => {
+    const status = itemStatus(deco, entry, unlocked);
+    const node = document.createElement('button');
+    node.className = `deco-item ${status}${decoPick === entry ? ' picked' : ''}`;
+    node.dataset.id = entry.id;
+    const thumb = entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>` : `<span class="thumb" style="--c:${entry.color}"></span>`;
+    const tag = status === 'locked' ? `🔒 Level ${entry.lock}` : status === 'using' ? (FURNISHING(entry) ? 'In room' : 'Using')
+      : status === 'owned' ? (entry.cat === 'cats' ? 'Add' : 'Owned') : `<i class="ico-coin"></i>${entry.price}`;
+    node.innerHTML = `${thumb}<span>${entry.name}</span><em>${tag}</em>`;
+    return node;
+  }));
+  renderDecoAction(unlocked);
+}
+function renderDecoAction(unlocked) {
+  const button = $('deco-do');
+  if (!decoPick) {
+    $('deco-selected').textContent = `Pick an item to preview it in your ${deco.zone === 'garden' ? 'garden' : 'room'}`;
+    button.hidden = true;
+    return;
+  }
+  const status = itemStatus(deco, decoPick, unlocked);
+  const labels = {
+    locked: `Unlocks at level ${decoPick.lock}`, poor: `<i class="ico-coin"></i> ${decoPick.price}`, buy: `Buy <i class="ico-coin"></i> ${decoPick.price}`,
+    owned: decoPick.cat === 'cats' ? 'Add to room' : FURNISHING(decoPick) ? 'Place' : 'Use', using: FURNISHING(decoPick) ? 'Remove' : 'Using',
+  };
+  $('deco-selected').textContent = status === 'poor' ? `${decoPick.name} · need ${decoPick.price - deco.coins} more` : decoPick.name;
+  button.hidden = false;
+  button.innerHTML = labels[status];
+  button.disabled = status === 'locked' || status === 'poor' || (status === 'using' && !FURNISHING(decoPick));
+  button.classList.toggle('ghost', status === 'using');
+}
+function pickDeco(entry) {
+  decoPick = entry;
+  room3d?.apply(previewDeco(deco, entry));
+  if (entry) room3d?.focus(entry.id);
+  renderDeco();
+}
+$('deco-grid').addEventListener('click', event => {
+  const entry = itemById(event.target.closest('.deco-item')?.dataset.id);
+  if (entry) pickDeco(decoPick === entry ? null : entry);
+});
+$('deco-do').onclick = () => {
+  if (!decoPick) return;
+  const unlocked = unlockedCount(loadProgress());
+  const next = applyAction(deco, decoPick, unlocked);
+  if (next.error) return showToast(next.error);
+  const bought = next.coins < deco.coins;
+  deco = next;
+  saveDeco(deco);
+  refreshWallet();
+  if (bought) showToast(`Bought ${decoPick.name}!`);
+  playSound(bought ? 'reward' : 'pick');
+  if (!room3d) buildFlatRooms();
+  // Vừa gỡ ra thì bỏ chọn luôn, không thì bản xem trước lại đặt món đó vào phòng.
+  pickDeco(itemStatus(deco, decoPick, unlocked) === 'using' ? decoPick : null);
+};
+$('deco').querySelector('.chips').addEventListener('click', event => {
+  const chip = event.target.closest('.chip');
+  if (!chip) return;
+  chip.parentElement.querySelectorAll('.chip').forEach(other => {
+    other.classList.toggle('on', other === chip);
+    other.setAttribute('aria-selected', other === chip);
+  });
+  decoCat = chip.dataset.cat;
+  pickDeco(null);
+});
+
+// ===== Khu: vườn (màn 1–10) / phòng khách (mở khi thắng màn 10). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
+const levelsCleared = () => loadProgress().stars.filter(Boolean).length;
+function renderZoneSwitch() {
+  const cleared = levelsCleared();
+  document.querySelectorAll('.zone-switch button').forEach(button => {
+    const zone = button.dataset.zone, open = zoneOpen(zone, cleared);
+    button.classList.toggle('on', zone === deco.zone);
+    button.classList.toggle('locked', !open);
+    button.setAttribute('aria-selected', zone === deco.zone);
+    button.innerHTML = open ? ZONES[zone].name : `🔒 ${ZONES[zone].name}`;
+  });
+}
+document.addEventListener('click', event => {
+  const button = event.target.closest('.zone-switch button');
+  if (!button) return;
+  const zone = button.dataset.zone;
+  if (!zoneOpen(zone, levelsCleared())) return showToast(`Beat level ${ZONES[zone].unlockAfter} to unlock the ${ZONES[zone].name.toLowerCase()}`);
+  if (zone === deco.zone) return;
+  deco = { ...deco, zone };
+  saveDeco(deco);
+  decoPick = null;
+  renderZoneSwitch();
+  const tab = TABS.find(name => !$(name).hidden);
+  if (tab === 'deco') renderDeco();
+  if (tab) mountRoom(tab);
+});
+
+let toastTimer = 0;
+function showToast(text) {
+  const toast = $('toast');
+  toast.textContent = text;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 1600);
+}
+// Shop (tiền thật) vẫn là khung giao diện: bấm vào chỉ báo "sắp có".
+document.addEventListener('click', event => { if (event.target.closest('.soon')) showToast('Coming soon!'); });
+
+function startLevel(index, skipIntro = false) {
   const level = LEVELS[index];
+  hideMenus();
+  $('map').hidden = true;
   newGame(index);
-  $('intro-number').textContent = `Màn ${index + 1}${level.hard ? ' · Khó' : ''}`;
-  $('intro-name').textContent = level.name;
-  $('intro-feature').textContent = `Mới: ${level.feature}`;
-  $('intro-target').textContent = level.target;
-  $('intro-moves').textContent = level.moves;
+  if (skipIntro) return renderTutorial();
+  $('intro-number').textContent = `Level ${index + 1}${levelTag(level)}`;
   $('intro-dialog').classList.toggle('hard', !!level.hard);
   $('intro-dialog').showModal();
   renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
@@ -1016,48 +1269,58 @@ $('intro-dialog').addEventListener('close', () => renderTutorial());
 
 function endLevel(win, reason = '') {
   state.over = true;
-  render(win ? '' : `${reason} Bạn đạt ${state.score}/${state.level.target} điểm.`, !win);
+  render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
   renderTutorial();
   const index = state.levelIndex, last = index === LEVELS.length - 1;
-  let stars = 0;
+  const stars = win ? starsFor(state.level, state.moves) : 0;
+  $('result-stars').textContent = win ? starText(stars) : '';
+  let coinsEarned = 0;
   if (win) {
-    stars = starsFor(state.level, state.moves);
-    const progress = loadProgress();
-    progress.stars[index] = Math.max(progress.stars[index] || 0, stars);
+    const progress = loadProgress(), before = progress.stars[index] || 0;
+    progress.stars[index] = Math.max(before, stars);
     saveProgress(progress);
+    // Chỉ sao mới (vượt kỷ lục cũ của màn) mới ra xu.
+    coinsEarned = Math.max(0, stars - before) * COINS_PER_STAR;
+    if (coinsEarned) { deco = { ...deco, coins: deco.coins + coinsEarned }; saveDeco(deco); }
   }
+  const unlockedLiving = win && index + 1 === ZONES.living.unlockAfter && coinsEarned > 0 && levelsCleared() === ZONES.living.unlockAfter;
+  $('result-coins').hidden = !coinsEarned;
+  if (coinsEarned) setTimeout(() => playSound('reward'), 450);
+  $('result-coins').innerHTML = `<i class="ico-coin"></i> +${coinsEarned} coins${unlockedLiving ? ' · Living room unlocked!' : ''}`;
   const dialog = $('result-dialog');
   dialog.classList.toggle('win', win);
-  $('result-title').textContent = win ? (last ? 'Hoàn thành hành trình!' : 'Qua màn!') : reason;
-  $('result-score').textContent = `${state.score} / ${state.level.target} điểm`;
-  $('result-stars').replaceChildren(...[0, 1, 2].map(i => {
-    const star = document.createElement('span');
-    star.textContent = '★';
-    star.className = i < stars ? 'on' : '';
-    star.style.animationDelay = `${250 + i * 220}ms`;
-    return star;
-  }));
-  $('result-stars').hidden = !win;
+  $('result-title').textContent = win ? (last ? 'Journey complete!' : 'Level complete!') : reason;
+  $('result-score').textContent = `${state.score} / ${state.level.target} points`;
   $('result-next').hidden = !win || last;
   $('result-retry').hidden = win;
   setTimeout(() => dialog.showModal(), win ? 150 : 700);
 }
-$('result-next').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex + 1); };
+$('result-next').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex + 1, true); };
 $('result-retry').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex); };
-$('result-map').onclick = () => { $('result-dialog').close(); showMap(); };
+$('result-map').onclick = () => { $('result-dialog').close(); showTab('home'); };
 $('intro-map').onclick = () => { $('intro-dialog').close(); showMap(); };
 
-// Lần đầu mở game: vào thẳng màn 1 (FTUE), không bắt đọc bản đồ. Đã chơi rồi thì mở bản đồ.
+// Mở game luôn vào Home; màn chơi dựng sẵn phía sau ở level đang mở. PLAY vào thẳng level đó.
 function boot() {
-  const progress = loadProgress();
-  if (progress.stars.some(Boolean)) {
-    newGame(unlockedCount(progress) - 1);
-    showMap();
-  } else startLevel(0);
+  newGame(unlockedCount(loadProgress()) - 1);
+  showTab('home');
 }
 $('tutorial-avatar').innerHTML = catMarkup.orange;
 
 $('restart').onclick = () => { if (!state.animating) startLevel(state.levelIndex); };
 $('help').onclick = () => $('help-dialog').showModal();
-$('open-map').onclick = () => { if (!state.animating) showMap(); };
+$('home-help').onclick = () => $('help-dialog').showModal();
+function renderSoundButtons() {
+  document.querySelectorAll('.sound-toggle').forEach(button => {
+    button.setAttribute('aria-pressed', soundOn());
+    button.setAttribute('aria-label', soundOn() ? 'Sound on, tap to mute' : 'Sound off, tap to unmute');
+    button.innerHTML = `<svg viewBox="0 0 24 24"><use href="#i-${soundOn() ? 'sound' : 'mute'}"/></svg>`;
+  });
+}
+document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = () => { setSound(!soundOn()); renderSoundButtons(); }; });
+renderSoundButtons();
+$('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
+$('home-journey').onclick = showMap;
+$('map-back').onclick = () => showTab('home');
+$('open-map').onclick = () => { if (!state.animating) showTab('home'); };
 boot();
