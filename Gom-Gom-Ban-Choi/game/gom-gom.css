@@ -255,3 +255,93 @@ dialog p{color:#8a6440}
   background:radial-gradient(circle at 38% 35%,#fff 0 35%,#f3ead8 70%,#e6d9bf00 100%);opacity:0;
   animation:land-puff .6s .22s cubic-bezier(.2,.7,.3,1) forwards}
 @media(prefers-reduced-motion:reduce){.hold-puff{display:none}}
+/* ===== AFK: mèo lộ biểu cảm khi người chơi bỏ đi 3 giây ===== */
+/* Chuyển mặt mượt: mặt thường và mặt AFK cùng mờ dần/hiện dần (crossfade), mặt mới hơi trồi lên khi hiện. */
+.cat .calm,.cat .blush{transition:opacity .45s ease}
+.cat .afk{visibility:visible;opacity:0;translate:0 1.5px;transition:opacity .45s ease,translate .45s cubic-bezier(.3,1.4,.5,1)}
+body.afk .cat[data-afk] .calm,body.afk .cat[data-afk] .blush{opacity:0}
+body.afk .cat[data-afk=sad] .afk-sad,body.afk .cat[data-afk=worried] .afk-worried,body.afk .cat[data-afk=crying] .afk-crying,
+body.afk .cat[data-afk=disappointed] .afk-disappointed,body.afk .cat[data-afk=sulky] .afk-sulky{opacity:1;translate:0 0;transition-delay:.12s}
+@media(prefers-reduced-motion:no-preference){
+  body.afk .cat[data-afk=crying] .afk-tear{animation:afk-tear 1.4s ease-in .5s infinite backwards;transform-box:fill-box;transform-origin:50% 0}
+  body.afk .cat[data-afk=worried] .afk-sweat{animation:afk-sweat 1.6s ease-in-out infinite alternate}
+  body.afk .cat[data-afk=crying]{animation:afk-sob .35s ease-in-out infinite alternate}
+  body.afk .cat[data-afk=worried]{animation:afk-shiver .12s linear infinite alternate}
+  body.afk .cat[data-afk=sad],body.afk .cat[data-afk=disappointed]{animation:afk-droop 2.4s ease-in-out infinite alternate}}
+.cat .afk-glint{transform-box:fill-box;transform-origin:center}
+@media(prefers-reduced-motion:no-preference){body.afk .cat[data-afk=crying] .afk-glint{animation:afk-glint 1.1s ease-in-out infinite alternate}body.afk .cat[data-afk=crying] .afk-glint.b{animation-delay:-.4s}body.afk .cat[data-afk=crying] .afk-glint.c{animation-delay:-.7s}}
+@keyframes afk-glint{from{scale:.75;opacity:.75}to{scale:1.15;opacity:1}}
+@keyframes afk-tear{0%{translate:0 0;opacity:0}15%{opacity:1}100%{translate:0 22px;opacity:0}}
+@keyframes afk-sweat{to{translate:0 3px}}
+@keyframes afk-sob{to{translate:0 1.5px}}
+@keyframes afk-shiver{from{translate:-.6px 0}to{translate:.6px 0}}
+@keyframes afk-droop{to{translate:0 2px;rotate:-2deg}}
+/* ===== Màn chơi: tiêu đề màn trên topbar ===== */
+.topbar h1 small{display:block;margin-top:4px;font-size:13px;letter-spacing:0;color:var(--cream-ink);text-shadow:none;background:var(--cream-1);border-radius:999px;padding:3px 10px;width:max-content;margin-inline:auto;box-shadow:0 2px 0 var(--cream-deep)}
+.pill-button{min-width:112px;padding:12px 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:900;color:#fff;cursor:pointer;
+  background:linear-gradient(#63c77f,#3fa55f);box-shadow:0 4px 0 #2b7a45,0 6px 12px #2b7a4540;transition:transform .12s}
+.pill-button:active{transform:translateY(3px);box-shadow:0 1px 0 #2b7a45}
+.pill-button.ghost{background:linear-gradient(var(--cream-1),var(--cream-2));color:var(--cream-ink);box-shadow:0 4px 0 var(--cream-deep)}
+[hidden]{display:none!important}
+
+/* ===== Bản đồ hành trình ===== */
+.map{position:fixed;inset:0;z-index:40;overflow-y:auto;padding:max(16px,env(safe-area-inset-top)) 16px 32px;
+  background:#a8d77a url('./skins/farm-pop/background-pink.png') 50% 0/cover no-repeat}
+.map-head{display:flex;align-items:center;justify-content:space-between;width:min(420px,100%);margin:0 auto 12px}
+.map-head h2{margin:0;font-size:30px;font-weight:900;color:#fffaf0;text-shadow:0 2px 0 #6fa84a,0 4px 10px #3f6e2a55}
+.map-list{display:flex;flex-direction:column;gap:14px;width:min(420px,100%);margin:auto;padding-bottom:40px}
+/* Đường zigzag: nút lệch trái/phải xen kẽ như bản đồ game mobile */
+.map-node{position:relative;display:grid;grid-template-columns:62px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;
+  width:78%;padding:10px 16px 10px 10px;border:0;border-radius:22px;text-align:left;font:inherit;cursor:pointer;color:var(--cream-ink);
+  background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 5px 0 var(--cream-deep),0 8px 14px #8a4b3a33}
+.map-node:nth-child(even){align-self:flex-end}
+.map-node b{grid-row:span 2;display:grid;place-items:center;width:62px;height:62px;border-radius:50%;font-size:26px;font-weight:900;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#8fe0a4,#3fa55f);box-shadow:inset 0 -4px 0 #2b7a45,0 3px 6px #2b7a4540}
+.map-node small{font-size:15px;font-weight:900}
+.map-stars{font-size:18px;letter-spacing:2px;color:#f2b53c;text-shadow:0 1px 0 #b8741f}
+.map-node.hard b{background:radial-gradient(circle at 35% 30%,#ffae9a,#e0513f);box-shadow:inset 0 -4px 0 #a8342a}
+.map-node.locked{cursor:default;opacity:.7;filter:grayscale(.6)}
+.map-node.locked b{background:#cdbf9f;box-shadow:inset 0 -4px 0 #a8987a;font-size:22px}
+.map-node.current b{animation:map-bounce .9s ease-in-out infinite alternate}
+@keyframes map-bounce{to{translate:0 -5px;box-shadow:inset 0 -4px 0 #2b7a45,0 0 0 6px #fff8,0 8px 12px #2b7a4540}}
+
+/* ===== Tutorial ===== */
+.tutorial{position:fixed;inset:0;z-index:30;pointer-events:none}
+.tutorial.blocking{pointer-events:auto}
+.tutorial-dim{position:absolute;inset:0;width:100%;height:100%;fill:#2b1a10a6;animation:tut-fade .3s ease both}
+.tutorial-ring{position:absolute;border-radius:16px;box-shadow:0 0 0 3px #fff6c8,0 0 18px 4px #ffe27a;animation:tut-ring 1s ease-in-out infinite alternate}
+.tutorial-hand{position:absolute;left:0;top:0;margin:-6px 0 0 -12px;font-size:44px;line-height:1;filter:drop-shadow(0 4px 4px #0006);transform-origin:30% 10%}
+body.card-dragging .tutorial-hand{visibility:hidden}
+.tutorial-bubble{position:absolute;left:50%;translate:-50% 0;display:flex;align-items:center;gap:10px;width:min(360px,calc(100% - 32px));
+  padding:10px 14px 10px 10px;border-radius:20px;background:#fffaf0;color:var(--cream-ink);box-shadow:0 4px 0 var(--cream-deep),0 10px 24px #0004}
+.tutorial-bubble.center{top:50%;translate:-50% -50%;flex-wrap:wrap;justify-content:center;text-align:center;padding:18px}
+.tutorial-bubble p{flex:1;margin:0;font-size:14px;font-weight:800;line-height:1.4}
+.tutorial-bubble.center p{flex-basis:100%;font-size:16px}
+.tutorial-avatar{flex:none;width:46px;height:46px}
+.tutorial-avatar .cat{width:100%;height:100%}
+.tutorial-bubble.center .tutorial-avatar{width:64px;height:64px}
+@keyframes tut-fade{from{opacity:0}}
+@keyframes tut-ring{to{box-shadow:0 0 0 5px #fff6c8,0 0 26px 8px #ffe27a}}
+
+/* ===== Bảng giới thiệu màn + kết quả ===== */
+.level-dialog{text-align:center;padding:26px 22px 22px}
+.level-dialog h2{margin:2px 0 6px;font-size:28px}
+.level-number{margin:0;font-size:13px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#3fa55f}
+.level-dialog.hard .level-number{color:#e0513f}
+.level-feature{margin:0 0 16px;font-size:14px!important;font-weight:800;color:var(--cream-ink)!important}
+.level-goal{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+.level-goal div{display:grid;min-width:96px;padding:10px 12px;border-radius:16px;background:var(--cream-2);box-shadow:inset 0 -3px 0 var(--cream-3)}
+.level-goal span,.level-goal em{font-size:11px;font-weight:800;font-style:normal;text-transform:uppercase;opacity:.75}
+.level-goal strong{font-size:30px;font-weight:900;color:#e0772f;line-height:1.1}
+.level-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.result-stars{display:flex;justify-content:center;gap:6px;margin:-4px 0 4px;font-size:46px;line-height:1}
+.result-stars span{color:#e6d6b0;text-shadow:0 2px 0 #c9b58a}
+.result-stars span:nth-child(2){font-size:58px;translate:0 -8px}
+.result-stars span.on{color:#ffc93c;text-shadow:0 3px 0 #d48a1a,0 0 14px #ffd76a;animation:star-pop .5s cubic-bezier(.3,1.7,.5,1) both}
+@keyframes star-pop{from{scale:0;rotate:-40deg;opacity:0}}
+@media(prefers-reduced-motion:reduce){.tutorial-ring,.map-node.current b,.result-stars span.on{animation:none}}
+/* ===== Thùng gỗ: ô chặn, vỡ khi gom mèo sát bên ===== */
+.cell.block{padding:1px;border:0;background:none;box-shadow:none;cursor:default}
+.cell.block .crate{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 2px #6b3f1c55)}
+.crate-ghost{position:absolute;z-index:3}
+.crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:linear-gradient(#e7ad6e,#b97237);box-shadow:0 1px 0 #6d4020;pointer-events:none}

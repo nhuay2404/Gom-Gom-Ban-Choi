@@ -247,3 +247,17 @@ test('đặt thẻ nhiều object sẽ khóa tất cả và cộng điểm liề
   assert.equal(result.score, 35);
   assert.ok(result.indices.every(index => result.board[index].locked));
 });
+
+test('thùng gỗ chặn ô, không bị tính vào cụm và vỡ khi gom sát bên', () => {
+  const board = Array(W * H).fill(null);
+  const cat = { group: 'orange' }, block = { block: true };
+  board[0] = cat; board[1] = cat; board[2] = cat; // hàng 0: 3 mèo cam -> gom
+  board[W + 1] = block; // sát mèo giữa -> vỡ
+  board[4 * W + 4] = block; board[4 * W + 3] = block; board[3 * W + 4] = block; // 3 thùng liền nhau: không phải cụm
+  assert.equal(placementIndices(board, W, H, W + 1, [[0, 0]]), null);
+  const result = clearMatches(board, W, H, 3);
+  assert.deepEqual(result.cleared.sort(), [0, 1, 2]);
+  assert.deepEqual(result.broken, [W + 1]);
+  assert.equal(result.board[W + 1], null);
+  assert.ok(result.board[4 * W + 4]?.block);
+});

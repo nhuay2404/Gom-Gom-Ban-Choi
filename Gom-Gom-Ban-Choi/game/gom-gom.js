@@ -1,65 +1,22 @@
 import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
-import { categories, catGroups, addArt as addCatArt } from './cat-art.mjs';
+import { MATCH_SIZE, clusterPoints, matchPoints } from './scoring.mjs';
+import { categories, catMarkup, addArt as addCatArt, AFK_MOODS } from './cat-art.mjs';
+import { LEVELS, parseBoard, makeDealer, starsFor } from './levels.mjs';
 
-// Thắng: đạt điểm mục tiêu trong giới hạn lượt.
-const W = 6, H = 6, TURN_LIMIT = 20, TARGET_SCORE = 120, PREVIEW_COUNT = 1;
+// Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
+const W = 6, H = 6, PREVIEW_COUNT = 1;
 const $ = id => document.getElementById(id);
-const MATCH_SIZE = 3, POINTS_PER_CLEARED = 10, DRAG_BOOST = 1.6, DRAG_SHRINK_RANGE = 110;
-// Hệ số theo cỡ cụm: gom 3 giữ mốc 30 điểm, cụm càng to thưởng càng đậm để đáng mạo hiểm chờ.
-// 3 -> 30 · 4 -> 50 · 5 -> 80 · 6+ -> 120 (cụm 7+ vẫn x2).
-const MATCH_MULTIPLIER = { 3: 1, 4: 1.25, 5: 1.6, 6: 2 };
-// Combo: gom liên tiếp nhiều lượt, mỗi bậc +10% điểm (lượt gom đầu x1), tối đa x1.5. Lượt không gom -> về 0.
-const COMBO_STEP = 0.1, COMBO_MAX = 1.5;
-const comboMultiplier = combo => Math.min(1 + Math.max(combo - 1, 0) * COMBO_STEP, COMBO_MAX);
-const nextCombo = match => match.clusters.length ? (state.combo || 0) + 1 : 0;
-const clusterPoints = (size, combo = 1) => Math.round(size * POINTS_PER_CLEARED * (MATCH_MULTIPLIER[Math.min(size, 6)] ?? 1) * comboMultiplier(combo));
-const matchPoints = (clusters, combo) => clusters.reduce((sum, cluster) => sum + clusterPoints(cluster.length, combo), 0);
-const shapes = {
-  single: [[0, 0]],
-  domino: [[0, 0], [0, 1]],
-  line: [[0, 0], [0, 1], [0, 2]],
-  elbow: [[0, 0], [1, 0], [1, 1]],
-};
-
+const DRAG_BOOST = 1.6, DRAG_SHRINK_RANGE = 110;
 let state, cardDrag = null;
-const startingBlocks = [
-  [0, 0, 'orange'], [0, 5, 'gray'], [2, 2, 'white'],
-  [3, 4, 'tabby'], [5, 0, 'orange'], [5, 5, 'siamese'],
-];
-// Tỉ lệ hình thẻ: nhiều thẻ 1 ô để dễ lấp chỗ trống và gom nhóm.
-// Mỗi 12 thẻ chỉ có 1 thẻ 3 ô (xen kẽ chữ I / chữ L).
-const shapeBag = ['single', 'single', 'domino', 'single', 'single', 'domino', 'single', 'triple', 'single', 'domino', 'single', 'domino'];
-
 function item(group) {
   return { group, name: categories[group].name };
 }
 
-function randomGroup() {
-  return catGroups[Math.floor(Math.random() * catGroups.length)];
-}
-
-function shuffled(values) {
-  const result = values.slice();
-  for (let index = result.length - 1; index > 0; index--) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
-
-function buildDeck() {
-  const cards = [];
-  for (let index = 0; index < 24; index++) {
-    let shapeName = shapeBag[index % shapeBag.length];
-    if (shapeName === 'triple') shapeName = index < shapeBag.length ? 'line' : 'elbow';
-    const items = shapes[shapeName].map(() => item(randomGroup()));
-    cards.push({ offsets: shapes[shapeName].map(point => point.slice()), items });
-  }
-  return shuffled(cards);
-}
-
 function drawCard() {
-  if (state.deck.length <= PREVIEW_COUNT) state.deck.push(...buildDeck());
+  while (state.deck.length <= PREVIEW_COUNT) {
+    const card = state.deal(state.board);
+    state.deck.push({ offsets: card.offsets, items: card.items.map(({ group }) => item(group)) });
+  }
   return state.deck.shift();
 }
 
@@ -132,12 +89,14 @@ function popIn(container, delay = 0) {
 
 function rotateActive() {
   if (state.over || state.animating || state.active.items.length < 2) return;
+  if (!tutorialAllows('rotate')) return;
   // Ghi vị trí từng mèo trước khi xoay (đang giữa anim thì lấy đúng chỗ đang hiện -> bấm liên tục vẫn liền mạch).
   const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
   state.active.offsets = rotateOffsets(state.active.offsets);
   state.preview = null;
   state.animateHints = true; // render() sẽ cho mũi tên trượt theo cung thay vì nhảy
   render();
+  tutorialDone('rotate');
   state.animateHints = false;
   animateRotation(before);
 }
@@ -252,19 +211,33 @@ function dropIntoHold(hold) {
 
 function holdActive() {
   if (state.over || state.animating) return;
+  if (!tutorialAllows('hold')) return render('Làm theo hướng dẫn nhé!', true);
   const previous = state.hold;
   state.hold = state.active;
   state.active = previous || drawCard();
   state.preview = null;
   render();
+  tutorialDone(previous ? 'tapHold' : 'hold');
+  checkStuck();
 }
 
 function canPlaceAnywhere(card) {
-  return state.board.some((_, index) => placementIndices(state.board, W, H, index, card.offsets));
+  let offsets = card.offsets;
+  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
+    if (state.board.some((_, index) => placementIndices(state.board, W, H, index, offsets))) return true;
+  }
+  return false;
+}
+// Thua vì hết chỗ: cả thẻ đang bóc lẫn thẻ gửi tạm đều không vừa bàn (ô gửi tạm trống thì vẫn còn đường rút thẻ).
+function checkStuck() {
+  if (state.over || canPlaceAnywhere(state.active) || !state.hold || canPlaceAnywhere(state.hold)) return false;
+  endLevel(false, 'Hết chỗ đặt!');
+  return true;
 }
 
 function placeAt(anchor) {
   if (state.over || state.animating) return;
+  if (!tutorialAllows('place', anchor)) return render('Kéo vào ô sáng nhé!', true);
   const result = placeCard(state.board, W, H, anchor, state.active);
   if (result.error) return render(result.error, true);
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
@@ -272,13 +245,58 @@ function placeAt(anchor) {
   if (!match.cleared.length || reduceMotion.matches) return finishTurn(result, match);
   // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
   // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
-  const combo = nextCombo(match);
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
   const ghosts = spawnMergeGhosts(merges, result);
-  const done = animateMerges(ghosts, merges, combo);
+  const done = animateMerges(ghosts, merges);
+  breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
   finishTurn(result, match);
+}
+
+// Thùng gỗ: ô chặn không đặt mèo lên được, vỡ khi gom mèo sát bên (luật ở board-rules.mjs).
+const CRATE_SVG = `<svg class="crate" viewBox="0 0 100 100" aria-hidden="true">
+  <rect x="6" y="10" width="88" height="84" rx="12" fill="#8a5429"/>
+  <rect x="6" y="4" width="88" height="84" rx="12" fill="#d49256"/>
+  <rect x="14" y="12" width="72" height="68" rx="6" fill="#c07c40"/>
+  <path d="M14 34H86M14 58H86" stroke="#a4632d" stroke-width="3"/>
+  <path d="M20 18L80 74M80 18L20 74" stroke="#e7ad6e" stroke-width="10" stroke-linecap="round"/>
+  <path d="M20 18L80 74M80 18L20 74" stroke="#b97237" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+  <g fill="#6d4020"><circle cx="16" cy="14" r="3"/><circle cx="84" cy="14" r="3"/><circle cx="16" cy="78" r="3"/><circle cx="84" cy="78" r="3"/></g>
+  <rect x="10" y="7" width="80" height="6" rx="3" fill="#f2c28a" opacity=".6"/>
+</svg>`;
+
+// Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
+function breakCrates(indices, delay) {
+  if (!indices?.length || reduceMotion.matches) return;
+  const layer = fxLayer();
+  indices.forEach(index => {
+    const cell = cellEl(index);
+    if (!cell) return;
+    const ghost = document.createElement('span');
+    ghost.className = 'cell block crate-ghost';
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    ghost.innerHTML = CRATE_SVG;
+    layer.append(ghost);
+    setTimeout(async () => {
+      await ghost.animate([
+        { rotate: '0deg' }, { rotate: '-7deg' }, { rotate: '6deg' }, { rotate: '-4deg' }, { rotate: '0deg' },
+      ], { duration: 180 }).finished.catch(() => {});
+      for (let i = 0; i < 6; i++) {
+        const shard = document.createElement('span');
+        shard.className = 'crate-shard';
+        shard.style.cssText = `left:${cell.offsetLeft + cell.offsetWidth / 2}px;top:${cell.offsetTop + cell.offsetHeight / 2}px`;
+        layer.append(shard);
+        const angle = (i / 6) * Math.PI * 2 + Math.random() * .6, dist = cell.offsetWidth * (.6 + Math.random() * .5);
+        shard.animate([
+          { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+          { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist + 18}px)) rotate(${(Math.random() - .5) * 540}deg)`, opacity: 0 },
+        ], { duration: 560, easing: 'cubic-bezier(.2, .7, .4, 1)', fill: 'forwards' }).finished.then(() => shard.remove());
+      }
+      spawnPuff(ghost);
+      ghost.remove();
+    }, delay);
+  });
 }
 
 function cellEl(index) {
@@ -341,7 +359,7 @@ function spawnGhosts(indices, board, placed = new Set()) {
 
 // Pha 1: mèo bị nhấc bổng lên, lộ bụng + chân sau lủng lẳng (CSS .lifted).
 // Pha 2: cả cụm trượt vào mèo vừa đặt và nhỏ dần; mèo đích phồng lên rồi biến mất.
-async function animateMerges(ghosts, merges, combo) {
+async function animateMerges(ghosts, merges) {
   await wait(DROP_MS); // mèo vừa đặt rơi xong đã
   merges.forEach(({ cluster }) => cluster.forEach((index, order) => {
     const ghost = ghosts.get(index);
@@ -372,7 +390,7 @@ async function animateMerges(ghosts, merges, combo) {
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ], { duration: MERGE_MS, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }));
     });
-    showMergeScore(targetGhost, clusterPoints(cluster.length, combo));
+    showMergeScore(targetGhost, clusterPoints(cluster.length));
   });
   await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
   ghosts.forEach(ghost => ghost.remove());
@@ -382,7 +400,8 @@ async function animateMerges(ghosts, merges, combo) {
 async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
-  const occupied = state.board.map((object, index) => object && index).filter(index => index !== null && index !== false);
+  const occupied = state.board.map((object, index) => object?.group ? index : null).filter(index => index !== null);
+  breakCrates(state.board.map((object, index) => object?.block ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
   if (!reduceMotion.matches && occupied.length) {
     await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
     // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
@@ -461,29 +480,29 @@ function showMergeScore(cell, points) {
 }
 
 function finishTurn(result, match) {
-  state.combo = nextCombo(match);
-  const gained = matchPoints(match.clusters, state.combo);
+  const gained = matchPoints(match.clusters);
   state.board = match.board;
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   state.score += gained;
-  const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}!${state.combo >= 2 ? ` Combo x${state.combo}` : ''} +${gained} điểm.` : '';
+  const crateText = match.broken?.length ? ` Phá ${match.broken.length} thùng!` : '';
+  const clearedText = match.groups.length ? `Gom ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} điểm.${crateText}` : '';
   state.moves--;
   state.preview = null;
-  if (state.score >= TARGET_SCORE) {
+  tutorialDone('place');
+  if (state.score >= state.level.target) {
     state.over = true;
+    state.active = drawCard(); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     const message = `Bạn thắng với ${state.score} điểm! ✨`;
     render(message);
-    return celebrateWin(message);
+    return celebrateWin(message).then(() => endLevel(true));
   }
-  if (state.moves === 0) {
-    state.over = true;
-    return render(`Hết lượt — bạn đạt ${state.score}/${TARGET_SCORE} điểm.` , true);
-  }
+  if (state.moves === 0) return endLevel(false, 'Hết lượt!');
   state.active = drawCard();
   const fit = canPlaceAnywhere(state.active);
   render(fit ? clearedText : `${clearedText} Hết chỗ đặt — kéo vào Gửi tạm.`.trim(), !fit);
+  checkStuck();
 }
 
 const centerOf = rect => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
@@ -584,6 +603,8 @@ function startCardDrag(event) {
 function moveCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
   if (!cardDrag.ghost && Math.hypot(event.clientX - cardDrag.startX, event.clientY - cardDrag.startY) < 5) return;
+  if (!cardDrag.ghost && !tutorialAllows('drag')) return;
+  document.body.classList.add('card-dragging');
   if (!cardDrag.ghost) {
     cardDrag.ghost = $('active-card').cloneNode(true);
     cardDrag.ghost.removeAttribute('id');
@@ -634,6 +655,7 @@ function finishCardDrag(event) {
   if (physics) cancelAnimationFrame(physics.frame);
   ghost?.remove();
   cardDrag = null;
+  document.body.classList.remove('card-dragging');
   $('active-card').classList.remove('dragging');
   $('hold').classList.remove('drop-target');
   state.preview = null; state.previewAnchor = null;
@@ -649,7 +671,8 @@ function finishCardDrag(event) {
 
 function render(message = '', error = false) {
   $('score').textContent = state.score;
-  $('highscore').textContent = TARGET_SCORE;
+  $('highscore').textContent = state.level.target;
+  $('level-title').textContent = `Màn ${state.levelIndex + 1}`;
   $('moves').textContent = state.moves;
   $('message').textContent = message;
   $('message').classList.toggle('error', error);
@@ -684,6 +707,12 @@ function renderBoard() {
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
+    if (object?.block) {
+      cell.className = 'cell block';
+      cell.setAttribute('aria-label', 'Thùng gỗ, gom mèo sát bên để phá');
+      cell.innerHTML = CRATE_SVG;
+      return;
+    }
     cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
     cell.setAttribute('aria-label', object ? `${object.name}, đã khóa` : `Ô ${index + 1}, trống`);
     if (!object) return;
@@ -758,12 +787,16 @@ function paintInvalid() {
   if (!state.preview && state.previewAnchor !== null) document.querySelector(`.cell[data-index="${state.previewAnchor}"]`)?.classList.add('preview-invalid');
 }
 
-function newGame() {
-  const board = Array(W * H).fill(null);
-  startingBlocks.forEach(([row, col, name]) => { board[row * W + col] = { ...item(name), locked: true, starting: true }; });
-  state = { board, deck: buildDeck(), active: null, hold: null, score: 0, moves: TURN_LIMIT, over: false, preview: null, previewAnchor: null };
+function newGame(levelIndex = state?.levelIndex ?? 0) {
+  const level = LEVELS[levelIndex];
+  state = {
+    level, levelIndex, board: parseBoard(level.board), deal: makeDealer(level), deck: [], active: null, hold: null,
+    score: 0, moves: level.moves, over: false, preview: null, previewAnchor: null,
+    tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
+  };
   state.active = drawCard();
-  render(`Đạt ${TARGET_SCORE} điểm trong ${TURN_LIMIT} lượt!`);
+  render(`Đạt ${level.target} điểm trong ${level.moves} lượt!`);
+  renderTutorial();
 }
 
 $('active-card').onpointerdown = startCardDrag;
@@ -808,6 +841,223 @@ function petCat(cell) {
 
 // Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm (đang có thẻ) = đổi thẻ đó về ô đang bóc.
 $('hold').onclick = () => { if (state.hold) holdActive(); };
-$('restart').onclick = newGame;
+// AFK: 3 giây không thao tác thì mèo lộ biểu cảm (buồn, lo lắng, khóc, thất vọng, dỗi), mỗi con một kiểu.
+// Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.
+const AFK_MS = 3000;
+let afkTimer = 0;
+function goAfk() {
+  if (state.over || state.animating || cardDrag) return armAfk();
+  const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
+  // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
+  const offset = Math.floor(Math.random() * AFK_MOODS.length);
+  cats.forEach((cat, i) => { cat.dataset.afk = AFK_MOODS[(i * 3 + offset + Math.floor(Math.random() * 2)) % AFK_MOODS.length]; });
+  document.body.classList.add('afk');
+}
+function armAfk() {
+  document.body.classList.remove('afk');
+  clearTimeout(afkTimer);
+  afkTimer = setTimeout(goAfk, AFK_MS);
+}
+addEventListener('pointerdown', armAfk, { passive: true });
+addEventListener('pointerup', armAfk, { passive: true });
+addEventListener('pointermove', event => { if (event.buttons || event.pointerType === 'touch') armAfk(); }, { passive: true });
+armAfk();
+
+// ===== Tutorial: làm mờ màn hình, khoét sáng đúng chỗ cần chạm, bàn tay chỉ đường + bong bóng lời thoại =====
+// Mỗi bước (levels.mjs): drag (kéo vào ô `anchor`; free = chỉ gợi ý), rotate (xoay tới hướng `offsets`),
+// hold (kéo vào Gửi tạm), tapHold (chạm Gửi tạm), info (đọc rồi bấm Tiếp tục).
+const tutorialStep = () => state.tutorial?.steps[state.tutorial.step] || null;
+function tutorialAllows(action, anchor) {
+  const step = tutorialStep();
+  if (!step) return true;
+  if (step.type === 'info') return false;
+  if (step.free) return true;
+  if (action === 'drag') return step.type === 'drag' || step.type === 'hold';
+  if (action === 'place') return step.type === 'drag' && anchor === step.anchor;
+  if (action === 'rotate') return step.type === 'rotate';
+  if (action === 'hold') return step.type === 'hold' || step.type === 'tapHold';
+  return false;
+}
+function tutorialDone(action) {
+  const step = tutorialStep();
+  if (!step) return;
+  const matches = step.type === 'drag' ? action === 'place'
+    : step.type === 'rotate' ? action === 'rotate' && JSON.stringify(state.active.offsets) === JSON.stringify(step.offsets)
+      : step.type === action;
+  if (!matches) return;
+  state.tutorial.step++;
+  // Chờ anim gom/đặt một nhịp rồi mới chỉ bước kế để người chơi kịp thấy kết quả.
+  $('tutorial').hidden = true;
+  setTimeout(renderTutorial, action === 'place' ? 700 : 250);
+}
+
+function tutorialHoles(step) {
+  const rect = el => el.getBoundingClientRect();
+  if (step.type === 'rotate') return [rect($('active-card'))];
+  if (step.type === 'hold') return [rect($('active-card')), rect($('hold'))];
+  if (step.type === 'tapHold') return [rect($('hold'))];
+  if (step.type === 'drag') {
+    const cells = placementIndices(state.board, W, H, step.anchor, state.active.offsets) || [step.anchor];
+    return [rect($('active-card')), ...cells.map(index => rect(cellEl(index)))];
+  }
+  return [];
+}
+
+function renderTutorial() {
+  const layer = $('tutorial'), step = tutorialStep();
+  layer.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
+  if (!step || state.over || $('intro-dialog').open || !$('map').hidden) {
+    layer.hidden = true;
+    return;
+  }
+  layer.hidden = false;
+  layer.classList.toggle('blocking', step.type === 'info');
+  requestAnimationFrame(() => {
+    const holes = tutorialHoles(step), pad = 6;
+    const box = b => ({ x: b.left - pad, y: b.top - pad, width: b.width + pad * 2, height: b.height + pad * 2 });
+    $('tutorial-holes').replaceChildren(...holes.map(b => {
+      const hole = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      Object.entries({ ...box(b), rx: 16 }).forEach(([key, value]) => hole.setAttribute(key, value));
+      return hole;
+    }));
+    // Viền sáng nhấp nháy quanh chỗ cần thả / cần chạm.
+    const ringed = step.type === 'drag' || step.type === 'hold' ? holes.slice(1) : holes;
+    $('tutorial-rings').replaceChildren(...ringed.map(b => {
+      const ring = document.createElement('span'), { x, y, width, height } = box(b);
+      ring.className = 'tutorial-ring';
+      ring.style.cssText = `left:${x}px;top:${y}px;width:${width}px;height:${height}px`;
+      return ring;
+    }));
+    // Bong bóng: bước info nằm giữa màn hình, các bước khác nằm ngay dưới bàn chơi.
+    const bubble = $('tutorial-bubble');
+    $('tutorial-text').textContent = step.text;
+    $('tutorial-next').hidden = step.type !== 'info';
+    bubble.classList.toggle('center', step.type === 'info');
+    bubble.style.top = step.type === 'info' ? '' : `${$('board').getBoundingClientRect().bottom + 8}px`;
+    bubble.animate([{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], { duration: 260, easing: 'ease-out' });
+    animateHand(step, holes);
+  });
+}
+
+// Bàn tay: kéo (từ thẻ tới ô đích, lặp lại) hoặc chạm (nhấn nhịp).
+function animateHand(step, holes) {
+  const hand = $('tutorial-hand');
+  hand.hidden = step.type === 'info';
+  if (hand.hidden) return;
+  const center = b => [b.left + b.width / 2, b.top + b.height / 2];
+  const [x0, y0] = center(holes[0]);
+  const at = (x, y, scale) => `translate(${x}px, ${y}px) scale(${scale})`;
+  if (step.type === 'drag' || step.type === 'hold') {
+    const targets = holes.slice(1).map(center);
+    const x1 = targets.reduce((sum, [x]) => sum + x, 0) / targets.length;
+    const y1 = targets.reduce((sum, [, y]) => sum + y, 0) / targets.length;
+    hand.animate([
+      { transform: at(x0, y0, 1), opacity: 0 },
+      { transform: at(x0, y0, .86), opacity: 1, offset: .15 },
+      { transform: at(x1, y1, .86), opacity: 1, offset: .7 },
+      { transform: at(x1, y1, 1), opacity: 1, offset: .82 },
+      { transform: at(x1, y1, 1), opacity: 0 },
+    ], { duration: 1800, iterations: Infinity, easing: 'ease-in-out' });
+  } else {
+    hand.animate([
+      { transform: at(x0, y0, 1) }, { transform: at(x0, y0, .8), offset: .3 },
+      { transform: at(x0, y0, 1), offset: .6 }, { transform: at(x0, y0, 1) },
+    ], { duration: 1100, iterations: Infinity });
+  }
+}
+$('tutorial-next').onclick = () => { state.tutorial.step++; renderTutorial(); };
+addEventListener('resize', () => { if (tutorialStep()) renderTutorial(); });
+
+// ===== Tiến độ (lưu trong máy), bản đồ màn, giới thiệu màn, kết quả =====
+const SAVE_KEY = 'gomgom-rotate-progress-v1';
+function loadProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (saved && Array.isArray(saved.stars)) return saved;
+  } catch {}
+  return { stars: [] };
+}
+function saveProgress(progress) {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch {}
+}
+const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.filter(Boolean).length + 1);
+const starText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+
+function showMap() {
+  const progress = loadProgress(), open = unlockedCount(progress);
+  $('map-list').replaceChildren(...LEVELS.map((level, index) => {
+    const node = document.createElement('button');
+    const stars = progress.stars[index] || 0, locked = index >= open;
+    node.className = `map-node${locked ? ' locked' : ''}${index === open - 1 && !stars ? ' current' : ''}${level.hard ? ' hard' : ''}`;
+    node.disabled = locked;
+    node.innerHTML = `<b>${locked ? '🔒' : index + 1}</b><span class="map-stars">${locked ? '' : starText(stars)}</span>`
+      + `<small>${level.name}${level.hard ? ' · Khó' : ''}</small>`;
+    node.onclick = () => { $('map').hidden = true; startLevel(index); };
+    return node;
+  }));
+  $('map').hidden = false;
+  $('tutorial').hidden = true;
+  document.querySelector('.map-node.current')?.scrollIntoView({ block: 'center' });
+}
+
+function startLevel(index) {
+  const level = LEVELS[index];
+  newGame(index);
+  $('intro-number').textContent = `Màn ${index + 1}${level.hard ? ' · Khó' : ''}`;
+  $('intro-name').textContent = level.name;
+  $('intro-feature').textContent = `Mới: ${level.feature}`;
+  $('intro-target').textContent = level.target;
+  $('intro-moves').textContent = level.moves;
+  $('intro-dialog').classList.toggle('hard', !!level.hard);
+  $('intro-dialog').showModal();
+  renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
+}
+$('intro-dialog').addEventListener('close', () => renderTutorial());
+
+function endLevel(win, reason = '') {
+  state.over = true;
+  render(win ? '' : `${reason} Bạn đạt ${state.score}/${state.level.target} điểm.`, !win);
+  renderTutorial();
+  const index = state.levelIndex, last = index === LEVELS.length - 1;
+  let stars = 0;
+  if (win) {
+    stars = starsFor(state.level, state.moves);
+    const progress = loadProgress();
+    progress.stars[index] = Math.max(progress.stars[index] || 0, stars);
+    saveProgress(progress);
+  }
+  const dialog = $('result-dialog');
+  dialog.classList.toggle('win', win);
+  $('result-title').textContent = win ? (last ? 'Hoàn thành hành trình!' : 'Qua màn!') : reason;
+  $('result-score').textContent = `${state.score} / ${state.level.target} điểm`;
+  $('result-stars').replaceChildren(...[0, 1, 2].map(i => {
+    const star = document.createElement('span');
+    star.textContent = '★';
+    star.className = i < stars ? 'on' : '';
+    star.style.animationDelay = `${250 + i * 220}ms`;
+    return star;
+  }));
+  $('result-stars').hidden = !win;
+  $('result-next').hidden = !win || last;
+  $('result-retry').hidden = win;
+  setTimeout(() => dialog.showModal(), win ? 150 : 700);
+}
+$('result-next').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex + 1); };
+$('result-retry').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex); };
+$('result-map').onclick = () => { $('result-dialog').close(); showMap(); };
+$('intro-map').onclick = () => { $('intro-dialog').close(); showMap(); };
+
+// Lần đầu mở game: vào thẳng màn 1 (FTUE), không bắt đọc bản đồ. Đã chơi rồi thì mở bản đồ.
+function boot() {
+  const progress = loadProgress();
+  if (progress.stars.some(Boolean)) {
+    newGame(unlockedCount(progress) - 1);
+    showMap();
+  } else startLevel(0);
+}
+$('tutorial-avatar').innerHTML = catMarkup.orange;
+
+$('restart').onclick = () => { if (!state.animating) startLevel(state.levelIndex); };
 $('help').onclick = () => $('help-dialog').showModal();
-newGame();
+$('open-map').onclick = () => { if (!state.animating) showMap(); };
+boot();

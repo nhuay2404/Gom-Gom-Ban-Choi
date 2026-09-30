@@ -72,6 +72,45 @@ function face(cat, group, mood, ink) {
   return `<g class="eyes${mood === 'happy' ? ' no-blink' : ''}">${eyes}</g>${mouth}`;
 }
 
+// Biểu cảm khi người chơi AFK: mỗi con một kiểu (JS gắn data-afk trên ô để chọn). Mặc định ẩn.
+export const AFK_MOODS = ['sad', 'worried', 'crying', 'disappointed', 'sulky'];
+function afkFaces(cat, group, ink) {
+  const line = group === 'tuxedo' ? '#f3e7cf' : ink;
+  const stroke = `fill="none" stroke="${line}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"`;
+  const eyes = openEye(cat, 37) + openEye(cat, 63);
+  const frown = `<path d="M43 73 Q50 67 57 73" ${stroke}/>`;
+  const tear = (x, delay) => `<path class="afk-tear" style="animation-delay:${delay}s" d="M${x} 63 Q${x + 3} 67 ${x} 69.5 Q${x - 3} 67 ${x} 62Z" fill="#8fd3f7" stroke="#4fa9d9" stroke-width=".8"/>`;
+  return {
+    // Buồn: mày xụ, mắt rưng rưng (giọt lệ đọng), miệng mếu.
+    sad: `<path d="M29 48 L41 45M71 48 L59 45" ${stroke}/>${eyes}
+      <ellipse cx="37" cy="63" rx="4" ry="1.8" fill="#bfe8ff" opacity=".9"/><ellipse cx="63" cy="63" rx="4" ry="1.8" fill="#bfe8ff" opacity=".9"/>${frown}`,
+    // Lo lắng: mày nhướng chữ bát, miệng méo zigzag, giọt mồ hôi.
+    worried: `<path d="M30 46 Q35 43 41 47M70 46 Q65 43 59 47" ${stroke}/>${eyes}
+      <path d="M42 72 L45.5 70 L49 72.5 L52 70 L55.5 72.5 L58 71" ${stroke} stroke-width="2"/>
+      <path class="afk-sweat" d="M82 36 Q87 44 82 47 Q77 44 82 36Z" fill="#9fdcf7" stroke="#5fb4dd" stroke-width="1.2"/>`,
+    // Khóc: mắt to long lanh ngấn nước (tròng đen lớn, nhiều đốm sáng lấp lánh, vũng nước mắt đọng mí dưới),
+    // mày xụ, miệng mếu nhỏ, nước mắt lăn từ khoé mắt.
+    crying: `<path d="M29 46 L40 43M71 46 L60 43" ${stroke}/>
+      ${[37, 63].map(x => `
+      <circle cx="${x}" cy="57" r="8.2" fill="#2b2230"/>
+      <circle cx="${x}" cy="58.5" r="6.4" fill="url(#cry-iris)"/>
+      <path d="M${x - 7.6} 60 Q${x} 67.5 ${x + 7.6} 60 Q${x} 64 ${x - 7.6} 60Z" fill="#9fdcff" opacity=".85"/>
+      <circle class="afk-glint" cx="${x + 2.8}" cy="53.8" r="2.9" fill="#fff"/>
+      <circle class="afk-glint b" cx="${x - 3}" cy="59.6" r="1.5" fill="#fff"/>
+      <circle class="afk-glint c" cx="${x + 3.6}" cy="60.5" r=".9" fill="#fff"/>`).join('')}
+      <path d="M44 72.5 Q47 69.5 50 72 Q53 69.5 56 72.5" ${stroke} stroke-width="2"/>
+      ${tear(30.5, 0)}${tear(69.5, -.45)}${tear(33, -.9)}${tear(67, -1.2)}`,
+    // Thất vọng: mí mắt sụp nửa chừng, liếc xuống, miệng thẳng.
+    disappointed: `<path d="M32 55 A5 5 0 0 0 42 55Z M58 55 A5 5 0 0 0 68 55Z" fill="${cat.eye}"/>
+      <path d="M30 55 L44 55M56 55 L70 55" ${stroke} stroke-width="3"/>
+      <path d="M44 71 L56 71" ${stroke}/>`,
+    // Dỗi: mắt -_-, má phồng, gân giận nhỏ.
+    sulky: `<path d="M31 57 L43 57M57 57 L69 57" ${stroke} stroke-width="3"/>
+      <path d="M45 71 Q50 68.5 55 71" ${stroke}/>
+      <path d="M80 22 l4 4 m0 -4 l-4 4 M86 26 l3 3" stroke="#e2574c" stroke-width="2.2" stroke-linecap="round"/>`,
+  };
+}
+
 function catSvg(group) {
   const cat = categories[group], id = `cat-${group}`, mood = cat.mood;
   const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
@@ -100,6 +139,7 @@ function catSvg(group) {
     </g>`;
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
+      <radialGradient id="cry-iris" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#6b5a86"/><stop offset=".6" stop-color="#3a2f4a"/><stop offset="1" stop-color="#241c2e"/></radialGradient>
       <radialGradient id="${id}-fur" cx=".36" cy=".3" r=".85">
         <stop offset="0" stop-color="${shade(cat.fur, .28)}"/><stop offset=".55" stop-color="${cat.fur}"/><stop offset="1" stop-color="${shade(cat.fur, -.2)}"/>
       </radialGradient>
@@ -124,6 +164,7 @@ function catSvg(group) {
       <path d="M43 72 Q46.5 68 50 71.5 Q53.5 68 57 72" stroke="${ink}" stroke-width="2"/>
       <path d="M84 30 Q88 37 84 40 Q80 37 84 30Z" fill="#9fdcf7" stroke="#5fb4dd" stroke-width="1.2"/>
     </g>
+    ${Object.entries(afkFaces(cat, group, ink)).map(([name, svg]) => `<g class="afk afk-${name}" visibility="hidden">${svg}</g>`).join('')}
     <g class="joy" visibility="hidden">
       <g fill="none" stroke="${group === 'tuxedo' ? '#f3e7cf' : ink}" stroke-width="3.2" stroke-linecap="round">
         <path d="M30 59 Q37 49 44 59M56 59 Q63 49 70 59"/></g>

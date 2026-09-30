@@ -67,6 +67,8 @@ export function slideDirectional(board, width, height, source, delta) {
 }
 
 // Gom: mọi cụm liền kề cùng nhóm có từ `size` món trở lên sẽ biến mất khỏi bàn.
+// Thùng gỗ ({ block: true }, không có group) chiếm ô, không bao giờ nằm trong cụm; ô bị gom nằm sát thùng
+// (trên/dưới/trái/phải) thì thùng vỡ theo. `broken` = các ô thùng vừa vỡ.
 export function clearMatches(board, width, height, size = 4) {
   const seen = new Set(), cleared = [], groups = [], clusters = [];
   board.forEach((cell, index) => {
@@ -75,10 +77,17 @@ export function clearMatches(board, width, height, size = 4) {
     cluster.forEach(i => seen.add(i));
     if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); clusters.push(cluster); }
   });
-  if (!cleared.length) return { board, cleared, groups, clusters };
-  const nextBoard = board.slice();
-  cleared.forEach(index => { nextBoard[index] = null; });
-  return { board: nextBoard, cleared, groups, clusters };
+  if (!cleared.length) return { board, cleared, groups, clusters, broken: [] };
+  const nextBoard = board.slice(), broken = new Set();
+  cleared.forEach(index => {
+    nextBoard[index] = null;
+    for (const delta of [1, -1, width, -width]) {
+      const other = neighbor(index, delta, width, height);
+      if (other >= 0 && board[other]?.block) broken.add(other);
+    }
+  });
+  broken.forEach(index => { nextBoard[index] = null; });
+  return { board: nextBoard, cleared, groups, clusters, broken: [...broken] };
 }
 
 // Điểm tụ của cụm khi gom: ô vừa đặt nằm trong cụm, ưu tiên ô gần tâm cụm nhất.

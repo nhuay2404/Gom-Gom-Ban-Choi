@@ -14,9 +14,9 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <button id="restart" class="round-button" aria-label="Chơi lại" title="Chơi lại">↻</button>
-      <h1>Gom Gom</h1>
-      <button id="help" class="round-button" aria-label="Cách chơi" title="Cách chơi">?</button>
+      <button id="open-map" class="round-button" aria-label="Bản đồ màn" title="Bản đồ màn">☰</button>
+      <h1>Gom Gom <small id="level-title">Màn 1</small></h1>
+      <button id="restart" class="round-button" aria-label="Chơi lại màn này" title="Chơi lại">↻</button>
     </header>
     <section class="scorebar" aria-label="Thông tin lượt chơi">
       <div><span>Điểm</span><strong id="score">0</strong></div>
@@ -44,12 +44,57 @@
       <div id="next-cards" class="next-cards"></div>
     </section>
   </main>
+  <!-- Bản đồ hành trình: 10 màn, mở khoá lần lượt, sao tốt nhất của từng màn -->
+  <section id="map" class="map" hidden>
+    <header class="map-head">
+      <h2>Hành trình</h2>
+      <button id="help" class="round-button" aria-label="Cách chơi" title="Cách chơi">?</button>
+    </header>
+    <div id="map-list" class="map-list"></div>
+  </section>
+  <!-- Tutorial: lớp mờ khoét lỗ (SVG mask), viền sáng, bàn tay chỉ đường, bong bóng lời thoại -->
+  <div id="tutorial" class="tutorial" hidden>
+    <svg class="tutorial-dim" aria-hidden="true">
+      <defs><mask id="tutorial-mask"><rect width="100%" height="100%" fill="#fff"/><g id="tutorial-holes" fill="#000"></g></mask></defs>
+      <rect width="100%" height="100%" mask="url(#tutorial-mask)"/>
+    </svg>
+    <div id="tutorial-rings"></div>
+    <div id="tutorial-hand" class="tutorial-hand" aria-hidden="true">👆</div>
+    <div id="tutorial-bubble" class="tutorial-bubble" role="status">
+      <span id="tutorial-avatar" class="tutorial-avatar" aria-hidden="true"></span>
+      <p id="tutorial-text"></p>
+      <button id="tutorial-next" class="pill-button">Tiếp tục</button>
+    </div>
+  </div>
+  <dialog id="intro-dialog" class="level-dialog">
+    <p id="intro-number" class="level-number">Màn 1</p>
+    <h2 id="intro-name">Chào mèo nhỏ</h2>
+    <p id="intro-feature" class="level-feature">Mới: Kéo thả</p>
+    <div class="level-goal">
+      <div><span>Mục tiêu</span><strong id="intro-target">60</strong><em>điểm</em></div>
+      <div><span>Trong</span><strong id="intro-moves">4</strong><em>lượt</em></div>
+    </div>
+    <form method="dialog" class="level-actions">
+      <button id="intro-map" type="button" class="pill-button ghost">Bản đồ</button>
+      <button class="pill-button">Chơi</button>
+    </form>
+  </dialog>
+  <dialog id="result-dialog" class="level-dialog">
+    <div id="result-stars" class="result-stars"></div>
+    <h2 id="result-title">Qua màn!</h2>
+    <p id="result-score" class="level-feature">0 điểm</p>
+    <div class="level-actions">
+      <button id="result-map" class="pill-button ghost">Bản đồ</button>
+      <button id="result-retry" class="pill-button">Chơi lại</button>
+      <button id="result-next" class="pill-button">Màn tiếp</button>
+    </div>
+  </dialog>
   <dialog id="help-dialog">
     <form method="dialog"><button class="round-button close-help" aria-label="Đóng">×</button></form>
     <h2>Cách chơi</h2>
     <p>Mỗi lượt chỉ bóc một thẻ. Thẻ có thể chứa 1–3 món theo hình đơn, chữ I hoặc chữ L.</p>
     <p>Chạm vào thẻ đang bóc để xoay, sau đó kéo thẻ lên bàn. Các ô sáng cho biết vị trí thẻ sẽ được đặt.</p>
-    <p>Kéo thẻ thả vào ô “Gửi tạm” để cất thẻ đó (hoặc đổi với thẻ đang cất), không giới hạn số lần. Chạm vào ô “Gửi tạm” để lấy thẻ đã cất về. Có 6 loại mèo: cam, xám, trắng, mun, Xiêm và mướp. Chỉ khi gom 3 mèo cùng loại liền kề (chúng sẽ biến mất) bạn mới được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120 điểm. Xem trước thẻ tiếp theo để tính nước. Đạt điểm mục tiêu trước khi hết lượt để thắng.</p>
+    <p>Kéo thẻ thả vào ô “Gửi tạm” để cất thẻ đó (hoặc đổi với thẻ đang cất), không giới hạn số lần. Chạm vào ô “Gửi tạm” để lấy thẻ đã cất về. Có 6 loại mèo: cam, xám, trắng, mun, Xiêm và mướp. Chỉ khi gom 3 mèo cùng loại liền kề (chúng sẽ biến mất) bạn mới được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120 điểm. Xem trước thẻ tiếp theo để tính nước. Thùng gỗ chặn ô, không đặt mèo lên được; gom mèo sát bên thùng để phá nó. Mỗi màn có mục tiêu điểm và số lượt riêng; hết lượt hoặc hết chỗ đặt là thua.</p>
   </dialog>
 </body>
 </html>

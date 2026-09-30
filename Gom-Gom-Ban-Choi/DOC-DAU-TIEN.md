@@ -38,6 +38,8 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `server.mjs` | Máy chủ tĩnh tối giản, chỉ dùng Node.js, không phụ thuộc thư viện nào |
 | `Choi-Gom-Gom.bat` | Trình chạy cho Windows |
 | `Choi-Gom-Gom.command` | Trình chạy cho macOS |
+| `tools/simulate-levels.mjs` | Bot chơi thử 10 màn để cân độ khó: `node tools/simulate-levels.mjs [số ván] [--sweep]` |
+| `tai-lieu/4-Thiet-ke-10-man-Rotate.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
 | `tai-lieu/1-Dac-ta-thiet-ke-va-trien-khai.*` | Đặc tả gameplay, UI, VFX, vật phẩm, progression. Có bản Markdown, Word và PDF |
 | `tai-lieu/2-He-thong-do-kho.md` | Cách hệ thống độ khó hoạt động: cơ chế, chỉ số, cổng kiểm tra, quy trình bảo trì, nhật ký quyết định |
 | `tai-lieu/3-Bao-cao-curve-20-man.md` | Số liệu 20 màn, sinh tự động từ dữ liệu đã đóng băng |
@@ -48,8 +50,10 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | File | Nội dung |
 |---|---|
 | `index.html` | Trang game: thanh điểm, bàn chơi, thẻ đang bóc, ô gửi tạm, thẻ sắp tới, hộp hướng dẫn |
-| `gom-gom.js` | Vòng chơi chính: kéo thả, xoay thẻ, gửi tạm, tính điểm + combo, thắng/thua và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim) |
-| `board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, chọn điểm hợp nhất |
+| `gom-gom.js` | Vòng chơi chính: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, bản đồ màn, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
+| `levels.mjs` | Dữ liệu 10 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
+| `scoring.mjs` | Tính điểm theo cỡ cụm |
+| `board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |
 | `board-rules.test.mjs` | Kiểm thử luật bàn, chạy bằng `node --test game/board-rules.test.mjs` |
 | `cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
 | `gom-gom.css` | Giao diện và hiệu ứng: theme vàng kem, thẻ, mũi tên xoay, anim |
@@ -59,7 +63,11 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 
-Bàn 6×6. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120. Gom liên tiếp nhiều lượt tạo combo, mỗi bậc +10% điểm, tối đa x1,5. Đạt 120 điểm trong 20 lượt là thắng.
+Bàn 6×6. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
+
+Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
+
+Có 10 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `tai-lieu/4-Thiet-ke-10-man-Rotate.md`.
 
 Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
 
