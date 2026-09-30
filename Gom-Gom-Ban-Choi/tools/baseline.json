@@ -1,0 +1,227 @@
+{
+  "runsPerLevel": 400,
+  "seed": "level × 100000 + run",
+  "note": "bot tham lam nhìn 1 nước; tỉ lệ thắng là cận dưới của người chơi thật",
+  "levels": [
+    {
+      "level": 1,
+      "name": "Hello, Kitty",
+      "tier": "normal",
+      "moves": 4,
+      "target": 60,
+      "winRate": 1,
+      "stuckRate": 0,
+      "avgStars": 3,
+      "avgScore": 60
+    },
+    {
+      "level": 2,
+      "name": "Round and Round",
+      "tier": "normal",
+      "moves": 6,
+      "target": 90,
+      "winRate": 1,
+      "stuckRate": 0,
+      "avgStars": 3,
+      "avgScore": 90
+    },
+    {
+      "level": 3,
+      "name": "Go Big",
+      "tier": "normal",
+      "moves": 10,
+      "target": 170,
+      "winRate": 0.948,
+      "stuckRate": 0,
+      "avgStars": 1.99,
+      "avgScore": 180
+    },
+    {
+      "level": 4,
+      "name": "Triple Cards",
+      "tier": "normal",
+      "moves": 12,
+      "target": 280,
+      "winRate": 0.907,
+      "stuckRate": 0,
+      "avgStars": 1.7,
+      "avgScore": 291
+    },
+    {
+      "level": 5,
+      "name": "Crates",
+      "tier": "normal",
+      "moves": 12,
+      "target": 180,
+      "winRate": 0.97,
+      "stuckRate": 0,
+      "avgStars": 1.96,
+      "avgScore": 193
+    },
+    {
+      "level": 6,
+      "name": "Crate Garden",
+      "tier": "normal",
+      "moves": 14,
+      "target": 260,
+      "winRate": 0.835,
+      "stuckRate": 0,
+      "avgStars": 1.49,
+      "avgScore": 265
+    },
+    {
+      "level": 7,
+      "name": "Tight Crates",
+      "tier": "hard",
+      "moves": 12,
+      "target": 270,
+      "winRate": 0.688,
+      "stuckRate": 0.025,
+      "avgStars": 1.43,
+      "avgScore": 268
+    },
+    {
+      "level": 8,
+      "name": "Steel Nap",
+      "tier": "chill",
+      "moves": 18,
+      "target": 240,
+      "winRate": 0.985,
+      "stuckRate": 0,
+      "avgStars": 2.02,
+      "avgScore": 254
+    },
+    {
+      "level": 9,
+      "name": "Iron & Oak",
+      "tier": "hard",
+      "moves": 16,
+      "target": 300,
+      "winRate": 0.557,
+      "stuckRate": 0.003,
+      "avgStars": 1.47,
+      "avgScore": 294
+    },
+    {
+      "level": 10,
+      "name": "Garden Fortress",
+      "tier": "boss",
+      "moves": 20,
+      "target": 370,
+      "winRate": 0.46,
+      "stuckRate": 0.005,
+      "avgStars": 1.21,
+      "avgScore": 355
+    },
+    {
+      "level": 11,
+      "name": "Fresh Start",
+      "tier": "normal",
+      "moves": 14,
+      "target": 240,
+      "winRate": 0.93,
+      "stuckRate": 0,
+      "avgStars": 1.69,
+      "avgScore": 254
+    },
+    {
+      "level": 12,
+      "name": "Crate Scatter",
+      "tier": "normal",
+      "moves": 15,
+      "target": 240,
+      "winRate": 0.922,
+      "stuckRate": 0.005,
+      "avgStars": 1.72,
+      "avgScore": 250
+    },
+    {
+      "level": 13,
+      "name": "Steel Corners",
+      "tier": "normal",
+      "moves": 15,
+      "target": 280,
+      "winRate": 0.818,
+      "stuckRate": 0,
+      "avgStars": 1.66,
+      "avgScore": 284
+    },
+    {
+      "level": 14,
+      "name": "Crate & Steel",
+      "tier": "hard",
+      "moves": 16,
+      "target": 270,
+      "winRate": 0.748,
+      "stuckRate": 0.01,
+      "avgStars": 1.61,
+      "avgScore": 272
+    },
+    {
+      "level": 15,
+      "name": "Open Field",
+      "tier": "normal",
+      "moves": 14,
+      "target": 290,
+      "winRate": 0.83,
+      "stuckRate": 0,
+      "avgStars": 1.61,
+      "avgScore": 294
+    },
+    {
+      "level": 16,
+      "name": "Crate Maze",
+      "tier": "hard",
+      "moves": 16,
+      "target": 260,
+      "winRate": 0.757,
+      "stuckRate": 0,
+      "avgStars": 1.56,
+      "avgScore": 261
+    },
+    {
+      "level": 17,
+      "name": "Divided",
+      "tier": "hard",
+      "moves": 15,
+      "target": 240,
+      "winRate": 0.665,
+      "stuckRate": 0.003,
+      "avgStars": 1.38,
+      "avgScore": 237
+    },
+    {
+      "level": 18,
+      "name": "Iron Gate",
+      "tier": "hard",
+      "moves": 18,
+      "target": 300,
+      "winRate": 0.615,
+      "stuckRate": 0.025,
+      "avgStars": 1.22,
+      "avgScore": 289
+    },
+    {
+      "level": 19,
+      "name": "Tea Break",
+      "tier": "chill",
+      "moves": 20,
+      "target": 290,
+      "winRate": 0.973,
+      "stuckRate": 0,
+      "avgStars": 1.76,
+      "avgScore": 302
+    },
+    {
+      "level": 20,
+      "name": "Steel Fortress",
+      "tier": "boss",
+      "moves": 22,
+      "target": 380,
+      "winRate": 0.465,
+      "stuckRate": 0.01,
+      "avgStars": 1.18,
+      "avgScore": 363
+    }
+  ]
+}

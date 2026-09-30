@@ -5,10 +5,9 @@
 //   reward   nhận xu / mua đồ          G5 -> C6
 //   complete thắng màn                 C5 E5 G5 C6 (rải hợp âm)
 // Trình duyệt chỉ cho phát tiếng sau lần chạm đầu tiên; bật/tắt được và lưu lại trong máy.
-const KEY = 'gomgom-rotate-sound';
+import { SAVE_KEYS, readText, writeText } from './save.mjs';
 let context = null;
-let enabled = true;
-try { enabled = localStorage.getItem(KEY) !== 'off'; } catch {}
+let enabled = readText(SAVE_KEYS.sound) !== 'off';
 
 const NOTES = {
   complete: () => [523.25, 659.25, 783.99, 1046.5],
@@ -39,6 +38,6 @@ export function playSound(kind, size = 2) {
 export const soundOn = () => enabled;
 export function setSound(on) {
   enabled = on;
-  try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch {}
+  writeText(SAVE_KEYS.sound, on ? 'on' : 'off');
   if (on) playSound('merge'); // như bản gốc: bật lên thì kêu một tiếng để biết
 }

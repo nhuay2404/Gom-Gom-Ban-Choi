@@ -1,0 +1,17 @@
+{
+  "name": "gom-gom-rotate",
+  "private": true,
+  "description": "Gom Gom Rotate — web prototype. Chỉ cần Node.js, không cài thêm thư viện. Xem docs/PORTING.md khi chuyển sang Cocos.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test game/*.test.mjs",
+    "simulate": "node tools/simulate-levels.mjs 400",
+    "baseline": "node tools/simulate-levels.mjs 400 --baseline",
+    "export:data": "node tools/export-data.mjs",
+    "export:art": "node tools/export-art.mjs",
+    "export:sounds": "node tools/export-sounds.mjs",
+    "export": "node tools/export-data.mjs && node tools/export-art.mjs && node tools/export-sounds.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

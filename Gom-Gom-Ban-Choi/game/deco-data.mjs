@@ -1,8 +1,8 @@
 // Dữ liệu Deco: 2 khu (vườn, phòng khách), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm bằng sao: mỗi sao mới = COINS_PER_STAR xu. Mèo dùng chung cả 2 khu.
-export const COINS_PER_STAR = 50;
-export const MAX_ROOM_CATS = 6;
-const SAVE_KEY = 'gomgom-rotate-deco-v1';
+import { ECONOMY } from './tuning.mjs';
+import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
+export const { COINS_PER_STAR, MAX_ROOM_CATS } = ECONOMY;
 
 // Vườn là khu của màn 1–10. Phòng khách mở khi thắng màn 10 (dành cho màn 11–20).
 export const ZONES = {
@@ -80,19 +80,19 @@ function defaults(totalStars) {
 // Save cũ (trước khi có vườn, đồ mua cho phòng khách): phòng khách giờ khoá tới màn 10, nên hoàn lại xu
 // của đồ đã mua để người chơi sắm cho vườn; phòng khách về mặc định.
 export function loadDeco(totalStars) {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+  const saved = readJSON(SAVE_KEYS.deco);
+  {
     if (saved && saved.zones) return { ...defaults(totalStars), ...saved };
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(totalStars);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
       return { ...base, coins: (saved.coins ?? 0) + refund, cats: saved.cats || base.cats };
     }
-  } catch {}
+  }
   return defaults(totalStars);
 }
 export function saveDeco(deco) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(deco)); } catch {}
+  writeJSON(SAVE_KEYS.deco, deco);
 }
 export const zoneState = (deco, zone = deco.zone) => deco.zones[zone];
 const withZone = (deco, zone, change) => ({ ...deco, zones: { ...deco.zones, [zone]: { ...deco.zones[zone], ...change } } });

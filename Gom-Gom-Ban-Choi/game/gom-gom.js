@@ -1,27 +1,20 @@
-import { clearMatches, mergeTarget, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
-import { MATCH_SIZE, clusterPoints, matchPoints } from './scoring.mjs';
+import { mergeTarget, placementIndices } from './board-rules.mjs';
+import { clusterPoints } from './scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './cat-art.mjs';
-import { LEVELS, parseBoard, makeDealer, starsFor } from './levels.mjs';
+import { LEVELS } from './levels.mjs';
+import * as game from './session.mjs';
+import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, totalStars as sumStars, recordWin, levelTier, levelMechanics } from './progression.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES } from './tuning.mjs';
+import { CRATE_SVG, METAL_SVG } from './board-art.mjs';
 import { playSound, soundOn, setSound } from './sound.mjs';
-import { COINS_PER_STAR, ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco } from './deco-data.mjs';
+import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco } from './deco-data.mjs';
 
+// Giao diện màn chơi + menu. Luật của một ván nằm ở session.mjs (thuần logic): file này chỉ gọi luật rồi vẽ/diễn.
 // Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
-const W = 6, H = 6, PREVIEW_COUNT = 1;
+const { W, H, PREVIEW_COUNT } = BOARD;
 const $ = id => document.getElementById(id);
-const DRAG_BOOST = 1.6, DRAG_SHRINK_RANGE = 110;
+const DRAG_BOOST = DRAG.BOOST, DRAG_SHRINK_RANGE = DRAG.SHRINK_RANGE;
 let state, cardDrag = null;
-function item(group) {
-  return { group, name: categories[group].name };
-}
-
-function drawCard() {
-  while (state.deck.length <= PREVIEW_COUNT) {
-    const card = state.deal(state.board);
-    state.deck.push({ offsets: card.offsets, items: card.items.map(({ group }) => item(group)) });
-  }
-  return state.deck.shift();
-}
-
 function addArt(element, object) {
   addCatArt(element, object.group);
 }
@@ -90,16 +83,16 @@ function popIn(container, delay = 0) {
 }
 
 function rotateActive() {
-  if (state.over || state.animating || state.active.items.length < 2) return;
-  if (!tutorialAllows('rotate')) return;
-  playSound('pick');
+  if (state.animating) return;
   // Ghi vị trí từng mèo trước khi xoay (đang giữa anim thì lấy đúng chỗ đang hiện -> bấm liên tục vẫn liền mạch).
   const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
-  state.active.offsets = rotateOffsets(state.active.offsets);
+  const turn = game.rotate(state);
+  if (!turn.ok) return;
+  playSound('pick');
   state.preview = null;
   state.animateHints = true; // render() sẽ cho mũi tên trượt theo cung thay vì nhảy
   render();
-  tutorialDone('rotate');
+  if (turn.tutorialAdvanced) showNextTutorial(250);
   state.animateHints = false;
   animateRotation(before);
 }
@@ -107,7 +100,7 @@ function rotateActive() {
 // Mũi tên gợi ý xoay nằm trên quỹ đạo quanh tâm thẻ: góc 0° = mép trên (chỉ phải), 180° = mép dưới.
 // Đổi ngang <-> dọc thì cả vòng quay thêm 90° thuận chiều, nên mũi tên trượt theo cung tròn và tự đổi hướng.
 let hintAngle = 0;
-const ROTATE_MS = 340;
+const ROTATE_MS = TIMING.ROTATE_MS;
 function hintTransform(angle, card, arrowHeight) {
   const rad = angle * Math.PI / 180;
   const radiusY = card.height / 2 - arrowHeight / 2 - 3, radiusX = card.width / 2 - arrowHeight / 2 - 5;
@@ -213,40 +206,26 @@ function dropIntoHold(hold) {
 }
 
 function holdActive() {
-  if (state.over || state.animating) return;
-  if (!tutorialAllows('hold')) return render('Follow the tutorial!', true);
-  const previous = state.hold;
+  if (state.animating) return;
+  const turn = game.hold(state);
+  if (turn.error === 'tutorial') return render('Follow the tutorial!', true);
+  if (!turn.ok) return;
   playSound('draw');
-  state.hold = state.active;
-  state.active = previous || drawCard();
   state.preview = null;
   render();
-  tutorialDone(previous ? 'tapHold' : 'hold');
-  checkStuck();
-}
-
-function canPlaceAnywhere(card) {
-  let offsets = card.offsets;
-  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
-    if (state.board.some((_, index) => placementIndices(state.board, W, H, index, offsets))) return true;
-  }
-  return false;
-}
-// Thua vì hết chỗ: cả thẻ đang bóc lẫn thẻ gửi tạm đều không vừa bàn (ô gửi tạm trống thì vẫn còn đường rút thẻ).
-function checkStuck() {
-  if (state.over || canPlaceAnywhere(state.active) || !state.hold || canPlaceAnywhere(state.hold)) return false;
-  endLevel(false, 'No room left!');
-  return true;
+  if (turn.tutorialAdvanced) showNextTutorial(250);
+  if (turn.stuck) endLevel(false, state.outcome.reason);
 }
 
 function placeAt(anchor) {
   if (state.over || state.animating) return;
-  if (!tutorialAllows('place', anchor)) return render('Drag onto the glowing cell!', true);
-  const result = placeCard(state.board, W, H, anchor, state.active);
-  if (result.error) return render(result.error, true);
+  const turn = game.place(state, anchor);
+  if (turn.error === 'tutorial') return render('Drag onto the glowing cell!', true);
+  if (turn.error) return render(turn.error, true);
+  if (!turn.ok) return;
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
-  const match = clearMatches(result.board, W, H, MATCH_SIZE);
-  if (!match.cleared.length || reduceMotion.matches) return finishTurn(result, match);
+  const { result, match } = turn;
+  if (!match.cleared.length || reduceMotion.matches) return finishTurn(turn);
   // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
   // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
@@ -255,32 +234,8 @@ function placeAt(anchor) {
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
-  finishTurn(result, match);
+  finishTurn(turn);
 }
-
-// Thùng gỗ: ô chặn không đặt mèo lên được, vỡ khi gom mèo sát bên (luật ở board-rules.mjs).
-const CRATE_SVG = `<svg class="crate" viewBox="0 0 100 100" aria-hidden="true">
-  <rect x="6" y="10" width="88" height="84" rx="12" fill="#8a5429"/>
-  <rect x="6" y="4" width="88" height="84" rx="12" fill="#d49256"/>
-  <rect x="14" y="12" width="72" height="68" rx="6" fill="#c07c40"/>
-  <path d="M14 34H86M14 58H86" stroke="#a4632d" stroke-width="3"/>
-  <path d="M20 18L80 74M80 18L20 74" stroke="#e7ad6e" stroke-width="10" stroke-linecap="round"/>
-  <path d="M20 18L80 74M80 18L20 74" stroke="#b97237" stroke-width="3" stroke-linecap="round" opacity=".5"/>
-  <g fill="#6d4020"><circle cx="16" cy="14" r="3"/><circle cx="84" cy="14" r="3"/><circle cx="16" cy="78" r="3"/><circle cx="84" cy="78" r="3"/></g>
-  <rect x="10" y="7" width="80" height="6" rx="3" fill="#f2c28a" opacity=".6"/>
-</svg>`;
-
-// Khối kim loại (chương 2): ô chặn như thùng gỗ nhưng không bao giờ vỡ. Thép xám, đinh tán, vệt sáng.
-const METAL_SVG = `<svg class="crate metal-block" viewBox="0 0 100 100" aria-hidden="true">
-  <defs><linearGradient id="metal-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3e8ee"/><stop offset=".5" stop-color="#aab4c0"/><stop offset="1" stop-color="#8793a1"/></linearGradient></defs>
-  <rect x="6" y="10" width="88" height="84" rx="12" fill="#56606c"/>
-  <rect x="6" y="4" width="88" height="84" rx="12" fill="url(#metal-face)"/>
-  <rect x="16" y="14" width="68" height="64" rx="6" fill="none" stroke="#7a8592" stroke-width="3"/>
-  <path d="M24 70L70 22" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".45"/>
-  <path d="M36 72L76 32" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".3"/>
-  <g fill="#6c7784" stroke="#dfe5ec" stroke-width="1.5"><circle cx="16" cy="14" r="4"/><circle cx="84" cy="14" r="4"/><circle cx="16" cy="78" r="4"/><circle cx="84" cy="78" r="4"/></g>
-  <rect x="10" y="7" width="80" height="5" rx="2.5" fill="#fff" opacity=".55"/>
-</svg>`;
 
 // Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
 function breakCrates(indices, delay) {
@@ -319,7 +274,7 @@ function cellEl(index) {
   return document.querySelector(`.cell[data-index="${index}"]`);
 }
 
-const LIFT_MS = 560, MERGE_MS = 420, WIN_PAUSE_MS = 800, DROP_MS = 340;
+const { LIFT_MS, MERGE_MS, WIN_PAUSE_MS, DROP_MS } = TIMING;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const pendingMerges = new Set();
 
@@ -495,33 +450,26 @@ function showMergeScore(cell, points) {
   pop.addEventListener('animationend', () => pop.remove());
 }
 
-function finishTurn(result, match) {
-  const gained = matchPoints(match.clusters);
-  state.board = match.board;
+function finishTurn(turn) {
+  const { result, match, gained } = turn;
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
-  state.score += gained;
   if (match.clusters.length) playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
   else playSound('pick');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}` : '';
-  state.moves--;
   state.preview = null;
-  tutorialDone('place');
-  if (state.score >= state.level.target) {
-    state.over = true;
-    state.active = drawCard(); // không để thẻ vừa đặt nằm lại trong ô đang bóc
+  if (turn.tutorialAdvanced) showNextTutorial(700);
+  if (turn.win) {
     const message = `You win with ${state.score} points! ✨`;
     render(message);
     setTimeout(() => playSound('complete'), 380); // sau tiếng gom cuối
     return celebrateWin(message).then(() => endLevel(true));
   }
-  if (state.moves === 0) return endLevel(false, 'Out of moves!');
-  state.active = drawCard();
-  const fit = canPlaceAnywhere(state.active);
-  render(`${fit ? clearedText : `${clearedText} No room left — drag a card into Hold.`} ${lowMovesText()}`.trim(), !fit);
-  checkStuck();
+  if (turn.lose && !turn.stuck) return endLevel(false, state.outcome.reason);
+  render(`${turn.fit ? clearedText : `${clearedText} No room left — drag a card into Hold.`} ${lowMovesText()}`.trim(), !turn.fit);
+  if (turn.stuck) endLevel(false, state.outcome.reason);
 }
 
 const centerOf = rect => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
@@ -813,12 +761,8 @@ function paintInvalid() {
 
 function newGame(levelIndex = state?.levelIndex ?? 0) {
   const level = LEVELS[levelIndex];
-  state = {
-    level, levelIndex, board: parseBoard(level.board), deal: makeDealer(level), deck: [], active: null, hold: null,
-    score: 0, moves: level.moves, over: false, preview: null, previewAnchor: null,
-    tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
-  };
-  state.active = drawCard();
+  // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
+  state = Object.assign(game.createSession(levelIndex), { preview: null, previewAnchor: null, animating: false });
   render(`Reach ${level.target} points in ${level.moves} moves!`);
   renderTutorial();
 }
@@ -867,7 +811,7 @@ function petCat(cell) {
 $('hold').onclick = () => { if (state.hold) holdActive(); };
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
 // Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.
-const AFK_MS = 5000;
+const { AFK_MS } = TIMING;
 let afkTimer = 0;
 function goAfk() {
   if (state.over || state.animating || cardDrag) return armAfk();
@@ -875,7 +819,7 @@ function goAfk() {
 }
 
 // Sắp hết lượt: ô Moves đổi màu + đập nhịp, mèo lộ biểu cảm buồn/lo (mỗi con một kiểu), thông báo ở vài lượt cuối.
-const LOW_CATS_AT = 2, LOW_MSG_AT = 3;
+const { CATS_AT: LOW_CATS_AT, MSG_AT: LOW_MSG_AT } = LOW_MOVES;
 function lowMovesText() {
   if (state.over || state.moves > LOW_MSG_AT || state.moves < 1) return '';
   return state.moves === 1 ? 'Last move!' : `${state.moves} moves left!`;
@@ -905,29 +849,13 @@ armAfk();
 // ===== Tutorial: làm mờ màn hình, khoét sáng đúng chỗ cần chạm, bàn tay chỉ đường + bong bóng lời thoại =====
 // Mỗi bước (levels.mjs): drag (kéo vào ô `anchor`; free = chỉ gợi ý), rotate (xoay tới hướng `offsets`),
 // hold (kéo vào Gửi tạm), tapHold (chạm Gửi tạm), info (đọc rồi bấm Tiếp tục).
-const tutorialStep = () => state.tutorial?.steps[state.tutorial.step] || null;
-function tutorialAllows(action, anchor) {
-  const step = tutorialStep();
-  if (!step) return true;
-  if (step.type === 'info') return false;
-  if (step.free) return true;
-  if (action === 'drag') return step.type === 'drag' || step.type === 'hold';
-  if (action === 'place') return step.type === 'drag' && anchor === step.anchor;
-  if (action === 'rotate') return step.type === 'rotate';
-  if (action === 'hold') return step.type === 'hold' || step.type === 'tapHold';
-  return false;
-}
-function tutorialDone(action) {
-  const step = tutorialStep();
-  if (!step) return;
-  const matches = step.type === 'drag' ? action === 'place'
-    : step.type === 'rotate' ? action === 'rotate' && JSON.stringify(state.active.offsets) === JSON.stringify(step.offsets)
-      : step.type === action;
-  if (!matches) return;
-  state.tutorial.step++;
-  // Chờ anim gom/đặt một nhịp rồi mới chỉ bước kế để người chơi kịp thấy kết quả.
+// Luật tutorial (bước nào cho làm gì, khi nào sang bước) nằm ở session.mjs; ở đây chỉ vẽ.
+const tutorialStep = () => game.tutorialStep(state);
+const tutorialAllows = (action, anchor) => game.tutorialAllows(state, action, anchor);
+// Chờ anim gom/đặt một nhịp rồi mới chỉ bước kế để người chơi kịp thấy kết quả.
+function showNextTutorial(delay) {
   $('tutorial').hidden = true;
-  setTimeout(renderTutorial, action === 'place' ? 700 : 250);
+  setTimeout(renderTutorial, delay);
 }
 
 function tutorialHoles(step) {
@@ -1004,32 +932,18 @@ function animateHand(step, holes) {
     ], { duration: 1100, iterations: Infinity });
   }
 }
-$('tutorial-next').onclick = () => { state.tutorial.step++; renderTutorial(); };
+$('tutorial-next').onclick = () => { game.continueTutorial(state); renderTutorial(); };
 addEventListener('resize', () => { if (tutorialStep()) renderTutorial(); });
 
 // ===== Tiến độ (lưu trong máy), bản đồ màn, giới thiệu màn, kết quả =====
-const SAVE_KEY = 'gomgom-rotate-progress-v1';
-function loadProgress() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (saved && Array.isArray(saved.stars)) return saved;
-  } catch {}
-  return { stars: [] };
-}
-function saveProgress(progress) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch {}
-}
-const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.filter(Boolean).length + 1);
 // Cấp độ khó (levels.mjs: tier) hiện ở bảng vào màn và bản đồ. Màn normal không gắn nhãn.
 const TIERS = {
   chill: { label: 'Chill', icon: '<svg viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14Zm0 0 7-7"/></svg>' },
   hard: { label: 'Hard', icon: '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/></svg>' },
   boss: { label: 'Boss', icon: '<svg viewBox="0 0 24 24"><path d="M4 18 3 7l5 4 4-6 4 6 5-4-1 11Z M5 21h14"/></svg>' },
 };
-const levelTier = level => level.tier || 'normal';
 const levelTag = level => (TIERS[levelTier(level)] ? ` · ${TIERS[levelTier(level)].label}` : '');
 // Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
-const levelMechanics = level => ['crate', 'metal'].filter(kind => level.board.join('').includes(kind === 'crate' ? 'X' : 'M'));
 const starText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 
 function showMap() {
@@ -1053,10 +967,10 @@ function showMap() {
 // ===== Home / Deco / Shop: các tab dùng chung thanh điều hướng nổi, chỉ hiện ngoài màn chơi =====
 const TABS = ['home', 'deco', 'shop'];
 const menuOpen = () => TABS.some(tab => !$(tab).hidden);
-const totalStars = () => loadProgress().stars.reduce((sum, n) => sum + (n || 0), 0);
+const totalStars = () => sumStars(loadProgress());
 let deco = loadDeco(totalStars());
-let room3d = null;
-let decoThumbnail = null; // chụp model 3D làm ảnh cho ô đồ (có sau khi nạp Three.js) // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
+let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
+let decoThumbnail = null; // chụp model 3D làm ảnh cho ô đồ (có sau khi nạp Three.js)
 let decoCat = 'furniture', decoPick = null;
 
 function hideMenus() {
@@ -1231,7 +1145,7 @@ $('deco').querySelector('.chips').addEventListener('click', event => {
 });
 
 // ===== Khu: vườn (màn 1–10) / phòng khách (mở khi thắng màn 10). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
-const levelsCleared = () => loadProgress().stars.filter(Boolean).length;
+const levelsCleared = () => clearedCount(loadProgress());
 function renderZoneSwitch() {
   const cleared = levelsCleared();
   document.querySelectorAll('.zone-switch button').forEach(button => {
@@ -1290,18 +1204,17 @@ $('intro-dialog').addEventListener('close', () => renderTutorial());
 
 function endLevel(win, reason = '') {
   state.over = true;
+  state.outcome ??= { win, reason, stars: 0 };
   render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
   renderTutorial();
   const index = state.levelIndex, last = index === LEVELS.length - 1;
-  const stars = win ? starsFor(state.level, state.moves) : 0;
+  const stars = win ? state.outcome.stars : 0;
   $('result-stars').textContent = win ? starText(stars) : '';
   let coinsEarned = 0;
   if (win) {
-    const progress = loadProgress(), before = progress.stars[index] || 0;
-    progress.stars[index] = Math.max(before, stars);
-    saveProgress(progress);
-    // Chỉ sao mới (vượt kỷ lục cũ của màn) mới ra xu.
-    coinsEarned = Math.max(0, stars - before) * COINS_PER_STAR;
+    const record = recordWin(loadProgress(), index, stars); // chỉ sao mới (vượt kỷ lục cũ) mới ra xu
+    saveProgress(record.progress);
+    coinsEarned = record.coins;
     if (coinsEarned) { deco = { ...deco, coins: deco.coins + coinsEarned }; saveDeco(deco); }
   }
   const unlockedLiving = win && index + 1 === ZONES.living.unlockAfter && coinsEarned > 0 && levelsCleared() === ZONES.living.unlockAfter;

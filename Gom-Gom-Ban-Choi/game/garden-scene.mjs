@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const HALF = 3, TAU = Math.PI * 2;
+import { ROOM_HALF } from './room-layout.mjs';
+const HALF = ROOM_HALF, TAU = Math.PI * 2;
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: .85, metalness: 0, ...extra });
 function mesh(geometry, material) {
   const node = new THREE.Mesh(geometry, material instanceof THREE.Material ? material : mat(material));
@@ -19,10 +20,7 @@ const cyl = (top, bottom, h, color, seg = RADIAL) => mesh(new THREE.CylinderGeom
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, 32, 24), color);
 const group = (...children) => { const g = new THREE.Group(); g.add(...children); return g; };
 
-export const GARDEN_PLACES = {
-  flowers: [-2, 1.65], stump: [.2, 2.2], catnip: [2.2, 1.5], lantern: [1.15, 2.5], sandbox: [2.2, -.1],
-  cathouse: [2, -2], pond: [-1.5, -1.4], hammock: [.35, -2.35, 0], birdbath: [-2.3, .35], bench: [-.8, 2.35],
-};
+// Chỗ đặt các món vườn: room-layout.mjs (PLACES).
 
 const FLOWER_COLORS = ['#ff8fa0', '#ffd66b', '#b79cf0', '#fff4f0', '#ff9e6b'];
 function flower(color, x, z, h = .28) {

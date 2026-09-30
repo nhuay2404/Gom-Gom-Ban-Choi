@@ -7,9 +7,11 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { createCatLife } from './room-cats.mjs';
 import { playSound } from './sound.mjs';
 import { CATALOG, itemById, zoneState } from './deco-data.mjs';
-import { GARDEN_PLACES, GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies } from './garden-scene.mjs';
+import { PLACES, WALL_H, ROOM_HALF } from './room-layout.mjs';
+import { TIMING, DRAG } from './tuning.mjs';
+import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies } from './garden-scene.mjs';
 
-const HALF = 3, WALL_H = 3, TAU = Math.PI * 2;
+const HALF = ROOM_HALF, TAU = Math.PI * 2;
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: .85, metalness: 0, ...extra });
 function mesh(geometry, material) {
   const node = new THREE.Mesh(geometry, material instanceof THREE.Material ? material : mat(material));
@@ -25,11 +27,7 @@ const cyl = (top, bottom, h, color, seg = RADIAL) => mesh(new THREE.CylinderGeom
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, 32, 24), color);
 const group = (...children) => { const g = new THREE.Group(); g.add(...children); return g; };
 
-// ---------- Đồ đạc: mỗi món một hàm dựng + chỗ đặt cố định [x, z, xoay] ----------
-const PLACES = {
-  rug: [0, .1, 0], armchair: [-1.85, -1.95], plant: [-2.4, 2.35], yarn: [-.6, 2.4], catbed: [1.05, 2.2],
-  table: [2.4, -.45], lamp: [2.35, -2.4], cattree: [-2.3, .55], shelf: [.35, -2.66, 0], tank: [2.42, 1.15, -Math.PI / 2],
-};
+// ---------- Đồ đạc: mỗi món một hàm dựng (chỗ đặt [x, z, xoay] ở room-layout.mjs) ----------
 const BUILD = {
   rug() {
     const outer = cyl(1.55, 1.55, .04, '#f4a3b6', 48), inner = cyl(1.12, 1.12, .045, '#ffc9d5', 48);
@@ -127,7 +125,6 @@ const BUILD = {
 };
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
-Object.assign(PLACES, GARDEN_PLACES);
 Object.assign(BUILD, GARDEN_BUILD);
 
 // ---------- Sàn: vân gỗ / thảm / gạch vẽ bằng canvas ----------
@@ -374,7 +371,7 @@ export function createRoom() {
   //   chạm nhanh          -> cưng (mặt vui, nảy, tim bay)
   //   giữ ~0.35 s rồi kéo -> nhấc mèo lên, mèo lơ lửng ngay dưới ngón tay, thả tay thì mèo rơi xuống chỗ đó
   // Trong lúc nhấc mèo: khoá xoay/zoom camera (vẫn để OrbitControls theo dõi ngón tay cho khỏi lệch trạng thái).
-  const HOLD_MS = 350, MOVE_TOLERANCE = 8;
+  const HOLD_MS = TIMING.CARRY_HOLD_MS, MOVE_TOLERANCE = DRAG.CARRY_TOLERANCE;
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), hit = new THREE.Vector3();
   const carryPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -cats.carryHeight);
   let down = null, holdTimer = 0, carrying = null;

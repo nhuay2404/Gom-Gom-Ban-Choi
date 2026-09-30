@@ -1,18 +1,23 @@
 // Mô phỏng mọi màn bằng bot tham lam (xét mọi hướng xoay, mọi ô, có dùng Gửi tạm) để cân độ khó.
-// Chạy: node tools/simulate-levels.mjs [số ván mỗi màn]
+// Chạy: node tools/simulate-levels.mjs [số ván mỗi màn] [--sweep] [--json] [--baseline]
+//   --baseline  ghi kết quả vào tools/baseline.json (mốc để đối chiếu sau khi port sang Cocos)
+//   --json      in kết quả dạng JSON
+// Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
 import { LEVELS, parseBoard, parseCard, makeDealer, starsFor } from '../game/levels.mjs';
 import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/board-rules.mjs';
 import { MATCH_SIZE, matchPoints } from '../game/scoring.mjs';
+import { writeFileSync } from 'node:fs';
 
-const W = 6, H = 6, RUNS = Number(process.argv[2] ?? 400);
+const W = 6, H = 6, RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 400);
+const JSON_OUT = process.argv.includes('--json'), BASELINE = process.argv.includes('--baseline');
 function mulberry32(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 const rotations = offsets => { const out = [offsets]; for (let i = 0; i < 3; i++) out.push(rotateOffsets(out.at(-1))); return out; };
 const fits = (board, card) => rotations(card.offsets).some(o => board.some((_, a) => placementIndices(board, W, H, a, o)));
 
-function bestMove(board, card) {
+function bestMove(board, card, rng) {
   let best = null;
   for (const offsets of rotations(card.offsets)) for (let anchor = 0; anchor < W * H; anchor++) {
     const indices = placementIndices(board, W, H, anchor, offsets);
@@ -25,7 +30,7 @@ function bestMove(board, card) {
     let setup = 0;
     indices.forEach(index => { if (match.board[index]) setup += connectedGroup(match.board, W, H, index).length - 1; });
     const empty = match.board.filter(cell => !cell).length;
-    const value = points * 10 + setup * 6 + empty * 0.5 + Math.random();
+    const value = points * 10 + setup * 6 + empty * 0.5 + rng();
     if (!best || value > best.value) best = { value, match, points };
   }
   return best;
@@ -44,7 +49,7 @@ function play(level, seed) {
     options.push({ card: swapCard, after: () => { if (hold) hold = active; else { hold = active; queue.shift(); } } });
     let pick = null;
     for (const option of options) {
-      const move = bestMove(board, option.card);
+      const move = bestMove(board, option.card, rng);
       if (move && (!pick || move.value > pick.move.value)) pick = { option, move };
     }
     if (!pick) return { win: false, reason: 'stuck', score };
@@ -68,16 +73,23 @@ function validate(level, n) {
   (level.deck || []).forEach(spec => { if (parseCard(spec).items.some(item => !item.group)) throw new Error(`Màn ${n}: thẻ lỗi ${spec}`); });
 }
 
-console.log(`Mô phỏng ${RUNS} ván mỗi màn\n`);
-console.log('Màn | Tên              | Lượt | Mục tiêu | Thắng | Kẹt  | ★ TB | Điểm TB');
+const log = (...args) => { if (!JSON_OUT) console.log(...args); };
+const rows = [];
+log(`Mô phỏng ${RUNS} ván mỗi màn\n`);
+log('Màn | Tên              | Lượt | Mục tiêu | Thắng | Kẹt  | ★ TB | Điểm TB');
 LEVELS.forEach((level, i) => {
   validate(level, i + 1);
   const results = Array.from({ length: RUNS }, (_, run) => play(level, (i + 1) * 100000 + run));
   const wins = results.filter(r => r.win), stuck = results.filter(r => r.reason === 'stuck').length;
   const stars = wins.length ? wins.reduce((s, r) => s + r.stars, 0) / wins.length : 0;
   const avg = results.reduce((s, r) => s + r.score, 0) / RUNS;
-  console.log(`${String(i + 1).padStart(3)} | ${level.name.padEnd(16)} | ${String(level.moves).padStart(4)} | ${String(level.target).padStart(8)} | ${(wins.length / RUNS * 100).toFixed(0).padStart(4)}% | ${(stuck / RUNS * 100).toFixed(0).padStart(3)}% | ${stars.toFixed(1).padStart(4)} | ${avg.toFixed(0).padStart(6)}`);
+  rows.push({ level: i + 1, name: level.name, tier: level.tier || 'normal', moves: level.moves, target: level.target, winRate: +(wins.length / RUNS).toFixed(3), stuckRate: +(stuck / RUNS).toFixed(3), avgStars: +stars.toFixed(2), avgScore: Math.round(avg) });
+  log(`${String(i + 1).padStart(3)} | ${level.name.padEnd(16)} | ${String(level.moves).padStart(4)} | ${String(level.target).padStart(8)} | ${(wins.length / RUNS * 100).toFixed(0).padStart(4)}% | ${(stuck / RUNS * 100).toFixed(0).padStart(3)}% | ${stars.toFixed(1).padStart(4)} | ${avg.toFixed(0).padStart(6)}`);
 });
+
+const report = { runsPerLevel: RUNS, seed: 'level × 100000 + run', note: 'bot tham lam nhìn 1 nước; tỉ lệ thắng là cận dưới của người chơi thật', levels: rows };
+if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
+if (BASELINE) { writeFileSync(new URL('./baseline.json', import.meta.url), `${JSON.stringify(report, null, 2)}\n`); log('\nĐã ghi tools/baseline.json'); }
 
 // --sweep: thử nhiều mức mục tiêu để chọn mức cho đúng đường cong độ khó.
 if (process.argv.includes('--sweep')) {

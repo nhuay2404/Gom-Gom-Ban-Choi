@@ -5,8 +5,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { categories, eyesMarkup } from './cat-art.mjs';
+import { OBSTACLE_RADIUS, WINDOW } from './room-layout.mjs';
+import { CAT_BODY, CAT_MOTION } from './tuning.mjs';
 
-const W = .6, H = .54, D = .62, LEG = .1, ROOM = 2.5, TAU = Math.PI * 2;
+const { W, H, D, LEG } = CAT_BODY, ROOM = CAT_MOTION.ROOM_LIMIT, TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 const chance = p => Math.random() < p;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -20,24 +22,11 @@ function spring(obj, key, target, k, zeta, dt) {
   obj[vKey] = v + accel * dt;
   obj[key] += obj[vKey] * dt;
 }
-// [độ cứng, tỉ lệ tắt] cho từng tư thế: đổi tư thế to (nằm, cuộn) thì chậm và êm, chân/tay thì nhanh và nảy.
-const POSE_SPRING = {
-  sit: [70, .8], lie: [55, .85], curl: [28, .9], stretch: [85, .7], roll: [40, .75], lean: [110, .7],
-  paw: [320, .55], groom: [170, .65], knead: [130, .7], tailUp: [36, .6],
-};
-const CARRY_H = .95; // độ cao mèo lơ lửng khi bị nhấc
-const STRIDE_WALK = .34, STRIDE_RUN = .78; // quãng đường cho một chu kỳ bước (chân không trượt trên sàn)
+// Lò xo từng tư thế, độ cao khi bị nhấc, sải bước: tuning.mjs (CAT_MOTION).
+const { POSE_SPRING, CARRY_H, STRIDE_WALK, STRIDE_RUN } = CAT_MOTION;
 
-// Chỗ đứng / ngồi của mèo với từng món (toạ độ trong không gian của món đồ; +z của món hướng vào giữa phòng).
-// `r` = bán kính vật cản khi mèo đi quanh.
-const FURNITURE = {
-  catbed: { r: .75 }, armchair: { r: .8 }, cattree: { r: .65 }, table: { r: .62 }, shelf: { r: .9 },
-  yarn: { r: .5 }, plant: { r: .45 }, tank: { r: .8 }, lamp: { r: .38 }, rug: { r: 0 },
-  // vườn (bồn hoa r = 0: mặt đất đi được, không phải vật cản)
-  flowers: { r: 0 }, stump: { r: .45 }, catnip: { r: .45 }, lantern: { r: .28 }, sandbox: { r: .62 },
-  cathouse: { r: .75 }, pond: { r: 1 }, hammock: { r: .7 }, birdbath: { r: .36 }, bench: { r: .75 },
-};
-const WINDOW = { x: -1.6, z: -2.5 }; // cửa sổ vòm trên tường sau
+// Bán kính vật cản của từng món + cửa sổ: room-layout.mjs.
+const FURNITURE = Object.fromEntries(Object.entries(OBSTACLE_RADIUS).map(([id, r]) => [id, { r }]));
 
 // ---------- Mặt mèo: vẽ bằng canvas, tách lớp "mặt" (bụng, mõm, miệng) và lớp "mắt" để mắt liếc được ----------
 const textures = {};
