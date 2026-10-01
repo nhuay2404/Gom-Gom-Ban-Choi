@@ -51,3 +51,31 @@ export const BOOSTERS = {
   EXTRA_MOVES: 3,
   PRICE: { hammer: 60, swap: 40, moves: 80 },
 };
+
+// Độ khó thích ứng theo profile người chơi (adaptive.mjs, tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md).
+export const ADAPTIVE = {
+  TIGHT_PPM: 18,          // điểm cần mỗi lượt (target / moves) từ mức này trở lên thì element "moves" bật
+  LOOSE_PPM: 16,          // tắt moves: moves = ceil(target / LOOSE_PPM)
+  TIGHTEN_PPM: 18,        // bật moves: moves = floor(target / TIGHTEN_PPM) (vừa chạm ngưỡng; 19 làm vài màn rớt quá mạnh)
+  MANY_COLORS: 5,         // từ bấy nhiêu giống mèo trở lên thì element "màu" bật
+  WINDOW: 5,              // cửa sổ lần thử gần nhất để tính tỉ lệ thắng
+  ONBOARD_LEVELS: 4,      // người mới: đang ở 4 màn đầu ...
+  ONBOARD_ATTEMPTS: 6,    // ... hoặc chưa đủ bấy nhiêu lần thử (chỉ chặn việc nới; thắng sạch liền vẫn được tăng khó)
+  NEAR_MISS: 0.85,        // thua mà đạt từ tỉ lệ điểm này trở lên = sát nút
+  IDLE_RATIO: 1.5,        // nghĩ mỗi lượt lâu hơn bấy nhiêu lần mức thường của chính người đó = lưỡng lự
+  IDLE_SHARE: 0.25,       // hoặc thời gian AFK chiếm hơn bấy nhiêu phần thời gian màn
+  FRAGILE_WINDOW: 10,     // từng bỏ ngang trong bấy nhiêu lần thử gần nhất = người chơi mong manh
+  DWELL_MS: 8000,         // đứng ở bảng kết quả lâu hơn mức này = nản / mất hứng
+  THINKER_MS: 6000,       // mức nghĩ thường mỗi lượt từ đây trở lên (mà vẫn thắng) = người suy nghĩ kỹ
+  RETURN_DAYS: 3,         // nghỉ bấy nhiêu ngày thì màn đầu phiên được khởi động nhẹ
+  CALM_LEVELS: 3,         // sau khi nhận diện "sắp bỏ game": bấy nhiêu màn thắng kế tiếp tối đa Medium
+  EXTRA_MOVES: 2,         // số lượt cộng thêm (người mới thua 2 lần, sát nút lần thứ 4)
+  HISTORY: 60,            // số lần thử giữ trong save
+  // Chỉnh bộ chia thẻ theo lý do thua ở màn đang chơi lại (không đổi bàn, không đổi lượt):
+  STUCK_AFTER: 2,         // thua vì hết chỗ bấy nhiêu lần ở màn này -> thêm thẻ đôi
+  MOVES_AFTER: 2,         // thua vì hết lượt bấy nhiêu lần ở màn này -> thêm thẻ 3 ô + tăng assist (thẻ trùng màu mèo trên bàn)
+  ASSIST_STEP: 0.1,       // mỗi lần thua thêm / mỗi mức cao thủ
+  ASSIST_MAX: 0.6,
+  ASSIST_MIN: 0.2,
+  CROWDED_BLOCKS: 6,      // bàn có từ bấy nhiêu ô vật cản = màn chật: hết lượt thì thêm thẻ đôi thay vì thẻ 3 ô (đỡ kẹt)
+};

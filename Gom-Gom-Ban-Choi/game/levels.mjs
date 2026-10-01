@@ -192,17 +192,21 @@ export function starsFor(level, movesLeft) {
   return 1;
 }
 
+// Mặc định của bộ chia khi màn không ghi `shapes` / `assist` (adaptive.mjs cũng dựa vào đây để chỉnh).
+export const DEFAULT_SHAPES = { single: 6, domino: 5, triple: 1 };
+export const DEFAULT_ASSIST = 0.3;
+
 // Bộ chia: phát hết thẻ kịch bản, sau đó thẻ ngẫu nhiên theo tỉ lệ hình của màn. `assist` = xác suất màu
 // của một mèo được chọn theo mèo đang có trên bàn (nhiều con cùng màu thì dễ ra màu đó) cho đỡ bí.
 export function makeDealer(level, rng = Math.random) {
   const script = (level.deck || []).map(parseCard);
   const pool = [...level.cats].map(ch => LETTERS[ch]);
-  const weights = level.shapes || { single: 6, domino: 5, triple: 1 };
+  const weights = level.shapes || DEFAULT_SHAPES;
   const bag = Object.entries(weights).flatMap(([name, n]) => Array(n).fill(name));
   const pick = list => list[Math.floor(rng() * list.length)];
   const color = board => {
     const present = board.filter(cell => cell?.group).map(cell => cell.group).filter(group => pool.includes(group));
-    return present.length && rng() < (level.assist ?? 0.3) ? pick(present) : pick(pool);
+    return present.length && rng() < (level.assist ?? DEFAULT_ASSIST) ? pick(present) : pick(pool);
   };
   return board => {
     if (script.length) return script.shift();

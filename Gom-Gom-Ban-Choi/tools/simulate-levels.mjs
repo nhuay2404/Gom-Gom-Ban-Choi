@@ -1,69 +1,18 @@
 // Mô phỏng mọi màn bằng bot tham lam (xét mọi hướng xoay, mọi ô, có dùng Gửi tạm) để cân độ khó.
-// Chạy: node tools/simulate-levels.mjs [số ván mỗi màn] [--sweep] [--json] [--baseline]
+// Chạy: node tools/simulate-levels.mjs [số ván mỗi màn] [--sweep] [--dda] [--json] [--baseline]
+//   --dda       tỉ lệ thắng của từng bản biến thể theo số element (độ khó thích ứng, adaptive.mjs)
 //   --baseline  ghi kết quả vào tools/baseline.json (mốc để đối chiếu sau khi port sang Cocos)
 //   --json      in kết quả dạng JSON
 // Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
-import { LEVELS, parseBoard, parseCard, makeDealer, starsFor } from '../game/levels.mjs';
-import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/board-rules.mjs';
-import { MATCH_SIZE, matchPoints } from '../game/scoring.mjs';
+import { LEVELS, parseBoard, parseCard } from '../game/levels.mjs';
+import { clearMatches } from '../game/board-rules.mjs';
+import { MATCH_SIZE } from '../game/scoring.mjs';
+import { play } from './bot.mjs';
 import { writeFileSync } from 'node:fs';
 
 const W = 6, H = 6, RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 400);
 const JSON_OUT = process.argv.includes('--json'), BASELINE = process.argv.includes('--baseline');
-function mulberry32(seed) {
-  return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-}
-const rotations = offsets => { const out = [offsets]; for (let i = 0; i < 3; i++) out.push(rotateOffsets(out.at(-1))); return out; };
-const fits = (board, card) => rotations(card.offsets).some(o => board.some((_, a) => placementIndices(board, W, H, a, o)));
-
-function bestMove(board, card, rng) {
-  let best = null;
-  for (const offsets of rotations(card.offsets)) for (let anchor = 0; anchor < W * H; anchor++) {
-    const indices = placementIndices(board, W, H, anchor, offsets);
-    if (!indices) continue;
-    const next = board.slice();
-    indices.forEach((index, i) => { next[index] = { group: card.items[i].group }; });
-    const match = clearMatches(next, W, H, MATCH_SIZE);
-    const points = matchPoints(match.clusters);
-    // Chưa gom được thì ưu tiên nước tạo cụm 2 (chuẩn bị gom), phạt nước làm bàn chật.
-    let setup = 0;
-    indices.forEach(index => { if (match.board[index]) setup += connectedGroup(match.board, W, H, index).length - 1; });
-    const empty = match.board.filter(cell => !cell).length;
-    const value = points * 10 + setup * 6 + empty * 0.5 + rng();
-    if (!best || value > best.value) best = { value, match, points };
-  }
-  return best;
-}
-
-function play(level, seed) {
-  const rng = mulberry32(seed), deal = makeDealer(level, rng);
-  let board = parseBoard(level.board), score = 0, moves = level.moves, hold = null;
-  const queue = [];
-  const draw = () => { while (queue.length < 2) queue.push(deal(board)); return queue.shift(); };
-  let active = draw();
-  while (moves > 0) {
-    // Lựa chọn: đặt thẻ đang bóc, hoặc đổi với Gửi tạm (ô trống thì cất và rút thẻ kế).
-    const options = [{ card: active, after: () => {} }];
-    const swapCard = hold || queue[0];
-    options.push({ card: swapCard, after: () => { if (hold) hold = active; else { hold = active; queue.shift(); } } });
-    let pick = null;
-    for (const option of options) {
-      const move = bestMove(board, option.card, rng);
-      if (move && (!pick || move.value > pick.move.value)) pick = { option, move };
-    }
-    if (!pick) return { win: false, reason: 'stuck', score };
-    const swapping = pick.option.card !== active;
-    if (swapping) pick.option.after();
-    score += pick.move.points;
-    board = pick.move.match.board;
-    moves--;
-    if (score >= level.target) return { win: true, stars: starsFor(level, moves), score };
-    active = draw();
-    if (!fits(board, active) && !(hold ? fits(board, hold) : true)) return { win: false, reason: 'stuck', score };
-  }
-  return { win: false, reason: 'moves', score };
-}
 
 // Kiểm tra dữ liệu màn: bàn không có sẵn cụm gom được, ô tutorial hợp lệ.
 function validate(level, n) {
@@ -90,6 +39,26 @@ LEVELS.forEach((level, i) => {
 const report = { runsPerLevel: RUNS, seed: 'level × 100000 + run', note: 'bot tham lam nhìn 1 nước; tỉ lệ thắng là cận dưới của người chơi thật', levels: rows };
 if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
 if (BASELINE) { writeFileSync(new URL('./baseline.json', import.meta.url), `${JSON.stringify(report, null, 2)}\n`); log('\nĐã ghi tools/baseline.json'); }
+
+// --dda: tỉ lệ thắng của bot ở từng bản biến thể theo số element (adaptive.mjs). Bản ít element phải thắng
+// nhiều hơn; dòng nào đảo thứ tự thì gắn "!" để xem lại.
+if (process.argv.includes('--dda')) {
+  const { buildVariant, elementCount, isAdaptive } = await import('../game/adaptive.mjs');
+  console.log('\nĐộ khó thích ứng: tỉ lệ thắng theo số element (* = bản gốc)');
+  LEVELS.forEach((base, i) => {
+    if (!isAdaptive(base)) return;
+    const seen = new Set(), row = [];
+    for (let target = 0; target <= 4; target++) {
+      const level = buildVariant(base, target), count = elementCount(level);
+      if (seen.has(count)) continue;
+      seen.add(count);
+      const wins = Array.from({ length: 200 }, (_, run) => play(level, (i + 1) * 100000 + run)).filter(r => r.win).length / 200;
+      row.push({ count, wins, mark: count === elementCount(base) ? '*' : '' });
+    }
+    const ordered = row.every((cell, k) => !k || cell.wins <= row[k - 1].wins + 0.05);
+    console.log(`${String(i + 1).padStart(2)}. ${base.name.padEnd(16)} ${row.map(c => `${c.count}${c.mark}:${(c.wins * 100).toFixed(0).padStart(3)}%`).join('  ')}${ordered ? '' : '  !'}`);
+  });
+}
 
 // --sweep: thử nhiều mức mục tiêu để chọn mức cho đúng đường cong độ khó.
 if (process.argv.includes('--sweep')) {

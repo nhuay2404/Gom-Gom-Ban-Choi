@@ -16,6 +16,7 @@ chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API
 | | `game/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold, đặt, thắng/thua, tutorial, booster |
 | | `game/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
 | | `game/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
+| | `game/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall); màn có tutorial giữ bản gốc |
 | | `game/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
 | | `game/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
 | | `game/tuning.mjs` | Mọi hằng số cảm giác chơi |
@@ -67,6 +68,7 @@ Sau bước `drag` chờ ~700 ms, các bước khác ~250 ms rồi mới hiện 
 | `gomgom-rotate-progress-v1` | `{ stars: number[] }` — sao tốt nhất từng màn (chỉ số 0 = màn 1) |
 | `gomgom-rotate-deco-v1` | `{ coins, cats[], zone, zones: { garden, living: { owned[], placed[], wall, floor } } }` |
 | `gomgom-rotate-sound` | `'on'` / `'off'` |
+| `gomgom-rotate-profile-v1` | `{ attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }` — lịch sử các lần thử (thắng/thua, tỉ lệ điểm, thời gian nghĩ, idle, bỏ ngang, đứng ở bảng kết quả) cho `adaptive.mjs` |
 | `gomgom-rotate-boosters-v1` | `{ hammer, swap, moves }` — số booster đang có; chưa có save = `BOOSTERS.START_STOCK` mỗi loại (luật ở `session.smash/swapCard/addMoves`, kho ở `boosters.mjs`) |
 
 Trong Cocos: `setStorageBackend(sys.localStorage)` lúc khởi động. Giữ nguyên key để đọc được save của bản web nếu cần.

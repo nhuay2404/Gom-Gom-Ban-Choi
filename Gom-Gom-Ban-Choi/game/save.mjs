@@ -8,12 +8,14 @@
 //   sound     'on' | 'off'
 //   night     'on' | 'off'                   khu mèo ban đêm / ban ngày
 //   boosters  { hammer, swap, moves }        số booster đang có (chưa có save = BOOSTERS.START_STOCK mỗi loại)
+//   profile   { attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }  lịch sử chơi cho độ khó thích ứng (adaptive.mjs)
 export const SAVE_KEYS = {
   progress: 'gomgom-rotate-progress-v1',
   deco: 'gomgom-rotate-deco-v1',
   sound: 'gomgom-rotate-sound',
   boosters: 'gomgom-rotate-boosters-v1',
   night: 'gomgom-rotate-night',
+  profile: 'gomgom-rotate-profile-v1',
 };
 
 function defaultBackend() {

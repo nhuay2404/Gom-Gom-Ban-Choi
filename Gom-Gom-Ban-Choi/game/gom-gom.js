@@ -9,6 +9,7 @@ import { loadBoosters, saveBoosters, spendBooster, buyBooster, boostersUnlocked 
 import { CRATE_SVG, METAL_SVG } from './board-art.mjs';
 import { playSound, soundOn, setSound } from './sound.mjs';
 import { SAVE_KEYS, readText, writeText } from './save.mjs';
+import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './adaptive.mjs';
 import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco, occupantOf } from './deco-data.mjs';
 
 // Giao diện màn chơi + menu. Luật của một ván nằm ở session.mjs (thuần logic): file này chỉ gọi luật rồi vẽ/diễn.
@@ -17,6 +18,16 @@ const { W, H, PREVIEW_COUNT } = BOARD;
 const $ = id => document.getElementById(id);
 const DRAG_BOOST = DRAG.BOOST, DRAG_SHRINK_RANGE = DRAG.SHRINK_RANGE;
 let state, cardDrag = null;
+// Profile người chơi cho độ khó thích ứng (adaptive.mjs) + metric của ván đang chơi (ghi ở recordTry).
+let profile = startVisit(loadProfile());
+saveProfile(profile);
+let track = null;
+const now = () => performance.now();
+function startTracking() {
+  const t = now();
+  track = { start: t, last: t, thinks: [], idleMs: 0, idleSince: 0, boosters: 0, boostUse: { hammer: 0, swap: 0, moves: 0 }, bought: 0, preBoostRatio: null, done: false };
+}
+const median = list => { const s = [...list].sort((a, b) => a - b); return s.length ? s[s.length >> 1] : 0; };
 function addArt(element, object) {
   addCatArt(element, object.group);
 }
@@ -226,6 +237,9 @@ function placeAt(anchor) {
   if (turn.error === 'tutorial') return render('Drag onto the glowing cell!', true);
   if (turn.error) return render(turn.error, true);
   if (!turn.ok) return;
+  const placedAt = now();
+  track.thinks.push(placedAt - track.last);
+  track.last = placedAt;
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
   const { result, match } = turn;
   if (!match.cleared.length || reduceMotion.matches) return finishTurn(turn);
@@ -765,10 +779,14 @@ function paintInvalid() {
 }
 
 function newGame(levelIndex = state?.levelIndex ?? 0) {
-  const level = LEVELS[levelIndex];
+  // Màn không còn cố định: bật/tắt element theo profile người chơi (adaptive.mjs); màn có tutorial giữ bản gốc.
+  const plan = planLevel(profile, levelIndex), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
-  state = Object.assign(game.createSession(levelIndex), { preview: null, previewAnchor: null, animating: false });
+  state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
   hammerArmed = false;
+  startTracking();
+  // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
+  $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('suggest', plan.suggestBooster && boostersUnlocked(levelIndex));
   render(`Reach ${level.target} points in ${level.moves} moves!`);
   renderTutorial();
 }
@@ -855,8 +873,18 @@ function buyOne(id) {
   showToast(`Bought ${BOOSTER_NAMES[id]} · −${BOOSTERS.PRICE[id]} coins`);
   return true;
 }
-const haveBooster = id => boosterStock[id] > 0 || buyOne(id);
-const useBooster = id => storeBoosters(spendBooster(boosterStock, id));
+// Booster mua ngay trong ván (hết hàng, trả bằng xu) được ghi riêng để thống kê.
+const haveBooster = id => {
+  if (boosterStock[id] > 0) return true;
+  if (!buyOne(id)) return false;
+  track.bought++;
+  return true;
+};
+const useBooster = id => {
+  track.boosters++; track.boostUse[id]++;
+  storeBoosters(spendBooster(boosterStock, id));
+  $('booster-bar').querySelector('.suggest')?.classList.remove('suggest');
+};
 
 $('booster-bar').addEventListener('click', event => {
   const button = event.target.closest('[data-boost]');
@@ -876,6 +904,8 @@ $('booster-bar').addEventListener('click', event => {
     state.preview = null;
     render('Here is a new card!');
   }
+  // Tỉ lệ điểm trước lần +lượt đầu tiên (chỉ để thống kê; adaptive.mjs không dùng booster để xét thắng/thua).
+  if (id === 'moves') track.preBoostRatio ??= +(state.score / state.level.target).toFixed(3);
   if (id === 'moves' && game.addMoves(state, BOOSTERS.EXTRA_MOVES).ok) {
     useBooster(id);
     playSound('reward');
@@ -917,6 +947,8 @@ let afkTimer = 0;
 function goAfk() {
   if (state.over || state.animating || cardDrag) return armAfk();
   document.body.classList.add('afk');
+  // Metric idle: tính cả khoảng chờ trước khi mèo ngủ (đã AFK_MS không chạm), chỉ khi đang trong ván.
+  if (track && !track.done && !menuOpen() && $('map').hidden) track.idleSince = now() - AFK_MS;
 }
 
 // Sắp hết lượt: ô Moves đổi màu + đập nhịp, mèo lộ biểu cảm buồn/lo (mỗi con một kiểu), thông báo ở vài lượt cuối.
@@ -939,6 +971,7 @@ function renderLowMoves() {
   cats.forEach((cat, i) => { if (!cat.dataset.low) cat.dataset.low = LOW_MOVE_MOODS[(i * 3 + offset + Math.floor(Math.random() * 2)) % LOW_MOVE_MOODS.length]; });
 }function armAfk() {
   document.body.classList.remove('afk');
+  if (track?.idleSince) { track.idleMs += now() - track.idleSince; track.idleSince = 0; }
   clearTimeout(afkTimer);
   afkTimer = setTimeout(goAfk, AFK_MS);
 }
@@ -1039,13 +1072,19 @@ $('tutorial-next').onclick = () => { game.continueTutorial(state); renderTutoria
 addEventListener('resize', () => { if (tutorialStep()) renderTutorial(); });
 
 // ===== Tiến độ (lưu trong máy), bản đồ màn, giới thiệu màn, kết quả =====
-// Cấp độ khó (levels.mjs: tier) hiện ở bảng vào màn và bản đồ. Màn normal không gắn nhãn.
+// Nhãn độ khó ở bảng vào màn và bản đồ: Easy / Medium / Hard theo số element của bản màn sẽ chơi (adaptive.mjs),
+// boss giữ nhãn Boss. `style` = kiểu màu có sẵn trong CSS (data-tier, .tier-*); 'normal' là màu mặc định.
 const TIERS = {
-  chill: { label: 'Chill', icon: '<svg viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14Zm0 0 7-7"/></svg>' },
-  hard: { label: 'Hard', icon: '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/></svg>' },
-  boss: { label: 'Boss', icon: '<svg viewBox="0 0 24 24"><path d="M4 18 3 7l5 4 4-6 4 6 5-4-1 11Z M5 21h14"/></svg>' },
+  easy: { style: 'chill', label: 'Easy', icon: '<svg viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14Zm0 0 7-7"/></svg>' },
+  medium: { style: 'normal', label: 'Medium', icon: '<svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6l-5.4 2.9 1.2-6-4.5-4.2 6.1-.7Z"/></svg>' },
+  hard: { style: 'hard', label: 'Hard', icon: '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/></svg>' },
+  boss: { style: 'boss', label: 'Boss', icon: '<svg viewBox="0 0 24 24"><path d="M4 18 3 7l5 4 4-6 4 6 5-4-1 11Z M5 21h14"/></svg>' },
 };
-const levelTag = level => (TIERS[levelTier(level)] ? ` · ${TIERS[levelTier(level)].label}` : '');
+const tierOf = (index, plan = planLevel(profile, index)) => TIERS[levelTier(LEVELS[index]) === 'boss' ? 'boss' : plan.difficulty];
+// Bản đồ: chỉ màn đang mở hiện độ khó đã chỉnh; các màn khác hiện nhãn bản gốc để người chơi không thấy cả bản đồ đổi theo.
+const mapTier = (index, current) => tierOf(index, current ? undefined : { difficulty: difficultyOf(elementCount(LEVELS[index])) });
+// ?dda trên URL: hiện profile đang nhận diện ở bảng vào màn (để QA), người chơi thường không thấy.
+const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 // Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
 
 // Bản đồ saga: màn 1 ở đáy, các nút nằm trên một con đường uốn hình sin đi lên (như Candy Crush).
@@ -1087,10 +1126,10 @@ function renderMap() {
   road.append(...LEVELS.map((level, index) => {
     const node = document.createElement('button');
     const stars = progress.stars[index] || 0, locked = index >= open, tier = levelTier(level), current = index === open - 1;
-    node.className = `map-node${locked ? ' locked' : stars ? ' done' : ''}${current ? ` current${points[index].x > width / 2 ? ' avatar-left' : ''}` : ''}${TIERS[tier] ? ` tier-${tier}` : ''}`;
+    node.className = `map-node${locked ? ' locked' : stars ? ' done' : ''}${current ? ` current${points[index].x > width / 2 ? ' avatar-left' : ''}` : ''} tier-${mapTier(index, current).style}`;
     node.style.cssText = `left:${points[index].x}px;top:${points[index].y}px`;
     node.disabled = locked;
-    node.title = `${level.name}${levelTag(level)}`;
+    node.title = `${level.name} · ${mapTier(index, current).label}`;
     node.setAttribute('aria-label', `Level ${index + 1}: ${level.name}${locked ? ' (locked)' : stars ? ' (cleared)' : ''}`);
     node.innerHTML = `<b>${locked ? LOCK_SVG : index + 1}</b>`
       + (tier === 'boss' ? '<span class="map-crown" aria-hidden="true">👑</span>' : '')
@@ -1373,22 +1412,55 @@ function startLevel(index, skipIntro = false) {
   newGame(index);
   if (skipIntro) return renderTutorial();
   // Bảng vào màn "móc" người chơi bằng bố cục theo độ khó: nhãn cấp độ + màu nền; boss nền tối, bảng rung, nút đỏ.
-  const tier = levelTier(level), dialog = $('intro-dialog'), badge = $('intro-tier');
-  dialog.dataset.tier = tier;
-  badge.hidden = !TIERS[tier];
-  if (TIERS[tier]) badge.innerHTML = `${TIERS[tier].icon}<span>${TIERS[tier].label}</span>`;
-  $('intro-number').textContent = `Level ${index + 1}`;
-  const mechanics = levelMechanics(level);
+  // Nhãn và vật cản lấy từ bản màn đã chỉnh theo profile (state.level), không phải bản gốc.
+  const tier = tierOf(index, state.plan), dialog = $('intro-dialog'), badge = $('intro-tier');
+  dialog.dataset.tier = tier.style;
+  badge.hidden = false;
+  badge.innerHTML = `${tier.icon}<span>${tier.label}</span>`;
+  const { plan } = state;
+  $('intro-number').textContent = `Level ${index + 1}${DDA_DEBUG ? ` · ${plan.profile} ${plan.shift >= 0 ? '+' : ''}${plan.shift} (${plan.baseCount}→${plan.count})${plan.deal ? ` · ${plan.deal}` : ''}` : ''}`;
+  const mechanics = levelMechanics(state.level);
   $('intro-mechanics').hidden = !mechanics.length;
   $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${kind === 'crate' ? 'Crates' : 'Metal blocks'}">${kind === 'crate' ? CRATE_SVG : METAL_SVG}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
   dialog.showModal();
   renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
 }
-$('intro-dialog').addEventListener('close', () => renderTutorial());
+$('intro-dialog').addEventListener('close', () => { startTracking(); renderTutorial(); });
+
+// ===== Metric cho độ khó thích ứng: thời gian nghĩ mỗi lượt, AFK, booster, bỏ ngang, đứng ở bảng kết quả =====
+// Ghi một lần thử vào profile (mỗi ván một lần). Trả về true nếu được tặng quà (thắng sau chuỗi "sắp bỏ game").
+function recordTry(win, reason) {
+  if (!track || track.done) return false;
+  track.done = true;
+  if (track.idleSince) track.idleMs += now() - track.idleSince;
+  const { plan, level } = state;
+  const result = recordAttempt(profile, {
+    level: state.levelIndex, win, reason, ratio: +(state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
+    boosters: track.boosters, boostUse: track.boostUse, bought: track.bought, preBoostRatio: track.preBoostRatio, thinkMs: Math.round(median(track.thinks)), idleMs: Math.round(track.idleMs),
+    durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, count: plan.count,
+  });
+  profile = result.profile;
+  saveProfile(profile);
+  return result.gift;
+}
+// Rời ván giữa chừng (chơi lại / về Home) khi đã đặt ít nhất một thẻ = bỏ ngang.
+function recordQuit() {
+  if (state && !state.over && state.moves < state.level.moves) recordTry(false, 'quit');
+}
+let resultShownAt = 0;
+function leaveResult() {
+  profile = noteDwell(profile, Math.round(now() - resultShownAt));
+  saveProfile(profile);
+  $('result-dialog').close();
+}
 
 function endLevel(win, reason = '') {
   state.over = true;
   state.outcome ??= { win, reason, stars: 0 };
+  const gift = recordTry(win, win ? 'win' : state.moves > 0 ? 'stuck' : 'moves');
+  if (gift) storeBoosters({ ...boosterStock, moves: boosterStock.moves + 1 });
+  // Thua sát nút mà chưa dùng booster: mời dùng +lượt ở lần sau (luật sát nút giữ nguyên độ khó).
+  const tip = !win && boostersUnlocked(state.levelIndex) && boosterTip(profile);
   render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
   renderTutorial();
   const index = state.levelIndex, last = index === LEVELS.length - 1;
@@ -1401,20 +1473,21 @@ function endLevel(win, reason = '') {
     if (coinsEarned) { deco = { ...deco, coins: deco.coins + coinsEarned }; saveDeco(deco); }
   }
   const unlockedLiving = win && index + 1 === ZONES.living.unlockAfter && coinsEarned > 0 && levelsCleared() === ZONES.living.unlockAfter;
-  $('result-coins').hidden = !coinsEarned;
-  if (coinsEarned) setTimeout(() => playSound('reward'), 450);
-  $('result-coins').innerHTML = `<i class="ico-coin"></i> +${coinsEarned} coins${unlockedLiving ? ' · Living room unlocked!' : ''}`;
+  $('result-coins').hidden = !coinsEarned && !gift && !tip;
+  if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
+  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedLiving && 'Living room unlocked!',
+    gift && `Gift: ${BOOSTER_NAMES.moves} booster`, tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`].filter(Boolean).join(' · ');
   const dialog = $('result-dialog');
   dialog.classList.toggle('win', win);
   $('result-title').textContent = win ? (last ? 'Journey complete!' : 'Level complete!') : reason;
   $('result-score').textContent = `${state.score} / ${state.level.target} points`;
   $('result-next').hidden = !win || last;
   $('result-retry').hidden = win;
-  setTimeout(() => dialog.showModal(), win ? 150 : 700);
+  setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 150 : 700);
 }
-$('result-next').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex + 1, true); };
-$('result-retry').onclick = () => { $('result-dialog').close(); startLevel(state.levelIndex); };
-$('result-map').onclick = () => { $('result-dialog').close(); showTab('home'); };
+$('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1, true); };
+$('result-retry').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
+$('result-map').onclick = () => { leaveResult(); showTab('home'); };
 $('intro-map').onclick = () => { $('intro-dialog').close(); showMap(); };
 
 // Mở game luôn vào Home; màn chơi dựng sẵn phía sau ở level đang mở. PLAY vào thẳng level đó.
@@ -1424,7 +1497,7 @@ function boot() {
 }
 $('tutorial-avatar').innerHTML = catMarkup.orange;
 
-$('restart').onclick = () => { if (!state.animating) startLevel(state.levelIndex); };
+$('restart').onclick = () => { if (!state.animating) { recordQuit(); startLevel(state.levelIndex); } };
 $('help').onclick = () => $('help-dialog').showModal();
 $('home-help').onclick = () => $('help-dialog').showModal();
 function renderSoundButtons() {
@@ -1453,5 +1526,5 @@ applyNight();
 $('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
 $('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');
-$('open-map').onclick = () => { if (!state.animating) showTab('home'); };
+$('open-map').onclick = () => { if (!state.animating) { recordQuit(); showTab('home'); } };
 boot();

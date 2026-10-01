@@ -10,8 +10,8 @@ import { BOARD } from './tuning.mjs';
 const { W, H, PREVIEW_COUNT } = BOARD;
 const withNames = card => ({ offsets: card.offsets, items: card.items.map(({ group }) => ({ group, name: categories[group].name })) });
 
-export function createSession(levelIndex, { rng = Math.random } = {}) {
-  const level = LEVELS[levelIndex];
+// `level`: bản màn đã chỉnh độ khó (adaptive.mjs); không truyền thì dùng màn gốc.
+export function createSession(levelIndex, { rng = Math.random, level = LEVELS[levelIndex] } = {}) {
   const s = {
     level, levelIndex, board: parseBoard(level.board), deal: makeDealer(level, rng), deck: [], active: null, hold: null,
     score: 0, moves: level.moves, over: false, outcome: null,

@@ -7,6 +7,7 @@
     "start": "node server.mjs",
     "test": "node --test game/*.test.mjs",
     "simulate": "node tools/simulate-levels.mjs 400",
+    "simulate:profiles": "node tools/simulate-profiles.mjs 100",
     "baseline": "node tools/simulate-levels.mjs 400 --baseline",
     "build:html": "node tools/build-single-html.mjs",
     "export:data": "node tools/export-data.mjs",
