@@ -4,10 +4,12 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 import { ROOM_HALF } from './room-layout.mjs';
+import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
 // Vật liệu đồ đạc kiểu vật lý: gỗ / sơn / vải đều nhám (roughness cao), phản xạ điện môi thấp (specularIntensity)
 // nên không loé bóng như nhựa. Nước, kính, kim loại tự ghi đè roughness/metalness riêng.
-const mat = (color, extra = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, specularIntensity: .55, ...extra });
+const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
+  : new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, specularIntensity: .55, ...extra });
 function mesh(geometry, material) {
   const node = new THREE.Mesh(geometry, material instanceof THREE.Material ? material : mat(material));
   node.castShadow = node.receiveShadow = true;
@@ -313,7 +315,7 @@ export function groundTexture(entry) {
 // Hàng rào quanh vườn, dựng lại khi đổi kiểu. Thấp nên không cần mờ đi như tường phòng.
 // `half` = nửa cạnh khoảnh vườn (mặc định cả vườn; thumbnail Deco dùng khoảnh nhỏ).
 export function buildFence(entry, half = HALF) {
-  const fence = new THREE.Group();
+  const fence = markOutlineUnit(new THREE.Group()); // cả hàng rào là một khối: chấn song đè lên cột không có nét trong
   const span = half * 2;
   const side = (build) => [[0, -half - .05, 0], [0, half + .05, Math.PI], [-half - .05, 0, Math.PI / 2], [half + .05, 0, -Math.PI / 2]]
     .forEach(([x, z, rot]) => { const g = build(); g.position.set(x, 0, z); g.rotation.y = rot; fence.add(g); });
@@ -341,7 +343,7 @@ export function buildFence(entry, half = HALF) {
 export function gardenCorners() {
   const corners = new THREE.Group();
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
-    const bush = group(at(ball(.34, '#6fbf4a'), 0, .3, 0), at(ball(.24, '#86d05e'), .2 * sx, .22, -.15 * sz), at(ball(.2, '#5fa83e'), -.18 * sx, .2, .18 * sz));
+    const bush = markOutlineUnit(group(at(ball(.34, '#6fbf4a'), 0, .3, 0), at(ball(.24, '#86d05e'), .2 * sx, .22, -.15 * sz), at(ball(.2, '#5fa83e'), -.18 * sx, .2, .18 * sz)));
     if (i % 2) bush.add(flower('#ff8fa0', .1, .1, .5));
     bush.position.set(sx * 2.85, 0, sz * 2.85);
     corners.add(bush);

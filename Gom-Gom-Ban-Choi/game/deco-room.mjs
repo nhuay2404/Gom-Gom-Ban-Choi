@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCatLife } from './room-cats.mjs';
+import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER } from './toon.mjs';
 import { playSound } from './sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF } from './room-layout.mjs';
@@ -15,7 +16,8 @@ import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
 // Vật liệu đồ đạc kiểu vật lý: gỗ / sơn / vải đều nhám (roughness cao), phản xạ điện môi thấp (specularIntensity)
 // nên không loé bóng như nhựa. Nước, kính, kim loại tự ghi đè roughness/metalness riêng.
-const mat = (color, extra = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, specularIntensity: .55, ...extra });
+const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
+  : new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, specularIntensity: .55, ...extra });
 function mesh(geometry, material) {
   const node = new THREE.Mesh(geometry, material instanceof THREE.Material ? material : mat(material));
   node.castShadow = node.receiveShadow = true;
@@ -255,7 +257,7 @@ Object.assign(BUILD, GARDEN_BUILD);
 function buildItem(entry) {
   const node = BUILD[entry.id]();
   node.userData.itemId = entry.id;
-  return node;
+  return markOutlineUnit(node);
 }
 
 // ---------- Sàn: vân gỗ / thảm / gạch vẽ bằng canvas ----------
@@ -290,6 +292,7 @@ const thumbCache = {};
 // Nhìn "vật lý" hơn: tone mapping trung tính (Khronos PBR Neutral, giữ đúng màu, vùng sáng không cháy trắng)
 // + ánh sáng môi trường mềm từ một căn phòng ảo (RoomEnvironment) để bề mặt có sáng tối tự nhiên như thật.
 function physicalLook(renderer, scene, envIntensity = .45) {
+  if (TOON) return toonLook(renderer, scene);
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1;
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -305,11 +308,12 @@ function thumbStudio() {
   renderer.setSize(192, 192, false);
   const scene = new THREE.Scene();
   physicalLook(renderer, scene);
-  scene.add(new THREE.HemisphereLight('#fff8e8', '#e0b98a', 1.5));
-  const sun = new THREE.DirectionalLight('#fff1d6', 1.9);
+  scene.add(new THREE.HemisphereLight('#fff8e8', '#e0b98a', TOON ? 1.15 * TOON_LIGHT.hemi : 1.5));
+  const sun = new THREE.DirectionalLight('#fff1d6', TOON ? 1.7 * TOON_LIGHT.sun : 1.9); // toon: cùng ánh sáng với phòng để icon khớp màu
   sun.position.set(3, 7, 5);
   scene.add(sun);
-  const camera = new THREE.PerspectiveCamera(28, 1, .05, 60);
+  const camera = new THREE.PerspectiveCamera(TOON ? TOON_FOV : 28, 1, .05, 60);
+  camera.layers.enable(OUTLINE_LAYER); camera.layers.enable(DECAL_LAYER);
   return (thumbKit = { renderer, scene, camera });
 }
 const slab = (w, d, top, edge = '#c79a5f') => {
@@ -340,11 +344,13 @@ export function thumbnail(entry) {
   const subject = thumbSubject(entry);
   subject.userData.update?.(0);
   scene.add(subject);
+  addOutlines(subject);
   subject.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(subject), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
   const radius = size.length() / 2, distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * .82;
   camera.position.copy(center).add(new THREE.Vector3(.75, .62, 1).normalize().multiplyScalar(distance));
   camera.lookAt(center);
+  syncOutlineResolution(renderer);
   renderer.render(scene, camera);
   thumbCache[entry.id] = renderer.domElement.toDataURL('image/png');
   scene.remove(subject);
@@ -360,26 +366,34 @@ export function createRoom() {
   renderer.domElement.className = 'room-canvas';
   const scene = new THREE.Scene();
   physicalLook(renderer, scene);
-  const camera = new THREE.PerspectiveCamera(34, 1, .1, 100);
-  const HOME_VIEW = new THREE.Vector3(7.9, 7.1, 7.9);
+  const FOV = TOON ? TOON_FOV : 34;
+  // Đổi FOV thì lùi camera theo tỉ lệ tan(fov/2) để phòng vẫn chiếm đúng khung hình như góc 34° gốc.
+  const pullBack = Math.tan(THREE.MathUtils.degToRad(17)) / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+  const camera = new THREE.PerspectiveCamera(FOV, 1, .1, 100 * pullBack);
+  // Toon: nhìn cao hơn (~40° thay vì ~32°) như góc isometric của Cats & Soup, bớt thấy chiều sâu.
+  const HOME_VIEW = (TOON ? new THREE.Vector3(7.2, 9.4, 7.2) : new THREE.Vector3(7.9, 7.1, 7.9)).multiplyScalar(pullBack);
   camera.position.copy(HOME_VIEW);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, .8, 0);
   controls.enablePan = false;
   controls.enableDamping = true;
-  controls.minDistance = 9; controls.maxDistance = 18;
+  controls.minDistance = 9 * pullBack; controls.maxDistance = 18 * pullBack;
   controls.minPolarAngle = .45; controls.maxPolarAngle = 1.22;
   controls.autoRotateSpeed = .7;
   controls.update();
 
-  const hemi = new THREE.HemisphereLight('#fff8e8', '#e0b98a', 1.15);
+  const hemi = new THREE.HemisphereLight('#fff8e8', '#e0b98a', 1.15 * (TOON ? TOON_LIGHT.hemi : 1));
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight('#fff1d6', 1.7);
+  const sun = new THREE.DirectionalLight('#fff1d6', 1.7 * (TOON ? TOON_LIGHT.sun : 1));
   sun.position.set(4, 9, 5);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 25 });
   sun.shadow.bias = -.0015;
+  if (TOON) sun.shadow.intensity = TOON_LIGHT.shadow; // bóng đổ nhạt, không đen đặc
+  // Đẩy điểm so bóng theo pháp tuyến: mặt đứng gần song song tia nắng (vách nhà mèo, tủ...) không bị sọc "shadow acne".
+  // Toon chia nấc gắt nên sọc lộ rõ hơn PCFSoft cũ, vì vậy cần normalBias.
+  sun.shadow.normalBias = .08; // thử thực tế: .05 vẫn còn sọc mờ trên vách nhà mèo, .08 sạch mà bóng mèo trên sàn vẫn dính chân
   scene.add(sun);
 
   // Bệ diorama + sàn
@@ -476,8 +490,8 @@ export function createRoom() {
   function setNight(on) {
     night = !!on;
     const look = LIGHTING[night ? 'night' : 'day'];
-    hemi.color.set(look.sky); hemi.groundColor.set(look.ground); hemi.intensity = look.hemi;
-    sun.color.set(look.sun); sun.intensity = look.sunI;
+    hemi.color.set(look.sky); hemi.groundColor.set(look.ground); hemi.intensity = look.hemi * (TOON ? TOON_LIGHT.hemi : 1);
+    sun.color.set(look.sun); sun.intensity = look.sunI * (TOON ? TOON_LIGHT.sun : 1);
     scene.environmentIntensity = look.env;
     windowGlass.forEach(m => m.color.set(look.glass));
     butterflies.forEach(b => { b.node.visible = garden.visible && !night; });
@@ -670,6 +684,7 @@ export function createRoom() {
     }
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
     lastFrame = now;
+    if (TOON) { addOutlines(scene); syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera); }
     renderer.render(scene, camera);
   }
 
