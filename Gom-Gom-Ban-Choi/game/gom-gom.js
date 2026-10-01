@@ -142,7 +142,8 @@ function fitInsideHints(enabled, _vertical, card, arrowHeight) {
   if (!grid) return;
   grid.style.removeProperty('--cell');
   if (!enabled) return;
-  const band = arrowHeight * .78 + 4, pad = 10, gap = 4;
+  // Thẻ thấp (màn thấp / cửa sổ máy tính): dải mũi tên không được ăn quá 22% mỗi cạnh, không thì mèo co về 0 và biến mất.
+  const band = Math.min(arrowHeight * .78 + 4, Math.min(card.width, card.height) * .22), pad = 10, gap = 4;
   const fit = (rows, cols, arrowsOnSides) => {
     const width = card.width - (arrowsOnSides ? band * 2 : 0), height = card.height - (arrowsOnSides ? 0 : band * 2);
     return Math.min(68, (width - pad - gap * (cols - 1)) / cols, (height - pad - gap * (rows - 1)) / rows);
@@ -152,7 +153,7 @@ function fitInsideHints(enabled, _vertical, card, arrowHeight) {
   const cell = rows === cols
     ? Math.min(fit(rows, cols, false), fit(rows, cols, true))
     : Math.min(fit(short, long, false), fit(long, short, true));
-  grid.style.setProperty('--cell', `${Math.floor(cell)}px`);
+  grid.style.setProperty('--cell', `${Math.max(22, Math.floor(cell))}px`); // luôn đủ to để nhìn thấy mèo
 }
 
 // Mỗi mèo chạy theo cung tròn quanh tâm thẻ (như cả thẻ quay 90° thuận chiều) từ chỗ cũ tới chỗ mới;
