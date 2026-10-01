@@ -346,3 +346,7 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .room.deco-view{position:sticky;top:calc(-1 * max(14px,env(safe-area-inset-top)));z-index:5;width:min(100vw,480px);max-width:none;margin-inline:calc(50% - min(50vw,240px));border-radius:0;box-shadow:none;
   border-block:6px solid #fff8e4;box-sizing:border-box} /* viền kem trên + dưới, hai bên vẫn tràn */
 .screen.deco>.deco-action{position:sticky;z-index:5;top:calc(min(100vw,480px) * .82 + 6px - max(14px,env(safe-area-inset-top)))} /* sticky tính từ mép trong lề trên 14px của trang -> bù lại */
+
+/* Ký hiệu nổi trên đầu mèo: ♪ (kêu meo), … (bị làm phiền), 💢 (cáu vì bị chạm quá nhiều) */
+.pet-heart.symbol{color:#6b4523;font-weight:900}
+.pet-heart.angry{font-size:30px!important}

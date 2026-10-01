@@ -490,13 +490,17 @@ export function createRoom() {
     scene, furniture, butterflies,
     get zone() { return zoneId; },
     get night() { return night; },
-    heartsAt(position) {
-      if (!container) return;
-      const p = position.clone().project(camera);
-      if (p.z > 1) return;
-      spawnHearts((p.x + 1) / 2 * container.clientWidth, (1 - p.y) / 2 * container.clientHeight);
-    },
+    heartsAt(position) { symbolAt(position); },
+    // Ký hiệu bay lên trên đầu mèo: 💢 khi cáu, ♪ khi kêu meo, … khi bị làm phiền.
+    symbolAt(position, symbol, count) { symbolAt(position, symbol, count); },
+    cameraPos: () => camera.position,
   });
+  function symbolAt(position, symbol = '♥', count = 4) {
+    if (!container) return;
+    const p = position.clone().project(camera);
+    if (p.z > 1) return;
+    spawnHearts((p.x + 1) / 2 * container.clientWidth, (1 - p.y) / 2 * container.clientHeight, symbol, count);
+  }
   let catKey = '';
 
   let floorId = '';
@@ -602,18 +606,23 @@ export function createRoom() {
     if (event.type === 'pointerup' && down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
-      if (cat) { cat.pet(); spawnHearts(event.clientX - rect.left, event.clientY - rect.top); }
+      if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
+        const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
+        if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
+        else if (mood === 'warning') spawnHearts(x, y, '♥', 1);
+        else spawnHearts(x, y);
+      }
     }
     down = null;
   };
   renderer.domElement.addEventListener('pointerup', release);
   renderer.domElement.addEventListener('pointercancel', release);
-  function spawnHearts(x, y) {
+  function spawnHearts(x, y, symbol = '♥', count = 4, kind = '') {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || !container) return;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < count; i++) {
       const heart = document.createElement('span');
-      heart.className = 'pet-heart';
-      heart.textContent = '♥';
+      heart.className = `pet-heart${kind ? ` ${kind}` : ''}${symbol !== '♥' ? ' symbol' : ''}`;
+      heart.textContent = symbol;
       Object.assign(heart.style, { left: `${x + (Math.random() - .5) * 24}px`, top: `${y - 20}px`, animationDelay: `${i * 110}ms`, fontSize: `${14 + Math.random() * 8}px` });
       heart.style.setProperty('--dx', `${(Math.random() - .5) * 40}px`);
       heart.style.setProperty('--rot', `${(Math.random() - .5) * 40}deg`);
