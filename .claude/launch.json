@@ -1,5 +1,6 @@
-{"version":"0.0.1","configurations":[
-{"name":"rotate-highscore","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-Gom-Ban-Choi-rotate-highscore/Gom-Gom-Ban-Choi/game","-p","5178","-c-1"],"port":5178},
+﻿{"version":"0.0.1","configurations":[
+{"name":"rotate-highscore","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-Gom-Ban-Choi-rotate-highscore/Gom-Gom-Ban-Choi/game","-c-1"],"port":5178,"autoPort":true},
 {"name":"rotate-clear-board","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-Gom-Ban-Choi-rotate-clear-board/Gom-Gom-Ban-Choi/game","-p","5180","-c-1"],"port":5180},
 {"name":"solitaire","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-gom-ban-choi-solitaire/Gom-Gom-Ban-Choi/game","-p","5179","-c-1"],"port":5179}
 ]}
+
