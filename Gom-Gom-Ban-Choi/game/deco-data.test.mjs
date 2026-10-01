@@ -50,3 +50,30 @@ test('danh mục: mỗi khu có đủ 4 nhóm, mèo dùng chung', () => {
   for (const zone of ['garden', 'living']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
   assert.equal(new Set(CATALOG.map(entry => entry.id)).size, CATALOG.length, 'id trùng');
 });
+
+test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt vào thì thay món cùng chỗ', async () => {
+  const { slotOf, occupantOf } = await import('./deco-data.mjs');
+  const { PLACES } = await import('./room-layout.mjs');
+  const bases = CATALOG.filter(entry => entry.cat === 'furniture' && !entry.slot);
+  bases.forEach(base => {
+    const alts = CATALOG.filter(entry => entry.slot === base.id);
+    assert.ok(alts.length >= 1, `${base.id} có phương án thay thế`);
+    alts.forEach(alt => {
+      assert.equal(alt.price, base.price, `${alt.id} đồng giá`);
+      assert.equal(alt.lock, base.lock, `${alt.id} cùng khoá`);
+      assert.equal(alt.zone, base.zone);
+      assert.ok(PLACES[slotOf(alt)], `${alt.id} có chỗ đặt`);
+    });
+  });
+  setStorageBackend(memoryStore());
+  let deco = loadDeco(10);
+  const shrooms = itemById('flowers-mushroom');
+  assert.deepEqual(deco.zones.garden.placed, ['flowers'], 'mặc định chỉ đặt món gốc');
+  assert.equal(occupantOf(deco, shrooms).id, 'flowers');
+  assert.deepEqual(previewDeco(deco, shrooms).zones.garden.placed, ['flowers-mushroom']);
+  deco = applyAction(deco, shrooms, 1); // giá 0: nhận luôn, đặt vào thay bồn hoa cũ
+  assert.deepEqual(deco.zones.garden.placed, ['flowers-mushroom']);
+  assert.equal(itemStatus(deco, itemById('flowers'), 1), 'owned');
+  deco = applyAction(deco, itemById('flowers'), 1);
+  assert.deepEqual(deco.zones.garden.placed, ['flowers']);
+});

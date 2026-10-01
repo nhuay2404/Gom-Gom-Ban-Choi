@@ -195,11 +195,11 @@
       "name": "Iron Gate",
       "tier": "hard",
       "moves": 18,
-      "target": 300,
-      "winRate": 0.615,
+      "target": 330,
+      "winRate": 0.237,
       "stuckRate": 0.025,
-      "avgStars": 1.22,
-      "avgScore": 289
+      "avgStars": 1.13,
+      "avgScore": 294
     },
     {
       "level": 19,

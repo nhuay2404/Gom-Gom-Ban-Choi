@@ -136,3 +136,35 @@ test('tiến độ: giữ sao tốt nhất, chỉ sao mới ra xu, mở khoá m�
   assert.equal(record.coins, ECONOMY.COINS_PER_STAR);
   assert.equal(unlockedCount(record.progress), 2);
 });
+
+test('booster: búa đập mèo/thùng, không đập kim loại/ô trống; đổi thẻ giữ thẻ sắp tới; thêm lượt', () => {
+  const s = game.createSession(5, { rng: seeded(7) });
+  const crate = s.board.findIndex(o => o?.block && !o.metal);
+  assert.ok(crate >= 0, 'màn 6 có thùng');
+  assert.ok(game.smash(s, crate).ok);
+  assert.equal(s.board[crate], null);
+  const empty = s.board.findIndex(o => !o);
+  assert.equal(game.smash(s, empty).ok, false);
+  s.board[empty] = { block: true, metal: true };
+  assert.equal(game.smash(s, empty).ok, false);
+  assert.ok(s.board[empty].metal);
+
+  const next = game.upcoming(s)[0], moves = s.moves;
+  assert.ok(game.swapCard(s).ok);
+  assert.equal(game.upcoming(s)[0], next);
+  assert.ok(game.addMoves(s, 3).ok);
+  assert.equal(s.moves, moves + 3);
+});
+
+test('booster: kho mặc định, dùng, mua bằng xu', async () => {
+  const { loadBoosters, spendBooster, buyBooster, boostersUnlocked } = await import('./boosters.mjs');
+  const { BOOSTERS } = await import('./tuning.mjs');
+  const stock = loadBoosters();
+  assert.deepEqual(stock, { hammer: BOOSTERS.START_STOCK, swap: BOOSTERS.START_STOCK, moves: BOOSTERS.START_STOCK });
+  assert.equal(spendBooster({ ...stock, hammer: 0 }, 'hammer'), null);
+  assert.equal(spendBooster(stock, 'hammer').hammer, BOOSTERS.START_STOCK - 1);
+  assert.ok(buyBooster(stock, BOOSTERS.PRICE.swap - 1, 'swap').error);
+  assert.deepEqual(buyBooster(stock, 100, 'swap').coins, 100 - BOOSTERS.PRICE.swap);
+  assert.equal(boostersUnlocked(1), false);
+  assert.equal(boostersUnlocked(2), true);
+});

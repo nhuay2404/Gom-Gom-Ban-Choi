@@ -4,10 +4,12 @@ import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './ca
 import { LEVELS } from './levels.mjs';
 import * as game from './session.mjs';
 import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, totalStars as sumStars, recordWin, levelTier, levelMechanics } from './progression.mjs';
-import { BOARD, TIMING, DRAG, LOW_MOVES } from './tuning.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from './tuning.mjs';
+import { loadBoosters, saveBoosters, spendBooster, buyBooster, boostersUnlocked } from './boosters.mjs';
 import { CRATE_SVG, METAL_SVG } from './board-art.mjs';
 import { playSound, soundOn, setSound } from './sound.mjs';
-import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco } from './deco-data.mjs';
+import { SAVE_KEYS, readText, writeText } from './save.mjs';
+import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco, occupantOf } from './deco-data.mjs';
 
 // Giao diện màn chơi + menu. Luật của một ván nằm ở session.mjs (thuần logic): file này chỉ gọi luật rồi vẽ/diễn.
 // Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
@@ -556,6 +558,7 @@ function grabbedPiece(x, y) {
 function startCardDrag(event) {
   if (state.over || state.animating || event.button !== 0) return;
   event.preventDefault();
+  if (hammerArmed) { hammerArmed = false; renderBoosters(); }
   const source = $('active-card');
   source.setPointerCapture(event.pointerId);
   const rect = source.getBoundingClientRect();
@@ -656,6 +659,7 @@ function render(message = '', error = false) {
   layoutHints(shape.rows > shape.cols, state.animateHints);
   $('hold').disabled = state.over;
   renderLowMoves();
+  renderBoosters();
 }
 
 // Ô bàn được giữ cố định; chỉ ô nào đổi mèo mới dựng lại. Không xoá/dựng lại cả 36 ô mỗi lần vẽ
@@ -763,6 +767,7 @@ function newGame(levelIndex = state?.levelIndex ?? 0) {
   const level = LEVELS[levelIndex];
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   state = Object.assign(game.createSession(levelIndex), { preview: null, previewAnchor: null, animating: false });
+  hammerArmed = false;
   render(`Reach ${level.target} points in ${level.moves} moves!`);
   renderTutorial();
 }
@@ -780,6 +785,7 @@ $('hold').onkeydown = event => {
 };
 // Chạm vào mèo trên bàn: mèo cười phấn khích, nhún nhẹ (không co giãn) và vài trái tim nhỏ bay lên.
 $('board').addEventListener('pointerdown', event => {
+  if (hammerArmed) return smashAt(event.target.closest('.cell'));
   const cell = event.target.closest('.cell.locked');
   if (!cell || cell.classList.contains('merge-ghost') || state.animating) return;
   petCat(cell);
@@ -809,6 +815,100 @@ function petCat(cell) {
 
 // Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm (đang có thẻ) = đổi thẻ đó về ô đang bóc.
 $('hold').onclick = () => { if (state.hold) holdActive(); };
+
+// ===== Booster: mở từ màn BOOSTERS.UNLOCK_LEVEL, không tốn lượt; hết thì chạm là mua luôn bằng xu =====
+let boosterStock = loadBoosters(), hammerArmed = false;
+const BOOSTER_NAMES = { hammer: 'Hammer', swap: 'New card', moves: `+${BOOSTERS.EXTRA_MOVES} moves` };
+const priceTag = id => `<i class="ico-coin"></i>${BOOSTERS.PRICE[id]}`;
+function renderBoosters() {
+  const bar = $('booster-bar');
+  bar.hidden = !boostersUnlocked(state.levelIndex);
+  const busy = state.over || !!tutorialStep();
+  bar.querySelectorAll('[data-boost]').forEach(button => {
+    const id = button.dataset.boost, count = boosterStock[id];
+    button.disabled = busy;
+    button.classList.toggle('armed', id === 'hammer' && hammerArmed);
+    button.classList.toggle('empty', !count);
+    button.querySelector('.boost-count').innerHTML = count || priceTag(id);
+  });
+  document.body.classList.toggle('hammer-armed', hammerArmed);
+}
+function renderShopBoosters() {
+  $('shop-boosters').querySelectorAll('[data-buy]').forEach(button => {
+    const id = button.dataset.buy;
+    button.querySelector('small').textContent = `You have ${boosterStock[id]}`;
+    button.querySelector('em').innerHTML = priceTag(id);
+    button.classList.toggle('poor', deco.coins < BOOSTERS.PRICE[id]);
+  });
+}
+function storeBoosters(stock) { boosterStock = stock; saveBoosters(stock); }
+// Mua một cái bằng xu; trả về false nếu không đủ xu.
+function buyOne(id) {
+  const bought = buyBooster(boosterStock, deco.coins, id);
+  if (bought.error) { showToast(`Need ${BOOSTERS.PRICE[id] - deco.coins} more coins for ${BOOSTER_NAMES[id]}`); return false; }
+  deco = { ...deco, coins: bought.coins };
+  saveDeco(deco);
+  storeBoosters(bought.stock);
+  refreshWallet();
+  playSound('reward');
+  showToast(`Bought ${BOOSTER_NAMES[id]} · −${BOOSTERS.PRICE[id]} coins`);
+  return true;
+}
+const haveBooster = id => boosterStock[id] > 0 || buyOne(id);
+const useBooster = id => storeBoosters(spendBooster(boosterStock, id));
+
+$('booster-bar').addEventListener('click', event => {
+  const button = event.target.closest('[data-boost]');
+  if (!button || button.disabled || state.over || state.animating) return;
+  const id = button.dataset.boost;
+  if (id === 'hammer') {
+    if (hammerArmed) { hammerArmed = false; return render(); }
+    if (!haveBooster(id)) return renderBoosters();
+    hammerArmed = true;
+    return render('Tap a cat or a crate to smash it.');
+  }
+  if (!haveBooster(id)) return renderBoosters();
+  hammerArmed = false;
+  if (id === 'swap' && game.swapCard(state).ok) {
+    useBooster(id);
+    playSound('draw');
+    state.preview = null;
+    render('Here is a new card!');
+  }
+  if (id === 'moves' && game.addMoves(state, BOOSTERS.EXTRA_MOVES).ok) {
+    useBooster(id);
+    playSound('reward');
+    render(`+${BOOSTERS.EXTRA_MOVES} moves!`);
+    if (!reduceMotion.matches) document.querySelector('.moves-box').animate([{ scale: 1 }, { scale: 1.25 }, { scale: 1 }], { duration: 420, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+  }
+});
+addEventListener('keydown', event => { if (event.key === 'Escape' && hammerArmed) { hammerArmed = false; render(); } });
+
+// Búa: mèo co lại xoay tròn rồi biến mất trong khói; thùng thì vỡ như khi gom.
+function smashAt(cell) {
+  if (!cell || state.over || state.animating) return;
+  const index = Number(cell.dataset.index), turn = game.smash(state, index);
+  if (!turn.ok) return render(turn.error || '', !!turn.error);
+  useBooster('hammer');
+  hammerArmed = false;
+  playSound('merge', 1);
+  if (turn.object.block) breakCrates([index], 0);
+  else if (!reduceMotion.matches) {
+    const ghost = cell.cloneNode(true);
+    ghost.classList.add('smash-ghost');
+    ghost.style.cssText += `;left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    fxLayer().append(ghost);
+    ghost.animate([{ scale: 1, rotate: '0deg', opacity: 1 }, { scale: 1.15, rotate: '-12deg', opacity: 1, offset: .25 }, { scale: 0, rotate: '200deg', opacity: 0 }],
+      { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
+    spawnPuff(cell);
+  }
+  render(turn.object.block ? 'Crate smashed!' : `Bye, ${categories[turn.object.group].name}!`);
+}
+
+$('shop-boosters').addEventListener('click', event => {
+  const button = event.target.closest('[data-buy]');
+  if (button && buyOne(button.dataset.buy)) renderShopBoosters();
+});
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
 // Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.
 const { AFK_MS } = TIMING;
@@ -863,6 +963,8 @@ function tutorialHoles(step) {
   if (step.type === 'rotate') return [rect($('active-card'))];
   if (step.type === 'hold') return [rect($('active-card')), rect($('hold'))];
   if (step.type === 'tapHold') return [rect($('hold'))];
+  // Bước info có `focus`: khoanh sáng phần HUD đang được giới thiệu (thanh điểm / ô Moves).
+  if (step.focus) return [rect(document.querySelector(step.focus === 'moves' ? '.moves-box' : '.progress'))];
   if (step.type === 'drag') {
     const cells = placementIndices(state.board, W, H, step.anchor, state.active.offsets) || [step.anchor];
     return [rect($('active-card')), ...cells.map(index => rect(cellEl(index)))];
@@ -897,7 +999,7 @@ function renderTutorial() {
     }));
     // Bong bóng: bước info nằm giữa màn hình, các bước khác nằm ngay dưới bàn chơi.
     const bubble = $('tutorial-bubble');
-    $('tutorial-text').textContent = step.text;
+    $('tutorial-text').textContent = step.text.replace('{target}', state.level.target).replace('{moves}', state.level.moves);
     $('tutorial-next').hidden = step.type !== 'info';
     bubble.classList.toggle('center', step.type === 'info');
     bubble.style.top = step.type === 'info' ? '' : `${$('board').getBoundingClientRect().bottom + 8}px`;
@@ -944,25 +1046,70 @@ const TIERS = {
 };
 const levelTag = level => (TIERS[levelTier(level)] ? ` · ${TIERS[levelTier(level)].label}` : '');
 // Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
-const starText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
 
-function showMap() {
-  const progress = loadProgress(), open = unlockedCount(progress);
-  $('map-list').replaceChildren(...LEVELS.map((level, index) => {
+// Bản đồ saga: màn 1 ở đáy, các nút nằm trên một con đường uốn hình sin đi lên (như Candy Crush).
+const MAP = { STEP: 112, TOP: 150, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
+const MAP_DECOR = ['🌸', '🌳', '🍄', '🌼', '🌷', '🌲', '🪴', '🌻'];
+const LOCK_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>';
+const mapPoint = (index, width, height) => ({
+  x: width * (0.5 + MAP.SWING * Math.sin(index * MAP.FREQ)),
+  y: height - MAP.BOTTOM - index * MAP.STEP,
+});
+// Đường cong mượt qua các điểm: mỗi đoạn là cubic bezier với tay nắm thẳng đứng.
+const mapPath = points => points.map((p, i) => {
+  if (!i) return `M${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  const q = points[i - 1], mid = (q.y - p.y) / 2;
+  return `C${q.x.toFixed(1)} ${(q.y - mid).toFixed(1)} ${p.x.toFixed(1)} ${(p.y + mid).toFixed(1)} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+}).join('');
+
+function renderMap() {
+  const list = $('map-list'), progress = loadProgress(), open = unlockedCount(progress);
+  const width = Math.min(list.clientWidth, 440), height = MAP.TOP + MAP.BOTTOM + (LEVELS.length - 1) * MAP.STEP;
+  const points = LEVELS.map((_, index) => mapPoint(index, width, height));
+  const road = document.createElement('div');
+  road.className = 'map-road';
+  road.style.cssText = `width:${width}px;height:${height}px`;
+  // Đoạn đã đi (tới màn đang mở) tô màu kẹo; phần còn lại là đường đất.
+  road.innerHTML = `<svg width="${width}" height="${height}" aria-hidden="true">
+      <path class="road-edge" d="${mapPath(points)}"/><path class="road-fill" d="${mapPath(points)}"/>
+      ${open > 1 ? `<path class="road-done" d="${mapPath(points.slice(0, open))}"/>` : ''}
+      <path class="road-dots" d="${mapPath(points)}"/>
+    </svg>`;
+  // Cây cỏ lác đác ở phía đối diện chỗ đường uốn tới.
+  road.append(...points.map((p, index) => {
+    const decor = document.createElement('span');
+    decor.className = 'map-decor';
+    decor.textContent = MAP_DECOR[index % MAP_DECOR.length];
+    decor.style.cssText = `left:${width * (p.x > width / 2 ? 0.14 : 0.86)}px;top:${p.y + MAP.STEP * 0.4}px`;
+    return decor;
+  }));
+  road.append(...LEVELS.map((level, index) => {
     const node = document.createElement('button');
-    const stars = progress.stars[index] || 0, locked = index >= open;
-    node.className = `map-node${locked ? ' locked' : ''}${index === open - 1 && !stars ? ' current' : ''}${TIERS[levelTier(level)] ? ` tier-${levelTier(level)}` : ''}`;
+    const stars = progress.stars[index] || 0, locked = index >= open, tier = levelTier(level), current = index === open - 1;
+    node.className = `map-node${locked ? ' locked' : stars ? ' done' : ''}${current ? ` current${points[index].x > width / 2 ? ' avatar-left' : ''}` : ''}${TIERS[tier] ? ` tier-${tier}` : ''}`;
+    node.style.cssText = `left:${points[index].x}px;top:${points[index].y}px`;
     node.disabled = locked;
-    node.innerHTML = `<b>${locked ? '🔒' : index + 1}</b><span class="map-stars">${locked ? '' : starText(stars)}</span>`
-      + `<small>${level.name}${levelTag(level)}</small>`;
+    node.title = `${level.name}${levelTag(level)}`;
+    node.setAttribute('aria-label', `Level ${index + 1}: ${level.name}${locked ? ' (locked)' : stars ? ' (cleared)' : ''}`);
+    node.innerHTML = `<b>${locked ? LOCK_SVG : index + 1}</b>`
+      + (tier === 'boss' ? '<span class="map-crown" aria-hidden="true">👑</span>' : '')
+      + (current ? `<span class="map-avatar" aria-hidden="true">${catMarkup.orange}</span>` : '');
     node.onclick = () => { $('map').hidden = true; startLevel(index); };
     return node;
   }));
+  list.replaceChildren(road);
+}
+
+function showMap() {
   hideMenus();
   $('map').hidden = false;
   $('tutorial').hidden = true;
-  document.querySelector('.map-node.current')?.scrollIntoView({ block: 'center' });
+  renderMap();
+  // Cuộn cho màn đang chơi nằm giữa màn hình (không có thì ở đáy, chỗ màn 1).
+  const list = $('map-list'), current = list.querySelector('.map-node.current');
+  list.scrollTop = current ? current.offsetTop - list.clientHeight / 2 : list.scrollHeight;
 }
+addEventListener('resize', () => { if (!$('map').hidden) renderMap(); });
 
 // ===== Home / Deco / Shop: các tab dùng chung thanh điều hướng nổi, chỉ hiện ngoài màn chơi =====
 const TABS = ['home', 'deco', 'shop'];
@@ -993,12 +1140,11 @@ function showTab(tab) {
   $('tutorial').hidden = true;
   const progress = loadProgress();
   refreshWallet();
-  $('home-stars').textContent = totalStars();
   const next = unlockedCount(progress) - 1;
   $('home-level').textContent = `Level ${next + 1}`;
-  $('home-level-stars').textContent = starText(progress.stars[next] || 0);
   if (tab !== 'deco') decoPick = null;
   if (tab === 'deco') renderDeco();
+  if (tab === 'shop') renderShopBoosters();
   renderZoneSwitch();
   mountRoom(tab);
   $(tab).scrollTop = 0;
@@ -1007,8 +1153,18 @@ function mountRoom(tab) {
   if (!room3d) return;
   if (tab === 'shop') return room3d.stop();
   room3d.apply(previewDeco(deco, tab === 'deco' ? decoPick : null));
-  room3d.mount($(`${tab}-room`), { autoRotate: tab === 'home', resetView: tab === 'home' });
+  room3d.mount($(`${tab}-room`), { autoRotate: tab === 'home', resetView: tab === 'home', view: tab === 'home' ? HOME_VIEW : undefined });
 }
+// Home tràn viền: phòng phủ cả màn, thanh trên + nút chọn khu + khung PLAY đè lên; camera nhắm vào phần trống giữa.
+const HOME_VIEW = {
+  zoomCap: 1.25, zoomFit: .8,
+  insets() {
+    const room = $('home-room').getBoundingClientRect();
+    const top = $('home-zone').getBoundingClientRect().bottom - room.top + 8;
+    const bottom = room.bottom - document.querySelector('.home-actions').getBoundingClientRect().top + 12;
+    return { top, bottom };
+  },
+};
 $('tabbar').addEventListener('click', event => {
   const tab = event.target.closest('.tab');
   if (tab) { playSound('pick'); showTab(tab.dataset.tab); }
@@ -1056,12 +1212,12 @@ document.addEventListener('click', event => {
   if (cat) petRoomCat(cat);
 });
 const roomHint = $('deco-room').querySelector('.room-hint');
-const homeHint = $('home-room').querySelector('.room-hint');
 buildFlatRooms();
 import('./deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
+  room3d.setNight(night);
   decoThumbnail = thumbnail;
-  $('home-room').replaceChildren(homeHint);
+  $('home-room').replaceChildren();
   $('deco-room').replaceChildren(roomHint);
   $('home-room').classList.add('is-3d');
   $('deco-room').classList.add('is-3d');
@@ -1097,12 +1253,14 @@ function renderDecoAction(unlocked) {
     button.hidden = true;
     return;
   }
-  const status = itemStatus(deco, decoPick, unlocked);
+  const status = itemStatus(deco, decoPick, unlocked), occupant = occupantOf(deco, decoPick);
   const labels = {
     locked: `Unlocks at level ${decoPick.lock}`, poor: `<i class="ico-coin"></i> ${decoPick.price}`, buy: `Buy <i class="ico-coin"></i> ${decoPick.price}`,
-    owned: decoPick.cat === 'cats' ? 'Add to room' : FURNISHING(decoPick) ? 'Place' : 'Use', using: FURNISHING(decoPick) ? 'Remove' : 'Using',
+    owned: decoPick.cat === 'cats' ? 'Add to room' : occupant ? 'Swap' : FURNISHING(decoPick) ? 'Place' : 'Use', using: FURNISHING(decoPick) ? 'Remove' : 'Using',
   };
-  $('deco-selected').textContent = status === 'poor' ? `${decoPick.name} · need ${decoPick.price - deco.coins} more` : decoPick.name;
+  // Phương án thay thế: cho biết sẽ thay món nào đang ở cùng chỗ.
+  const swapText = occupant && status !== 'locked' ? ` · replaces ${occupant.name}` : '';
+  $('deco-selected').textContent = status === 'poor' ? `${decoPick.name} · need ${decoPick.price - deco.coins} more` : decoPick.name + swapText;
   button.hidden = false;
   button.innerHTML = labels[status];
   button.disabled = status === 'locked' || status === 'poor' || (status === 'using' && !FURNISHING(decoPick));
@@ -1114,10 +1272,35 @@ function pickDeco(entry) {
   if (entry) room3d?.focus(entry.id);
   renderDeco();
 }
+// Chạm lần 1: xem trước trong phòng. Chạm lại đúng món đang xem: hộp xác nhận (mua / đặt / đổi / gỡ).
 $('deco-grid').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.deco-item')?.dataset.id);
-  if (entry) pickDeco(decoPick === entry ? null : entry);
+  if (!entry) return;
+  if (decoPick === entry) openDecoConfirm();
+  else pickDeco(entry);
 });
+function openDecoConfirm() {
+  const unlocked = unlockedCount(loadProgress()), status = itemStatus(deco, decoPick, unlocked), occupant = occupantOf(deco, decoPick);
+  if (status === 'locked') return showToast(`Unlocks at level ${decoPick.lock}`);
+  if (status === 'using' && !FURNISHING(decoPick)) return showToast('Already in use');
+  const tile = document.querySelector(`#deco-grid .deco-item[data-id="${decoPick.id}"] .thumb`);
+  $('deco-confirm-thumb').replaceChildren(...(tile ? [tile.cloneNode(true)] : []));
+  $('deco-confirm-name').textContent = decoPick.name;
+  const price = `<i class="ico-coin"></i> ${decoPick.price}`;
+  const notes = {
+    buy: `Buy for ${price}?${occupant ? ` It replaces ${occupant.name}.` : ''}`,
+    poor: `You need ${price} — ${decoPick.price - deco.coins} more coins.`,
+    owned: occupant ? `Swap ${occupant.name} for this?` : decoPick.cat === 'cats' ? 'Add this cat to your room?' : FURNISHING(decoPick) ? 'Place it in your room?' : 'Use this one?',
+    using: 'Take it out of your room?',
+  };
+  $('deco-confirm-note').innerHTML = notes[status];
+  const ok = $('deco-confirm-ok');
+  ok.innerHTML = { buy: `Buy ${price}`, poor: 'Not enough coins', owned: occupant ? 'Swap' : decoPick.cat === 'cats' ? 'Add' : FURNISHING(decoPick) ? 'Place' : 'Use', using: 'Remove' }[status];
+  ok.disabled = status === 'poor';
+  $('deco-confirm').showModal();
+}
+$('deco-confirm-cancel').onclick = () => $('deco-confirm').close();
+$('deco-confirm-ok').onclick = () => { $('deco-confirm').close(); $('deco-do').onclick(); };
 $('deco-do').onclick = () => {
   if (!decoPick) return;
   const unlocked = unlockedCount(loadProgress());
@@ -1209,7 +1392,6 @@ function endLevel(win, reason = '') {
   renderTutorial();
   const index = state.levelIndex, last = index === LEVELS.length - 1;
   const stars = win ? state.outcome.stars : 0;
-  $('result-stars').textContent = win ? starText(stars) : '';
   let coinsEarned = 0;
   if (win) {
     const record = recordWin(loadProgress(), index, stars); // chỉ sao mới (vượt kỷ lục cũ) mới ra xu
@@ -1253,6 +1435,20 @@ function renderSoundButtons() {
 }
 document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = () => { setSound(!soundOn()); renderSoundButtons(); }; });
 renderSoundButtons();
+
+// Ngày / đêm cho khu mèo (Home + Deco dùng chung một cảnh 3D). Lưu lại cho lần sau.
+let night = readText(SAVE_KEYS.night) === 'on';
+function applyNight() {
+  const button = $('night-toggle');
+  button.setAttribute('aria-pressed', night);
+  button.setAttribute('aria-label', night ? 'Night, tap for day' : 'Day, tap for night');
+  button.title = night ? 'Night' : 'Day';
+  button.innerHTML = `<svg viewBox="0 0 24 24"><use href="#i-${night ? 'moon' : 'sun'}"/></svg>`;
+  ['home-room', 'deco-room'].forEach(id => $(id).classList.toggle('night', night));
+  room3d?.setNight(night);
+}
+$('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
+applyNight();
 $('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
 $('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');

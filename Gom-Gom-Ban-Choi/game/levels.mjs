@@ -8,6 +8,7 @@
 //   8    Giới thiệu khối kim loại, kiêm màn nghỉ (breather)
 //   9    Kim loại + thùng gỗ (+ mèo Xiêm)    10   BOSS chương 1 (đủ 6 giống, cả hai vật cản)
 //   11–18 Xào lại cơ chế: không vật cản -> thùng -> kim loại -> cả hai, hai vòng, vòng sau khó hơn
+//   18   Bottleneck (bức tường độ khó trước màn nghỉ + Boss)
 //   19   Màn nghỉ                           20   BOSS chương 2
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
@@ -30,7 +31,10 @@ export const LEVELS = [
     moves: 4, target: 60, cats: 'OG',
     board: ['......', '......', '..OO..', '......', '.GG...', '......'],
     deck: ['O', 'G', 'O', 'G'],
+    // Mở đầu: giới thiệu mục tiêu điểm và số lượt ({target}/{moves} lấy từ màn), rồi mới dạy kéo thả.
     tutorial: [
+      { type: 'info', focus: 'score', text: 'Fill this bar to win! Reach {target} points to clear the level.' },
+      { type: 'info', focus: 'moves', text: 'You have {moves} moves. Placing a card uses 1 move, so make every move count!' },
       { type: 'drag', anchor: 16, text: 'Drag the orange cat onto the glowing cell to make 3!' },
       { type: 'drag', anchor: 27, text: 'Great! Now match 3 gray cats.' },
     ],
@@ -148,8 +152,10 @@ export const LEVELS = [
     deck: [],
   },
   {
+    // Bottleneck của chương 2: bot thắng ~24% (mục tiêu cao, ít hỗ trợ màu), điểm TB ~294/330 = hụt một cú gom
+    // -> người chơi thua sát nút, muốn chơi lại hoặc dùng booster. Ngay sau là màn nghỉ 19.
     name: 'Iron Gate', feature: 'Crates + metal', tier: 'hard',
-    moves: 18, target: 300, cats: 'OGWTSK', assist: 0.4,
+    moves: 18, target: 330, cats: 'OGWTSK', assist: 0.3,
     board: ['M.X.XM', '.O..G.', 'X.MM.X', '..W.K.', '.S.XT.', 'M..O.M'],
     deck: [],
   },

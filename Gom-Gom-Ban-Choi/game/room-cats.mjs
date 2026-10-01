@@ -93,10 +93,13 @@ function eyesTexture(breed, eyes) {
 function buildRig(breed) {
   EYE_KINDS.forEach(kind => eyesTexture(breed, kind)); // nạp sẵn mọi kiểu mắt: lần chớp đầu không bị trống
   const cat = categories[breed];
-  const fur = new THREE.MeshStandardMaterial({ color: cat.fur, roughness: .75 });
-  const accent = new THREE.MeshStandardMaterial({ color: cat.mask || cat.fur, roughness: .75 });
-  const paw = new THREE.MeshStandardMaterial({ color: cat.paw, roughness: .8 });
-  const earInner = new THREE.MeshStandardMaterial({ color: cat.mask ? '#b88a78' : '#f6a8b4', roughness: .8 });
+  // Lông: nhám hoàn toàn, phản xạ thấp, thêm "sheen" (ánh mềm ở mép như lông/nhung thật) thay cho đốm bóng kiểu nhựa.
+  const furMat = color => new THREE.MeshPhysicalMaterial({ color, roughness: 1, metalness: 0, specularIntensity: .08,
+    sheen: .25, sheenRoughness: .9, sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), .2) }); // dịu, không loá mép
+  const fur = furMat(cat.fur);
+  const accent = furMat(cat.mask || cat.fur);
+  const paw = furMat(cat.paw);
+  const earInner = new THREE.MeshPhysicalMaterial({ color: cat.mask ? '#b88a78' : '#f6a8b4', roughness: .95, specularIntensity: .3 });
   const mesh = (geometry, material, shadow = true) => { const m = new THREE.Mesh(geometry, material); m.castShadow = shadow; m.receiveShadow = true; return m; };
 
   const root = new THREE.Group();          // vị trí + hướng
@@ -992,10 +995,10 @@ export function createCatLife(ctx) {
       add('groom', 1.2, () => cat.groom());
       add('stretch', .5, () => cat.yawnStretch());
       add('zoomies', .35, () => cat.zoomies());
-      add('nap', .7, () => cat.loafNap());
+      add('nap', ctx.night ? 2.4 : .7, () => cat.loafNap()); // ban đêm mèo hay ngủ
       const garden = ctx.zone === 'garden';
       if (!garden && !world.claims.has('window')) add('window', .8, () => cat.lookOutWindow());
-      if (garden) add('butterfly', 1.1, () => cat.chaseButterfly());
+      if (garden && !ctx.night) add('butterfly', 1.1, () => cat.chaseButterfly()); // đêm bướm đi ngủ
       if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6, () => cat.rollOnRug());
       const weights = garden
         ? { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 }

@@ -42,3 +42,12 @@ export const CAT_MOTION = {
     paw: [320, .55], groom: [170, .65], knead: [130, .7], tailUp: [36, .6],
   },
 };
+
+// Booster trong màn: mở từ màn UNLOCK_LEVEL (không có tutorial), tặng START_STOCK mỗi loại, hết thì mua bằng xu.
+// Dùng booster không tốn lượt.
+export const BOOSTERS = {
+  UNLOCK_LEVEL: 3,
+  START_STOCK: 3,
+  EXTRA_MOVES: 3,
+  PRICE: { hammer: 60, swap: 40, moves: 80 },
+};

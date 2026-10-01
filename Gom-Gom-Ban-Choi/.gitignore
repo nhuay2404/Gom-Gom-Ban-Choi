@@ -1,2 +1,5 @@
 # Asset xuất cho Cocos: tạo lại bằng `npm run export` bất cứ lúc nào.
 export/
+
+# File HTML gộp để test trên điện thoại: tạo lại bằng `npm run build:html`.
+dist/

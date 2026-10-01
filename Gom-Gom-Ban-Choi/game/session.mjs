@@ -48,7 +48,7 @@ function finish(s, win, reason = '') {
 
 // ---------- Tutorial: các bước trong levels.mjs ----------
 //   drag  (kéo vào ô `anchor`; `free` = chỉ gợi ý, đặt đâu cũng được) · rotate (xoay tới hướng `offsets`)
-//   hold  (kéo vào ô Gửi tạm) · tapHold (chạm ô Gửi tạm) · info (đọc rồi bấm Tiếp tục)
+//   hold  (kéo vào ô Gửi tạm) · tapHold (chạm ô Gửi tạm) · info (đọc rồi bấm Tiếp tục; `focus`: 'score' / 'moves' = khoanh sáng phần HUD)
 export const tutorialStep = s => s.tutorial?.steps[s.tutorial.step] || null;
 export function tutorialAllows(s, action, anchor) {
   const step = tutorialStep(s);
@@ -122,4 +122,28 @@ export function place(s, anchor) {
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
   return { ...turn, fit, stuck, lose: stuck };
+}
+
+// ---------- Booster (không tốn lượt; kho booster do boosters.mjs giữ, ở đây chỉ là luật trên bàn) ----------
+// Búa: đập vỡ một con mèo hoặc một thùng gỗ. Kim loại và ô trống thì không đập được.
+export const canSmash = (s, index) => !!s.board[index] && !s.board[index].metal;
+export function smash(s, index) {
+  if (s.over || tutorialStep(s)) return { ok: false };
+  if (!canSmash(s, index)) return { ok: false, error: s.board[index]?.metal ? 'Metal can\'t be smashed.' : 'Pick a cat or a crate.' };
+  const object = s.board[index];
+  s.board = s.board.slice();
+  s.board[index] = null;
+  return { ok: true, object };
+}
+// Đổi thẻ: bỏ thẻ đang bóc, bóc một thẻ ngẫu nhiên mới (thẻ "sắp tới" giữ nguyên để người chơi vẫn tính trước được).
+export function swapCard(s) {
+  if (s.over || tutorialStep(s)) return { ok: false };
+  s.active = withNames(s.deal(s.board));
+  return { ok: true };
+}
+// Thêm lượt.
+export function addMoves(s, count) {
+  if (s.over || tutorialStep(s)) return { ok: false };
+  s.moves += count;
+  return { ok: true };
 }

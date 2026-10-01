@@ -24,6 +24,10 @@
     <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM16 9.5l5 5M21 9.5l-5 5"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+    <symbol id="i-hammer" viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><path d="M12 10v11.5"/><rect x="4.5" y="3" width="15" height="7" rx="2" fill="currentColor"/></g></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M5 9.5A7 7 0 0 1 18 7.5M19 4v4h-4M19 14.5A7 7 0 0 1 6 16.5M5 20v-4h4"/></symbol>
   </svg>
 
   <!-- ===== Màn chơi (bố cục L2: HUD gọn, bàn lớn, dock ngón cái) ===== -->
@@ -43,6 +47,12 @@
     </section>
     <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
+    <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để mua bằng xu -->
+    <section id="booster-bar" class="booster-bar" aria-label="Boosters" hidden>
+      <button class="boost" data-boost="hammer" aria-label="Hammer: smash one cat or crate" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="swap" aria-label="New card: swap the current card for a new one" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="moves" aria-label="Extra moves" title="Extra moves"><strong class="boost-plus">+3</strong><b class="boost-count"></b></button>
+    </section>
     <section class="dock draw-area" aria-label="Cards">
       <div class="hold-column">
         <button id="hold" class="hold-slot" aria-label="Hold a card or take back the held card"><span>+</span></button>
@@ -66,8 +76,9 @@
   <!-- Home cho chơi một tay: trên = chỉ xem (xu, sao), giữa = phòng mèo (kéo xoay, chạm cưng), dưới = nút chơi trong tầm ngón cái -->
   <section id="home" class="screen home" hidden>
     <header class="screen-top home-top">
-      <div class="wallet"><span class="pill-stat" aria-label="Stars"><i class="ico-star">★</i><b id="home-stars">0</b></span><span class="pill-stat" aria-label="Coins"><i class="ico-coin"></i><b id="home-coins">0</b></span></div>
-      <div class="top-actions"><button class="round-button small icon sound-toggle" aria-pressed="true"></button>
+      <div class="wallet"><span class="pill-stat" aria-label="Coins"><i class="ico-coin"></i><b id="home-coins">0</b></span></div>
+      <div class="top-actions"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button>
+      <button class="round-button small icon sound-toggle" aria-pressed="true"></button>
       <button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button></div>
     </header>
     <div class="home-stage">
@@ -76,10 +87,10 @@
         <button role="tab" data-zone="garden">Garden</button>
         <button role="tab" data-zone="living">Living room</button>
       </div>
-      <div id="home-room" class="room home-room"><span class="room-hint">Drag to spin · tap a cat</span></div>
+      <div id="home-room" class="room home-room"></div>
     </div>
     <div class="home-actions">
-      <p class="home-level"><span id="home-level">Level 1</span><span id="home-level-stars" class="level-card-stars">☆☆☆</span></p>
+      <p class="home-level"><span id="home-level">Level 1</span></p>
       <div class="home-buttons">
         <button id="home-play" class="pill-button big">Play</button>
         <button id="home-journey" class="square-button" aria-label="All levels"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Levels</span></button>
@@ -120,10 +131,10 @@
       <span class="price">$1.99</span>
     </button>
     <h3 class="shop-head">Boosters</h3>
-    <div class="booster-row">
-      <button class="booster soon"><b>+3</b><span>Extra moves</span><em><i class="ico-coin"></i>80</em></button>
-      <button class="booster soon"><b>×2</b><span>Second hold</span><em><i class="ico-coin"></i>60</em></button>
-      <button class="booster soon"><b>?</b><span>Hint</span><em><i class="ico-coin"></i>50</em></button>
+    <div id="shop-boosters" class="booster-row">
+      <button class="booster" data-buy="hammer"><b><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg></b><span>Hammer</span><small></small><em></em></button>
+      <button class="booster" data-buy="swap"><b><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></b><span>New card</span><small></small><em></em></button>
+      <button class="booster" data-buy="moves"><b>+3</b><span>Extra moves</span><small></small><em></em></button>
     </div>
     <h3 class="shop-head">Coins</h3>
     <div class="coin-list">
@@ -131,7 +142,7 @@
       <button class="coin-pack soon"><span><i class="ico-coin"></i>1,200</span><em>$1.99</em></button>
       <button class="coin-pack soon"><span><i class="ico-coin"></i>3,000</span><em>$4.99</em></button>
     </div>
-    <p class="soon-note">The shop is coming soon. Nothing here charges you yet.</p>
+    <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
   </section>
 
   <nav id="tabbar" class="tabbar" aria-label="Main" hidden>
@@ -141,14 +152,16 @@
   </nav>
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <!-- Bản đồ hành trình: 10 màn, mở khoá lần lượt, sao tốt nhất của từng màn -->
+  <!-- Bản đồ hành trình kiểu saga: màn 1 ở đáy, đường uốn lượn đi lên; nút Home luôn nằm dưới đáy -->
   <section id="map" class="map" hidden>
     <header class="map-head">
-      <button id="map-back" class="round-button icon" aria-label="Back to Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
       <h2>Journey</h2>
       <button id="help" class="round-button" aria-label="How to play" title="How to play">?</button>
     </header>
     <div id="map-list" class="map-list"></div>
+    <footer class="map-foot">
+      <button id="map-back" class="map-back" aria-label="Back to Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg><span>Home</span></button>
+    </footer>
   </section>
   <!-- Tutorial: lớp mờ khoét lỗ (SVG mask), viền sáng, bàn tay chỉ đường, bong bóng lời thoại -->
   <div id="tutorial" class="tutorial" hidden>
@@ -175,7 +188,6 @@
   </dialog>
   <dialog id="result-dialog" class="level-dialog">
     <h2 id="result-title">Level complete!</h2>
-    <p id="result-stars" class="result-stars" aria-label="Stars"></p>
     <p id="result-score" class="level-feature">0 points</p>
     <p id="result-coins" class="result-coins" hidden></p>
     <div class="level-actions">
@@ -184,12 +196,22 @@
       <button id="result-next" class="pill-button">Next level</button>
     </div>
   </dialog>
+  <!-- Deco: chạm món lần 1 = xem trước trong phòng, chạm lần 2 = hộp xác nhận mua / đặt / đổi -->
+  <dialog id="deco-confirm" class="level-dialog deco-confirm">
+    <div id="deco-confirm-thumb" class="deco-confirm-thumb"></div>
+    <h2 id="deco-confirm-name">Item</h2>
+    <p id="deco-confirm-note" class="level-feature"></p>
+    <div class="level-actions">
+      <button id="deco-confirm-cancel" class="pill-button ghost">Cancel</button>
+      <button id="deco-confirm-ok" class="pill-button">Buy</button>
+    </div>
+  </dialog>
   <dialog id="help-dialog">
     <form method="dialog"><button class="round-button close-help" aria-label="Close">×</button></form>
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Drag a card into the “Hold” slot to stash it (or swap it with the stashed card), as often as you like. Tap the “Hold” slot to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose.</p>
+    <p>Drag a card into the “Hold” slot to stash it (or swap it with the stashed card), as often as you like. Tap the “Hold” slot to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
 </body>
 </html>

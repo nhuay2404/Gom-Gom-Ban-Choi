@@ -2,48 +2,56 @@
    File này nạp sau gom-gom.css và đè lên bố cục cũ; animation mèo/bàn giữ nguyên. */
 :root{--leaf:#5f9b3a;--leaf-deep:#3f7326;--petal:#f4a3b6;--wood:#e4b574;--wood-deep:#b9854a;--danger:#d9442f;
   --ui-font:Nunito,"Avenir Next",ui-rounded,system-ui,-apple-system,sans-serif;--display:"Baloo 2",Nunito,ui-rounded,system-ui,sans-serif}
+/* Bảng màu phẳng: nút màu trơn (không gradient), bão hoà vừa; *-deep = viền đáy (bóng cứng) của nút */
+:root{--panel:#fff3d1;--sky:#cdeaff;--map-bg:#bfe4a0;
+  --green:#4fb34a;--green-deep:#2f7d2c;--pink:#ec5b8c;--pink-deep:#b3386a;--blue:#3b8fe0;--blue-deep:#2461a8;
+  --orange:#f07b3c;--orange-deep:#b4521f;--teal:#27a695;--teal-deep:#19756a;--purple:#8c4fd0;--purple-deep:#5a2c8e;
+  --gold:#f5b93c;--red:#e5483a;--red-deep:#9e2a20;--grey:#b3aa99}
 body{font-family:var(--ui-font)}
 
 /* ---------- Màn chơi: cột dọc, dock dính đáy ---------- */
 .shell{display:flex;flex-direction:column;padding:max(10px,env(safe-area-inset-top)) 18px max(12px,env(safe-area-inset-bottom))}
 .topbar{height:52px;margin-bottom:8px;grid-template-columns:44px 1fr 44px}
 .topbar h1{transform:none;font-family:var(--display);font-size:17px;font-weight:800;letter-spacing:.2px;line-height:1;color:var(--cream-ink);text-shadow:none;
-  justify-self:center;padding:8px 18px;border-radius:999px;background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 3px 0 var(--cream-deep),0 5px 8px #8a4b3a26}
+  justify-self:center;padding:8px 18px;border-radius:999px;background:var(--panel);box-shadow:none}
 .round-button.icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
 
 /* HUD: thanh tiến độ điểm + ô Moves */
 .hud{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .progress{position:relative;flex:1;min-width:0;height:42px;border-radius:999px;padding:5px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 3px 0 var(--cream-deep),0 6px 10px #8a4b3a26}
-.progress-track{height:100%;border-radius:999px;background:#ecd39a;box-shadow:inset 0 2px 3px #b7874266;overflow:hidden}
-.progress-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(#8fd86a,var(--leaf));box-shadow:inset 0 2px 0 #ffffff70,inset 0 -2px 0 #00000018;transition:width .45s cubic-bezier(.3,1.2,.5,1)}
-.progress.full .progress-fill{background:linear-gradient(#ffd66b,#f0a93a)}
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
+.progress-track{height:100%;border-radius:999px;background:#ecd39a;box-shadow:none;overflow:hidden}
+.progress-fill{height:100%;width:0;border-radius:999px;background:var(--green);box-shadow:none;transition:width .45s cubic-bezier(.3,1.2,.5,1)}
+.progress.full .progress-fill{background:var(--gold)}
 .progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:900;font-size:14px;color:var(--cream-ink);
-  text-shadow:0 1px 0 #fff,0 0 4px #fff;font-variant-numeric:tabular-nums;pointer-events:none}
+  text-shadow:0 1px 0 #fff;font-variant-numeric:tabular-nums;pointer-events:none}
 .progress-text strong{font-family:var(--display);font-size:20px;line-height:1;color:#c9601c}
 .moves-box{flex:none;width:76px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 3px 0 var(--cream-deep),0 6px 10px #8a4b3a26;color:var(--cream-ink)}
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none;color:var(--cream-ink)}
 .moves-box span{font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase}
 .moves-box strong{font-family:var(--display);font-size:26px;font-weight:800;line-height:1;color:#e0792a;font-variant-numeric:tabular-nums}
 .moves-box.warn strong{color:#e8781e}
-.moves-box.danger{border-color:var(--danger);background:linear-gradient(#ffe6df,#ffcfc4);box-shadow:0 3px 0 #b8341f,0 0 14px #d9442f55}
+.moves-box.danger{border-color:var(--danger);background:#ffd9cf;box-shadow:none}
 .moves-box.danger strong{color:#d9301c}
 @media(prefers-reduced-motion:no-preference){.moves-box.danger strong{animation:moves-pulse .9s ease-in-out infinite}}
 body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 
-/* Bàn: to hơn, căn giữa */
-.board-wrap{width:min(100%,440px);margin-inline:auto}
+/* Bàn: to nhất có thể nhưng màn chơi luôn vừa đúng một màn hình điện thoại (kể cả khi có hàng booster).
+   Màn chơi cao đúng 100dvh; bàn chiếm phần còn lại giữa HUD và dock, luôn vuông: cạnh = min(bề ngang, chiều cao còn lại). */
+.shell{height:100dvh;min-height:0;overflow:hidden}
+.board-wrap{flex:1 1 auto;min-height:0;width:100%;display:flex;justify-content:center;align-items:flex-start;container-type:size}
+.board-wrap>.board{width:min(100cqw,100cqh,440px);height:auto;flex:none}
 
 /* Thông báo: một hàng cố định, chữ nằm trong viên kẹo, không đẩy bố cục */
 .message-row{height:34px;margin:4px 0 6px;display:flex;align-items:center;justify-content:center}
 .message-row .message{min-height:0;margin:0;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:900;max-width:100%;text-align:center;
-  background:#fff8e4e8;box-shadow:0 2px 0 var(--cream-deep);color:var(--cream-ink)}
+  background:#fff8e4e8;box-shadow:none;color:var(--cream-ink)}
 .message-row .message:empty{display:none}
-.message-row .message.error{background:#ffe6df;color:#b8321c;box-shadow:0 2px 0 #d98a7a}
+.message-row .message.error{background:#ffe6df;color:#b8321c;box-shadow:none}
 
 /* Dock ngón cái: Hold | thẻ đang bóc | Next */
 .dock.draw-area{margin-top:auto;display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:8px;padding:10px 10px 12px;border-radius:28px;
-  background:linear-gradient(#fff8e4f2,#ffedc2f2);border:1px solid var(--cream-edge);box-shadow:0 4px 0 var(--cream-deep),0 10px 22px #8a4b3a33}
+  background:#fff3d1f2;border:1px solid var(--cream-edge);box-shadow:none}
 .dock .hold-column{grid-column:1;justify-self:center;align-self:center;gap:4px}
 .dock .card-column{grid-column:2;justify-self:center}
 .dock .next-column{grid-column:3;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:0}
@@ -67,29 +75,28 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
   background:#a8d77a url('./skins/farm-pop/background-pink.png') 50% 0/cover no-repeat}
 .screen>*{width:min(420px,100%);flex:none}
 .screen-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.screen-title{margin:0;font-family:var(--display);font-size:30px;font-weight:800;color:#fffaf0;text-shadow:0 2px 0 #6fa84a,0 4px 10px #3f6e2a55}
+.screen-title{margin:0;font-family:var(--display);font-size:30px;font-weight:800;color:#fffaf0;text-shadow:0 2px 0 #6fa84a}
 .wallet{display:flex;gap:8px}
 .pill-stat{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;font-weight:900;font-size:15px;color:var(--cream-ink);
-  background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 3px 0 var(--cream-deep),0 5px 8px #8a4b3a26;font-variant-numeric:tabular-nums}
-.ico-star{font-style:normal;color:#f2b53c;text-shadow:0 1px 0 #b8741f;font-size:18px;line-height:1}
-.ico-coin{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff3b0,#f6c343 55%,#d9962a);box-shadow:inset 0 0 0 2px #e9a93a,0 1px 0 #b8741f}
+  background:var(--panel);box-shadow:none;font-variant-numeric:tabular-nums}
+.ico-coin{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none;background:var(--gold);box-shadow:inset 0 0 0 2px #e9a93a}
 .home-logo{margin:4px 0 0;text-align:center;font-family:var(--display);font-size:46px;font-weight:800;letter-spacing:-1px;line-height:1;color:#fffaf0;
-  text-shadow:0 3px 0 #6fa84a,0 6px 14px #3f6e2a55;transform:rotate(-4deg)}
+  text-shadow:0 3px 0 #6fa84a;transform:rotate(-4deg)}
 
 /* Phòng mèo: tường kem, cửa sổ vòm, sàn gỗ, thảm hồng; mèo ngồi trên thảm */
 .room{position:relative;aspect-ratio:1/.86;border-radius:30px;overflow:hidden;flex:none;
-  background:linear-gradient(#fff4da 0 60%,var(--wood) 60%);box-shadow:0 5px 0 var(--cream-deep),0 12px 24px #8a4b3a40,inset 0 0 0 6px #fff8e4}
+  background:#fff4da;box-shadow:inset 0 0 0 6px #fff8e4}
 .room.small{aspect-ratio:1/.62}
-.room::after{content:"";position:absolute;inset:60% 0 0;background:repeating-linear-gradient(90deg,#0000 0 23%,#b9854a55 23% 24%);pointer-events:none;z-index:0}
+.room::after{content:"";position:absolute;inset:60% 0 0;background:var(--wood);pointer-events:none;z-index:0}
 .room-rug,.room-cats{z-index:1}
 .room-window{position:absolute;left:50%;top:9%;width:30%;aspect-ratio:1/1.1;translate:-50% 0;border-radius:999px 999px 12px 12px;
-  background:linear-gradient(#bfe6ff,#e9f7ff 70%,#cdeec0 70%);border:6px solid #f6d88f;box-shadow:0 3px 0 var(--cream-deep)}
+  background:var(--sky);border:6px solid #f6d88f;box-shadow:none}
 .room-window::before{content:"";position:absolute;inset:0 calc(50% - 2px);background:#f6d88f}
-.room-frame{position:absolute;left:10%;top:16%;width:17%;aspect-ratio:1/1.2;border-radius:8px;background:linear-gradient(135deg,#ffd7e0,#f4a3b6);border:5px solid #e0b36a;rotate:-4deg}
+.room-frame{position:absolute;left:10%;top:16%;width:17%;aspect-ratio:1/1.2;border-radius:8px;background:#f4a3b6;border:5px solid #e0b36a;rotate:-4deg}
 .room-plant{position:absolute;right:9%;top:36%;width:15%;aspect-ratio:1/1.5}
-.room-plant::before{content:"";position:absolute;left:10%;right:10%;bottom:0;height:38%;border-radius:4px 4px 12px 12px;background:linear-gradient(#e98b5a,#c8653a)}
-.room-plant::after{content:"";position:absolute;left:0;right:0;top:0;height:66%;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#9fdc76,var(--leaf) 70%)}
-.room-rug{position:absolute;left:12%;right:12%;bottom:8%;height:22%;border-radius:50%;background:radial-gradient(#ffc6d3 0 55%,var(--petal) 56% 70%,#ffc6d3 71%);box-shadow:0 4px 0 #d9829a}
+.room-plant::before{content:"";position:absolute;left:10%;right:10%;bottom:0;height:38%;border-radius:4px 4px 12px 12px;background:#d9774a}
+.room-plant::after{content:"";position:absolute;left:0;right:0;top:0;height:66%;border-radius:50% 50% 45% 45%;background:var(--green)}
+.room-rug{position:absolute;left:12%;right:12%;bottom:8%;height:22%;border-radius:50%;background:#f7b3c4;box-shadow:none}
 .room-cats{position:absolute;left:14%;right:14%;bottom:14%;display:flex;justify-content:center;align-items:flex-end;gap:2%}
 .room-cat{position:relative;width:30%;aspect-ratio:1;border:0;padding:0;background:none;cursor:pointer}
 .room-cat .cat{width:100%;height:100%}
@@ -100,9 +107,8 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .room .pet-heart{z-index:3}
 
 .level-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 18px 12px;border-radius:26px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 5px 0 var(--cream-deep),0 10px 20px #8a4b3a33}
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
 .level-card-label{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:20px;font-weight:800;color:var(--cream-ink)}
-.level-card-stars{font-size:18px;letter-spacing:2px;color:#f2b53c;text-shadow:0 1px 0 #b8741f}
 .pill-button.big{width:100%;font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:1px;padding:12px 0;text-transform:uppercase}
 @media(prefers-reduced-motion:no-preference){.pill-button.big{animation:play-breathe 1.8s ease-in-out infinite}}
 @keyframes play-breathe{50%{scale:1.03}}
@@ -110,68 +116,66 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 
 /* Deco */
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
-.chip{flex:none;padding:7px 14px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);background:#fff8e4d9;box-shadow:0 2px 0 var(--cream-deep)}
-.chip.on{background:var(--leaf);color:#fff;box-shadow:0 2px 0 var(--leaf-deep)}
+.chip{flex:none;padding:7px 14px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);background:#fff8e4d9;box-shadow:none}
+.chip.on{background:var(--green);color:#fff;box-shadow:none}
 .item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .deco-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px 8px;border-radius:20px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 4px 0 var(--cream-deep);color:var(--cream-ink);font-weight:900;font-size:12px}
+  background:var(--panel);box-shadow:none;color:var(--cream-ink);font-weight:900;font-size:12px}
 .deco-item .thumb{width:58%;aspect-ratio:1;border-radius:14px}
 .deco-item em{font-style:normal;display:inline-flex;align-items:center;gap:4px;font-size:13px}
 .deco-item em .ico-coin{width:14px;height:14px}
-.deco-item.owned{box-shadow:0 0 0 3px var(--leaf),0 4px 0 var(--cream-deep)}
+.deco-item.owned{box-shadow:0 0 0 3px var(--leaf)}
 .deco-item.locked{opacity:.65;filter:grayscale(.5)}
 .soon-note{margin:0;text-align:center;font-size:12px;font-weight:800;color:var(--cream-ink);background:#fff8e4cc;border-radius:12px;padding:6px 10px}
 
 /* Shop */
 .featured{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 18px;border-radius:24px;text-align:left;color:#fff;
-  background:linear-gradient(135deg,#ff9fb6,#e8617f);box-shadow:0 5px 0 #b8435f,0 10px 20px #8a4b3a40}
+  background:var(--pink);box-shadow:none}
 .featured-tag{font-size:11px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;background:#fff3;border-radius:99px;padding:2px 10px}
 .featured strong{font-family:var(--display);font-size:22px;font-weight:800;line-height:1.15}
 .featured .price{margin-top:4px;font-weight:900;font-size:16px;background:#fff;color:#c9435f;border-radius:99px;padding:5px 16px}
 .shop-head{margin:4px 0 -4px;font-family:var(--display);font-size:20px;font-weight:800;color:#fffaf0;text-shadow:0 2px 0 #6fa84a}
 .booster-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .booster{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px 10px;border-radius:20px;color:var(--cream-ink);
-  background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 4px 0 var(--cream-deep)}
+  background:var(--panel);box-shadow:none}
 .booster b{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;font-family:var(--display);font-size:20px;color:#fff;
-  background:radial-gradient(circle at 35% 30%,#8fe0a4,#3fa55f);box-shadow:inset 0 -3px 0 #2b7a45}
+  background:var(--green);box-shadow:none}
 .booster span{font-size:12px;font-weight:900;text-align:center;line-height:1.2}
 .booster em,.coin-pack span{font-style:normal;display:inline-flex;align-items:center;gap:5px;font-weight:900}
 .coin-list{display:flex;flex-direction:column;gap:8px}
 .coin-pack{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:18px;color:var(--cream-ink);font-size:16px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));box-shadow:0 4px 0 var(--cream-deep)}
-.coin-pack em{font-style:normal;font-weight:900;background:var(--leaf);color:#fff;border-radius:99px;padding:5px 14px;font-size:14px}
+  background:var(--panel);box-shadow:none}
+.coin-pack em{font-style:normal;font-weight:900;background:var(--green);color:#fff;border-radius:99px;padding:5px 14px;font-size:14px}
 
 /* Thanh điều hướng nổi bo tròn (N2) */
 .tabbar{position:fixed;z-index:50;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));translate:-50% 0;width:min(360px,calc(100% - 32px));
-  display:flex;gap:4px;padding:6px;border-radius:999px;background:linear-gradient(#fffaf0,#ffecb8);border:1px solid var(--cream-edge);
-  box-shadow:0 4px 0 var(--cream-deep),0 12px 24px #5a3a2040}
+  display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--panel);border:1px solid var(--cream-edge);
+  box-shadow:none}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:999px;color:var(--cream-ink);font-weight:900;font-size:11px;letter-spacing:.4px;text-transform:uppercase}
 .tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
-.tab[aria-current="page"]{background:linear-gradient(#7fc45a,var(--leaf));color:#fff;box-shadow:inset 0 -3px 0 var(--leaf-deep)}
+.tab[aria-current="page"]{background:var(--green);color:#fff;box-shadow:none}
 @media(prefers-reduced-motion:no-preference){.tab[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
 @keyframes tab-pop{from{scale:.7}}
 
 .toast{position:fixed;z-index:60;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));translate:-50% 0;padding:9px 18px;border-radius:999px;
-  font-weight:900;font-size:14px;color:#fff;background:#5b3a26e6;box-shadow:0 6px 16px #0003;pointer-events:none;white-space:nowrap}
+  font-weight:900;font-size:14px;color:#fff;background:#5b3a26e6;box-shadow:none;pointer-events:none;white-space:nowrap}
 
-/* Journey: nằm trên Home; nút quay lại bên trái */
+/* Journey: nằm trên Home; tiêu đề giữa, nút ? bên phải, nút Home ở đáy */
 .map{z-index:45}
 .map-head{display:grid;grid-template-columns:44px 1fr 44px;gap:10px}
-.map-head h2{text-align:center;font-family:var(--display)}
+.map-head h2{grid-column:2;text-align:center;font-family:var(--display)}
+.map-node b,.map-back{font-family:var(--display)}
 
-/* Kết quả: sao */
-.result-stars{margin:0 0 6px;font-size:34px;letter-spacing:6px;color:#f2b53c;text-shadow:0 2px 0 #b8741f}
-.result-stars:empty{display:none}
 .level-dialog h2,.level-number{font-family:var(--display)}
 
 /* ===== Phòng 3D (Home + Deco) ===== */
-.room.is-3d{background:radial-gradient(circle at 50% 30%,#fffaf0,#ffe9c4 55%,#f6d3a0);touch-action:none}
+.room.is-3d{background:#ffe9c4;touch-action:none}
 .room.is-3d::after{display:none}
 .room-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 .room-canvas:active{cursor:grabbing}
 .room.deco-view{aspect-ratio:1/.82}
 .room-hint{position:absolute;left:50%;bottom:10px;translate:-50% 0;z-index:2;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:900;
-  color:var(--cream-ink);background:#fff8e4d9;box-shadow:0 2px 0 var(--cream-deep);pointer-events:none;white-space:nowrap}
+  color:var(--cream-ink);background:#fff8e4d9;box-shadow:none;pointer-events:none;white-space:nowrap}
 .room:not(.is-3d) .room-hint{display:none}
 
 /* Nút âm thanh cạnh "?" (Home) và cạnh "↻" (màn chơi) */
@@ -182,26 +186,26 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .sound-toggle[aria-pressed="false"]{opacity:.7}
 
 /* ===== Chuyển khu Garden / Living room ===== */
-.zone-switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff8e4e6;box-shadow:0 3px 0 var(--cream-deep);width:max-content;max-width:100%;margin-inline:auto}
+.zone-switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff8e4e6;box-shadow:none;width:max-content;max-width:100%;margin-inline:auto}
 .zone-switch button{min-height:40px;padding:0 16px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);white-space:nowrap}
-.zone-switch button.on{background:linear-gradient(#7fc45a,var(--leaf));color:#fff;box-shadow:inset 0 -3px 0 var(--leaf-deep)}
+.zone-switch button.on{background:var(--green);color:#fff;box-shadow:none}
 .zone-switch button.locked{opacity:.6}
-.home-stage .zone-switch{position:absolute;z-index:3;left:50%;translate:-50% 0;top:56px}
+.home-stage .zone-switch{position:absolute;z-index:3;left:50%;translate:-50% 0;top:calc(max(14px,env(safe-area-inset-top)) + 100px)}
 .screen>.zone-switch{flex:none}
-.room.is-3d[data-zone="garden"]{background:radial-gradient(circle at 50% 20%,#f4fbff,#cfeaff 50%,#b8e0a0)}
-@media(max-height:680px){.home-stage .zone-switch{top:42px}.zone-switch button{min-height:36px;font-size:12px}}
+.room.is-3d[data-zone="garden"]{background:var(--sky)}
+@media(max-height:680px){.home-stage .zone-switch{top:calc(max(14px,env(safe-area-inset-top)) + 84px)}.zone-switch button{min-height:36px;font-size:12px}}
 
 /* ===== Deco: thanh hành động + ô đồ ===== */
 .deco-action{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:56px;padding:8px 8px 8px 16px;border-radius:22px;
-  background:linear-gradient(var(--cream-1),var(--cream-2));border:1px solid var(--cream-edge);box-shadow:0 4px 0 var(--cream-deep)}
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
 .deco-selected{font-weight:900;font-size:14px;color:var(--cream-ink);min-width:0}
 .deco-action .pill-button{min-width:0;padding:10px 18px;font-size:15px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .deco-action .pill-button:disabled{opacity:.5;cursor:default}
-.deco-item .thumb{background:radial-gradient(circle at 35% 30%,#fff9,var(--c,#ddd) 62%);box-shadow:inset 0 -3px 0 #0000001a}
+.deco-item .thumb{background:var(--c,#ddd);box-shadow:none}
 .deco-item .cat-thumb{background:none;box-shadow:none}
 .deco-item .cat-thumb .cat{width:100%;height:100%}
-.deco-item.using{box-shadow:0 0 0 3px var(--leaf),0 4px 0 var(--cream-deep)}
-.deco-item.picked{box-shadow:0 0 0 3px #f2b53c,0 4px 0 var(--cream-deep);transform:translateY(-2px)}
+.deco-item.using{box-shadow:0 0 0 3px var(--leaf)}
+.deco-item.picked{box-shadow:0 0 0 3px #f2b53c;transform:translateY(-2px)}
 .deco-item.locked{opacity:.65;filter:grayscale(.5)}
 .deco-item.poor em{color:#c0392b}
 .deco-item.using em,.deco-item.owned em{color:var(--leaf-deep)}
@@ -211,39 +215,48 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .screen.home{overflow:hidden;height:100dvh;gap:10px;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 .home-top{min-height:44px}
 .round-button.small{width:40px;height:40px;font-size:18px}
-.screen>.home-stage{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-.home-stage .home-logo{position:absolute;z-index:2;left:0;right:0;top:12px;margin:0;font-size:34px;pointer-events:none}
-.room.home-room{flex:1 1 auto;min-height:220px;aspect-ratio:auto}
-.home-room .room-hint{bottom:12px}
+/* Phòng mèo tràn viền: phủ kín cả màn, không bo góc, không viền; thanh trên + khung PLAY nổi đè lên */
+.screen>.home-stage{position:absolute;inset:0;z-index:0;width:auto;display:flex;flex-direction:column}
+.home-stage .home-logo{position:absolute;z-index:2;left:0;right:0;top:calc(max(14px,env(safe-area-inset-top)) + 52px);margin:0;font-size:34px;pointer-events:none}
+.room.home-room{flex:1 1 auto;min-height:0;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.screen.home>.home-top,.screen.home>.home-actions{position:relative;z-index:1}
+.screen.home>.home-top{pointer-events:none}
+.screen.home>.home-top>*{pointer-events:auto}
+.screen.home>.home-actions{margin-top:auto}
 .home-actions{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:30px;
-  background:linear-gradient(#fff8e4f2,#ffedc2f2);border:1px solid var(--cream-edge);box-shadow:0 4px 0 var(--cream-deep),0 10px 22px #8a4b3a33}
+  background:#fff3d1f2;border:1px solid var(--cream-edge);box-shadow:none}
 .home-level{margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-size:18px;font-weight:800;color:var(--cream-ink)}
 .home-buttons{display:flex;gap:10px;align-items:stretch}
 .home-buttons .pill-button.big{flex:1;min-height:68px;border-radius:24px;font-size:30px}
 .square-button{flex:none;width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:24px;
   font-weight:900;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--cream-ink);
-  background:linear-gradient(#fffdf4,var(--cream-2));box-shadow:0 4px 0 var(--cream-deep),inset 0 0 0 1px var(--cream-edge)}
+  background:var(--panel);box-shadow:inset 0 0 0 1px var(--cream-edge)}
 .square-button svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
-.square-button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--cream-deep),inset 0 0 0 1px var(--cream-edge)}
+.square-button:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--cream-edge)}
 /* Thanh điều hướng: chạm dễ hơn bằng ngón cái */
 .tabbar{width:min(380px,calc(100% - 24px));bottom:calc(10px + env(safe-area-inset-bottom))}
 .tab{min-height:56px;justify-content:center}
-@media(max-height:680px){.home-stage .home-logo{font-size:26px;top:8px}.home-buttons .pill-button.big{min-height:60px;font-size:26px}.home-level{font-size:16px}}
+@media(max-height:680px){.home-stage .home-logo{font-size:26px;top:calc(max(14px,env(safe-area-inset-top)) + 50px)}.home-buttons .pill-button.big{min-height:60px;font-size:26px}.home-level{font-size:16px}}
 .room-canvas.carrying{cursor:grabbing}
-.deco-item .thumb-3d{width:86%;aspect-ratio:1;object-fit:contain;display:block;background:radial-gradient(circle at 50% 58%,#ffffffcc 0 45%,#fff0 70%);box-shadow:none;border-radius:16px}
+.deco-item .thumb-3d{width:86%;aspect-ratio:1;object-fit:contain;display:block;background:transparent;box-shadow:none;border-radius:16px}
 .deco-item.locked .thumb-3d{filter:grayscale(.6)}
 
 /* ===== Bảng vào màn theo độ khó (tier): chill · normal · hard · boss ===== */
 .level-dialog{--tier:#3fa55f}
-.level-dialog[data-tier="chill"]{--tier:#2f9e8f;background:linear-gradient(#f2fff8,#dff5ea)}
-.level-dialog[data-tier="hard"]{--tier:#e0602f;background:linear-gradient(#fff4e8,#ffe1c7);border-color:#f2a46b}
-.level-dialog[data-tier="boss"]{--tier:#ffcf5a;background:radial-gradient(circle at 50% 0%,#6b2238,#2d0f1c 75%);border:2px solid #ffcf5a;color:#fff3dc}
+.deco-confirm h2{margin:6px 0 2px;font-family:var(--display)}
+.deco-confirm .level-feature{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+.deco-confirm-thumb{width:120px;height:120px;margin:0 auto;display:grid;place-items:center}
+.deco-confirm-thumb>*{width:100%;height:100%;aspect-ratio:auto}
+.deco-confirm .pill-button:disabled{opacity:.5}
+.level-dialog[data-tier="chill"]{--tier:#2f9e8f;background:#e3f6ec}
+.level-dialog[data-tier="hard"]{--tier:#e0602f;background:#ffe6cf;border-color:#f2a46b}
+.level-dialog[data-tier="boss"]{--tier:#ffcf5a;background:#3d1426;border:2px solid #ffcf5a;color:#fff3dc}
 .level-dialog[data-tier] .level-number{color:var(--tier)}
 .level-dialog[data-tier="boss"] .level-number{font-size:22px;letter-spacing:2px;text-shadow:0 2px 0 #0006}
 .level-dialog[data-tier="hard"]::backdrop{background:#5a2a1080}
-.level-dialog[data-tier="boss"]::backdrop{background:radial-gradient(circle,#4a0f1f99,#12040acc)}
+.level-dialog[data-tier="boss"]::backdrop{background:#12040acc}
 .intro-tier{display:inline-flex;align-items:center;gap:6px;margin:0 auto 8px;padding:5px 14px 5px 10px;border-radius:999px;
-  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--tier);box-shadow:0 3px 0 #0003}
+  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--tier);box-shadow:none}
 .intro-tier svg{width:20px;height:20px;fill:#fff;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round}
 .level-dialog[data-tier="chill"] .intro-tier svg{fill:none;stroke-width:2.2}
 .level-dialog[data-tier="boss"] .intro-tier{color:#2d0f1c;font-size:18px;padding:7px 18px 7px 12px}
@@ -251,9 +264,9 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .intro-mechanics{display:flex;justify-content:center;gap:10px;margin:10px 0 4px}
 .intro-mechanics .mechanic{position:relative;width:46px;height:46px;display:grid;place-items:center}
 .intro-mechanics .mechanic svg{width:100%;height:100%}
-.intro-mechanics .mechanic b{position:absolute;top:-8px;right:-14px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;background:#e8617f;box-shadow:0 2px 0 #b8435f;transform:rotate(8deg)}
-.level-dialog[data-tier="boss"] .pill-button:not(.ghost){background:linear-gradient(#ff7a6b,#d9362b);box-shadow:0 4px 0 #8f1f18,0 6px 12px #0006}
-.level-dialog[data-tier="boss"] .pill-button.ghost{background:#ffffff1f;color:#fff3dc;box-shadow:0 4px 0 #0005}
+.intro-mechanics .mechanic b{position:absolute;top:-8px;right:-14px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;background:#e8617f;box-shadow:none;transform:rotate(8deg)}
+.level-dialog[data-tier="boss"] .pill-button:not(.ghost){background:var(--red);box-shadow:none}
+.level-dialog[data-tier="boss"] .pill-button.ghost{background:#ffffff1f;color:#fff3dc;box-shadow:none}
 @media(prefers-reduced-motion:no-preference){
   .level-dialog[data-tier="boss"][open]{animation:boss-enter .6s cubic-bezier(.3,1.4,.5,1)}
   .level-dialog[data-tier="boss"][open] .intro-tier{animation:boss-badge 1.4s ease-in-out .6s infinite}
@@ -261,11 +274,75 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
   .intro-mechanics .mechanic.new{animation:mech-pop .5s cubic-bezier(.3,1.6,.5,1) .15s both}
 }
 @keyframes boss-enter{0%{transform:scale(.6);opacity:0}45%{transform:scale(1.06) rotate(-1.5deg);opacity:1}60%{transform:rotate(1.5deg)}75%{transform:rotate(-1deg)}100%{transform:none}}
-@keyframes boss-badge{50%{transform:scale(1.08);box-shadow:0 3px 0 #0003,0 0 18px #ffcf5a}}
+@keyframes boss-badge{50%{transform:scale(1.08);box-shadow:none}}
 @keyframes hard-enter{from{transform:translateY(18px) scale(.92);opacity:0}}
 @keyframes mech-pop{from{transform:scale(.3)}}
 /* Bản đồ: màu nút theo cấp độ */
-.map-node.tier-chill b{background:radial-gradient(circle at 35% 30%,#9ce8d6,#2f9e8f);box-shadow:inset 0 -4px 0 #1f7266}
-.map-node.tier-hard b{background:radial-gradient(circle at 35% 30%,#ffc08a,#e0602f);box-shadow:inset 0 -4px 0 #a8421f}
-.map-node.tier-boss b{background:radial-gradient(circle at 35% 30%,#b94a66,#4a1426);box-shadow:inset 0 -4px 0 #2d0f1c,0 0 0 3px #ffcf5a}
-.map-node.tier-boss{background:linear-gradient(#fff1d6,#ffd9a0)}
+.map-node:not(.locked).tier-chill b{background:var(--teal);box-shadow:none}
+.map-node:not(.locked).tier-hard b{background:var(--orange);box-shadow:none}
+.map-node:not(.locked).tier-boss b{background:var(--purple);border-color:#ffcf5a;box-shadow:none}
+.map-node.tier-boss{width:84px;height:84px}
+.map-node.tier-boss.locked b{width:68px;height:68px;margin:8px}
+
+/* ---------- Booster trong màn: hàng nút tròn ngay trên dock, số lượng ở góc (hết thì hiện giá xu) ---------- */
+.booster-bar{display:flex;justify-content:center;gap:18px;margin:0 0 10px}
+.boost{position:relative;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;cursor:pointer;color:#fff;
+  background:var(--pink);
+  border:3px solid #fff;box-shadow:none}
+.boost svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+.boost[data-boost="swap"]{background:var(--blue);box-shadow:none}
+.boost[data-boost="moves"]{background:var(--green);box-shadow:none}
+.boost-plus{font-family:var(--display);font-size:22px;font-weight:800;line-height:1;text-shadow:0 2px 0 #0003}
+.boost-count{position:absolute;right:-8px;top:-6px;min-width:24px;height:24px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--display);font-size:14px;font-weight:800;color:var(--cream-ink);background:#fff;box-shadow:none}
+.boost.empty .boost-count{right:50%;top:auto;bottom:-10px;translate:50% 0;font-size:12px;background:#ffe9a8}
+.boost-count .ico-coin{width:12px;height:12px}
+.boost:not(:disabled):active{translate:0 3px;box-shadow:none}
+.boost.armed{outline:3px solid #ffd23f;outline-offset:3px}
+@media(prefers-reduced-motion:no-preference){.boost.armed{animation:boost-armed .6s ease-in-out infinite alternate}}
+@keyframes boost-armed{to{rotate:-14deg}}
+/* Đang cầm búa: ô đập được rung nhẹ, ô kim loại/trống thì mờ đi */
+body.hammer-armed .board .cell.locked,body.hammer-armed .board .cell.block:not(.metal){cursor:crosshair;box-shadow:inset 0 0 0 3px #ffd23f}
+body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacity:.55}
+.smash-ghost{position:absolute;pointer-events:none;z-index:3}
+@media(max-height:720px){.booster-bar{margin-bottom:6px;gap:14px}.boost{width:46px;height:46px}.boost svg{width:22px;height:22px}}
+
+/* Shop: booster mua bằng xu */
+.booster svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+.booster small{font-size:11px;font-weight:800;opacity:.7}
+.booster em{margin-top:2px;padding:3px 10px;border-radius:99px;background:var(--green);color:#fff;font-size:13px}
+.booster.poor em{background:#b9a98a}
+
+/* ---------- Khu mèo ban đêm (nút mặt trời / mặt trăng ở Home): trời tối màu trơn + vài ngôi sao lấp lánh ---------- */
+.room.is-3d.night,.room.is-3d.night[data-zone="garden"]{background:#1e2747}
+.room.is-3d.night::before{content:"✦      ·     ✧        ·      ✦     ·       ✧     ·    ✦";
+  position:absolute;left:8%;right:8%;top:calc(max(14px,env(safe-area-inset-top)) + 150px);z-index:0;white-space:pre;text-align:center;
+  font-size:14px;line-height:1;color:#fff6c8;opacity:.8;pointer-events:none}
+.room.deco-view.is-3d.night::before{top:14px}
+@media(prefers-reduced-motion:no-preference){.room.is-3d.night::before{animation:night-twinkle 2.6s ease-in-out infinite alternate}}
+@keyframes night-twinkle{to{opacity:.45}}
+#night-toggle[aria-pressed="true"]{background:#2f3a66;color:#fff6c8}
+
+/* Màn thấp (iPhone SE, Android 360×740, điện thoại có thanh trình duyệt): gọn thanh trên, HUD, dock, booster để nhường chỗ cho bàn cờ */
+@media(max-height:760px){
+  .topbar{height:44px;margin-bottom:4px}
+  .hud{margin-bottom:6px}
+  .progress{height:36px}
+  .moves-box{height:44px;width:68px}
+  .moves-box strong{font-size:22px}
+  .dock.draw-area{padding:6px 8px 8px}
+  #active-card{height:112px;--card-h:112px}
+  .dock .hold-slot,.dock .next-slot{width:52px;height:52px;--card-w:52px;--card-h:52px}
+  .booster-bar{margin-bottom:4px;gap:14px}
+  .boost{width:42px;height:42px}
+  .boost svg{width:20px;height:20px}
+  .boost-plus{font-size:18px}
+  .message-row{height:26px;margin:0 0 2px}
+}
+
+/* Deco: khung phòng 3D dính trên cùng khi cuộn xuống danh sách đồ, để vừa chọn vừa xem trước */
+/* + thanh Mua/Đặt dính ngay dưới khung (khung rộng = bề ngang nội dung, cao = rộng × .82) */
+/* Khung 3D tràn viền hai bên, không bo góc, không viền (rộng tối đa 480px trên máy lớn) */
+.room.deco-view{position:sticky;top:calc(-1 * max(14px,env(safe-area-inset-top)));z-index:5;width:min(100vw,480px);max-width:none;margin-inline:calc(50% - min(50vw,240px));border-radius:0;box-shadow:none;
+  border-block:6px solid #fff8e4;box-sizing:border-box} /* viền kem trên + dưới, hai bên vẫn tràn */
+.screen.deco>.deco-action{position:sticky;z-index:5;top:calc(min(100vw,480px) * .82 + 6px - max(14px,env(safe-area-inset-top)))} /* sticky tính từ mép trong lề trên 14px của trang -> bù lại */

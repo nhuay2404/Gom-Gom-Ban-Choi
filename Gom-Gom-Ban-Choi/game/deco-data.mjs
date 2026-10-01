@@ -60,14 +60,50 @@ export const CATALOG = [
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', price: 0, breed: 'siamese', lock: 9 },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', price: 0, breed: 'tuxedo', lock: 10 },
 ];
+// Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá.
+// Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
+// nên mèo vẫn chơi được như cũ (ví dụ đài phun nước vẫn có cá để rình, tủ đầu giường vẫn có bình hoa để đẩy rơi).
+// Mỗi slot chỉ đặt được một món: đặt món khác thì nó thay chỗ món đang ở đó.
+const VARIANTS = [
+  // --- Vườn ---
+  ['flowers', 'flowers-mushroom', 'Mushroom ring', '#e5483a'],
+  ['stump', 'stump-hay', 'Hay bale', '#e8c25a'],
+  ['catnip', 'catnip-grass', 'Cat grass tray', '#5fb83a'],
+  ['lantern', 'lantern-torch', 'Tiki torch', '#ffb347'],
+  ['sandbox', 'sandbox-turtle', 'Turtle sandbox', '#4fb34a'],
+  ['cathouse', 'cathouse-barrel', 'Barrel house', '#b9854a'],
+  ['pond', 'pond-fountain', 'Fountain', '#d9d2c4'],
+  ['hammock', 'hammock-tire', 'Tire swing', '#3a3a3a'],
+  ['birdbath', 'birdbath-feeder', 'Bird feeder', '#e5483a'],
+  ['bench', 'bench-log', 'Log bench', '#9a6a45'],
+  // --- Phòng khách ---
+  ['rug', 'rug-quilt', 'Patchwork quilt', '#ec5b8c'],
+  ['armchair', 'armchair-rocker', 'Rocking chair', '#b9854a'],
+  ['plant', 'plant-cactus', 'Cactus', '#4f9f5a'],
+  ['yarn', 'yarn-toybox', 'Toy box', '#3b8fe0'],
+  ['catbed', 'catbed-box', 'Cardboard box', '#d9a36a'],
+  ['table', 'table-nightstand', 'Nightstand', '#f5f0e6'],
+  ['lamp', 'lamp-heater', 'Heater', '#e5483a'],
+  ['cattree', 'cattree-cactus', 'Cactus tower', '#4f9f5a'],
+  ['shelf', 'shelf-wardrobe', 'Wardrobe', '#8fc9f2'],
+  ['tank', 'tank-birdcage', 'Bird cage', '#d9a13a'],
+];
+// Chèn mỗi phương án ngay sau món gốc; giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
+VARIANTS.forEach(([slot, id, name, color]) => {
+  const at = CATALOG.findIndex(entry => entry.id === slot), base = CATALOG[at];
+  CATALOG.splice(at + 1, 0, { id, zone: base.zone, cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
+});
 export const itemById = id => CATALOG.find(entry => entry.id === id);
+// Chỗ đặt của một món (món gốc: chính nó; phương án thay thế: món gốc).
+export const slotOf = entry => entry.slot || entry.id;
+const withoutSlot = (placed, entry) => placed.filter(id => slotOf(itemById(id)) !== slotOf(entry));
 export const catalogFor = (zone, cat) => CATALOG.filter(entry => entry.cat === cat && (!entry.zone || entry.zone === zone));
 
 const zoneDefaults = zone => {
   const free = CATALOG.filter(entry => entry.zone === zone && entry.price === 0);
   return {
     owned: free.map(entry => entry.id),
-    placed: free.filter(entry => entry.cat === 'furniture').map(entry => entry.id),
+    placed: free.filter(entry => entry.cat === 'furniture' && !entry.slot).map(entry => entry.id),
     wall: free.find(entry => entry.cat === 'walls').id,
     floor: free.find(entry => entry.cat === 'floors').id,
   };
@@ -76,13 +112,20 @@ function defaults(totalStars) {
   return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', zones: { garden: zoneDefaults('garden'), living: zoneDefaults('living') } };
 }
 
+// Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
+function clean(deco) {
+  const known = id => !!itemById(id);
+  const zones = Object.fromEntries(Object.entries(deco.zones).map(([zone, state]) => [zone, { ...state, owned: state.owned.filter(known), placed: state.placed.filter(known) }]));
+  return { ...deco, zones };
+}
+
 // Lần đầu có Deco: số xu = tổng sao đã có × COINS_PER_STAR.
 // Save cũ (trước khi có vườn, đồ mua cho phòng khách): phòng khách giờ khoá tới màn 10, nên hoàn lại xu
 // của đồ đã mua để người chơi sắm cho vườn; phòng khách về mặc định.
 export function loadDeco(totalStars) {
   const saved = readJSON(SAVE_KEYS.deco);
   {
-    if (saved && saved.zones) return { ...defaults(totalStars), ...saved };
+    if (saved && saved.zones) return clean({ ...defaults(totalStars), ...saved });
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(totalStars);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
@@ -102,12 +145,20 @@ export function itemStatus(deco, entry, unlockedLevel) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
   if (entry.cat === 'cats') return deco.cats.includes(entry.breed) ? 'using' : 'owned';
   const zone = zoneState(deco, entry.zone);
-  const owned = zone.owned.includes(entry.id), affordable = deco.coins >= entry.price ? 'buy' : 'poor';
+  // Món giá 0 (kể cả phương án thay thế của món miễn phí) luôn coi như đã có, không cần "mua".
+  const owned = zone.owned.includes(entry.id) || entry.price === 0, affordable = deco.coins >= entry.price ? 'buy' : 'poor';
   if (entry.cat === 'walls') return zone.wall === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (entry.cat === 'floors') return zone.floor === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (!owned) return affordable;
   return zone.placed.includes(entry.id) ? 'using' : 'owned';
 }
+
+// Món đang chiếm chỗ của `entry` (phương án khác cùng slot), nếu có.
+export const occupantOf = (deco, entry) => {
+  if (entry.cat !== 'furniture') return null;
+  const id = zoneState(deco, entry.zone).placed.find(other => other !== entry.id && slotOf(itemById(other)) === slotOf(entry));
+  return id ? itemById(id) : null;
+};
 
 // Hành động chính trên một món; trả về deco mới (không sửa bản cũ) hoặc { error }.
 export function applyAction(deco, entry, unlockedLevel) {
@@ -127,7 +178,8 @@ export function applyAction(deco, entry, unlockedLevel) {
   if (status === 'buy') next = withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] });
   if (entry.cat === 'walls') return withZone(next, entry.zone, { wall: entry.id });
   if (entry.cat === 'floors') return withZone(next, entry.zone, { floor: entry.id });
-  const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...zone.placed, entry.id];
+  // Đặt vào thì thay món khác đang ở cùng chỗ.
+  const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...withoutSlot(zone.placed, entry), entry.id];
   return withZone(next, entry.zone, { placed });
 }
 
@@ -138,5 +190,5 @@ export function previewDeco(deco, entry) {
   const zone = zoneState(deco, entry.zone);
   if (entry.cat === 'walls') return withZone(deco, entry.zone, { wall: entry.id });
   if (entry.cat === 'floors') return withZone(deco, entry.zone, { floor: entry.id });
-  return zone.placed.includes(entry.id) ? deco : withZone(deco, entry.zone, { placed: [...zone.placed, entry.id] });
+  return zone.placed.includes(entry.id) ? deco : withZone(deco, entry.zone, { placed: [...withoutSlot(zone.placed, entry), entry.id] });
 }

@@ -8,6 +8,7 @@
     "test": "node --test game/*.test.mjs",
     "simulate": "node tools/simulate-levels.mjs 400",
     "baseline": "node tools/simulate-levels.mjs 400 --baseline",
+    "build:html": "node tools/build-single-html.mjs",
     "export:data": "node tools/export-data.mjs",
     "export:art": "node tools/export-art.mjs",
     "export:sounds": "node tools/export-sounds.mjs",

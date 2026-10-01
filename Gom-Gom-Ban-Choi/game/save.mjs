@@ -6,10 +6,14 @@
 //   progress  { stars: number[] }            sao tốt nhất từng màn (chỉ số 0 = màn 1), 0/undefined = chưa qua
 //   deco      { coins, cats[], zone, zones: { garden|living: { owned[], placed[], wall, floor } } }
 //   sound     'on' | 'off'
+//   night     'on' | 'off'                   khu mèo ban đêm / ban ngày
+//   boosters  { hammer, swap, moves }        số booster đang có (chưa có save = BOOSTERS.START_STOCK mỗi loại)
 export const SAVE_KEYS = {
   progress: 'gomgom-rotate-progress-v1',
   deco: 'gomgom-rotate-deco-v1',
   sound: 'gomgom-rotate-sound',
+  boosters: 'gomgom-rotate-boosters-v1',
+  night: 'gomgom-rotate-night',
 };
 
 function defaultBackend() {
