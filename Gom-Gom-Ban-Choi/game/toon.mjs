@@ -117,7 +117,7 @@ const OUTLINE_PX = 3;
 //   toneScale: độ dài một đoạn đậm→mờ (số nhỏ = đoạn dài, chuyển mềm)   grain : độ rõ của xơ bút
 // Mọi nhiễu tính theo toạ độ của chính khối (không theo pixel màn hình) nên khi xoay camera hay mèo di chuyển,
 // hoa văn nét dính chặt vào khối, không trôi / nhấp nháy.
-const STROKE = { wobble: .15, wobbleScale: 3.0, tone: .5, toneScale: 4.5, grain: .14, grainScale: 34.0, inner: .1 };
+const STROKE = { wobble: .15, wobbleScale: 3.0, tone: 0, toneScale: 4.5, grain: .05, grainScale: 34.0, inner: .1 };
 const NOISE_GLSL = `
 float toonHash( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
 float toonNoise( vec3 x ) {
@@ -201,8 +201,8 @@ export function renderOutlineIds(renderer, scene, camera) {
 //   px: độ dày (px màn hình)   dark: độ sáng còn lại của màu khối trong mực (nhỏ = đậm hơn)
 //   tone: mức nhạt của đoạn "mờ"   brown: tông nâu pha vào mực   inner: độ đậm nét trong (0 = bỏ hẳn)
 export const OUTLINE_STYLES = {
-  default: { px: OUTLINE_PX, dark: .5, tone: STROKE.tone, brown: '#5a3a2a', inner: STROKE.inner },
-  cat: { px: 4.4, dark: .3, tone: .22, brown: '#3e2418', inner: 0 }, // mèo là nhân vật chính: nét dày, đậm, ít đoạn nhạt, không có nét trong
+  default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
+  cat: { px: 4.4, dark: .25, tone: 0, brown: '#3a2016', inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;
