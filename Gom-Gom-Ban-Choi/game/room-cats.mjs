@@ -97,6 +97,13 @@ function eyesTexture(breed, eyes) {
   });
 }
 
+// Độ sâu (z, hệ toạ độ thân) của mặt trước thân bo tròn tại (x, y): phần phẳng ở giữa, cong dần ra mép theo bán kính bo.
+const BODY_R = .12;
+function frontSurface(x, y) {
+  const dx = Math.max(0, Math.abs(x) - (W / 2 - BODY_R)), dy = Math.max(0, Math.abs(y) - (H / 2 - BODY_R));
+  return D / 2 - BODY_R + Math.sqrt(Math.max(0, BODY_R * BODY_R - dx * dx - dy * dy));
+}
+
 // ---------- Đuôi: mỗi giống một kiểu ----------
 // n đốt dài `seg`, bán kính từ gốc r0 tới chóp r1 (fluff = phình giữa như đuôi xù); ring = màu khoanh xen kẽ;
 // tipColor/tipFrom = chóp khác màu; pom/tuft = cục bông / chùm lông ở chóp; hook = chóp cong móc câu khi dựng đuôi;
@@ -138,15 +145,22 @@ function buildRig(breed) {
   const pivot = new THREE.Group();         // chúi / ngửa quanh mép sau-dưới thân
   root.add(hopper); hopper.add(roller); roller.add(pivot);
   pivot.position.set(0, LEG, -D / 2);
-  const body = mesh(new RoundedBoxGeometry(W, H, D, 6, .12), fur);
+  const body = mesh(new RoundedBoxGeometry(W, H, D, 6, BODY_R), fur);
   body.position.set(0, H / 2, D / 2);
   pivot.add(body);
 
   const faceMat = new THREE.MeshBasicMaterial({ map: faceTexture(breed, 'calm'), transparent: true, alphaTest: .02, depthWrite: false });
   const eyesMat = new THREE.MeshBasicMaterial({ map: eyesTexture(breed, 'open'), transparent: true, alphaTest: .02, depthWrite: false });
-  const plane = new THREE.PlaneGeometry(W * .94, H * .94);
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(W * .94 * (1 + 2 * FACE_PAD), H * .94), faceMat), eyes = new THREE.Mesh(plane, eyesMat);
-  face.position.set(0, H / 2, D + .003); eyes.position.set(0, H / 2, D + .006);
+  // Mặt / mắt là tấm lưới mịn dán ÔM lên mặt trước bo tròn của thân (không phải tấm phẳng lơ lửng), và mỗi frame
+  // uốn theo đúng phép biến dạng của thân (jelly), nên nhìn nghiêng hay thân đang lắc thì mặt vẫn dính vào thân.
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(W * .94 * (1 + 2 * FACE_PAD), H * .94, 24, 16), faceMat);
+  const eyes = new THREE.Mesh(new THREE.PlaneGeometry(W * .94, H * .94, 20, 16), eyesMat);
+  [[face, .003], [eyes, .006]].forEach(([decal, lift]) => {
+    decal.position.copy(body.position); // toạ độ đỉnh tính trong hệ toạ độ thân
+    decal.userData.flat = Float32Array.from(decal.geometry.attributes.position.array);
+    decal.userData.lift = lift;
+    decal.frustumCulled = false;
+  });
   pivot.add(face, eyes);
 
   const ears = [-1, 1].map(side => {
@@ -210,8 +224,18 @@ function buildRig(breed) {
   z.scale.set(.28, .25, 1); z.visible = false;
   root.add(z);
   root.traverse(node => { node.userData.catRoot = root; });
-  return { root, hopper, roller, pivot, body, face, eyes, faceMat, eyesMat, ears, tail, tailParts, tailStyle: style, legs, z };
+  // Thân mềm: giữ toạ độ gốc của từng đỉnh thân + vị trí gốc của mặt/tai để mỗi frame uốn lại theo độ lắc (Cat.jelly).
+  const bodyBase = Float32Array.from(body.geometry.attributes.position.array);
+  const rest = ears.map(node => [node, node.position.clone()]);
+  return { bodyBase, rest, root, hopper, roller, pivot, body, face, eyes, faceMat, eyesMat, ears, tail, tailParts, tailStyle: style, legs, z };
 }
+
+// Lò xo thân mềm theo từng trục: [độ cứng, tỉ lệ tắt, độ nhạy với gia tốc (1 = khối thật: lệch ≈ gia tốc ÷ độ cứng), độ lệch tối đa (m)].
+// Tắt ít (zeta ~.15) nên lắc vài nhịp mới đứng yên; trục dọc cứng hơn để không trông như bóng nước.
+const JELLY = {
+  x: [210, .14, .9, .09], z: [210, .14, 1, .1], y: [320, .16, .45, .06], MAX_ACC: 60,
+  tmpPos: new THREE.Vector3(), tmpVel: new THREE.Vector3(), tmpAcc: new THREE.Vector3(), tmpQ: new THREE.Quaternion(),
+};
 
 // ---------- Một con mèo: thân thể + não ----------
 class Cat {
@@ -231,6 +255,7 @@ class Cat {
     this.move = 0; this.lid = 1; this.earFlop = 0; this.swayF = 0; this.swayL = 0; this.lean = 0; this.lastY = 0; this.airK = null; this.hopY = 0;
     const segs = this.rig.tail.length;
     this.tailZ = new Array(segs).fill(0); this.tailX = new Array(segs).fill(0); this.phase = rand(0, TAU);
+    this.jig = new THREE.Vector3(); this.bend = new THREE.Vector3(); this.jigV = new THREE.Vector3(); this.lastBodyPos = null; this.lastBodyVel = new THREE.Vector3();
     this.wrap = 0; this.wrapSide = chance(.5) ? 1 : -1; this.puff = 0; this.rub = 0; // quấn đuôi quanh chân · xù đuôi · dụi người
     this.brain = this.life();
     this.rig.root.userData.cat = this;
@@ -1089,6 +1114,7 @@ class Cat {
       return 'grumpy';
     }
     this.petUntil = now + 1.3;
+    this.jigV.y -= 1.1; this.jigV.x += rand(-.6, .6); // chọc vào: thân lún xuống rồi rung rinh
     this.petMood = this.petTimes.length >= PET_ANNOY.WARN ? 'warning' : 'happy';
     if (this.petMood === 'warning' && this.sleeping) this.interrupt(this.life()); // bị chọc mãi thì tỉnh giấc, bực bội
     else if (this.sleeping) { this.earSide = chance(.5) ? 0 : 1; this.earTwitchV = (this.earTwitchV || 0) + 16; return 'sleepy'; } // ngủ say: chỉ giật giật tai
@@ -1124,6 +1150,62 @@ class Cat {
     yield* this.life();
   }
 
+  // ----- Thân mềm (soft body) -----
+  // Đỉnh thân là một khối nặng gắn lò xo với đáy: thân tăng/giảm tốc, nảy, quay, bị nhấc... thì đỉnh trễ lại rồi
+  // lắc qua lắc lại tắt dần. Gia tốc lấy từ chính tâm thân trong không gian thế giới, nên MỌI chuyển động (đi, nhảy,
+  // đổi tư thế, bị kéo) đều tự sinh rung, không phải gắn tay từng hành vi.
+  // jig = độ lệch của đỉnh thân trong hệ toạ độ thân (x ngang, y lún/giãn, z trước sau).
+  jelly(dt) {
+    const rig = this.rig, body = rig.body;
+    body.updateWorldMatrix(true, false);
+    const pos = JELLY.tmpPos.setFromMatrixPosition(body.matrixWorld);
+    if (!this.lastBodyPos || dt <= 0) { this.lastBodyPos = pos.clone(); return; }
+    const vel = JELLY.tmpVel.subVectors(pos, this.lastBodyPos).divideScalar(dt);
+    const acc = JELLY.tmpAcc.subVectors(vel, this.lastBodyVel).divideScalar(dt);
+    this.lastBodyPos.copy(pos); this.lastBodyVel.copy(vel);
+    if (acc.length() > JELLY.MAX_ACC) acc.setLength(JELLY.MAX_ACC); // dịch chuyển tức thời (thả mèo mới vào phòng...) không làm nổ
+    acc.applyQuaternion(JELLY.tmpQ.setFromRotationMatrix(body.matrixWorld).invert()); // đổi sang hệ toạ độ thân
+    for (const axis of ['x', 'y', 'z']) {
+      const [k, zeta, gain, max] = JELLY[axis];
+      const a = -k * this.jig[axis] - 2 * zeta * Math.sqrt(k) * this.jigV[axis] - acc[axis] * gain;
+      this.jigV[axis] += a * dt;
+      this.jig[axis] = clamp(this.jig[axis] + this.jigV[axis] * dt, -max * 3, max * 3);
+      this.bend[axis] = max * Math.tanh(this.jig[axis] / max); // chặn mềm: gần ngưỡng thì cứng dần, không khựng cái cụp
+    }
+    // Uốn đỉnh: độ lệch tăng theo bình phương độ cao (đáy dính chân, đỉnh lắc nhiều nhất);
+    // lún xuống thì phình eo, giãn lên thì thóp eo, giữ thể tích như khối thạch.
+    const { x: jx, y: jy, z: jz } = this.bend, base = rig.bodyBase, out = body.geometry.attributes.position;
+    const arr = out.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      const h = clamp((base[i + 1] + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * 1.4 * Math.sin(h * Math.PI);
+      arr[i] = base[i] * belly + jx * w;
+      arr[i + 1] = base[i + 1] + jy * w;
+      arr[i + 2] = base[i + 2] * belly + jz * w;
+    }
+    out.needsUpdate = true;
+    body.geometry.boundingSphere = null; // để raycast (bấm vào mèo) tính lại cho đúng hình mới
+    // Mặt / mắt: dán lên mặt trước bo tròn rồi uốn cùng công thức với đỉnh thân -> luôn khít với thân.
+    // Mắt liếc (this.look) = trượt dọc bề mặt, không phải dời cả tấm ra khỏi thân.
+    for (const decal of [rig.face, rig.eyes]) {
+      const flat = decal.userData.flat, lift = decal.userData.lift, attr = decal.geometry.attributes.position, a = attr.array;
+      const shift = decal === rig.eyes ? this.look * .03 : 0;
+      for (let i = 0; i < a.length; i += 3) {
+        const x = flat[i] + shift, y = flat[i + 1];
+        const h = clamp((y + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * 1.4 * Math.sin(h * Math.PI);
+        const z = frontSurface(x, y) + lift;
+        a[i] = x * belly + jx * w; a[i + 1] = y + jy * w; a[i + 2] = z * belly + jz * w;
+      }
+      attr.needsUpdate = true;
+      if (decal === rig.eyes) decal.scale.y *= body.scale.y; else decal.scale.y = body.scale.y; // thân co khi nằm thì mặt co theo (mắt: nhân thêm vào độ khép mi đặt trong update)
+    }
+    // Tai (đỉnh thân) đi theo phần thân đang uốn.
+    const top = H / 2 + (H / 2) * body.scale.y; // đỉnh thân thật (thân co khi nằm)
+    for (const [node, home] of rig.rest) {
+      const w = clamp(home.y / H, 0, 1.15) ** 2;
+      node.position.set(home.x + jx * w, home.y - (H - top) + jy * w, home.z + jz * w);
+    }
+  }
+
   // ----- Mỗi frame: não chạy trước, rồi thân thể đi theo bằng lò xo -----
   update(dt, t) {
     const petting = t < this.petUntil;
@@ -1143,7 +1225,7 @@ class Cat {
     spring(this, 'rub', rubGoal, 70, .7, dt);
     // Xù đuôi khi giật mình / bực (puffUntil); sắp hết kiên nhẫn lúc bị cưng thì xù nhẹ.
     spring(this, 'puff', t < (this.puffUntil || 0) ? 1 : petting && this.petMood === 'warning' ? .4 : 0, 90, .5, dt);
-    spring(this, 'squash', 0, 170, .32, dt);           // nhún/giãn: tắt ít nên nảy 1–2 nhịp
+    spring(this, 'squash', 0, 150, .2, dt);            // nhún/giãn: tắt rất ít nên nảy 2–3 nhịp như thạch
     spring(this, 'earFlop', 0, 120, .35, dt);
     spring(this, 'yaw', this.yaw + angDiff(this.yaw, this.heading), 150, .85, dt);
     const turnRate = this.yawV || 0;
@@ -1186,7 +1268,7 @@ class Cat {
     const faceTex = faceTexture(this.breed, mouth), eyesTex = eyesTexture(this.breed, eyes);
     if (rig.faceMat.map !== faceTex) { rig.faceMat.map = faceTex; rig.faceMat.needsUpdate = true; }
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
-    rig.eyes.position.x = this.look * .035;
+    // mắt liếc ngang (this.look): cộng trong jelly() cùng với độ lắc của thân
     rig.eyes.scale.y = eyes === 'blink' || !canBlink ? 1 : clamp(this.lid, .2, 1);
 
     // ---- Tai: giật bằng xung lò xo, cụp khi tiếp đất, dỏng khi tập trung, cụp khi bực ----
@@ -1296,6 +1378,8 @@ class Cat {
     });
     const puff = Math.max(0, this.puff);
     rig.tailParts.forEach(part => { const b = part.userData.baseScale; part.scale.set(b.x * (1 + puff * .65), b.y * (1 + puff * .15), b.z * (1 + puff * .65)); });
+
+    this.jelly(dt);
 
     // Zzz
     rig.z.visible = this.sleeping;
