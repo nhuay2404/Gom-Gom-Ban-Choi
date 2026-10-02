@@ -80,8 +80,6 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .pill-stat{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;font-weight:900;font-size:15px;color:var(--cream-ink);
   background:var(--panel);box-shadow:none;font-variant-numeric:tabular-nums}
 .ico-coin{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none;background:var(--gold);box-shadow:inset 0 0 0 2px #e9a93a}
-.home-logo{margin:4px 0 0;text-align:center;font-family:var(--display);font-size:46px;font-weight:800;letter-spacing:-1px;line-height:1;color:#fffaf0;
-  text-shadow:0 3px 0 #6fa84a;transform:rotate(-4deg)}
 
 /* Phòng mèo: tường kem, cửa sổ vòm, sàn gỗ, thảm hồng; mèo ngồi trên thảm */
 .room{position:relative;aspect-ratio:1/.86;border-radius:30px;overflow:hidden;flex:none;
@@ -152,7 +150,7 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
   display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--panel);border:1px solid var(--cream-edge);
   box-shadow:none}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:999px;color:var(--cream-ink);font-weight:900;font-size:11px;letter-spacing:.4px;text-transform:uppercase}
-.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 .tab[aria-current="page"]{background:var(--green);color:#fff;box-shadow:none}
 @media(prefers-reduced-motion:no-preference){.tab[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
 @keyframes tab-pop{from{scale:.7}}
@@ -209,12 +207,7 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .room.is-3d[data-zone]{background:var(--sky)} /* khu nhà có cả vườn: trời xanh cả khi đang ở phòng khách */
 @media(max-height:680px){.home-stage .zone-switch{top:calc(max(14px,env(safe-area-inset-top)) + 84px)}.zone-switch button{min-height:36px;font-size:12px}}
 
-/* ===== Deco: thanh hành động + ô đồ ===== */
-.deco-action{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:56px;padding:8px 8px 8px 16px;border-radius:22px;
-  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
-.deco-selected{font-weight:900;font-size:14px;color:var(--cream-ink);min-width:0}
-.deco-action .pill-button{min-width:0;padding:10px 18px;font-size:15px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.deco-action .pill-button:disabled{opacity:.5;cursor:default}
+/* ===== Deco: ô đồ (chạm lần 2 để mua / đặt qua hộp xác nhận) ===== */
 .deco-item .thumb{background:var(--c,#ddd);box-shadow:none}
 .deco-item .cat-thumb{background:none;box-shadow:none}
 .deco-item .cat-thumb .cat{width:100%;height:100%}
@@ -226,31 +219,30 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .result-coins{margin:-8px 0 14px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:900;font-size:16px;color:#c9601c}
 /* ===== Home cho chơi một tay (bố cục theo vùng ngón cái) =====
    Trên: chỉ để xem. Giữa: phòng mèo co giãn theo màn. Dưới: PLAY to + Levels, ngay trên thanh điều hướng. Không cuộn. */
-.screen.home{overflow:hidden;height:100dvh;gap:10px;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.screen.home{overflow:hidden;height:100dvh;gap:10px;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .home-top{min-height:44px}
 .round-button.small{width:40px;height:40px;font-size:18px}
 /* Phòng mèo tràn viền: phủ kín cả màn, không bo góc, không viền; thanh trên + khung PLAY nổi đè lên */
 .screen>.home-stage{position:absolute;inset:0;z-index:0;width:auto;display:flex;flex-direction:column}
-.home-stage .home-logo{position:absolute;z-index:2;left:0;right:0;top:calc(max(14px,env(safe-area-inset-top)) + 52px);margin:0;font-size:34px;pointer-events:none}
 .room.home-room{flex:1 1 auto;min-height:0;aspect-ratio:auto;border-radius:0;box-shadow:none}
 .screen.home>.home-top,.screen.home>.home-actions{position:relative;z-index:1}
 .screen.home>.home-top{pointer-events:none}
 .screen.home>.home-top>*{pointer-events:auto}
 .screen.home>.home-actions{margin-top:auto}
-.home-actions{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:30px;
+.home-actions{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:24px;
   background:#fff3d1f2;border:1px solid var(--cream-edge);box-shadow:none}
-.home-level{margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-size:18px;font-weight:800;color:var(--cream-ink)}
-.home-buttons{display:flex;gap:10px;align-items:stretch}
-.home-buttons .pill-button.big{flex:1;min-height:68px;border-radius:24px;font-size:30px}
-.square-button{flex:none;width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:24px;
-  font-weight:900;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--cream-ink);
+.home-level{margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-size:15px;font-weight:800;color:var(--cream-ink)}
+.home-buttons{display:flex;gap:8px;align-items:stretch}
+.home-buttons .pill-button.big{flex:1;min-height:52px;padding:8px 0;border-radius:18px;font-size:22px}
+.square-button{flex:none;width:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:18px;
+  font-weight:900;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--cream-ink);
   background:var(--panel);box-shadow:inset 0 0 0 1px var(--cream-edge)}
-.square-button svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.square-button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 .square-button:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--cream-edge)}
 /* Thanh điều hướng: chạm dễ hơn bằng ngón cái */
-.tabbar{width:min(380px,calc(100% - 24px));bottom:calc(10px + env(safe-area-inset-bottom))}
-.tab{min-height:56px;justify-content:center}
-@media(max-height:680px){.home-stage .home-logo{font-size:26px;top:calc(max(14px,env(safe-area-inset-top)) + 50px)}.home-buttons .pill-button.big{min-height:60px;font-size:26px}.home-level{font-size:16px}}
+.tabbar{width:min(320px,calc(100% - 48px));padding:4px;bottom:calc(10px + env(safe-area-inset-bottom))}
+.tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}
+@media(max-height:680px){.home-buttons .pill-button.big{min-height:46px;font-size:20px}.home-level{font-size:14px}}
 .room-canvas.carrying{cursor:grabbing}
 .deco-item .thumb-3d{width:86%;aspect-ratio:1;object-fit:contain;display:block;background:transparent;box-shadow:none;border-radius:16px}
 .deco-item.locked .thumb-3d{filter:grayscale(.6)}
@@ -358,11 +350,10 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 }
 
 /* Deco: khung phòng 3D dính trên cùng khi cuộn xuống danh sách đồ, để vừa chọn vừa xem trước */
-/* + thanh Mua/Đặt dính ngay dưới khung (khung rộng = bề ngang nội dung, cao = rộng × .82) */
+/* (khung rộng = bề ngang nội dung, cao = rộng × .82) */
 /* Khung 3D tràn viền hai bên, không bo góc, không viền (rộng tối đa 480px trên máy lớn) */
 .room.deco-view{position:sticky;top:calc(-1 * max(14px,env(safe-area-inset-top)));z-index:5;width:min(100vw,480px);max-width:none;margin-inline:calc(50% - min(50vw,240px));border-radius:0;box-shadow:none;
   border-block:6px solid #fff8e4;box-sizing:border-box} /* viền kem trên + dưới, hai bên vẫn tràn */
-.screen.deco>.deco-action{position:sticky;z-index:5;top:calc(min(100vw,480px) * .82 + 6px - max(14px,env(safe-area-inset-top)))} /* sticky tính từ mép trong lề trên 14px của trang -> bù lại */
 
 /* Ký hiệu nổi trên đầu mèo: ♪ (kêu meo), … (bị làm phiền), 💢 (cáu vì bị chạm quá nhiều) */
 .pet-heart.symbol{color:#6b4523;font-weight:900}

@@ -2,6 +2,7 @@
 // Mỗi món có chỗ đặt cố định [x, z, xoay?]; +z của món hướng vào giữa vườn (mèo đi tới từ phía đó).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { sphereSegments, radialSegments, mergeStatic } from './mesh-detail.mjs';
 
 import { ROOM_HALF } from './room-layout.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
@@ -17,11 +18,11 @@ function mesh(geometry, material) {
 }
 const at = (node, x, y, z) => { node.position.set(x, y, z); return node; };
 // Độ mịn kiểu subdivision, cùng mức với deco-room.mjs.
-const ROUND = 5, RADIAL = 40;
+const ROUND = 3, RADIAL = 32; // bo góc 3 nấc / trụ 32 cạnh là đủ mượt dưới viền toon; cầu / trụ mặc định chia theo cỡ (mesh-detail.mjs)
 const rbox = (w, h, d, r, color) => mesh(new RoundedBoxGeometry(w, h, d, ROUND, r), color);
 const box = (w, h, d, color) => mesh(new THREE.BoxGeometry(w, h, d), color);
-const cyl = (top, bottom, h, color, seg = RADIAL) => mesh(new THREE.CylinderGeometry(top, bottom, h, seg), color);
-const ball = (r, color) => mesh(new THREE.SphereGeometry(r, 32, 24), color);
+const cyl = (top, bottom, h, color, seg = radialSegments(Math.max(top, bottom))) => mesh(new THREE.CylinderGeometry(top, bottom, h, seg), color);
+const ball = (r, color) => mesh(new THREE.SphereGeometry(r, ...sphereSegments(r)), color);
 // group() rỗng thì không gọi add(): Three.js báo lỗi khi add() không có đối số.
 const group = (...children) => { const g = new THREE.Group(); if (children.length) g.add(...children); return g; };
 
@@ -111,16 +112,42 @@ export const GARDEN_BUILD = {
     return stump;
   },
   catnip() {
-    const bush = group();
-    const balls = [[0, .32, 0, .3], [.22, .24, .12, .22], [-.22, .22, .1, .2], [.05, .22, -.2, .22], [-.1, .5, .02, .2]];
-    balls.forEach(([x, y, z, r], i) => bush.add(at(ball(r, i % 2 ? '#8fd46a' : '#a6e07e'), x, y, z)));
-    // Hoa tím mọc NGAY TRÊN mặt các khối lá (nửa trên), không lơ lửng ngoài bụi.
-    for (let i = 0; i < 9; i++) {
-      const [x, y, z, r] = balls[i % balls.length], a = i * 2.3, up = .5 + (i % 3) * .25;
-      bush.add(at(ball(.04, '#c9a6f5'), x + Math.cos(a) * Math.sin(up) * r, y + Math.cos(up) * r, z + Math.sin(a) * Math.sin(up) * r));
-    }
-    bush.userData.leaves = bush;
-    return bush;
+    // Cây catnip thật: nhiều nhánh mọc thẳng toả ra từ gốc, lá hình trứng mọc đối từng cặp (cặp sau xoay 90°),
+    // đầu nhánh là bông hoa tím dạng bông đuôi. Không còn là cục lá tròn.
+    const LEAF = ['#8fbf6a', '#a3cf7e', '#7fb35c'], BLOOM = ['#c9a6f5', '#b48ee8'];
+    const leafGeo = new THREE.SphereGeometry(1, 14, 10);
+    const leaf = (side, size, color) => { // lá dẹt, chĩa ra ngoài và hơi rủ xuống
+      const node = mesh(leafGeo, color);
+      node.scale.set(size, size * .22, size * .62);
+      node.position.x = side * size * .85; node.rotation.z = side * -.35;
+      return node;
+    };
+    const stem = (angle, tilt, h, k) => {
+      const shoot = group(at(cyl(.012, .018, h, '#6a9a48', 8), 0, h / 2, 0));
+      const pairs = Math.round(h / .1);
+      for (let p = 0; p < pairs; p++) {
+        const y = .06 + p * (h - .1) / pairs, size = .085 - p * .009; // lá dưới to, lên ngọn nhỏ dần
+        const pair = group(leaf(1, size, LEAF[(k + p) % 3]), leaf(-1, size, LEAF[(k + p + 1) % 3]));
+        pair.position.y = y; pair.rotation.y = p % 2 ? Math.PI / 2 : 0;
+        shoot.add(pair);
+      }
+      for (let b = 0; b < 4; b++) { // bông đuôi: các chùm hoa nhỏ dần lên ngọn
+        const bud = at(ball(.034 - b * .005, BLOOM[(k + b) % 2]), 0, h + .02 + b * .04, 0);
+        bud.scale.y = .8; shoot.add(bud);
+      }
+      shoot.rotation.set(0, angle, tilt, 'YXZ');
+      return shoot;
+    };
+    const bush = group(at(cyl(.24, .3, .05, '#8a6a4a', 24), 0, .025, 0)); // ụ đất gốc
+    bush.add(stem(0, 0, .55, 0));
+    for (let i = 0; i < 8; i++) bush.add(stem(i / 8 * TAU + (i % 2) * .2, .28 + (i % 3) * .1, .38 + ((i * 5) % 4) * .05, i));
+    // Phóng to ở lớp giữa: lớp ngoài bị hiệu ứng nảy khi đặt đồ (deco-room.mjs) ghi đè scale,
+    // còn `leaves` bị wiggle() (room-cats.mjs) đặt lại scale ~1 khi mèo gặm.
+    mergeStatic(bush); // nhánh + lá + hoa cùng màu gộp lại; cả bụi vẫn rung như một khối
+    const sized = group(bush); sized.scale.setScalar(1.4);
+    const plant = group(sized);
+    plant.userData.leaves = bush;
+    return plant;
   },
   lantern() {
     const glow = mesh(new RoundedBoxGeometry(.3, .36, .3, ROUND, .05), mat('#fff0b8', { emissive: '#ffcf5a', emissiveIntensity: .9 }));
@@ -131,35 +158,121 @@ export const GARDEN_BUILD = {
   },
   sandbox() {
     const wood = '#c9955e';
-    const sand = at(box(.9, .12, .9, '#f3dfb0'), 0, .12, 0);
+    // Lòng cát: khối cát + mặt cát gồ ghề (dồn cao sát thành gỗ, một đụn nhỏ ở góc, lõm chỗ mèo hay đào ở giữa)
+    // phủ texture hạt cát + vệt cào. Mặt cát ~.18 như cũ: mèo đứng đào ở đúng độ cao này (room-cats.mjs).
+    const sandM = sandMat();
+    const top = new THREE.PlaneGeometry(.9, .9, 28, 28).rotateX(-Math.PI / 2), pos = top.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), z = pos.getZ(i), edge = Math.max(Math.abs(x), Math.abs(z)) / .45;
+      const dune = Math.exp(-((x + .22) ** 2 + (z + .2) ** 2) / .02) * .035, dip = -Math.exp(-(x * x + z * z) / .03) * .012;
+      pos.setY(i, edge ** 6 * .02 + dune + dip + Math.sin(x * 23 + z * 7) * .003);
+    }
+    top.computeVertexNormals();
+    const surface = at(mesh(top, sandM), 0, .175, 0);
+    surface.castShadow = false;
+    // Lâu đài cát nhỏ ở góc: cát ướt nén (sẫm hơn mặt cát khô) để nổi khối, thân + hai tháp có mái nhọn + cờ.
+    const wet = sandMat('#d9b77a');
+    const castle = group(at(cyl(.11, .13, .1, wet, 20), 0, .05, 0),
+      at(cyl(.045, .05, .1, wet, 12), .06, .15, .03), at(mesh(new THREE.ConeGeometry(.055, .07, 12), wet), .06, .235, .03),
+      at(cyl(.04, .045, .07, wet, 12), -.06, .135, -.03), at(mesh(new THREE.ConeGeometry(.05, .06, 12), wet), -.06, .2, -.03),
+      at(cyl(.004, .004, .1, '#8a6a4a', 6), .06, .3, .03), at(box(.05, .03, .004, '#ff8fa0'), .085, .335, .03));
+    castle.position.set(.2, .18, .2);
     return group(at(box(1.05, .22, .08, wood), 0, .11, .5), at(box(1.05, .22, .08, wood), 0, .11, -.5),
-      at(box(.08, .22, 1.05, wood), .5, .11, 0), at(box(.08, .22, 1.05, wood), -.5, .11, 0), sand,
-      at(mesh(new THREE.ConeGeometry(.08, .14, 10), '#ff8fa0'), .25, .24, -.2), at(ball(.06, '#8fc9f2'), -.2, .22, .15));
+      at(box(.08, .22, 1.05, wood), .5, .11, 0), at(box(.08, .22, 1.05, wood), -.5, .11, 0), at(box(.9, .12, .9, sandM), 0, .115, 0), surface, castle,
+      at(mesh(new THREE.ConeGeometry(.08, .14, 10), '#ff8fa0'), .25, .26, -.2), at(ball(.06, '#8fc9f2'), -.2, .23, .15));
   },
   cathouse() {
-    const body = rbox(1.1, .8, 1, .06, '#f3d5a8');
-    const roofL = rbox(1.25, .08, .72, .03, '#e8617f'), roofR = roofL.clone();
-    roofL.rotation.z = .62; roofL.position.set(-.29, 1.03, 0);
-    roofR.rotation.z = -.62; roofR.position.set(.29, 1.03, 0);
-    const door = new THREE.Mesh(new THREE.CircleGeometry(.24, 24), new THREE.MeshBasicMaterial({ color: '#4a2e20' }));
-    door.position.set(0, .34, .505);
-    const sign = at(box(.34, .12, .03, '#fffaf0'), 0, .66, .51);
-    return group(at(body, 0, .4, 0), roofL, roofR, door, sign);
+    // Nhà mèo bo tròn kiểu đồ chơi: thân bo góc lớn trên đế, đầu hồi tam giác bo mép lấp kín dưới mái (trước đây hở),
+    // mái hai tấm dày chìa ra trước / sau + nóc tròn, cửa vòm có khung, cửa sổ tròn hai bên hông.
+    const W = 1.1, D = 1, H = .8, BASE = .05, PITCH = .62, EAVE = .14, T = .1; // mái dốc ~35°, chìa ra EAVE, dày T
+    const WALL = '#f3d5a8', ROOF = '#e8617f', TRIM = '#fff4e0';
+    const top = BASE + H, rise = W / 2 * Math.tan(PITCH), apex = top + rise;
+    const base = at(rbox(W + .14, BASE * 2, D + .12, .04, '#d9b07e'), 0, BASE, 0);
+    const body = at(rbox(W, H, D, .13, WALL), 0, BASE + H / 2, 0);
+    const extrude = (shape, depth, bevel = .025) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 4, curveSegments: 24 });
+    const tri = new THREE.Shape([new THREE.Vector2(-W / 2 + .06, 0), new THREE.Vector2(W / 2 - .06, 0), new THREE.Vector2(0, rise - .02)]);
+    const gable = at(mesh(extrude(tri, D - .16, .05), WALL), 0, top - .06, -(D - .16) / 2);
+    // Tấm mái: nằm trên đường dốc từ nóc ra mép (chìa thêm EAVE), dời ra theo pháp tuyến nửa bề dày.
+    const slope = (W / 2 + EAVE) / Math.cos(PITCH);
+    const roof = [1, -1].map(s => {
+      const slab = rbox(slope, T, D + .26, .045, ROOF);
+      slab.rotation.z = -s * PITCH;
+      slab.position.set(s * (Math.cos(PITCH) * slope / 2 + Math.sin(PITCH) * T / 2), apex - Math.sin(PITCH) * slope / 2 + Math.cos(PITCH) * T / 2, 0);
+      return slab;
+    });
+    const ridge = at(cyl(.075, .075, D + .3, '#d44d6c', 24), 0, apex + T * .9, 0);
+    ridge.rotation.x = Math.PI / 2;
+    // Cửa vòm: lỗ tối + khung kem bo mép bao quanh.
+    const arch = (w, h) => { const s = new THREE.Shape(); s.moveTo(-w / 2, 0); s.lineTo(-w / 2, h); s.absarc(0, h, w / 2, Math.PI, 0, true); s.lineTo(w / 2, 0); s.lineTo(-w / 2, 0); return s; };
+    const door = new THREE.Mesh(new THREE.ShapeGeometry(arch(.44, .26), 24), new THREE.MeshBasicMaterial({ color: '#4a2e20' }));
+    door.position.set(0, BASE + .02, D / 2 + .004);
+    const frameShape = arch(.56, .26); frameShape.holes.push(arch(.44, .26));
+    const frame = at(mesh(extrude(frameShape, .03, .018), TRIM), 0, BASE + .02, D / 2 - .01);
+    const sign = at(rbox(.36, .13, .04, .03, TRIM), 0, BASE + .66, D / 2 + .01);
+    const paw = at(ball(.03, ROOF), 0, BASE + .65, D / 2 + .035); paw.scale.z = .4;
+    const windows = [1, -1].map(s => {
+      const glass = at(mesh(new THREE.CircleGeometry(.11, 24), '#bfe6ff'), 0, 0, 0);
+      const ring = mesh(new THREE.TorusGeometry(.12, .028, 10, 28), TRIM);
+      const win = group(glass, ring, at(box(.2, .022, .012, TRIM), 0, 0, .006), at(box(.022, .2, .012, TRIM), 0, 0, .006));
+      win.position.set(s * (W / 2 + .004), BASE + .46, 0); win.rotation.y = s * Math.PI / 2;
+      return win;
+    });
+    return group(base, body, gable, ...roof, ridge, door, frame, sign, paw, ...windows);
   },
   pond() {
-    const water = mesh(new THREE.CylinderGeometry(.8, .8, .04, 64), mat('#6fc3e0', { roughness: .15, transparent: true, opacity: .85 }));
-    water.castShadow = false;
+    // Ao tự nhiên, không phải hồ bơi: mép nước lượn sóng (không tròn đều), viền là đá cuội tròn to nhỏ khác nhau
+    // xếp chồng mép nhau, thêm cụm cỏ lau + lá súng có hoa. Ngẫu nhiên có seed nên lần nào dựng cũng giống nhau.
+    let seed = 7;
+    const rnd = (lo, hi) => { seed = (seed * 16807) % 2147483647; return lo + (seed / 2147483647) * (hi - lo); };
+    const edge = a => .76 * (1 + .09 * Math.sin(2 * a + .6) + .05 * Math.sin(3 * a + 1.9)); // bán kính mép nước theo góc
+    const blob = (scale, n = 72) => {
+      const shape = new THREE.Shape();
+      for (let i = 0; i <= n; i++) { const a = i / n * TAU, r = edge(a) * scale; shape[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, -Math.sin(a) * r); }
+      return shape;
+    };
+    const flat = (geometry, material, y) => { const m = mesh(geometry, material); m.rotation.x = -Math.PI / 2; m.position.y = y; m.castShadow = false; return m; };
+    const bed = flat(new THREE.ShapeGeometry(blob(1.02)), mat('#3f8f9e'), .012); // đáy sẫm lộ ra ở mép -> có chiều sâu
+    const water = flat(new THREE.ShapeGeometry(blob(.94)), mat('#6fc3e0', { roughness: .15, transparent: true, opacity: .85 }), .04);
+    const STONE_COLORS = ['#c8c2b8', '#b5aea3', '#d6cfc2', '#a39b8f', '#bdb6a6'];
     const stones = group();
-    for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; const s = rbox(.24, .12, .18, .05, i % 2 ? '#c8c2b8' : '#b5aea3'); s.position.set(Math.cos(a) * .9, .06, Math.sin(a) * .9); s.rotation.y = -a; stones.add(s); }
-    const pad = new THREE.Mesh(new THREE.CircleGeometry(.14, 20), mat('#6fbf4a'));
-    pad.rotation.x = -Math.PI / 2; pad.position.set(.3, .052, -.25);
+    // Đi quanh mép, mỗi viên cách viên trước ít hơn bề ngang của nó -> viền liền mà vẫn lổn nhổn tự nhiên.
+    for (let a = 0; a < TAU - .12;) {
+      const size = rnd(.09, .16), r = edge(a) + size * .55;
+      const s = ball(size, STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))]);
+      s.scale.set(rnd(1.1, 1.5), rnd(.5, .75), rnd(.9, 1.2));
+      s.position.set(Math.cos(a) * r, size * .35, Math.sin(a) * r); s.rotation.y = rnd(0, TAU);
+      stones.add(s);
+      if (rnd(0, 1) < .35) { // sỏi nhỏ lăn ra ngoài viền
+        const p = ball(rnd(.04, .065), STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))]);
+        const pr = r + size * rnd(.9, 1.3), pa = a + rnd(-.08, .08);
+        p.scale.y = .6; p.position.set(Math.cos(pa) * pr, .02, Math.sin(pa) * pr); stones.add(p);
+      }
+      a += size * 1.25 / edge(a);
+    }
+    // Cụm cỏ lau ở một góc ao, mọc chen giữa đá.
+    const reeds = group();
+    for (let i = 0; i < 9; i++) {
+      const h = rnd(.28, .48), a = 2.3 + rnd(-.35, .35), r = edge(a) + rnd(-.04, .12);
+      const blade = mesh(new THREE.ConeGeometry(.022, h, 6), i % 3 ? '#5fa83e' : '#7cc256');
+      blade.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r); blade.rotation.set(rnd(-.25, .25), 0, rnd(-.25, .25));
+      reeds.add(blade);
+    }
+    const lily = (x, z, r, flowerColor) => {
+      const leaf = flat(new THREE.CircleGeometry(r, 20, .35, TAU - .7), mat('#6fbf4a'), .052);
+      leaf.position.x = x; leaf.position.z = z; leaf.rotation.z = rnd(0, TAU);
+      if (!flowerColor) return leaf;
+      const bloom = at(ball(.05, flowerColor), x, .08, z); bloom.scale.y = .7;
+      return group(leaf, bloom, at(ball(.022, '#ffd66b'), x, .11, z));
+    };
+    const pad = group(lily(.3, -.25, .14, '#ff9fb8'), lily(-.38, .2, .1), lily(.05, .42, .08));
     const koi = ['#f39a45', '#fff4f0'].map((color, i) => {
       const fish = group(ball(.07, color), at(mesh(new THREE.ConeGeometry(.05, .1, 10), color), -.1, 0, 0));
       fish.children[0].scale.set(1.4, .6, .8); fish.children[1].rotation.z = Math.PI / 2;
       fish.userData.phase = i * Math.PI;
       return fish;
     });
-    const pond = group(at(water, 0, .02, 0), stones, pad, ...koi);
+    mergeStatic(stones); mergeStatic(reeds); mergeStatic(pad); // đá / lau / lá súng tĩnh: gộp theo màu
+    const pond = group(bed, water, stones, reeds, pad, ...koi);
     pond.userData.fish = koi;
     pond.userData.update = t => koi.forEach(f => {
       const a = t * .5 + f.userData.phase;
@@ -170,7 +283,32 @@ export const GARDEN_BUILD = {
   },
   hammock() {
     const wood = '#9a6a45';
-    const cloth = mesh(new THREE.CylinderGeometry(.34, .34, 1.4, 32, 1, true, Math.PI / 2, Math.PI), mat('#8fc9f2', { side: THREE.DoubleSide }));
+    // Vải võng: vẫn là CylinderGeometry hở nửa ống (room-cats.mjs findTrough/holdInTrough đọc parameters để mèo nằm bó
+    // theo lòng vải), nhưng uốn lại đỉnh: giữa giữ nguyên bán kính, hai đầu túm dần về điểm buộc dây -> dáng võng mềm
+    // như vải bị kéo căng, không còn là ống cứng. Hệ toạ độ của ống: y = dọc võng, z+ = hướng lên (sau khi xoay).
+    const LEN = 1.4, R = .34, RADIAL = 32, ROWS = 28;
+    const geo = new THREE.CylinderGeometry(R, R, LEN, RADIAL, ROWS, true, Math.PI / 2, Math.PI);
+    const pinch = y => Math.max(.035, 1 - Math.abs(y / (LEN / 2)) ** 2.2); // 1 ở giữa, ~0 ở hai đầu
+    const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3);
+    const STRIPES = [new THREE.Color('#8fc9f2'), new THREE.Color('#fff6e4'), new THREE.Color('#8fc9f2'), new THREE.Color('#ffd27a')];
+    for (let i = 0; i < pos.count; i++) {
+      const s = pinch(pos.getY(i));
+      pos.setX(i, pos.getX(i) * s); pos.setZ(i, pos.getZ(i) * s);
+      STRIPES[Math.floor((i % (RADIAL + 1)) / (RADIAL / 8)) % STRIPES.length].toArray(colors, i * 3); // sọc chạy dọc võng
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.computeVertexNormals();
+    const clothMat = mat('#ffffff', { side: THREE.DoubleSide });
+    clothMat.vertexColors = true;
+    const cloth = mesh(geo, clothMat);
+    // Tấm vải mỏng một lớp: viền "inverted hull" (toon.mjs) không có mặt trong để che nên phủ một mảng tối vào lòng võng.
+    // Bỏ viền cho tấm vải, thay bằng đường viền mép vải (ống mảnh, có viền bình thường) ở hai mép trên.
+    cloth.userData.noOutline = true;
+    for (const side of [1, -1]) {
+      const hem = [];
+      for (let k = 0; k <= 24; k++) { const y = -LEN / 2 + k / 24 * LEN; hem.push(new THREE.Vector3(side * R * pinch(y), y, 0)); }
+      cloth.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hem), 48, .016, 6), '#5fa3d6'));
+    }
     cloth.rotation.z = Math.PI / 2;
     cloth.rotation.x = -Math.PI / 2; // (Euler XYZ: quay z trước) nửa ống quay xuống dưới: lòng võng võng xuống (mèo nằm ở ~.42)
     const sling = at(group(cloth), 0, .72, 0);
@@ -257,7 +395,7 @@ export const GARDEN_BUILD = {
     const skin = '#8fd46a';
     const legs = [[.42, .38], [-.42, .38], [.42, -.38], [-.42, -.38]].map(([x, z]) => at(ball(.12, skin), x, .06, z));
     return group(at(cyl(.55, .5, .2, '#4fb34a'), 0, .1, 0), at(mesh(new THREE.TorusGeometry(.53, .04, 10, 48), '#3a8f36'), 0, .2, 0).rotateX(Math.PI / 2),
-      at(cyl(.5, .5, .02, '#f3dfb0'), 0, .205, 0), ...legs, at(ball(.15, skin), 0, .2, -.58), // mặt cát cao hơn miệng bồn (.2)
+      at(cyl(.5, .5, .02, sandMat()), 0, .205, 0), ...legs, at(ball(.15, skin), 0, .2, -.58), // mặt cát cao hơn miệng bồn (.2)
       at(ball(.03, '#2a2a2a'), .07, .26, -.7), at(ball(.03, '#2a2a2a'), -.07, .26, -.7),
       at(mesh(new THREE.ConeGeometry(.07, .12, 10), '#ec5b8c'), .2, .25, .1), at(ball(.05, '#3b8fe0'), -.18, .23, -.12));
   },
@@ -358,6 +496,30 @@ export function groundTexture(entry) {
   return texture;
 }
 
+// Chất cát (hộp cát, bồn rùa): nền vàng cát + vệt cào gợn sóng + hàng nghìn hạt sáng / tối + vài vỏ ốc, sỏi nhỏ.
+let sandTexture = null;
+function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ướt / nén thì sẫm hơn
+  if (!sandTexture) {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#efd8a4'; g.fillRect(0, 0, 256, 256);
+    let seed = 3; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let y = 8; y < 256; y += 18) [['#dcc086', 3, 0], ['#fbeac4', 1.5, -3]].forEach(([color, width, dy]) => {
+      g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+      for (let x = 0; x <= 256; x += 8) { const yy = y + dy + Math.sin(x / 28 + y * .7) * 4; x ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+      g.stroke();
+    });
+    for (let i = 0; i < 6000; i++) {
+      const r = rnd(); g.fillStyle = r < .45 ? '#c9a66a' : r < .8 ? '#fff4d8' : r < .93 ? '#e2c48c' : '#a98349';
+      const size = rnd() < .9 ? 1 : 2; g.fillRect(rnd() * 256, rnd() * 256, size, size);
+    }
+    for (let i = 0; i < 14; i++) { g.fillStyle = ['#ffffff', '#f5c6c6', '#cbbfae'][i % 3]; g.beginPath(); g.ellipse(rnd() * 256, rnd() * 256, 2 + rnd() * 2.5, 1.5 + rnd() * 2, rnd() * 3, 0, TAU); g.fill(); }
+    sandTexture = new THREE.CanvasTexture(canvas);
+    sandTexture.colorSpace = THREE.SRGBColorSpace;
+  }
+  return mat(tint, { map: sandTexture });
+}
+
 // Hàng rào quanh vườn, dựng lại khi đổi kiểu. Thấp nên không cần mờ đi như tường phòng.
 // `half` = nửa cạnh khoảnh vườn (mặc định cả vườn; thumbnail Deco dùng khoảnh nhỏ).
 // `gate` = { x, w }: chừa cổng trên cạnh -z (lối sang phòng khách), hai bên cổng có cột.
@@ -393,16 +555,83 @@ export function buildFence(entry, half = HALF, gate = null) {
     fence.add(side);
   });
   fence.traverse(node => { if (node.isMesh) node.castShadow = false; });
-  return fence;
+  return mergeStatic(fence); // hàng trăm chấn song / thanh ngang cùng màu -> vài mesh
 }
 
 // Bụi cây trang trí 4 góc vườn (ngoài lối đi của mèo).
+// Mỗi bụi: vài khối tán lá lổn nhổn (đỉnh cầu bị đẩy lồi lõm theo nhiễu, tối dưới sáng trên), lá rời mọc chìa ra khỏi
+// tán cho viền bụi lởm chởm, thêm hoa / quả mọng tuỳ góc, cỏ con + sỏi ở gốc. Ngẫu nhiên có seed: lần nào dựng cũng giống.
+function lumpyPuff(r, dark, light, rnd) {
+  const geo = new THREE.SphereGeometry(r, 22, 16);
+  const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const k1 = rnd(0, TAU), k2 = rnd(0, TAU), k3 = rnd(0, TAU), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).divideScalar(r); // hướng từ tâm (theo vị trí -> đỉnh trùng ở đường nối vẫn khớp)
+    const bump = .09 * Math.sin(5 * v.x + k1) * Math.sin(5 * v.y + k2) * Math.sin(5 * v.z + k3) + .05 * Math.sin(9 * v.x + 7 * v.z + k1);
+    const flatBottom = v.y < -.3 ? .75 + (v.y + 1) / .7 * .25 : 1; // đáy bẹt xuống đất
+    pos.setXYZ(i, v.x * r * (1 + bump), v.y * r * (1 + bump) * flatBottom, v.z * r * (1 + bump));
+    c.copy(dark).lerp(light, THREE.MathUtils.smoothstep(v.y, -.6, .9)).toArray(colors, i * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  const material = mat('#ffffff'); material.vertexColors = true;
+  return mesh(geo, material);
+}
+// Rải `count` bản của `geometry` lên mặt các khối tán (InstancedMesh: một lần vẽ cho cả chùm lá / hoa).
+function scatterOn(puffs, geometry, color, count, rnd, { minUp = -.2, out = 1, scale = [1, 1] } = {}) {
+  const inst = new THREE.InstancedMesh(geometry, mat(color), count), dummy = new THREE.Object3D(), dir = new THREE.Vector3();
+  inst.castShadow = true;
+  for (let n = 0; n < count; n++) {
+    const [px, py, pz, pr] = puffs[Math.floor(rnd(0, puffs.length))];
+    do dir.set(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)); while (dir.lengthSq() > 1 || dir.lengthSq() < .05);
+    dir.normalize(); if (dir.y < minUp) dir.y = -dir.y;
+    dummy.position.set(px + dir.x * pr * out, py + dir.y * pr * out, pz + dir.z * pr * out);
+    dummy.lookAt(dummy.position.x + dir.x, dummy.position.y + dir.y, dummy.position.z + dir.z); // trục z hướng ra ngoài tán
+    dummy.rotateZ(rnd(0, TAU));
+    dummy.scale.setScalar(rnd(scale[0], scale[1]));
+    dummy.updateMatrix();
+    inst.setMatrixAt(n, dummy.matrix);
+  }
+  return inst;
+}
+const CORNER_BUSHES = [ // điểm nhấn từng góc: hoa hồng / quả mọng đỏ / hoa trắng / cỏ lau cao
+  { seed: 11, accent: 'flowers', color: '#ff8fa0' }, { seed: 23, accent: 'berries', color: '#e5483a' },
+  { seed: 37, accent: 'flowers', color: '#fff4f0' }, { seed: 51, accent: 'reeds' },
+];
+const leafGeo = new THREE.SphereGeometry(.06, 8, 6).scale(.55, .22, 1); // lá dẹt, dài theo trục z (chìa ra ngoài tán)
+const blossomGeo = new THREE.SphereGeometry(.045, 10, 8).scale(1, 1, .55);
+const berryGeo = new THREE.SphereGeometry(.03, 10, 8);
+function cornerBush(sx, sz, { seed, accent, color }) {
+  const rnd = (lo, hi) => { seed = (seed * 16807) % 2147483647; return lo + (seed / 2147483647) * (hi - lo); };
+  const dark = new THREE.Color('#4f9a36'), light = new THREE.Color('#9be06a');
+  // Khối tán: một khối chính + các khối phụ dồn về phía trong vườn / hai bên hàng rào, cao thấp so le.
+  const puffs = [[0, .32, 0, .34], [.24 * sx, .22, -.12 * sz, .25], [-.16 * sx, .2, .22 * sz, .23], [.06 * sx, .5, .08 * sz, .22], [-.24 * sx, .18, -.16 * sz, .19]];
+  const bush = group(...puffs.map(([x, y, z, r]) => at(lumpyPuff(r, dark, light, rnd), x, y, z)));
+  bush.add(scatterOn(puffs, leafGeo, '#6fbf4a', 70, rnd, { out: .98, scale: [.8, 1.3] }));
+  bush.add(scatterOn(puffs, leafGeo, '#8fd46a', 50, rnd, { minUp: .1, out: 1, scale: [.7, 1.1] }));
+  if (accent === 'flowers') {
+    bush.add(scatterOn(puffs, blossomGeo, color, 16, rnd, { minUp: 0, out: 1.04 }));
+    bush.add(scatterOn(puffs, berryGeo, '#ffd66b', 16, rnd, { minUp: .2, out: 1.08, scale: [.6, .8] }));
+  } else if (accent === 'berries') bush.add(scatterOn(puffs, berryGeo, color, 22, rnd, { minUp: -.1, out: 1.03 }));
+  else for (let i = 0; i < 7; i++) { // cỏ lau cao mọc xuyên lên từ sau bụi
+    const h = rnd(.55, .85), blade = mesh(new THREE.ConeGeometry(.02, h, 6), i % 2 ? '#5fa83e' : '#7cc256');
+    blade.position.set(-.1 * sx + rnd(-.15, .15), h / 2, -.1 * sz + rnd(-.15, .15)); blade.rotation.set(rnd(-.2, .2), 0, rnd(-.2, .2));
+    const tip = at(ball(.03, '#c9a36a'), 0, h / 2, 0); tip.scale.y = 2.4; blade.add(tip);
+    bush.add(blade);
+  }
+  // Gốc: vài viên sỏi, chỉ ở phía trong vườn (bụi sát góc hàng rào, rải đều quanh gốc sẽ lọt ra ngoài rào lên viền đế).
+  const inward = Math.atan2(-sz, -sx);
+  for (let i = 0; i < 3; i++) {
+    const a = inward + rnd(-.6, .6), pebble = at(ball(rnd(.035, .06), i % 2 ? '#c8c2b8' : '#b5aea3'), Math.cos(a) * .5, .02, Math.sin(a) * .5);
+    pebble.scale.y = .55; bush.add(pebble);
+  }
+  return markOutlineUnit(mergeStatic(bush)); // lá rời / hoa là InstancedMesh, giữ nguyên
+}
 export function gardenCorners() {
   const corners = new THREE.Group();
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
-    const bush = markOutlineUnit(group(at(ball(.34, '#6fbf4a'), 0, .3, 0), at(ball(.24, '#86d05e'), .2 * sx, .22, -.15 * sz), at(ball(.2, '#5fa83e'), -.18 * sx, .2, .18 * sz)));
-    if (i % 2) bush.add(flower('#ff8fa0', .1, .1, .5));
-    bush.position.set(sx * 2.85, 0, sz * 2.85);
+    const bush = cornerBush(sx, sz, { ...CORNER_BUSHES[i] });
+    bush.position.set(sx * (HALF - .15), 0, sz * (HALF - .15));
     corners.add(bush);
   });
   return corners;

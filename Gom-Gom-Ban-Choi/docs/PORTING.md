@@ -111,7 +111,7 @@ Chưa có tool: **mặt mèo 3D** (bụng, mũi, miệng, má) đang vẽ bằng
 
 ## 8. Phòng 3D
 
-- Phòng 6 × 6 m, tâm ở gốc. Camera phối cảnh FOV 34°, nhìn vào (0, 0.8, 0), khoảng cách 9–18, góc cực 0.45–1.22 rad,
+- Phòng 8 × 8 m (ROOM_HALF = 4), tâm ở gốc. Camera phối cảnh FOV 34°, nhìn vào (0, 0.8, 0), khoảng cách 12–24 (9–18 × ROOM_HALF / 3), góc cực 0.45–1.22 rad,
   tự xoay 0.7 ở Home (dừng 2.5 s khi người chơi chạm). Home luôn mở ở góc (7.9, 7.1, 7.9).
   Khung dọc: `zoom = min(1, aspect / 1.05)` để phòng không bị cắt hai bên.
 - **Tường tự mờ** (phòng khách): tường có pháp tuyến hướng vào trong `n`; camera ở `c` thì tường mờ đi khi `c · n < -3 + 0.2`.

@@ -38,7 +38,7 @@ export const ECONOMY = { COINS_PER_STAR: 50, MAX_ROOM_CATS: 6 };
 // Mèo 3D trong phòng
 export const CAT_BODY = { W: .6, H: .54, D: .62, LEG: .1 };
 export const CAT_MOTION = {
-  ROOM_LIMIT: 2.5,                     // mèo đi trong khoảng ±ROOM_LIMIT
+  ROOM_LIMIT: 3.5,                     // mèo đi trong khoảng ±ROOM_LIMIT (sàn ±ROOM_HALF = 4, room-layout.mjs)
   CARRY_H: .95,                        // độ cao lơ lửng khi bị nhấc
   STRIDE_WALK: .34, STRIDE_RUN: .78,   // quãng đường cho một chu kỳ bước (chân không trượt)
   WALK_SPEED: .72, RUN_SPEED: 2.1,

@@ -1231,12 +1231,12 @@ function mountRoom(tab) {
   // Home = khu nhà: kéo để đi qua các khu, chụm để thu nhỏ xem toàn bộ. Deco = khoá vào khu đang trang trí.
   room3d.mount($(`${tab}-room`), { mode: tab === 'home' ? 'hub' : 'room', resetView: tab === 'home', view: tab === 'home' ? HOME_VIEW : undefined });
 }
-// Home tràn viền: phòng phủ cả màn, thanh trên + logo + khung PLAY đè lên; camera nhắm vào phần trống giữa.
+// Home tràn viền: phòng phủ cả màn, thanh trên + khung PLAY đè lên; camera nhắm vào phần trống giữa.
 const HOME_VIEW = {
   zoomCap: 1.25, zoomFit: .8,
   insets() {
     const room = $('home-room').getBoundingClientRect();
-    const top = document.querySelector('.home-logo').getBoundingClientRect().bottom - room.top + 8;
+    const top = document.querySelector('.home-top').getBoundingClientRect().bottom - room.top + 8;
     const bottom = room.bottom - document.querySelector('.home-actions').getBoundingClientRect().top + 12;
     return { top, bottom };
   },
@@ -1320,27 +1320,6 @@ function renderDeco() {
     node.innerHTML = `${thumb}<span>${entry.name}</span><em>${tag}</em>`;
     return node;
   }));
-  renderDecoAction(unlocked);
-}
-function renderDecoAction(unlocked) {
-  const button = $('deco-do');
-  if (!decoPick) {
-    $('deco-selected').textContent = `Pick an item to preview it in your ${deco.zone === 'garden' ? 'garden' : 'room'}`;
-    button.hidden = true;
-    return;
-  }
-  const status = itemStatus(deco, decoPick, unlocked), occupant = occupantOf(deco, decoPick);
-  const labels = {
-    locked: `Unlocks at level ${decoPick.lock}`, poor: `<i class="ico-coin"></i> ${decoPick.price}`, buy: `Buy <i class="ico-coin"></i> ${decoPick.price}`,
-    owned: decoPick.cat === 'cats' ? 'Add to room' : occupant ? 'Swap' : FURNISHING(decoPick) ? 'Place' : 'Use', using: FURNISHING(decoPick) ? 'Remove' : 'Using',
-  };
-  // Phương án thay thế: cho biết sẽ thay món nào đang ở cùng chỗ.
-  const swapText = occupant && status !== 'locked' ? ` · replaces ${occupant.name}` : '';
-  $('deco-selected').textContent = status === 'poor' ? `${decoPick.name} · need ${decoPick.price - deco.coins} more` : decoPick.name + swapText;
-  button.hidden = false;
-  button.innerHTML = labels[status];
-  button.disabled = status === 'locked' || status === 'poor' || (status === 'using' && !FURNISHING(decoPick));
-  button.classList.toggle('ghost', status === 'using');
 }
 function pickDeco(entry) {
   decoPick = entry;
@@ -1376,8 +1355,8 @@ function openDecoConfirm() {
   $('deco-confirm').showModal();
 }
 $('deco-confirm-cancel').onclick = () => $('deco-confirm').close();
-$('deco-confirm-ok').onclick = () => { $('deco-confirm').close(); $('deco-do').onclick(); };
-$('deco-do').onclick = () => {
+$('deco-confirm-ok').onclick = () => { $('deco-confirm').close(); applyDecoPick(); };
+function applyDecoPick() {
   if (!decoPick) return;
   const unlocked = unlockedCount(loadProgress());
   const next = applyAction(deco, decoPick, unlocked);
@@ -1391,7 +1370,7 @@ $('deco-do').onclick = () => {
   if (!room3d) buildFlatRooms();
   // Vừa gỡ ra thì bỏ chọn luôn, không thì bản xem trước lại đặt món đó vào phòng.
   pickDeco(itemStatus(deco, decoPick, unlocked) === 'using' ? decoPick : null);
-};
+}
 $('deco').querySelector('.chips').addEventListener('click', event => {
   const chip = event.target.closest('.chip');
   if (!chip) return;
