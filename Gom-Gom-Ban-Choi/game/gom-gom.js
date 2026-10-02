@@ -14,7 +14,9 @@ import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, 
 
 // Giao diện màn chơi + menu. Luật của một ván nằm ở session.mjs (thuần logic): file này chỉ gọi luật rồi vẽ/diễn.
 // Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
-const { W, H, PREVIEW_COUNT } = BOARD;
+const { PREVIEW_COUNT } = BOARD;
+// Kích thước bàn của màn đang chơi (mỗi màn một cỡ/hình, xem board-shapes.mjs); đặt lại ở newGame.
+let W = BOARD.W, H = BOARD.H;
 const $ = id => document.getElementById(id);
 const DRAG_BOOST = DRAG.BOOST, DRAG_SHRINK_RANGE = DRAG.SHRINK_RANGE;
 let state, cardDrag = null;
@@ -485,7 +487,8 @@ function finishTurn(turn) {
     return celebrateWin(message).then(() => endLevel(true));
   }
   if (turn.lose && !turn.stuck) return endLevel(false, state.outcome.reason);
-  render(`${turn.fit ? clearedText : `${clearedText} No room left — drag a card into Hold.`} ${lowMovesText()}`.trim(), !turn.fit);
+  const noRoom = state.holdOn ? 'No room left — drag a card into Hold.' : 'No room left for this card!';
+  render(`${turn.fit ? clearedText : `${clearedText} ${noRoom}`} ${lowMovesText()}`.trim(), !turn.fit);
   if (turn.stuck) endLevel(false, state.outcome.reason);
 }
 
@@ -620,7 +623,7 @@ function moveCardDrag(event) {
   cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
   // Kéo vào ô Gửi tạm: ưu tiên hơn bàn, sáng ô lên để báo thả được.
   const hold = cardDrag.holdRect;
-  cardDrag.overHold = event.clientX >= hold.left - 8 && event.clientX <= hold.right + 8
+  cardDrag.overHold = state.holdOn && event.clientX >= hold.left - 8 && event.clientX <= hold.right + 8
     && event.clientY >= hold.top - 8 && event.clientY <= hold.bottom + 8;
   $('hold').classList.toggle('drop-target', cardDrag.overHold);
   if (cardDrag.overHold) {
@@ -672,7 +675,9 @@ function render(message = '', error = false) {
   // Thẻ dọc (nhiều hàng hơn cột) -> mũi tên xoay dựng dọc hai bên.
   const shape = normalizePreview(state.active.offsets);
   layoutHints(shape.rows > shape.cols, state.animateHints);
-  $('hold').disabled = state.over;
+  $('hold').disabled = state.over || !state.holdOn;
+  // Ô Hold chỉ hiện từ màn HOLD.UNLOCK_LEVEL (giữ chỗ trong dock để thẻ đang bóc không bị lệch).
+  document.querySelector('.hold-column').classList.toggle('locked', !state.holdOn);
   renderLowMoves();
   renderBoosters();
 }
@@ -681,14 +686,33 @@ function render(message = '', error = false) {
 // nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
 function renderBoard() {
   const board = $('board');
-  if (board.querySelectorAll(':scope > .cell').length !== W * H) {
-    board.replaceChildren(...Array.from({ length: W * H }, (_, index) => {
+  // Dựng lại lưới khi đổi cỡ hoặc hình bàn (ô ngoài bàn cố định suốt ván).
+  const layout = `${W}x${H}:${state.board.map(cell => (cell?.void ? 1 : 0)).join('')}`;
+  if (board.layout !== layout) {
+    board.layout = layout;
+    board.style.setProperty('--cols', W);
+    board.style.setProperty('--rows', H);
+    // Bàn có ô ngoài bàn ('#') = bàn có hình (tim, tam giác...): bỏ nền chữ nhật, vẽ nền theo hình (board-shape).
+    const shaped = state.board.some(cell => cell?.void);
+    board.classList.toggle('shaped', shaped);
+    const cells = Array.from({ length: W * H }, (_, index) => {
       const cell = document.createElement('button');
       cell.className = 'cell';
       cell.dataset.index = index;
       cell.renderedObject = undefined;
       return cell;
-    }));
+    });
+    // Nền bàn có hình: mỗi ô trong bàn một mảnh nền tràn ra khe giữa các ô, ghép lại thành hình của bàn.
+    const underlay = document.createElement('div');
+    underlay.className = 'board-shape';
+    underlay.setAttribute('aria-hidden', 'true');
+    state.board.forEach((cell, index) => {
+      if (cell?.void) return;
+      const tile = document.createElement('i');
+      tile.style.gridArea = `${Math.floor(index / W) + 1}/${index % W + 1}`;
+      underlay.append(tile);
+    });
+    board.replaceChildren(...(shaped ? [underlay] : []), ...cells);
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
@@ -698,6 +722,12 @@ function renderBoard() {
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
+    if (object?.void) {
+      cell.className = 'cell void';
+      cell.disabled = true;
+      cell.setAttribute('aria-hidden', 'true');
+      return;
+    }
     if (object?.block) {
       cell.className = `cell block${object.metal ? ' metal' : ''}`;
       cell.setAttribute('aria-label', object.metal ? 'Metal block, it never breaks' : 'Crate, match cats next to it to break it');
@@ -783,6 +813,7 @@ function newGame(levelIndex = state?.levelIndex ?? 0) {
   const plan = planLevel(profile, levelIndex), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
+  ({ W, H } = state);
   hammerArmed = false;
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -997,8 +1028,8 @@ function tutorialHoles(step) {
   if (step.type === 'rotate') return [rect($('active-card'))];
   if (step.type === 'hold') return [rect($('active-card')), rect($('hold'))];
   if (step.type === 'tapHold') return [rect($('hold'))];
-  // Bước info có `focus`: khoanh sáng phần HUD đang được giới thiệu (thanh điểm / ô Moves).
-  if (step.focus) return [rect(document.querySelector(step.focus === 'moves' ? '.moves-box' : '.progress'))];
+  // Bước info có `focus`: khoanh sáng phần HUD đang được giới thiệu (thanh điểm / ô Moves / ô Hold).
+  if (step.focus) return [rect(document.querySelector({ moves: '.moves-box', hold: '#hold' }[step.focus] || '.progress'))];
   if (step.type === 'drag') {
     const cells = placementIndices(state.board, W, H, step.anchor, state.active.offsets) || [step.anchor];
     return [rect($('active-card')), ...cells.map(index => rect(cellEl(index)))];
@@ -1189,18 +1220,21 @@ function showTab(tab) {
   mountRoom(tab);
   $(tab).scrollTop = 0;
 }
+// Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10).
+const applyRoom = shown => room3d?.apply(shown, { living: zoneOpen('living', levelsCleared()) });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab === 'shop') return room3d.stop();
-  room3d.apply(previewDeco(deco, tab === 'deco' ? decoPick : null));
-  room3d.mount($(`${tab}-room`), { autoRotate: tab === 'home', resetView: tab === 'home', view: tab === 'home' ? HOME_VIEW : undefined });
+  applyRoom(previewDeco(deco, tab === 'deco' ? decoPick : null));
+  // Home = khu nhà: kéo để đi qua các khu, chụm để thu nhỏ xem toàn bộ. Deco = khoá vào khu đang trang trí.
+  room3d.mount($(`${tab}-room`), { mode: tab === 'home' ? 'hub' : 'room', resetView: tab === 'home', view: tab === 'home' ? HOME_VIEW : undefined });
 }
-// Home tràn viền: phòng phủ cả màn, thanh trên + nút chọn khu + khung PLAY đè lên; camera nhắm vào phần trống giữa.
+// Home tràn viền: phòng phủ cả màn, thanh trên + logo + khung PLAY đè lên; camera nhắm vào phần trống giữa.
 const HOME_VIEW = {
   zoomCap: 1.25, zoomFit: .8,
   insets() {
     const room = $('home-room').getBoundingClientRect();
-    const top = $('home-zone').getBoundingClientRect().bottom - room.top + 8;
+    const top = document.querySelector('.home-logo').getBoundingClientRect().bottom - room.top + 8;
     const bottom = room.bottom - document.querySelector('.home-actions').getBoundingClientRect().top + 12;
     return { top, bottom };
   },
@@ -1308,7 +1342,7 @@ function renderDecoAction(unlocked) {
 }
 function pickDeco(entry) {
   decoPick = entry;
-  room3d?.apply(previewDeco(deco, entry));
+  applyRoom(previewDeco(deco, entry));
   if (entry) room3d?.focus(entry.id);
   renderDeco();
 }
@@ -1389,9 +1423,8 @@ document.addEventListener('click', event => {
   saveDeco(deco);
   decoPick = null;
   renderZoneSwitch();
-  const tab = TABS.find(name => !$(name).hidden);
-  if (tab === 'deco') renderDeco();
-  if (tab) mountRoom(tab);
+  renderDeco();
+  applyRoom(deco); // camera Deco lướt sang khu vừa chọn (nút chọn khu giờ chỉ còn ở Deco)
 });
 
 let toastTimer = 0;
@@ -1405,6 +1438,8 @@ function showToast(text) {
 // Shop (tiền thật) vẫn là khung giao diện: bấm vào chỉ báo "sắp có".
 document.addEventListener('click', event => { if (event.target.closest('.soon')) showToast('Coming soon!'); });
 
+// Icon ô Hold cho bảng vào màn (màn mở Hold).
+const HOLD_SVG = '<svg viewBox="0 0 46 46"><rect x="5" y="7" width="36" height="32" rx="9" fill="#f5dc9c" stroke="#c79a4f" stroke-width="2.5"/><path d="M23 15v16M15 23h16" stroke="#d38a3a" stroke-width="4" stroke-linecap="round"/></svg>';
 function startLevel(index, skipIntro = false) {
   const level = LEVELS[index];
   hideMenus();
@@ -1419,9 +1454,10 @@ function startLevel(index, skipIntro = false) {
   badge.innerHTML = `${tier.icon}<span>${tier.label}</span>`;
   const { plan } = state;
   $('intro-number').textContent = `Level ${index + 1}${DDA_DEBUG ? ` · ${plan.profile} ${plan.shift >= 0 ? '+' : ''}${plan.shift} (${plan.baseCount}→${plan.count})${plan.deal ? ` · ${plan.deal}` : ''}` : ''}`;
-  const mechanics = levelMechanics(state.level);
+  const mechanics = [...(level.introduces === 'hold' ? ['hold'] : []), ...levelMechanics(state.level)];
+  const MECH = { crate: ['Crates', CRATE_SVG], metal: ['Metal blocks', METAL_SVG], hold: ['Hold slot', HOLD_SVG] };
   $('intro-mechanics').hidden = !mechanics.length;
-  $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${kind === 'crate' ? 'Crates' : 'Metal blocks'}">${kind === 'crate' ? CRATE_SVG : METAL_SVG}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
+  $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${MECH[kind][0]}">${MECH[kind][1]}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
   dialog.showModal();
   renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
 }
@@ -1499,7 +1535,19 @@ $('tutorial-avatar').innerHTML = catMarkup.orange;
 
 $('restart').onclick = () => { if (!state.animating) { recordQuit(); startLevel(state.levelIndex); } };
 $('help').onclick = () => $('help-dialog').showModal();
-$('home-help').onclick = () => $('help-dialog').showModal();
+// Nút cài đặt (Home: ngày/đêm, âm thanh, hướng dẫn; màn chơi: âm thanh, hướng dẫn): bánh răng xổ menu.
+// Chạm ra ngoài hoặc Esc thì đóng.
+function setSettingsOpen(box, open) {
+  box.querySelector('.settings-menu').hidden = !open;
+  box.querySelector('.settings-toggle').setAttribute('aria-expanded', open);
+}
+const closeAllSettings = (except = null) => document.querySelectorAll('.settings').forEach(box => { if (box !== except) setSettingsOpen(box, false); });
+document.querySelectorAll('.settings').forEach(box => {
+  box.querySelector('.settings-toggle').onclick = () => { playSound('pick'); setSettingsOpen(box, box.querySelector('.settings-menu').hidden); };
+});
+document.addEventListener('pointerdown', event => closeAllSettings(event.target.closest('.settings')));
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
+['home-help', 'game-help'].forEach(id => { $(id).onclick = () => { closeAllSettings(); $('help-dialog').showModal(); }; });
 function renderSoundButtons() {
   document.querySelectorAll('.sound-toggle').forEach(button => {
     button.setAttribute('aria-pressed', soundOn());

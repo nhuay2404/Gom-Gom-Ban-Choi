@@ -3,11 +3,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as game from './session.mjs';
-import { LEVELS, parseBoard, parseCard } from './levels.mjs';
+import { LEVELS, parseBoard, parseCard, boardSize } from './levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
 import { recordWin, unlockedCount, levelTier, levelMechanics } from './progression.mjs';
-import { BOARD, ECONOMY } from './tuning.mjs';
+import { ECONOMY, HOLD } from './tuning.mjs';
 
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 
@@ -27,18 +27,19 @@ function playTutorial(index) {
   return { s, steps };
 }
 
-test('mọi màn: bàn đủ 36 ô, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
+test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
   assert.equal(LEVELS.length, 20);
   LEVELS.forEach((level, i) => {
-    const board = parseBoard(level.board);
-    assert.equal(board.length, BOARD.W * BOARD.H, `màn ${i + 1}`);
-    assert.equal(clearMatches(board, BOARD.W, BOARD.H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} có sẵn cụm`);
+    const board = parseBoard(level.board), { W, H } = boardSize(level.board);
+    assert.ok(level.board.every(row => row.length === W), `màn ${i + 1}: các hàng cùng độ dài`);
+    assert.ok(W >= 6 && W <= 8 && H >= 6 && H <= 8, `màn ${i + 1}: cỡ bàn ${W}×${H}`);
+    assert.equal(clearMatches(board, W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} có sẵn cụm`);
     (level.deck || []).forEach(spec => assert.ok(parseCard(spec).items.every(item => item.group), `màn ${i + 1} thẻ ${spec}`));
     assert.ok(['chill', 'normal', 'hard', 'boss'].includes(levelTier(level)), `màn ${i + 1} tier`);
   });
 });
 
-test('nhịp tiến trình: tutorial chỉ ở màn 1–2 (+ bong bóng giới thiệu cơ chế), boss ở 10 và 20, nghỉ ở 8 và 19', () => {
+test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng giới thiệu cơ chế), boss ở 10 và 20, nghỉ ở 8 và 19', () => {
   assert.equal(levelTier(LEVELS[9]), 'boss');
   assert.equal(levelTier(LEVELS[19]), 'boss');
   assert.equal(levelTier(LEVELS[7]), 'chill');
@@ -49,7 +50,18 @@ test('nhịp tiến trình: tutorial chỉ ở màn 1–2 (+ bong bóng giới t
   assert.deepEqual(levelMechanics(LEVELS[4]), ['crate']);     // màn 5 giới thiệu thùng
   assert.deepEqual(levelMechanics(LEVELS[8]), ['crate', 'metal']);
   const withTutorial = LEVELS.map((level, i) => (level.tutorial ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(withTutorial, [1, 2, 5, 8], 'chỉ màn 1–2 là tutorial; màn 5 và 8 chỉ có bong bóng giới thiệu cơ chế');
+  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11], 'màn 1–2 và 11 là tutorial; màn 5 và 8 chỉ có bong bóng giới thiệu cơ chế');
+  assert.equal(LEVELS[HOLD.UNLOCK_LEVEL - 1].introduces, 'hold');
+  // Màn đầu 6×6; chương 2 đa số bàn to / có hình.
+  const big = LEVELS.map((level, i) => (boardSize(level.board).W > 6 ? i + 1 : null)).filter(Boolean);
+  assert.ok(big.filter(n => n > 10).length >= 8 && big.filter(n => n <= 5).length === 0, `bàn to ở màn ${big}`);
+});
+
+test('tutorial màn 11 (mở Hold) chạy hết bằng session', () => {
+  const { s } = playTutorial(10);
+  assert.equal(game.tutorialStep(s), null);
+  assert.equal(s.score, 60);
+  assert.ok(!s.over);
 });
 
 test('tutorial màn 1 và 2 chạy hết bằng session và thắng màn', () => {
@@ -70,15 +82,27 @@ test('bước giới thiệu thùng gỗ (màn 5): gom sát thùng thì thùng v
   assert.equal(turn.match.broken.length, 1);
 });
 
-test('tutorial chặn hành động sai bước: chưa tới bước xoay thì không cho gửi tạm', () => {
+test('tutorial chặn hành động sai bước: chưa tới bước xoay thì không cho đặt; bước info thì không cho gửi tạm', () => {
   const s = game.createSession(1, { rng: seeded(2) });
-  assert.equal(game.hold(s).error, 'tutorial');
   assert.equal(game.place(s, 0).error, 'tutorial');
   assert.ok(game.rotate(s).ok);
+  const hold = game.createSession(10, { rng: seeded(2) });
+  assert.equal(game.hold(hold).error, 'tutorial');
+});
+
+test('ô Hold chỉ mở từ màn HOLD.UNLOCK_LEVEL; trước đó thẻ không vừa bàn là kẹt luôn', () => {
+  for (let i = 0; i < HOLD.UNLOCK_LEVEL - 1; i++) assert.equal(game.createSession(i).holdOn, false, `màn ${i + 1}`);
+  const s = game.createSession(2, { rng: seeded(3) });
+  assert.equal(game.hold(s).ok, false);
+  s.board = s.board.map(() => ({ group: 'gray', locked: true }));
+  assert.ok(game.checkStuck(s));
+  const later = game.createSession(11, { rng: seeded(3) });
+  later.board = later.board.map(cell => cell ?? { group: 'gray', locked: true });
+  assert.equal(game.checkStuck(later), false, 'có Hold: ô Hold trống thì vẫn còn đường cất thẻ');
 });
 
 test('gửi tạm: ô trống thì cất + bóc thẻ mới, ô có thẻ thì đổi chỗ', () => {
-  const s = game.createSession(2, { rng: seeded(3) }); // màn 3: không tutorial
+  const s = game.createSession(11, { rng: seeded(3) }); // màn 12: đã mở Hold, không tutorial
   const first = s.active;
   assert.ok(game.hold(s).ok);
   assert.equal(s.hold, first);
@@ -92,7 +116,7 @@ test('gửi tạm: ô trống thì cất + bóc thẻ mới, ô có thẻ thì �
 // Bàn dựng sẵn: 2 mèo cam ở ô 0–1, thẻ đang bóc là 1 mèo cam -> đặt ô 2 là gom 3 (+30).
 function staged(levelIndex) {
   const s = game.createSession(levelIndex, { rng: seeded(9) });
-  s.board = Array(BOARD.W * BOARD.H).fill(null);
+  s.board = Array(s.W * s.H).fill(null);
   s.board[0] = { group: 'orange', locked: true }; s.board[1] = { group: 'orange', locked: true };
   s.active = { offsets: [[0, 0]], items: [{ group: 'orange', name: 'Orange cat' }] };
   return s;

@@ -2,7 +2,13 @@
 // Khi port sang Cocos: chép nguyên file này (hoặc dùng export/data/tuning.json) để cảm giác giống hệt bản web.
 // Thời gian tính bằng mili giây; kích thước 3D tính bằng mét của phòng (phòng 6 × 6).
 
+// Kích thước bàn tuỳ màn (levels.mjs, board-shapes.mjs); W/H ở đây là bàn chuẩn 6×6 dùng làm mặc định.
 export const BOARD = { W: 6, H: 6, PREVIEW_COUNT: 1 };
+
+// Ô Hold (cất thẻ) mở từ màn UNLOCK_LEVEL (số thứ tự màn, 1 = màn đầu); màn đó có tutorial dạy dùng Hold.
+// Trước đó bàn nhỏ, màn dễ nên chưa cần chỗ cất thẻ.
+export const HOLD = { UNLOCK_LEVEL: 11 };
+export const holdUnlocked = levelIndex => levelIndex + 1 >= HOLD.UNLOCK_LEVEL;
 
 // Nhịp animation màn chơi (gom mèo, xoay thẻ, thắng)
 export const TIMING = {
@@ -77,5 +83,6 @@ export const ADAPTIVE = {
   ASSIST_STEP: 0.1,       // mỗi lần thua thêm / mỗi mức cao thủ
   ASSIST_MAX: 0.6,
   ASSIST_MIN: 0.2,
+  CRATE_PER_CELLS: 10,    // bật element crate cho màn chưa có thùng: khoảng 1 thùng / bấy nhiêu ô trong bàn
   CROWDED_BLOCKS: 6,      // bàn có từ bấy nhiêu ô vật cản = màn chật: hết lượt thì thêm thẻ đôi thay vì thẻ 3 ô (đỡ kẹt)
 };

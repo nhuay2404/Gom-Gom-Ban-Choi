@@ -57,6 +57,34 @@ function bendOnWalk(bed, items, sway = .07) {
   };
   return bed;
 }
+// Dây: hình trụ nối đúng hai điểm a → b (dài đúng khoảng cách, không thừa không thiếu).
+export function ropeBetween(a, b, r, color) {
+  const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+  const node = cyl(r, r, len, color, 8);
+  node.position.copy(a).addScaledVector(dir, .5);
+  node.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return node;
+}
+// Con lắc treo dưới điểm `pivot` (toạ độ món đồ); con của nó đặt theo toạ độ tính từ điểm treo (dây hướng -y).
+// Lắc theo 2 trục như con lắc thật: tần số theo độ dài dây ω = √(g/L) (dây dài lắc chậm), tắt dần, gió nhẹ giữ cho
+// đung đưa; swing.userData.kick(vx, vz) = cú đẩy (rad/s) khi mèo khều / nhảy vào / nhảy ra.
+export function pendulum(pivot, length, ...children) {
+  const swing = group(...children);
+  swing.position.copy(pivot);
+  const w = Math.sqrt(9.8 / length), zeta = .06, s = { ax: 0, az: 0, vx: 0, vz: 0, last: 0, phase: Math.random() * TAU };
+  swing.userData.kick = (vx, vz) => { s.vx += vx; s.vz += vz; };
+  swing.userData.step = t => {
+    const dt = Math.min(.05, Math.max(0, t - (s.last || t))); s.last = t;
+    const gust = .02 * w * w; // gió: lệch ~.02 rad
+    for (const [a, v, f] of [['ax', 'vx', Math.sin(t * .7 + s.phase)], ['az', 'vz', Math.sin(t * .53 + s.phase * 2)]]) {
+      s[v] += (-w * w * Math.sin(s[a]) - 2 * zeta * w * s[v] + gust * f) * dt;
+      s[a] += s[v] * dt;
+    }
+    swing.rotation.set(s.ax, 0, s.az);
+  };
+  return swing;
+}
+
 // Vật liệu phát sáng (lửa, đèn).
 const glow = (color, emissive, intensity = 1) => mat(color, { emissive, emissiveIntensity: intensity });
 
@@ -83,8 +111,13 @@ export const GARDEN_BUILD = {
   },
   catnip() {
     const bush = group();
-    [[0, .32, 0, .3], [.22, .24, .12, .22], [-.22, .22, .1, .2], [.05, .22, -.2, .22], [-.1, .5, .02, .2]].forEach(([x, y, z, r], i) => bush.add(at(ball(r, i % 2 ? '#8fd46a' : '#a6e07e'), x, y, z)));
-    for (let i = 0; i < 7; i++) { const a = i * .9; bush.add(at(ball(.04, '#c9a6f5'), Math.cos(a) * .3, .5 + (i % 3) * .08, Math.sin(a) * .3)); }
+    const balls = [[0, .32, 0, .3], [.22, .24, .12, .22], [-.22, .22, .1, .2], [.05, .22, -.2, .22], [-.1, .5, .02, .2]];
+    balls.forEach(([x, y, z, r], i) => bush.add(at(ball(r, i % 2 ? '#8fd46a' : '#a6e07e'), x, y, z)));
+    // Hoa tím mọc NGAY TRÊN mặt các khối lá (nửa trên), không lơ lửng ngoài bụi.
+    for (let i = 0; i < 9; i++) {
+      const [x, y, z, r] = balls[i % balls.length], a = i * 2.3, up = .5 + (i % 3) * .25;
+      bush.add(at(ball(.04, '#c9a6f5'), x + Math.cos(a) * Math.sin(up) * r, y + Math.cos(up) * r, z + Math.sin(a) * Math.sin(up) * r));
+    }
     bush.userData.leaves = bush;
     return bush;
   },
@@ -138,9 +171,11 @@ export const GARDEN_BUILD = {
     const wood = '#9a6a45';
     const cloth = mesh(new THREE.CylinderGeometry(.34, .34, 1.4, 32, 1, true, Math.PI / 2, Math.PI), mat('#8fc9f2', { side: THREE.DoubleSide }));
     cloth.rotation.z = Math.PI / 2;
+    cloth.rotation.x = -Math.PI / 2; // (Euler XYZ: quay z trước) nửa ống quay xuống dưới: lòng võng võng xuống (mèo nằm ở ~.42)
     const sling = at(group(cloth), 0, .72, 0);
-    const hammock = group(at(cyl(.06, .07, 1.3, wood), -.95, .65, 0), at(cyl(.06, .07, 1.3, wood), .95, .65, 0), sling,
-      at(cyl(.012, .012, .3, '#fffaf0', 6), -.78, .95, 0).rotateZ(1), at(cyl(.012, .012, .3, '#fffaf0', 6), .78, .95, 0).rotateZ(-1));
+    // Dây buộc hai đầu võng (mép trên, x = ±.7) lên gần đỉnh cột (x = ±.95 trừ bán kính cột).
+    const ropes = [-1, 1].map(s => ropeBetween(new THREE.Vector3(s * .7, .72, 0), new THREE.Vector3(s * .89, 1.18, 0), .014, '#fffaf0'));
+    const hammock = group(at(cyl(.06, .07, 1.3, wood), -.95, .65, 0), at(cyl(.06, .07, 1.3, wood), .95, .65, 0), sling, ...ropes);
     hammock.userData.update = t => { sling.rotation.x = Math.sin(t * 1.1) * .06; };
     return hammock;
   },
@@ -230,15 +265,18 @@ export const GARDEN_BUILD = {
     barrel.rotation.x = Math.PI / 2;
     const back = at(mesh(new THREE.CircleGeometry(.6, 32), '#9a6a45'), 0, 0, -.5);
     const hoop = z => at(mesh(new THREE.TorusGeometry(.61, .03, 8, 48), mat('#8a8a8a', { metalness: .8, roughness: .45 })), 0, 0, z);
-    const cushion = at(cyl(.42, .42, .06, '#ec5b8c'), 0, .05, 0);
-    cushion.scale.z = 1.05;
-    return group(at(group(barrel, back, hoop(-.35), hoop(.35)), 0, .6, 0), cushion, at(box(.3, .2, .04, '#fffaf0'), 0, 1.02, .5));
+    // Nệm hẹp nằm đúng lòng thùng (lòng thùng cong: ở x = ±.25 đáy cao ~.05) nên không xuyên ra ngoài vỏ.
+    const cushion = at(rbox(.5, .05, .82, .02, '#ec5b8c'), 0, .06, 0);
+    // Biển tên dựng trên nóc thùng, hai chân chạm nóc (y = 1.2).
+    const sign = group(at(rbox(.36, .16, .03, .01, '#fffaf0'), 0, 1.33, .28), at(cyl(.012, .012, .1, '#8a5a3a', 6), -.12, 1.23, .28), at(cyl(.012, .012, .1, '#8a5a3a', 6), .12, 1.23, .28));
+    return group(at(group(barrel, back, hoop(-.35), hoop(.35)), 0, .6, 0), cushion, sign);
   },
   // Đài phun nước (thay hồ cá): bồn đá tròn có cá vàng bơi; mèo rình cá rồi khều nước.
   'pond-fountain'() {
     const water = mesh(new THREE.CylinderGeometry(.74, .74, .02, 48), mat('#6fc3e0', { roughness: .15, transparent: true, opacity: .85 }));
     water.castShadow = false;
-    const spray = at(mesh(new THREE.SphereGeometry(.12, 16, 12), mat('#dff4ff', { transparent: true, opacity: .6, roughness: .1 })), 0, 1.02, 0);
+    const jet = mat('#dff4ff', { transparent: true, opacity: .6, roughness: .1 });
+    const spray = at(mesh(new THREE.SphereGeometry(.12, 16, 12), jet), 0, 1.08, 0);
     const koi = ['#f39a45', '#ffd23f'].map((color, i) => {
       const fish = group(ball(.06, color), at(mesh(new THREE.ConeGeometry(.045, .09, 10), color), -.09, 0, 0));
       fish.children[0].scale.set(1.4, .6, .8); fish.children[1].rotation.z = Math.PI / 2;
@@ -249,7 +287,8 @@ export const GARDEN_BUILD = {
     // bệ đá (đỉnh .26) < mặt nước (.28) < vành bồn hình xuyến (đỉnh ~.34) bao quanh mép nước.
     const fountain = group(at(cyl(.82, .9, .26, '#d9d2c4'), 0, .13, 0), at(water, 0, .27, 0),
       at(mesh(new THREE.TorusGeometry(.8, .07, 12, 56), '#d9d2c4'), 0, .28, 0).rotateX(Math.PI / 2),
-      at(cyl(.1, .14, .55, '#d9d2c4'), 0, .55, 0), at(cyl(.3, .14, .12, '#e3ddd1'), 0, .86, 0), at(cyl(.26, .26, .02, '#8fd0ef'), 0, .92, 0), spray, ...koi);
+      at(cyl(.1, .14, .55, '#d9d2c4'), 0, .55, 0), at(cyl(.3, .14, .12, '#e3ddd1'), 0, .86, 0), at(cyl(.26, .26, .02, '#8fd0ef'), 0, .92, 0),
+      at(mesh(new THREE.CylinderGeometry(.035, .05, .14, 12), jet), 0, .99, 0), spray, ...koi); // tia nước nối mặt bát lên chùm bọt
     fountain.userData.fish = koi;
     fountain.userData.update = t => {
       spray.scale.setScalar(1 + Math.sin(t * 6) * .15);
@@ -258,15 +297,19 @@ export const GARDEN_BUILD = {
     return fountain;
   },
   // Xích đu lốp xe (thay võng): lốp nằm ngang treo trên xà, lòng lốp cao ~.42 để mèo nhảy vào cuộn tròn.
+  // Lốp treo bằng 3 dây chụm vào một móc dưới xà; cả bộ lắc quanh móc như con lắc (pendulum).
   'hammock-tire'() {
-    const wood = '#8a5a3a';
-    const tire = at(mesh(new THREE.TorusGeometry(.3, .12, 16, 40), '#3a3a3a'), 0, .36, 0);
+    const wood = '#8a5a3a', beamY = 1.47, hookY = beamY - .07, tireY = .36, L = hookY - tireY;
+    const tire = at(mesh(new THREE.TorusGeometry(.3, .12, 16, 40), '#3a3a3a'), 0, -L, 0);
     tire.rotation.x = Math.PI / 2;
-    const ropes = [0, 2.1, 4.2].map(a => at(cyl(.012, .012, 1.02, '#e6c79a', 6), Math.cos(a) * .3, .95, Math.sin(a) * .3));
-    const swing = group(tire, at(cyl(.24, .24, .03, '#ec5b8c'), 0, .38, 0), ...ropes);
+    const hook = new THREE.Vector3(0, -.04, 0);
+    const ropes = [0, 2.1, 4.2].map(a => ropeBetween(new THREE.Vector3(Math.cos(a) * .3, -L + .11, Math.sin(a) * .3), hook, .012, '#e6c79a'));
+    const swing = pendulum(new THREE.Vector3(0, hookY, 0), L, tire, at(cyl(.24, .24, .03, '#ec5b8c'), 0, -L + .02, 0), ...ropes,
+      at(mesh(new THREE.TorusGeometry(.04, .012, 8, 16), '#9a9a9a'), 0, -.02, 0));
     const frame = group(at(cyl(.06, .07, 1.5, wood), -.9, .75, 0), at(cyl(.06, .07, 1.5, wood), .9, .75, 0),
-      at(cyl(.06, .06, 1.9, wood), 0, 1.47, 0).rotateZ(Math.PI / 2), swing);
-    frame.userData.update = t => { swing.rotation.x = Math.sin(t * 1.1) * .05; };
+      at(cyl(.06, .06, 1.9, wood), 0, beamY, 0).rotateZ(Math.PI / 2), swing);
+    frame.userData.swing = swing; // mèo nhảy vào / ra thì đẩy lốp lắc
+    frame.userData.update = t => swing.userData.step(t);
     return frame;
   },
   // Máng ăn cho chim (thay chậu tắm chim): khay hạt cao ~.9 có chim đậu; mèo doạ chim bay hoặc nhảy lên khay.
@@ -314,26 +357,37 @@ export function groundTexture(entry) {
 
 // Hàng rào quanh vườn, dựng lại khi đổi kiểu. Thấp nên không cần mờ đi như tường phòng.
 // `half` = nửa cạnh khoảnh vườn (mặc định cả vườn; thumbnail Deco dùng khoảnh nhỏ).
-export function buildFence(entry, half = HALF) {
+// `gate` = { x, w }: chừa cổng trên cạnh -z (lối sang phòng khách), hai bên cổng có cột.
+export function buildFence(entry, half = HALF, gate = null) {
   const fence = markOutlineUnit(new THREE.Group()); // cả hàng rào là một khối: chấn song đè lên cột không có nét trong
-  const span = half * 2;
-  const side = (build) => [[0, -half - .05, 0], [0, half + .05, Math.PI], [-half - .05, 0, Math.PI / 2], [half + .05, 0, -Math.PI / 2]]
-    .forEach(([x, z, rot]) => { const g = build(); g.position.set(x, 0, z); g.rotation.y = rot; fence.add(g); });
-  if (entry.id === 'fence-hedge') side(() => group(at(rbox(span + .2, .6, .32, .14, entry.color), 0, .3, 0)));
-  else if (entry.id === 'fence-stone') side(() => {
-    const g = group(), n = Math.max(2, Math.round(span / .675)), step = span / n;
-    for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), -half + step * (i + .5), .18, 0));
-    return g;
-  });
-  else side(() => {
-    const g = group(at(box(span + .2, .06, .04, entry.color), 0, .42, 0), at(box(span + .2, .06, .04, entry.color), 0, .2, 0));
-    const n = Math.max(2, Math.round(span / .5)), step = span / n;
+  // Một đoạn rào chạy dọc trục x cục bộ từ x0 tới x1 (đoạn nguyên một cạnh thì nhô thêm .1 mỗi đầu để kín góc).
+  const run = (x0, x1, capped) => {
+    const span = x1 - x0, mid = (x0 + x1) / 2, extra = capped ? .2 : 0;
+    if (entry.id === 'fence-hedge') return group(at(rbox(span + extra, .6, .32, .14, entry.color), mid, .3, 0));
+    if (entry.id === 'fence-stone') {
+      const g = group(), n = Math.max(1, Math.round(span / .675)), step = span / n;
+      for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), x0 + step * (i + .5), .18, 0));
+      return g;
+    }
+    const g = group(at(box(span + extra, .06, .04, entry.color), mid, .42, 0), at(box(span + extra, .06, .04, entry.color), mid, .2, 0));
+    const n = Math.max(1, Math.round(span / .5)), step = span / n;
     for (let i = 0; i <= n; i++) {
-      const x = -half + i * step;
+      const x = x0 + i * step;
       g.add(at(rbox(.12, .6, .05, .02, entry.color), x, .3, .02));
       if (entry.id === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), x, .64, .02).rotateY(Math.PI / 4));
     }
     return g;
+  };
+  [[0, -half - .05, 0], [0, half + .05, Math.PI], [-half - .05, 0, Math.PI / 2], [half + .05, 0, -Math.PI / 2]].forEach(([x, z, rot], i) => {
+    let side;
+    if (gate && i === 0) { // cạnh -z (không xoay: x cục bộ = x vườn): hai đoạn hai bên cổng + cột cổng
+      const a = gate.x - gate.w / 2, b = gate.x + gate.w / 2, post = entry.id === 'fence-hedge' ? '#5fa83e' : entry.id === 'fence-stone' ? '#b5aea3' : entry.color;
+      side = group(run(-half - .1, a, false), run(b, half + .1, false),
+        at(rbox(.16, .78, .16, .04, post), a, .39, 0), at(rbox(.16, .78, .16, .04, post), b, .39, 0),
+        at(ball(.09, post), a, .82, 0), at(ball(.09, post), b, .82, 0));
+    } else side = run(-half, half, true);
+    side.position.set(x, 0, z); side.rotation.y = rot;
+    fence.add(side);
   });
   fence.traverse(node => { if (node.isMesh) node.castShadow = false; });
   return fence;

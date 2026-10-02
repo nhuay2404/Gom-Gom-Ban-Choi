@@ -4,16 +4,19 @@
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, matchPoints } from './scoring.mjs';
 import { categories } from './cat-art.mjs';
-import { LEVELS, parseBoard, makeDealer, starsFor } from './levels.mjs';
-import { BOARD } from './tuning.mjs';
+import { LEVELS, parseBoard, makeDealer, starsFor, boardSize } from './levels.mjs';
+import { BOARD, holdUnlocked } from './tuning.mjs';
 
-const { W, H, PREVIEW_COUNT } = BOARD;
+const { PREVIEW_COUNT } = BOARD;
 const withNames = card => ({ offsets: card.offsets, items: card.items.map(({ group }) => ({ group, name: categories[group].name })) });
 
 // `level`: bản màn đã chỉnh độ khó (adaptive.mjs); không truyền thì dùng màn gốc.
+// s.W × s.H = kích thước bàn của màn; s.holdOn = màn đã mở ô Hold chưa (tuning.mjs: HOLD).
 export function createSession(levelIndex, { rng = Math.random, level = LEVELS[levelIndex] } = {}) {
+  const { W, H } = boardSize(level.board);
   const s = {
-    level, levelIndex, board: parseBoard(level.board), deal: makeDealer(level, rng), deck: [], active: null, hold: null,
+    level, levelIndex, W, H, holdOn: holdUnlocked(levelIndex),
+    board: parseBoard(level.board), deal: makeDealer(level, rng), deck: [], active: null, hold: null,
     score: 0, moves: level.moves, over: false, outcome: null,
     tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
   };
@@ -31,13 +34,15 @@ export const upcoming = s => s.deck.slice(0, PREVIEW_COUNT);
 export function canPlaceAnywhere(s, card) {
   let offsets = card.offsets;
   for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
-    if (s.board.some((_, index) => placementIndices(s.board, W, H, index, offsets))) return true;
+    if (s.board.some((_, index) => placementIndices(s.board, s.W, s.H, index, offsets))) return true;
   }
   return false;
 }
 // Kẹt: thẻ đang bóc không vừa bàn và thẻ gửi tạm cũng không (ô gửi tạm trống thì vẫn còn đường rút thẻ).
+// Màn chưa mở Hold: thẻ đang bóc không vừa là kẹt.
 export function checkStuck(s) {
-  if (s.over || canPlaceAnywhere(s, s.active) || !s.hold || canPlaceAnywhere(s, s.hold)) return false;
+  if (s.over || canPlaceAnywhere(s, s.active)) return false;
+  if (s.holdOn && (!s.hold || canPlaceAnywhere(s, s.hold))) return false;
   finish(s, false, 'No room left!');
   return true;
 }
@@ -48,7 +53,7 @@ function finish(s, win, reason = '') {
 
 // ---------- Tutorial: các bước trong levels.mjs ----------
 //   drag  (kéo vào ô `anchor`; `free` = chỉ gợi ý, đặt đâu cũng được) · rotate (xoay tới hướng `offsets`)
-//   hold  (kéo vào ô Gửi tạm) · tapHold (chạm ô Gửi tạm) · info (đọc rồi bấm Tiếp tục; `focus`: 'score' / 'moves' = khoanh sáng phần HUD)
+//   hold  (kéo vào ô Gửi tạm) · tapHold (chạm ô Gửi tạm) · info (đọc rồi bấm Tiếp tục; `focus`: 'score' / 'moves' / 'hold' = khoanh sáng phần HUD)
 export const tutorialStep = s => s.tutorial?.steps[s.tutorial.step] || null;
 export function tutorialAllows(s, action, anchor) {
   const step = tutorialStep(s);
@@ -87,7 +92,7 @@ export function rotate(s) {
 
 // Gửi tạm: ô trống thì cất thẻ và bóc thẻ mới; ô có thẻ thì đổi chỗ hai thẻ. Không giới hạn số lần.
 export function hold(s) {
-  if (s.over) return { ok: false };
+  if (s.over || !s.holdOn) return { ok: false };
   if (!tutorialAllows(s, 'hold')) return { ok: false, error: 'tutorial' };
   const previous = s.hold;
   s.hold = s.active;
@@ -103,9 +108,9 @@ export function hold(s) {
 export function place(s, anchor) {
   if (s.over) return { ok: false };
   if (!tutorialAllows(s, 'place', anchor)) return { ok: false, error: 'tutorial' };
-  const result = placeCard(s.board, W, H, anchor, s.active);
+  const result = placeCard(s.board, s.W, s.H, anchor, s.active);
   if (result.error) return { ok: false, error: result.error };
-  const match = clearMatches(result.board, W, H, MATCH_SIZE);
+  const match = clearMatches(result.board, s.W, s.H, MATCH_SIZE);
   const gained = matchPoints(match.clusters);
   s.board = match.board;
   s.score += gained;

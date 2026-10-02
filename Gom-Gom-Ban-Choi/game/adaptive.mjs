@@ -1,8 +1,9 @@
 // Độ khó thích ứng theo profile người chơi (thuần logic, không đụng giao diện).
 // Thiết kế đầy đủ: tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md. Ngưỡng nằm ở tuning.mjs (ADAPTIVE).
 //
-// Mỗi màn có 4 element: moves (lượt chật), màu mèo (nhiều giống), crate ('X'), wall ('M').
-// Số element đang bật quyết định nhãn: Easy 0–1 · Medium 2–3 · Hard 4.
+// Mỗi màn có 5 element: moves (lượt chật), màu mèo (nhiều giống), crate ('X'), wall ('M'), board (bàn rộng hơn
+// 6×6 hoặc có hình: tim, tam giác...). Số element đang bật quyết định nhãn: Easy 0–1 · Medium 2–3 · Hard 4–5.
+// Bàn theo profile: người đang vất vả được thu về 6×6 gọn, bớt vật cản; người giỏi được bàn rộng, có hình, thêm thùng.
 //
 // Vòng đời: startVisit lúc mở game -> planLevel trước mỗi lần vào màn (đọc lịch sử -> profile -> bản màn
 // đã bật/tắt element) -> recordAttempt khi màn kết thúc (thắng, thua, bỏ ngang) -> noteDwell khi rời bảng kết quả.
@@ -10,7 +11,8 @@
 import { LEVELS, parseBoard, DEFAULT_SHAPES, DEFAULT_ASSIST } from './levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
-import { ADAPTIVE, BOARD } from './tuning.mjs';
+import { ADAPTIVE } from './tuning.mjs';
+import { boardSize, isPlainSquare, compactBoard, expandBoard, playableCells, VOID } from './board-shapes.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
 
 const A = ADAPTIVE;
@@ -19,7 +21,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const BREEDS = 'OGWTSK';
 
 // ---------- Element và nhãn độ khó ----------
-export const ELEMENTS = ['moves', 'colors', 'crate', 'wall'];
+export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board'];
 export function levelElements(level) {
   const cells = level.board.join('');
   return {
@@ -27,26 +29,59 @@ export function levelElements(level) {
     colors: level.cats.length >= A.MANY_COLORS,
     crate: cells.includes('X'),
     wall: cells.includes('M'),
+    board: !isPlainSquare(level.board),
   };
 }
 export const elementCount = level => Object.values(levelElements(level)).filter(Boolean).length;
 export const difficultyOf = count => (count <= 1 ? 'easy' : count <= 3 ? 'medium' : 'hard');
+export const MAX_ELEMENTS = ELEMENTS.length;
 export const isAdaptive = level => !level.tutorial;
 
 // Bỏ giống mèo: mèo đặt sẵn của giống bị bỏ được tô lại thành giống còn giữ (giữ các cặp sẵn trên bàn),
 // miễn không sinh cụm gom sẵn; không giống nào hợp thì thành ô trống.
 function recolor(rows, cats) {
+  const { W, H } = boardSize(rows);
   const cells = rows.join('').split('');
   cells.forEach((ch, i) => {
-    if ('.XM'.includes(ch) || cats.includes(ch)) return;
+    if ('.XM#'.includes(ch) || cats.includes(ch)) return;
     cells[i] = '.';
     for (const pick of cats) {
       cells[i] = pick;
-      if (!clearMatches(parseBoard([cells.join('')]), BOARD.W, BOARD.H, MATCH_SIZE).cleared.length) return;
+      if (!clearMatches(parseBoard([cells.join('')]), W, H, MATCH_SIZE).cleared.length) return;
     }
     cells[i] = '.';
   });
-  return rows.map((_, r) => cells.slice(r * BOARD.W, (r + 1) * BOARD.W).join(''));
+  return rows.map((_, r) => cells.slice(r * W, (r + 1) * W).join(''));
+}
+
+// Hash nhỏ theo tên màn: cùng màn luôn ra cùng hình bàn / cùng chỗ đặt thùng (bản màn ổn định giữa các lần chơi).
+const hashOf = text => [...text].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+// Mở rộng bàn 6×6: hình ghi ở màn (`expand`), không có thì chọn theo tên màn trong các hình không làm mất mèo.
+const EXPAND_SHAPES = ['octagon', 'heart', 'hexagon', 'diamond', 'triangle', 'square7'];
+function widen(level) {
+  const order = level.expand ? [level.expand] : EXPAND_SHAPES.map((_, k, list) => list[(hashOf(level.name) + k) % list.length]);
+  for (const shape of order) {
+    const board = expandBoard(level.board, shape);
+    if (board !== level.board) return board;
+  }
+  return level.board;
+}
+// Thêm `want` thùng gỗ vào ô trống, không đặt sát mèo đặt sẵn hay vật cản khác để không bịt kín cặp mèo
+// có sẵn. Thùng luôn vỡ được nên không làm bàn vô nghiệm.
+const crateCount = rows => [...rows.join('')].filter(ch => ch === 'X').length;
+function addCrates(rows, want) {
+  const { W, H } = boardSize(rows), cells = rows.join('').split('');
+  const near = i => [i - W, i + W, i % W ? i - 1 : -1, i % W < W - 1 ? i + 1 : -1].some(j => j >= 0 && j < W * H && cells[j] !== '.' && cells[j] !== VOID);
+  const free = cells.map((ch, i) => i).filter(i => cells[i] === '.' && !near(i));
+  let h = hashOf(rows.join(''));
+  while (want > 0 && free.length) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    const i = free.splice(h % free.length, 1)[0];
+    if (near(i)) continue;
+    cells[i] = 'X';
+    want--;
+  }
+  return rows.map((_, r) => cells.slice(r * W, (r + 1) * W).join(''));
 }
 
 // Tắt một element (dễ hơn).
@@ -58,9 +93,18 @@ const OFF = {
   },
   crate: l => ({ ...l, board: l.board.map(row => row.replaceAll('X', '.')) }),
   wall: l => ({ ...l, board: l.board.map(row => row.replaceAll('M', '.')) }),
+  board: l => ({ ...l, board: compactBoard(l.board) }),
 };
-// Bật một element (khó hơn). Chỉ moves và màu: vật cản đặt ngẫu nhiên dễ làm bàn vô nghiệm nên không tự thêm.
+// Bật một element (khó hơn). Không tự thêm kim loại (không bao giờ vỡ nên đặt bừa dễ làm bàn bí).
 const ON = {
+  // Bàn rộng hơn: màn có thùng thì thêm thùng vào phần mới để giữ mật độ (bàn rộng mà thưa thùng lại dễ hơn).
+  board: l => {
+    const board = widen(l), crates = crateCount(l.board);
+    const extra = Math.round(crates * playableCells(board) / playableCells(l.board)) - crates;
+    return { ...l, board: extra > 0 ? addCrates(board, extra) : board };
+  },
+  // Màn chưa có thùng: khoảng 1 thùng / CRATE_PER_CELLS ô trong bàn.
+  crate: l => ({ ...l, board: addCrates(l.board, Math.round(playableCells(l.board) / A.CRATE_PER_CELLS)) }),
   moves: l => ({ ...l, moves: Math.min(l.moves, Math.floor(l.target / A.TIGHTEN_PPM)) }),
   colors: l => {
     let cats = l.cats;
@@ -68,8 +112,9 @@ const ON = {
     return { ...l, cats };
   },
 };
-const OFF_ORDER = ['moves', 'colors', 'crate', 'wall']; // ít thấy -> dễ thấy; wall thường là bản sắc của màn
-const ON_ORDER = ['moves', 'colors'];
+// Tắt: ít thấy -> dễ thấy; bàn và wall thường là bản sắc của màn nên tắt sau cùng.
+const OFF_ORDER = ['moves', 'colors', 'crate', 'board', 'wall'];
+const ON_ORDER = ['moves', 'colors', 'board', 'crate'];
 
 // Bản màn có (gần nhất có thể) `target` element bật.
 //   noMoves: không siết lượt khi tăng khó (người suy nghĩ kỹ)
@@ -80,6 +125,13 @@ export function buildVariant(base, target, { noMoves = false, swap = false } = {
   if (swap) {
     const add = ON_ORDER.find(canOn), drop = ['crate', 'wall'].find(key => levelElements(level)[key]);
     if (add && drop) level = OFF[drop](ON[add](level));
+  }
+  // Hạ xuống Easy (0–1 element): ra bản cơ bản hoàn toàn — bàn 6×6 gọn, không vật cản, lượt thoải mái, ≤4 giống.
+  // Giữ lại 1 element nào cũng lệch: lượt chật / nhiều màu nặng hơn cả vật cản + bàn rộng cộng lại (đo bằng bot),
+  // còn giữ vật cản / bàn rộng thì trái với "màn dễ là 6×6 không chướng ngại vật".
+  if (target <= 1 && target < elementCount(base)) {
+    for (const key of [...OFF_ORDER].reverse()) if (levelElements(level)[key]) level = OFF[key](level);
+    return level;
   }
   for (const key of OFF_ORDER) {
     if (elementCount(level) <= target) break;
@@ -246,7 +298,7 @@ export function planLevel(profile, levelIndex) {
   const lastShift = profile.attempts.slice(profile.streakFrom).at(-1)?.shift ?? 0;
   // Mỗi lần thử chỉ đổi tối đa 1 element so với lần trước (trừ các profile `free`).
   const shift = p.free ? p.shift ?? 0 : clamp(p.shift, lastShift - 1, lastShift + 1);
-  let target = clamp(p.target ?? baseCount + shift, 0, 4);
+  let target = clamp(p.target ?? baseCount + shift, 0, MAX_ELEMENTS);
   if (profile.cooldown > 0) target = Math.min(target, 2);
   if (base.tier === 'boss') target = Math.max(target, 2); // boss không xuống dưới Medium
   let level = buildVariant(base, target, p);

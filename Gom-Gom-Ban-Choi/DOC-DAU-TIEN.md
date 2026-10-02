@@ -57,13 +57,13 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `board-rules.test.mjs` | Kiểm thử luật bàn, chạy bằng `node --test game/board-rules.test.mjs` |
 | `cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
 | `gom-gom.css` | Giao diện và hiệu ứng: theme vàng kem, thẻ, mũi tên xoay, anim |
-| `board-grid.css` | Lưới 6×6 của bàn chơi |
+| `board-grid.css` | Lưới bàn chơi (số cột/hàng theo màn, nền theo hình bàn) |
 | `favicon.svg` | Icon tab trình duyệt |
 | `skins/farm-pop/` | Ảnh skin: `background-pink.png` (nền), `rotate-arrow.png` (mũi tên xoay), `decor-sprites.png` + `decor-sprites-mask.png` (sprite trang trí) |
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 
-Bàn 6×6. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
+Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 

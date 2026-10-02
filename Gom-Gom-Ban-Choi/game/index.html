@@ -25,7 +25,8 @@
     <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM16 9.5l5 5M21 9.5l-5 5"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
-    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M10.3 3h3.4l.5 2.6 1.9 1.1 2.5-.9 1.7 2.9-2 1.7v2.2l2 1.7-1.7 2.9-2.5-.9-1.9 1.1-.5 2.6h-3.4l-.5-2.6-1.9-1.1-2.5.9-1.7-2.9 2-1.7v-2.2l-2-1.7 1.7-2.9 2.5.9 1.9-1.1Z"/></symbol>
+    <symbol id="i-moon"viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
     <symbol id="i-hammer" viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><path d="M12 10v11.5"/><rect x="4.5" y="3" width="15" height="7" rx="2" fill="currentColor"/></g></symbol>
     <symbol id="i-swap" viewBox="0 0 24 24"><path d="M5 9.5A7 7 0 0 1 18 7.5M19 4v4h-4M19 14.5A7 7 0 0 1 6 16.5M5 20v-4h4"/></symbol>
   </svg>
@@ -35,7 +36,12 @@
     <header class="topbar">
       <button id="open-map" class="round-button icon" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
       <h1 id="level-title">Level 1</h1>
-      <div class="top-actions"><button class="round-button icon sound-toggle" aria-pressed="true"></button>
+      <div class="top-actions settings">
+        <button class="round-button icon settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="game-settings-menu"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+        <div id="game-settings-menu" class="settings-menu" hidden>
+          <label class="settings-row" for="game-sound"><button id="game-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
+          <label class="settings-row" for="game-help"><button id="game-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
+        </div>
       <button id="restart" class="round-button" aria-label="Restart this level" title="Restart">↻</button></div>
     </header>
     <section class="hud" aria-label="Game info">
@@ -77,16 +83,19 @@
   <section id="home" class="screen home" hidden>
     <header class="screen-top home-top">
       <div class="wallet"><span class="pill-stat" aria-label="Coins"><i class="ico-coin"></i><b id="home-coins">0</b></span></div>
-      <div class="top-actions"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button>
-      <button class="round-button small icon sound-toggle" aria-pressed="true"></button>
-      <button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button></div>
+      <!-- Cài đặt: gom ngày/đêm, âm thanh, hướng dẫn vào một nút bánh răng, bấm mới xổ menu -->
+      <div class="top-actions settings">
+        <button class="round-button small icon settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+        <div id="settings-menu" class="settings-menu" hidden>
+          <label class="settings-row" for="night-toggle"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button><span>Day / Night</span></label>
+          <label class="settings-row" for="home-sound"><button id="home-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
+          <label class="settings-row" for="home-help"><button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
+        </div>
+      </div>
     </header>
     <div class="home-stage">
       <h1 class="home-logo">Gom Gom</h1>
-      <div id="home-zone" class="zone-switch" role="tablist" aria-label="Area">
-        <button role="tab" data-zone="garden">Garden</button>
-        <button role="tab" data-zone="living">Living room</button>
-      </div>
+      <!-- Khu nhà (vườn + phòng khách nối liền): kéo trên khu nhà để đi, kéo ở trời để xoay, chụm để zoom -->
       <div id="home-room" class="room home-room"></div>
     </div>
     <div class="home-actions">
@@ -211,7 +220,7 @@
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Drag a card into the “Hold” slot to stash it (or swap it with the stashed card), as often as you like. Tap the “Hold” slot to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
+    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
 </body>
 </html>

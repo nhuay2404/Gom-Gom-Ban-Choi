@@ -9,7 +9,7 @@
 // Đây là mô hình giả định để so hai chế độ với cùng người chơi, không phải dự báo số liệu thật.
 import { LEVELS } from '../game/levels.mjs';
 import { planLevel, recordAttempt, noteDwell, startVisit, elementCount, difficultyOf } from '../game/adaptive.mjs';
-import { ADAPTIVE, BOOSTERS, ECONOMY } from '../game/tuning.mjs';
+import { ADAPTIVE, BOOSTERS, ECONOMY, holdUnlocked } from '../game/tuning.mjs';
 import { boostersUnlocked } from '../game/boosters.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
@@ -55,7 +55,7 @@ function runPlayer(type, playerIndex, mode) {
     const canBoost = boostersUnlocked(level) && (!type.onlyRetry || triesHere > 0);
     const boughtBefore = bought;
     const result = play(plan.level, 1e6 * (TYPES.indexOf(type) + 1) + playerIndex * 1000 + tries,
-      { noise: type.noise, hold: type.hold, boost: canBoost ? { at: type.boostAt, want } : null });
+      { noise: type.noise, hold: type.hold && holdUnlocked(level), boost: canBoost ? { at: type.boostAt, want } : null });
     const used = result.boostUse.moves + result.boostUse.swap, boughtNow = bought - boughtBefore;
     out.boostUsed += used; out.bought += boughtNow;
     if (result.win) { const stars = result.stars || 1; coins += Math.max(0, stars - (best[level] || 0)) * ECONOMY.COINS_PER_STAR; best[level] = Math.max(best[level] || 0, stars); }

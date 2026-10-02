@@ -6,6 +6,8 @@ Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơ
 
 Độ khó của một màn tính bằng số **element đang "bật"** trong 4 element: lượt (moves), số màu mèo, thùng gỗ (crate, `X`), khối kim loại (wall, `M`).
 
+> **Từ 02/10/2026 có 5 element** (thêm **board**: bàn rộng hơn 6×6 hoặc có hình), nhãn Hard = 4–5, và ô Hold mở từ màn 11. Bảng 1.1 dưới đây là số liệu trước thay đổi; xem mục 16.
+
 | Element | Bật khi | Ghi chú |
 |---|---|---|
 | Moves | Điểm cần mỗi lượt `target / moves ≥ 18` | Ngân sách lượt chật. Màn có lượt dư dả thì moves không tính là một áp lực. |
@@ -528,3 +530,52 @@ Mô phỏng sau khi hoàn lại (`cố định → thích ứng`, người ảo 
 
 So với 15.2 (bản có tính booster): người dễ nản bỏ game 80% → 87%; người chơi dùng booster nhiều hơn (người yếu 14.9 → 21.1 mỗi người, mua bằng xu 10.3 → 15.9). Các kiểu khác gần như không đổi.
 
+
+## 16. Bàn nhiều cỡ / nhiều hình theo profile + mở Hold muộn (02/10/2026)
+
+Hai yêu cầu của chủ dự án: (1) ô Hold (tray) chỉ xuất hiện ở progression sau, khi màn khó hơn, kèm tutorial riêng; (2) bàn không chỉ một mẫu 6×6 mà đa dạng (6×6 cho màn dễ, bàn tam giác, trái tim...), và profile người chơi quyết định bàn rộng hay hẹp, vật cản nhiều hay ít.
+
+### 16.1 Luật
+
+- **Hold**: `HOLD.UNLOCK_LEVEL = 11` (tuning.mjs). Màn 1–10 không có ô Hold (ẩn, giữ chỗ trong dock); thẻ không vừa bàn là kẹt luôn. Màn 2 chỉ còn dạy xoay thẻ + mẹo gom to. Màn 11 (đầu chương 2) là tutorial Hold: giới thiệu (khoanh sáng ô Hold) → cất thẻ → gom → lấy thẻ ra → gom. Bảng vào màn 11 gắn NEW cho ô Hold.
+- **Bàn**: chuỗi bàn trong `levels.mjs` có độ dài tuỳ màn (6×6 tới 8×8), `#` = ô ngoài bàn (chặn ô như kim loại, không vẽ). Khuôn hình ở `board-shapes.mjs`: square7, square8, octagon, diamond, heart, triangle, hexagon, cross, ring. Giao diện vẽ nền theo hình (`.board-shape`).
+- **Element thứ 5 — board**: bật khi bàn không phải 6×6 vuông. Tắt = thu về khung 6×6 giữ được nhiều mèo/vật cản nhất (`compactBoard`). Bật = đặt bàn 6×6 vào một khuôn to hơn không làm mất mèo (`expandBoard`, chọn theo `level.expand` hoặc theo tên màn), màn có thùng thì thêm thùng vào phần mới để giữ mật độ.
+- **Crate bật được** (trước chỉ tắt được): màn chưa có thùng thì thêm khoảng 1 thùng / `CRATE_PER_CELLS` (10) ô, không đặt sát mèo hay vật cản khác. Kim loại vẫn không tự thêm.
+- **Hạ xuống Easy** (mục tiêu 0–1 element, thấp hơn bản gốc): ra **bản cơ bản hoàn toàn** — 6×6 vuông, không vật cản, lượt thoải mái, ≤ 4 giống. Đo bằng bot: giữ lại "lượt chật" hoặc "nhiều màu" thì bản 1 element còn khó hơn bản 2 element chỉ có vật cản + bàn rộng (vd. Divided 60% so với 90%), còn giữ vật cản thì trái với "màn dễ là 6×6 không chướng ngại vật". Màn vốn đã Easy thì giữ nguyên.
+- Thứ tự tắt: moves → màu → crate → board → wall. Thứ tự bật: moves → màu → board → crate.
+
+### 16.2 Đo: bàn to hơn có dễ hơn không?
+
+Cùng nội dung màn, chỉ đổi khuôn (bot 200 ván): bàn to hơn **không dễ hơn**, hơi khó hơn về điểm (mèo thưa, khó gom với mèo có sẵn) nhưng hết hẳn kẹt. Ví dụ Iron & Oak 6×6 40% (kẹt 7%) → 7×7 37% (kẹt 0%) → 8×8 29%; Go Big 89% → 8×8 85%. Vì vậy board là element "khó" nhẹ, đúng hướng "dễ = 6×6 gọn".
+
+### 16.3 Bàn của 20 màn và tỉ lệ thắng của bot (300 ván)
+
+| Màn | Tên | Bàn | Mục tiêu | Thắng (trước → sau) |
+|---:|---|---|---:|---|
+| 3 | Go Big | 6×6 | 170 | 94% → 88% (không Hold) |
+| 4 | Triple Cards | 6×6 | 280 → 260 | 90% → 92% |
+| 6 | Crate Garden | bát giác 7×7 | 260 | 83% → 79% |
+| 7 | Tight Crates | 6×6 | 270 → 250 | 68% → 65% (kẹt 12%, không Hold) |
+| 8 | Steel Nap | tim 8×7 | 240 | 99% → 96% |
+| 9 | Iron & Oak | 7×7 | 300 | 58% → 60% |
+| 10 | Garden Fortress (boss) | chữ thập 8×8 | 370 → 410 | 45% → 39% |
+| 11 | Fresh Start (tutorial Hold) | 6×6 | 240 | 93% → 97% |
+| 12 | Crate Scatter | tam giác 8×7 | 240 | 92% → 91% |
+| 13 | Steel Corners | kim cương 7×7 | 280 → 290 | 82% → 82% |
+| 14 | Crate & Steel | lục giác 8×7 | 270 → 290 | 76% → 79% |
+| 15 | Open Field | vành khuyên 8×8 | 290 | 83% → 86% |
+| 16 | Crate Maze | tim 8×7 | 260 | 77% → 80% |
+| 17 | Divided | 8×7 + tường | 240 → 250 | 67% → 58% |
+| 18 | Iron Gate (bottleneck) | 8×8 | 330 → 350 | 21% → 19% |
+| 19 | Tea Break (nghỉ) | tim 8×7 | 290 | 98% → 94% |
+| 20 | Steel Fortress (boss) | chữ thập 8×8 | 380 → 430 | 49% → 47% |
+
+Màn 1, 2, 5 giữ 6×6 như cũ. Đường cong răng cưa giữ như trước (nghỉ ở 8, 19; bottleneck 18; boss 10, 20).
+
+### 16.4 DDA theo số element (bot 150 ván, * = bản gốc)
+
+Hầu hết đơn điệu: bản Easy (0) 88–100%, mỗi element bật thêm thì thắng ít đi. Còn một chỗ lệch nhỏ: Tight Crates 3 element 31% → 4 element 38% (mở rộng bàn ở màn chưa có Hold làm giảm kẹt).
+
+### 16.5 Mô phỏng 8 kiểu người chơi (60 người mỗi kiểu, cố định → thích ứng)
+
+So với trước thay đổi: người mới chơi yếu qua hết 20 màn 100% (như cũ), người dễ nản qua hết 12% → **22%**, cao thủ dễ chán 33% → 30%, các kiểu khác không đổi (100%). Tỉ lệ nhãn Hard tăng (do thêm element board).

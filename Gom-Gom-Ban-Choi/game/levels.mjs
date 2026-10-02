@@ -2,20 +2,23 @@
 // (bộ mô phỏng tools/simulate-levels.mjs dùng chung file này để cân độ khó).
 //
 // Tiến trình (độ khó răng cưa: lên dần, thả ở màn nghỉ, lên cao hơn ở boss):
-//   1–2  Tutorial: kéo thả + gom 3 · xoay thẻ + ô Hold + mẹo gom to (hết tutorial sau màn 2)
+//   1–2  Tutorial: kéo thả + gom 3 · xoay thẻ + mẹo gom to
 //   3–4  Chơi bình thường, chưa có vật cản
 //   5    Giới thiệu thùng gỗ (barrel)        6–7  Thùng gỗ trong màn (+ mèo mướp)
 //   8    Giới thiệu khối kim loại, kiêm màn nghỉ (breather)
 //   9    Kim loại + thùng gỗ (+ mèo Xiêm)    10   BOSS chương 1 (đủ 6 giống, cả hai vật cản)
-//   11–18 Xào lại cơ chế: không vật cản -> thùng -> kim loại -> cả hai, hai vòng, vòng sau khó hơn
+//   11   Mở ô Hold (tutorial): từ đây bàn to hơn, nhiều hình, các màn khó hơn nên mới cần chỗ cất thẻ
+//   12–18 Xào lại cơ chế: thùng -> kim loại -> cả hai, hai vòng, vòng sau khó hơn
 //   18   Bottleneck (bức tường độ khó trước màn nghỉ + Boss)
 //   19   Màn nghỉ                           20   BOSS chương 2
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
-// `introduces` = cơ chế mới của màn ('crate' | 'metal'), bảng vào màn gắn nhãn NEW.
+// `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold'), bảng vào màn gắn nhãn NEW.
+// `expand` = khuôn hình (board-shapes.mjs) khi độ khó thích ứng cần bàn to hơn cho màn 6×6 vuông.
 //
-// Bàn: 6 chuỗi x 6 ký tự, '.' ô trống, 'X' thùng gỗ (chặn ô, vỡ khi gom mèo sát bên), 'M' khối kim loại
-// (chặn ô, không bao giờ vỡ). Ký tự mèo:
+// Bàn: các chuỗi cùng độ dài, 6×6 tới 8×8, hình dạng tuỳ màn (chương 1 chủ yếu 6×6, chương 2 to dần và
+// nhiều hình: tim, tam giác, kim cương...). '.' ô trống, '#' ngoài bàn, 'X' thùng gỗ (chặn ô, vỡ khi gom
+// mèo sát bên), 'M' khối kim loại (chặn ô, không bao giờ vỡ). Ký tự mèo:
 export const LETTERS = { O: 'orange', G: 'gray', W: 'white', K: 'tuxedo', S: 'siamese', T: 'tabby' };
 
 // Thẻ viết gọn: 'O' đơn · 'OG' đôi ngang · 'O|G' đôi dọc · 'I:OGW' ba ngang · 'V:OGW' ba dọc · 'L:OGW' chữ L.
@@ -40,19 +43,17 @@ export const LEVELS = [
     ],
   },
   {
-    // Tutorial cuối: xoay thẻ -> cất thẻ vào Hold -> mẹo gom to -> lấy thẻ từ Hold ra.
-    name: 'Round and Round', feature: 'Rotate & Hold', tier: 'normal',
+    // Tutorial cuối phần mở đầu: xoay thẻ -> mẹo gom to. Chưa có ô Hold (mở ở màn 11).
+    name: 'Round and Round', feature: 'Rotate cards', tier: 'normal',
     moves: 6, target: 90, cats: 'OGW',
     board: ['...GG.', '.W....', '.G....', 'OW....', '....WW', '......'],
-    deck: ['OO', 'W', 'G', 'G'],
+    deck: ['OO', 'W', 'G'],
     tutorial: [
       { type: 'rotate', offsets: SHAPES.dominoV, text: 'This card is sideways and won\'t fit the gap. Tap the card to rotate it!' },
       { type: 'drag', anchor: 6, text: 'A perfect fit! Drag it into the gap to match 3 orange cats.' },
-      { type: 'hold', text: 'This white cat doesn\'t fit yet. Drag it into the Hold slot to save it for later.' },
-      { type: 'drag', anchor: 5, text: 'Now match 3 gray cats!' },
+      { type: 'drag', anchor: 27, text: 'Now match 3 white cats!' },
       { type: 'info', text: 'Tip: bigger matches score more! 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 points.' },
-      { type: 'tapHold', text: 'Tap the Hold slot to bring the white cat back.' },
-      { type: 'drag', anchor: 27, text: 'Match 3 white cats! You can use Hold as often as you like.' },
+      { type: 'drag', anchor: 5, text: 'Match 3 gray cats to finish!' },
     ],
   },
   {
@@ -63,7 +64,7 @@ export const LEVELS = [
   },
   {
     name: 'Triple Cards', feature: 'More 3-cat cards', tier: 'normal',
-    moves: 12, target: 280, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
+    moves: 12, target: 260, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
     board: ['O....W', '..GG..', '......', '.W..O.', '..OW..', 'G....G'],
     deck: [],
   },
@@ -80,103 +81,114 @@ export const LEVELS = [
   {
     name: 'Crate Garden', feature: 'Crates + tabby cat', tier: 'normal',
     moves: 14, target: 260, cats: 'OGWT', assist: 0.4,
-    board: ['X..O..', '.GG..X', '..X.W.', 'W...X.', '.X.T..', 'T..X.O'],
+    board: ['#X..O.#', '.GG...X', '..X.W..', 'W...X..', '.X.T..T', 'T..X..O', '#..O..#'],
     deck: [],
   },
   {
     name: 'Tight Crates', feature: 'Crowded + crates', tier: 'hard',
-    moves: 12, target: 270, cats: 'OGWT', assist: 0.35,
+    moves: 12, target: 250, cats: 'OGWT', assist: 0.35,
     board: ['OGX.TO', 'G..WX.', 'X.OG.W', '.TX.O.', 'W.GX.T', '.T..XO'],
     deck: [],
   },
   {
-    name: 'Steel Nap', feature: 'Metal never breaks', tier: 'chill', introduces: 'metal',
+    name: 'Steel Nap', feature: 'Heart board + metal', tier: 'chill', introduces: 'metal',
     moves: 18, target: 240, cats: 'OGWT', assist: 0.5,
-    board: ['......', '.M..M.', '..OO..', '..WW..', '.M..M.', '......'],
+    board: ['#..##..#', '.M....M.', '...OO...', '...WW...', '#M....M#', '##....##', '###..###'],
     deck: [],
     tutorial: [{ type: 'info', text: 'New: metal blocks! Like crates they take up a cell, but they never break. Plan around them.' }],
   },
   {
     name: 'Iron & Oak', feature: 'Metal + crates', tier: 'hard',
     moves: 16, target: 300, cats: 'OGWTS', assist: 0.4,
-    board: ['X.M..X', '.O..O.', 'MXGG..', '..W.XM', '.O..T.', 'X..M.X'],
+    board: ['X.M...X', '.O..O..', 'MXGG..S', '..W.XM.', '.O..T..', 'X..M..X', '..S..T.'],
     deck: [],
   },
   {
-    name: 'Garden Fortress', feature: 'Boss', tier: 'boss',
-    moves: 20, target: 370, cats: 'OGWTSK', assist: 0.4,
-    board: ['MX..XM', 'X.OG.X', '.K..S.', '.TW.K.', 'X.S..X', 'MX..XM'],
+    name: 'Garden Fortress', feature: 'Boss: cross board', tier: 'boss',
+    moves: 20, target: 410, cats: 'OGWTSK', assist: 0.4,
+    board: ['##MX.M##', '##.OG.##', 'X.K..S.X', '.TW..K..', '..S..T..', 'X.W..O.X', '##.SO.##', '##M..M##'],
     deck: [],
   },
-  // ===== Chương 2: phòng khách — xào lại cơ chế, hai vòng: trống -> thùng -> kim loại -> cả hai =====
+  // ===== Chương 2: phòng khách — mở ô Hold, bàn to dần và nhiều hình; xào lại cơ chế thùng -> kim loại -> cả hai =====
   {
-    name: 'Fresh Start', feature: 'No obstacles', tier: 'normal',
+    // Mở ô Hold: cất thẻ -> gom -> lấy thẻ ra -> gom. Từ màn này trở đi luôn có Hold.
+    name: 'Fresh Start', feature: 'Hold a card', tier: 'normal', introduces: 'hold',
     moves: 14, target: 240, cats: 'OGWTS', assist: 0.45,
-    board: ['O....G', '..T...', '.W..S.', '..SW..', '...T..', 'G....O'],
-    deck: [],
+    board: ['O....G', 'O.T...', '.W..S.', '..SW..', '...T..', 'GG...O'],
+    deck: ['G', 'O'],
+    tutorial: [
+      { type: 'info', focus: 'hold', text: 'New: the Hold slot! Stash a card there and take it back whenever you like. Boards get bigger from here, so it comes in handy.' },
+      { type: 'hold', text: 'Drag this gray cat into the Hold slot to save it for later.' },
+      { type: 'drag', anchor: 12, text: 'Now match 3 orange cats!' },
+      { type: 'tapHold', text: 'Tap the Hold slot to bring the gray cat back.' },
+      { type: 'drag', anchor: 32, text: 'Match 3 gray cats! You can use Hold as often as you like.' },
+    ],
   },
   {
-    name: 'Crate Scatter', feature: 'Crates', tier: 'normal',
+    name: 'Crate Scatter', feature: 'Triangle board + crates', tier: 'normal',
     moves: 15, target: 240, cats: 'OGWTS', assist: 0.4,
-    board: ['.X..X.', 'X.O..G', '..TX..', '.S..W.', 'G..X.T', '.X..X.'],
+    board: ['###..###', '##.X..##', '##O..G##', '#..TX..#', '#.S..W.#', 'G..X..T.', '.X..O..X'],
     deck: [],
   },
   {
-    name: 'Steel Corners', feature: 'Metal', tier: 'normal',
-    moves: 15, target: 280, cats: 'OGWTS', assist: 0.4,
-    board: ['M....M', '..OO..', '.G..G.', '.S..S.', '..TT..', 'M....M'],
+    name: 'Steel Corners', feature: 'Diamond board + metal', tier: 'normal',
+    moves: 15, target: 290, cats: 'OGWTS', assist: 0.4,
+    board: ['##M.M##', '#..OO.#', '.G...G.', 'M.S.S.M', '...TT..', '#.W..W#', '##M.M##'],
     deck: [],
   },
   {
     name: 'Crate & Steel', feature: 'Crates + metal', tier: 'hard',
-    moves: 16, target: 270, cats: 'OGWTSK', assist: 0.4,
-    board: ['X.M..X', '.O..K.', 'MXGG..', '..W.XM', '.K..W.', 'X..M.X'],
+    moves: 16, target: 290, cats: 'OGWTSK', assist: 0.4,
+    board: ['##X.M.##', '#.O..K.#', 'MXGG..XM', '...W.X..', '.K..W..T', '#X..S.X#', '##M.O.##'],
     deck: [],
   },
   {
-    name: 'Open Field', feature: 'No obstacles, 6 breeds', tier: 'normal',
+    name: 'Open Field', feature: 'Big ring board, 6 breeds', tier: 'normal',
     moves: 14, target: 290, cats: 'OGWTSK', assist: 0.4,
-    board: ['K.O..S', '..O.T.', '.WW..T', 'G.....', 'G.S..K', '..T..O'],
+    board: ['K..O...S', '...O.T..', '.WW...T.', 'G..##...', 'G..##.K.', '..S...O.', '.T...S..', 'O...K..W'],
     deck: [],
   },
   {
-    name: 'Crate Maze', feature: 'Lots of crates', tier: 'hard',
+    name: 'Crate Maze', feature: 'Heart board + crates', tier: 'hard',
     moves: 16, target: 260, cats: 'OGWTSK', assist: 0.4,
-    board: ['X...X.', '.O.G..', '..S.X.', 'XW.K..', '..T..X', '.X...O'],
+    board: ['#X.##.X#', '..O.G...', '.X.S.X..', 'XW..K..X', '#..T..X#', '##X..O##', '###..###'],
     deck: [],
   },
   {
     name: 'Divided', feature: 'A metal wall splits the board', tier: 'hard',
-    moves: 15, target: 240, cats: 'OGWTSK', assist: 0.4,
-    board: ['..M...', '.O.M.G', '..M..S', '.K.M..', '.G.M.O', '..M..T'],
+    moves: 15, target: 250, cats: 'OGWTSK', assist: 0.4,
+    board: ['...M....', '.O..M.G.', '...M..S.', '.K..M...', '.G.M..O.', '....M.T.', 'W..M....'],
     deck: [],
   },
   {
-    // Bottleneck của chương 2: bot thắng ~24% (mục tiêu cao, ít hỗ trợ màu), điểm TB ~294/330 = hụt một cú gom
+    // Bottleneck của chương 2: bot thắng ~19% (mục tiêu cao, ít hỗ trợ màu), điểm TB ~310/350 = hụt một cú gom
     // -> người chơi thua sát nút, muốn chơi lại hoặc dùng booster. Ngay sau là màn nghỉ 19.
     name: 'Iron Gate', feature: 'Crates + metal', tier: 'hard',
-    moves: 18, target: 330, cats: 'OGWTSK', assist: 0.3,
-    board: ['M.X.XM', '.O..G.', 'X.MM.X', '..W.K.', '.S.XT.', 'M..O.M'],
+    moves: 18, target: 350, cats: 'OGWTSK', assist: 0.3,
+    board: ['M..X.X.M', '.O...G..', 'X..MM..X', '...W.K..', '.S..X.T.', 'X..MM..X', '..O..K..', 'M.X..X.M'],
     deck: [],
   },
   {
-    name: 'Tea Break', feature: 'Take a breather', tier: 'chill',
+    name: 'Tea Break', feature: 'Heart board, take a breather', tier: 'chill',
     moves: 20, target: 290, cats: 'OGWT', assist: 0.5,
-    board: ['......', '.OO.M.', '.M....', '....M.', '.M.GG.', '......'],
+    board: ['#..##..#', '.OO..M..', '.M......', '.....M..', '#.M.GG.#', '##....##', '###..###'],
     deck: [],
   },
   {
-    name: 'Steel Fortress', feature: 'Boss', tier: 'boss',
-    moves: 22, target: 380, cats: 'OGWTSK', assist: 0.4,
-    board: ['MM..MM', 'M.OG.M', '.X..X.', '.TK.S.', 'M.W..M', 'MM..MM'],
+    name: 'Steel Fortress', feature: 'Boss: cross board', tier: 'boss',
+    moves: 22, target: 430, cats: 'OGWTSK', assist: 0.4,
+    board: ['##M..M##', '##.OG.##', 'M.X..X.M', '.TK..S..', '..S..W.T', 'M.W..K.M', '##.X.O##', '##M..M##'],
     deck: [],
   },
 ];
 
+// Ô ngoài bàn ('#') chặn ô như kim loại (không đặt được, không vỡ, búa không đập được) nhưng không vẽ.
 export function parseBoard(rows) {
   return rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
-    : { group: LETTERS[ch], locked: true, starting: true }));
+    : ch === '#' ? { block: true, metal: true, void: true }
+      : { group: LETTERS[ch], locked: true, starting: true }));
 }
+export { boardSize } from './board-shapes.mjs';
 
 export function parseCard(spec) {
   const [kind, letters] = spec.includes(':') ? spec.split(':') : [null, spec.replace('|', '')];

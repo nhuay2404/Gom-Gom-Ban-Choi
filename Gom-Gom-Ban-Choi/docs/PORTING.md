@@ -13,10 +13,11 @@ chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API
 | **Lõi (chép)** | `game/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
 | | `game/scoring.mjs` | Điểm theo cỡ cụm |
 | | `game/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
-| | `game/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold, đặt, thắng/thua, tutorial, booster |
+| | `game/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
+| | `game/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
 | | `game/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
 | | `game/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
-| | `game/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall); màn có tutorial giữ bản gốc |
+| | `game/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
 | | `game/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
 | | `game/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
 | | `game/tuning.mjs` | Mọi hằng số cảm giác chơi |

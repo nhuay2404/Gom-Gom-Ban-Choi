@@ -184,6 +184,20 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .topbar>#open-map{justify-self:start}
 .round-button.small.icon svg{width:20px;height:20px}
 .sound-toggle[aria-pressed="false"]{opacity:.7}
+/* Nút cài đặt ở Home: bánh răng, bấm xổ menu dọc ngay bên dưới (căn phải) */
+.settings{position:relative}
+.settings-toggle svg{transition:rotate .3s cubic-bezier(.3,1.4,.5,1)}
+.settings-toggle[aria-expanded="true"] svg{rotate:60deg}
+.settings-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:6;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:20px;
+  background:var(--cream-1);border:1px solid var(--cream-edge);box-shadow:0 8px 20px #6b452333;transform-origin:top right;animation:settings-pop .18s cubic-bezier(.3,1.4,.5,1)}
+.settings-menu[hidden]{display:none}
+.settings-row{display:flex;align-items:center;gap:10px;padding:4px 14px 4px 4px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  font-weight:900;font-size:14px;color:var(--cream-ink)}
+.settings-row:hover{background:#0000000a}
+.settings-row .round-button{background:var(--cream-2)}
+#night-toggle[aria-pressed="true"]{background:#2f3a66}
+@keyframes settings-pop{from{opacity:0;scale:.85}}
+@media(prefers-reduced-motion:reduce){.settings-menu{animation:none}.settings-toggle svg{transition:none}}
 
 /* ===== Chuyển khu Garden / Living room ===== */
 .zone-switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff8e4e6;box-shadow:none;width:max-content;max-width:100%;margin-inline:auto}
@@ -192,7 +206,7 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .zone-switch button.locked{opacity:.6}
 .home-stage .zone-switch{position:absolute;z-index:3;left:50%;translate:-50% 0;top:calc(max(14px,env(safe-area-inset-top)) + 100px)}
 .screen>.zone-switch{flex:none}
-.room.is-3d[data-zone="garden"]{background:var(--sky)}
+.room.is-3d[data-zone]{background:var(--sky)} /* khu nhà có cả vườn: trời xanh cả khi đang ở phòng khách */
 @media(max-height:680px){.home-stage .zone-switch{top:calc(max(14px,env(safe-area-inset-top)) + 84px)}.zone-switch button{min-height:36px;font-size:12px}}
 
 /* ===== Deco: thanh hành động + ô đồ ===== */

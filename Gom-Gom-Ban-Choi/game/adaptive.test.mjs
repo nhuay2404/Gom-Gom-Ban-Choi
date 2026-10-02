@@ -1,7 +1,8 @@
 // Test độ khó thích ứng (adaptive.mjs): element, bản biến thể, nhận diện profile, ghi lần thử. Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, parseBoard } from './levels.mjs';
+import { LEVELS, parseBoard, boardSize } from './levels.mjs';
+import { isPlainSquare } from './board-shapes.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
 import { elementCount, difficultyOf, buildVariant, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip } from './adaptive.mjs';
@@ -14,24 +15,27 @@ function try_(level, win, extra = {}) {
 }
 const withTries = (profile, ...tries) => ({ ...profile, attempts: [...profile.attempts, ...tries] });
 
-test('nhãn độ khó theo số element: 0–1 Easy, 2–3 Medium, 4 Hard', () => {
-  assert.deepEqual([0, 1, 2, 3, 4].map(difficultyOf), ['easy', 'easy', 'medium', 'medium', 'hard']);
+test('nhãn độ khó theo số element: 0–1 Easy, 2–3 Medium, 4–5 Hard', () => {
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(difficultyOf), ['easy', 'easy', 'medium', 'medium', 'hard', 'hard']);
   assert.equal(elementCount(LEVELS[0]), 0);   // Hello, Kitty
-  assert.equal(elementCount(LEVELS[8]), 4);   // Iron & Oak
-  assert.equal(elementCount(LEVELS[16]), 2);  // Divided
+  assert.equal(elementCount(LEVELS[8]), 5);   // Iron & Oak: lượt chật, 5 giống, thùng, kim loại, bàn 7×7
+  assert.equal(elementCount(LEVELS[16]), 3);  // Divided: 6 giống, kim loại, bàn 8×7
 });
 
 test('mọi bản biến thể: bàn hợp lệ, không có sẵn cụm gom, đạt đúng số element khi tắt bớt', () => {
   LEVELS.forEach((base, i) => {
-    for (let target = 0; target <= 4; target++) {
+    for (let target = 0; target <= 5; target++) {
       const level = buildVariant(base, target);
-      const board = parseBoard(level.board);
-      assert.equal(board.length, 36, `màn ${i + 1}`);
-      assert.equal(clearMatches(board, 6, 6, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} → ${target}`);
+      const board = parseBoard(level.board), { W, H } = boardSize(level.board);
+      assert.ok(level.board.every(row => row.length === W) && W >= 6 && W <= 8 && H >= 6 && H <= 8, `màn ${i + 1} → ${target}: cỡ bàn`);
+      assert.equal(clearMatches(board, W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} → ${target}`);
       assert.ok(level.moves > 0 && level.cats.length >= 2, `màn ${i + 1} → ${target}`);
       // Mèo trên bàn chỉ thuộc các giống của màn (bộ chia thẻ phát đúng các giống này).
-      assert.ok([...level.board.join('')].every(ch => '.XM'.includes(ch) || level.cats.includes(ch)), `màn ${i + 1} → ${target}`);
-      if (target <= elementCount(base)) assert.equal(elementCount(level), target, `màn ${i + 1} → ${target}`);
+      assert.ok([...level.board.join('')].every(ch => '.XM#'.includes(ch) || level.cats.includes(ch)), `màn ${i + 1} → ${target}`);
+      // Hạ xuống Easy luôn ra bản cơ bản (0 element, bàn 6×6 vuông, không vật cản); các mức khác đúng số element.
+      const toEasy = target <= 1 && target < elementCount(base);
+      if (target <= elementCount(base)) assert.equal(elementCount(level), toEasy ? 0 : target, `màn ${i + 1} → ${target}`);
+      if (toEasy) assert.ok(isPlainSquare(level.board) && !/[XM]/.test(level.board.join('')), `màn ${i + 1} → ${target}: Easy`);
     }
   });
 });
@@ -58,11 +62,11 @@ test('đang vật lộn: mỗi lần thua bớt 1 element, tối đa 2', () => {
   let p = veteran();
   const counts = [];
   for (let i = 0; i < 4; i++) {
-    const plan = planLevel(p, 17); // Iron Gate, 4 element
+    const plan = planLevel(p, 17); // Iron Gate, 5 element
     counts.push(plan.count);
     p = recordAttempt(p, try_(17, false, { profile: plan.profile, shift: plan.shift })).profile;
   }
-  assert.deepEqual(counts, [4, 4, 3, 2]);
+  assert.deepEqual(counts, [5, 5, 4, 3]);
   assert.equal(detectProfile(p, 17).id, 'frustrated'); // thua lần thứ 4 -> sắp bỏ game
 });
 
@@ -87,16 +91,16 @@ test('thua sát nút: giữ độ khó, tới lần thứ 4 mới +2 lượt', (
 
 test('cao thủ: thắng 3 màn liền sạch sẽ thì +1 element, chỉ siết lượt / thêm màu', () => {
   const hot = withTries(veteran(), try_(10, true, { stars: 3 }), try_(11, true, { stars: 3 }), try_(12, true, { stars: 2 }));
-  const plan = planLevel(hot, 15); // Crate Maze: 6 giống + crate = 2 element
+  const plan = planLevel(hot, 15); // Crate Maze: 6 giống + crate + bàn tim = 3 element
   assert.equal(plan.profile, 'skilled');
-  assert.equal(plan.count, 3);
+  assert.equal(plan.count, 4);
   assert.ok(plan.level.moves < LEVELS[15].moves);
   assert.equal(plan.level.board.join(''), LEVELS[15].board.join(''));
 });
 
 test('chơi chán: đổi loại element (tắt vật cản, bật moves/màu), giữ số lượng', () => {
   const bored = withTries(veteran(), ...[10, 11, 12].map(l => try_(l, true, { stars: 3, dwellMs: 9000 })));
-  const plan = planLevel(bored, 11); // Crate Scatter: màu + crate
+  const plan = planLevel(bored, 11); // Crate Scatter: màu + crate + bàn tam giác
   assert.equal(plan.profile, 'bored');
   assert.equal(plan.mode, 'swap');
   assert.equal(plan.count, elementCount(LEVELS[11]));
@@ -196,9 +200,10 @@ test('planLevel đọc lý do thua ở chính màn đang chơi lại; màn tutor
 });
 
 test('chơi chán nhận ra sau 2 màn thắng sạch nếu kèm dấu hiệu lơ đãng; không có dấu hiệu thì không', () => {
+  // Màn 11 là tutorial (không tính), nên dùng màn 12–13.
   const base = withTries(veteran(), try_(9, false));
-  assert.equal(detectProfile(withTries(base, try_(10, true, { dwellMs: 9000 }), try_(11, true, { dwellMs: 9500 })), 12).id, 'bored');
-  assert.notEqual(detectProfile(withTries(base, try_(10, true, { dwellMs: 2000 }), try_(11, true, { dwellMs: 2000 })), 12).id, 'bored');
+  assert.equal(detectProfile(withTries(base, try_(11, true, { dwellMs: 9000 }), try_(12, true, { dwellMs: 9500 })), 13).id, 'bored');
+  assert.notEqual(detectProfile(withTries(base, try_(11, true, { dwellMs: 2000 }), try_(12, true, { dwellMs: 2000 })), 13).id, 'bored');
 });
 
 test('booster không đổi thắng/thua; thua sát nút mà chưa dùng booster thì mời booster và giữ nguyên bộ thẻ', () => {
@@ -214,4 +219,20 @@ test('booster không đổi thắng/thua; thua sát nút mà chưa dùng booster
   assert.equal(boosterTip(near), true);
   const nearUsed = withTries(veteran(), try_(13, false, { ratio: 0.9 }), try_(13, false, { ratio: 0.9, boosters: 1 }));
   assert.equal(boosterTip(nearUsed), false);
+});
+
+test('bàn theo profile: Easy thu về 6×6 gọn không vật cản; cao thủ được bàn rộng có hình và thêm thùng', () => {
+  // Màn 17 Divided (bàn 8×7 có tường kim loại): sắp bỏ game -> bàn 6×6 vuông, hết vật cản.
+  const losing = withTries(veteran(), ...Array.from({ length: 4 }, () => try_(16, false)));
+  const easy = planLevel(losing, 16);
+  assert.equal(easy.difficulty, 'easy');
+  assert.ok(isPlainSquare(easy.level.board));
+  assert.ok(!/[XM]/.test(easy.level.board.join('')));
+  // Màn 4 Triple Cards (6×6 vuông, không vật cản): biến thể khó nhất có bàn to hơn và thùng gỗ.
+  const hard = buildVariant(LEVELS[3], 5);
+  assert.ok(!isPlainSquare(hard.board));
+  assert.ok(hard.board.join('').includes('X'));
+  // Mở rộng bàn không làm mất mèo đặt sẵn.
+  const cats = rows => [...rows.join('')].filter(ch => /[OGWKST]/.test(ch)).length;
+  assert.equal(cats(buildVariant(LEVELS[3], 3).board), cats(LEVELS[3].board));
 });
