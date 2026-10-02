@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { categories, eyesMarkup } from './cat-art.mjs';
-import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, DOOR } from './room-layout.mjs';
+import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from './tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
 
@@ -16,15 +16,37 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const angDiff = (a, b) => ((((b - a) % TAU) + TAU + Math.PI) % TAU) - Math.PI;
 const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.exp(-rate * dt));
 
-// ---------- Khu nhà: mèo đi lại tự do giữa vườn và phòng khách ----------
-// Toạ độ mèo = toạ độ khu nhà (tâm vườn là gốc, phòng khách lệch ZONE_OFFSET.living). Mỗi khu mèo đi trong ô
-// ±ROOM quanh tâm khu; giữa hai khu là lối đi hẹp qua cửa (DOOR) xuyên qua tường phòng / cổng rào vườn.
+// ---------- Khu nhà: mèo đi lại tự do giữa vườn, phòng khách, phòng ngủ ----------
+// Toạ độ mèo = toạ độ khu nhà (tâm vườn là gốc, mỗi phòng lệch ZONE_OFFSET[khu]). Mỗi khu mèo đi trong ô
+// ±ROOM quanh tâm khu; hai khu cạnh nhau nối bằng một lối hẹp qua cửa (LINKS) xuyên qua tường / cổng rào.
 const zoneHome = zone => ({ x: ZONE_OFFSET[zone][0], z: ZONE_OFFSET[zone][1] });
-const GARDEN_EDGE = ZONE_OFFSET.garden[1] - ROOM, LIVING_EDGE = ZONE_OFFSET.living[1] + ROOM; // mép -z vườn, mép +z phòng
-const DOOR_X = ZONE_OFFSET.living[0] + DOOR.x, DOOR_HALF = DOOR.w / 2 - .2; // lối cửa rộng vừa thân mèo
-const MIDLINE = (ZONE_OFFSET.garden[1] + ZONE_OFFSET.living[1]) / 2;
-// Hai đầu lối cửa (đứng ngay trong mỗi khu): mèo sang khu kia thì đi qua hai điểm này.
-const DOOR_STEP = { garden: { x: DOOR_X, z: GARDEN_EDGE + .15 }, living: { x: DOOR_X, z: LIVING_EDGE - .15 } };
+// Mỗi lối: trục hai khu lệch nhau (x hoặc z), ô lối đi (box) giữa hai mép khu, và điểm đứng ngay trong mỗi khu (steps).
+const PASSES = LINKS.map(({ a, b, at, w }) => {
+  const [ax, az] = ZONE_OFFSET[a], [bx, bz] = ZONE_OFFSET[b];
+  const axis = Math.abs(ax - bx) > Math.abs(az - bz) ? 'x' : 'z', side = axis === 'x' ? 'z' : 'x';
+  const ca = axis === 'x' ? ax : az, cb = axis === 'x' ? bx : bz, dir = Math.sign(cb - ca);
+  const edgeA = ca + dir * ROOM, edgeB = cb - dir * ROOM, half = w / 2 - .2; // lối cửa rộng vừa thân mèo
+  const point = (along, across) => (axis === 'x' ? { x: along, z: across } : { x: across, z: along });
+  const lo = point(Math.min(edgeA, edgeB), at - half), hi = point(Math.max(edgeA, edgeB), at + half);
+  return { a, b, box: [lo.x, hi.x, lo.z, hi.z], steps: { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) } };
+});
+// Đường đi qua các khu (đồ thị nhỏ, tìm theo chiều rộng): danh sách khu từ `from` tới `to` chỉ qua các khu đã mở.
+function zoneRoute(from, to, open) {
+  const prev = { [from]: null }, queue = [from];
+  while (queue.length) {
+    const zone = queue.shift();
+    if (zone === to) break;
+    for (const p of PASSES) {
+      const next = p.a === zone ? p.b : p.b === zone ? p.a : null;
+      if (next && open.includes(next) && !(next in prev)) { prev[next] = zone; queue.push(next); }
+    }
+  }
+  if (!(to in prev)) return [from];
+  const route = [];
+  for (let zone = to; zone; zone = prev[zone]) route.unshift(zone);
+  return route;
+}
+const passBetween = (a, b) => PASSES.find(p => (p.a === a && p.b === b) || (p.a === b && p.b === a));
 const boxNearest = (x, z, x0, x1, z0, z1) => ({ x: clamp(x, x0, x1), z: clamp(z, z0, z1) });
 // Lò xo tắt dần: obj[key] chạy về đích với độ cứng k và tỉ lệ tắt zeta (vận tốc lưu ở obj[key + 'V']).
 // zeta < 1 thì hơi vọt qua rồi về, như thịt mềm; đây là thứ làm chuyển động hết "cứng".
@@ -430,11 +452,15 @@ class Cat {
 
   // pace: hệ số tốc độ; glide: không phanh về 0 khi hết maxTime (gọi nối tiếp từng đoạn ngắn để bám theo con khác mà không khựng).
   *walkTo(tx, tz, { run = false, near = .08, ignore = null, maxTime = 8, pace = 1, glide = false, direct = false } = {}) {
-    // Đích ở khu kia: đi tới cửa, qua lối cửa, rồi mới tới đích (không đi xuyên tường / hàng rào).
+    // Đích ở khu khác: đi tới cửa, qua lối cửa (có thể qua khu giữa), rồi mới tới đích (không đi xuyên tường / hàng rào).
     const from = this.world.zoneAt(this.x, this.z), to = this.world.zoneAt(tx, tz);
     if (!direct && from !== to) {
-      for (const step of [DOOR_STEP[from], DOOR_STEP[to]]) {
-        yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: 6, pace, glide: true, direct: true });
+      const route = zoneRoute(from, to, this.world.zones());
+      for (let i = 1; i < route.length; i++) {
+        const pass = passBetween(route[i - 1], route[i]);
+        for (const step of [pass.steps[route[i - 1]], pass.steps[route[i]]]) {
+          yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: 6, pace, glide: true, direct: true });
+        }
       }
     }
     this.setPose('stand', { tailUp: run ? .9 : this.goal.tailUp });
@@ -821,6 +847,102 @@ class Cat {
       yield* this.wait(1);
       this.contact = { spread: kind === 'lamp-heater' ? 1 : .7 }; // ấm quá nên "tan chảy" ra sàn (lò sưởi tan nhiều nhất)
       yield* this.sleep(rand(5, 8)); // sưởi ấm dưới đèn
+    } else if (id === 'bed') {
+      // Giường: nhảy lên chăn, nhồi bột rừ rừ, xoay vòng rồi cuộn tròn ngủ một giấc dài trên chăn êm.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      this.setPose('knead'); this.face('blink'); this.purr = 1;
+      this.contact = { spread: .3, sag: .35 };
+      yield* this.wait(rand(2, 3.5));
+      this.purr = 0;
+      for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
+      this.setPose(chance(.3) ? 'roll' : 'curl');
+      this.contact = { spread: .55, sag: .45 };
+      yield* this.sleep(rand(10, 18));
+      yield* this.yawnStretch();
+    } else if (id === 'desk') {
+      // Bàn máy tính: nhảy lên nằm chễm chệ trên bàn phím, nhìn màn hình, đuôi phe phẩy... rồi ngủ luôn ở đó.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); this.face('focus'); this.tailWag = .6;
+      this.lookGoal = rand(-1, 1) > 0 ? 1 : -1; // liếc màn hình
+      yield* this.wait(rand(2, 3));
+      this.lookGoal = 0; this.tailWag = .25;
+      this.setPose('loaf'); this.face('half'); this.contact = { spread: .45 };
+      yield* this.sleep(rand(5, 9));
+    } else if (id === 'chair') {
+      // Ghế gaming: đáp lên làm ghế xoay đung đưa, ngồi nhìn quanh rồi cuộn tròn trên đệm ghế.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      node.userData.spin?.(chance(.5) ? 2.4 : -2.4);
+      this.contact = { spread: .25, sag: .2 };
+      this.setPose('sit'); this.face('open');
+      yield* this.lookAround(rand(2, 4));
+      this.setPose('curl'); this.contact = { spread: .5, sag: .3 };
+      yield* this.sleep(rand(5, 9));
+      node.userData.spin?.(1.2); // đạp nhảy xuống: ghế xoay nhẹ
+    } else if (id === 'bedside') {
+      // Tủ đầu giường: nhảy lên, nhìn bạn, khều đồng hồ báo thức rơi khỏi tủ (như cốc trên bàn).
+      const top = local(-.12, node.userData.top, -.05);
+      yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
+      const clock = node.userData.mug;
+      if (clock && !clock.userData.knocked) {
+        const clockWorld = clock.getWorldPosition(new THREE.Vector3());
+        yield* this.turnTo(this.facing(clockWorld.x, clockWorld.z));
+        this.setPose('sit'); this.face('open');
+        yield* this.wait(1);
+        for (let i = 0; i < 2; i++) { this.goal.paw = 1; yield* this.wait(.3); this.world.nudge(clock, this, .03); this.goal.paw = 0; yield* this.wait(.5); }
+        this.goal.paw = 1; yield* this.wait(.25);
+        this.world.knockOff(node, clock, this);
+        this.goal.paw = 0; this.goal.lean = .7; this.face('focus');
+        yield* this.wait(1.1);
+        this.goal.lean = 0; this.face('happy', 'open');
+        yield* this.wait(1);
+      } else {
+        this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(3, 5));
+      }
+    } else if (id === 'closet') {
+      // Tủ quần áo / bàn trang điểm: nhảy phốc lên nóc, nằm canh cả phòng.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('loaf'); this.goal.tailUp = 0; this.tailWag = .5; this.contact = { spread: .45 };
+      yield* this.lookAround(rand(4, 7));
+      this.tailWag = .25;
+    } else if (id === 'catsteps') {
+      // Bậc leo gắn tường: nhảy lần lượt từng bậc lên đệm trên cùng, khều quả bóng treo, rồi nằm nghỉ trên cao.
+      for (const [x, y, z] of node.userData.steps) {
+        const p = local(x, y, z);
+        yield* this.jumpTo(p.x, p.y, p.z);
+        yield* this.wait(.25);
+      }
+      this.surface = id;
+      this.kick(node, .8);
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); this.goal.tailUp = 0;
+      yield* this.lookAround(rand(3, 5));
+      this.setPose('loaf'); this.contact = { spread: .5 };
+      yield* this.sleep(rand(3, 6));
+    } else if (id === 'plushie') {
+      // Gấu bông: ôm nhồi bột gấu rừ rừ, rồi rúc ngủ tựa vào gấu.
+      this.setPose('knead', { lean: .5 }); this.face('blink'); this.purr = 1;
+      yield* this.wait(rand(2.5, 4));
+      this.purr = 0;
+      const side = local(...node.userData.seat);
+      yield* this.walkTo(side.x, side.z, { ignore: id, near: .1, pace: .6 });
+      yield* this.turnTo(this.facing(center.x, center.z) + Math.PI / 2, 3);
+      this.setPose('curl'); this.contact = { spread: .45, squeeze: .2 };
+      yield* this.sleep(rand(6, 10));
+    } else if (id === 'laundry') {
+      // Giỏ đồ giặt / thùng các-tông: chui vào nằm vừa khít trên đống quần áo.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      node.userData.bump?.(.9);
+      this.contact = { squeeze: .9, spread: .15 };
+      for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
+      this.setPose('curl'); this.contact = { squeeze: 1, spread: .2 };
+      yield* this.sleep(rand(7, 12));
     } else if (id === 'flowers') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1.2); // ngửi hoa...
@@ -1622,7 +1744,6 @@ class Cat {
     rig.hopper.scale.set(1 + s * .12 - breathe * .3, 1 - s * .2 + breathe, 1 + s * .08 - s * (s < 0 ? .15 : 0));
     const turnLean = clamp(-turnRate * .045 * (.35 + amp), -.2, .2);
     rig.roller.rotation.z = this.swayL + pose.roll * 1.3 + (this.wriggle ? Math.sin(t * 20) * .09 : 0) + pose.curl * .12 + sway + turnLean + idle + this.rub;
-    rig.roller.position.y = pose.roll * .2;
     // Ngồi kiểu mèo thật: mông hạ sát sàn, ngực nhổm nhẹ -> chân trước gần như giữ độ dài, trông tròn trịa.
     rig.pivot.position.y = LEG * (1 - Math.max(clamp(pose.lie, 0, 1), clamp(pose.sit, 0, 1) * .9)) + pose.stretch * .1 - pose.lie * .02;
     rig.pivot.rotation.x = -clamp(pose.sit, 0, 1) * .24 + pose.stretch * .32 + pose.lean * .22 + (this.airPitch || 0) - pose.groom * .15 + gaitPitch + this.lean + this.swayF;
@@ -1630,6 +1751,13 @@ class Cat {
     rig.pivot.rotation.y = 0;
     rig.roller.rotation.y = pose.curl * .35 + this.look * .12; // xoay cả thân lẫn chân theo hướng nhìn
     rig.body.scale.y = 1 - pose.lie * .1;
+    // Lăn nghiêng (roll) quay thân quanh trục z tại gốc roller: nhấc roller lên vừa đủ để góc bo của mép thân đang chúi
+    // xuống chạm đúng mặt sàn. Trước đây nhấc cố định .2 nên khi nằm nghiêng hẳn (~75°) nửa hông chìm xuống đất.
+    // Cạnh đáy thân (trong hệ roller) ở yb; góc bo bán kính BODY_R, tâm cách mép ngoài (W/2 - BODY_R).
+    {
+      const tilt = Math.abs(rig.roller.rotation.z), yb = rig.pivot.position.y + H / 2 * (1 - rig.body.scale.y);
+      rig.roller.position.y = Math.max(0, (W / 2 - BODY_R) * Math.sin(tilt) - (yb + BODY_R) * Math.cos(tilt) + BODY_R + .01 * clamp(pose.roll, 0, 1));
+    }
 
     // ---- Chân: đi = chéo cặp, chạy = phi nước đại; nhấc bàn chân khi đưa về trước; trên không duỗi/đón ----
     const air = this.airK;
@@ -1722,6 +1850,8 @@ class Cat {
 // Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
+const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4 };
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS };
 // ctx.zones() = các khu đã mở (đọc lúc chạy: mở phòng khách không cần tạo lại đàn mèo).
 export function createCatLife(ctx) {
   const { scene, furniture, heartsAt, symbolAt } = ctx;
@@ -1757,15 +1887,22 @@ export function createCatLife(ctx) {
     },
     // ----- Khu nhà (xem ZONE_OFFSET / DOOR) -----
     zones() { return ctx.zones?.() || ['garden']; }, // các khu đã mở
-    // Khu chứa điểm (x, z): phía sau đường giữa hai khu là phòng khách (nếu đã mở).
-    zoneAt(x, z) { return z < MIDLINE && world.zones().includes('living') ? 'living' : 'garden'; },
+    // Khu chứa điểm (x, z): khu đã mở có ô gần điểm nhất (trong lối cửa thì thuộc khu gần hơn).
+    zoneAt(x, z) {
+      let best = 'garden', bestD = Infinity;
+      for (const zone of world.zones()) {
+        const h = zoneHome(zone), p = boxNearest(x, z, h.x - ROOM, h.x + ROOM, h.z - ROOM, h.z + ROOM), d = (p.x - x) ** 2 + (p.z - z) ** 2;
+        if (d < bestD) { best = zone; bestD = d; }
+      }
+      return best;
+    },
     // Điểm gần (x, z) nhất mà mèo đứng được: trong ô của một khu đã mở hoặc trong lối cửa giữa hai khu.
     // Lấy điểm gần nhất (không kẹp theo khu) nên mèo bước từ khu vào lối cửa liền mạch, không bị giật.
     bound(x, z) {
       let best = null, bestD = Infinity;
       const consider = p => { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < bestD) { best = p; bestD = d; } };
       for (const zone of world.zones()) { const h = zoneHome(zone); consider(boxNearest(x, z, h.x - ROOM, h.x + ROOM, h.z - ROOM, h.z + ROOM)); }
-      if (world.zones().includes('living')) consider(boxNearest(x, z, DOOR_X - DOOR_HALF, DOOR_X + DOOR_HALF, LIVING_EDGE, GARDEN_EDGE));
+      for (const p of PASSES) if (world.zones().includes(p.a) && world.zones().includes(p.b)) consider(boxNearest(x, z, ...p.box));
       return best;
     },
     // Cửa sổ vòm phòng khách theo toạ độ khu nhà.
@@ -1817,13 +1954,13 @@ export function createCatLife(ctx) {
       add('meow', .45, () => cat.meowAtYou());
       // Mèo chơi chủ yếu ở khu đang đứng; thỉnh thoảng đi qua cửa sang khu kia (dạo chơi, hoặc tới thẳng một món đồ bên đó).
       const zone = world.zoneAt(cat.x, cat.z), garden = zone === 'garden';
-      const other = world.zones().find(z => z !== zone);
-      const there = id => (garden ? GARDEN_TOYS : LIVING_TOYS)[id] === undefined ? .25 : 1; // món ở khu kia: ít chọn hơn
+      const others = world.zones().filter(z => z !== zone), other = others[Math.floor(Math.random() * others.length)];
+      const there = id => ZONE_TOYS[zone][id] === undefined ? .25 : 1; // món ở khu khác: ít chọn hơn
       if (other) add('roam', .6, () => cat.wander(other));
-      if (!garden && !world.claims.has('window')) add('window', .8, () => cat.lookOutWindow());
+      if (zone === 'living' && !world.claims.has('window')) add('window', .8, () => cat.lookOutWindow());
       if (garden && !ctx.night) add('butterfly', 1.1, () => cat.chaseButterfly()); // đêm bướm đi ngủ
       if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6 * (garden ? .25 : 1), () => cat.rollOnRug());
-      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS })) {
+      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS })) {
         if (furniture[id]?.visible && !world.claims.has(id)) add(id, weight * there(id), () => cat.useFurniture(id));
       }
       const buddies = world.cats.filter(other => other !== cat && other.interruptible() && other.y < .01 && world.zoneAt(other.x, other.z) === zone);
@@ -1971,7 +2108,7 @@ export function createCatLife(ctx) {
     world.tween(.4, k => bird.scale.setScalar(Math.max(.01, k)));
   }
   function restoreToys() {
-    for (const id of ['table', 'yarn']) {
+    for (const id of ['table', 'yarn', 'bedside']) {
       const node = furniture[id];
       const item = node?.userData.mug || node?.userData.toy;
       if (!item?.userData.restoreAt || world.time < item.userData.restoreAt || world.claims.has(id)) continue;

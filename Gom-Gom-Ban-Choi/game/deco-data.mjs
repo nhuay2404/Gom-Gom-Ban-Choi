@@ -1,14 +1,16 @@
-// Dữ liệu Deco: 2 khu (vườn, phòng khách), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
+// Dữ liệu Deco: 3 khu (vườn, phòng khách, phòng ngủ), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm bằng sao: mỗi sao mới = COINS_PER_STAR xu. Mèo dùng chung cả 2 khu.
 import { ECONOMY } from './tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
 export const { COINS_PER_STAR, MAX_ROOM_CATS } = ECONOMY;
 
-// Vườn là khu của màn 1–10. Phòng khách mở khi thắng màn 10 (dành cho màn 11–20).
+// Vườn là khu của màn 1–10. Phòng khách mở khi thắng màn 10, phòng ngủ khi thắng màn 15 (màn 16–20).
 export const ZONES = {
   garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
   living: { name: 'Living room', unlockAfter: 10, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  bedroom: { name: 'Bedroom', unlockAfter: 15, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
 };
+export const ZONE_IDS = Object.keys(ZONES);
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
 
 // `lock` = level phải mở tới (1-based) thì mới mua được. Giá 0 = có sẵn từ đầu.
@@ -52,6 +54,25 @@ export const CATALOG = [
   { id: 'floor-walnut', zone: 'living', cat: 'floors', name: 'Walnut', price: 100, color: '#a8744a' },
   { id: 'floor-carpet', zone: 'living', cat: 'floors', name: 'Pink carpet', price: 120, color: '#f3c2cc' },
   { id: 'floor-tiles', zone: 'living', cat: 'floors', name: 'Mint tiles', price: 150, color: '#bfe3cf' },
+  // --- Phòng ngủ (mở cả khu khi thắng màn 15; đồ mở dần ở màn 16–19) ---
+  { id: 'bed', zone: 'bedroom', cat: 'furniture', name: 'Cozy bed', price: 0, color: '#8fc9f2' },
+  { id: 'bedrug', zone: 'bedroom', cat: 'furniture', name: 'Fluffy rug', price: 0, color: '#e6dcff' },
+  { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', price: 100, color: '#e9c58f', lock: 16 },
+  { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', price: 120, color: '#f3d5a8', lock: 16 },
+  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', price: 260, color: '#3a3f4a', lock: 16 },
+  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', price: 180, color: '#e8617f', lock: 17 },
+  { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', price: 220, color: '#fff4e0', lock: 17 },
+  { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', price: 150, color: '#d9a36a', lock: 18 },
+  { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', price: 240, color: '#c98a55', lock: 19 },
+  { id: 'bwall-lavender', zone: 'bedroom', cat: 'walls', name: 'Lavender', price: 0, color: '#ebe3f8' },
+  { id: 'bwall-blush', zone: 'bedroom', cat: 'walls', name: 'Blush', price: 100, color: '#ffe0e6' },
+  { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', price: 100, color: '#dcebd6' },
+  { id: 'bwall-butter', zone: 'bedroom', cat: 'walls', name: 'Butter', price: 150, color: '#fff0c2' },
+  { id: 'bwall-night', zone: 'bedroom', cat: 'walls', name: 'Night blue', price: 150, color: '#c9d3ee' },
+  { id: 'bfloor-maple', zone: 'bedroom', cat: 'floors', name: 'Maple', price: 0, color: '#e9c493' },
+  { id: 'bfloor-ash', zone: 'bedroom', cat: 'floors', name: 'Ash wood', price: 100, color: '#cdb69a' },
+  { id: 'bfloor-carpet', zone: 'bedroom', cat: 'floors', name: 'Lilac carpet', price: 120, color: '#d9d4f2' },
+  { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', price: 150, color: '#f2d7c9' },
   // --- Mèo (dùng chung) ---
   { id: 'cat-orange', cat: 'cats', name: 'Orange cat', price: 0, breed: 'orange' },
   { id: 'cat-gray', cat: 'cats', name: 'Gray cat', price: 0, breed: 'gray' },
@@ -87,6 +108,16 @@ const VARIANTS = [
   ['cattree', 'cattree-cactus', 'Cactus tower', '#4f9f5a'],
   ['shelf', 'shelf-wardrobe', 'Wardrobe', '#8fc9f2'],
   ['tank', 'tank-birdcage', 'Bird cage', '#d9a13a'],
+  // --- Phòng ngủ ---
+  ['bed', 'bed-canopy', 'Canopy bed', '#ffb3c4'],
+  ['bedrug', 'bedrug-cloud', 'Cloud rug', '#f4f8ff'],
+  ['laundry', 'laundry-box', 'Moving box', '#d9a36a'],
+  ['bedside', 'bedside-drawers', 'Chest of drawers', '#9fd0f0'],
+  ['desk', 'desk-study', 'Study desk', '#d9a36a'],
+  ['chair', 'chair-beanbag', 'Beanbag', '#ffd27a'],
+  ['closet', 'closet-dresser', 'Vanity dresser', '#ffc9d5'],
+  ['plushie', 'plushie-dino', 'Dino plush', '#7fc45a'],
+  ['catsteps', 'catsteps-bridge', 'Rope bridge', '#b9854a'],
 ];
 // Chèn mỗi phương án ngay sau món gốc; giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
 VARIANTS.forEach(([slot, id, name, color]) => {
@@ -109,7 +140,7 @@ const zoneDefaults = zone => {
   };
 };
 function defaults(totalStars) {
-  return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', zones: { garden: zoneDefaults('garden'), living: zoneDefaults('living') } };
+  return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
@@ -125,7 +156,8 @@ function clean(deco) {
 export function loadDeco(totalStars) {
   const saved = readJSON(SAVE_KEYS.deco);
   {
-    if (saved && saved.zones) return clean({ ...defaults(totalStars), ...saved });
+    // Save có từ trước khi thêm khu mới (vd. phòng ngủ): khu thiếu lấy mặc định, khu đã có giữ nguyên.
+    if (saved && saved.zones) { const base = defaults(totalStars); return clean({ ...base, ...saved, zones: { ...base.zones, ...saved.zones } }); }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(totalStars);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);

@@ -22,6 +22,29 @@ test('save cũ (trước khi có vườn): hoàn xu đồ phòng khách đã mua
   assert.deepEqual(deco.cats, ['gray']);
 });
 
+test('save có trước phòng ngủ: thêm khu phòng ngủ mặc định, giữ nguyên vườn / phòng khách', () => {
+  setStorageBackend(memoryStore());
+  const old = loadDeco(5);
+  const { bedroom, ...zones } = old.zones;
+  writeJSON(SAVE_KEYS.deco, { ...old, coins: 77, zones: { ...zones, garden: { ...zones.garden, placed: ['flowers', 'stump'] } } });
+  const deco = loadDeco(0);
+  assert.equal(deco.coins, 77);
+  assert.deepEqual(deco.zones.garden.placed, ['flowers', 'stump']);
+  assert.deepEqual(deco.zones.bedroom.placed, ['bed', 'bedrug']);
+  assert.equal(deco.zones.bedroom.wall, 'bwall-lavender');
+  assert.equal(zoneOpen('bedroom', 14), false);
+  assert.equal(zoneOpen('bedroom', 15), true);
+});
+
+test('mọi món nội thất có chỗ đặt + bán kính vật cản; các khu nối liền qua cửa', async () => {
+  const { PLACES, OBSTACLE_RADIUS, LINKS, ZONE_OFFSET } = await import('./room-layout.mjs');
+  for (const entry of CATALOG.filter(e => e.cat === 'furniture' && !e.slot)) {
+    assert.ok(PLACES[entry.id], `${entry.id} có chỗ đặt`);
+    assert.ok(OBSTACLE_RADIUS[entry.id] !== undefined, `${entry.id} có bán kính vật cản`);
+  }
+  for (const zone of Object.keys(ZONE_OFFSET)) assert.ok(zone === 'garden' || LINKS.some(l => l.a === zone || l.b === zone), `${zone} có cửa`);
+});
+
 test('mua -> đặt -> gỡ; thiếu xu và khoá level báo lỗi', () => {
   setStorageBackend(memoryStore());
   let deco = loadDeco(4); // 200 xu
@@ -47,7 +70,7 @@ test('xem trước không trừ xu; khu phòng khách mở khi thắng màn 10',
 });
 
 test('danh mục: mỗi khu có đủ 4 nhóm, mèo dùng chung', () => {
-  for (const zone of ['garden', 'living']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
+  for (const zone of ['garden', 'living', 'bedroom']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
   assert.equal(new Set(CATALOG.map(entry => entry.id)).size, CATALOG.length, 'id trùng');
 });
 

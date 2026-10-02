@@ -1223,7 +1223,7 @@ function showTab(tab) {
   $(tab).scrollTop = 0;
 }
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10).
-const applyRoom = shown => room3d?.apply(shown, { living: zoneOpen('living', levelsCleared()) });
+const applyRoom = shown => room3d?.apply(shown, { living: zoneOpen('living', levelsCleared()), bedroom: zoneOpen('bedroom', levelsCleared()) });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab === 'shop') return room3d.stop();
@@ -1489,10 +1489,11 @@ function endLevel(win, reason = '') {
     coinsEarned = record.coins;
     if (coinsEarned) { deco = { ...deco, coins: deco.coins + coinsEarned }; saveDeco(deco); }
   }
-  const unlockedLiving = win && index + 1 === ZONES.living.unlockAfter && coinsEarned > 0 && levelsCleared() === ZONES.living.unlockAfter;
+  // Vừa mở một khu mới (thắng đúng màn mốc lần đầu): báo trong hộp kết quả.
+  const unlockedZone = win && coinsEarned > 0 && Object.values(ZONES).find(z => z.unlockAfter > 0 && index + 1 === z.unlockAfter && levelsCleared() === z.unlockAfter);
   $('result-coins').hidden = !coinsEarned && !gift && !tip;
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
-  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedLiving && 'Living room unlocked!',
+  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedZone && `${unlockedZone.name} unlocked!`,
     gift && `Gift: ${BOOSTER_NAMES.moves} booster`, tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`].filter(Boolean).join(' · ');
   const dialog = $('result-dialog');
   dialog.classList.toggle('win', win);
