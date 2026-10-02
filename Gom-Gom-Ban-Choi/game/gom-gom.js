@@ -1573,6 +1573,27 @@ function applyNight() {
 }
 $('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
 applyNight();
+// ===== Nút cho game dev: mở hết màn (3 sao) → mở luôn phòng khách + mèo khoá theo màn, cộng xu để thử Deco/Shop =====
+// Chỉ hiện khi chạy localhost hoặc URL có ?dev — bản gửi người chơi không thấy.
+const DEV_MODE = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) || new URLSearchParams(location.search).has('dev');
+const DEV_COINS = 99999;
+document.querySelectorAll('.dev-only').forEach(row => { row.hidden = !DEV_MODE; });
+$('dev-unlock').onclick = () => {
+  closeAllSettings();
+  saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
+  deco = { ...deco, coins: Math.max(deco.coins, DEV_COINS) };
+  saveDeco(deco);
+  playSound('reward');
+  showTab('home');
+  showToast(`Dev: all ${LEVELS.length} levels unlocked · ${DEV_COINS.toLocaleString('en-US')} coins`);
+};
+// Reset: xoá tiến độ, deco/xu, booster, hồ sơ độ khó (giữ cài đặt âm thanh, ngày/đêm) rồi tải lại như người chơi mới.
+$('dev-reset').onclick = () => {
+  closeAllSettings();
+  if (!confirm('Dev: reset ALL progress (levels, coins, deco, boosters, difficulty profile)?')) return;
+  ['progress', 'deco', 'boosters', 'profile'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
+  location.reload();
+};
 $('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
 $('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');

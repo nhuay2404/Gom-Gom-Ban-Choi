@@ -90,6 +90,9 @@
           <label class="settings-row" for="night-toggle"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button><span>Day / Night</span></label>
           <label class="settings-row" for="home-sound"><button id="home-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
           <label class="settings-row" for="home-help"><button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
+          <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
+          <label class="settings-row dev-only" for="dev-unlock" hidden><button id="dev-unlock" class="round-button small" aria-label="Dev: unlock all progress" title="Dev: unlock all progress">🔓</button><span>Dev: Unlock all</span></label>
+          <label class="settings-row dev-only" for="dev-reset" hidden><button id="dev-reset" class="round-button small" aria-label="Dev: reset all progress" title="Dev: reset all progress">↺</button><span>Dev: Reset progress</span></label>
         </div>
       </div>
     </header>
