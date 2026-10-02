@@ -945,7 +945,9 @@ export function createRoom() {
       wall.userData.opacity += ((behind ? 0 : 1) - wall.userData.opacity) * .18;
       const o = wall.userData.opacity;
       wall.visible = o > .03;
-      wall.traverse(node => { if (node.material) { node.material.opacity = o; node.material.depthWrite = o > .98; } });
+      // Ghi depth ngay khi tường đặc hơn 50%: viền (vẽ sau cùng, không ghi depth) của đồ phía sau tường không lộ xuyên qua
+      // tường lúc đang hiện / mờ dần khi xoay. Đồ đặc phía sau vẫn mờ dần qua tường vì đã vẽ trước tường.
+      wall.traverse(node => { if (node.material) { node.material.opacity = o; node.material.depthWrite = o > .5; } });
       if (wall.userData.stub) wall.userData.stub.visible = o < .6;
     });
     Object.values(furniture).forEach(node => {
