@@ -203,6 +203,8 @@ export function renderOutlineIds(renderer, scene, camera) {
 export const OUTLINE_STYLES = {
   default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
   cat: { px: 4.4, dark: .25, tone: 0, brown: '#3a2016', inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
+  // tai mèo: chóp nhọn 4 cạnh, nét "phình theo pháp tuyến" ở cạnh sắc bị mỏng đi nên cần dày hơn thân để nhìn bằng nhau
+  catEar: { px: 6.6, dark: .25, tone: 0, brown: '#3a2016', inner: 0 },
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;

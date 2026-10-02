@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { categories, eyesMarkup } from './cat-art.mjs';
-import { OBSTACLE_RADIUS, WINDOW } from './room-layout.mjs';
+import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, DOOR } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from './tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
 
@@ -15,6 +15,17 @@ const chance = p => Math.random() < p;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const angDiff = (a, b) => ((((b - a) % TAU) + TAU + Math.PI) % TAU) - Math.PI;
 const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.exp(-rate * dt));
+
+// ---------- Khu nhà: mèo đi lại tự do giữa vườn và phòng khách ----------
+// Toạ độ mèo = toạ độ khu nhà (tâm vườn là gốc, phòng khách lệch ZONE_OFFSET.living). Mỗi khu mèo đi trong ô
+// ±ROOM quanh tâm khu; giữa hai khu là lối đi hẹp qua cửa (DOOR) xuyên qua tường phòng / cổng rào vườn.
+const zoneHome = zone => ({ x: ZONE_OFFSET[zone][0], z: ZONE_OFFSET[zone][1] });
+const GARDEN_EDGE = ZONE_OFFSET.garden[1] - ROOM, LIVING_EDGE = ZONE_OFFSET.living[1] + ROOM; // mép -z vườn, mép +z phòng
+const DOOR_X = ZONE_OFFSET.living[0] + DOOR.x, DOOR_HALF = DOOR.w / 2 - .2; // lối cửa rộng vừa thân mèo
+const MIDLINE = (ZONE_OFFSET.garden[1] + ZONE_OFFSET.living[1]) / 2;
+// Hai đầu lối cửa (đứng ngay trong mỗi khu): mèo sang khu kia thì đi qua hai điểm này.
+const DOOR_STEP = { garden: { x: DOOR_X, z: GARDEN_EDGE + .15 }, living: { x: DOOR_X, z: LIVING_EDGE - .15 } };
+const boxNearest = (x, z, x0, x1, z0, z1) => ({ x: clamp(x, x0, x1), z: clamp(z, z0, z1) });
 // Lò xo tắt dần: obj[key] chạy về đích với độ cứng k và tỉ lệ tắt zeta (vận tốc lưu ở obj[key + 'V']).
 // zeta < 1 thì hơi vọt qua rồi về, như thịt mềm; đây là thứ làm chuyển động hết "cứng".
 function spring(obj, key, target, k, zeta, dt) {
@@ -97,11 +108,34 @@ function eyesTexture(breed, eyes) {
   });
 }
 
-// Độ sâu (z, hệ toạ độ thân) của mặt trước thân bo tròn tại (x, y): phần phẳng ở giữa, cong dần ra mép theo bán kính bo.
-const BODY_R = .12;
+// Độ sâu (z, hệ toạ độ thân) của mặt dán (mặt/mắt/ria) tại (x, y): phẳng ở giữa, cong theo góc bo của thân tới
+// WRAP_D rồi đi PHẲNG ra ngoài. Ria nằm ngoài mép thân nên chìa thẳng sang hai bên như ria thật / như mèo 2D;
+// nếu ôm tiếp theo góc bo, ria bị kéo vòng ra sau sườn, đè lên vằn má và nét viền nên chồng chéo, nhấp nháy.
+const BODY_R = .12, WRAP_D = BODY_R * .6;
 function frontSurface(x, y) {
-  const dx = Math.max(0, Math.abs(x) - (W / 2 - BODY_R)), dy = Math.max(0, Math.abs(y) - (H / 2 - BODY_R));
+  // Chỉ chiều NGANG mới dừng ôm ở WRAP_D (cho ria chìa ra); chiều dọc ôm hết góc bo, nếu không mảng bụng / cằm ở
+  // mép dưới sẽ chìa phẳng ra khỏi đáy thân thành một vạt màu lơ lửng.
+  const dx = Math.min(WRAP_D, Math.max(0, Math.abs(x) - (W / 2 - BODY_R))), dy = Math.max(0, Math.abs(y) - (H / 2 - BODY_R));
   return D / 2 - BODY_R + Math.sqrt(Math.max(0, BODY_R * BODY_R - dx * dx - dy * dy));
+}
+
+const TAIL_TMP = { tip: new THREE.Vector3() };
+
+// Đệm mèo dưới lòng bàn chân: 1 đệm lớn hình tim tròn + 4 hạt đậu ngón ở phía trước, dán theo mặt dưới của bàn chân
+// (khối cầu bán kính FOOT_R trong hệ toạ độ bàn chân, trước khi bàn chân bị nén dẹt). Chỉ thấy khi nhấc chân lên:
+// lúc bước, nằm ngửa lăn lộn, bị nhấc bổng, quơ vuốt.
+const FOOT_R = .085, LEG_SHAFT = .13; // LEG_SHAFT: chiều cao gốc của ống chân (co giãn bằng scale.y)
+const BEANS = [[0, -.02, .034, .9], [-.042, .03, .017, .8], [-.015, .045, .016, .9], [.015, .045, .016, .9], [.042, .03, .017, .8]]; // [x, z, bán kính, độ dẹt ngang]
+const beanGeo = new THREE.SphereGeometry(1, 14, 10);
+function toeBeans(material) {
+  return BEANS.map(([x, z, r, wide]) => {
+    const bean = new THREE.Mesh(beanGeo, material);
+    const y = -Math.sqrt(Math.max(0, FOOT_R * FOOT_R - x * x - z * z)) + r * .35; // lún một phần vào bàn chân
+    bean.position.set(x, y, z);
+    bean.scale.set(r * wide, r * 1.1, r); // bàn chân nén y còn .42 -> đệm thành hạt dẹt nằm sát lòng bàn chân
+    bean.userData.noOutline = true; // chỉ là mảng màu, không viền
+    return bean;
+  });
 }
 
 // ---------- Đuôi: mỗi giống một kiểu ----------
@@ -134,6 +168,9 @@ function buildRig(breed) {
   const accent = furMat(cat.mask || cat.fur);
   const paw = furMat(cat.paw);
   const earInnerColor = cat.mask ? '#b88a78' : '#f6a8b4';
+  // Đệm thịt lòng bàn chân: hồng với bàn chân sáng màu, hồng nâu với bàn chân sẫm (Xiêm).
+  const beanColor = new THREE.Color(cat.paw).getHSL({}).l < .5 ? '#c27d8a' : '#f59ab0';
+  const beanMat = TOON ? toonMat({ color: beanColor }) : new THREE.MeshPhysicalMaterial({ color: beanColor, roughness: .7, specularIntensity: .4 });
   const earInner = TOON ? toonMat({ color: earInnerColor }) : new THREE.MeshPhysicalMaterial({ color: earInnerColor, roughness: .95, specularIntensity: .3 });
   // Mèo không nhận bóng đổ (kể cả bóng của chính tai/đuôi hay đồ đạc): thân luôn sạch màu kiểu tranh vẽ; vẫn đổ bóng xuống sàn.
   const mesh = (geometry, material, shadow = true) => { const m = new THREE.Mesh(geometry, material); m.castShadow = shadow; m.receiveShadow = false; return m; };
@@ -166,6 +203,7 @@ function buildRig(breed) {
   const ears = [-1, 1].map(side => {
     const ear = new THREE.Group();
     const outer = mesh(new THREE.ConeGeometry(.1, .17, 4), accent);
+    outer.userData.outlineStyle = 'catEar'; // viền tai dày hơn (toon.mjs OUTLINE_STYLES)
     outer.rotation.y = Math.PI / 4;
     const inner = mesh(new THREE.ConeGeometry(.055, .11, 4), earInner, false);
     inner.userData.noOutline = true; // lòng tai: chỉ là mảng màu, không viền
@@ -210,10 +248,14 @@ function buildRig(breed) {
   const legs = [[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([sx, sz]) => {
     const hip = new THREE.Group();
     hip.position.set(sx * W * .3, LEG + .03, sz * D * .3);
-    const leg = mesh(new RoundedBoxGeometry(.14, LEG + .06, .14, 4, .05), cat.mask ? accent : fur);
-    leg.position.y = -(LEG + .03) / 2;
-    const foot = mesh(new RoundedBoxGeometry(.15, .05, .16, 4, .025), paw);
-    foot.position.set(0, -(LEG + .03) + .025, .01);
+    // Chân tròn mũm mĩm: ống trụ tròn (đầu trên chìm trong thân, đầu dưới bị bàn chân che) + bàn chân là "cục bông" dẹt.
+    // Ống trụ kéo dài theo y vẫn tròn đều (không méo góc bo như hộp bo góc khi kéo).
+    const leg = mesh(new THREE.CylinderGeometry(.066, .07, LEG_SHAFT, 20, 1, true), cat.mask ? accent : fur);
+    leg.scale.y = (LEG + .03) / LEG_SHAFT; leg.position.y = .03 - (LEG + .03) / 2;
+    const foot = mesh(new THREE.SphereGeometry(FOOT_R, 20, 12), paw);
+    foot.scale.set(1, .42, 1.12); // bàn chân tròn dẹt, hơi dài về trước
+    foot.add(...toeBeans(beanMat));
+    foot.position.set(0, -(LEG + .03) + .03, .015);
     hip.add(leg, foot);
     // Gắn vào roller (cùng nhánh với thân): thân nghiêng / lắc / nảy thì chân theo, không choãi ra ngoài thân.
     roller.add(hip);
@@ -232,8 +274,9 @@ function buildRig(breed) {
 
 // Lò xo thân mềm theo từng trục: [độ cứng, tỉ lệ tắt, độ nhạy với gia tốc (1 = khối thật: lệch ≈ gia tốc ÷ độ cứng), độ lệch tối đa (m)].
 // Tắt ít (zeta ~.15) nên lắc vài nhịp mới đứng yên; trục dọc cứng hơn để không trông như bóng nước.
+// SMOOTH = hằng số thời gian (s) lọc gia tốc (bỏ rung do frame dài ngắn không đều); BELLY = độ phình eo khi lún.
 const JELLY = {
-  x: [210, .14, .9, .09], z: [210, .14, 1, .1], y: [320, .16, .45, .06], MAX_ACC: 60,
+  x: [210, .14, .9, .09], z: [210, .14, 1, .1], y: [520, .2, .5, .05], MAX_ACC: 60, SMOOTH: .05, BELLY: .6,
   tmpPos: new THREE.Vector3(), tmpVel: new THREE.Vector3(), tmpAcc: new THREE.Vector3(), tmpQ: new THREE.Quaternion(),
 };
 
@@ -291,11 +334,23 @@ class Cat {
     this.heading += clamp(diff, -rate * this.world.dt, rate * this.world.dt);
   }
   facing(x, z) { return Math.atan2(x - this.x, z - this.z); }
+  // Đẩy món đồ có phần treo (con lắc: xích đu lốp, bóng treo cây cho mèo) theo hướng mèo đang nhìn.
+  kick(node, speed) { node.userData.swing?.userData.kick(-Math.cos(this.heading) * speed, Math.sin(this.heading) * speed); } // quay x âm = bóng ra +z, quay z dương = ra +x
+  // Tâm khu mèo đang đứng (vườn / phòng khách) và hướng nhìn về đó.
+  home() { return zoneHome(this.world.zoneAt(this.x, this.z)); }
+  facingHome() { const home = this.home(); return this.facing(home.x, home.z); }
   // Bước tại chỗ (lúc xoay người): nhịp chân chậm, chân nhấc thấp.
   stepGait(amount) { this.gait += this.world.dt * 7 * amount; this.shuffle = Math.max(this.shuffle || 0, amount); }
 
   // pace: hệ số tốc độ; glide: không phanh về 0 khi hết maxTime (gọi nối tiếp từng đoạn ngắn để bám theo con khác mà không khựng).
-  *walkTo(tx, tz, { run = false, near = .08, ignore = null, maxTime = 8, pace = 1, glide = false } = {}) {
+  *walkTo(tx, tz, { run = false, near = .08, ignore = null, maxTime = 8, pace = 1, glide = false, direct = false } = {}) {
+    // Đích ở khu kia: đi tới cửa, qua lối cửa, rồi mới tới đích (không đi xuyên tường / hàng rào).
+    const from = this.world.zoneAt(this.x, this.z), to = this.world.zoneAt(tx, tz);
+    if (!direct && from !== to) {
+      for (const step of [DOOR_STEP[from], DOOR_STEP[to]]) {
+        yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: 6, pace, glide: true, direct: true });
+      }
+    }
     this.setPose('stand', { tailUp: run ? .9 : this.goal.tailUp });
     this.running = run;
     let elapsed = 0;
@@ -325,8 +380,8 @@ class Cat {
       const align = Math.max(0, Math.cos(angDiff(this.heading, want)));
       const top = (run ? 2.1 : .72) * pace, slow = clamp(dist / .5, .35, 1);
       this.speed = damp(this.speed, top * align * slow, 6, dt);
-      this.x = clamp(this.x + Math.sin(this.heading) * this.speed * dt, -ROOM, ROOM);
-      this.z = clamp(this.z + Math.cos(this.heading) * this.speed * dt, -ROOM, ROOM);
+      const next = this.world.bound(this.x + Math.sin(this.heading) * this.speed * dt, this.z + Math.cos(this.heading) * this.speed * dt);
+      this.x = next.x; this.z = next.z;
       this.gait += (this.speed * dt / (run ? STRIDE_RUN : STRIDE_WALK)) * TAU;
       yield;
     }
@@ -365,10 +420,10 @@ class Cat {
     const from = this.surface ? this.world.center(this.surface) : { x: this.x, z: this.z, r: .6 };
     let dx = this.x - from.x, dz = this.z - from.z;
     const len = Math.hypot(dx, dz) || 1;
-    if (len < .05) { dx = -this.x; dz = -this.z; }
+    if (len < .05) { const home = this.home(); dx = home.x - this.x; dz = home.z - this.z; }
     const l2 = Math.hypot(dx, dz) || 1;
     const out = (from.r || .6) + .45;
-    const tx = clamp(from.x + (dx / l2) * out, -ROOM, ROOM), tz = clamp(from.z + (dz / l2) * out, -ROOM, ROOM);
+    const { x: tx, z: tz } = this.world.bound(from.x + (dx / l2) * out, from.z + (dz / l2) * out);
     this.release();
     yield* this.jumpTo(tx, 0, tz);
     this.surface = null;
@@ -414,8 +469,8 @@ class Cat {
       try { yield* behavior; } finally { this.release(); this.social = null; this.partner = null; this.setPose('stand'); this.face('open'); this.lookGoal = 0; }
     }
   }
-  *wander() {
-    const p = this.world.freeSpot(this);
+  *wander(zone) { // zone: dạo sang khu đó (đi qua cửa); bỏ trống = loanh quanh khu đang đứng
+    const p = this.world.freeSpot(this, zone);
     this.goal.tailUp = rand(.5, 1);
     yield* this.walkTo(p.x, p.z);
     yield* this.lookAround(rand(1, 3));
@@ -514,7 +569,8 @@ class Cat {
       yield* this.jumpTo(back.x, back.y, back.z);
       this.surface = 'armchair';
     } else return;
-    yield* this.turnTo(this.facing(WINDOW.x, -3.1));
+    const win = this.world.window();
+    yield* this.turnTo(this.facing(win.x, win.z - .6));
     this.setPose('sit'); this.goal.tailUp = .2; this.tailSpeed = 2.4;
     for (let t = 0, n = rand(5, 9); t < n; t += 1.2) {
       this.lookGoal = rand(-1, 1);
@@ -525,7 +581,8 @@ class Cat {
   }
   *rollOnRug() {
     if (!this.claim('rug')) return;
-    yield* this.walkTo(rand(-.3, .3), rand(-.1, .4));
+    const rug = this.world.center('rug');
+    yield* this.walkTo(rug.x + rand(-.3, .3), rug.z + rand(-.2, .3));
     this.setPose('loaf'); yield* this.wait(.4);
     this.setPose('roll'); this.face('happy', 'open');
     for (let t = 0, n = rand(2, 3.5); t < n; t += .5) { this.wriggle = 1; yield* this.wait(.5); }
@@ -547,6 +604,7 @@ class Cat {
     if (id === 'catbed') {
       const spot = local(0, .14, 0);
       yield* this.jumpTo(spot.x, spot.y, spot.z); this.surface = id;
+      node.userData.bump?.(.9); // thùng các-tông: nắp rung khi mèo đáp vào
       // xoay vòng tìm chỗ nằm rồi mới cuộn tròn
       for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
       this.setPose('curl');
@@ -565,14 +623,15 @@ class Cat {
       yield* this.jumpTo(mid.x, mid.y, mid.z);
       yield* this.wait(.3);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
-      yield* this.turnTo(Math.atan2(-this.x, -this.z));
+      this.kick(node, .9); // nhảy lên tầng trên: quả bóng treo bên dưới lắc
+      yield* this.turnTo(this.facingHome());
       this.setPose('sit'); this.goal.tailUp = 0;
       yield* this.lookAround(rand(3, 6)); // vua của căn phòng
       this.setPose('loaf'); yield* this.sleep(rand(3, 6));
     } else if (id === 'shelf') {
       const top = local(0, 2, .02);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
-      yield* this.turnTo(Math.atan2(-this.x, -this.z));
+      yield* this.turnTo(this.facingHome());
       this.setPose('loaf'); this.goal.tailUp = 0; this.tailWag = .5;
       yield* this.lookAround(rand(4, 7));
       this.tailWag = .25;
@@ -602,6 +661,7 @@ class Cat {
       this.setPose('crouch'); this.face('focus'); this.tailSpeed = 6;
       yield* this.wait(.8);
       this.goal.paw = 1; yield* this.wait(.25); this.goal.paw = 0;
+      node.userData.bump?.(.6); // hộp đồ chơi: nắp bật nảy khi bóng bị khều ra
       const landing = this.world.batToy(node, toy, this);
       yield* this.wait(.5);
       for (let i = 0; i < 2; i++) {
@@ -658,7 +718,7 @@ class Cat {
       yield* this.wait(rand(2, 3));
       const top = local(0, .46, 0);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
-      yield* this.turnTo(Math.atan2(-this.x, -this.z));
+      yield* this.turnTo(this.facingHome());
       this.setPose('sit'); yield* this.lookAround(rand(3, 5));
     } else if (id === 'catnip') {
       this.goal.lean = .8; this.face('focus');
@@ -694,7 +754,7 @@ class Cat {
       } else { // leo lên mái ngồi canh vườn
         const roof = local(0, 1.2, 0);
         yield* this.jumpTo(roof.x, roof.y, roof.z); this.surface = id;
-        yield* this.turnTo(Math.atan2(-this.x, -this.z));
+        yield* this.turnTo(this.facingHome());
         this.setPose('loaf'); yield* this.lookAround(rand(4, 7));
       }
     } else if (id === 'pond') {
@@ -715,10 +775,12 @@ class Cat {
     } else if (id === 'hammock') {
       const sling = local(0, .42, 0);
       yield* this.jumpTo(sling.x, sling.y, sling.z); this.surface = id;
+      this.kick(node, .15); // lốp treo (xích đu) nhún nhẹ khi mèo đáp vào
       yield* this.turnTo(this.heading + Math.PI * .9, 3);
       this.setPose('curl');
       yield* this.sleep(rand(8, 14));
       yield* this.yawnStretch();
+      this.kick(node, .7); // đạp nhảy ra: xích đu còn lắc một lúc
     } else if (id === 'birdbath') {
       const bird = node.userData.bird;
       if (bird && !bird.userData.away) {
@@ -812,8 +874,11 @@ class Cat {
         const d = Math.hypot(dx, dz) || 1;
         dx /= d; dz /= d;
         let tx = this.x + dx * 1.4 + rand(-.6, .6), tz = this.z + dz * 1.4 + rand(-.6, .6);
-        if (Math.abs(tx) > ROOM - .2 || Math.abs(tz) > ROOM - .2) { tx = -this.x * .6 + rand(-.8, .8); tz = -this.z * .6 + rand(-.8, .8); } // bị dồn vào góc thì vòng ra
-        yield* this.walkTo(tx, tz, { run: true, near: .3, maxTime: .7, glide: true });
+        const home = this.home(); // chạy trong khu đang đứng, không vọt qua cửa
+        if (Math.abs(tx - home.x) > ROOM - .2 || Math.abs(tz - home.z) > ROOM - .2) { // bị dồn vào góc thì vòng ra
+          tx = home.x - (this.x - home.x) * .6 + rand(-.8, .8); tz = home.z - (this.z - home.z) * .6 + rand(-.8, .8);
+        }
+        yield* this.walkTo(tx, tz, { run: true, near: .3, maxTime: .7, glide: true, direct: true });
       }
       this.speed = 0; this.running = false;
       this.tailSpeed = 1.6; this.setPose('sit'); this.face('annoyed', 'zig');
@@ -1152,18 +1217,21 @@ class Cat {
 
   // ----- Thân mềm (soft body) -----
   // Đỉnh thân là một khối nặng gắn lò xo với đáy: thân tăng/giảm tốc, nảy, quay, bị nhấc... thì đỉnh trễ lại rồi
-  // lắc qua lắc lại tắt dần. Gia tốc lấy từ chính tâm thân trong không gian thế giới, nên MỌI chuyển động (đi, nhảy,
+  // lắc qua lắc lại tắt dần. Gia tốc lấy từ vị trí thật của con mèo (x, y, z + cú nảy khi cưng), KHÔNG lấy từ nhịp
+  // nhún bước chân (chỉ là hoạt hình, đưa vào thì thân rung liên tục và cộng hưởng nên giật). Mọi chuyển động thật (đi, nhảy,
   // đổi tư thế, bị kéo) đều tự sinh rung, không phải gắn tay từng hành vi.
   // jig = độ lệch của đỉnh thân trong hệ toạ độ thân (x ngang, y lún/giãn, z trước sau).
   jelly(dt) {
     const rig = this.rig, body = rig.body;
     body.updateWorldMatrix(true, false);
-    const pos = JELLY.tmpPos.setFromMatrixPosition(body.matrixWorld);
+    const pos = JELLY.tmpPos.set(this.x, this.y + this.hopY, this.z);
     if (!this.lastBodyPos || dt <= 0) { this.lastBodyPos = pos.clone(); return; }
     const vel = JELLY.tmpVel.subVectors(pos, this.lastBodyPos).divideScalar(dt);
     const acc = JELLY.tmpAcc.subVectors(vel, this.lastBodyVel).divideScalar(dt);
     this.lastBodyPos.copy(pos); this.lastBodyVel.copy(vel);
     if (acc.length() > JELLY.MAX_ACC) acc.setLength(JELLY.MAX_ACC); // dịch chuyển tức thời (thả mèo mới vào phòng...) không làm nổ
+    this.accF ||= new THREE.Vector3();
+    acc.copy(this.accF.lerp(acc, 1 - Math.exp(-dt / JELLY.SMOOTH))); // lọc thông thấp
     acc.applyQuaternion(JELLY.tmpQ.setFromRotationMatrix(body.matrixWorld).invert()); // đổi sang hệ toạ độ thân
     for (const axis of ['x', 'y', 'z']) {
       const [k, zeta, gain, max] = JELLY[axis];
@@ -1177,7 +1245,7 @@ class Cat {
     const { x: jx, y: jy, z: jz } = this.bend, base = rig.bodyBase, out = body.geometry.attributes.position;
     const arr = out.array;
     for (let i = 0; i < arr.length; i += 3) {
-      const h = clamp((base[i + 1] + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * 1.4 * Math.sin(h * Math.PI);
+      const h = clamp((base[i + 1] + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * JELLY.BELLY * Math.sin(h * Math.PI);
       arr[i] = base[i] * belly + jx * w;
       arr[i + 1] = base[i + 1] + jy * w;
       arr[i + 2] = base[i + 2] * belly + jz * w;
@@ -1191,7 +1259,7 @@ class Cat {
       const shift = decal === rig.eyes ? this.look * .03 : 0;
       for (let i = 0; i < a.length; i += 3) {
         const x = flat[i] + shift, y = flat[i + 1];
-        const h = clamp((y + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * 1.4 * Math.sin(h * Math.PI);
+        const h = clamp((y + H / 2) / H, 0, 1), w = h * h, belly = 1 - jy / H * JELLY.BELLY * Math.sin(h * Math.PI);
         const z = frontSurface(x, y) + lift;
         a[i] = x * belly + jx * w; a[i + 1] = y + jy * w; a[i + 2] = z * belly + jz * w;
       }
@@ -1203,6 +1271,32 @@ class Cat {
     for (const [node, home] of rig.rest) {
       const w = clamp(home.y / H, 0, 1.15) ** 2;
       node.position.set(home.x + jx * w, home.y - (H - top) + jy * w, home.z + jz * w);
+    }
+  }
+
+  // ----- Đuôi không xuyên sàn -----
+  // Sau khi lò xo đặt góc từng đốt: đốt nào có đầu mút (kể cả độ dày đốt) thụt xuống dưới mặt đang đứng thì
+  // nhấc đốt đó lên vừa chạm mặt (Newton 1 chiều theo góc gập, đạo hàm tính bằng sai phân), và ghi góc đã sửa vào
+  // trạng thái lò xo để đuôi nằm ÉP trên sàn thay vì nảy xuyên xuống rồi bị kéo lên mỗi frame.
+  // Đang bay (nhảy) / bị nhấc thì bỏ qua: sàn thật ở xa bên dưới.
+  tailFloor(puff) {
+    if (this.carried || this.airK !== null) return;
+    const rig = this.rig, tail = rig.tail, style = rig.tailStyle, floor = this.y + .02, tip = TAIL_TMP.tip, eps = .04;
+    const tipY = joint => { joint.updateWorldMatrix(true, false); return tip.set(0, style.seg, 0).applyMatrix4(joint.matrixWorld).y; };
+    for (let i = 0; i < tail.length; i++) {
+      const joint = tail[i], k = i / Math.max(1, tail.length - 1);
+      let r = (style.r0 + (style.r1 - style.r0) * k) * (style.fluff ? 1.3 : 1) * (1 + puff * .65);
+      if (i === tail.length - 1 && (style.pom || style.tuft)) r = Math.max(r, (style.pom || style.tuft) * 1.2);
+      for (let it = 0; it < 3; it++) {
+        const y0 = tipY(joint), pen = floor + r - y0;
+        if (pen <= 0) break;
+        joint.rotation.x += eps;
+        const slope = (tipY(joint) - y0) / eps;
+        joint.rotation.x -= eps;
+        if (Math.abs(slope) < .01) break; // đốt đang dựng đứng: gập không làm cao thêm
+        joint.rotation.x += clamp(pen / slope, -.5, .5);
+      }
+      if (joint.rotation.x !== this.tailX[i]) { this.tailX[i] = joint.rotation.x; if (this.tailXV) this.tailXV[i] = 0; }
     }
   }
 
@@ -1343,8 +1437,11 @@ class Cat {
       const tuck = leg.front ? lie * (1 - clamp(pose.roll, 0, 1) * .5) : Math.max(lie, sit * .9);
       const reach = (bottomY + .03 - groundY) / full; // độ dài để bàn chân vừa chạm sàn (không tính phần nhấc chân)
       const len = this.carried ? 1.3 : air !== null ? 1 : clamp(reach * (1 - tuck * .85), .15, 2.2);
-      leg.leg.scale.y = len; leg.leg.position.y = -full * len / 2;
-      leg.foot.position.y = -full * len + .025;
+      // Ống chân chạy từ trong thân (+.03) xuống đúng TÂM bàn chân: đáy ống luôn chìm trong khối bàn chân.
+      // (Trước đây ống dài hơn chân nên thò ra dưới đáy bàn chân thành một vành màu lông khi nhìn từ dưới lên.)
+      const shaft = full * len;
+      leg.leg.scale.y = shaft / LEG_SHAFT; leg.leg.position.y = .03 - shaft / 2;
+      leg.foot.position.y = -full * len + .03;
       leg.hip.scale.y = 1;
     });
 
@@ -1378,6 +1475,7 @@ class Cat {
     });
     const puff = Math.max(0, this.puff);
     rig.tailParts.forEach(part => { const b = part.userData.baseScale; part.scale.set(b.x * (1 + puff * .65), b.y * (1 + puff * .15), b.z * (1 + puff * .65)); });
+    this.tailFloor(puff);
 
     this.jelly(dt);
 
@@ -1393,8 +1491,12 @@ class Cat {
 }
 
 // ---------- Cả đàn: chọn hành vi, vật cản, đồ chơi rơi/lăn ----------
+// Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
+const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
+const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
+// ctx.zones() = các khu đã mở (đọc lúc chạy: mở phòng khách không cần tạo lại đàn mèo).
 export function createCatLife(ctx) {
-  const { scene, furniture, heartsAt, symbolAt } = ctx; // ctx.zone đọc lúc chạy (đổi khu không cần tạo lại đàn mèo)
+  const { scene, furniture, heartsAt, symbolAt } = ctx;
   const tweens = [];
   const world = {
     scene, furniture, butterflies: ctx.butterflies, cats: [], claims: new Map(), dt: 0, time: 0, afk: false,
@@ -1425,34 +1527,52 @@ export function createCatLife(ctx) {
       return Object.entries(furniture).filter(([id, node]) => node.visible && id !== ignore && FURNITURE[id]?.r)
         .map(([id, node]) => ({ x: node.position.x, z: node.position.z, r: FURNITURE[id].r }));
     },
+    // ----- Khu nhà (xem ZONE_OFFSET / DOOR) -----
+    zones() { return ctx.zones?.() || ['garden']; }, // các khu đã mở
+    // Khu chứa điểm (x, z): phía sau đường giữa hai khu là phòng khách (nếu đã mở).
+    zoneAt(x, z) { return z < MIDLINE && world.zones().includes('living') ? 'living' : 'garden'; },
+    // Điểm gần (x, z) nhất mà mèo đứng được: trong ô của một khu đã mở hoặc trong lối cửa giữa hai khu.
+    // Lấy điểm gần nhất (không kẹp theo khu) nên mèo bước từ khu vào lối cửa liền mạch, không bị giật.
+    bound(x, z) {
+      let best = null, bestD = Infinity;
+      const consider = p => { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < bestD) { best = p; bestD = d; } };
+      for (const zone of world.zones()) { const h = zoneHome(zone); consider(boxNearest(x, z, h.x - ROOM, h.x + ROOM, h.z - ROOM, h.z + ROOM)); }
+      if (world.zones().includes('living')) consider(boxNearest(x, z, DOOR_X - DOOR_HALF, DOOR_X + DOOR_HALF, LIVING_EDGE, GARDEN_EDGE));
+      return best;
+    },
+    // Cửa sổ vòm phòng khách theo toạ độ khu nhà.
+    window() { const h = zoneHome('living'); return { x: h.x + WINDOW.x, z: h.z + WINDOW.z }; },
     // Chỗ trống trên sàn ngay dưới cửa sổ (cửa sổ rộng x -2.2..-1.0); null nếu đồ đạc che hết.
     windowSpot() {
-      for (const x of [WINDOW.x, WINDOW.x + .3, WINDOW.x - .3, WINDOW.x + .55, WINDOW.x - .5]) {
-        if (!world.obstacles().some(ob => Math.hypot(x - ob.x, WINDOW.z - ob.z) < ob.r + .42)) return { x, z: WINDOW.z };
+      const win = world.window();
+      for (const x of [win.x, win.x + .3, win.x - .3, win.x + .55, win.x - .5]) {
+        if (!world.obstacles().some(ob => Math.hypot(x - ob.x, win.z - ob.z) < ob.r + .42)) return { x, z: win.z };
       }
       return null;
     },
     // Chỗ đáp khi thả mèo: đúng điểm thả, trừ khi trùng đồ đạc thì dời ra mép đồ gần nhất.
     landingSpot(cat) { return world.reachable(cat.x, cat.z); },
-    // Điểm gần (x, z) nhất mà mèo đứng được: trong phòng và ngoài mọi vật cản.
+    // Điểm gần (x, z) nhất mà mèo đứng được: trong khu nhà và ngoài mọi vật cản.
     reachable(px, pz) {
-      let x = clamp(px, -ROOM, ROOM), z = clamp(pz, -ROOM, ROOM);
+      let { x, z } = world.bound(px, pz);
       for (const ob of world.obstacles()) {
         const dx = x - ob.x, dz = z - ob.z, d = Math.hypot(dx, dz) || 1e-4, reach = ob.r + W * .45;
-        if (d < reach) { x = clamp(ob.x + dx / d * reach, -ROOM, ROOM); z = clamp(ob.z + dz / d * reach, -ROOM, ROOM); }
+        if (d < reach) ({ x, z } = world.bound(ob.x + dx / d * reach, ob.z + dz / d * reach));
       }
       return { x, z };
     },
     center(id) { const node = furniture[id]; return { x: node.position.x, z: node.position.z, r: FURNITURE[id]?.r || .5 }; },
-    freeSpot(cat) {
+    // Chỗ trống ngẫu nhiên trong một khu (mặc định khu mèo đang đứng).
+    freeSpot(cat, zone = world.zoneAt(cat.x, cat.z)) {
+      const h = zoneHome(zone);
       for (let i = 0; i < 30; i++) {
-        const x = rand(-ROOM + .3, ROOM - .3), z = rand(-ROOM + .3, ROOM - .3);
+        const x = h.x + rand(-ROOM + .3, ROOM - .3), z = h.z + rand(-ROOM + .3, ROOM - .3);
         if (Math.hypot(x - cat.x, z - cat.z) < .8) continue;
         if (world.obstacles().some(ob => Math.hypot(x - ob.x, z - ob.z) < ob.r + .4)) continue;
         if (world.cats.some(other => other !== cat && Math.hypot(x - other.x, z - other.z) < .7)) continue;
         return { x, z };
       }
-      return { x: rand(-1, 1), z: rand(-1, 1) };
+      return { x: h.x + rand(-1, 1), z: h.z + rand(-1, 1) };
     },
     choose(cat, last) {
       const options = [];
@@ -1467,17 +1587,18 @@ export function createCatLife(ctx) {
       add('pounce', ctx.night ? .15 : .55, () => cat.pounceBug());
       add('bellyroll', .4, () => cat.bellyRoll());
       add('meow', .45, () => cat.meowAtYou());
-      const garden = ctx.zone === 'garden';
+      // Mèo chơi chủ yếu ở khu đang đứng; thỉnh thoảng đi qua cửa sang khu kia (dạo chơi, hoặc tới thẳng một món đồ bên đó).
+      const zone = world.zoneAt(cat.x, cat.z), garden = zone === 'garden';
+      const other = world.zones().find(z => z !== zone);
+      const there = id => (garden ? GARDEN_TOYS : LIVING_TOYS)[id] === undefined ? .25 : 1; // món ở khu kia: ít chọn hơn
+      if (other) add('roam', .6, () => cat.wander(other));
       if (!garden && !world.claims.has('window')) add('window', .8, () => cat.lookOutWindow());
       if (garden && !ctx.night) add('butterfly', 1.1, () => cat.chaseButterfly()); // đêm bướm đi ngủ
-      if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6, () => cat.rollOnRug());
-      const weights = garden
-        ? { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 }
-        : { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
-      for (const [id, weight] of Object.entries(weights)) {
-        if (furniture[id]?.visible && !world.claims.has(id)) add(id, weight, () => cat.useFurniture(id));
+      if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6 * (garden ? .25 : 1), () => cat.rollOnRug());
+      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS })) {
+        if (furniture[id]?.visible && !world.claims.has(id)) add(id, weight * there(id), () => cat.useFurniture(id));
       }
-      const buddies = world.cats.filter(other => other !== cat && other.interruptible() && other.y < .01);
+      const buddies = world.cats.filter(other => other !== cat && other.interruptible() && other.y < .01 && world.zoneAt(other.x, other.z) === zone);
       if (buddies.length) {
         const other = buddies[Math.floor(Math.random() * buddies.length)];
         add('boop', 1, () => cat.boop(other));
@@ -1564,7 +1685,7 @@ export function createCatLife(ctx) {
       const dirWorld = new THREE.Vector3(Math.sin(cat.heading), 0, Math.cos(cat.heading)).multiplyScalar(rand(.5, .9));
       const world0 = toy.getWorldPosition(new THREE.Vector3());
       const target = world0.clone().add(dirWorld);
-      target.x = clamp(target.x, -ROOM, ROOM); target.z = clamp(target.z, -ROOM, ROOM); target.y = .19;
+      ({ x: target.x, z: target.z } = world.bound(target.x, target.z)); target.y = .19;
       const to = basket.worldToLocal(target.clone());
       to.y = .19;
       world.tween(.6, k => {
@@ -1584,7 +1705,7 @@ export function createCatLife(ctx) {
   function pushOutOfFurniture(cat) {
     for (const ob of world.obstacles(cat.busyWith)) {
       const dx = cat.x - ob.x, dz = cat.z - ob.z, d = Math.hypot(dx, dz) || 1e-4, reach = ob.r + W * .45;
-      if (d < reach) { cat.x = clamp(ob.x + dx / d * reach, -ROOM, ROOM); cat.z = clamp(ob.z + dz / d * reach, -ROOM, ROOM); }
+      if (d < reach) ({ x: cat.x, z: cat.z } = world.bound(ob.x + dx / d * reach, ob.z + dz / d * reach));
     }
   }
   function separate() {
@@ -1600,8 +1721,8 @@ export function createCatLife(ctx) {
           // hướng tách (vector đơn vị); trùng hẳn chỗ thì tách theo hướng nhìn của con thứ hai
           const ux = d > 1e-4 ? (b.x - a.x) / d : Math.sin(b.heading), uz = d > 1e-4 ? (b.z - a.z) / d : Math.cos(b.heading);
           const half = (CAT_GAP - d) / 2;
-          a.x = clamp(a.x - ux * half, -ROOM, ROOM); a.z = clamp(a.z - uz * half, -ROOM, ROOM);
-          b.x = clamp(b.x + ux * half, -ROOM, ROOM); b.z = clamp(b.z + uz * half, -ROOM, ROOM);
+          ({ x: a.x, z: a.z } = world.bound(a.x - ux * half, a.z - uz * half));
+          ({ x: b.x, z: b.z } = world.bound(b.x + ux * half, b.z + uz * half));
         }
         pushOutOfFurniture(a);
       }
@@ -1629,12 +1750,14 @@ export function createCatLife(ctx) {
 
   return {
     carryHeight: CARRY_H,
+    // Đàn mèo (chỉ đọc: x, z, y, speed, carried) để cảnh làm đồ đạc rung nhẹ khi mèo đi sát qua.
+    bodies() { return world.cats; },
     pickUp(cat, x, z) {
       cat.carried = true; cat.petUntil = 0;
-      cat.carryX = clamp(x, -ROOM, ROOM); cat.carryZ = clamp(z, -ROOM, ROOM);
+      ({ x: cat.carryX, z: cat.carryZ } = world.bound(x, z));
       cat.interrupt(cat.beCarried());
     },
-    carryTo(cat, x, z) { cat.carryX = clamp(x, -ROOM, ROOM); cat.carryZ = clamp(z, -ROOM, ROOM); },
+    carryTo(cat, x, z) { ({ x: cat.carryX, z: cat.carryZ } = world.bound(x, z)); }, // bế mèo sang khu kia cũng được
     drop(cat) { cat.carried = false; },
     setCats(breeds) {
       const keep = [];
@@ -1642,7 +1765,7 @@ export function createCatLife(ctx) {
         const existing = world.cats.find(cat => cat.breed === breed && !keep.includes(cat));
         if (existing) keep.push(existing);
         else {
-          const spot = world.freeSpot({ x: 99, z: 99 });
+          const zones = world.zones(), spot = world.freeSpot({ x: 99, z: 99 }, zones[Math.floor(Math.random() * zones.length)]); // mèo mới: ở khu bất kỳ
           keep.push(new Cat(world, breed, spot.x, spot.z));
         }
       });
