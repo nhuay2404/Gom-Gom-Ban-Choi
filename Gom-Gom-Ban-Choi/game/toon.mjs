@@ -142,6 +142,10 @@ export function syncOutlineResolution(renderer) {
 // pixel viền nào nằm đè lên chính khối của nó thì hạ alpha xuống STROKE.inner.
 // "Khối" = tổ tiên gần nhất có markOutlineUnit() (mèo, món đồ, hàng rào, bụi cây...); không đánh dấu thì mỗi mesh là một khối.
 export const OUTLINE_LAYER = 1, DECAL_LAYER = 2;
+// Sàn / nền cỏ lùi lại trong depth test theo ĐỘ DỐC của chính nó trên màn hình (polygonOffsetFactor ~ số px): phần viền
+// phình ra quanh chân đồ đạc nằm trên sàn luôn thắng sàn ở mọi mức zoom (sàn nhìn xiên nên độ dốc depth lớn, tự tỉ lệ
+// theo khoảng cách), không chập chờn. 6 px > bề rộng viền dày nhất (mèo ~5 px).
+export const FLOOR_OFFSET = { polygonOffset: true, polygonOffsetFactor: 6, polygonOffsetUnits: 2 };
 export function markOutlineUnit(object) { object.userData.outlineUnit = true; return object; }
 function unitIdOf(object) {
   if (object.userData.outlineUnitId) return object.userData.outlineUnitId;
@@ -182,10 +186,18 @@ export function renderOutlineIds(renderer, scene, camera) {
   scene.overrideMaterial = idMat; scene.background = null;
   camera.layers.set(0);                  // không vẽ viền vào pass ID
   renderer.shadowMap.autoUpdate = false; // bóng đổ để pass chính cập nhật, khỏi vẽ shadow map hai lần
+  // Vật trong suốt đang mờ (tường phòng khách khi chắn camera) không được che ID của vật phía sau: nếu không, viền
+  // của vật đó không nhận ra mình đang đè lên chính nó và vẽ đậm thành mảng tối (thảm) trong lúc tường mờ dần.
+  const hidden = [];
+  scene.traverse(node => {
+    const m = node.isMesh && node.visible && node.material;
+    if (m && !Array.isArray(m) && m.transparent && m.opacity < .99) { node.visible = false; hidden.push(node); }
+  });
   renderer.setRenderTarget(idTarget);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
   renderer.render(scene, camera);
+  hidden.forEach(node => { node.visible = true; });
   renderer.setRenderTarget(prevTarget);
   renderer.setClearColor(clearTmp, prevAlpha);
   renderer.shadowMap.autoUpdate = prevAuto;
@@ -203,8 +215,8 @@ export function renderOutlineIds(renderer, scene, camera) {
 export const OUTLINE_STYLES = {
   default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
   cat: { px: 4.4, dark: .25, tone: 0, brown: '#3a2016', inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
-  // tai mèo: chóp nhọn 4 cạnh, nét "phình theo pháp tuyến" ở cạnh sắc bị mỏng đi nên cần dày hơn thân để nhìn bằng nhau
-  catEar: { px: 6.6, dark: .25, tone: 0, brown: '#3a2016', inner: 0 },
+  // tai mèo: khối nhỏ nên cùng số px trông mảnh hơn thân, dày hơn chút cho cân
+  catEar: { px: 5.2, dark: .25, tone: 0, brown: '#3a2016', inner: 0 },
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;
@@ -223,11 +235,24 @@ function outlineMat(baseColor, styleName = 'default') {
       uniform float width; uniform vec2 resolution;
       attribute vec3 outlineNormal;
       varying vec3 vObj;
+      varying float vDown;
       ${NOISE_GLSL}
       void main() {
         vObj = position;
         float w = width * (1.0 - ${(STROKE.wobble / 2).toFixed(3)} + ${STROKE.wobble.toFixed(3)} * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
-        vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        // Mép dưới của vật đặt trên sàn (bồn hoa, chân mèo, đáy hộp...): phần viền phình ra phía dưới rơi lên mặt sàn ĐỨNG
+        // TRƯỚC đáy vật, nên bị sàn che (viền phía gần camera mất / chập chờn khi xoay). Kéo riêng các đỉnh có pháp tuyến
+        // hướng xuống về phía camera đúng bằng vài lần bề rộng viền (tính theo kích thước 1 px ở khoảng cách đó).
+        // Không kéo đỉnh hướng lên / ngang để viền không chọc xuyên khối mỏng (tai mèo).
+        float down = smoothstep(0.05, 0.6, -normalize(mat3(modelMatrix) * outlineNormal).y);
+        float pixelWorld = 2.0 * -mv.z / (projectionMatrix[1][1] * resolution.y);
+        // Chỉ kéo tối đa 1.5 cm: kéo tỉ lệ khoảng cách thì zoom xa vượt bề dày vật dẹt (thảm, thảm chùi chân, đệm) và mặt đáy
+        // viền trồi lên đè lên mặt trên của vật / của khối nằm trên nó thành mảng tối. Phần viền phình ra nằm trên sàn thì sàn
+        // tự lùi lại theo độ dốc (FLOOR_OFFSET) nên không cần kéo xa. Mặt đáy viền còn đè lên chính khối thì bỏ (vDown).
+        mv.z += down * min(w * pixelWorld * 3.0, 0.015);
+        vDown = down;
+        vec4 clip = projectionMatrix * mv;
         vec2 dir = (projectionMatrix * vec4(normalize(normalMatrix * outlineNormal), 0.0)).xy;
         float len = length(dir);
         if (len > 1e-5) clip.xy += dir / len * w * 2.0 / resolution * clip.w;
@@ -242,6 +267,7 @@ function outlineMat(baseColor, styleName = 'default') {
       uniform float useIds;
       uniform vec2 resolution;
       varying vec3 vObj;
+      varying float vDown;
       ${NOISE_GLSL}
       void main() {
         // Đậm / mờ: nhiễu tần số thấp, 2 lớp (đoạn dài + đoạn ngắn hơn) cho nhịp tay tự nhiên, chuyển mềm.
@@ -253,7 +279,11 @@ function outlineMat(baseColor, styleName = 'default') {
         float alpha = 1.0;
         if (useIds > 0.5) { // đè lên chính khối của mình -> nét trong, mờ đi
           vec3 behind = floor(texture2D(tIds, gl_FragCoord.xy / resolution).rgb * 255.0 + 0.5);
-          if (all(equal(behind, unitId))) { if (innerAlpha <= 0.0) discard; alpha = innerAlpha; }
+          if (all(equal(behind, unitId))) {
+            // mặt đáy viền (bị kéo về phía camera) đè lên chính vật: không phải nét trong thật, bỏ (không thì vật tối khi zoom xa)
+            if (innerAlpha <= 0.0 || vDown > 0.5) discard;
+            alpha = innerAlpha;
+          }
         }
         gl_FragColor = vec4(c, alpha);
         #include <colorspace_fragment>
@@ -325,6 +355,10 @@ export function addOutlines(root) {
     hull.raycast = noRaycast;
     hull.castShadow = hull.receiveShadow = false;
     hull.layers.set(OUTLINE_LAYER);
+    // Viền là vật trong suốt (alpha cho nét trong) và không ghi depth. Tường phòng khách cũng trong suốt (để mờ đi khi chắn
+    // camera); nếu tường được vẽ SAU viền thì nó đè mất viền của đồ đứng trước nó, và thứ tự này đổi theo góc camera nên
+    // viền chập chờn khi xoay. renderOrder 1: viền luôn vẽ sau mọi vật trong suốt thường, trước tấm dán (2).
+    hull.renderOrder = 1;
     node.add(hull);
   }
 }

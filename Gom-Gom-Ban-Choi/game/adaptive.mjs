@@ -14,6 +14,7 @@ import { MATCH_SIZE } from './scoring.mjs';
 import { ADAPTIVE } from './tuning.mjs';
 import { boardSize, isPlainSquare, compactBoard, expandBoard, playableCells, VOID } from './board-shapes.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
+import { LAYOUTS } from './level-layouts.mjs';
 
 const A = ADAPTIVE;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -119,9 +120,9 @@ const ON_ORDER = ['moves', 'colors', 'board', 'crate'];
 // Bản màn có (gần nhất có thể) `target` element bật.
 //   noMoves: không siết lượt khi tăng khó (người suy nghĩ kỹ)
 //   swap: đổi loại element, giữ số lượng (tắt một vật cản, bật moves/màu) — cho người chơi chán
-export function buildVariant(base, target, { noMoves = false, swap = false } = {}) {
+export function buildVariant(base, target, { noMoves = false, swap = false, keep = [] } = {}) {
   let level = { ...base };
-  const canOn = key => !levelElements(level)[key] && !(noMoves && key === 'moves');
+  const canOn = key => !levelElements(level)[key] && !(noMoves && key === 'moves') && !keep.includes(key);
   if (swap) {
     const add = ON_ORDER.find(canOn), drop = ['crate', 'wall'].find(key => levelElements(level)[key]);
     if (add && drop) level = OFF[drop](ON[add](level));
@@ -130,12 +131,12 @@ export function buildVariant(base, target, { noMoves = false, swap = false } = {
   // Giữ lại 1 element nào cũng lệch: lượt chật / nhiều màu nặng hơn cả vật cản + bàn rộng cộng lại (đo bằng bot),
   // còn giữ vật cản / bàn rộng thì trái với "màn dễ là 6×6 không chướng ngại vật".
   if (target <= 1 && target < elementCount(base)) {
-    for (const key of [...OFF_ORDER].reverse()) if (levelElements(level)[key]) level = OFF[key](level);
+    for (const key of [...OFF_ORDER].reverse()) if (levelElements(level)[key] && !keep.includes(key)) level = OFF[key](level);
     return level;
   }
   for (const key of OFF_ORDER) {
     if (elementCount(level) <= target) break;
-    if (levelElements(level)[key]) level = OFF[key](level);
+    if (levelElements(level)[key] && !keep.includes(key)) level = OFF[key](level);
   }
   for (const key of ON_ORDER) {
     if (elementCount(level) >= target) break;
@@ -288,6 +289,27 @@ export function tuneDealer(level, { stuck = 0, moves = 0, skilled = false } = {}
   return { level: { ...level, shapes, assist }, deal: notes.join(' ') };
 }
 
+// ---------- Bố trí crate/wall theo profile ----------
+// Mức: '-2' thoáng · '-1' nhẹ · '0' bản gốc · '0b' đổi chỗ (giữ số lượng) · '+1' hiểm · '+2' rất hiểm.
+const LAYOUT_KEYS = ['crate', 'wall', 'board'];
+const LAYOUT_STEP = { '-2': -2, '-1': -1, 0: 0, '0': 0, '0b': 0, '+1': 1, '+2': 2 };
+const layoutOf = step => ({ '-2': '-2', '-1': '-1', 0: '0', 1: '+1', 2: '+2' }[step]);
+export function pickLayout(profile, levelIndex, p) {
+  const name = LEVELS[levelIndex].name, has = tier => tier === '0' || !!LAYOUTS[name]?.[tier];
+  const recent = profile.attempts.slice(profile.streakFrom), lastTry = recent.at(-1);
+  // Thua sát nút: giữ đúng bố trí của lần vừa chơi ở màn này để người chơi thử lại đúng bàn đó.
+  if (p.id === 'near-miss' && lastTry?.level === levelIndex && has(lastTry.layout ?? '0')) return lastTry.layout ?? '0';
+  let want = { frustrated: -2, struggling: -1, returning: -1, skilled: p.shift >= 2 ? 2 : 1 }[p.id] ?? 0;
+  if (p.id === 'bored') return has('0b') && lastTry?.layout !== '0b' ? '0b' : has('+1') ? '+1' : '0';
+  if (profile.cooldown > 0) want = Math.min(want, 0);
+  // Mỗi lần chỉ dịch một mức so với lần thử trước (trừ khi sắp bỏ game).
+  const last = LAYOUT_STEP[lastTry?.layout ?? '0'] ?? 0;
+  if (p.id !== 'frustrated') want = Math.max(last - 1, Math.min(last + 1, want));
+  // Không có bản cho mức đó thì lùi dần về bản gốc.
+  while (want !== 0 && !has(layoutOf(want))) want -= Math.sign(want);
+  return layoutOf(want);
+}
+
 // Bản màn cho lần vào màn kế tiếp. `level` là dữ liệu màn đã chỉnh, đưa thẳng vào createSession.
 export function planLevel(profile, levelIndex) {
   const base = LEVELS[levelIndex], baseCount = elementCount(base);
@@ -301,7 +323,12 @@ export function planLevel(profile, levelIndex) {
   let target = clamp(p.target ?? baseCount + shift, 0, MAX_ELEMENTS);
   if (profile.cooldown > 0) target = Math.min(target, 2);
   if (base.tier === 'boss') target = Math.max(target, 2); // boss không xuống dưới Medium
-  let level = buildVariant(base, target, p);
+  // Bố trí crate/wall sinh sẵn (level-layouts.mjs) theo profile: có bản cho mức đó thì dùng, và khi ấy số lượng / vị trí
+  // vật cản và hình bàn do bản sinh sẵn quyết định; buildVariant chỉ còn chỉnh lượt và màu.
+  // Hạ hẳn về Easy thì giữ luật "màn dễ là 6×6 gọn không vật cản" của buildVariant, không dùng bố trí sinh sẵn.
+  const layout = target <= 1 ? '0' : pickLayout(profile, levelIndex, p);
+  const fromLayout = layout !== '0' ? { ...base, board: LAYOUTS[base.name][layout] } : base;
+  let level = buildVariant(fromLayout, target, layout !== '0' ? { ...p, keep: LAYOUT_KEYS } : p);
   if (p.extraMoves) level = { ...level, moves: level.moves + p.extraMoves };
   // Lý do các lần thua liên tiếp ở chính màn này (bỏ ngang không tính vào lý do nào).
   const losses = { stuck: 0, moves: 0 };
@@ -314,7 +341,7 @@ export function planLevel(profile, levelIndex) {
   const tuned = keepDeal ? { level, deal: null } : tuneDealer(level, { ...losses, skilled: p.id === 'skilled' });
   level = tuned.level;
   const count = elementCount(level);
-  return { level, profile: p.id, shift: target - baseCount, mode: p.swap ? 'swap' : null, deal: tuned.deal, suggestBooster: !!p.suggestBooster, baseCount, count, difficulty: difficultyOf(count) };
+  return { level, profile: p.id, shift: target - baseCount, mode: p.swap ? 'swap' : null, layout, deal: tuned.deal, suggestBooster: !!p.suggestBooster, baseCount, count, difficulty: difficultyOf(count) };
 }
 
 // Ghi một lần thử. `attempt` gồm metric lần chơi + { profile, shift, mode } của plan đã dùng.

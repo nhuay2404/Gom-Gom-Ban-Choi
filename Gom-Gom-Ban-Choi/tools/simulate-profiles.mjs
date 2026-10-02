@@ -80,7 +80,7 @@ function runPlayer(type, playerIndex, mode) {
         level, win: result.win, reason, ratio: +ratio.toFixed(3), stars: result.stars || 0, thinkMs,
         boosters: used, boostUse: result.boostUse, bought: boughtNow,
         preBoostRatio: result.preBoostRatio == null ? null : +result.preBoostRatio.toFixed(3),
-        idleMs: tilt ? Math.round(durationMs * 0.3) : 0, durationMs, profile: plan.profile, shift: plan.shift, mode: plan.mode, count: plan.count,
+        idleMs: tilt ? Math.round(durationMs * 0.3) : 0, durationMs, profile: plan.profile, shift: plan.shift, mode: plan.mode, layout: plan.layout, count: plan.count,
       }, now);
       profile = noteDwell(rec.profile, Math.round(dwellMs));
       if (rec.gift) out.gifts++;

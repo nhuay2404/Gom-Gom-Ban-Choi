@@ -93,20 +93,20 @@ export const LEVELS = [
   {
     name: 'Steel Nap', feature: 'Heart board + metal', tier: 'chill', introduces: 'metal',
     moves: 18, target: 240, cats: 'OGWT', assist: 0.5,
-    board: ['#..##..#', '.M....M.', '...OO...', '...WW...', '#M....M#', '##....##', '###..###'],
+    board: ['#..##..#', '...MM...', '.M.OO.M.', '.M.WW.M.', '#..MM..#', '##....##', '###..###'],
     deck: [],
     tutorial: [{ type: 'info', text: 'New: metal blocks! Like crates they take up a cell, but they never break. Plan around them.' }],
   },
   {
     name: 'Iron & Oak', feature: 'Metal + crates', tier: 'hard',
     moves: 16, target: 300, cats: 'OGWTS', assist: 0.4,
-    board: ['X.M...X', '.O..O..', 'MXGG..S', '..W.XM.', '.O..T..', 'X..M..X', '..S..T.'],
+    board: ['X..M..X', '.O.M.O.', '.XGG..S', 'MM.W.MM', '.O..T..', 'X..M.X.', '..SM.T.'],
     deck: [],
   },
   {
     name: 'Garden Fortress', feature: 'Boss: cross board', tier: 'boss',
-    moves: 20, target: 410, cats: 'OGWTSK', assist: 0.4,
-    board: ['##MX.M##', '##.OG.##', 'X.K..S.X', '.TW..K..', '..S..T..', 'X.W..O.X', '##.SO.##', '##M..M##'],
+    moves: 20, target: 370, cats: 'OGWTSK', assist: 0.4,
+    board: ['##..X.##', '##.OG.##', 'X.MK.MSX', '.TW..M..', '..MS.T..', 'X.M.WMOX', '##.SK.##', '##.X..##'],
     deck: [],
   },
   // ===== Chương 2: phòng khách — mở ô Hold, bàn to dần và nhiều hình; xào lại cơ chế thùng -> kim loại -> cả hai =====
@@ -133,13 +133,13 @@ export const LEVELS = [
   {
     name: 'Steel Corners', feature: 'Diamond board + metal', tier: 'normal',
     moves: 15, target: 290, cats: 'OGWTS', assist: 0.4,
-    board: ['##M.M##', '#..OO.#', '.G...G.', 'M.S.S.M', '...TT..', '#.W..W#', '##M.M##'],
+    board: ['##...##', '#M.OOM#', '.G.M.G.', '..S.S..', '.M.TT.M', '#.W.MW#', '##...##'],
     deck: [],
   },
   {
     name: 'Crate & Steel', feature: 'Crates + metal', tier: 'hard',
     moves: 16, target: 290, cats: 'OGWTSK', assist: 0.4,
-    board: ['##X.M.##', '#.O..K.#', 'MXGG..XM', '...W.X..', '.K..W..T', '#X..S.X#', '##M.O.##'],
+    board: ['##X...##', '#.O.MK.#', '.XGGM.X.', '.M.W.X..', '.K.MW..T', '#X.MS.X#', '##..O.##'],
     deck: [],
   },
   {
@@ -157,27 +157,27 @@ export const LEVELS = [
   {
     name: 'Divided', feature: 'A metal wall splits the board', tier: 'hard',
     moves: 15, target: 250, cats: 'OGWTSK', assist: 0.4,
-    board: ['...M....', '.O..M.G.', '...M..S.', '.K..M...', '.G.M..O.', '....M.T.', 'W..M....'],
+    board: ['...MM...', '.O..M.G.', '..MM..S.', '.K..MM..', '.G.M..O.', '..MM.T..', 'W..M....'],
     deck: [],
   },
   {
-    // Bottleneck của chương 2: bot thắng ~19% (mục tiêu cao, ít hỗ trợ màu), điểm TB ~310/350 = hụt một cú gom
+    // Bottleneck của chương 2: bot thắng ~16% (cổng kim loại 2 lớp + mục tiêu cao), điểm TB ~298/340 = hụt một cú gom
     // -> người chơi thua sát nút, muốn chơi lại hoặc dùng booster. Ngay sau là màn nghỉ 19.
     name: 'Iron Gate', feature: 'Crates + metal', tier: 'hard',
-    moves: 18, target: 350, cats: 'OGWTSK', assist: 0.3,
-    board: ['M..X.X.M', '.O...G..', 'X..MM..X', '...W.K..', '.S..X.T.', 'X..MM..X', '..O..K..', 'M.X..X.M'],
+    moves: 18, target: 340, cats: 'OGWTSK', assist: 0.3,
+    board: ['...X.X..', '.O..MG..', 'XMM..MMX', '...W.K..', '.S..X.T.', 'XMM..MMX', '..O..K..', '..X..X..'],
     deck: [],
   },
   {
     name: 'Tea Break', feature: 'Heart board, take a breather', tier: 'chill',
     moves: 20, target: 290, cats: 'OGWT', assist: 0.5,
-    board: ['#..##..#', '.OO..M..', '.M......', '.....M..', '#.M.GG.#', '##....##', '###..###'],
+    board: ['#..##..#', '.OO.M...', '.M....M.', '...MM...', '#M..GG.#', '##..M.##', '###..###'],
     deck: [],
   },
   {
     name: 'Steel Fortress', feature: 'Boss: cross board', tier: 'boss',
-    moves: 22, target: 430, cats: 'OGWTSK', assist: 0.4,
-    board: ['##M..M##', '##.OG.##', 'M.X..X.M', '.TK..S..', '..S..W.T', 'M.W..K.M', '##.X.O##', '##M..M##'],
+    moves: 22, target: 420, cats: 'OGWTSK', assist: 0.4,
+    board: ['##....##', '##MOGM##', '..X..X..', '.TKMMS..', '..SMMW.T', '..W..K..', '##MX.M##', '##.O..##'],
     deck: [],
   },
 ];

@@ -387,6 +387,8 @@ async function animateMerges(ghosts, merges) {
 }
 
 // Thắng: chờ các anim gom còn dở xong, rồi mọi mèo còn lại bị nhấc bổng và bay vút lên, bàn trống trơn.
+// Bàn trống sau khi thắng: giữ ô ngoài bàn ('#') để lưới không bị dựng lại thành hình chữ nhật giữa anim.
+const emptiedBoard = () => state.board.map(cell => (cell?.void ? cell : null));
 async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
@@ -397,7 +399,7 @@ async function celebrateWin(message) {
     // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
     const ghostMap = spawnGhosts(occupied, state.board), ghosts = [...ghostMap.values()];
     const rowOf = new Map([...ghostMap].map(([index, ghost]) => [ghost, Math.floor(index / W)]));
-    state.board = state.board.map(() => null);
+    state.board = emptiedBoard();
     render(message);
     $('board').classList.add('busy', 'flying');
     // Pha 1: sóng từ hàng trên xuống, từng hàng lần lượt bị nhấc bổng và bay vọt lên rồi lơ lửng.
@@ -445,7 +447,7 @@ async function celebrateWin(message) {
     $('board').classList.remove('busy', 'flying');
   }
   state.animating = false;
-  state.board = state.board.map(() => null);
+  state.board = emptiedBoard();
   render(message);
 }
 // Chớp sáng hợp nhất ở tâm board khi mọi mèo chụm lại.
@@ -1473,7 +1475,7 @@ function recordTry(win, reason) {
   const result = recordAttempt(profile, {
     level: state.levelIndex, win, reason, ratio: +(state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
     boosters: track.boosters, boostUse: track.boostUse, bought: track.bought, preBoostRatio: track.preBoostRatio, thinkMs: Math.round(median(track.thinks)), idleMs: Math.round(track.idleMs),
-    durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, count: plan.count,
+    durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, layout: plan.layout, count: plan.count,
   });
   profile = result.profile;
   saveProfile(profile);

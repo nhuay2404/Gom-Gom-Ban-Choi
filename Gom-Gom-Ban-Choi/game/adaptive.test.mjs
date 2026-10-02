@@ -5,6 +5,7 @@ import { LEVELS, parseBoard, boardSize } from './levels.mjs';
 import { isPlainSquare } from './board-shapes.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
+import { LAYOUTS } from './level-layouts.mjs';
 import { elementCount, difficultyOf, buildVariant, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip } from './adaptive.mjs';
 
 const fresh = () => ({ attempts: [], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 });
@@ -75,7 +76,8 @@ test('sắp bỏ game: hạ về Easy, boss vẫn tối thiểu Medium, quà khi
   const plan = planLevel(losing, 17);
   assert.equal(plan.profile, 'frustrated');
   assert.equal(plan.difficulty, 'easy');
-  assert.equal(planLevel(losing, 19).count, 2); // boss
+  assert.equal(planLevel(losing, 19).difficulty, 'medium'); // boss: không xuống dưới Medium
+  assert.equal(planLevel(losing, 19).layout, '-2');        // vật cản thoáng nhất
   const won = recordAttempt(losing, try_(17, true, { profile: plan.profile, shift: plan.shift }));
   assert.equal(won.gift, true);
   assert.equal(won.profile.cooldown, 3);
@@ -95,7 +97,11 @@ test('cao thủ: thắng 3 màn liền sạch sẽ thì +1 element, chỉ siết
   assert.equal(plan.profile, 'skilled');
   assert.equal(plan.count, 4);
   assert.ok(plan.level.moves < LEVELS[15].moves);
-  assert.equal(plan.level.board.join(''), LEVELS[15].board.join(''));
+  // Bố trí "hiểm" sinh sẵn: nhiều thùng hơn bản gốc, giữ nguyên hình bàn và mèo đặt sẵn.
+  assert.equal(plan.layout, '+1');
+  assert.equal(plan.level.board.join(''), LAYOUTS[LEVELS[15].name]['+1'].join(''));
+  const crates = rows => [...rows.join('')].filter(ch => ch === 'X').length;
+  assert.ok(crates(plan.level.board) > crates(LEVELS[15].board));
 });
 
 test('chơi chán: đổi loại element (tắt vật cản, bật moves/màu), giữ số lượng', () => {
@@ -235,4 +241,29 @@ test('bàn theo profile: Easy thu về 6×6 gọn không vật cản; cao thủ 
   // Mở rộng bàn không làm mất mèo đặt sẵn.
   const cats = rows => [...rows.join('')].filter(ch => /[OGWKST]/.test(ch)).length;
   assert.equal(cats(buildVariant(LEVELS[3], 3).board), cats(LEVELS[3].board));
+});
+
+test('bố trí crate/wall theo profile: vật lộn -> nhẹ, sát nút giữ đúng bàn, mỗi lần dịch một mức', () => {
+  const struggling = withTries(veteran(), try_(9, false), try_(9, false));
+  const easier = planLevel(struggling, 9); // Garden Fortress (boss)
+  assert.equal(easier.layout, '-1');
+  const count = rows => [...rows.join('')].filter(c => c === 'X' || c === 'M').length;
+  assert.ok(count(easier.level.board) < count(LEVELS[9].board));
+  // Hình bàn và mèo đặt sẵn không đổi.
+  const shape = rows => rows.join('').replace(/[XM]/g, '.');
+  assert.equal(shape(easier.level.board), shape(LEVELS[9].board));
+  // Sát nút sau khi chơi bản '-1': giữ bản '-1'.
+  const near = withTries(veteran(), try_(9, false, { ratio: 0.9, layout: '-1' }), try_(9, false, { ratio: 0.9, layout: '-1' }));
+  assert.equal(planLevel(near, 9).layout, '-1');
+  // Lần trước '+1', giờ vật lộn -> về '0' chứ chưa xuống '-1'.
+  assert.equal(planLevel(withTries(veteran(), try_(9, false, { layout: '+1' }), try_(9, false, { layout: '+1' })), 9).layout, '0');
+  // Mọi bản sinh sẵn: không có cụm gom sẵn, giữ hình bàn và mèo.
+  for (const [name, tiers] of Object.entries(LAYOUTS)) {
+    const base = LEVELS.find(l => l.name === name);
+    for (const rows of Object.values(tiers)) {
+      const { W, H } = boardSize(rows);
+      assert.equal(clearMatches(parseBoard(rows), W, H, MATCH_SIZE).cleared.length, 0, name);
+      assert.equal(shape(rows), shape(base.board), name);
+    }
+  }
 });

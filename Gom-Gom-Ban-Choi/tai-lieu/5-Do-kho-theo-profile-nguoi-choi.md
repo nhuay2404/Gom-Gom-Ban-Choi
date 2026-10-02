@@ -579,3 +579,44 @@ Hầu hết đơn điệu: bản Easy (0) 88–100%, mỗi element bật thêm t
 ### 16.5 Mô phỏng 8 kiểu người chơi (60 người mỗi kiểu, cố định → thích ứng)
 
 So với trước thay đổi: người mới chơi yếu qua hết 20 màn 100% (như cũ), người dễ nản qua hết 12% → **22%**, cao thủ dễ chán 33% → 30%, các kiểu khác không đổi (100%). Tỉ lệ nhãn Hard tăng (do thêm element board).
+
+## 17. Tường kim loại dày và có chủ đích hơn (02/10/2026)
+
+Chủ dự án thấy tường cũ "đặt cho có": phần lớn nằm ở góc / mép bàn, là những ô vốn ít dùng, nên không làm màn khó hơn. Bàn của 9 màn có tường (8, 9, 10, 13, 14, 17, 18, 19, 20) được vẽ lại theo các nguyên tắc:
+- **Chia phòng + cửa hẹp**: tường cắt bàn thành 2–4 khu nối bằng cửa 1–2 ô (Iron & Oak: chữ thập 4 phòng; Iron Gate: 2 lớp cổng, cửa giữa 2 ô; Divided: vách đôi so le).
+- **Hành lang 1 ô**: thẻ 3 ô chỉ vừa một hướng (Steel Nap, Garden Fortress).
+- **Hốc 1–2 ô**: chỉ nhét được thẻ đơn / đôi.
+- **Tường sát cặp mèo sẵn**: chặn một phía, phải tính hướng gom (Steel Nap, Steel Corners, Tea Break).
+- **Lõi giữa bàn** (Steel Fortress: khối 2×2 ở tâm chữ thập).
+- Không đặt tường ở góc bàn.
+
+Mật độ tường ~12–20% số ô (trước 8–25% nhưng phần lớn ở mép).
+
+Bot 200 ván, trước → sau: Steel Nap 96% → 92% · Iron & Oak 60% → 49% · Garden Fortress (mục tiêu 410 → 370) 39% → 30% · Steel Corners 82% → 74% · Crate & Steel 79% → 63% · Divided 58% → 52% · Iron Gate (350 → 340) 19% → 16% · Tea Break 94% → 96% · Steel Fortress (430 → 420) 47% → 30%. Hai boss và bottleneck được hạ mục tiêu chút vì tường mới làm boss 10 rơi xuống 5%. Màn nghỉ 8, 19 vẫn dễ. DDA vẫn đúng chiều (bản Easy 6×6 không vật cản 89–100%).
+
+## 16. Số lượng và vị trí crate/wall theo profile (02/10/2026)
+
+Trước đây crate/wall chỉ có hai trạng thái: giữ nguyên hoặc xoá hết. Giờ mỗi màn có các **bản bố trí sinh sẵn offline**:
+
+- `game/layout-score.mjs`: chấm độ khó một bố trí: chỗ đặt thẻ 3 ô, vùng trống lớn nhất, nút thắt, thùng khó phá (≤ 1 ô trống sát bên), vật cản chặn đầu cặp mèo sẵn.
+- `tools/generate-layouts.mjs`: mỗi màn, mỗi mức sinh ~300 ứng viên (giữ hình bàn `#` và mèo sẵn, không tạo cụm gom sẵn, không thêm loại vật cản trước màn giới thiệu nó), xếp hạng bằng điểm bố trí, cho bot "trung bình" chơi thử 12 bản đầu, giữ bản lệch tỉ lệ thắng gần mục tiêu nhất; mức nào phá thứ tự dễ → khó thì bỏ. Kết quả ghi vào `game/level-layouts.mjs` (sửa tay được; chạy lại sẽ ghi đè). Mất ~7 phút.
+
+| Mức | Crate | Wall | Mục tiêu tỉ lệ thắng (so với gốc) | Dùng cho profile |
+|---|---|---|---|---|
+| `-2` thoáng | ≈ C/2 | ≈ W/2 | +25 điểm | Sắp bỏ game (chỉ khi màn vẫn phải giữ Medium, ví dụ boss) |
+| `-1` nhẹ | C−1..C−2 | W hoặc W−1 | +12 | Vật lộn, quay lại sau nghỉ |
+| `0` | gốc | gốc | 0 | Ổn định, người mới, suy nghĩ kỹ |
+| `0b` đổi chỗ | giữ | giữ | ±0 | Chơi chán |
+| `+1` hiểm | C+1..C+2 | W..W+1 | −12 | Cao thủ |
+| `+2` rất hiểm | C+2..C+3 | W+1..W+2 | −22 | Cao thủ thắng sạch ≥ 6 màn |
+
+Luật trong `adaptive.mjs` (`pickLayout`):
+- Có bản cho mức đó thì crate, wall và hình bàn do bản sinh sẵn quyết định; `buildVariant` chỉ còn chỉnh lượt và màu (`keep`).
+- **Hạ hẳn về Easy** (0–1 element) vẫn theo luật cũ "bàn 6×6 gọn, không vật cản", không dùng bố trí sinh sẵn.
+- **Thua sát nút giữ đúng bố trí của lần vừa chơi** (lần thử lưu `layout`).
+- Mỗi lần chỉ dịch một mức so với lần trước (trừ sắp bỏ game); đang trong 3 màn "dịu lại" sau khi sắp bỏ game thì không lên mức khó.
+- Màn không có bản cho mức muốn thì lùi dần về bản gốc.
+
+Bản sinh ra (bot trung bình, gốc → các mức): màn 10 Garden Fortress 44% → −2: 59% · −1: 51% · +1: 31% · +2: 21%; màn 17 Divided 38% → 63 / 46 / 25 / 25%; màn 18 Iron Gate 6% → 24 / 19 / 4 / 5%. Màn 15 Open Field (không vật cản) chỉ có +1/+2 (thêm thùng). Một số màn có +2 ≈ +1 (12, 16, 17, 18, 20) vì không tìm được bố trí khó hơn rõ rệt.
+
+Mô phỏng (100 người mỗi kiểu, cố định → thích ứng): người dễ nản bỏ game **87% → 76%**; người dễ chán bỏ game 60% → 67% (thử đổi "chán" sang mức +1 cũng ra 67%, nên chênh lệch không đến từ lựa chọn mức; cần theo dõi); các kiểu khác không đổi (bỏ game 0%, tỉ lệ thắng ±1 điểm). Tỉ lệ màn Hard của cao thủ gần như giữ nguyên (46% → 45%), vì phần lớn màn của cao thủ đã ở mức Hard sẵn sau khi có element "hình bàn".

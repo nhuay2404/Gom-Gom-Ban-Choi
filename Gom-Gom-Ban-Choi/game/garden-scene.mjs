@@ -96,7 +96,8 @@ export const GARDEN_BUILD = {
     const flowers = [];
     for (let i = 0; i < 16; i++) {
       const a = i * 2.4, r = .15 + (i % 4) * .15;
-      const f = flower(FLOWER_COLORS[i % FLOWER_COLORS.length], Math.cos(a) * r, Math.sin(a) * r, .22 + (i % 3) * .06);
+      // Mỗi bông là một khối viền riêng: viền hoa nằm trên đất của bồn vẫn đậm (không bị coi là nét trong của bồn).
+      const f = markOutlineUnit(flower(FLOWER_COLORS[i % FLOWER_COLORS.length], Math.cos(a) * r, Math.sin(a) * r, .22 + (i % 3) * .06));
       f.position.y = .035;
       bed.add(f);
       flowers.push(f);
@@ -177,6 +178,7 @@ export const GARDEN_BUILD = {
     const ropes = [-1, 1].map(s => ropeBetween(new THREE.Vector3(s * .7, .72, 0), new THREE.Vector3(s * .89, 1.18, 0), .014, '#fffaf0'));
     const hammock = group(at(cyl(.06, .07, 1.3, wood), -.95, .65, 0), at(cyl(.06, .07, 1.3, wood), .95, .65, 0), sling, ...ropes);
     hammock.userData.update = t => { sling.rotation.x = Math.sin(t * 1.1) * .06; };
+    hammock.userData.ride = sling; // mèo nằm trong võng đung đưa theo (deco-room.mjs rideAlong)
     return hammock;
   },
   birdbath() {
@@ -309,6 +311,7 @@ export const GARDEN_BUILD = {
     const frame = group(at(cyl(.06, .07, 1.5, wood), -.9, .75, 0), at(cyl(.06, .07, 1.5, wood), .9, .75, 0),
       at(cyl(.06, .06, 1.9, wood), 0, beamY, 0).rotateZ(Math.PI / 2), swing);
     frame.userData.swing = swing; // mèo nhảy vào / ra thì đẩy lốp lắc
+    frame.userData.ride = swing; // mèo ngồi trong lốp đung đưa theo (deco-room.mjs rideAlong)
     frame.userData.update = t => swing.userData.step(t);
     return frame;
   },

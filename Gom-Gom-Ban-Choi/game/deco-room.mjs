@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCatLife } from './room-cats.mjs';
-import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER } from './toon.mjs';
+import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
 import { playSound } from './sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, OBSTACLE_RADIUS } from './room-layout.mjs';
@@ -55,6 +55,22 @@ function springy(node, parts) {
     state.forEach(s => { const off = s.part.rotation.x - s.rest; s.v += (-120 * off - 7 * s.v) * dt; s.part.rotation.x += s.v * dt; });
   };
   return node;
+}
+
+// Ghế bập bênh: cả ghế bập bênh quanh điểm chạm sàn của thanh cong (trục x), như con lắc tắt chậm.
+// bump(k) = cú đẩy (mèo đi sát qua, nhảy lên, nhảy xuống — nhảy xuống đạp mạnh nhất nên ghế bập bênh lâu nhất).
+function rocking(rock) {
+  const chair = group(rock), s = { a: 0, v: 0, last: 0 };
+  chair.userData.ride = rock; rock.userData.restPos = new THREE.Vector3(); // mèo ngồi trên ghế đung đưa theo (rideAlong)
+  chair.userData.bump = (k = 1) => { s.v += k * 1.4 * (s.v >= 0 ? 1 : -1); }; // đẩy cùng chiều đang bập bênh: không hãm ghế lại
+  chair.userData.update = t => {
+    const dt = Math.min(.05, Math.max(0, t - (s.last || t))); s.last = t;
+    s.v += (-10 * Math.sin(s.a) - .7 * s.v) * dt; // ω ≈ 3.2 rad/s (~2 giây một nhịp), tắt chậm như ghế gỗ thật
+    s.a = Math.max(-.22, Math.min(.22, s.a + s.v * dt));
+    rock.rotation.x = s.a;
+    rock.position.y = Math.abs(s.a) * .04; // lăn trên thanh cong: nhấc nhẹ khi nghiêng, đầu thanh không lún xuống sàn
+  };
+  return chair;
 }
 
 // ---------- Đồ đạc: mỗi món một hàm dựng (chỗ đặt [x, z, xoay] ở room-layout.mjs) ----------
@@ -169,10 +185,10 @@ const BUILD = {
     const runner = x => group(at(rbox(.06, .06, 1.1, .03, wood), x, .03, .03), at(rbox(.06, .06, .25, .03, wood), x, .07, .66).rotateX(-.4), at(rbox(.06, .06, .25, .03, wood), x, .07, -.6).rotateX(.4));
     const legs = [[-.45, -.32], [.45, -.32], [-.45, .38], [.45, .38]].map(([x, z]) => at(cyl(.04, .04, .56, wood), x, .3, z));
     const slats = [-.36, -.18, 0, .18, .36].map(x => at(rbox(.1, .72, .05, .02, wood), x, .95, -.4));
-    return group(runner(-.45), runner(.45), ...legs, at(rbox(1.04, .1, .9, .03, wood), 0, .57, 0), at(rbox(.9, .08, .76, .04, '#ec5b8c'), 0, .64, .02),
+    return rocking(group(runner(-.45), runner(.45), ...legs, at(rbox(1.04, .1, .9, .03, wood), 0, .57, 0), at(rbox(.9, .08, .76, .04, '#ec5b8c'), 0, .64, .02),
       ...slats, at(rbox(1.08, .12, .1, .04, wood), 0, 1.3, -.4), at(rbox(1.08, .08, .08, .03, wood), 0, .62, -.4),
       at(rbox(.08, .07, .82, .03, wood), -.52, .86, 0), at(rbox(.08, .07, .82, .03, wood), .52, .86, 0),
-      at(cyl(.03, .03, .26, wood), -.52, .72, .36), at(cyl(.03, .03, .26, wood), .52, .72, .36));
+      at(cyl(.03, .03, .26, wood), -.52, .72, .36), at(cyl(.03, .03, .26, wood), .52, .72, .36)));
   },
   // Chậu xương rồng (thay cây cảnh): mèo vẫn gặm thử... rồi nhăn mặt.
   'plant-cactus'() {
@@ -495,7 +511,7 @@ export function createRoom() {
   const siteBase = at(rbox(HALF * 2 + .7, .5, HALF * 2 + .7 - LZ, .18, '#fff4da'), 0, -.52, LZ / 2);
   site.add(gardenBase, siteBase);
 
-  const floorMat = mat('#e4b574', { roughness: .9 });
+  const floorMat = Object.assign(mat('#e4b574', { roughness: .9 }), FLOOR_OFFSET); // sàn lùi theo độ dốc: viền chân đồ không chập chờn
   const edge = mat('#c79a5f');
   const floor = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), edge), 0, -.15, 0);
   floor.material = [edge, edge, floorMat, edge, edge, edge]; // mặt trên (+y) là sàn
@@ -503,7 +519,7 @@ export function createRoom() {
   const threshold = at(box(DOOR.w + .1, .3, .32, '#c79a5f'), DOOR.x, -.14, HALF + .16); // cao hơn sàn .01: không trùng mặt sàn
   threshold.castShadow = false;
   living.add(floor, threshold);
-  const groundMat = mat('#9fd46a', { roughness: .95 }), soil = mat('#8a6a45');
+  const groundMat = Object.assign(mat('#9fd46a', { roughness: .95 }), FLOOR_OFFSET), soil = mat('#8a6a45');
   const ground = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), soil), 0, -.15, 0);
   ground.material = [soil, soil, groundMat, soil, soil, soil];
   // Thảm chùi chân trước cổng vườn (chỉ hiện khi đã có phòng khách); phẳng nên mèo đi qua được.
@@ -862,6 +878,34 @@ export function createRoom() {
   }
   let clock = 0;
 
+  // Mèo đang ngồi / nằm trên phần đung đưa của món đồ (ghế bập bênh, võng, xích đu lốp — node.userData.ride) đung đưa
+  // cùng nó: lấy phép biến đổi của phần đó so với lúc đứng yên (toạ độ thế giới) áp lên thân mèo.
+  // room-cats đặt lại VỊ TRÍ mèo mỗi frame nhưng chỉ đặt lại góc quay ngang (rotation.y), nên độ nghiêng áp lần trước
+  // phải tự xoá trước khi áp lần mới — không thì cộng dồn từng frame tới khi mèo lộn ngược.
+  const rideDelta = new THREE.Matrix4(), rideRest = new THREE.Matrix4(), rideQ = new THREE.Quaternion();
+  function rideAlong() {
+    for (const cat of cats.bodies()) {
+      const root = cat.rig.root;
+      if (root.userData.rode) { root.rotation.set(0, cat.yaw, 0); root.userData.rode = false; }
+    }
+    for (const [id, node] of Object.entries(furniture)) {
+      const ride = node.userData.ride;
+      if (!ride || !node.visible) continue;
+      const riders = cats.bodies().filter(cat => cat.surface === id && !cat.carried);
+      if (!riders.length) continue;
+      node.updateMatrixWorld(true);
+      rideRest.makeTranslation(ride.userData.restPos ?? ride.position).premultiply(ride.parent.matrixWorld); // chỗ nghỉ: đúng vị trí, không xoay
+      rideDelta.copy(ride.matrixWorld).multiply(rideRest.invert());
+      rideQ.setFromRotationMatrix(rideDelta);
+      for (const cat of riders) {
+        const root = cat.rig.root;
+        root.rotation.set(0, cat.yaw, 0); // về thẳng đứng rồi mới nghiêng theo món đồ
+        root.position.applyMatrix4(rideDelta); root.quaternion.premultiply(rideQ);
+        root.userData.rode = true;
+      }
+    }
+  }
+
   const camDir = new THREE.Vector3(), spherical = new THREE.Spherical();
   let lastFrame = 0, lastRadius = 0;
   function frame(now) {
@@ -918,6 +962,7 @@ export function createRoom() {
     if (furniture.flowers?.visible) flowerCenter.set(furniture.flowers.position.x, 0, furniture.flowers.position.z); else flowerCenter.set(0, 0, 0);
     butterflies.forEach(b => b.update(t, Math.min(.05, (now - (lastFrame || now)) / 1000), flowerCenter));
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
+    rideAlong();
     lastFrame = now;
     if (TOON) { addOutlines(scene); syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera); }
     renderer.render(scene, camera);
