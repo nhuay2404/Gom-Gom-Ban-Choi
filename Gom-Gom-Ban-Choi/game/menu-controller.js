@@ -18,7 +18,6 @@ export function connectPlay(playController) { play = playController; }
 const MAP = { STEP: 118, TOP: 230, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
 const PAW_SVG = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg>';
 const EAR_SVG = '<svg viewBox="0 0 24 24"><path class="ear-out" d="M3 22 6.5 4.5Q7.5 1.5 10 3.5L22 13Z"/><path class="ear-in" d="M8 16.5 9.5 8.5 15.5 13.5Z"/></svg>';
-const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9Z"/></svg>';
 const LOCK_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>';
 const mapPoint = (index, width, height) => ({
   x: width * (0.5 + MAP.SWING * Math.sin(index * MAP.FREQ)),
@@ -66,7 +65,6 @@ function renderMap() {
     node.title = `${level.name} · ${play.mapTier(index, current).label}`;
     node.setAttribute('aria-label', `Level ${index + 1}: ${level.name}${locked ? ' (locked)' : stars ? ' (cleared)' : ''}`);
     node.innerHTML = `${EAR_SVG.replace('<svg', '<svg class="ear l"')}${EAR_SVG.replace('<svg', '<svg class="ear r"')}<b>${index + 1}${locked ? LOCK_SVG : ''}</b>`
-      + `<span class="map-stars">${[0, 1, 2].map(i => i < stars ? STAR_SVG.replace('<svg', '<svg class="on"') : STAR_SVG).join('')}</span>`
       + (tier === 'boss' ? '<span class="map-crown" aria-hidden="true">👑</span>' : '')
       + (current ? `<span class="map-avatar" aria-hidden="true">${catMarkup.orange}</span>` : '');
     node.onclick = () => { $('map').hidden = true; play.startLevel(index); };
@@ -89,17 +87,45 @@ function markTab(tab) {
     else button.removeAttribute('aria-current');
   });
 }
+// Bản đồ 3D (deco/map-world.mjs: trống cỏ lăn như Animal Crossing). Máy không có WebGL / lỗi nạp thì dùng bản đồ 2D ở trên.
+let map3d = null, map3dFailed = false;
+const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld }) => {
+  map3d = createMapWorld($('map-3d'), {
+    avatarSvg: catMarkup.orange,
+    onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
+  });
+}).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
+function mapLevels() {
+  const open = unlockedCount(loadProgress());
+  return LEVELS.map((level, index) => ({ locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style }));
+}
+async function showMap3d() {
+  await map3dReady;
+  if ($('map').hidden) return;
+  if (!map3d) { showMap2d(); return; }
+  const levels = mapLevels();
+  $('map').classList.add('is-3d');
+  map3d.render(levels);
+  map3d.focus(Math.max(0, levels.findIndex(level => level.current)));
+  map3d.start();
+}
+
 export function showMap() {
   hideMenus();
   markTab('map');
   $('map').hidden = false;
   $('tutorial').hidden = true;
+  if (map3dFailed) showMap2d();
+  else showMap3d();
+}
+function showMap2d() {
+  $('map').classList.remove('is-3d');
   renderMap();
   // Cuộn cho màn đang chơi nằm giữa màn hình (không có thì ở đáy, chỗ màn 1).
   const list = $('map-list'), current = list.querySelector('.map-node.current');
   list.scrollTop = current ? current.offsetTop - list.clientHeight / 2 : list.scrollHeight;
 }
-addEventListener('resize', () => { if (!$('map').hidden) renderMap(); });
+addEventListener('resize', () => { if (!$('map').hidden && map3dFailed) renderMap(); });
 
 // ===== Home / Deco / Shop: các tab dùng chung thanh điều hướng nổi, chỉ hiện ngoài màn chơi =====
 const TABS = ['home', 'deco', 'shop'];
@@ -113,6 +139,7 @@ export function hideMenus() {
   $('tabbar').hidden = true;
   decoPick = null;
   room3d?.stop();
+  map3d?.stop();
 }
 export function showTab(tab) {
   TABS.forEach(name => { $(name).hidden = name !== tab; });

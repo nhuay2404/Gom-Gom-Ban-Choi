@@ -4,6 +4,7 @@ Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư vi
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 30 / phòng khách / phòng ngủ): `game/deco/deco-room.mjs`,
 `game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs`;
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
+Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
 ## Cấu trúc thư mục `game/` và cách chia commit
 

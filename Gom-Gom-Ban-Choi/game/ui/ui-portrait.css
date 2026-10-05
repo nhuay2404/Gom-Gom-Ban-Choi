@@ -473,3 +473,51 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
   -webkit-mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent)}
 .deco-groups::-webkit-scrollbar{display:none}
 .room.deco-view.is-3d{-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+
+/* Map 3D (deco/map-world.mjs): canvas phủ kín màn, trời vẽ trong cảnh; bản 2D (#map-list) chỉ là dự phòng. */
+.map-3d{display:none;position:absolute;inset:0;touch-action:none}
+.map.is-3d .map-3d{display:block}
+.map.is-3d .map-list{display:none}
+.map.is-3d .map-head{background:none}
+.map-canvas{display:block;width:100%;height:100%;cursor:grab}
+.map-canvas:active{cursor:grabbing}
+
+/* ===== Shop theo Figma (frame "Shop" 23:499) — đơn vị --u = bề ngang khung / 393 như Home ===== */
+.screen.shop{--u:calc(min(100vw,480px) / 393);--ink:#5b2e1c;gap:calc(16 * var(--u));padding-inline:0;padding-top:calc(56 * var(--u) + env(safe-area-inset-top));
+  background:#9fdcff url('./skins/figma-shop/bg.jpg') 50% 0/cover no-repeat}
+.screen.shop>*{width:calc(338 * var(--u));max-width:none}
+/* Hàng ví: cùng ảnh pill + toạ độ với Home (Figma), số xu viết lên đúng chỗ */
+.screen.shop>.shop-hud{position:relative;width:calc(393 * var(--u));height:calc(50 * var(--u))}
+.shop-hud>*{position:absolute;padding:0;border:0;background-color:transparent;background-position:center;background-size:100% 100%;background-repeat:no-repeat}
+.shop-hud>.fh-coins{top:0}
+.shop-hud>.fh-gems,.shop-hud>.fh-energy{top:calc(2 * var(--u))}
+.shop-hud button:active{translate:0 calc(2 * var(--u))}
+/* Banner gói khởi đầu: ảnh Figma (chữ + giá in sẵn, nội dung cố định) */
+.shop-starter{aspect-ratio:338/126;padding:0;border:0;background:url('./skins/figma-shop/starter.png') 50% 0/117.16% 104.76% no-repeat;margin-bottom:calc(8 * var(--u))}
+.shop-starter:active{translate:0 calc(2 * var(--u))}
+/* Thẻ booster: nền kem, viền nâu dày, icon đầu mèo có tia hồng hai bên, tên, số đang có, nút giá xanh */
+.screen.shop .booster-row{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(5 * var(--u))}
+.screen.shop .booster{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;padding:calc(10 * var(--u)) calc(6 * var(--u)) calc(8 * var(--u));
+  border:calc(3 * var(--u)) solid #73392a;border-radius:calc(16 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:var(--ink)}
+.screen.shop .booster::before{content:'';position:absolute;top:calc(14 * var(--u));left:calc(8 * var(--u));right:calc(8 * var(--u));height:calc(30 * var(--u));pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 30'%3E%3Cg stroke='%23f58aa2' stroke-width='3.4' stroke-linecap='round'%3E%3Cpath d='M9 6l4 6M4 17l7 1M81 6l-4 6M86 17l-7 1'/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat}
+.screen.shop .booster img{width:calc(60 * var(--u));height:calc(60 * var(--u));object-fit:contain}
+.screen.shop .booster span{margin-top:calc(2 * var(--u));font-family:var(--display);font-size:calc(15 * var(--u));font-weight:800;line-height:1.05;text-align:center;white-space:nowrap}
+.screen.shop .booster small{font-size:calc(11.5 * var(--u));font-weight:900;line-height:1.2;color:#a0705a;opacity:1}
+.screen.shop .booster em{display:flex;align-items:center;justify-content:center;gap:calc(5 * var(--u));width:100%;margin-top:calc(5 * var(--u));padding:calc(3 * var(--u)) 0;
+  border:calc(2 * var(--u)) solid #2f7d3a;border-radius:999px;background:linear-gradient(#93df82,#5fbe57);box-shadow:inset 0 calc(2 * var(--u)) 0 #ffffff55;
+  font-family:var(--display);font-size:calc(17 * var(--u));font-weight:800;font-style:normal;line-height:1;color:#fff;-webkit-text-stroke:calc(3.5 * var(--u)) #2f6f35;paint-order:stroke fill}
+.screen.shop .booster em .ico-coin,.screen.shop .coin-pack .ico-coin{width:calc(22 * var(--u));height:calc(22 * var(--u));box-shadow:none;background:url('./skins/figma-shop/coin.png') center/contain no-repeat}
+.screen.shop .booster.poor em{border-color:#8b7a63;background:linear-gradient(#cdbfa6,#ad9d80);-webkit-text-stroke-color:#6f604c}
+.screen.shop .booster:active{translate:0 calc(2 * var(--u))}
+/* Dòng gói xu: kem viền nâu, chồng xu + tia hồng, số xu, nút giá xanh bên phải */
+.screen.shop .coin-list{display:flex;flex-direction:column;gap:calc(8 * var(--u))}
+.screen.shop .coin-pack{display:flex;align-items:center;gap:calc(8 * var(--u));height:calc(53 * var(--u));padding:0 calc(6 * var(--u)) 0 calc(8 * var(--u));
+  border:calc(3 * var(--u)) solid #73392a;border-radius:calc(13 * var(--u));background:#f6f0e0;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffcf2;color:var(--ink)}
+.screen.shop .coin-pack img{height:calc(38 * var(--u));width:auto}
+.screen.shop .coin-pack b{flex:1;text-align:left;font-family:var(--display);font-size:calc(20 * var(--u));font-weight:800}
+.screen.shop .coin-pack em{min-width:calc(108 * var(--u));padding:calc(5 * var(--u)) 0;border:calc(2 * var(--u)) solid #2f7d3a;border-radius:999px;background:linear-gradient(#93df82,#5fbe57);
+  box-shadow:inset 0 calc(2 * var(--u)) 0 #ffffff55;text-align:center;font-family:var(--display);font-size:calc(19 * var(--u));font-weight:800;font-style:normal;color:#fff;
+  -webkit-text-stroke:calc(3.5 * var(--u)) #2f6f35;paint-order:stroke fill}
+.screen.shop .coin-pack:active{translate:0 calc(2 * var(--u))}
+.screen.shop .soon-note{width:calc(338 * var(--u))}

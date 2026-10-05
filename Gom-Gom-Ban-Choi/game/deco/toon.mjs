@@ -212,11 +212,14 @@ export function renderOutlineIds(renderer, scene, camera) {
 // Kiểu viền theo khối: gán userData.outlineStyle = 'cat' (hoặc tên khác) cho khối gốc, mọi mesh bên trong dùng kiểu đó.
 //   px: độ dày (px màn hình)   dark: độ sáng còn lại của màu khối trong mực (nhỏ = đậm hơn)
 //   tone: mức nhạt của đoạn "mờ"   brown: tông nâu pha vào mực   inner: độ đậm nét trong (0 = bỏ hẳn)
+//   ink: mực một màu cố định (bỏ qua màu khối)   wobble: dao động độ dày (mặc định STROKE.wobble; 0 = dày đều tuyệt đối)
+// Mèo dùng đúng mực nâu sticker của khối đầu mèo trên bản đồ (map-world.mjs): một màu cho mọi bộ lông, nét dày, đều.
+export const MAP_INK = '#5b2e1c';
 export const OUTLINE_STYLES = {
   default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
-  cat: { px: 4.4, dark: .25, tone: 0, brown: '#3a2016', inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
+  cat: { px: 5.6, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
   // tai mèo: khối nhỏ nên cùng số px trông mảnh hơn thân, dày hơn chút cho cân
-  catEar: { px: 5.2, dark: .25, tone: 0, brown: '#3a2016', inner: 0 },
+  catEar: { px: 6.4, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;
@@ -226,20 +229,21 @@ const outlineMats = new Map();
 function outlineMat(baseColor, styleName = 'default') {
   const style = OUTLINE_STYLES[styleName] || OUTLINE_STYLES.default;
   // Viền nâu ấm pha tông của khối (kiểu line Cats & Soup): mèo cam viền nâu cam, rào trắng viền nâu xám.
-  const ink = pastelColor(baseColor).multiplyScalar(style.dark).lerp(new THREE.Color(style.brown), .5);
+  const ink = style.ink ? new THREE.Color(style.ink) : pastelColor(baseColor).multiplyScalar(style.dark).lerp(new THREE.Color(style.brown), .5);
+  const wobble = style.wobble ?? STROKE.wobble;
   const key = `${styleName}:${ink.getHexString()}`;
   if (outlineMats.has(key)) return outlineMats.get(key);
   const material = new THREE.ShaderMaterial({
-    uniforms: { color: { value: ink }, width: { value: style.px }, toneAmount: { value: style.tone }, innerAlpha: { value: style.inner }, resolution: { value: resolution }, unitId: { value: new THREE.Vector3() }, ...outlineShared },
+    uniforms: { color: { value: ink }, width: { value: style.px }, wobble: { value: wobble }, toneAmount: { value: style.tone }, innerAlpha: { value: style.inner }, resolution: { value: resolution }, unitId: { value: new THREE.Vector3() }, ...outlineShared },
     vertexShader: `
-      uniform float width; uniform vec2 resolution;
+      uniform float width; uniform float wobble; uniform vec2 resolution;
       attribute vec3 outlineNormal;
       varying vec3 vObj;
       varying float vDown;
       ${NOISE_GLSL}
       void main() {
         vObj = position;
-        float w = width * (1.0 - ${(STROKE.wobble / 2).toFixed(3)} + ${STROKE.wobble.toFixed(3)} * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
+        float w = width * (1.0 - wobble * 0.5 + wobble * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         // Mép dưới của vật đặt trên sàn (bồn hoa, chân mèo, đáy hộp...): phần viền phình ra phía dưới rơi lên mặt sàn ĐỨNG
         // TRƯỚC đáy vật, nên bị sàn che (viền phía gần camera mất / chập chờn khi xoay). Kéo riêng các đỉnh có pháp tuyến

@@ -141,27 +141,24 @@
     </div>
   </section>
 
+  <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, banner gói khởi đầu, thẻ booster kem viền nâu,
+       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu-controller.js điền). -->
   <section id="shop" class="screen shop" hidden>
-    <header class="screen-top">
-      <h2 class="screen-title">Shop</h2>
-      <span class="pill-stat"><i class="ico-coin"></i><b id="shop-coins">0</b></span>
-    </header>
-    <button class="featured soon">
-      <span class="featured-tag">Starter pack</span>
-      <strong>Coins, a cozy rug and 5 boosters</strong>
-      <span class="price">$1.99</span>
-    </button>
-    <h3 class="shop-head">Boosters</h3>
-    <div id="shop-boosters" class="booster-row">
-      <button class="booster" data-buy="hammer"><b><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg></b><span>Hammer</span><small></small><em></em></button>
-      <button class="booster" data-buy="swap"><b><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></b><span>New card</span><small></small><em></em></button>
-      <button class="booster" data-buy="moves"><b>+3</b><span>Extra moves</span><small></small><em></em></button>
+    <div class="shop-hud">
+      <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
+      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
     </div>
-    <h3 class="shop-head">Coins</h3>
+    <button class="shop-starter soon" aria-label="Starter pack: coins, a cozy rug and 5 boosters, $1.99 (coming soon)"></button>
+    <div id="shop-boosters" class="booster-row">
+      <button class="booster" data-buy="hammer"><img src="./ui/skins/figma-game/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
+      <button class="booster" data-buy="swap"><img src="./ui/skins/figma-game/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
+      <button class="booster" data-buy="moves"><img src="./ui/skins/figma-game/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
+    </div>
     <div class="coin-list">
-      <button class="coin-pack soon"><span><i class="ico-coin"></i>500</span><em>$0.99</em></button>
-      <button class="coin-pack soon"><span><i class="ico-coin"></i>1,200</span><em>$1.99</em></button>
-      <button class="coin-pack soon"><span><i class="ico-coin"></i>3,000</span><em>$4.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
     </div>
     <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
   </section>
@@ -182,6 +179,7 @@
       <button id="help" class="round-button" aria-label="How to play" title="How to play">?</button>
     </header>
     <div id="map-list" class="map-list"></div>
+    <div id="map-3d" class="map-3d"></div>
     <footer class="map-foot">
       <button id="map-back" class="map-back" aria-label="Back to Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg><span>Home</span></button>
     </footer>

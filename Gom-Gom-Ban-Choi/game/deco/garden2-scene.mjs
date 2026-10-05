@@ -519,8 +519,8 @@ export function garden2Decor() {
     const d = 1.02 - k * .12, ex = dir.x * HILL.rx * d, ez = dir.y * HILL.rz * d, x = HILL.x + ex + Math.sin(k * 1.3) * .08, z = HILL.z + ez;
     decor.add(onSlope(squash(mesh(new THREE.CylinderGeometry(.16, .18, .06, 10), k % 2 ? '#d9d2c4' : '#c8c2b8'), 1.2, 1, 1), x, z, .02));
   }
-  // Đá tảng chôn nửa trên sườn + cỏ lún phún (instanced) + hoa dại.
-  [[2.9, -.6, .22], [-.2, -2.3, .18], [2.4, -3.1, .16]].forEach(([x, z, r]) => decor.add(onSlope(squash(rock(r, '#b5aea3', x * 13 + z * 7), 1.2, .85, 1), x, z, 0))); // đá tảng: hình góc cạnh ngẫu nhiên
+  // Đá tảng chôn nửa trên sườn đồi (u = toạ độ x tính từ GARDEN_EXT_X, đồi nằm ở phần mở rộng) + cỏ lún phún (instanced) + hoa dại.
+  [[2.9, -.6, .22], [-.2, -2.3, .18], [2.4, -3.1, .16]].forEach(([u, z, r]) => { const x = GARDEN_EXT_X + u; decor.add(onSlope(squash(rock(r, '#b5aea3', u * 13 + z * 7), 1.2, .85, 1), x, z, 0)); }); // đá tảng: hình góc cạnh ngẫu nhiên
   let seed = 11; const rnd = (a, b) => { seed = (seed * 16807) % 2147483647; return a + seed / 2147483647 * (b - a); };
   const tuftGeo = new THREE.ConeGeometry(.025, .14, 5), flowerGeo = new THREE.SphereGeometry(.035, 8, 6);
   const tufts = new THREE.InstancedMesh(tuftGeo, mat('#6fae46'), 70), flowers = new THREE.InstancedMesh(flowerGeo, mat('#ffffff'), 36);
