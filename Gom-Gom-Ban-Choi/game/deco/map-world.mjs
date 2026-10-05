@@ -587,8 +587,11 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // Giữ bề ngang thấy được cố định (màn dọc hẹp thì mở FOV dọc ra), tránh đường uốn bị cắt mép.
+    // Canh theo bề rộng khung UI (--frame-w trong gom-gom.css), không theo cả màn: màn ngang / desktop thì nút màn
+    // vẫn to đúng tỉ lệ với UI như trên điện thoại, chỉ thấy thêm cỏ hai bên.
+    const frameW = Math.min(w, 480, h * 393 / 700);
     const dist = Math.hypot(CAM.height - CAM.aimUp, CAM.back + CAM.aimAhead);
-    const fov = 2 * Math.atan(CAM.halfW / (dist * camera.aspect)) * 180 / Math.PI;
+    const fov = 2 * Math.atan(CAM.halfW / (dist * frameW / h)) * 180 / Math.PI;
     camera.fov = Math.min(62, Math.max(34, fov));
     camera.updateProjectionMatrix();
     pxPerLevel = h / 5.2;
