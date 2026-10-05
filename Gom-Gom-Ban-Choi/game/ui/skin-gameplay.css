@@ -2,7 +2,11 @@
    - Ảnh nền đồng cỏ (image 116), pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (skins/figma-game/).
    - Bàn chơi, ô, thùng gỗ, mèo: vẽ lại bằng CSS / SVG (cat-art.mjs, board-art.mjs) theo cùng kiểu đổ bóng với bản Figma.
    Kích thước nhân theo --u (= bề ngang khung / 393). File nạp sau ui-portrait.css nên chỉ ghi đè phần nhìn. */
-.shell{background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+/* Màn chơi cần cao ~780u mới đủ HUD + dock + booster mà bàn vẫn gần bằng bề ngang. Màn thấp hơn thì --u trong màn chơi
+   nhỏ lại theo chiều cao: HUD / dock / booster co cùng tỉ lệ, phần dôi ra dành cho bàn (bàn tự lấp chỗ trống còn lại),
+   thay vì chỉ mình bàn bị bóp nhỏ còn khung thẻ mèo vẫn to. Điện thoại dọc cao (≥ 393 × 780) giữ nguyên. */
+.shell{--u:min(calc(var(--frame-w) / 393), calc(100dvh / 780));
+  background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
 /* Màn rộng hơn khung (màn ngang, tablet, desktop): hai bên khung là cùng ảnh đồng cỏ phóng to + làm mờ, thay cho dải màu trơn */
 body{background:none}
 body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
@@ -42,12 +46,27 @@ body.low-moves .fg-score{outline:0}
 /* Bàn nằm giữa khoảng trống còn lại (bàn ít hàng / bàn ngang không dồn lên trên, chừa khoảng hở lớn phía trên dock) */
 .shell .board-wrap{align-items:center}
 
-/* ---------- Bàn chơi: khay kem vàng, mép dưới dày, ô lõm bo tròn (vẽ bằng CSS theo shading Figma) ---------- */
-.board{padding:calc(10 * var(--u));border-radius:calc(22 * var(--u));gap:calc(6 * var(--u));
-  background:linear-gradient(#fbe7b2,#f5d998);
-  box-shadow:inset 0 2px 0 #fff6d9,inset 0 0 0 2px #f0cf8a,0 0 0 2px #e5bd74,0 calc(10 * var(--u)) 0 #e2b46a,0 calc(12 * var(--u)) 0 #c99a52,0 calc(22 * var(--u)) calc(20 * var(--u)) #6b4a1c55}
-.cell{border-radius:calc(12 * var(--u));background:linear-gradient(#efcf8a,#f4d898 45%,#f6dda2);
-  box-shadow:inset 0 calc(4 * var(--u)) calc(5 * var(--u)) #c3954f70,inset 0 -1px 0 #fff1cc}
+/* ---------- Bàn chơi: khay gỗ ấm có vân, mép dưới dày; ô là mặt gỗ sáng hơi lõm ----------
+   Mọi số đo của bàn (lề, khe, bo góc, độ dày mép) tính theo --c = bước một ô (bề ngang bàn / số cột), KHÔNG theo --u:
+   bàn co lại (màn thấp, bàn 8 cột) thì khe + bo góc co theo, ô vẫn vuông bo nhẹ chứ không thành hình tròn.
+   --bw lặp lại đúng công thức bề ngang bàn (.board-wrap>.board trong ui-portrait.css); cqw/cqh lấy theo .board-wrap. */
+.board{--bw:min(100cqw,100cqh,440px);--c:calc(var(--bw) / var(--cols, 6));--pad:calc(var(--c) * .26);--gap:calc(var(--c) * .14);--rad:calc(var(--c) * .2);
+  --edge:calc(var(--c) * .22);
+  padding:var(--pad);border-radius:calc(var(--rad) * 1.6);gap:var(--gap)}
+.board{
+  background:
+    repeating-linear-gradient(90deg,#0000 0 calc(var(--c) * .9),#8a4f2414 calc(var(--c) * .9) calc(var(--c) * .93)),
+    repeating-linear-gradient(0deg,#0000 0 3px,#ffffff0d 3px 5px,#0000 5px 9px),
+    linear-gradient(#d9a066,#c98d55 60%,#bf8249);
+  box-shadow:inset 0 2px 0 #f6cf98,inset 0 0 0 2px #b97a43,0 0 0 2px #8f5629,0 var(--edge) 0 #9a5f30,0 calc(var(--edge) * 1.25) 0 #7a4622,
+    0 calc(var(--edge) * 2) calc(var(--edge) * 2) #4a2a1255}
+/* Bàn có hình: các mảnh chồng mép lên nhau, nên chỉ tô màu gỗ trơn + mép dày (vân / viền trong sẽ lộ đường nối giữa mảnh) */
+.board.shaped{background:none;box-shadow:none}
+.board-shape i{background:#cf9459;box-shadow:0 var(--edge) 0 #9a5f30,0 calc(var(--edge) * 1.25) 0 #7a4622}
+.board-shape{filter:drop-shadow(0 calc(var(--edge) * .9) calc(var(--edge) * 1.2) #4a2a1240)}
+.cell{border-radius:var(--rad);
+  background:repeating-linear-gradient(100deg,#0000 0 calc(var(--c) * .22),#a8693612 calc(var(--c) * .22) calc(var(--c) * .25)),linear-gradient(#e6b77c,#efc690 45%,#f3cf9c);
+  box-shadow:inset 0 calc(var(--c) * .08) calc(var(--c) * .1) #8f562a80,inset 0 -1px 0 #ffe4bb}
 .cell.block{background:none;box-shadow:none}
 .cell.block .crate{filter:drop-shadow(0 calc(3 * var(--u)) calc(2 * var(--u)) #5a331655)}
 .board .cat{filter:drop-shadow(0 calc(2 * var(--u)) calc(1.5 * var(--u)) #5a331640)}

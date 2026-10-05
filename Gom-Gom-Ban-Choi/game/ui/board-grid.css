@@ -9,11 +9,12 @@
    giữa các ô, ghép lại thành hình của bàn. Ô ngoài bàn ẩn hẳn. */
 .board.shaped { background: none; box-shadow: none; }
 .board-shape {
-  position: absolute; inset: 8px; display: grid; gap: 6px; pointer-events: none;
+  position: absolute; inset: var(--pad, 8px); display: grid; gap: var(--gap, 6px); pointer-events: none;
   grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr));
   grid-template-rows: repeat(var(--rows, 6), minmax(0, 1fr));
 }
-.board-shape i { margin: -6px; border-radius: 12px; background: #fbe3a6; box-shadow: 0 10px 0 #dcb66a, 0 12px 0 #c3994e, inset 0 2px 0 #fffbea; }
+/* Mảnh nền tràn ra nửa khe + lề quanh ô để các mảnh liền thành một khối (lề / khe theo --pad / --gap của .board) */
+.board-shape i { margin: calc(-1 * var(--pad, 6px)); border-radius: var(--rad, 12px); background: #fbe3a6; box-shadow: 0 10px 0 #dcb66a, 0 12px 0 #c3994e, inset 0 2px 0 #fffbea; }
 .cell.void { visibility: hidden; pointer-events: none; }
 /* Ô Hold chưa mở (trước màn HOLD.UNLOCK_LEVEL): ẩn nhưng giữ chỗ để thẻ đang bóc không lệch */
 .hold-column.locked { visibility: hidden; pointer-events: none; }
