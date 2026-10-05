@@ -154,6 +154,15 @@ export const itemById = id => CATALOG.find(entry => entry.id === id);
 export const slotOf = entry => entry.slot || entry.id;
 const withoutSlot = (placed, entry) => placed.filter(id => slotOf(itemById(id)) !== slotOf(entry));
 export const catalogFor = (zone, cat) => CATALOG.filter(entry => entry.cat === cat && (!entry.zone || entry.zone === zone));
+// Danh mục gom theo chỗ đặt (để giao diện xếp các món "chọn một" cạnh nhau):
+// đồ = mỗi chỗ một nhóm (món gốc + phương án thay thế); tường / sàn = cả danh mục chung một chỗ; mèo = cả danh mục một nhóm.
+export function slotGroups(zone, cat) {
+  const list = catalogFor(zone, cat);
+  if (cat !== 'furniture') return [list];
+  const groups = new Map();
+  list.forEach(entry => groups.set(slotOf(entry), [...(groups.get(slotOf(entry)) || []), entry]));
+  return [...groups.values()];
+}
 
 const zoneDefaults = zone => {
   const free = CATALOG.filter(entry => entry.zone === zone && entry.price === 0);
@@ -253,6 +262,19 @@ export function applyAction(deco, entry, unlockedLevel) {
   // Đặt vào thì thay món khác đang ở cùng chỗ.
   const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...withoutSlot(zone.placed, entry), entry.id];
   return withZone(next, entry.zone, { placed });
+}
+
+// Món đã có (đã mua, hoặc miễn phí) — chưa tính đang đặt hay không.
+export const isOwned = (deco, entry) => entry.price === 0 || (entry.cat === 'cats' ? true : zoneState(deco, entry.zone).owned.includes(entry.id));
+
+// Xem trước MỌI món đồ chưa mua của một khu cùng lúc: mỗi chỗ đặt còn món chưa mua thì hiện một món
+// (ưu tiên món gốc), thay món đang ở đó. Tường / sàn / mèo mỗi lúc chỉ một nên không gộp vào đây.
+// `shown(entry)` lọc món đang hiện (vd. bỏ đồ phần vườn mở rộng khi vườn chưa mở rộng).
+// Trả về { deco, items } — deco để dựng phòng, items là các món đang được xem trước.
+export function previewAllNew(deco, zone = deco.zone, shown = () => true) {
+  const items = slotGroups(zone, 'furniture').map(group => group.find(entry => shown(entry) && !isOwned(deco, entry))).filter(Boolean);
+  const placed = items.reduce((list, entry) => [...withoutSlot(list, entry), entry.id], zoneState(deco, zone).placed);
+  return { deco: withZone(deco, zone, { placed }), items };
 }
 
 // Bản xem trước: deco như thể món đang chọn đã được dùng (chưa trả xu).

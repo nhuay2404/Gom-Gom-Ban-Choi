@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../gameplay/save.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR } from './deco-data.mjs';
+import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR, slotGroups, previewAllNew } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -146,4 +146,29 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
   assert.equal(itemStatus(deco, itemById('flowers'), 1), 'owned');
   deco = applyAction(deco, itemById('flowers'), 1);
   assert.deepEqual(deco.zones.garden.placed, ['windmill', 'sunflowers', 'flowers']);
+});
+
+test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tường / sàn / mèo là một nhóm', () => {
+  const groups = slotGroups('garden', 'furniture');
+  groups.forEach(group => assert.ok(group.every(e => (e.slot || e.id) === (group[0].slot || group[0].id)), 'cùng chỗ'));
+  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom']);
+  assert.equal(groups.flat().length, catalogFor('garden', 'furniture').length, 'không sót món nào');
+  assert.equal(slotGroups('living', 'walls').length, 1);
+  assert.equal(slotGroups('living', 'cats').length, 1);
+});
+
+test('previewAllNew: mỗi chỗ hiện một món chưa mua, không trừ xu, không đổi save', () => {
+  setStorageBackend(memoryStore());
+  let deco = loadDeco(100);
+  deco = applyAction(deco, itemById('stump'), 1); // đã mua gốc cây → chỗ đó hiện phương án chưa mua (đống rơm)
+  const { deco: shown, items } = previewAllNew(deco, 'garden');
+  const ids = items.map(e => e.id);
+  assert.ok(ids.includes('stump-hay') && !ids.includes('stump'), 'món đã mua không nằm trong danh sách');
+  assert.ok(!ids.includes('flowers') && !ids.includes('flowers-mushroom'), 'món miễn phí coi như đã có');
+  assert.ok(ids.includes('catnip'), 'chỗ chưa mua gì: ưu tiên món gốc');
+  const slots = shown.zones.garden.placed.map(id => itemById(id).slot || id);
+  assert.equal(new Set(slots).size, slots.length, 'mỗi chỗ chỉ một món');
+  ids.forEach(id => assert.ok(shown.zones.garden.placed.includes(id)));
+  assert.equal(shown.coins, deco.coins);
+  assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers', 'stump'], 'bản gốc không đổi');
 });
