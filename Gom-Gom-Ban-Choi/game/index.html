@@ -126,7 +126,13 @@
       <button class="chip" role="tab" aria-selected="false" data-cat="floors">Floors</button>
       <button class="chip" role="tab" aria-selected="false" data-cat="cats">Cats</button>
     </div>
-    <div id="deco-grid" class="item-grid"></div>
+    <!-- Gợi ý + nút xem trước mọi món chưa mua (chỉ ở mục đồ) -->
+    <div class="deco-tools">
+      <p id="deco-hint" class="deco-hint">Each box is one spot in the room. Pick one item for it.</p>
+      <button id="deco-preview-all" class="deco-preview-all" aria-pressed="false" hidden></button>
+    </div>
+    <!-- Danh sách gom theo chỗ đặt: các món trong một khung là "chọn một" (chung một vị trí trong phòng) -->
+    <div id="deco-grid" class="deco-groups"></div>
   </section>
 
   <section id="shop" class="screen shop" hidden>
@@ -212,16 +218,6 @@
     <div class="level-actions">
       <button id="quit-cancel" class="pill-button ghost">Keep playing</button>
       <button id="quit-ok" class="pill-button">Leave</button>
-    </div>
-  </dialog>
-  <!-- Deco: chạm món lần 1 = xem trước trong phòng, chạm lần 2 = hộp xác nhận mua / đặt / đổi -->
-  <dialog id="deco-confirm" class="level-dialog deco-confirm">
-    <div id="deco-confirm-thumb" class="deco-confirm-thumb"></div>
-    <h2 id="deco-confirm-name">Item</h2>
-    <p id="deco-confirm-note" class="level-feature"></p>
-    <div class="level-actions">
-      <button id="deco-confirm-cancel" class="pill-button ghost">Cancel</button>
-      <button id="deco-confirm-ok" class="pill-button">Buy</button>
     </div>
   </dialog>
   <!-- Dev: kết quả QC model 3D (qc.mjs) -->

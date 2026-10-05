@@ -116,14 +116,6 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
 .chip{flex:none;padding:7px 14px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);background:#fff8e4d9;box-shadow:none}
 .chip.on{background:var(--green);color:#fff;box-shadow:none}
-.item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.deco-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px 8px;border-radius:20px;
-  background:var(--panel);box-shadow:none;color:var(--cream-ink);font-weight:900;font-size:12px}
-.deco-item .thumb{width:58%;aspect-ratio:1;border-radius:14px}
-.deco-item em{font-style:normal;display:inline-flex;align-items:center;gap:4px;font-size:13px}
-.deco-item em .ico-coin{width:14px;height:14px}
-.deco-item.owned{box-shadow:0 0 0 3px var(--leaf)}
-.deco-item.locked{opacity:.65;filter:grayscale(.5)}
 .soon-note{margin:0;text-align:center;font-size:12px;font-weight:800;color:var(--cream-ink);background:#fff8e4cc;border-radius:12px;padding:6px 10px}
 
 /* Shop */
@@ -171,7 +163,7 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .room.is-3d::after{display:none}
 .room-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 .room-canvas:active{cursor:grabbing}
-.room.deco-view{aspect-ratio:1/.82}
+.room.deco-view{aspect-ratio:1/.66}
 .room-hint{position:absolute;left:50%;bottom:10px;translate:-50% 0;z-index:2;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:900;
   color:var(--cream-ink);background:#fff8e4d9;box-shadow:none;pointer-events:none;white-space:nowrap}
 .room:not(.is-3d) .room-hint{display:none}
@@ -210,14 +202,6 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 @media(max-height:680px){.home-stage .zone-switch{top:calc(max(14px,env(safe-area-inset-top)) + 84px)}.zone-switch button{min-height:36px;font-size:12px}}
 
 /* ===== Deco: ô đồ (chạm lần 2 để mua / đặt qua hộp xác nhận) ===== */
-.deco-item .thumb{background:var(--c,#ddd);box-shadow:none}
-.deco-item .cat-thumb{background:none;box-shadow:none}
-.deco-item .cat-thumb .cat{width:100%;height:100%}
-.deco-item.using{box-shadow:0 0 0 3px var(--leaf)}
-.deco-item.picked{box-shadow:0 0 0 3px #f2b53c;transform:translateY(-2px)}
-.deco-item.locked{opacity:.65;filter:grayscale(.5)}
-.deco-item.poor em{color:#c0392b}
-.deco-item.using em,.deco-item.owned em{color:var(--leaf-deep)}
 .result-coins{margin:-8px 0 14px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:900;font-size:16px;color:#c9601c}
 /* ===== Home cho chơi một tay (bố cục theo vùng ngón cái) =====
    Trên: chỉ để xem. Giữa: phòng mèo co giãn theo màn. Dưới: PLAY to + Levels, ngay trên thanh điều hướng. Không cuộn. */
@@ -246,16 +230,9 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}
 @media(max-height:680px){.home-buttons .pill-button.big{min-height:46px;font-size:20px}.home-level{font-size:14px}}
 .room-canvas.carrying{cursor:grabbing}
-.deco-item .thumb-3d{width:86%;aspect-ratio:1;object-fit:contain;display:block;background:transparent;box-shadow:none;border-radius:16px}
-.deco-item.locked .thumb-3d{filter:grayscale(.6)}
 
 /* ===== Bảng vào màn theo độ khó (tier): chill · normal · hard · boss ===== */
 .level-dialog{--tier:#3fa55f}
-.deco-confirm h2{margin:6px 0 2px;font-family:var(--display)}
-.deco-confirm .level-feature{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
-.deco-confirm-thumb{width:120px;height:120px;margin:0 auto;display:grid;place-items:center}
-.deco-confirm-thumb>*{width:100%;height:100%;aspect-ratio:auto}
-.deco-confirm .pill-button:disabled{opacity:.5}
 .level-dialog[data-tier="chill"]{--tier:#2f9e8f;background:#e3f6ec}
 .level-dialog[data-tier="hard"]{--tier:#e0602f;background:#ffe6cf;border-color:#f2a46b}
 .level-dialog[data-tier="boss"]{--tier:#ffcf5a;background:#3d1426;border:2px solid #ffcf5a;color:#fff3dc}
@@ -373,3 +350,50 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .map-head h2{color:#fffaf0;text-shadow:0 2px 0 #c2456d,0 0 6px #a8355b99;-webkit-text-stroke:1px #c2456d;paint-order:stroke fill}
 .map-end{position:absolute;translate:-50% -50%;padding:6px 14px;border-radius:999px;font-weight:900;font-size:13px;white-space:nowrap;
   color:var(--cream-ink);background:var(--panel);border:1px dashed var(--cream-edge);pointer-events:none}
+
+/* ---------- Deco: danh sách gom theo chỗ đặt, nhãn trạng thái, thanh hành động ---------- */
+/* Chú thích + nút xem trước mọi món mới */
+.deco-tools{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.deco-preview-all{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-weight:900;font-size:13px;
+  color:#fff;background:#e8833a;box-shadow:0 2px 0 #b9622a}
+.deco-preview-all b{min-width:20px;padding:0 6px;border-radius:999px;background:#fff;color:#c0612a;font-size:12px}
+.deco-preview-all[aria-pressed="true"]{background:var(--cream-ink);box-shadow:0 2px 0 #3f2914}
+/* Nhãn trạng thái (dùng chung cho chú thích + ô) */
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:2px 7px;border-radius:999px;font-style:normal;font-weight:900;font-size:11px;
+  line-height:1.35;white-space:nowrap;color:var(--cream-ink);background:#fff;border:1.5px solid var(--cream-edge)}
+.badge .ico-coin{width:12px;height:12px}
+.amt{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.badge.using{color:#fff;background:var(--leaf-deep,#4f8a34);border-color:transparent}
+.badge.owned{color:#4f8a34;background:#eef8e4;border-color:#a9d48a}
+.badge.swap{color:#fff;background:#3b8fe0;border-color:transparent}
+.badge.buy{background:#fff4cc;border-color:#f2c95a}
+.badge.poor{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
+.badge.lock{color:#7b7166;background:#ece7e0;border-color:transparent}
+/* Nhóm: các món trong một khung = chọn một (chung chỗ). Đồ: 2 khung mỗi hàng; tường / sàn / mèo: một khung rộng. */
+.deco-hint{margin:0;font-size:12px;font-weight:800;line-height:1.3;color:var(--cream-ink);opacity:.8}
+.deco-hint[hidden]{display:none}
+.deco-groups{display:grid;grid-template-columns:1fr;gap:8px}
+.deco-groups.compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+.deco-group{display:flex;flex-direction:column;gap:4px;padding:5px;border-radius:18px;background:#fff8e4e6;border:1.5px dashed #e2bd72}
+.deco-group-title{margin:0 4px;font-size:10px;font-weight:900;letter-spacing:.3px;text-transform:uppercase;color:#a07a4a}
+.deco-group-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.deco-groups:not(.compact) .deco-group-items{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* Ô một món: ảnh nhỏ, tên một dòng, nhãn trạng thái */
+.deco-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:6px 3px 5px;border-radius:14px;
+  background:#fffdf7;border:2.5px solid transparent;color:var(--cream-ink);font-weight:900;font-size:11px;transition:transform .15s,border-color .15s}
+.deco-item .thumb{width:54px;height:54px;aspect-ratio:1;border-radius:12px;background:var(--c,#ddd)}
+.deco-item .thumb-3d{object-fit:contain;display:block;background:transparent}
+.deco-item .cat-thumb{background:none}
+.deco-item .cat-thumb .cat{width:100%;height:100%}
+.deco-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deco-item.using{border-color:var(--leaf-deep,#4f8a34);background:#f3faec}
+.deco-item.locked{opacity:.6}
+.deco-item.locked .thumb{filter:grayscale(.7)}
+/* Đang xem thử trong phòng: viền vàng dày + nhãn nổi */
+.deco-item.picked{border-color:#f2a93c;box-shadow:0 0 0 3px #ffd97a;transform:translateY(-2px);z-index:1}
+.deco-item.picked::before,.deco-item.previewing::before{content:'👁';position:absolute;top:-7px;left:-5px;width:22px;height:22px;display:grid;place-items:center;
+  border-radius:50%;background:#f2a93c;font-size:12px;box-shadow:0 1px 0 #b9622a}
+.deco-item.previewing{border-color:#f2a93c;border-style:dashed}
+/* Món đang chọn: nhãn thành nút hành động (mua / đổi / đặt / gỡ) */
+.badge.act{color:#fff;background:var(--green,#5cae4a);border-color:transparent;padding:3px 9px;font-size:12px;box-shadow:0 2px 0 #3f7d2f;cursor:pointer}
+.deco-item.using .badge.act{color:var(--cream-ink);background:#fff;border-color:var(--cream-edge);box-shadow:0 2px 0 #d9c39a}
