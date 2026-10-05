@@ -395,7 +395,6 @@ $('shop-boosters').addEventListener('click', event => {
   if (button && buyOne(button.dataset.buy)) renderShopBoosters();
 });
 
-$('help').onclick = () => $('help-dialog').showModal();
 // Nút cài đặt (Home: ngày/đêm, âm thanh, hướng dẫn; màn chơi: âm thanh, hướng dẫn): bánh răng xổ menu.
 // Chạm ra ngoài hoặc Esc thì đóng.
 function setSettingsOpen(box, open) {
@@ -417,7 +416,7 @@ document.addEventListener('pointerdown', event => {
 });
 document.querySelectorAll('.settings-close').forEach(button => { button.onclick = () => { playSound('pick'); closeAllSettings(); }; });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
-['home-help', 'game-help'].forEach(id => { $(id).onclick = () => { closeAllSettings(); $('help-dialog').showModal(); }; });
+$('game-help').onclick = () => { closeAllSettings(); $('help-dialog').showModal(); };
 function renderSoundButtons() {
   document.querySelectorAll('.sound-toggle').forEach(button => {
     button.setAttribute('aria-pressed', soundOn());

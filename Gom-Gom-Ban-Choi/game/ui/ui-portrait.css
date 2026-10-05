@@ -225,16 +225,14 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
 .fh-energy{left:calc(243 * var(--u));top:calc(58 * var(--u));width:calc(145 * var(--u));height:calc(48 * var(--u));background-image:url('./skins/figma-home/pill-energy.png')}
 /* Cột trái: Daily, Starter Pack */
-.fh-daily{left:calc(17 * var(--u));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./skins/figma-home/btn-daily.png')}
-.fh-starter{left:calc(17 * var(--u));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-home/btn-starter.png')}
+.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./skins/figma-home/btn-daily.png')}
+.fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-home/btn-starter.png')}
 /* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
 .fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
 .fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}
 .fh-round::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;width:calc(49.68 * var(--u));height:calc(49.68 * var(--u));border-radius:50%;background:#6a3229}
 .fh-round::after{content:'';position:absolute;inset:0;background:center/100% 100% no-repeat}
 .fh-gear::after{background-image:url('./skins/figma-home/btn-settings.png')}
-.fh-help{left:calc(317 * var(--u));top:calc(178 * var(--u));width:calc(62 * var(--u));height:calc(62 * var(--u))}
-.fh-help::after{background-image:url('./skins/figma-home/btn-help.png')}
 .fh-settings .settings-menu{top:calc(100% + 6px)}
 /* Ô đảo vườn (không hiện): camera 3D canh vườn vào đây. Ô đảo Figma là 334–589; dời lên 25 vì tâm khu vườn 3D nằm
    thấp hơn tâm hình nhìn thấy (camera nhìn chéo xuống), để vườn hiện đúng giữa chỗ đảo trong thiết kế. */
@@ -526,7 +524,7 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .screen.shop .soon-note{width:calc(338 * var(--u))}
 
 /* Home: hàng ví + cột nút hai bên nhích lên sát mép trên (bản Figma chừa trống phía trên nhiều) */
-.fh-layer>.fh-pill,.fh-layer>.fh-btn,.fh-layer>.fh-settings,.fh-layer>.fh-help{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
+.fh-layer>.fh-pill,.fh-layer>.fh-btn,.fh-layer>.fh-settings{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
 
 /* Deco: hàng ví cùng vị trí với Home / Shop */
 .screen.deco{padding-top:calc(18 * var(--u) + env(safe-area-inset-top))}
@@ -595,12 +593,10 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .settings-feedback:active{translate:0 2px}
 
 /* Nút cài đặt dùng chung Home / Map / Deco: đúng toạ độ + cỡ của nút ở Home (Figma 321,121 trừ 38u đã nhích lên) */
-.hub-settings{position:fixed;z-index:56;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(50% + 124.5 * var(--u));
+.hub-settings{position:fixed;z-index:56;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(50% + 124.5 * var(--u) + var(--gutter) - env(safe-area-inset-right));
   width:calc(54 * var(--u));height:calc(54 * var(--u))}
 .hub-settings[hidden]{display:none}
 .hub-settings .fh-gear:active{translate:0 calc(2 * var(--u))}
-/* Map: nút "?" đứng dưới nút cài đặt như ở Home */
-.map-head .map-help{position:fixed;top:calc(140 * var(--u) + env(safe-area-inset-top));left:calc(50% + 120.5 * var(--u));width:calc(62 * var(--u));height:calc(62 * var(--u))}
 /* Deco: hàng chọn khu dời sang trái, chừa chỗ cho nút cài đặt bên phải (mép trái của khung UI, không phải của màn: màn rộng vẫn thẳng hàng ví) */
 .screen.deco>.zone-switch{align-self:flex-start;margin-left:calc(max(0px, (100% - var(--frame-w)) / 2) + 6 * var(--u) - 6px);margin-right:0}
 .screen.deco>.zone-switch button{padding:0 10px}
