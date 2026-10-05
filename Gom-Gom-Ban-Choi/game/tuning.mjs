@@ -16,7 +16,7 @@ export const TIMING = {
   DROP_MS: 340,        // mèo vừa đặt rơi xuống ô
   LIFT_MS: 560,        // mèo bị nhấc bổng trước khi gom
   MERGE_MS: 420,       // cả cụm trượt vào điểm tụ
-  WIN_PAUSE_MS: 800,   // dừng một nhịp trước màn bay khi thắng
+  WIN_PAUSE_MS: 450,   // dừng một nhịp trước màn bay khi thắng
   AFK_MS: 5000,        // không chạm màn hình bấy lâu thì mèo buồn ngủ
   CARRY_HOLD_MS: 350,  // giữ mèo trong phòng bấy lâu thì nhấc lên
 };

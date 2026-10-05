@@ -157,9 +157,11 @@ function fitInsideHints(enabled, _vertical, card, arrowHeight) {
   if (!enabled) return;
   // Thẻ thấp (màn thấp / cửa sổ máy tính): dải mũi tên không được ăn quá 22% mỗi cạnh, không thì mèo co về 0 và biến mất.
   const band = Math.min(arrowHeight * .78 + 4, Math.min(card.width, card.height) * .22), pad = 10, gap = 4;
+  // Tai mèo nhô lên trên ô: chừa thêm chiều cao để thẻ dọc không tràn khay.
+  const ears = 16;
   const fit = (rows, cols, arrowsOnSides) => {
     const width = card.width - (arrowsOnSides ? band * 2 : 0), height = card.height - (arrowsOnSides ? 0 : band * 2);
-    return Math.min(68, (width - pad - gap * (cols - 1)) / cols, (height - pad - gap * (rows - 1)) / rows);
+    return Math.min(68, (width - pad - gap * (cols - 1)) / cols, (height - pad - ears - gap * (rows - 1)) / rows);
   };
   const { rows, cols } = normalizePreview(state.active.offsets);
   const long = Math.max(rows, cols), short = Math.min(rows, cols);
@@ -414,11 +416,11 @@ async function celebrateWin(message) {
         { translate: `0 ${-RISE}px` },
       ], { duration: 460, delay, easing: 'cubic-bezier(.3, 1.2, .5, 1)', fill: 'forwards' }).finished.catch(() => {});
     }));
-    await wait(160); // cả bàn lơ lửng một nhịp rồi mới chụm lại
+    await wait(80); // cả bàn lơ lửng một nhịp rồi mới chụm lại
     // Pha 2: mọi mèo cùng lúc bay vào tâm board, giữ nguyên hình dạng (không co giãn). Thân dưới lủng lẳng
     // chuyển động theo quán tính như con lắc: lấy đà thì thân lệch về phía tâm, lao đi thì thân bị kéo lùi lại,
     // tới nơi phanh gấp thì thân văng tới trước. Tới tâm các mèo chồng lên nhau, co lại và hợp nhất thành một chớp sáng.
-    const cx = $('board').offsetWidth / 2, cy = $('board').offsetHeight / 2, FLY_MS = 820;
+    const cx = $('board').offsetWidth / 2, cy = $('board').offsetHeight / 2, FLY_MS = 640;
     const far = Math.max(1, ...ghosts.map(ghost => Math.abs(cx - ghost.offsetLeft - ghost.offsetWidth / 2)));
     setTimeout(() => spawnFusion(cx, cy), FLY_MS * .86);
     await Promise.all(ghosts.flatMap(ghost => {
@@ -820,7 +822,12 @@ function newGame(levelIndex = state?.levelIndex ?? 0) {
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('suggest', plan.suggestBooster && boostersUnlocked(levelIndex));
+  // Ván mới: thanh điểm về 0 ngay, không tụt dần từ ván trước.
+  const fill = $('score-fill');
+  fill.style.transition = 'none';
   render(`Reach ${level.target} points in ${level.moves} moves!`);
+  void fill.offsetWidth;
+  fill.style.transition = '';
   renderTutorial();
 }
 
@@ -865,8 +872,8 @@ function petCat(cell) {
   }
 }
 
-// Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm (đang có thẻ) = đổi thẻ đó về ô đang bóc.
-$('hold').onclick = () => { if (state.hold) holdActive(); };
+// Gửi tạm không giới hạn số lần mỗi lượt. Chạm ô gửi tạm: trống = cất thẻ đang bóc vào, có thẻ = đổi về ô đang bóc.
+$('hold').onclick = () => { if (state.holdOn && !state.over) holdActive(); };
 
 // ===== Booster: mở từ màn BOOSTERS.UNLOCK_LEVEL, không tốn lượt; hết thì chạm là mua luôn bằng xu =====
 let boosterStock = loadBoosters(), hammerArmed = false;
@@ -1123,7 +1130,7 @@ const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 // Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
 
 // Bản đồ saga: màn 1 ở đáy, các nút nằm trên một con đường uốn hình sin đi lên (như Candy Crush).
-const MAP = { STEP: 112, TOP: 150, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
+const MAP = { STEP: 112, TOP: 230, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
 const MAP_DECOR = ['🌸', '🌳', '🍄', '🌼', '🌷', '🌲', '🪴', '🌻'];
 const LOCK_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>';
 const mapPoint = (index, width, height) => ({
@@ -1172,6 +1179,12 @@ function renderMap() {
     node.onclick = () => { $('map').hidden = true; startLevel(index); };
     return node;
   }));
+  // Cuối đường: biển báo hết màn để người chơi biết đã tới đỉnh, không phải bản đồ bị cắt.
+  const end = document.createElement('span');
+  end.className = 'map-end';
+  end.textContent = 'More levels coming soon!';
+  end.style.cssText = `left:${width / 2}px;top:${points[LEVELS.length - 1].y - 78}px`;
+  road.append(end);
   list.replaceChildren(road);
 }
 
@@ -1235,7 +1248,7 @@ function mountRoom(tab) {
 }
 // Home tràn viền: phòng phủ cả màn, thanh trên + khung PLAY đè lên; camera nhắm vào phần trống giữa.
 const HOME_VIEW = {
-  zoomCap: 1.25, zoomFit: .8,
+  zoomCap: 1.25, zoomFit: .95,
   insets() {
     const room = $('home-room').getBoundingClientRect();
     const top = document.querySelector('.home-top').getBoundingClientRect().bottom - room.top + 8;
@@ -1511,7 +1524,7 @@ function endLevel(win, reason = '') {
   $('result-score').textContent = `${state.score} / ${state.level.target} points`;
   $('result-next').hidden = !win || last;
   $('result-retry').hidden = win;
-  setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 150 : 700);
+  setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 0 : 700);
 }
 $('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1, true); };
 $('result-retry').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
@@ -1525,7 +1538,18 @@ function boot() {
 }
 $('tutorial-avatar').innerHTML = catMarkup.orange;
 
-$('restart').onclick = () => { if (!state.animating) { recordQuit(); startLevel(state.levelIndex); } };
+// Rời ván đang chơi dở (đã đặt ít nhất một thẻ): hỏi lại trước để không mất lượt vì bấm nhầm.
+let quitAction = null;
+function confirmQuit(title, action) {
+  if (state.animating) return;
+  if (state.over || state.moves >= state.level.moves) return action();
+  quitAction = action;
+  $('quit-title').textContent = title;
+  $('quit-dialog').showModal();
+}
+$('quit-cancel').onclick = () => $('quit-dialog').close();
+$('quit-ok').onclick = () => { $('quit-dialog').close(); recordQuit(); quitAction?.(); quitAction = null; };
+$('restart').onclick = () => confirmQuit('Restart this level?', () => startLevel(state.levelIndex));
 $('help').onclick = () => $('help-dialog').showModal();
 // Nút cài đặt (Home: ngày/đêm, âm thanh, hướng dẫn; màn chơi: âm thanh, hướng dẫn): bánh răng xổ menu.
 // Chạm ra ngoài hoặc Esc thì đóng.
@@ -1600,5 +1624,5 @@ $('dev-qc').onclick = () => { closeAllSettings(); runQC(); };
 $('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
 $('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');
-$('open-map').onclick = () => { if (!state.animating) { recordQuit(); showTab('home'); } };
+$('open-map').onclick = () => confirmQuit('Leave this level?', () => showTab('home'));
 boot();

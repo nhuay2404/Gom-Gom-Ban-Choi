@@ -2375,7 +2375,8 @@ export function createCatLife(ctx) {
 
   // Không cho mèo lồng vào nhau hay xuyên đồ đạc: sau khi di chuyển, đẩy tách mọi cặp đang chồng lên nhau.
   // Chỉ áp cho mèo đứng trên sàn (đang nhảy hoặc đang ngồi trên đồ thì bỏ qua), và bỏ qua món mèo đang dùng.
-  const CAT_GAP = W + .04;
+  // Theo cạnh dài nhất của thân + chừa chỗ cho tư thế nằm duỗi / đuôi: hai mèo cạnh nhau không đè lên nhau.
+  const CAT_GAP = Math.max(W, D) + .14;
   const grounded = cat => cat.y < .01 && !cat.airPitch;
   function pushOutOfFurniture(cat) {
     for (const ob of world.obstacles(cat.busyWith)) {

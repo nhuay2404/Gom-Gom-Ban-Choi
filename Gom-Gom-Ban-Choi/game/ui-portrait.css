@@ -366,3 +366,10 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .qc-dialog ul{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
 .qc-dialog li.error{color:#c0392b}
 .qc-dialog li.warn{color:#9a6a1a}
+
+/* Review fixes: chữ điểm đọc được trên phần thanh xanh, tiêu đề màn tương phản hơn, biển cuối bản đồ */
+.progress-text,.progress-text strong{text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff,0 1px 0 #fff}
+.screen-title{color:#fffaf0;text-shadow:0 2px 0 #4f8a34,0 0 6px #3f6e2a99;-webkit-text-stroke:1px #4f8a34;paint-order:stroke fill}
+.map-head h2{color:#fffaf0;text-shadow:0 2px 0 #c2456d,0 0 6px #a8355b99;-webkit-text-stroke:1px #c2456d;paint-order:stroke fill}
+.map-end{position:absolute;translate:-50% -50%;padding:6px 14px;border-radius:999px;font-weight:900;font-size:13px;white-space:nowrap;
+  color:var(--cream-ink);background:var(--panel);border:1px dashed var(--cream-edge);pointer-events:none}
