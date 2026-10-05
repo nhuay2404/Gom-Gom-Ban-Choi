@@ -7,10 +7,10 @@
 //   - thua liên tiếp `patience` lần (nản), hoặc
 //   - (kiểu "chơi chán") thắng ngay lần đầu `boredAfter` màn liền (quá dễ).
 // Đây là mô hình giả định để so hai chế độ với cùng người chơi, không phải dự báo số liệu thật.
-import { LEVELS } from '../game/levels.mjs';
-import { planLevel, recordAttempt, noteDwell, startVisit, elementCount, difficultyOf } from '../game/adaptive.mjs';
-import { ADAPTIVE, BOOSTERS, ECONOMY, holdUnlocked } from '../game/tuning.mjs';
-import { boostersUnlocked } from '../game/boosters.mjs';
+import { LEVELS } from '../game/gameplay/levels.mjs';
+import { planLevel, recordAttempt, noteDwell, startVisit, elementCount, difficultyOf } from '../game/gameplay/adaptive.mjs';
+import { ADAPTIVE, BOOSTERS, ECONOMY, holdUnlocked } from '../game/gameplay/tuning.mjs';
+import { boostersUnlocked } from '../game/gameplay/boosters.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
 const PLAYERS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 40);

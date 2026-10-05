@@ -10,25 +10,25 @@ chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API
 
 | Lớp | File | Sang Cocos |
 |---|---|---|
-| **Lõi (chép)** | `game/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
-| | `game/scoring.mjs` | Điểm theo cỡ cụm |
-| | `game/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
-| | `game/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
-| | `game/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
-| | `game/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
-| | `game/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
-| | `game/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
-| | `game/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
-| | `game/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
-| | `game/tuning.mjs` | Mọi hằng số cảm giác chơi |
-| | `game/room-layout.mjs` | Chỗ đặt đồ, bán kính vật cản, cửa sổ |
-| | `game/cat-art.mjs`, `game/board-art.mjs` | Art SVG dạng chuỗi (xuất ra PNG bằng tool) |
-| **Giao diện 2D (làm lại)** | `game/gom-gom.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |
-| **3D (làm lại)** | `game/deco-room.mjs`, `garden-scene.mjs` | Model glTF, camera xoay, tường tự mờ |
-| | `game/room-cats.mjs` | Não mèo (generator) + lò xo chuyển động: **~70% chép được**, khung xương làm lại thành prefab |
-| **Âm thanh** | `game/sound.mjs` | File WAV xuất sẵn + `AudioSource` |
+| **Lõi (chép)** | `game/gameplay/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
+| | `game/gameplay/scoring.mjs` | Điểm theo cỡ cụm |
+| | `game/gameplay/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
+| | `game/gameplay/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
+| | `game/gameplay/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
+| | `game/gameplay/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
+| | `game/gameplay/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
+| | `game/gameplay/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
+| | `game/deco/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
+| | `game/gameplay/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
+| | `game/gameplay/tuning.mjs` | Mọi hằng số cảm giác chơi |
+| | `game/deco/room-layout.mjs` | Chỗ đặt đồ, bán kính vật cản, cửa sổ |
+| | `game/ui/cat-art.mjs`, `game/ui/board-art.mjs` | Art SVG dạng chuỗi (xuất ra PNG bằng tool) |
+| **Giao diện 2D (làm lại)** | `game/play-controller.js` (màn chơi), `game/menu-controller.js` (menu), `game/shared.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |
+| **3D (làm lại)** | `game/deco/deco-room.mjs`, `garden-scene.mjs` | Model glTF, camera xoay, tường tự mờ |
+| | `game/deco/room-cats.mjs` | Não mèo (generator) + lò xo chuyển động: **~70% chép được**, khung xương làm lại thành prefab |
+| **Âm thanh** | `game/ui/sound.mjs` | File WAV xuất sẵn + `AudioSource` |
 
-Quy tắc khi port: **giao diện chỉ gọi lõi rồi vẽ theo kết quả**, không tự sửa luật (như `gom-gom.js` đang làm với `session.mjs`).
+Quy tắc khi port: **giao diện chỉ gọi lõi rồi vẽ theo kết quả**, không tự sửa luật (như `play-controller.js` đang làm với `session.mjs`).
 
 ## 2. Hợp đồng của `session.mjs`
 
@@ -49,7 +49,7 @@ tutorialStep(s), tutorialAllows(s, action, anchor), upcoming(s), canPlaceAnywher
 
 ## 3. Tutorial
 
-Bước trong `levels.mjs` (`tutorial: [...]`), luật ở `session.mjs`, phần vẽ ở `gom-gom.js`:
+Bước trong `levels.mjs` (`tutorial: [...]`), luật ở `session.mjs`, phần vẽ ở `play-controller.js`:
 
 | Bước | Người chơi phải | Giao diện hiển thị |
 |---|---|---|

@@ -5,7 +5,7 @@
 //   reward   nhận xu / mua đồ          G5 -> C6
 //   complete thắng màn                 C5 E5 G5 C6 (rải hợp âm)
 // Trình duyệt chỉ cho phát tiếng sau lần chạm đầu tiên; bật/tắt được và lưu lại trong máy.
-import { SAVE_KEYS, readText, writeText } from './save.mjs';
+import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 let context = null;
 let enabled = readText(SAVE_KEYS.sound) !== 'off';
 

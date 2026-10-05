@@ -4,10 +4,10 @@
 // một cú gom 3 đáng 30 nên noise 30+ là hay bỏ lỡ nước gom). `hold` = có biết dùng ô Gửi tạm không.
 // `boost` = { at, want(id) }: còn 1 lượt mà điểm đã đạt tỉ lệ `at` thì +3 lượt; thẻ không vừa bàn thì đổi thẻ.
 // want(id) trả về true nếu người chơi có (hoặc chịu mua) booster đó; kho và xu do bên gọi quản lý.
-import { parseBoard, makeDealer, starsFor, boardSize } from '../game/levels.mjs';
-import { BOOSTERS } from '../game/tuning.mjs';
-import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/board-rules.mjs';
-import { MATCH_SIZE, matchPoints } from '../game/scoring.mjs';
+import { parseBoard, makeDealer, starsFor, boardSize } from '../game/gameplay/levels.mjs';
+import { BOOSTERS } from '../game/gameplay/tuning.mjs';
+import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/gameplay/board-rules.mjs';
+import { MATCH_SIZE, matchPoints } from '../game/gameplay/scoring.mjs';
 
 export function mulberry32(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };

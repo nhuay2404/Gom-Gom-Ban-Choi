@@ -10,13 +10,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LEVELS, LETTERS, parseCard } from '../game/levels.mjs';
-import { MATCH_SIZE, clusterPoints } from '../game/scoring.mjs';
-import { categories } from '../game/cat-art.mjs';
-import { CATALOG, ZONES } from '../game/deco-data.mjs';
-import { PLACES, OBSTACLE_RADIUS, WINDOW, ROOM_HALF, WALL_H, facingOf } from '../game/room-layout.mjs';
-import * as tuning from '../game/tuning.mjs';
-import { levelTier, levelMechanics } from '../game/progression.mjs';
+import { LEVELS, LETTERS, parseCard } from '../game/gameplay/levels.mjs';
+import { MATCH_SIZE, clusterPoints } from '../game/gameplay/scoring.mjs';
+import { categories } from '../game/ui/cat-art.mjs';
+import { CATALOG, ZONES } from '../game/deco/deco-data.mjs';
+import { PLACES, OBSTACLE_RADIUS, WINDOW, ROOM_HALF, WALL_H, facingOf } from '../game/deco/room-layout.mjs';
+import * as tuning from '../game/gameplay/tuning.mjs';
+import { levelTier, levelMechanics } from '../game/gameplay/progression.mjs';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'export', 'data');
 mkdirSync(OUT, { recursive: true });

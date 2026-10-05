@@ -5,11 +5,11 @@
 //   --json      in kết quả dạng JSON
 // Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
-import { LEVELS, parseBoard, parseCard, boardSize } from '../game/levels.mjs';
-import { holdUnlocked } from '../game/tuning.mjs';
-import { playableCells } from '../game/board-shapes.mjs';
-import { clearMatches } from '../game/board-rules.mjs';
-import { MATCH_SIZE } from '../game/scoring.mjs';
+import { LEVELS, parseBoard, parseCard, boardSize } from '../game/gameplay/levels.mjs';
+import { holdUnlocked } from '../game/gameplay/tuning.mjs';
+import { playableCells } from '../game/gameplay/board-shapes.mjs';
+import { clearMatches } from '../game/gameplay/board-rules.mjs';
+import { MATCH_SIZE } from '../game/gameplay/scoring.mjs';
 import { play } from './bot.mjs';
 import { writeFileSync } from 'node:fs';
 
@@ -46,7 +46,7 @@ if (BASELINE) { writeFileSync(new URL('./baseline.json', import.meta.url), `${JS
 // --dda: tỉ lệ thắng của bot ở từng bản biến thể theo số element (adaptive.mjs). Bản ít element phải thắng
 // nhiều hơn; dòng nào đảo thứ tự thì gắn "!" để xem lại.
 if (process.argv.includes('--dda')) {
-  const { buildVariant, elementCount, isAdaptive } = await import('../game/adaptive.mjs');
+  const { buildVariant, elementCount, isAdaptive } = await import('../game/gameplay/adaptive.mjs');
   console.log('\nĐộ khó thích ứng: tỉ lệ thắng theo số element (* = bản gốc)');
   LEVELS.forEach((base, i) => {
     if (!isAdaptive(base)) return;

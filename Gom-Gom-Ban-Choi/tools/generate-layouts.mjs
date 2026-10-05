@@ -1,4 +1,4 @@
-// Sinh offline các bản bố trí crate/wall theo mức độ khó cho từng màn, ghi vào game/level-layouts.mjs.
+// Sinh offline các bản bố trí crate/wall theo mức độ khó cho từng màn, ghi vào game/gameplay/level-layouts.mjs.
 // Chạy: node tools/generate-layouts.mjs [số ván bot mỗi ứng viên, mặc định 80]
 //
 // Mỗi mức có luật số lượng riêng (crate C, wall W của bản gốc):
@@ -6,16 +6,16 @@
 //   0b  đổi chỗ    giữ số lượng, dời ≥ nửa số vật cản  +1 hiểm      crate C+1..C+2, wall W..W+1
 //   +2  rất hiểm   crate C+2..C+3, wall W+1..W+2
 // Không bao giờ: đặt lên mèo sẵn hay ô ngoài bàn '#', tạo cụm gom sẵn, thêm loại vật cản trước màn giới thiệu nó.
-// Với mỗi mức: sinh ~300 ứng viên, xếp hạng bằng layoutScore (game/layout-score.mjs), cho bot "trung bình" chơi thử
+// Với mỗi mức: sinh ~300 ứng viên, xếp hạng bằng layoutScore (game/gameplay/layout-score.mjs), cho bot "trung bình" chơi thử
 // các ứng viên đứng đầu, giữ bản có tỉ lệ thắng lệch so với bản gốc gần mục tiêu nhất (TARGET_DELTA).
 // Cuối cùng kiểm tra thứ tự: −2 ≥ −1 ≥ gốc ≥ +1 ≥ +2 (sai số 3 điểm); mức nào phá thứ tự thì bỏ.
 import { writeFileSync } from 'node:fs';
-import { LEVELS, parseBoard } from '../game/levels.mjs';
-import { clearMatches } from '../game/board-rules.mjs';
-import { MATCH_SIZE } from '../game/scoring.mjs';
-import { boardSize } from '../game/board-shapes.mjs';
-import { isAdaptive } from '../game/adaptive.mjs';
-import { layoutScore } from '../game/layout-score.mjs';
+import { LEVELS, parseBoard } from '../game/gameplay/levels.mjs';
+import { clearMatches } from '../game/gameplay/board-rules.mjs';
+import { MATCH_SIZE } from '../game/gameplay/scoring.mjs';
+import { boardSize } from '../game/gameplay/board-shapes.mjs';
+import { isAdaptive } from '../game/gameplay/adaptive.mjs';
+import { layoutScore } from '../game/gameplay/layout-score.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
 const RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 80);
@@ -115,5 +115,5 @@ const header = `// SINH TỰ ĐỘNG bởi tools/generate-layouts.mjs (bot "trun
 //   '-2' thoáng · '-1' nhẹ · '0b' đổi chỗ vật cản (giữ số lượng) · '+1' hiểm · '+2' rất hiểm. Mức nào không có = dùng cách cũ.
 // adaptive.mjs chọn mức theo profile người chơi.
 `;
-writeFileSync(new URL('../game/level-layouts.mjs', import.meta.url), `${header}export const LAYOUTS = ${JSON.stringify(out, null, 2)};\n`);
-console.log('\nĐã ghi game/level-layouts.mjs');
+writeFileSync(new URL('../game/gameplay/level-layouts.mjs', import.meta.url), `${header}export const LAYOUTS = ${JSON.stringify(out, null, 2)};\n`);
+console.log('\nĐã ghi game/gameplay/level-layouts.mjs');

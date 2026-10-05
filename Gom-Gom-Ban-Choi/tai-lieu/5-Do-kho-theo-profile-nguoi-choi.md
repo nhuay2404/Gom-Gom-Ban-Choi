@@ -1,6 +1,6 @@
 # Gom Gom Rotate — Độ khó theo profile người chơi
 
-Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/adaptive.mjs` (luật), `game/gom-gom.js` (thu metric, hiện nhãn), `game/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
+Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/gameplay/adaptive.mjs` (luật), `game/play-controller.js` (thu metric, hiện nhãn), `game/gameplay/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
 
 ## 1. Thang độ khó theo số element
 
@@ -195,7 +195,7 @@ function nextLevelPlan(history, levelIndex) {
 }
 ```
 
-Chỗ tích hợp dự kiến khi duyệt xong: module mới `game/adaptive.mjs` (thuần logic, test được bằng Node), save key mới `gomgom-rotate-profile-v1` trong `save.mjs`, `createSession` nhận bản biến thể thay vì `LEVELS[i]`, và `gom-gom.js` gửi thêm `thinkMs` / `idleMs` / `resultDwellMs` (đã có sẵn timer AFK).
+Chỗ tích hợp dự kiến khi duyệt xong: module mới `game/gameplay/adaptive.mjs` (thuần logic, test được bằng Node), save key mới `gomgom-rotate-profile-v1` trong `save.mjs`, `createSession` nhận bản biến thể thay vì `LEVELS[i]`, và `play-controller.js` gửi thêm `thinkMs` / `idleMs` / `resultDwellMs` (đã có sẵn timer AFK).
 
 ## 7. Các quyết định đã chốt khi tích hợp
 
@@ -472,7 +472,7 @@ Trước đây thuật toán chỉ biết tổng số booster mỗi lần thử,
 
 | Luật | Chi tiết | Chỗ trong code |
 |---|---|---|
-| Ghi chi tiết | Mỗi lần thử lưu `boostUse { hammer, swap, moves }`, `bought` (mua bằng xu ngay trong ván), `preBoostRatio` (tỉ lệ điểm ngay trước lần +lượt đầu) | `gom-gom.js`: `haveBooster`, `useBooster`, nút +lượt, `recordTry` |
+| Ghi chi tiết | Mỗi lần thử lưu `boostUse { hammer, swap, moves }`, `bought` (mua bằng xu ngay trong ván), `preBoostRatio` (tỉ lệ điểm ngay trước lần +lượt đầu) | `play-controller.js`: `haveBooster`, `useBooster`, nút +lượt, `recordTry` |
 | 3 loại thắng | `clean` không booster · `assisted` 1 búa hoặc 1 đổi thẻ · `carried` có +lượt hoặc ≥ 2 booster (`CARRIED_BOOSTERS`) | `winKind` |
 | Thắng nhờ booster | Vẫn qua màn, nhưng không xoá chuỗi thua và không tính vào chuỗi thắng, nên màn sau vẫn được nới | `detectProfile` |
 | Thua sát nút | Tính theo `preBoostRatio`: điểm có được nhờ lượt mua thêm không tính | `ownRatio` |
@@ -598,8 +598,8 @@ Bot 200 ván, trước → sau: Steel Nap 96% → 92% · Iron & Oak 60% → 49% 
 
 Trước đây crate/wall chỉ có hai trạng thái: giữ nguyên hoặc xoá hết. Giờ mỗi màn có các **bản bố trí sinh sẵn offline**:
 
-- `game/layout-score.mjs`: chấm độ khó một bố trí: chỗ đặt thẻ 3 ô, vùng trống lớn nhất, nút thắt, thùng khó phá (≤ 1 ô trống sát bên), vật cản chặn đầu cặp mèo sẵn.
-- `tools/generate-layouts.mjs`: mỗi màn, mỗi mức sinh ~300 ứng viên (giữ hình bàn `#` và mèo sẵn, không tạo cụm gom sẵn, không thêm loại vật cản trước màn giới thiệu nó), xếp hạng bằng điểm bố trí, cho bot "trung bình" chơi thử 12 bản đầu, giữ bản lệch tỉ lệ thắng gần mục tiêu nhất; mức nào phá thứ tự dễ → khó thì bỏ. Kết quả ghi vào `game/level-layouts.mjs` (sửa tay được; chạy lại sẽ ghi đè). Mất ~7 phút.
+- `game/gameplay/layout-score.mjs`: chấm độ khó một bố trí: chỗ đặt thẻ 3 ô, vùng trống lớn nhất, nút thắt, thùng khó phá (≤ 1 ô trống sát bên), vật cản chặn đầu cặp mèo sẵn.
+- `tools/generate-layouts.mjs`: mỗi màn, mỗi mức sinh ~300 ứng viên (giữ hình bàn `#` và mèo sẵn, không tạo cụm gom sẵn, không thêm loại vật cản trước màn giới thiệu nó), xếp hạng bằng điểm bố trí, cho bot "trung bình" chơi thử 12 bản đầu, giữ bản lệch tỉ lệ thắng gần mục tiêu nhất; mức nào phá thứ tự dễ → khó thì bỏ. Kết quả ghi vào `game/gameplay/level-layouts.mjs` (sửa tay được; chạy lại sẽ ghi đè). Mất ~7 phút.
 
 | Mức | Crate | Wall | Mục tiêu tỉ lệ thắng (so với gốc) | Dùng cho profile |
 |---|---|---|---|---|

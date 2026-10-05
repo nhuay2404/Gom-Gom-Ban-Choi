@@ -1,7 +1,7 @@
 // Test Deco (deco-data.mjs): mua / đặt / gỡ đồ, khoá theo level, khoá khu, chuyển save cũ. Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setStorageBackend, SAVE_KEYS, writeJSON } from './save.mjs';
+import { setStorageBackend, SAVE_KEYS, writeJSON } from '../gameplay/save.mjs';
 import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };

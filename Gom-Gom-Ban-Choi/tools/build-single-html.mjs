@@ -2,7 +2,7 @@
 // Three.js và font vẫn tải từ CDN nên máy cần có mạng. Chạy: npm run build:html -> dist/gom-gom-rotate.html
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -17,16 +17,16 @@ const js = execSync(
   { cwd: root, encoding: 'utf8', maxBuffer: 64 << 20 },
 ).replace(/<\/script/gi, '<\\/script');
 
-// CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') nhúng MỘT lần vào biến CSS
-// (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
+// CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
+// vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
 const images = new Map();
 const css = [...read('index.html').matchAll(/<link rel="stylesheet" href="\.\/([^"]+)">/g)]
-  .map(([, file]) => read(file))
-  .join('\n')
-  .replace(/url\('\.\/([^']+)'\)/g, (_, file) => {
-    if (!images.has(file)) images.set(file, `--img-${images.size}`);
-    return `var(${images.get(file)})`;
-  });
+  .map(([, sheet]) => read(sheet).replace(/url\('\.\/([^']+)'\)/g, (_, file) => {
+    const path = posix.join(posix.dirname(sheet), file);
+    if (!images.has(path)) images.set(path, `--img-${images.size}`);
+    return `var(${images.get(path)})`;
+  }))
+  .join('\n');
 const imageVars = `:root{${[...images].map(([file, name]) => `${name}:url('${dataUri(file)}')`).join(';')}}`;
 
 const html = read('index.html')

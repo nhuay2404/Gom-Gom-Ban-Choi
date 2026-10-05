@@ -1,6 +1,6 @@
 # Gom Gom Rotate — Thiết kế 10 màn đầu
 
-Tài liệu này mô tả cách dựng 10 màn đầu của bản Rotate (`game/`): nguyên tắc thiết kế, nhịp từng màn, tutorial, luồng màn hình và số liệu cân bằng. Dữ liệu màn nằm ở `game/levels.mjs`; công cụ cân độ khó ở `tools/simulate-levels.mjs`.
+Tài liệu này mô tả cách dựng 10 màn đầu của bản Rotate (`game/`): nguyên tắc thiết kế, nhịp từng màn, tutorial, luồng màn hình và số liệu cân bằng. Dữ liệu màn nằm ở `game/gameplay/levels.mjs`; công cụ cân độ khó ở `tools/simulate-levels.mjs`.
 
 ## 1. Nguyên tắc (tham khảo khuôn phổ biến của game puzzle mobile)
 

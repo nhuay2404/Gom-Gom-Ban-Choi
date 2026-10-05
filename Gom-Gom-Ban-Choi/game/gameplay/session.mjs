@@ -3,7 +3,7 @@
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, matchPoints } from './scoring.mjs';
-import { categories } from './cat-art.mjs';
+import { categories } from '../ui/cat-art.mjs';
 import { LEVELS, parseBoard, makeDealer, starsFor, boardSize } from './levels.mjs';
 import { BOARD, holdUnlocked } from './tuning.mjs';
 

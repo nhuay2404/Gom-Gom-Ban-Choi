@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const dir = new URL('.', import.meta.url);
-const sources = fs.readdirSync(dir).filter(f => /\.(mjs|js)$/.test(f) && !f.endsWith('.test.mjs'));
+// Quét cả thư mục con (ui/, gameplay/, deco/); tên file kèm thư mục, vd. 'deco/qc.mjs'.
+const sources = fs.readdirSync(dir, { recursive: true }).map(f => f.split('\\').join('/'))
+  .filter(f => /\.(mjs|js)$/.test(f) && !f.endsWith('.test.mjs'));
 
 // Chú thích `//` chèn giữa dòng làm câu lệnh phía sau biến thành chú thích (lỗi thật: `sideboard.rotation.y = ...` bị
 // nuốt làm tủ quay ngang xuyên tường; `p.rotation.z = ...` của ván cầu suối). Dấu hiệu: phần chú thích ở cuối một dòng
@@ -34,7 +36,7 @@ test('không có câu lệnh nào bị chú thích nuốt mất', () => {
 test('khối bo góc chỉ tạo qua roundedBox() (tự chặn bán kính bo)', () => {
   const direct = [];
   for (const file of sources) {
-    if (file === 'mesh-detail.mjs') continue;
+    if (file.endsWith('mesh-detail.mjs')) continue;
     fs.readFileSync(new URL(file, dir), 'utf8').split(/\r?\n/).forEach((line, i) => { if (/new RoundedBoxGeometry\(/.test(line) && !/room-cats\.mjs/.test(file)) direct.push(`${file}:${i + 1}`); });
   }
   assert.deepEqual(direct, [], `dùng roundedBox() thay cho new RoundedBoxGeometry: ${direct.join(', ')}`);

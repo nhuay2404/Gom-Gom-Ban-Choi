@@ -1,7 +1,7 @@
 // Dữ liệu Deco: 3 khu (vườn — mở rộng thêm khi thắng màn 30, phòng khách, phòng ngủ), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm bằng sao: mỗi sao mới = COINS_PER_STAR xu. Mèo dùng chung cả 2 khu.
-import { ECONOMY } from './tuning.mjs';
-import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
+import { ECONOMY } from '../gameplay/tuning.mjs';
+import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { COINS_PER_STAR, MAX_ROOM_CATS } = ECONOMY;
 
 // Vườn là khu của màn 1–10. Phòng khách mở khi thắng màn 10, phòng ngủ khi thắng màn 15 (màn 16–20).

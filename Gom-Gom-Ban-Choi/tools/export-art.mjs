@@ -13,8 +13,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { catGroups, catMarkup, eyesMarkup, LOW_MOVE_MOODS } from '../game/cat-art.mjs';
-import { CRATE_SVG, METAL_SVG } from '../game/board-art.mjs';
+import { catGroups, catMarkup, eyesMarkup, LOW_MOVE_MOODS } from '../game/ui/cat-art.mjs';
+import { CRATE_SVG, METAL_SVG } from '../game/ui/board-art.mjs';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'export', 'art');
 const files = [];

@@ -4,9 +4,9 @@
 // (đi tới -> nhảy lên -> xoay vòng -> nằm ngủ ...) mà vẫn ngắt được bất cứ lúc nào (cưng mèo, AFK, dời đồ).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { categories, eyesMarkup } from './cat-art.mjs';
+import { categories, eyesMarkup } from '../ui/cat-art.mjs';
 import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
-import { CAT_BODY, CAT_MOTION } from './tuning.mjs';
+import { CAT_BODY, CAT_MOTION } from '../gameplay/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
 
 const { W, H, D, LEG } = CAT_BODY, ROOM = CAT_MOTION.ROOM_LIMIT, TAU = Math.PI * 2;
