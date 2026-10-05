@@ -7,8 +7,10 @@ import { playSound } from './ui/sound.mjs';
 
 export const $ = id => document.getElementById(id);
 export const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
-// Nút cho game dev chỉ hiện khi chạy localhost hoặc URL có ?dev — bản gửi người chơi không thấy.
-export const DEV_MODE = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) || new URLSearchParams(location.search).has('dev');
+// Nút cho game dev chỉ hiện khi chạy localhost, URL có ?dev, hoặc bản HTML build bật cờ GOMGOM_DEV
+// (tools/build-single-html.mjs, mặc định bật; build cho người chơi: npm run build:html -- --no-dev).
+export const DEV_MODE = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) || new URLSearchParams(location.search).has('dev')
+  || globalThis.GOMGOM_DEV === true;
 
 let toastTimer = 0;
 export function showToast(text) {

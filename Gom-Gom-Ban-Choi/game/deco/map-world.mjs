@@ -545,7 +545,8 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
     const dy = e.clientY - drag.y, now = performance.now(), dt = Math.max(1, now - drag.t);
     drag.moved += Math.abs(dy) + Math.abs(e.clientX - drag.x);
     drag.y = e.clientY; drag.x = e.clientX; drag.t = now;
-    const delta = -dy / pxPerLevel * WORLD.STEP;
+    // Vuốt xuống = kéo mặt đất về phía mình = tiến lên các màn cao hơn (như Animal Crossing).
+    const delta = dy / pxPerLevel * WORLD.STEP;
     target = scroll = clamp(scroll + delta);
     velocity = Math.max(-WORLD.STEP * .35, Math.min(WORLD.STEP * .35, delta / dt * 16));
   });

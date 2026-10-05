@@ -119,5 +119,5 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Phần khoá ở màn game chưa có (vườn mở rộng: màn 30): xem bằng Dev: Unlock all (bật cờ `gomgom-dev-all-zones`).
 
 ## Khác
-- Dev tools chỉ hiện trên localhost hoặc URL có `?dev`: Unlock all, Reset progress, QC models.
+- Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.

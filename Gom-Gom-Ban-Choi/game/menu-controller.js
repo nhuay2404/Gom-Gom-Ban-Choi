@@ -80,8 +80,11 @@ function renderMap() {
 }
 
 // Thanh tab chung hiện ở Home / Map / Deco / Shop, đánh dấu mục đang mở.
+// Hub có nút cài đặt chung (Home / Map / Deco); Shop không có (banner gói khởi đầu nằm đúng chỗ đó).
+const SETTINGS_TABS = ['home', 'map', 'deco'];
 function markTab(tab) {
   $('tabbar').hidden = false;
+  $('hub-settings').hidden = !SETTINGS_TABS.includes(tab);
   $('tabbar').querySelectorAll('.tab').forEach(button => {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
@@ -141,6 +144,7 @@ let decoCat = 'furniture', decoPick = null;
 export function hideMenus() {
   TABS.forEach(tab => { $(tab).hidden = true; });
   $('tabbar').hidden = true;
+  $('hub-settings').hidden = true;
   decoPick = null;
   room3d?.stop();
   map3d?.stop();
@@ -225,7 +229,8 @@ document.addEventListener('click', event => {
   if (cat) petRoomCat(cat);
 });
 buildFlatRooms();
-import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
+// Cảnh 3D nạp xong (phòng + bản đồ): màn loading (gom-gom.js) đợi cái này rồi mới tắt.
+const roomReady = import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
   if (DEV_MODE && new URLSearchParams(location.search).has('qc')) setTimeout(runQC, 500);
   room3d.setNight(night);
@@ -238,6 +243,8 @@ import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   if (open) mountRoom(open);
   if (open === 'deco') renderDeco(); // thay quả cầu màu bằng ảnh chụp model
 }).catch(error => console.warn('3D room unavailable, using the flat room.', error));
+// Cho màn loading: xong khi cảnh phòng + bản đồ 3D đã nạp (lỗi cũng tính là xong, game dùng bản phẳng thay thế).
+export const sceneReady = Promise.all([roomReady, map3dReady]);
 
 // ===== Deco: mua / đặt đồ, đổi tường, sàn, chọn mèo. Chọn món = xem trước ngay trong phòng. =====
 // Danh sách gom theo chỗ đặt: mỗi khung là các món "chọn một" chung một vị trí (đồ: món gốc + phương án; tường / sàn: cả mục).
@@ -392,21 +399,32 @@ $('help').onclick = () => $('help-dialog').showModal();
 // Nút cài đặt (Home: ngày/đêm, âm thanh, hướng dẫn; màn chơi: âm thanh, hướng dẫn): bánh răng xổ menu.
 // Chạm ra ngoài hoặc Esc thì đóng.
 function setSettingsOpen(box, open) {
-  box.querySelector('.settings-menu').hidden = !open;
+  menuOf(box).hidden = !open;
   box.querySelector('.settings-toggle').setAttribute('aria-expanded', open);
 }
-const closeAllSettings = (except = null) => document.querySelectorAll('.settings').forEach(box => { if (box !== except) setSettingsOpen(box, false); });
-document.querySelectorAll('.settings').forEach(box => {
-  box.querySelector('.settings-toggle').onclick = () => { playSound('pick'); setSettingsOpen(box, box.querySelector('.settings-menu').hidden); };
+// Menu của một nút bánh răng: theo aria-controls (popup Settings ở Home nằm ngoài khối .settings, menu màn chơi nằm trong).
+const menuOf = box => document.getElementById(box.querySelector('.settings-toggle').getAttribute('aria-controls'));
+const settingsBoxes = [...document.querySelectorAll('.settings')];
+const closeAllSettings = (except = null) => settingsBoxes.forEach(box => { if (box !== except) setSettingsOpen(box, false); });
+settingsBoxes.forEach(box => {
+  box.querySelector('.settings-toggle').onclick = () => { playSound('pick'); setSettingsOpen(box, menuOf(box).hidden); };
 });
-document.addEventListener('pointerdown', event => closeAllSettings(event.target.closest('.settings')));
+// Chạm ra ngoài thì đóng; với popup, chạm nền tối (ngoài khung) cũng đóng.
+document.addEventListener('pointerdown', event => {
+  const keep = settingsBoxes.find(box => box.contains(event.target)
+    || (menuOf(box).contains(event.target) && !(event.target === menuOf(box) && menuOf(box).classList.contains('settings-modal'))));
+  closeAllSettings(keep);
+});
+document.querySelectorAll('.settings-close').forEach(button => { button.onclick = () => { playSound('pick'); closeAllSettings(); }; });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
 ['home-help', 'game-help'].forEach(id => { $(id).onclick = () => { closeAllSettings(); $('help-dialog').showModal(); }; });
 function renderSoundButtons() {
   document.querySelectorAll('.sound-toggle').forEach(button => {
     button.setAttribute('aria-pressed', soundOn());
     button.setAttribute('aria-label', soundOn() ? 'Sound on, tap to mute' : 'Sound off, tap to unmute');
-    button.innerHTML = `<svg viewBox="0 0 24 24"><use href="#i-${soundOn() ? 'sound' : 'mute'}"/></svg>`;
+    // Công tắc ON / OFF (popup Settings) hoặc nút icon loa (menu màn chơi).
+    if (button.classList.contains('switch')) button.querySelector('b').textContent = soundOn() ? 'ON' : 'OFF';
+    else button.innerHTML = `<svg viewBox="0 0 24 24"><use href="#i-${soundOn() ? 'sound' : 'mute'}"/></svg>`;
   });
 }
 document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = () => { setSound(!soundOn()); renderSoundButtons(); }; });
@@ -419,12 +437,34 @@ function applyNight() {
   button.setAttribute('aria-pressed', night);
   button.setAttribute('aria-label', night ? 'Night, tap for day' : 'Day, tap for night');
   button.title = night ? 'Night' : 'Day';
-  button.innerHTML = `<svg viewBox="0 0 24 24"><use href="#i-${night ? 'moon' : 'sun'}"/></svg>`;
   ['home-room', 'deco-room'].forEach(id => $(id).classList.toggle('night', night));
   room3d?.setNight(night);
 }
 $('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
 applyNight();
+
+// Music / Haptic / Notifications: lựa chọn của người chơi (mặc định bật), nhớ qua localStorage. Game chưa có nhạc nền /
+// thông báo nên hiện chỉ lưu lại; Haptic rung nhẹ khi bật (máy có hỗ trợ). Đọc ở nơi khác qua prefOn(name).
+const PREF_KEY = name => `gomgom-rotate-pref-${name}`;
+export const prefOn = name => readText(PREF_KEY(name)) !== 'off';
+function renderPrefs() {
+  document.querySelectorAll('.pref-toggle').forEach(button => {
+    const on = prefOn(button.dataset.pref);
+    button.setAttribute('aria-pressed', on);
+    button.setAttribute('aria-label', `${button.dataset.pref}: ${on ? 'on' : 'off'}`);
+    button.querySelector('b').textContent = on ? 'ON' : 'OFF';
+  });
+}
+document.querySelectorAll('.pref-toggle').forEach(button => {
+  button.onclick = () => {
+    const name = button.dataset.pref, on = !prefOn(name);
+    writeText(PREF_KEY(name), on ? 'on' : 'off');
+    playSound('pick');
+    if (name === 'haptic' && on) navigator.vibrate?.(30);
+    renderPrefs();
+  };
+});
+renderPrefs();
 // ===== Nút cho game dev: mở hết màn (3 sao) → mở luôn phòng khách + mèo khoá theo màn, cộng xu để thử Deco/Shop =====
 const DEV_COINS = 99999;
 document.querySelectorAll('.dev-only').forEach(row => { row.hidden = !DEV_MODE; });

@@ -539,3 +539,93 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .map-list{padding-bottom:calc(min(100vw,480px) / 393 * 96)}
 /* Map 3D: trời mây giống Home (cảnh 3D vẽ trong suốt phía trên) */
 .map.is-3d{background:#8ed4fc url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
+
+/* ===== Popup Settings theo Figma (frame Home 73:590): khung kem viền nâu, tiêu đề nâu đỏ, nút ✕ tròn, dòng có icon tròn,
+   công tắc ON xanh, Day / Night hai nửa (mặt trời vàng / trăng), hai nút Language / Support; nút dev cuộn xuống mới thấy ===== */
+.settings-modal{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:16px;background:#2b1a1099;animation:tut-fade .2s ease both}
+.settings-modal[hidden]{display:none}
+.settings-panel{width:min(340px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;padding:16px 16px 14px;border-radius:24px;
+  background:#fff7e8;border:3px solid #8a4128;box-shadow:inset 0 0 0 3px #fffdf6,0 4px 0 #8a412855,0 18px 40px #2b1a1066;color:#5e1d10}
+.settings-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px 4px}
+.settings-head h2{margin:0;font-family:var(--display);font-size:30px;font-weight:800;line-height:1;color:#5e1d10}
+.settings-close{display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%;cursor:pointer;background:#fde6cf;border:2.5px solid #b8603f;box-shadow:inset 0 2px 0 #fff6ea}
+.settings-close svg{width:22px;height:22px;fill:none;stroke:#9c2d1a;stroke-width:3.6;stroke-linecap:round}
+.settings-close:active{translate:0 2px}
+.settings-body{display:flex;flex-direction:column;gap:6px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -4px;padding:0 4px 2px}
+.settings-body::-webkit-scrollbar{display:none}
+.settings-item{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 8px 6px 6px;border-radius:18px;background:#fff1da}
+.settings-ico{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#fde9c6}
+.settings-ico svg{width:24px;height:24px;fill:none;stroke:#5e1d10;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.settings-name{flex:1;font-family:var(--display);font-size:17px;font-weight:800;color:#5e1d10}
+/* Công tắc ON / OFF */
+.switch{position:relative;flex:none;width:86px;height:38px;padding:0;border-radius:999px;cursor:pointer;background:#3fb84f;border:2.5px solid #23843a;box-shadow:inset 0 2px 0 #ffffff40}
+.switch b{position:absolute;inset:0 38px 0 0;display:grid;place-items:center;font-family:var(--display);font-size:15px;font-weight:800;color:#fff}
+.switch::after{content:'';position:absolute;top:3px;right:3px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 0 #0002;transition:right .18s ease}
+.switch[aria-pressed="false"]{background:#cdbfae;border-color:#9c8b77}
+.switch[aria-pressed="false"] b{inset:0 0 0 38px}
+.switch[aria-pressed="false"]::after{right:calc(100% - 31px)}
+/* Day / Night: hai nửa, nửa đang chọn sáng lên */
+.daynight{flex:none;display:grid;grid-template-columns:1fr 1fr;width:128px;height:40px;padding:2px;border-radius:999px;cursor:pointer;background:#fffaf0;border:2.5px solid #c9a46d}
+.daynight i{display:grid;place-items:center;border-radius:999px}
+.daynight svg{width:22px;height:22px;fill:none;stroke:#b5a99a;stroke-width:2.4;stroke-linecap:round}
+.daynight i:last-child svg{fill:#b5a99a;stroke:none}
+.daynight[aria-pressed="false"] i:first-child,.daynight[aria-pressed="true"] i:last-child{background:#ffe44d;box-shadow:inset 0 0 0 2px #e0b100}
+.daynight[aria-pressed="false"] i:first-child svg{stroke:#8a4a16}
+.daynight[aria-pressed="true"] i:last-child{background:#6d7bd9;box-shadow:inset 0 0 0 2px #4a55a8}
+.daynight[aria-pressed="true"] i:last-child svg{fill:#fff6c8}
+/* Language / Support + nút dev */
+.settings-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding-top:12px;border-top:2px solid #ecd6b3}
+.settings-link{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 10px 0 12px;border-radius:16px;cursor:pointer;background:#fffaf2;border:2px solid #e7cfa8;
+  font-family:var(--display);font-size:15px;font-weight:800;color:#5e1d10;text-align:left}
+.settings-link span{flex:1}
+.settings-link svg{flex:none;width:24px;height:24px;fill:none;stroke:#5e1d10;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.settings-link .chev{width:18px;height:18px;stroke-width:3}
+.settings-link:active{translate:0 2px}
+.settings-dev{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:2px dashed #ecd6b3}
+.settings-dev[hidden]{display:none}
+.settings-dev .settings-link{min-height:42px;font-size:14px;color:#7a4a35;background:#fff3e2}
+/* Hàng đầu Settings: link khảo sát góp ý (nổi bật màu hồng) */
+.settings-feedback{display:flex;align-items:center;gap:12px;min-height:60px;padding:6px 12px 6px 6px;border-radius:18px;text-decoration:none;
+  background:linear-gradient(#ffd3df,#ffbccf);border:2.5px solid #e8708f;box-shadow:inset 0 2px 0 #fff4f7}
+.settings-feedback .settings-ico{background:#fff4f7}
+.settings-feedback .settings-ico svg{stroke:#c43d62;color:#e8557c}
+.settings-feedback .settings-name{display:flex;flex-direction:column;line-height:1.1;color:#7a1f36}
+.settings-feedback small{font-family:var(--ui-font);font-size:12px;font-weight:800;color:#a8456a}
+.settings-feedback .chev{flex:none;width:20px;height:20px;fill:none;stroke:#7a1f36;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.settings-feedback:active{translate:0 2px}
+
+/* Nút cài đặt dùng chung Home / Map / Deco: đúng toạ độ + cỡ của nút ở Home (Figma 321,121 trừ 38u đã nhích lên) */
+.hub-settings{--u:calc(min(100vw,480px) / 393);position:fixed;z-index:56;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(50% + 124.5 * var(--u));
+  width:calc(54 * var(--u));height:calc(54 * var(--u))}
+.hub-settings[hidden]{display:none}
+.hub-settings .fh-gear:active{translate:0 calc(2 * var(--u))}
+/* Map: nút "?" đứng dưới nút cài đặt như ở Home */
+.map{--u:calc(min(100vw,480px) / 393)}
+.map-head .map-help{position:fixed;top:calc(140 * var(--u) + env(safe-area-inset-top));left:calc(50% + 120.5 * var(--u));width:calc(62 * var(--u));height:calc(62 * var(--u))}
+/* Deco: hàng chọn khu dời sang trái, chừa chỗ cho nút cài đặt bên phải */
+.screen.deco>.zone-switch{align-self:flex-start;margin-left:calc(6 * var(--u) - 6px);margin-right:0}
+.screen.deco>.zone-switch button{padding:0 10px}
+
+/* ===== Màn loading: nền dấu chân của Shop, logo "Gom Gom / Rotate", 3 dấu chân nhảy lần lượt, thanh kẹo xanh chạy sọc ===== */
+.loading-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;
+  background:#9fdcff url('./skins/figma-shop/bg.jpg') 50% 0/cover no-repeat;transition:opacity .45s ease,visibility .45s;font-family:var(--display)}
+.loading-screen.done{opacity:0;visibility:hidden;pointer-events:none}
+.loading-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:6px;animation:loading-pop .6s cubic-bezier(.3,1.6,.5,1) both}
+.loading-logo b{font-size:clamp(52px,16vw,72px);font-weight:800;line-height:.95;color:#fff;-webkit-text-stroke:10px #6b2416;paint-order:stroke fill;
+  filter:drop-shadow(0 5px 0 #6b241655)}
+.loading-logo span{margin-top:6px;padding:4px 20px 2px;rotate:-4deg;border-radius:999px;font-size:clamp(22px,7vw,30px);font-weight:800;line-height:1.1;color:#fff;
+  background:linear-gradient(#ff9fbb,#f0587f);border:3px solid #b8305a;box-shadow:inset 0 3px 0 #ffd6e2aa,0 4px 0 #b8305a66}
+@keyframes loading-pop{from{opacity:0;scale:.7}}
+.loading-paws{display:flex;gap:14px}
+.loading-paws i{display:block;width:34px;height:34px;animation:loading-hop 1.2s ease-in-out infinite}
+.loading-paws i:nth-child(2){animation-delay:.2s}
+.loading-paws i:nth-child(3){animation-delay:.4s}
+.loading-paws svg{display:block;width:100%;height:100%;fill:#ff7fa3;filter:drop-shadow(0 2px 0 #b8305a66)}
+@keyframes loading-hop{0%,60%,100%{translate:0 0;scale:1}30%{translate:0 -14px;scale:1.12}}
+.loading-bar{width:min(260px,72vw);height:28px;padding:4px;border-radius:999px;background:#fff6e2;border:3px solid #8a4128;box-shadow:inset 0 2px 4px #8a412833,0 4px 0 #8a412840}
+.loading-bar i{display:block;width:12%;height:100%;border-radius:999px;transition:width .5s cubic-bezier(.3,.9,.4,1);
+  background:repeating-linear-gradient(-45deg,#ffffff38 0 8px,transparent 8px 16px),linear-gradient(#93e07f,#4cb847);background-size:22px 22px,auto;
+  box-shadow:inset 0 3px 0 #d9ffc699,inset 0 -3px 0 #2f8f3a55;animation:loading-stripes .6s linear infinite}
+@keyframes loading-stripes{to{background-position:22px 0,0 0}}
+.loading-text{margin:0;font-size:18px;font-weight:800;color:#6b2416;-webkit-text-stroke:4px #fff;paint-order:stroke fill}
+@media(prefers-reduced-motion:reduce){.loading-paws i,.loading-bar i,.loading-logo{animation:none}}

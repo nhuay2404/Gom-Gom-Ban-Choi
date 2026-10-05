@@ -626,7 +626,7 @@ function startCardDrag(event) {
   event.preventDefault();
   if (hammerArmed) { hammerArmed = false; renderBoosters(); }
   const source = $('active-card');
-  source.setPointerCapture(event.pointerId);
+  try { source.setPointerCapture(event.pointerId); } catch { /* con trỏ giả (test) / đã nhả */ }
   const rect = source.getBoundingClientRect();
   cardDrag = {
     pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, ghost: null, anchor: null,
@@ -634,10 +634,13 @@ function startCardDrag(event) {
     grabbed: grabbedPiece(event.clientX, event.clientY), cells: null,
   };
   source.classList.add('dragging');
+  // Đang giữ thẻ: tắt cử chỉ của trình duyệt (chụm phóng to / cuộn) để ngón thứ hai chạm = xoay thẻ.
+  document.body.classList.add('card-holding');
 }
 
 function moveCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
+  cardDrag.lastX = event.clientX; cardDrag.lastY = event.clientY;
   if (!cardDrag.ghost && Math.hypot(event.clientX - cardDrag.startX, event.clientY - cardDrag.startY) < 5) return;
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
   document.body.classList.add('card-dragging');
@@ -692,7 +695,7 @@ function finishCardDrag(event) {
   if (physics) cancelAnimationFrame(physics.frame);
   ghost?.remove();
   cardDrag = null;
-  document.body.classList.remove('card-dragging');
+  document.body.classList.remove('card-dragging', 'card-holding');
   $('active-card').classList.remove('dragging');
   $('hold').classList.remove('drop-target');
   state.preview = null; state.previewAnchor = null;
@@ -876,6 +879,35 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   fill.style.transition = '';
   renderTutorial();
 }
+
+// Điện thoại: một ngón giữ + kéo thẻ, chạm ngón thứ hai (ở đâu cũng được) = xoay thẻ ngay trong tay. Bóng kéo đổi
+// theo hình mới, con mèo đang cầm đổi sang con nằm dưới ngón tay, ô xem trước trên bàn tính lại.
+function rotateWhileDragging(event) {
+  if (!cardDrag || event.pointerId === cardDrag.pointerId || state.animating || state.over) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const turn = game.rotate(state);
+  if (!turn.ok) return;
+  playSound('pick');
+  state.preview = null;
+  render();
+  if (turn.tutorialAdvanced) showNextTutorial(250);
+  const source = $('active-card');
+  source.classList.add('dragging');
+  if (!cardDrag.ghost) return; // chưa kịp kéo: thẻ ở dock đã xoay, kéo tiếp là bóng mới
+  const card = source.getBoundingClientRect();
+  let best = 0, bestDistance = Infinity;
+  source.querySelectorAll('.piece-object').forEach((piece, index) => {
+    const c = centerOf(piece.getBoundingClientRect());
+    const distance = Math.hypot(c.x - card.left - cardDrag.grabX, c.y - card.top - cardDrag.grabY);
+    if (distance < bestDistance) { bestDistance = distance; best = index; }
+  });
+  cardDrag.grabbed = best;
+  cardDrag.ghost.innerHTML = source.innerHTML;
+  cardDrag.ghost.animate([{ rotate: '-90deg', scale: .85 }, { rotate: '0deg', scale: 1 }], { duration: 180, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+  if (cardDrag.lastX !== undefined) moveCardDrag({ pointerId: cardDrag.pointerId, clientX: cardDrag.lastX, clientY: cardDrag.lastY });
+}
+document.addEventListener('pointerdown', rotateWhileDragging, { capture: true });
 
 $('active-card').onpointerdown = startCardDrag;
 document.addEventListener('pointermove', moveCardDrag);
@@ -1225,20 +1257,30 @@ function endLevel(win, reason = '') {
   // Vừa mở một khu mới (thắng đúng màn mốc lần đầu): báo trong hộp kết quả.
   const unlockedZone = win && coinsEarned > 0 && Object.values(ZONES).find(z => z.unlockAfter > 0 && index + 1 === z.unlockAfter && levelsCleared() === z.unlockAfter);
   const expandedNow = win && coinsEarned > 0 && index + 1 === GARDEN_EXPANSION.unlockAfter && levelsCleared() === GARDEN_EXPANSION.unlockAfter;
-  $('result-coins').hidden = !coinsEarned && !gift && !tip;
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
-  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!',
-    gift && `Gift: ${BOOSTER_NAMES.moves} booster`, tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`].filter(Boolean).join(' · ');
+  // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
+  $('result-coins').hidden = !coinsEarned;
+  $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
+  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+    tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
+  $('result-note').hidden = !notes.length;
+  $('result-note').textContent = notes.join(' · ');
   const dialog = $('result-dialog');
   dialog.classList.toggle('win', win);
-  $('result-title').textContent = win ? (last ? 'Journey complete!' : 'Level complete!') : reason;
-  $('result-score').textContent = `${state.score} / ${state.level.target} points`;
+  dialog.classList.toggle('lose', !win);
+  // Mèo ló đầu: mèo cam vẽ sẵn (cat-art.mjs), thắng thì mặt vui (.joy), thua thì khóc (.afk-crying) — CSS chọn mặt theo class.
+  if (!$('result-cat').firstChild) $('result-cat').innerHTML = catMarkup.orange;
+  $('result-stars').querySelectorAll('i').forEach((star, i) => star.classList.toggle('on', i < stars));
+  $('result-title').textContent = win ? (last ? 'Journey Complete!' : 'Level Complete!') : 'Try Again!';
+  $('result-sub').textContent = `Level ${index + 1} ${win ? 'cleared' : 'failed'}`;
+  $('result-score').textContent = state.score.toLocaleString('en-US');
   $('result-next').hidden = !win || last;
+  $('result-replay').hidden = !win;
   $('result-retry').hidden = win;
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 0 : 700);
 }
 $('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1, true); };
-$('result-retry').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
+$('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
 $('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };
 $('intro-map').onclick = () => { $('intro-dialog').close(); menus.showMap(); };
 

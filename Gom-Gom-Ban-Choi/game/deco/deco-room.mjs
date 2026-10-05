@@ -1022,6 +1022,15 @@ export function createRoom() {
     // Đang chọn một món: cho zoom sát hơn (6 thay vì 9) để ngắm món cận cảnh; bỏ chọn thì về giới hạn cũ.
     if (!hub) controls.minDistance = (zoomFocus ? 6 : 9) * reach;
     if (!place || !id) return;
+    // Đổi sang món khác: tâm nhìn lướt sang món mới, giữ độ zoom đang dùng. Vị trí tâm theo đúng tỉ lệ của zoom vào món
+    // (giữa khu khi zoom ra hết, đúng món khi zoom sát hết): đang soi cận món cũ thì sang soi cận món mới.
+    const item = !hub && furniture[slot];
+    if (item) {
+      const r = camera.position.distanceTo(controls.target);
+      const t = THREE.MathUtils.clamp((controls.maxDistance - r) / Math.max(.05, controls.maxDistance - controls.minDistance), 0, 1);
+      const center = zoneCenter(zoneId, new THREE.Vector3());
+      glideTo(center.lerp(itemBox.setFromObject(item).getCenter(tmpGoal), t), 600);
+    }
     const from = controls.getAzimuthalAngle();
     let to = Math.atan2(-place[0], -place[1]);
     to = from + ((((to - from) % TAU) + TAU + Math.PI) % TAU - Math.PI);

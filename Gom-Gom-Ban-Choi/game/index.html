@@ -17,6 +17,13 @@
   <script type="module" src="./gom-gom.js"></script>
 </head>
 <body>
+  <!-- Màn loading: hiện ngay khi mở trang (chỉ HTML/CSS, nền dấu chân của Shop), gom-gom.js đẩy thanh tiến độ theo
+       bước nạp thật (JS game -> font -> cảnh 3D) rồi mờ dần đi. -->
+  <div id="loading" class="loading-screen" role="status" aria-live="polite">
+    <div class="loading-paws" aria-hidden="true"><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i></div>
+    <div class="loading-bar" aria-hidden="true"><i id="loading-fill"></i></div>
+    <p id="loading-text" class="loading-text">Loading…</p>
+  </div>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 3.5 20.5 11V20.5H14.5V14h-5v6.5h-6Z"/></symbol>
     <symbol id="i-deco" viewBox="0 0 24 24"><path d="M6 11V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3M3 14a2 2 0 0 1 4 0v1.5h10V14a2 2 0 0 1 4 0v5.5H3ZM6 19.5V21M18 19.5V21"/></symbol>
@@ -28,7 +35,15 @@
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M10.3 3h3.4l.5 2.6 1.9 1.1 2.5-.9 1.7 2.9-2 1.7v2.2l2 1.7-1.7 2.9-2.5-.9-1.9 1.1-.5 2.6h-3.4l-.5-2.6-1.9-1.1-2.5.9-1.7-2.9 2-1.7v-2.2l-2-1.7 1.7-2.9 2.5.9 1.9-1.1Z"/></symbol>
-    <symbol id="i-moon"viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5.5l10-2V16"/><circle cx="6.5" cy="18" r="2.5" fill="currentColor"/><circle cx="16.5" cy="16" r="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-haptic" viewBox="0 0 24 24"><rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M4.5 8.5 3 10l1.5 1.5L3 13l1.5 1.5M19.5 8.5 21 10l-1.5 1.5L21 13l-1.5 1.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15ZM10 20.5a2 2 0 0 0 4 0" fill="currentColor"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c-3 3-3 14 0 17M12 3.5c3 3 3 14 0 17"/></symbol>
+    <symbol id="i-support" viewBox="0 0 24 24"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3.5" y="13" width="4" height="6" rx="1.5" fill="currentColor"/><rect x="16.5" y="13" width="4" height="6" rx="1.5" fill="currentColor"/><path d="M18.5 19c0 1.5-2 2.5-5 2.5"/></symbol>
+    <symbol id="i-feedback" viewBox="0 0 24 24"><path d="M4 5.5h16v10H10l-4.5 4v-4H4Z"/><path d="M12 13.2s-3-1.8-3-3.6a1.5 1.5 0 0 1 3-.4 1.5 1.5 0 0 1 3 .4c0 1.8-3 3.6-3 3.6Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 5.5 15.5 12 9 18.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/></symbol>
     <symbol id="i-hammer" viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><path d="M12 10v11.5"/><rect x="4.5" y="3" width="15" height="7" rx="2" fill="currentColor"/></g></symbol>
     <symbol id="i-swap" viewBox="0 0 24 24"><path d="M5 9.5A7 7 0 0 1 18 7.5M19 4v4h-4M19 14.5A7 7 0 0 1 6 16.5M5 20v-4h4"/></symbol>
   </svg>
@@ -100,23 +115,55 @@
       <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
       <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
       <!-- Cột phải: cài đặt (ngày / đêm, âm thanh, dev) và hướng dẫn -->
-      <div class="settings fh-settings">
-        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
-        <div id="settings-menu" class="settings-menu" hidden>
-          <label class="settings-row" for="night-toggle"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button><span>Day / Night</span></label>
-          <label class="settings-row" for="home-sound"><button id="home-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
-          <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
-          <label class="settings-row dev-only" for="dev-unlock" hidden><button id="dev-unlock" class="round-button small" aria-label="Dev: unlock all progress" title="Dev: unlock all progress">🔓</button><span>Dev: Unlock all</span></label>
-          <label class="settings-row dev-only" for="dev-reset" hidden><button id="dev-reset" class="round-button small" aria-label="Dev: reset all progress" title="Dev: reset all progress">↺</button><span>Dev: Reset progress</span></label>
-          <label class="settings-row dev-only" for="dev-qc" hidden><button id="dev-qc" class="round-button small" aria-label="Dev: QC 3D models" title="Dev: QC 3D models">🔍</button><span>Dev: QC models</span></label>
-        </div>
-      </div>
       <button id="home-help" class="fh-round fh-help" aria-label="How to play" title="How to play"></button>
       <!-- Ô đảo vườn trong bản Figma: không hiện, chỉ để camera 3D canh vườn vào đúng chỗ này -->
       <span class="fh-island" aria-hidden="true"></span>
       <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>
   </section>
+<!-- Cài đặt (Figma: frame Home 73:590): popup giữa màn hình, nền tối mờ; nút bánh răng ở Home mở (aria-controls).
+       Day / Night + Sound dùng logic cũ; Music / Haptic / Notifications là lựa chọn được nhớ (game chưa có hệ thống tương ứng,
+       Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev nằm cuối, cuộn xuống mới thấy. -->
+  <!-- Nút cài đặt dùng chung cho Home / Map / Deco: cùng vị trí, cùng cỡ (menu-controller.js markTab bật / tắt) -->
+  <div id="hub-settings" class="settings hub-settings" hidden>
+    <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
+  </div>
+  <div id="settings-menu" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="settings-panel">
+      <header class="settings-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="settings-close" aria-label="Close settings"><svg viewBox="0 0 24 24"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="settings-body">
+        <!-- Khảo sát góp ý của người chơi (Google Form), mở tab mới -->
+        <a class="settings-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer">
+          <span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-feedback"/></svg></span>
+          <span class="settings-name">Feedback survey<small>Tell us what you think!</small></span>
+          <svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg>
+        </a>
+        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></span><span class="settings-name">Day / Night</span>
+          <button id="night-toggle" class="daynight" aria-pressed="false"><i><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></i><i><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></i></button></div>
+        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg></span><span class="settings-name">Sound</span>
+          <button id="home-sound" class="switch sound-toggle" aria-pressed="true"><b></b></button></div>
+        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-music"/></svg></span><span class="settings-name">Music</span>
+          <button class="switch pref-toggle" data-pref="music" aria-pressed="true"><b></b></button></div>
+        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-haptic"/></svg></span><span class="settings-name">Haptic</span>
+          <button class="switch pref-toggle" data-pref="haptic" aria-pressed="true"><b></b></button></div>
+        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-bell"/></svg></span><span class="settings-name">Notifications</span>
+          <button class="switch pref-toggle" data-pref="notifications" aria-pressed="true"><b></b></button></div>
+        <div class="settings-links">
+          <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-globe"/></svg><span>Language</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
+          <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-support"/></svg><span>Support</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
+        </div>
+        <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
+        <div class="settings-dev dev-only" hidden>
+          <button id="dev-unlock" class="settings-link"><span>🔓 Dev: Unlock all</span></button>
+          <button id="dev-reset" class="settings-link"><span>↺ Dev: Reset progress</span></button>
+          <button id="dev-qc" class="settings-link"><span>🔍 Dev: QC models</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
   <section id="deco" class="screen deco" hidden>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
@@ -169,7 +216,7 @@
     <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
     <button class="tab" data-tab="map"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Map</span></button>
     <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><use href="#i-deco"/></svg><span>Deco</span></button>
-    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-cart"/></svg><span>Shop</span><i class="fh-alert" aria-hidden="true">!</i></button>
+    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-cart"/></svg><span>Shop</span></button>
   </nav>
   <div id="toast" class="toast" role="status" hidden></div>
 
@@ -177,7 +224,7 @@
   <section id="map" class="map" hidden>
     <header class="map-head">
       <h2>Journey</h2>
-      <button id="help" class="round-button" aria-label="How to play" title="How to play">?</button>
+      <button id="help" class="fh-round fh-help map-help" aria-label="How to play" title="How to play"></button>
     </header>
     <div id="map-list" class="map-list"></div>
     <div id="map-3d" class="map-3d"></div>
@@ -208,14 +255,34 @@
       <button class="pill-button">Play</button>
     </form>
   </dialog>
-  <dialog id="result-dialog" class="level-dialog">
-    <h2 id="result-title">Level complete!</h2>
-    <p id="result-score" class="level-feature">0 points</p>
-    <p id="result-coins" class="result-coins" hidden></p>
-    <div class="level-actions">
-      <button id="result-map" class="pill-button ghost">Home</button>
-      <button id="result-retry" class="pill-button">Retry</button>
-      <button id="result-next" class="pill-button">Next level</button>
+  <!-- Bảng kết quả theo Figma (frame Gameplay 73:616 thắng / 73:680 thua): mèo ló đầu trên khung (vui / khóc), thắng có 3 sao +
+       tia sáng, thua có trái tim vỡ; tiêu đề, "Level N cleared / failed", ô điểm + xu thưởng; nút tròn Home / chơi lại, nút dài
+       Next (xanh) hoặc Retry (hồng). play-controller.js endLevel() điền số và bật / tắt theo thắng / thua. -->
+  <dialog id="result-dialog" class="level-dialog result-dialog">
+    <div class="result-peek" aria-hidden="true">
+      <span class="result-bush l"></span><span class="result-bush r"></span>
+      <span id="result-cat" class="result-cat"></span>
+    </div>
+    <div class="result-hero" aria-hidden="true">
+      <div class="result-rays"></div>
+      <div id="result-stars" class="result-stars"><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i></div>
+      <svg class="result-heart" viewBox="0 0 100 90"><path d="M50 84 C20 62 6 46 6 28 A21 21 0 0 1 48 20 L42 36 L54 46 L44 60 Z" fill="#ff7c99" stroke="#c43d62" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M54 20 A21 21 0 0 1 94 28 C94 46 80 62 52 84 L58 62 L48 48 L60 36 Z" fill="#ff7c99" stroke="#c43d62" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M20 26 Q24 18 32 18" fill="none" stroke="#ffd0dc" stroke-width="5" stroke-linecap="round"/></svg>
+    </div>
+    <h2 id="result-title" class="result-title">Level Complete!</h2>
+    <p id="result-sub" class="result-sub">Level 1 cleared</p>
+    <div class="result-box">
+      <span class="result-label">Score</span>
+      <b id="result-score" class="result-score">0</b>
+      <p id="result-coins" class="result-coins" hidden></p>
+      <p id="result-note" class="result-note" hidden></p>
+    </div>
+    <div class="result-actions">
+      <button id="result-map" class="result-round" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
+      <button id="result-replay" class="result-round" aria-label="Play again" title="Play again"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg></button>
+      <button id="result-next" class="result-wide next" aria-label="Next level"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5Z"/></svg></button>
+      <button id="result-retry" class="result-wide retry" aria-label="Retry"><svg viewBox="0 0 24 24"><path d="M12 3.5v7M7.5 6.5a7.5 7.5 0 1 0 9 0"/></svg></button>
     </div>
   </dialog>
   <!-- Rời / chơi lại ván đang dở: hỏi lại trước -->
