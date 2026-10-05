@@ -594,7 +594,8 @@ export function createRoom() {
   controls.screenSpacePanning = false; // kéo = trượt trên mặt sàn, không bay lên xuống
   controls.update();
   // Hai kiểu điều khiển:
-  //   hub  (Home): kéo 1 ngón TRÊN khu nhà = trượt camera (trái/phải, xa/gần), kéo ở VÙNG TRỜI = xoay cả khu nhà;
+  //   hub  (Home): kéo 1 ngón (ở đâu cũng vậy) = trượt camera (trái/phải, xa/gần);
+  //                vặn 2 ngón = xoay cả khu nhà quanh tâm nhìn (trackTouch); chuột: kéo chuột phải = xoay;
   //                góc nhìn từ trên xuống cố định (không kéo lên cao / xuống thấp được);
   //                chụm 2 ngón = zoom: phóng to vào chỗ đang chụm, thu nhỏ thì trôi dần về giữa khu nhà.
   //   room (Deco): khoá vào khu đang trang trí, kéo = xoay quanh phòng, chụm = zoom
@@ -614,19 +615,6 @@ export function createRoom() {
   // Deco: vườn đã mở rộng dài gấp đôi nên lùi camera xa hơn (và cho thu nhỏ xa hơn) để thấy trọn cả vườn.
   const WIDE = 1.4;
   const zoneReach = zone => zone === 'garden' && expanded ? WIDE : 1;
-  // Home: bắt đầu kéo ở đâu quyết định kéo làm gì (chạy trước OrbitControls nhờ capture): trúng khu nhà thì trượt,
-  // trúng trời thì xoay.
-  function pickDrag(event) {
-    if (!hub || carrying) return;
-    aim(event);
-    const onSite = !!cats.hit(raycaster) || raycaster.intersectObject(site, true).some(({ object }) => {
-      for (let node = object; node; node = node.parent) if (!node.visible) return false;
-      return true;
-    });
-    const action = onSite ? 'PAN' : 'ROTATE';
-    controls.touches.ONE = THREE.TOUCH[action];
-    controls.mouseButtons.LEFT = THREE.MOUSE[action];
-  }
   // Giữ tâm nhìn trong khu nhà (các khu đã mở) khi kéo ở Home.
   const panBox = new THREE.Box3(), tmpCenter = new THREE.Vector3(), clampDelta = new THREE.Vector3(), itemBox = new THREE.Box3(), tmpGoal = new THREE.Vector3();
   function clampPan() {
@@ -1070,7 +1058,28 @@ export function createRoom() {
     controls.enableRotate = true; controls.enableZoom = true; controls.enablePan = hub;
     renderer.domElement.classList.remove('carrying');
   }
-  renderer.domElement.addEventListener('pointerdown', pickDrag, { capture: true });
+  // Home: vặn 2 ngón = xoay khu nhà quanh trục đứng qua tâm nhìn (OrbitControls chỉ lo chụm zoom + trượt 2 ngón).
+  // Góc vặn phải vượt ngưỡng mới bắt đầu xoay, để lúc chụm zoom khu nhà không lắc theo vài độ run tay.
+  const TWIST_START = .12; // rad (~7°)
+  const touches = new Map(), upAxis = new THREE.Vector3(0, 1, 0), twistOffset = new THREE.Vector3();
+  let twistAngle = 0, twistSum = 0, twisting = false;
+  const touchAngle = () => { const [a, b] = [...touches.values()]; return Math.atan2(b.y - a.y, b.x - a.x); };
+  function trackTouch(event) {
+    if (event.pointerType === 'mouse') return;
+    if (event.type === 'pointerup' || event.type === 'pointercancel') touches.delete(event.pointerId);
+    else if (event.type === 'pointerdown' || touches.has(event.pointerId)) touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touches.size !== 2) { twisting = false; return; }
+    const angle = touchAngle();
+    if (event.type !== 'pointermove') { twistAngle = angle; twistSum = 0; twisting = false; return; }
+    const delta = ((angle - twistAngle) % TAU + TAU + Math.PI) % TAU - Math.PI;
+    twistAngle = angle;
+    if (!hub || carrying) return;
+    if (!twisting) { twistSum += delta; if (Math.abs(twistSum) < TWIST_START) return; twisting = true; }
+    // Vặn theo chiều kim đồng hồ trên màn hình thì khu nhà quay theo: camera quay ngược lại quanh tâm nhìn.
+    twistOffset.subVectors(camera.position, controls.target).applyAxisAngle(upAxis, delta);
+    camera.position.copy(controls.target).add(twistOffset);
+  }
+  ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(type => renderer.domElement.addEventListener(type, trackTouch));
   renderer.domElement.addEventListener('pointerdown', event => {
     down = { x: event.clientX, y: event.clientY, id: event.pointerId };
     clearTimeout(holdTimer);
