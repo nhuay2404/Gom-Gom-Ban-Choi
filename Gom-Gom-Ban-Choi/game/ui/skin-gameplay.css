@@ -2,7 +2,10 @@
    - Ảnh nền đồng cỏ (image 116), pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (skins/figma-game/).
    - Bàn chơi, ô, thùng gỗ, mèo: vẽ lại bằng CSS / SVG (cat-art.mjs, board-art.mjs) theo cùng kiểu đổ bóng với bản Figma.
    Kích thước nhân theo --u (= bề ngang khung / 393). File nạp sau ui-portrait.css nên chỉ ghi đè phần nhìn. */
-.shell{--u:calc(min(100vw,480px) / 393);background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+.shell{background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+/* Màn rộng hơn khung (màn ngang, tablet, desktop): hai bên khung là cùng ảnh đồng cỏ phóng to + làm mờ, thay cho dải màu trơn */
+body{background:none}
+body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
 .shell>.topbar{display:none}
 /* Bỏ dòng thông báo (mục tiêu / cộng điểm) dưới bàn như bản Figma */
 .shell>.message-row{display:none}
@@ -102,7 +105,7 @@ body.low-moves .fg-score{outline:0}
 .fg-hud .fg-settings .fh-round::before{width:calc(36 * var(--u));height:calc(36 * var(--u))}
 
 /* ---------- Bảng kết quả theo Figma: thắng (Level Complete!) / thua (Try Again!) ---------- */
-.result-dialog{--u:calc(min(100vw,480px) / 393);width:calc(340 * var(--u));max-width:calc(100% - 24px);overflow:visible;margin-top:calc(150 * var(--u));
+.result-dialog{width:calc(340 * var(--u));max-width:calc(100% - 24px);overflow:visible;margin-top:calc(150 * var(--u));
   padding:calc(30 * var(--u)) calc(18 * var(--u)) calc(18 * var(--u));border:calc(3.5 * var(--u)) solid #8a4128;border-radius:calc(28 * var(--u));
   background:#fffaf0;box-shadow:inset 0 0 0 calc(3 * var(--u)) #fffdf7,0 calc(5 * var(--u)) 0 #8a412855;color:#6b2416;text-align:center}
 .result-dialog::backdrop{background:#2b1a1088;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}

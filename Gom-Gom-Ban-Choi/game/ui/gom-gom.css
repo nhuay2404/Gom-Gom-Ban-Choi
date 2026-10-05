@@ -1,11 +1,18 @@
 :root{color-scheme:light;font-synthesis:none;--cream:#fff5d8;--ink:#394521;--slot-fill:#365b3040;--slot-edge:#45672f85;--card-fill:#fff7e8;--card-edge:#829a5a;--selected:#076b63;font-family:"Avenir Next",Nunito,ui-rounded,system-ui,-apple-system,sans-serif;color:#34401d;background:#78a63d}
+/* Khung thiết kế 393 × 852 (Figma). Mọi kích thước UI = n × --u (--u = bề rộng khung / 393).
+   Khung co theo CẢ bề ngang lẫn chiều cao để giữ đúng tỉ lệ, không méo / chồng / tràn trên mọi cỡ màn:
+   - rộng tối đa 480px (tablet, desktop);
+   - cao: UI cần tối thiểu ~700u (Home: hàng nút trên + PLAY + thanh tab; màn chơi: HUD + bàn + dock + booster),
+     máy thấp hơn (màn ngang, desktop thấp) thì khung hẹp lại cho vừa chiều cao, hai bên là nền tràn viền.
+   Điện thoại dọc (≥ 9:16) vẫn rộng đúng bằng màn hình như cũ. */
+:root{--frame-w:min(100vw, 480px, 100dvh * 393 / 700);--u:calc(var(--frame-w) / 393)}
 *{box-sizing:border-box}
 body{margin:0;min-width:320px;min-height:100dvh;background:#8cc45e}
 button{font:inherit;color:inherit;cursor:pointer;background:0 0;border:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .14s,box-shadow .14s,opacity .14s}
 button:not(:disabled):active{filter:brightness(.96)}
 button:focus-visible{outline:3px solid #075f60;outline-offset:3px}
 button:disabled{opacity:.43;cursor:default}
-.shell{width:min(480px,100%);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#a8d77a url('./skins/farm-pop/background-pink.png') 50%/100% 100% no-repeat}
+.shell{width:var(--frame-w);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#a8d77a url('./skins/farm-pop/background-pink.png') 50%/100% 100% no-repeat}
 @media(width>=600px){.shell{box-shadow:none}}
 .topbar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:12px;height:63px;margin-bottom:6px}
 .topbar h1{margin:0;text-align:center;color:#fffdee;font-size:31px;font-weight:900;letter-spacing:-1.6px;line-height:.9;text-shadow:0 2px #46783348;transform:rotate(-5deg)}
