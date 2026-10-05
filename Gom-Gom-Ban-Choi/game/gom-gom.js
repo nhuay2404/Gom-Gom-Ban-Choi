@@ -10,7 +10,7 @@ import { CRATE_SVG, METAL_SVG } from './board-art.mjs';
 import { playSound, soundOn, setSound } from './sound.mjs';
 import { SAVE_KEYS, readText, writeText } from './save.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './adaptive.mjs';
-import { ZONES, zoneOpen, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco, occupantOf } from './deco-data.mjs';
+import { ZONES, zoneOpen, GARDEN_EXPANSION, gardenExpanded, catalogFor, itemById, loadDeco, saveDeco, itemStatus, applyAction, previewDeco, occupantOf } from './deco-data.mjs';
 
 // Giao diện màn chơi + menu. Luật của một ván nằm ở session.mjs (thuần logic): file này chỉ gọi luật rồi vẽ/diễn.
 // Mỗi màn (levels.mjs): đạt điểm mục tiêu trong giới hạn lượt. Hết lượt hoặc hết chỗ đặt là thua.
@@ -1002,7 +1002,9 @@ function renderLowMoves() {
   // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
   const offset = Math.floor(Math.random() * LOW_MOVE_MOODS.length);
   cats.forEach((cat, i) => { if (!cat.dataset.low) cat.dataset.low = LOW_MOVE_MOODS[(i * 3 + offset + Math.floor(Math.random() * 2)) % LOW_MOVE_MOODS.length]; });
-}function armAfk() {
+}
+
+function armAfk() {
   document.body.classList.remove('afk');
   if (track?.idleSince) { track.idleMs += now() - track.idleSince; track.idleSince = 0; }
   clearTimeout(afkTimer);
@@ -1223,7 +1225,7 @@ function showTab(tab) {
   $(tab).scrollTop = 0;
 }
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10).
-const applyRoom = shown => room3d?.apply(shown, { living: zoneOpen('living', levelsCleared()), bedroom: zoneOpen('bedroom', levelsCleared()) });
+const applyRoom = shown => room3d?.apply(shown, { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), gardenExpand: isGardenExpanded() });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab === 'shop') return room3d.stop();
@@ -1291,6 +1293,7 @@ const roomHint = $('deco-room').querySelector('.room-hint');
 buildFlatRooms();
 import('./deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
+  if (DEV_MODE && new URLSearchParams(location.search).has('qc')) setTimeout(runQC, 500);
   room3d.setNight(night);
   decoThumbnail = thumbnail;
   $('home-room').replaceChildren();
@@ -1305,7 +1308,7 @@ import('./deco-room.mjs').then(({ createRoom, thumbnail }) => {
 // ===== Deco: mua / đặt đồ, đổi tường, sàn, chọn mèo. Chọn món = xem trước ngay trong phòng. =====
 const FURNISHING = entry => entry.cat === 'furniture' || entry.cat === 'cats';
 function renderDeco() {
-  const unlocked = unlockedCount(loadProgress());
+  const unlocked = decoUnlockedLevel();
   $('deco').querySelectorAll('.chip').forEach(chip => { chip.textContent = ZONES[deco.zone].cats[chip.dataset.cat]; });
   $('deco-grid').replaceChildren(...catalogFor(deco.zone, decoCat).map(entry => {
     const status = itemStatus(deco, entry, unlocked);
@@ -1335,7 +1338,7 @@ $('deco-grid').addEventListener('click', event => {
   else pickDeco(entry);
 });
 function openDecoConfirm() {
-  const unlocked = unlockedCount(loadProgress()), status = itemStatus(deco, decoPick, unlocked), occupant = occupantOf(deco, decoPick);
+  const unlocked = decoUnlockedLevel(), status = itemStatus(deco, decoPick, unlocked), occupant = occupantOf(deco, decoPick);
   if (status === 'locked') return showToast(`Unlocks at level ${decoPick.lock}`);
   if (status === 'using' && !FURNISHING(decoPick)) return showToast('Already in use');
   const tile = document.querySelector(`#deco-grid .deco-item[data-id="${decoPick.id}"] .thumb`);
@@ -1358,7 +1361,7 @@ $('deco-confirm-cancel').onclick = () => $('deco-confirm').close();
 $('deco-confirm-ok').onclick = () => { $('deco-confirm').close(); applyDecoPick(); };
 function applyDecoPick() {
   if (!decoPick) return;
-  const unlocked = unlockedCount(loadProgress());
+  const unlocked = decoUnlockedLevel();
   const next = applyAction(deco, decoPick, unlocked);
   if (next.error) return showToast(next.error);
   const bought = next.coins < deco.coins;
@@ -1382,12 +1385,18 @@ $('deco').querySelector('.chips').addEventListener('click', event => {
   pickDeco(null);
 });
 
-// ===== Khu: vườn (màn 1–10) / phòng khách (mở khi thắng màn 10). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
+// ===== Khu: vườn (màn 1–10; mở rộng khi thắng màn 30) / phòng khách (thắng màn 10) / phòng ngủ (15). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
 const levelsCleared = () => clearedCount(loadProgress());
+// Dev "mở hết khu" (nút Dev: Unlock all): xem được cả phần / món khoá ở màn game chưa có (vườn mở rộng: màn 30+). Lưu trong máy.
+const DEV_ZONES_KEY = 'gomgom-dev-all-zones';
+const devAllZones = () => DEV_MODE && readText(DEV_ZONES_KEY) === 'on';
+const isZoneOpen = (zone, cleared = levelsCleared()) => zoneOpen(zone, cleared) || devAllZones();
+const isGardenExpanded = () => gardenExpanded(levelsCleared()) || devAllZones();
+const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
 function renderZoneSwitch() {
   const cleared = levelsCleared();
   document.querySelectorAll('.zone-switch button').forEach(button => {
-    const zone = button.dataset.zone, open = zoneOpen(zone, cleared);
+    const zone = button.dataset.zone, open = isZoneOpen(zone, cleared);
     button.classList.toggle('on', zone === deco.zone);
     button.classList.toggle('locked', !open);
     button.setAttribute('aria-selected', zone === deco.zone);
@@ -1398,7 +1407,7 @@ document.addEventListener('click', event => {
   const button = event.target.closest('.zone-switch button');
   if (!button) return;
   const zone = button.dataset.zone;
-  if (!zoneOpen(zone, levelsCleared())) return showToast(`Beat level ${ZONES[zone].unlockAfter} to unlock the ${ZONES[zone].name.toLowerCase()}`);
+  if (!isZoneOpen(zone)) return showToast(`Beat level ${ZONES[zone].unlockAfter} to unlock the ${ZONES[zone].name.toLowerCase()}`);
   if (zone === deco.zone) return;
   deco = { ...deco, zone };
   saveDeco(deco);
@@ -1491,9 +1500,10 @@ function endLevel(win, reason = '') {
   }
   // Vừa mở một khu mới (thắng đúng màn mốc lần đầu): báo trong hộp kết quả.
   const unlockedZone = win && coinsEarned > 0 && Object.values(ZONES).find(z => z.unlockAfter > 0 && index + 1 === z.unlockAfter && levelsCleared() === z.unlockAfter);
+  const expandedNow = win && coinsEarned > 0 && index + 1 === GARDEN_EXPANSION.unlockAfter && levelsCleared() === GARDEN_EXPANSION.unlockAfter;
   $('result-coins').hidden = !coinsEarned && !gift && !tip;
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
-  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedZone && `${unlockedZone.name} unlocked!`,
+  $('result-coins').innerHTML = [coinsEarned && `<i class="ico-coin"></i> +${coinsEarned} coins`, unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!',
     gift && `Gift: ${BOOSTER_NAMES.moves} booster`, tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`].filter(Boolean).join(' · ');
   const dialog = $('result-dialog');
   dialog.classList.toggle('win', win);
@@ -1561,19 +1571,32 @@ document.querySelectorAll('.dev-only').forEach(row => { row.hidden = !DEV_MODE; 
 $('dev-unlock').onclick = () => {
   closeAllSettings();
   saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
+  writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
   deco = { ...deco, coins: Math.max(deco.coins, DEV_COINS) };
   saveDeco(deco);
   playSound('reward');
   showTab('home');
-  showToast(`Dev: all ${LEVELS.length} levels unlocked · ${DEV_COINS.toLocaleString('en-US')} coins`);
+  showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · ${DEV_COINS.toLocaleString('en-US')} coins`);
 };
 // Reset: xoá tiến độ, deco/xu, booster, hồ sơ độ khó (giữ cài đặt âm thanh, ngày/đêm) rồi tải lại như người chơi mới.
 $('dev-reset').onclick = () => {
   closeAllSettings();
   if (!confirm('Dev: reset ALL progress (levels, coins, deco, boosters, difficulty profile)?')) return;
   ['progress', 'deco', 'boosters', 'profile'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
+  try { localStorage.removeItem(DEV_ZONES_KEY); } catch {}
   location.reload();
 };
+// QC model 3D (qc.mjs): liệt kê lỗi model / chỗ đặt đồ. Mở game với ?qc thì tự chạy khi phòng 3D sẵn sàng.
+function runQC() {
+  if (!room3d) return showToast('3D room not ready yet');
+  const report = room3d.qc(), errors = report.filter(r => r.level === 'error');
+  console.table(report);
+  $('qc-title').textContent = errors.length ? `Model QC: ${errors.length} error(s), ${report.length - errors.length} warning(s)` : report.length ? `Model QC: no errors, ${report.length} warning(s)` : 'Model QC: all clear ✓';
+  $('qc-list').replaceChildren(...report.map(r => Object.assign(document.createElement('li'), { className: r.level, textContent: `[${r.zone}] ${r.what}` })));
+  $('qc-dialog').showModal();
+  return report;
+}
+$('dev-qc').onclick = () => { closeAllSettings(); runQC(); };
 $('home-play').onclick = () => startLevel(unlockedCount(loadProgress()) - 1);
 $('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');

@@ -198,8 +198,10 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.settings-menu{animation:none}.settings-toggle svg{transition:none}}
 
 /* ===== Chuyển khu Garden / Living room ===== */
-.zone-switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff8e4e6;box-shadow:none;width:max-content;max-width:100%;margin-inline:auto}
-.zone-switch button{min-height:40px;padding:0 16px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);white-space:nowrap}
+.zone-switch{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff8e4e6;box-shadow:none;width:max-content;max-width:100%;margin-inline:auto;
+  overflow-x:auto;scrollbar-width:none} /* 4 khu: hẹp thì vuốt ngang */
+.zone-switch::-webkit-scrollbar{display:none}
+.zone-switch button{flex:none;min-height:40px;padding:0 12px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);white-space:nowrap}
 .zone-switch button.on{background:var(--green);color:#fff;box-shadow:none}
 .zone-switch button.locked{opacity:.6}
 .home-stage .zone-switch{position:absolute;z-index:3;left:50%;translate:-50% 0;top:calc(max(14px,env(safe-area-inset-top)) + 100px)}
@@ -358,3 +360,9 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 /* Ký hiệu nổi trên đầu mèo: ♪ (kêu meo), … (bị làm phiền), 💢 (cáu vì bị chạm quá nhiều) */
 .pet-heart.symbol{color:#6b4523;font-weight:900}
 .pet-heart.angry{font-size:30px!important}
+/* Dev: hộp kết quả QC model 3D (qc.mjs) */
+.qc-dialog{width:min(560px,calc(100% - 24px));max-height:80vh;overflow:auto}
+.qc-dialog h2{font-size:18px;margin:4px 0 10px}
+.qc-dialog ul{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
+.qc-dialog li.error{color:#c0392b}
+.qc-dialog li.warn{color:#9a6a1a}

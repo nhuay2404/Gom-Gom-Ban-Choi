@@ -1,4 +1,4 @@
-// Dữ liệu Deco: 3 khu (vườn, phòng khách, phòng ngủ), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
+// Dữ liệu Deco: 3 khu (vườn — mở rộng thêm khi thắng màn 30, phòng khách, phòng ngủ), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm bằng sao: mỗi sao mới = COINS_PER_STAR xu. Mèo dùng chung cả 2 khu.
 import { ECONOMY } from './tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
@@ -12,6 +12,11 @@ export const ZONES = {
 };
 export const ZONE_IDS = Object.keys(ZONES);
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
+// Vườn mở rộng (dành cho màn 31–40): thắng màn 30 thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
+// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2', khoá từ màn 31).
+// Game hiện có 20 màn nên người chơi chưa mở được; xem trước bằng nút Dev: Unlock all.
+export const GARDEN_EXPANSION = { unlockAfter: 30, name: 'Garden expansion' };
+export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
 
 // `lock` = level phải mở tới (1-based) thì mới mua được. Giá 0 = có sẵn từ đầu.
 export const CATALOG = [
@@ -69,10 +74,21 @@ export const CATALOG = [
   { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', price: 100, color: '#dcebd6' },
   { id: 'bwall-butter', zone: 'bedroom', cat: 'walls', name: 'Butter', price: 150, color: '#fff0c2' },
   { id: 'bwall-night', zone: 'bedroom', cat: 'walls', name: 'Night blue', price: 150, color: '#c9d3ee' },
-  { id: 'bfloor-maple', zone: 'bedroom', cat: 'floors', name: 'Maple', price: 0, color: '#e9c493' },
+  // Phòng trong nhà (phòng khách, phòng ngủ) đều mặc định sàn Oak miễn phí; vườn giữ nền cỏ.
+  { id: 'bfloor-oak', zone: 'bedroom', cat: 'floors', name: 'Oak', price: 0, color: '#e4b574' },
+  { id: 'bfloor-maple', zone: 'bedroom', cat: 'floors', name: 'Maple', price: 100, color: '#e9c493' },
   { id: 'bfloor-ash', zone: 'bedroom', cat: 'floors', name: 'Ash wood', price: 100, color: '#cdb69a' },
   { id: 'bfloor-carpet', zone: 'bedroom', cat: 'floors', name: 'Lilac carpet', price: 120, color: '#d9d4f2' },
   { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', price: 150, color: '#f2d7c9' },
+  // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
+  { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', price: 0, color: '#f3d5a8', lock: 31 },
+  { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', price: 0, color: '#ffd23f', lock: 31 },
+  { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', price: 200, color: '#8fc9f2', lock: 31 },
+  { id: 'campfire', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Campfire', price: 260, color: '#ff7a3d', lock: 32 },
+  { id: 'kite', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Kite', price: 220, color: '#e8617f', lock: 33 },
+  { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', price: 280, color: '#6fc3e0', lock: 34 },
+  { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', price: 320, color: '#6fbf4a', lock: 35 },
+  { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', price: 340, color: '#ffb347', lock: 37 },
   // --- Mèo (dùng chung) ---
   { id: 'cat-orange', cat: 'cats', name: 'Orange cat', price: 0, breed: 'orange' },
   { id: 'cat-gray', cat: 'cats', name: 'Gray cat', price: 0, breed: 'gray' },
@@ -118,11 +134,20 @@ const VARIANTS = [
   ['closet', 'closet-dresser', 'Vanity dresser', '#ffc9d5'],
   ['plushie', 'plushie-dino', 'Dino plush', '#7fc45a'],
   ['catsteps', 'catsteps-bridge', 'Rope bridge', '#b9854a'],
+  // --- Vườn mở rộng ---
+  ['windmill', 'windmill-turbine', 'Wind turbine', '#f5f8fb'],
+  ['sunflowers', 'sunflowers-scarecrow', 'Scarecrow', '#e9c25a'],
+  ['clothesline', 'clothesline-flags', 'Flag line', '#ffd66b'],
+  ['campfire', 'campfire-tent', 'Camping tent', '#ff9f43'],
+  ['kite', 'kite-balloons', 'Balloons', '#9fd0f0'],
+  ['stream', 'stream-bridge', 'Stream bridge', '#c9955e'],
+  ['swingtree', 'swingtree-treehouse', 'Treehouse', '#c98a55'],
+  ['slide', 'slide-seesaw', 'Seesaw', '#7fc45a'],
 ];
 // Chèn mỗi phương án ngay sau món gốc; giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
 VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findIndex(entry => entry.id === slot), base = CATALOG[at];
-  CATALOG.splice(at + 1, 0, { id, zone: base.zone, cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
+  CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
 });
 export const itemById = id => CATALOG.find(entry => entry.id === id);
 // Chỗ đặt của một món (món gốc: chính nó; phương án thay thế: món gốc).
@@ -140,13 +165,13 @@ const zoneDefaults = zone => {
   };
 };
 function defaults(totalStars) {
-  return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
+  return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
 function clean(deco) {
   const known = id => !!itemById(id);
-  const zones = Object.fromEntries(Object.entries(deco.zones).map(([zone, state]) => [zone, { ...state, owned: state.owned.filter(known), placed: state.placed.filter(known) }]));
+  const zones = Object.fromEntries(Object.entries(deco.zones).filter(([zone]) => ZONES[zone]).map(([zone, state]) => [zone, { ...state, owned: state.owned.filter(known), placed: state.placed.filter(known) }]));
   return { ...deco, zones };
 }
 
@@ -157,7 +182,22 @@ export function loadDeco(totalStars) {
   const saved = readJSON(SAVE_KEYS.deco);
   {
     // Save có từ trước khi thêm khu mới (vd. phòng ngủ): khu thiếu lấy mặc định, khu đã có giữ nguyên.
-    if (saved && saved.zones) { const base = defaults(totalStars); return clean({ ...base, ...saved, zones: { ...base.zones, ...saved.zones } }); }
+    if (saved && saved.zones) {
+      const base = defaults(totalStars), zones = { ...base.zones, ...saved.zones };
+      // Bản thử nghiệm từng tách vườn mở rộng thành khu 'garden2' riêng: gộp đồ đã có / đã đặt về vườn.
+      if (zones.garden2) {
+        const g = zones.garden, g2 = zones.garden2;
+        zones.garden = { ...g, owned: [...new Set([...g.owned, ...g2.owned])], placed: [...new Set([...g.placed, ...g2.placed.filter(id => itemById(id)?.zone === 'garden')])] };
+        delete zones.garden2;
+      }
+      // Save có từ trước khi có phần mở rộng: đặt sẵn đồ miễn phí của nó (chỉ hiện khi vườn đã mở rộng), một lần.
+      if (!saved.expansionSeeded) {
+        const free = CATALOG.filter(e => e.area === 'garden2' && e.price === 0 && !e.slot).map(e => e.id);
+        const taken = new Set(zones.garden.placed.map(id => slotOf(itemById(id) || { id })));
+        zones.garden = { ...zones.garden, placed: [...zones.garden.placed, ...free.filter(id => !taken.has(id))] };
+      }
+      return clean({ ...base, ...saved, zones, expansionSeeded: true });
+    }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(totalStars);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);

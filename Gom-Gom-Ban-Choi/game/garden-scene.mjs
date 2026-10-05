@@ -1,8 +1,7 @@
 // Khu vườn (màn 1–10): nền cỏ, hàng rào, bụi cây góc vườn, bướm bay; và bộ đồ vườn cho Deco.
 // Mỗi món có chỗ đặt cố định [x, z, xoay?]; +z của món hướng vào giữa vườn (mèo đi tới từ phía đó).
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { sphereSegments, radialSegments, mergeStatic } from './mesh-detail.mjs';
+import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
 
 import { ROOM_HALF } from './room-layout.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
@@ -19,7 +18,7 @@ function mesh(geometry, material) {
 const at = (node, x, y, z) => { node.position.set(x, y, z); return node; };
 // Độ mịn kiểu subdivision, cùng mức với deco-room.mjs.
 const ROUND = 3, RADIAL = 32; // bo góc 3 nấc / trụ 32 cạnh là đủ mượt dưới viền toon; cầu / trụ mặc định chia theo cỡ (mesh-detail.mjs)
-const rbox = (w, h, d, r, color) => mesh(new RoundedBoxGeometry(w, h, d, ROUND, r), color);
+const rbox = (w, h, d, r, color) => mesh(roundedBox(w, h, d, ROUND, r), color);
 const box = (w, h, d, color) => mesh(new THREE.BoxGeometry(w, h, d), color);
 const cyl = (top, bottom, h, color, seg = radialSegments(Math.max(top, bottom))) => mesh(new THREE.CylinderGeometry(top, bottom, h, seg), color);
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, ...sphereSegments(r)), color);
@@ -108,7 +107,7 @@ export const GARDEN_BUILD = {
   stump() {
     const stump = group(at(cyl(.38, .44, .45, '#9a6a45'), 0, .225, 0), at(cyl(.36, .36, .02, '#e6c79a'), 0, .455, 0),
       at(cyl(.2, .2, .021, '#d2ad7a'), 0, .457, 0));
-    for (let i = 0; i < 3; i++) { const root = rbox(.14, .1, .3, .04, '#8a5a3a'); root.rotation.y = i * 2.1; root.translateZ(.4); root.position.y = .04; stump.add(root); }
+    for (let i = 0; i < 3; i++) { const root = rbox(.14, .1, .3, .04, '#8a5a3a'); root.rotation.y = i * 2.1; root.translateZ(.4); root.position.y = .05; stump.add(root); }
     return stump;
   },
   catnip() {
@@ -136,6 +135,7 @@ export const GARDEN_BUILD = {
         bud.scale.y = .8; shoot.add(bud);
       }
       shoot.rotation.set(0, angle, tilt, 'YXZ');
+      shoot.position.y = .05; // mọc từ mặt ụ đất: nhánh nghiêng không cắm xuyên xuống sàn
       return shoot;
     };
     const bush = group(at(cyl(.24, .3, .05, '#8a6a4a', 24), 0, .025, 0)); // ụ đất gốc
@@ -150,7 +150,7 @@ export const GARDEN_BUILD = {
     return plant;
   },
   lantern() {
-    const glow = mesh(new RoundedBoxGeometry(.3, .36, .3, ROUND, .05), mat('#fff0b8', { emissive: '#ffcf5a', emissiveIntensity: .9 }));
+    const glow = mesh(roundedBox(.3, .36, .3, ROUND, .05), mat('#fff0b8', { emissive: '#ffcf5a', emissiveIntensity: .9 }));
     const light = new THREE.PointLight('#ffcf7a', 4, 5, 1.6);
     light.position.y = 1.3;
     return group(at(cyl(.2, .24, .08, '#5a4a3a'), 0, .04, 0), at(cyl(.04, .04, 1.1, '#5a4a3a'), 0, .6, 0), at(glow, 0, 1.3, 0),
@@ -208,13 +208,13 @@ export const GARDEN_BUILD = {
     door.position.set(0, BASE + .02, D / 2 + .004);
     const frameShape = arch(.56, .26); frameShape.holes.push(arch(.44, .26));
     const frame = at(mesh(extrude(frameShape, .03, .018), TRIM), 0, BASE + .02, D / 2 - .01);
-    const sign = at(rbox(.36, .13, .04, .03, TRIM), 0, BASE + .66, D / 2 + .01);
+    const sign = at(rbox(.36, .13, .04, .02, TRIM), 0, BASE + .66, D / 2 + .01);
     const paw = at(ball(.03, ROOF), 0, BASE + .65, D / 2 + .035); paw.scale.z = .4;
     const windows = [1, -1].map(s => {
       const glass = at(mesh(new THREE.CircleGeometry(.11, 24), '#bfe6ff'), 0, 0, 0);
       const ring = mesh(new THREE.TorusGeometry(.12, .028, 10, 28), TRIM);
-      const win = group(glass, ring, at(box(.2, .022, .012, TRIM), 0, 0, .006), at(box(.022, .2, .012, TRIM), 0, 0, .006));
-      win.position.set(s * (W / 2 + .004), BASE + .46, 0); win.rotation.y = s * Math.PI / 2;
+      const win = group(glass, ring, at(box(.2, .022, .012, TRIM), 0, 0, .012), at(box(.022, .2, .012, TRIM), 0, 0, .012)); // chấn song cách kính 6 mm
+      win.position.set(s * (W / 2 + .008), BASE + .46, 0); win.rotation.y = s * Math.PI / 2; // kính cách vách 8 mm (không z-fighting)
       return win;
     });
     return group(base, body, gable, ...roof, ridge, door, frame, sign, paw, ...windows);
@@ -274,6 +274,7 @@ export const GARDEN_BUILD = {
     mergeStatic(stones); mergeStatic(reeds); mergeStatic(pad); // đá / lau / lá súng tĩnh: gộp theo màu
     const pond = group(bed, water, stones, reeds, pad, ...koi);
     pond.userData.fish = koi;
+    pond.userData.sink = .07; // đá cuội viền ao chôn nửa viên xuống đất (tự nhiên), không phải lỗi lún
     pond.userData.update = t => koi.forEach(f => {
       const a = t * .5 + f.userData.phase;
       f.position.set(Math.cos(a) * .45, .03, Math.sin(a) * .45);
@@ -393,7 +394,7 @@ export const GARDEN_BUILD = {
   // Hộp cát hình rùa (thay hộp cát): mặt cát cao ~.18 để mèo nhảy vào đào.
   'sandbox-turtle'() {
     const skin = '#8fd46a';
-    const legs = [[.42, .38], [-.42, .38], [.42, -.38], [-.42, -.38]].map(([x, z]) => at(ball(.12, skin), x, .06, z));
+    const legs = [[.42, .38], [-.42, .38], [.42, -.38], [-.42, -.38]].map(([x, z]) => { const leg = at(ball(.12, skin), x, .06, z); leg.scale.y = .5; return leg; }); // chân bẹt chạm sàn
     return group(at(cyl(.55, .5, .2, '#4fb34a'), 0, .1, 0), at(mesh(new THREE.TorusGeometry(.53, .04, 10, 48), '#3a8f36'), 0, .2, 0).rotateX(Math.PI / 2),
       at(cyl(.5, .5, .02, sandMat()), 0, .205, 0), ...legs, at(ball(.15, skin), 0, .2, -.58), // mặt cát cao hơn miệng bồn (.2)
       at(ball(.03, '#2a2a2a'), .07, .26, -.7), at(ball(.03, '#2a2a2a'), -.07, .26, -.7),
@@ -403,13 +404,17 @@ export const GARDEN_BUILD = {
   'cathouse-barrel'() {
     const barrel = mesh(new THREE.CylinderGeometry(.6, .6, 1, 32, 1, true), mat('#b9854a', { side: THREE.DoubleSide }));
     barrel.rotation.x = Math.PI / 2;
+    barrel.userData.noOutline = true; // vỏ thùng mỏng hở hai đầu: viền toon phủ mảng tối vào lòng thùng -> viền bằng vành gỗ hai đầu
     const back = at(mesh(new THREE.CircleGeometry(.6, 32), '#9a6a45'), 0, 0, -.5);
     const hoop = z => at(mesh(new THREE.TorusGeometry(.61, .03, 8, 48), mat('#8a8a8a', { metalness: .8, roughness: .45 })), 0, 0, z);
     // Nệm hẹp nằm đúng lòng thùng (lòng thùng cong: ở x = ±.25 đáy cao ~.05) nên không xuyên ra ngoài vỏ.
     const cushion = at(rbox(.5, .05, .82, .02, '#ec5b8c'), 0, .06, 0);
     // Biển tên dựng trên nóc thùng, hai chân chạm nóc (y = 1.2).
     const sign = group(at(rbox(.36, .16, .03, .01, '#fffaf0'), 0, 1.33, .28), at(cyl(.012, .012, .1, '#8a5a3a', 6), -.12, 1.23, .28), at(cyl(.012, .012, .1, '#8a5a3a', 6), .12, 1.23, .28));
-    return group(at(group(barrel, back, hoop(-.35), hoop(.35)), 0, .6, 0), cushion, sign);
+    const rim = z => at(mesh(new THREE.TorusGeometry(.6, .025, 8, 48), '#9a6a45'), 0, 0, z);
+    const node = group(at(group(barrel, back, hoop(-.35), hoop(.35), rim(-.5), rim(.5)), 0, .6, 0), cushion, sign);
+    node.userData.sink = .045; // đai sắt chôn nhẹ xuống đất cho thùng nằm vững, lòng thùng vẫn sát sàn để mèo chui vào
+    return node;
   },
   // Đài phun nước (thay hồ cá): bồn đá tròn có cá vàng bơi; mèo rình cá rồi khều nước.
   'pond-fountain'() {
@@ -480,19 +485,21 @@ export const GARDEN_BUILD = {
 
 // Nền cỏ vẽ bằng canvas: cỏ thường / cỏ ba lá / đồng hoa / lối đá.
 export function groundTexture(entry) {
+  const kind = entry.style || entry.id; // style: món dùng lại kiểu nền của món khác
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const g = canvas.getContext('2d');
   g.fillStyle = entry.color; g.fillRect(0, 0, 512, 512);
   let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   for (let i = 0; i < 900; i++) { g.fillStyle = rnd() > .5 ? '#ffffff1c' : '#2a5a1a1c'; g.fillRect(rnd() * 512, rnd() * 512, 3, 7); }
-  if (entry.id === 'ground-clover') for (let i = 0; i < 160; i++) { g.fillStyle = '#5fa83e88'; const x = rnd() * 512, y = rnd() * 512; [0, 2.1, 4.2].forEach(a => { g.beginPath(); g.arc(x + Math.cos(a) * 5, y + Math.sin(a) * 5, 5, 0, TAU); g.fill(); }); }
-  if (entry.id === 'ground-meadow') for (let i = 0; i < 220; i++) { g.fillStyle = FLOWER_COLORS[i % FLOWER_COLORS.length]; g.beginPath(); g.arc(rnd() * 512, rnd() * 512, 4, 0, TAU); g.fill(); }
-  if (entry.id === 'ground-path') {
+  if (kind === 'ground-clover') for (let i = 0; i < 160; i++) { g.fillStyle = '#5fa83e88'; const x = rnd() * 512, y = rnd() * 512; [0, 2.1, 4.2].forEach(a => { g.beginPath(); g.arc(x + Math.cos(a) * 5, y + Math.sin(a) * 5, 5, 0, TAU); g.fill(); }); }
+  if (kind === 'ground-meadow') for (let i = 0; i < 220; i++) { g.fillStyle = FLOWER_COLORS[i % FLOWER_COLORS.length]; g.beginPath(); g.arc(rnd() * 512, rnd() * 512, 4, 0, TAU); g.fill(); }
+  if (kind === 'ground-path') {
     g.fillStyle = '#9fd46a'; g.fillRect(0, 0, 512, 512);
     for (let y = 0; y < 512; y += 64) for (let x = (y / 64) % 2 * 32; x < 512; x += 64) { g.fillStyle = rnd() > .5 ? '#e0d9cc' : '#cfc7b8'; g.beginPath(); g.ellipse(x + 30, y + 30, 26, 22, rnd(), 0, TAU); g.fill(); }
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping; // nền vườn mở rộng lặp texture theo chiều dài (không kéo giãn)
   return texture;
 }
 
@@ -522,14 +529,17 @@ function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ướt / 
 
 // Hàng rào quanh vườn, dựng lại khi đổi kiểu. Thấp nên không cần mờ đi như tường phòng.
 // `half` = nửa cạnh khoảnh vườn (mặc định cả vườn; thumbnail Deco dùng khoảnh nhỏ).
-// `gate` = { x, w }: chừa cổng trên cạnh -z (lối sang phòng khách), hai bên cổng có cột.
-export function buildFence(entry, half = HALF, gate = null) {
+// `gates` = [{ side, u, w }]: chừa cổng trên cạnh side (0 = -z, 1 = +z, 2 = -x, 3 = +x), tâm cổng ở u theo trục dọc
+// cạnh đó trong toạ độ cục bộ của đoạn rào (cạnh 0: u = x, 1: u = -x, 2: u = -z, 3: u = z); hai bên cổng có cột.
+// `halfX`: nửa chiều dài theo x (vườn mở rộng là hình chữ nhật dài theo x); mặc định = half (hình vuông).
+export function buildFence(entry, half = HALF, gates = [], halfX = half) {
+  const kind = entry.style || entry.id;
   const fence = markOutlineUnit(new THREE.Group()); // cả hàng rào là một khối: chấn song đè lên cột không có nét trong
   // Một đoạn rào chạy dọc trục x cục bộ từ x0 tới x1 (đoạn nguyên một cạnh thì nhô thêm .1 mỗi đầu để kín góc).
   const run = (x0, x1, capped) => {
     const span = x1 - x0, mid = (x0 + x1) / 2, extra = capped ? .2 : 0;
-    if (entry.id === 'fence-hedge') return group(at(rbox(span + extra, .6, .32, .14, entry.color), mid, .3, 0));
-    if (entry.id === 'fence-stone') {
+    if (kind === 'fence-hedge') return group(at(rbox(span + extra, .6, .32, .14, entry.color), mid, .3, 0));
+    if (kind === 'fence-stone') {
       const g = group(), n = Math.max(1, Math.round(span / .675)), step = span / n;
       for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), x0 + step * (i + .5), .18, 0));
       return g;
@@ -539,18 +549,19 @@ export function buildFence(entry, half = HALF, gate = null) {
     for (let i = 0; i <= n; i++) {
       const x = x0 + i * step;
       g.add(at(rbox(.12, .6, .05, .02, entry.color), x, .3, .02));
-      if (entry.id === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), x, .64, .02).rotateY(Math.PI / 4));
+      if (kind === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), x, .64, .02).rotateY(Math.PI / 4));
     }
     return g;
   };
-  [[0, -half - .05, 0], [0, half + .05, Math.PI], [-half - .05, 0, Math.PI / 2], [half + .05, 0, -Math.PI / 2]].forEach(([x, z, rot], i) => {
+  [[0, -half - .05, 0], [0, half + .05, Math.PI], [-halfX - .05, 0, Math.PI / 2], [halfX + .05, 0, -Math.PI / 2]].forEach(([x, z, rot], i) => {
     let side;
-    if (gate && i === 0) { // cạnh -z (không xoay: x cục bộ = x vườn): hai đoạn hai bên cổng + cột cổng
-      const a = gate.x - gate.w / 2, b = gate.x + gate.w / 2, post = entry.id === 'fence-hedge' ? '#5fa83e' : entry.id === 'fence-stone' ? '#b5aea3' : entry.color;
-      side = group(run(-half - .1, a, false), run(b, half + .1, false),
+    const gate = gates.find(g => g.side === i), len = i < 2 ? halfX : half; // nửa chiều dài cạnh này
+    if (gate) { // hai đoạn hai bên cổng + cột cổng
+      const a = gate.u - gate.w / 2, b = gate.u + gate.w / 2, post = kind === 'fence-hedge' ? '#5fa83e' : kind === 'fence-stone' ? '#b5aea3' : entry.color;
+      side = group(run(-len - .1, a, false), run(b, len + .1, false),
         at(rbox(.16, .78, .16, .04, post), a, .39, 0), at(rbox(.16, .78, .16, .04, post), b, .39, 0),
         at(ball(.09, post), a, .82, 0), at(ball(.09, post), b, .82, 0));
-    } else side = run(-half, half, true);
+    } else side = run(-len, len, true);
     side.position.set(x, 0, z); side.rotation.y = rot;
     fence.add(side);
   });
@@ -627,11 +638,13 @@ function cornerBush(sx, sz, { seed, accent, color }) {
   }
   return markOutlineUnit(mergeStatic(bush)); // lá rời / hoa là InstancedMesh, giữ nguyên
 }
-export function gardenCorners() {
+// `bounds` = khung vườn { x0, x1, z0, z1 } (room-layout.mjs gardenBounds): bụi ở 4 góc khung (vườn mở rộng: 4 góc mới).
+export function gardenCorners(bounds = { x0: -HALF, x1: HALF, z0: -HALF, z1: HALF }) {
   const corners = new THREE.Group();
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
     const bush = cornerBush(sx, sz, { ...CORNER_BUSHES[i] });
-    bush.position.set(sx * (HALF - .15), 0, sz * (HALF - .15));
+    // Nằm hẳn trong rào (tán ~.48 m sau khi thu .9): mép ngoài cách khung .13, trong cả tường đá / hàng rào cây (dày nhất, mặt trong cách khung .1).
+    bush.position.set(sx < 0 ? bounds.x0 + .65 : bounds.x1 - .65, 0, sz < 0 ? bounds.z0 + .65 : bounds.z1 - .65); bush.scale.setScalar(.9);
     corners.add(bush);
   });
   return corners;

@@ -93,6 +93,7 @@
           <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
           <label class="settings-row dev-only" for="dev-unlock" hidden><button id="dev-unlock" class="round-button small" aria-label="Dev: unlock all progress" title="Dev: unlock all progress">🔓</button><span>Dev: Unlock all</span></label>
           <label class="settings-row dev-only" for="dev-reset" hidden><button id="dev-reset" class="round-button small" aria-label="Dev: reset all progress" title="Dev: reset all progress">↺</button><span>Dev: Reset progress</span></label>
+          <label class="settings-row dev-only" for="dev-qc" hidden><button id="dev-qc" class="round-button small" aria-label="Dev: QC 3D models" title="Dev: QC 3D models">🔍</button><span>Dev: QC models</span></label>
         </div>
       </div>
     </header>
@@ -213,6 +214,12 @@
       <button id="deco-confirm-cancel" class="pill-button ghost">Cancel</button>
       <button id="deco-confirm-ok" class="pill-button">Buy</button>
     </div>
+  </dialog>
+  <!-- Dev: kết quả QC model 3D (qc.mjs) -->
+  <dialog id="qc-dialog" class="qc-dialog">
+    <form method="dialog"><button class="round-button close-help" aria-label="Close">×</button></form>
+    <h2 id="qc-title">Model QC</h2>
+    <ul id="qc-list"></ul>
   </dialog>
   <dialog id="help-dialog">
     <form method="dialog"><button class="round-button close-help" aria-label="Close">×</button></form>

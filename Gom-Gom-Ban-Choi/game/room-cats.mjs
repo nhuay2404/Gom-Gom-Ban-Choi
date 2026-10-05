@@ -21,14 +21,15 @@ const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.e
 // ±ROOM quanh tâm khu; hai khu cạnh nhau nối bằng một lối hẹp qua cửa (LINKS) xuyên qua tường / cổng rào.
 const zoneHome = zone => ({ x: ZONE_OFFSET[zone][0], z: ZONE_OFFSET[zone][1] });
 // Mỗi lối: trục hai khu lệch nhau (x hoặc z), ô lối đi (box) giữa hai mép khu, và điểm đứng ngay trong mỗi khu (steps).
-const PASSES = LINKS.map(({ a, b, at, w }) => {
+const PASSES = LINKS.map(({ a, b, at, w, open = false }) => {
   const [ax, az] = ZONE_OFFSET[a], [bx, bz] = ZONE_OFFSET[b];
   const axis = Math.abs(ax - bx) > Math.abs(az - bz) ? 'x' : 'z', side = axis === 'x' ? 'z' : 'x';
   const ca = axis === 'x' ? ax : az, cb = axis === 'x' ? bx : bz, dir = Math.sign(cb - ca);
-  const edgeA = ca + dir * ROOM, edgeB = cb - dir * ROOM, half = w / 2 - .2; // lối cửa rộng vừa thân mèo
+  // lối cửa rộng vừa thân mèo; lối thông thoáng (vườn <-> phần mở rộng) rộng bằng cả ô đi lại
+  const edgeA = ca + dir * ROOM, edgeB = cb - dir * ROOM, half = open ? ROOM : w / 2 - .2;
   const point = (along, across) => (axis === 'x' ? { x: along, z: across } : { x: across, z: along });
   const lo = point(Math.min(edgeA, edgeB), at - half), hi = point(Math.max(edgeA, edgeB), at + half);
-  return { a, b, box: [lo.x, hi.x, lo.z, hi.z], steps: { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) } };
+  return { a, b, open, box: [lo.x, hi.x, lo.z, hi.z], steps: { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) } };
 });
 // Đường đi qua các khu (đồ thị nhỏ, tìm theo chiều rộng): danh sách khu từ `from` tới `to` chỉ qua các khu đã mở.
 function zoneRoute(from, to, open) {
@@ -450,7 +451,49 @@ class Cat {
   // Bước tại chỗ (lúc xoay người): nhịp chân chậm, chân nhấc thấp.
   stepGait(amount) { this.gait += this.world.dt * 7 * amount; this.shuffle = Math.max(this.shuffle || 0, amount); }
 
+  // Thời gian đi bộ thẳng tới (x, z) (giây), cộng dư cho đoạn lách vật cản.
+  travelTime(x, z, run = false, pace = 1) { return 1 + 1.6 * Math.hypot(x - this.x, z - this.z) / ((run ? 2.1 : .72) * pace); }
+  // Chỗ lách khi kẹt giữa các vật cản: điểm cách 1.1 m (rồi 1.8 m) theo một hướng chếch khỏi hướng tới đích, cả đoạn đường tới
+  // đó nằm trong vùng đi được (không xuyên rào / tường sang khu bên cạnh) và thoáng vật cản, gần đích nhất; tránh quay
+  // lại chỗ vừa lách. null nếu không có.
+  detourSpot(tx, tz, ignore) {
+    const goal = Math.atan2(tx - this.x, tz - this.z), obs = this.world.obstacles(ignore);
+    const clear = (x, z) => Math.min(9, ...obs.map(ob => Math.hypot(x - ob.x, z - ob.z) - ob.r));
+    // Điểm đi được (cho trượt dọc rào / tường tới .3 m); ra xa hơn là xuyên rào sang khu bên cạnh.
+    const walkable = (x, z) => { const b = this.world.bound(x, z); return Math.hypot(b.x - x, b.z - z) < .3 ? b : null; };
+    let best = null, bestD = Infinity;
+    for (const reach of [1.1, 1.8]) {
+      for (const turn of [.6, -.6, 1.1, -1.1, 1.6, -1.6, 2.2, -2.2, Math.PI]) {
+        const a = goal + turn, p = walkable(this.x + Math.sin(a) * reach, this.z + Math.cos(a) * reach);
+        const mid = p && { x: (p.x + this.x) / 2, z: (p.z + this.z) / 2 };
+        if (!p || !walkable(mid.x, mid.z)) continue;
+        if (clear(p.x, p.z) < .35 || clear(mid.x, mid.z) < .25) continue;
+        const back = this.lastDetour && Math.hypot(p.x - this.lastDetour.x, p.z - this.lastDetour.z) < .5 ? 2 : 0;
+        const d = Math.hypot(tx - p.x, tz - p.z) + back;
+        if (d < bestD) { best = p; bestD = d; }
+      }
+      if (best) break;
+    }
+    return (this.lastDetour = best);
+  }
+  // Kẹt sát đồi (góc giữa đồi và rào, không còn chỗ lách): nhảy từng chặng ngắn qua đồi, bám theo mặt đồi, xuống phía
+  // chân đồi gần đích (tx, tz). false nếu không kẹt cạnh đồi.
+  *hopOverHill(tx, tz) {
+    const hill = this.world.hill();
+    if (!hill || Math.hypot(this.x - hill.x, this.z - hill.z) > hill.r + 1.2) return false;
+    let dx = tx - hill.x, dz = tz - hill.z;
+    const len = Math.hypot(dx, dz) || 1; dx /= len; dz /= len;
+    const end = this.world.reachable(hill.x + dx * (hill.r + .45), hill.z + dz * (hill.r + .45));
+    const x0 = this.x, z0 = this.z, hops = Math.max(3, Math.ceil(Math.hypot(end.x - x0, end.z - z0) / .8));
+    for (let i = 1; i <= hops; i++) { // chặng ngắn: sườn đồi lồi không cao quá đường nhảy (mèo không xuyên sườn)
+      const x = x0 + (end.x - x0) * i / hops, z = z0 + (end.z - z0) * i / hops;
+      yield* this.jumpTo(x, this.world.groundAt(x, z), z);
+    }
+    this.y = this.world.groundAt(this.x, this.z);
+    return true;
+  }
   // pace: hệ số tốc độ; glide: không phanh về 0 khi hết maxTime (gọi nối tiếp từng đoạn ngắn để bám theo con khác mà không khựng).
+  // maxTime: giới hạn chống kẹt — đi bình thường (không glide) thì ít nhất đủ thời gian tới đích (vườn mở rộng dài 16 m).
   *walkTo(tx, tz, { run = false, near = .08, ignore = null, maxTime = 8, pace = 1, glide = false, direct = false } = {}) {
     // Đích ở khu khác: đi tới cửa, qua lối cửa (có thể qua khu giữa), rồi mới tới đích (không đi xuyên tường / hàng rào).
     const from = this.world.zoneAt(this.x, this.z), to = this.world.zoneAt(tx, tz);
@@ -458,26 +501,48 @@ class Cat {
       const route = zoneRoute(from, to, this.world.zones());
       for (let i = 1; i < route.length; i++) {
         const pass = passBetween(route[i - 1], route[i]);
+        if (pass.open) continue; // lối thông thoáng (vườn <-> phần mở rộng): đi thẳng, không vòng qua cửa
         for (const step of [pass.steps[route[i - 1]], pass.steps[route[i]]]) {
-          yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: 6, pace, glide: true, direct: true });
+          yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: Math.max(6, this.travelTime(step.x, step.z, run, pace)), pace, glide: true, direct: true });
         }
       }
     }
     this.setPose('stand', { tailUp: run ? .9 : this.goal.tailUp });
     this.running = run;
     let elapsed = 0;
-    while (elapsed < maxTime) {
+    const limit = glide ? maxTime : Math.max(maxTime, this.travelTime(tx, tz, run, pace));
+    // Chống kẹt: mỗi 1.2 giây phải lại gần đích thêm ≥ .25 m; không thì (vd. kẹt giữa khóm hoa và chân đồi, rung rinh
+    // tại chỗ) lách sang bên thoáng rồi đi tiếp. Kẹt liền hai lần mà đang sát đồi (góc giữa đồi và rào): nhảy qua đồi.
+    let mark = Infinity, stall = 0, fails = 0;
+    while (elapsed < limit) {
       const dt = this.world.dt;
       elapsed += dt;
       const dx = tx - this.x, dz = tz - this.z, dist = Math.hypot(dx, dz);
       if (dist < near) break;
+      if ((stall += dt) > 1.2) {
+        const stuck = mark - dist < .25 && dist > .6 && limit > 2;
+        mark = dist; stall = 0; fails = stuck ? fails + 1 : 0;
+        if (stuck) {
+          const from = this.world.time; // thời gian lách / nhảy cũng tính vào giới hạn chống kẹt
+          let moved = fails >= 2 && (yield* this.hopOverHill(tx, tz));
+          if (!moved) {
+            const spot = this.detourSpot(tx, tz, ignore);
+            if (spot) { yield* this.walkTo(spot.x, spot.z, { run, near: .15, ignore, maxTime: 1.8, pace, glide: true, direct: true }); moved = true; }
+            else moved = yield* this.hopOverHill(tx, tz);
+          }
+          if (moved) { this.setPose('stand', { tailUp: run ? .9 : this.goal.tailUp }); elapsed += this.world.time - from; mark = Infinity; }
+          continue;
+        }
+      }
       let vx = dx / dist, vz = dz / dist;
       // Tránh đồ đạc: đẩy ra khỏi vật cản + lách vòng theo tiếp tuyến.
       for (const ob of this.world.obstacles(ignore)) {
         const ox = this.x - ob.x, oz = this.z - ob.z, d = Math.hypot(ox, oz) || .001, reach = ob.r + .42;
         if (d < reach) {
           const push = (reach - d) / reach * 2.4;
-          const side = Math.sign(vx * oz - vz * ox) || 1;
+          // Lách vòng phía gần (phía mèo đang lệch so với đường thẳng qua tâm vật cản). Lách phía xa làm mèo cắt ngang
+          // trước mặt vật cản, lệch qua lại quanh đường thẳng đó rồi kẹt.
+          const side = -(Math.sign(vx * oz - vz * ox) || 1);
           vx += (ox / d) * push + (-oz / d) * side * push * .8;
           vz += (oz / d) * push + (ox / d) * side * push * .8;
         }
@@ -493,7 +558,10 @@ class Cat {
       const top = (run ? 2.1 : .72) * pace, slow = clamp(dist / .5, .35, 1);
       this.speed = damp(this.speed, top * align * slow, 6, dt);
       const next = this.world.bound(this.x + Math.sin(this.heading) * this.speed * dt, this.z + Math.cos(this.heading) * this.speed * dt);
+      // Đang đứng trên mặt đất thì đi theo mặt đất thật (chân đồi thoải), không xuyên vào sườn đồi.
+      const onGround = Math.abs(this.y - this.world.groundAt(this.x, this.z)) < .02;
       this.x = next.x; this.z = next.z;
+      if (onGround) this.y = this.world.groundAt(this.x, this.z);
       this.gait += (this.speed * dt / (run ? STRIDE_RUN : STRIDE_WALK)) * TAU;
       yield;
     }
@@ -529,16 +597,89 @@ class Cat {
     yield* this.wait(.24);
   }
   *getDown() {
-    const from = this.surface ? this.world.center(this.surface) : { x: this.x, z: this.z, r: .6 };
-    let dx = this.x - from.x, dz = this.z - from.z;
-    const len = Math.hypot(dx, dz) || 1;
-    if (len < .05) { const home = this.home(); dx = home.x - this.x; dz = home.z - this.z; }
-    const l2 = Math.hypot(dx, dz) || 1;
-    const out = (from.r || .6) + .45;
-    const { x: tx, z: tz } = this.world.bound(from.x + (dx / l2) * out, from.z + (dz / l2) * out);
-    this.release();
-    yield* this.jumpTo(tx, 0, tz);
+    const surface = this.surface, from = surface ? this.world.center(surface) : { x: this.x, z: this.z, r: .6 };
+    // Rời món đồ đang đung đưa / xoay (ghế bập bênh, ghế xoay, võng...): lấy đúng chỗ + hướng mèo đang hiện trên màn hình
+    // (đã lắc theo món đồ) làm điểm bật, rồi thôi "đi nhờ" ngay từ lúc bật. Nếu vẫn đi nhờ trong lúc bay, món đồ còn
+    // đang đung đưa sẽ kéo lệch cả cú nhảy (mèo bị lắc / xoay giữa không trung trông như mắc kẹt).
+    if (surface && this.world.furniture[surface]?.userData.ride) {
+      const root = this.rig.root;
+      this.x = root.position.x; this.y = root.position.y; this.z = root.position.z;
+      this.heading = this.yaw = new THREE.Euler().setFromQuaternion(root.quaternion, 'YXZ').y;
+    }
     this.surface = null;
+    // Chỗ đáp: ưu tiên hướng từ tâm món đồ ra phía mèo đang ngồi, nhưng chỗ đó có thể là đồ khác (vd. tủ đầu giường
+    // sát giường: hướng đó là lòng giường). Xoay dần hướng thử sang hai bên tới khi gặp chỗ trống trên sàn.
+    let dx = this.x - from.x, dz = this.z - from.z;
+    if (Math.hypot(dx, dz) < .05) { const home = this.home(); dx = home.x - this.x; dz = home.z - this.z; }
+    const base = Math.atan2(dx, dz), out = (from.r || .6) + .45;
+    const clear = p => Math.hypot(p.x - from.x, p.z - from.z) > (from.r || .6) + .2
+      && !this.world.obstacles(surface).some(ob => Math.hypot(p.x - ob.x, p.z - ob.z) < ob.r + .32);
+    let target = null;
+    for (const turn of [0, .5, -.5, 1, -1, 1.5, -1.5, 2.1, -2.1, 2.6, -2.6, Math.PI]) {
+      const p = this.world.bound(from.x + Math.sin(base + turn) * out, from.z + Math.cos(base + turn) * out);
+      if (clear(p)) { target = p; break; }
+    }
+    target ||= this.world.reachable(from.x + Math.sin(base) * out, from.z + Math.cos(base) * out);
+    this.release();
+    yield* this.jumpTo(target.x, this.world.groundAt(target.x, target.z), target.z);
+  }
+  // ---------- Đồi ở phần vườn mở rộng (room-layout.mjs HILL) ----------
+  // Trèo đồi: đi tới chân đồi phía mình đang đứng rồi nhảy từng chặng ngắn bám theo mặt đồi tới `goal` (toạ độ khu nhà,
+  // mặc định gần đỉnh). Đồi là vật cản khi đi bộ nên chỉ lên được bằng hành vi này.
+  *climbHill(goal = null) {
+    const hill = this.world.hill();
+    if (!hill) return;
+    let dx = (goal ? goal.x : this.x) - hill.x, dz = (goal ? goal.z : this.z) - hill.z;
+    if (Math.hypot(dx, dz) < .05) { dx = this.x - hill.x; dz = this.z - hill.z; }
+    const len = Math.hypot(dx, dz) || 1; dx /= len; dz /= len;
+    const base = this.world.reachable(hill.x + dx * (hill.r + .3), hill.z + dz * (hill.r + .3));
+    yield* this.walkTo(base.x, base.z);
+    const top = goal || { x: hill.x + dx * .3, z: hill.z + dz * .3 };
+    for (const k of [.25, .5, .75, 1]) { // chặng ngắn: sườn đồi lồi không cao quá đường nhảy (mèo không xuyên sườn)
+      const x = base.x + (top.x - base.x) * k, z = base.z + (top.z - base.z) * k;
+      yield* this.jumpTo(x, this.world.groundAt(x, z), z);
+    }
+  }
+  // Xuống đồi: thường thì nhảy hai chặng; hứng lên thì nằm lăn lông lốc xuống (lăn nghiêng + xoay người theo dốc).
+  *leaveHill(roll = chance(.45)) {
+    const hill = this.world.hill();
+    if (!hill || this.y < .01) return;
+    let dx = this.x - hill.x, dz = this.z - hill.z;
+    const len = Math.hypot(dx, dz) || 1; dx /= len; dz /= len;
+    const end = this.world.reachable(hill.x + dx * (hill.r + .45), hill.z + dz * (hill.r + .45));
+    if (!roll) {
+      const x0 = this.x, z0 = this.z;
+      for (const k of [1 / 3, 2 / 3, 1]) { // ba chặng ngắn bám theo sườn đồi
+        const x = x0 + (end.x - x0) * k, z = z0 + (end.z - z0) * k;
+        yield* this.jumpTo(x, this.world.groundAt(x, z), z);
+      }
+      return;
+    }
+    yield* this.turnTo(this.facing(end.x, end.z) + Math.PI / 2, 4); // nằm ngang dốc rồi lăn
+    this.setPose('roll'); this.face('happy', 'open');
+    const x0 = this.x, z0 = this.z, T = 1.6, h0 = this.heading;
+    for (let t = 0; t < T; t += this.world.dt) {
+      const k = t / T, e = k * k * (3 - 2 * k);
+      this.x = x0 + (end.x - x0) * e; this.z = z0 + (end.z - z0) * e;
+      this.y = this.world.groundAt(this.x, this.z);
+      this.heading = h0 + Math.sin(k * Math.PI * 3) * .5; this.wriggle = 1;
+      yield;
+    }
+    this.wriggle = 0; this.y = this.world.groundAt(this.x, this.z);
+    this.setPose('stand'); this.squash = .6; this.squashV = 0;
+    yield* this.wait(.4);
+    this.face('happy', 'open'); this.setPose('sit');
+    yield* this.groom();
+  }
+  // Leo đồi ngắm cảnh rồi lăn / nhảy xuống.
+  *hillTop() {
+    if (!this.claim('hill')) return; // mỗi lúc một con lên đỉnh đồi
+    yield* this.climbHill();
+    yield* this.turnTo(this.facingHome());
+    this.setPose('sit'); this.goal.tailUp = .2;
+    yield* this.lookAround(rand(3, 6));
+    if (chance(.4)) { this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(3, 6)); }
+    yield* this.leaveHill();
   }
   claim(key) { if (this.world.claims.get(key) && this.world.claims.get(key) !== this) return false; this.world.claims.set(key, this); this.busyWith = key; return true; }
   release() { // nhả mọi chỗ đang giữ (kể cả ghế mượn để ngắm cửa sổ)
@@ -711,8 +852,11 @@ class Cat {
     const local = (x, y, z) => { node.updateMatrixWorld(true); return node.localToWorld(new THREE.Vector3(x, y, z)); };
     const approach = local(0, 0, (FURNITURE[id].r || .5) + .35);
     const center = local(0, 0, 0);
-    yield* this.walkTo(approach.x, approach.z, { ignore: id });
-    yield* this.turnTo(this.facing(center.x, center.z));
+    // Món đứng trên đồi (cối xay trên đỉnh): chỗ đứng trước nó nằm trên sườn đồi (vật cản khi đi bộ) -> hành vi tự trèo đồi.
+    if (node.position.y < .05) {
+      yield* this.walkTo(approach.x, approach.z, { ignore: id });
+      yield* this.turnTo(this.facing(center.x, center.z));
+    }
 
     if (id === 'catbed') {
       const spot = local(0, .14, 0);
@@ -943,6 +1087,160 @@ class Cat {
       for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
       this.setPose('curl'); this.contact = { squeeze: 1, spread: .2 };
       yield* this.sleep(rand(7, 12));
+    } else if (id === 'windmill') {
+      // Cối xay / tua-bin trên đỉnh đồi: trèo lên ngồi cạnh, ngắm cánh quay (đầu xoay theo), rồi lăn / nhảy xuống đồi.
+      const spot = local(...node.userData.spot);
+      yield* this.climbHill({ x: spot.x, z: spot.z });
+      yield* this.turnTo(this.facing(center.x, center.z));
+      this.setPose('sit'); this.face('focus'); this.tailSpeed = 4;
+      for (let t = 0, n = rand(3, 5); t < n; t += this.world.dt) { this.lookGoal = Math.sin(this.world.time * 2.2); yield; } // mắt đảo theo cánh
+      this.lookGoal = 0; this.tailSpeed = 1.6;
+      if (chance(.5)) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('happy', 'open'); yield* this.wait(.6); }
+      yield* this.leaveHill();
+    } else if (id === 'sunflowers' && kind === 'sunflowers-scarecrow') {
+      // Bù nhìn: rình con quạ đậu trên tay bù nhìn rồi vồ — quạ bay mất.
+      const bird = node.userData.bird;
+      this.setPose('crouch'); this.face('focus'); this.tailSpeed = 6; this.wriggle = 1;
+      yield* this.wait(rand(1, 1.6));
+      this.wriggle = 0;
+      if (bird && !bird.userData.away) this.world.scareBird(node);
+      yield* this.jumpTo(this.x + Math.sin(this.heading) * .3, 0, this.z + Math.cos(this.heading) * .3);
+      this.setPose('sit'); this.face('annoyed', 'zig'); yield* this.wait(1.2); this.tailSpeed = 1.6;
+    } else if (id === 'sunflowers') {
+      // Hướng dương: cả khóm quay mặt nhìn mèo; mèo đứng lên khều bông hoa, hoa lắc lư, hắt xì phấn hoa.
+      this.setPose('sit'); this.face('open'); yield* this.wait(1);
+      this.setPose('stretch'); this.goal.paw = 1; node.userData.bump?.(1); yield* this.wait(.35); this.goal.paw = 0;
+      yield* this.wait(.4); this.goal.paw = 1; node.userData.bump?.(.8); yield* this.wait(.3); this.goal.paw = 0;
+      this.setPose('sit'); this.face('blink', 'open'); this.jigV.z -= .8; yield* this.wait(.5); // hắt xì
+      this.face('happy'); yield* this.wait(1);
+    } else if (id === 'clothesline' && kind === 'clothesline-flags') {
+      // Dây cờ: nhảy chồm khều lá cờ thấp, cả dây cờ rung phần phật.
+      for (let i = 0; i < 2; i++) {
+        this.setPose('crouch'); this.face('focus'); yield* this.wait(.5);
+        yield* this.jumpTo(this.x, .35, this.z); this.goal.paw = 1; node.userData.bump?.(1.2);
+        yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
+      }
+      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1);
+    } else if (id === 'clothesline') {
+      // Dây phơi: nhảy khều chiếc tất đang bay phần phật — tất rơi xuống, mèo vồ lấy tha đi một đoạn.
+      const sock = node.userData.mug;
+      if (sock && !sock.userData.knocked) {
+        const sw = sock.getWorldPosition(new THREE.Vector3());
+        yield* this.walkTo(sw.x + (this.x - sw.x) * .2, sw.z + (this.z - sw.z) * .2 + .25, { ignore: id, near: .15 });
+        yield* this.turnTo(this.facing(sw.x, sw.z));
+        this.setPose('crouch'); this.face('focus'); this.wriggle = 1; yield* this.wait(rand(.8, 1.3)); this.wriggle = 0;
+        yield* this.jumpTo(this.x, .4, this.z); this.goal.paw = 1;
+        this.world.knockOff(node, sock, this);
+        yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
+        this.face('happy', 'open'); yield* this.wait(.8);
+      } else { this.setPose('sit'); this.face('half'); yield* this.lookAround(rand(2, 3)); }
+    } else if (id === 'campfire' && kind === 'campfire-tent') {
+      // Lều: chui vào nằm cạnh đèn, vạt lều đung đưa.
+      const inside = local(...node.userData.inside);
+      node.userData.bump?.(1);
+      this.contact = { squeeze: .6 };
+      yield* this.walkTo(inside.x, inside.z, { ignore: id, near: .08, pace: .7 });
+      yield* this.turnTo(this.facing(approach.x, approach.z));
+      this.setPose('loaf'); this.face('half'); this.contact = { spread: .3 };
+      yield* this.sleep(rand(7, 12));
+      this.contact = { squeeze: .6 }; node.userData.bump?.(.8);
+      yield* this.walkTo(approach.x, approach.z, { ignore: id, pace: .7 });
+      this.contact = {};
+    } else if (id === 'campfire') {
+      // Lửa trại: nằm sưởi, tan chảy vì ấm, ngủ gà ngủ gật nhìn lửa.
+      yield* this.turnTo(this.facing(center.x, center.z));
+      this.setPose('loaf'); this.face('half'); this.purr = 1;
+      yield* this.wait(1.5); this.purr = 0;
+      this.contact = { spread: .6 };
+      yield* this.sleep(rand(5, 9));
+    } else if (id === 'kite' && kind === 'kite-balloons') {
+      // Bóng bay: nhảy khều dây, chùm bóng nảy tưng tưng.
+      this.setPose('sit'); this.face('focus'); this.lookGoal = .5; yield* this.wait(1.2); this.lookGoal = 0;
+      yield* this.jumpTo(this.x, .3, this.z); this.goal.paw = 1; node.userData.bump?.(1.2);
+      yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
+      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1.5);
+    } else if (id === 'kite') {
+      // Diều: ngồi ngước nhìn diều lượn, vồ sợi dây — diều giật mạnh một cái.
+      this.setPose('sit'); this.face('focus'); this.tailSpeed = 5;
+      for (let t = 0, n = rand(2.5, 4); t < n; t += this.world.dt) { this.lookGoal = Math.sin(this.world.time * .7) * .8; yield; }
+      this.lookGoal = 0;
+      this.setPose('crouch'); this.wriggle = 1; yield* this.wait(.6); this.wriggle = 0;
+      yield* this.jumpTo(this.x + Math.sin(this.heading) * .25, .25, this.z + Math.cos(this.heading) * .25);
+      this.goal.paw = 1; node.userData.tug?.(1.5);
+      yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
+      this.setPose('sit'); this.face('happy', 'open'); this.tailSpeed = 1.6; yield* this.wait(1.2);
+    } else if (id === 'stream' && kind === 'stream-bridge') {
+      // Cầu suối: nhảy lên đỉnh cầu, ngồi nhìn lá trôi dưới chân.
+      const top = local(...node.userData.top);
+      yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
+      yield* this.turnTo(this.heading + Math.PI / 2, 3);
+      this.setPose('sit'); this.face('focus'); this.lookGoal = -.6;
+      yield* this.wait(rand(3, 5)); this.lookGoal = 0;
+      this.setPose('loaf'); this.face('half'); yield* this.sleep(rand(3, 5));
+    } else if (id === 'stream') {
+      // Suối: rình bên bờ, đợi chiếc lá trôi ngang qua thì khều — nước bắn tung, giũ chân.
+      yield* this.turnTo(this.facing(center.x, center.z));
+      this.setPose('crouch'); this.face('focus'); this.tailSpeed = 6;
+      const leaf = node.userData.leaf, lw = new THREE.Vector3();
+      for (let t = 0; t < 6; t += this.world.dt) { // đợi lá trôi tới gần trước mặt
+        if (leaf?.visible && leaf.getWorldPosition(lw) && Math.hypot(lw.x - this.x, lw.z - this.z) < 1) break;
+        this.lookGoal = clamp(angDiff(this.heading, this.facing(lw.x, lw.z)) * 2, -1, 1);
+        yield;
+      }
+      this.lookGoal = 0;
+      this.goal.paw = 1; this.goal.lean = .7; yield* this.wait(.3);
+      this.world.splash(node, this);
+      this.goal.paw = 0; this.goal.lean = 0; this.face('annoyed', 'zig');
+      this.setPose('sit');
+      for (let i = 0; i < 4; i++) { this.goal.paw = i % 2; yield* this.wait(.12); } // giũ chân
+      this.goal.paw = 0; this.tailSpeed = 1.6;
+      yield* this.groom();
+    } else if (id === 'swingtree' && kind === 'swingtree-treehouse') {
+      // Nhà cây: leo thang lên sàn, ngồi trước cửa ngắm vườn rồi ngủ trong nhà cây.
+      for (const [x, y, z] of node.userData.steps) { const p = local(x, y, z); yield* this.jumpTo(p.x, p.y, p.z); yield* this.wait(.2); }
+      this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); yield* this.lookAround(rand(3, 5));
+      this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(4, 8));
+    } else if (id === 'swingtree') {
+      // Xích đu: nhảy lên ván đu (đu đưa mạnh), nằm đu theo gió.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      this.kick(node, .8);
+      yield* this.turnTo(this.facingHome());
+      this.setPose('loaf'); this.face('blink'); this.contact = { spread: .35, sag: .2 };
+      yield* this.wait(1.5); this.face('half');
+      yield* this.sleep(rand(5, 9));
+      this.kick(node, .6); // đạp nhảy xuống: xích đu đung đưa tiếp
+    } else if (id === 'slide' && kind === 'slide-seesaw') {
+      // Bập bênh: nhảy lên đầu đang vểnh cao -> bập bênh lật xuống, mèo đi theo tấm ván; bật dậy chạy vòng.
+      const side = node.userData.highEnd(), plank = node.userData.plank;
+      node.updateMatrixWorld(true);
+      const end = plank.localToWorld(new THREE.Vector3(side * .95, .1, 0));
+      yield* this.jumpTo(end.x, end.y, end.z); this.surface = id;
+      node.userData.bump?.(1);
+      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1.2);
+      this.setPose('loaf'); yield* this.wait(rand(2, 4));
+      node.userData.bump?.(1); // nhảy xuống: bập bênh bật trở lại
+    } else if (id === 'slide') {
+      // Cầu trượt: leo thang lên sàn, ngồi chuẩn bị... rồi trượt vèo xuống, chạy một vòng sung sướng.
+      for (const [x, y, z] of node.userData.steps) { const p = local(x, y, z); yield* this.jumpTo(p.x, p.y, p.z); yield* this.wait(.2); }
+      this.surface = id;
+      const chute = node.userData.chute.map(([x, y, z]) => local(x, y, z));
+      yield* this.turnTo(this.facing(chute[2].x, chute[2].z), 5);
+      this.setPose('sit'); this.face('focus'); this.wriggle = 1; yield* this.wait(.8); this.wriggle = 0;
+      this.setPose('loaf'); this.face('happy', 'open'); this.goal.lean = -.3;
+      const T = 1.1;
+      for (let t = 0; t < T; t += this.world.dt) { // trượt nhanh dần theo máng
+        const k = (t / T) ** 1.6 * (chute.length - 1), i = Math.min(chute.length - 2, Math.floor(k)), f = k - i;
+        this.x = chute[i].x + (chute[i + 1].x - chute[i].x) * f; this.z = chute[i].z + (chute[i + 1].z - chute[i].z) * f;
+        this.y = chute[i].y + (chute[i + 1].y - chute[i].y) * f;
+        yield;
+      }
+      this.goal.lean = 0; this.surface = null;
+      const out = this.world.reachable(this.x + Math.sin(this.heading) * .6, this.z + Math.cos(this.heading) * .6);
+      yield* this.jumpTo(out.x, 0, out.z);
+      this.face('happy', 'open'); yield* this.zoomies();
     } else if (id === 'flowers') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1.2); // ngửi hoa...
@@ -1851,7 +2149,8 @@ class Cat {
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
 const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4 };
-const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS };
+const GARDEN2_TOYS = { windmill: 1.1, sunflowers: 1, clothesline: 1.1, campfire: 1.3, kite: 1.2, stream: 1.3, swingtree: 1.5, slide: 1.6 };
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, garden2: GARDEN2_TOYS };
 // ctx.zones() = các khu đã mở (đọc lúc chạy: mở phòng khách không cần tạo lại đàn mèo).
 export function createCatLife(ctx) {
   const { scene, furniture, heartsAt, symbolAt } = ctx;
@@ -1883,8 +2182,12 @@ export function createCatLife(ctx) {
     },
     obstacles(ignore) {
       return Object.entries(furniture).filter(([id, node]) => node.visible && id !== ignore && FURNITURE[id]?.r)
-        .map(([id, node]) => ({ x: node.position.x, z: node.position.z, r: FURNITURE[id].r }));
+        .map(([id, node]) => ({ x: node.position.x, z: node.position.z, r: FURNITURE[id].r }))
+        .concat((ctx.staticObstacles?.() || []).filter(ob => ob.id !== ignore)); // đồi ở phần vườn mở rộng
     },
+    // Độ cao mặt đất tại (x, z) khu nhà (đồi ở phần vườn mở rộng; còn lại 0) và vật cản đồi (null nếu vườn chưa mở rộng).
+    groundAt(x, z) { return ctx.groundAt?.(x, z) || 0; },
+    hill() { return (ctx.staticObstacles?.() || []).find(ob => ob.id === 'hill') || null; },
     // ----- Khu nhà (xem ZONE_OFFSET / DOOR) -----
     zones() { return ctx.zones?.() || ['garden']; }, // các khu đã mở
     // Khu chứa điểm (x, z): khu đã mở có ô gần điểm nhất (trong lối cửa thì thuộc khu gần hơn).
@@ -1927,12 +2230,18 @@ export function createCatLife(ctx) {
       return { x, z };
     },
     center(id) { const node = furniture[id]; return { x: node.position.x, z: node.position.z, r: FURNITURE[id]?.r || .5 }; },
-    // Chỗ trống ngẫu nhiên trong một khu (mặc định khu mèo đang đứng).
+    // Chỗ trống ngẫu nhiên trong một khu (mặc định khu mèo đang đứng). Bỏ chỗ khuất sau đồi (nhìn từ tâm khu bị đồi che):
+    // góc giữa đồi và rào là ngõ cụt, mèo không đi tới được.
     freeSpot(cat, zone = world.zoneAt(cat.x, cat.z)) {
-      const h = zoneHome(zone);
+      const h = zoneHome(zone), hill = world.hill();
+      const behindHill = (x, z) => {
+        if (!hill) return false;
+        const dx = x - h.x, dz = z - h.z, len = Math.hypot(dx, dz) || 1e-4, t = clamp(((hill.x - h.x) * dx + (hill.z - h.z) * dz) / len, 0, len);
+        return Math.hypot(h.x + dx / len * t - hill.x, h.z + dz / len * t - hill.z) < hill.r;
+      };
       for (let i = 0; i < 30; i++) {
         const x = h.x + rand(-ROOM + .3, ROOM - .3), z = h.z + rand(-ROOM + .3, ROOM - .3);
-        if (Math.hypot(x - cat.x, z - cat.z) < .8) continue;
+        if (Math.hypot(x - cat.x, z - cat.z) < .8 || behindHill(x, z)) continue;
         if (world.obstacles().some(ob => Math.hypot(x - ob.x, z - ob.z) < ob.r + .4)) continue;
         if (world.cats.some(other => other !== cat && Math.hypot(x - other.x, z - other.z) < .7)) continue;
         return { x, z };
@@ -1960,7 +2269,8 @@ export function createCatLife(ctx) {
       if (zone === 'living' && !world.claims.has('window')) add('window', .8, () => cat.lookOutWindow());
       if (garden && !ctx.night) add('butterfly', 1.1, () => cat.chaseButterfly()); // đêm bướm đi ngủ
       if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6 * (garden ? .25 : 1), () => cat.rollOnRug());
-      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS })) {
+      if (zone === 'garden2' && world.hill() && !world.claims.has('hill')) add('hill', .9, () => cat.hillTop());
+      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS, ...GARDEN2_TOYS })) {
         if (furniture[id]?.visible && !world.claims.has(id)) add(id, weight * there(id), () => cat.useFurniture(id));
       }
       const buddies = world.cats.filter(other => other !== cat && other.interruptible() && other.y < .01 && world.zoneAt(other.x, other.z) === zone);
@@ -2108,7 +2418,7 @@ export function createCatLife(ctx) {
     world.tween(.4, k => bird.scale.setScalar(Math.max(.01, k)));
   }
   function restoreToys() {
-    for (const id of ['table', 'yarn', 'bedside']) {
+    for (const id of ['table', 'yarn', 'bedside', 'clothesline']) {
       const node = furniture[id];
       const item = node?.userData.mug || node?.userData.toy;
       if (!item?.userData.restoreAt || world.time < item.userData.restoreAt || world.claims.has(id)) continue;
@@ -2151,9 +2461,9 @@ export function createCatLife(ctx) {
         cat.release();
         cat.interrupt((function* fall() {
           cat.surface = null; cat.setPose('stand'); cat.face('annoyed');
-          const y0 = cat.y;
-          for (let t = 0; t < .35; t += world.dt) { cat.y = y0 * (1 - (t / .35) ** 2); yield; }
-          cat.y = 0; cat.squash = 1;
+          const y0 = cat.y, floor = world.groundAt(cat.x, cat.z);
+          for (let t = 0; t < .35; t += world.dt) { cat.y = floor + (y0 - floor) * (1 - (t / .35) ** 2); yield; }
+          cat.y = floor; cat.squash = 1;
           yield* cat.wait(.5);
           yield* cat.life();
         })());
@@ -2179,6 +2489,7 @@ export function createCatLife(ctx) {
       restoreToys();
       restoreBird();
       if (furniture.flowers?.visible) furniture.flowers.userData.walkers = world.cats.filter(cat => cat.y < .05); // hoa rạp khi mèo giẫm qua
+      for (const node of Object.values(furniture)) if (node.visible && node.userData.watchCats) node.userData.cats = world.cats; // hướng dương nhìn theo mèo
       world.cats.forEach(cat => cat.update(world.dt, t));
       separate();
     },
