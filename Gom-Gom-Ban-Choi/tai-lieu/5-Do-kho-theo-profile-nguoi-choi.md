@@ -620,3 +620,11 @@ Luật trong `adaptive.mjs` (`pickLayout`):
 Bản sinh ra (bot trung bình, gốc → các mức): màn 10 Garden Fortress 44% → −2: 59% · −1: 51% · +1: 31% · +2: 21%; màn 17 Divided 38% → 63 / 46 / 25 / 25%; màn 18 Iron Gate 6% → 24 / 19 / 4 / 5%. Màn 15 Open Field (không vật cản) chỉ có +1/+2 (thêm thùng). Một số màn có +2 ≈ +1 (12, 16, 17, 18, 20) vì không tìm được bố trí khó hơn rõ rệt.
 
 Mô phỏng (100 người mỗi kiểu, cố định → thích ứng): người dễ nản bỏ game **87% → 76%**; người dễ chán bỏ game 60% → 67% (thử đổi "chán" sang mức +1 cũng ra 67%, nên chênh lệch không đến từ lựa chọn mức; cần theo dõi); các kiểu khác không đổi (bỏ game 0%, tỉ lệ thắng ±1 điểm). Tỉ lệ màn Hard của cao thủ gần như giữ nguyên (46% → 45%), vì phần lớn màn của cao thủ đã ở mức Hard sẵn sau khi có element "hình bàn".
+
+## Chuồng mèo (cơ chế mới từ màn 15)
+
+- Mèo bị nhốt (chữ thường trong bàn: `o`, `k`...) chiếm ô, không vào cụm gom, không đặt thẻ đè lên được.
+- Mỗi lần gom sát bên chuồng mất 1 khóa (một lần gom chạm nhiều ô vẫn chỉ tính 1); hết 2 khóa (`CAGE.LOCKS` trong tuning.mjs) thì chuồng vỡ, mèo thành mèo thường tại chỗ. Búa mở chuồng ngay.
+- Màn 15 Open Field giới thiệu (4 chuồng cạnh các cặp mèo sẵn, bong bóng hướng dẫn, NEW), 16 lượt / 285 điểm (nhãn Medium, bot 99%, như các màn giới thiệu khác). Màn 16, 17, 18, 20 có 2–3 chuồng; màn nghỉ 19 không có.
+- Độ khó thích ứng: chuồng tính chung element "crate"; tắt element thì bỏ chuồng. Bố trí sinh sẵn (level-layouts.mjs) được chép chuồng của bản gốc vào ô còn trống, trừ bản nhẹ '-1' / '-2'.
+- Bot (300 ván), trước → sau: màn 16 80% → 85%, 17 49% → 46%, 18 15% → 13%, 20 33% → 29%. Chuồng gần như không đổi độ khó vì mèo được thả lại giúp ghép.

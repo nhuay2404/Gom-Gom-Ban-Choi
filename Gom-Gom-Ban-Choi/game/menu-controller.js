@@ -7,7 +7,7 @@ import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCoun
 import { BOOSTERS } from './gameplay/tuning.mjs';
 import { playSound, soundOn, setSound } from './ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
-import { ZONES, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, previewAllNew, occupantOf } from './deco/deco-data.mjs';
+import { ZONES, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, occupantOf } from './deco/deco-data.mjs';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): gom-gom.js nối vào lúc khởi động.
@@ -73,8 +73,17 @@ function renderMap() {
   list.replaceChildren(road);
 }
 
+// Thanh tab chung hiện ở Home / Map / Deco / Shop, đánh dấu mục đang mở.
+function markTab(tab) {
+  $('tabbar').hidden = false;
+  $('tabbar').querySelectorAll('.tab').forEach(button => {
+    if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+}
 export function showMap() {
   hideMenus();
+  markTab('map');
   $('map').hidden = false;
   $('tutorial').hidden = true;
   renderMap();
@@ -95,23 +104,15 @@ export function hideMenus() {
   TABS.forEach(tab => { $(tab).hidden = true; });
   $('tabbar').hidden = true;
   decoPick = null;
-  decoAll = false;
   room3d?.stop();
 }
 export function showTab(tab) {
   TABS.forEach(name => { $(name).hidden = name !== tab; });
-  $('tabbar').hidden = false;
-  $('tabbar').querySelectorAll('.tab').forEach(button => {
-    if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
-  });
+  markTab(tab);
   $('map').hidden = true;
   $('tutorial').hidden = true;
-  const progress = loadProgress();
   refreshWallet();
-  const next = unlockedCount(progress) - 1;
-  $('home-level').textContent = `Level ${next + 1}`;
-  if (tab !== 'deco') { decoPick = null; decoAll = false; }
+  if (tab !== 'deco') decoPick = null;
   if (tab === 'deco') renderDeco();
   if (tab === 'shop') renderShopBoosters();
   renderZoneSwitch();
@@ -127,19 +128,20 @@ function mountRoom(tab) {
   // Home = khu nhà: kéo để đi qua các khu, chụm để thu nhỏ xem toàn bộ. Deco = khoá vào khu đang trang trí.
   room3d.mount($(`${tab}-room`), { mode: tab === 'home' ? 'hub' : 'room', resetView: tab === 'home', view: tab === 'home' ? HOME_VIEW : undefined });
 }
-// Home tràn viền: phòng phủ cả màn, thanh trên + khung PLAY đè lên; camera nhắm vào phần trống giữa.
+// Home tràn viền: phòng phủ cả màn, nút / pill đè lên; camera nhắm vào đúng ô đảo vườn của bản Figma (.fh-island).
 const HOME_VIEW = {
-  zoomCap: 1.25, zoomFit: .95,
+  zoomCap: 1.15, zoomFit: .95, // ô đảo rộng hơn cao nhiều nên zoom chạm trần: zoomCap quyết định cỡ vườn
   insets() {
-    const room = $('home-room').getBoundingClientRect();
-    const top = document.querySelector('.home-top').getBoundingClientRect().bottom - room.top + 8;
-    const bottom = room.bottom - document.querySelector('.home-actions').getBoundingClientRect().top + 12;
-    return { top, bottom };
+    const room = $('home-room').getBoundingClientRect(), island = document.querySelector('.fh-island').getBoundingClientRect();
+    return { top: island.top - room.top, bottom: room.bottom - island.bottom };
   },
 };
+$('home-starter').onclick = () => { playSound('pick'); showTab('shop'); }; // gói khởi đầu nằm đầu trang Shop
 $('tabbar').addEventListener('click', event => {
   const tab = event.target.closest('.tab');
-  if (tab) { playSound('pick'); showTab(tab.dataset.tab); }
+  if (!tab || tab.getAttribute('aria-current')) return;
+  playSound('pick');
+  if (tab.dataset.tab === 'map') showMap(); else showTab(tab.dataset.tab);
 });
 
 // Phòng CSS phẳng (dự phòng khi không nạp được 3D): tranh, cửa sổ, chậu cây, thảm và mèo; chạm mèo để cưng.
@@ -203,12 +205,10 @@ import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
 // Danh sách gom theo chỗ đặt: mỗi khung là các món "chọn một" chung một vị trí (đồ: món gốc + phương án; tường / sàn: cả mục).
 // Mỗi ô có nhãn trạng thái (✓ In room / Owned / ⇄ Swap / giá / 🔒). Chạm một món: xem trước trong phòng, nhãn của chính ô đó
 // thành nút hành động (Buy / Swap / Place / Remove) — chạm nhãn là làm luôn; chạm lại ô = bỏ chọn.
-// Nút "Preview all new": dựng phòng với mọi món chưa mua cùng lúc (mỗi chỗ một món).
 const FURNISHING = entry => entry.cat === 'furniture' || entry.cat === 'cats';
-let decoAll = false; // đang xem trước mọi món chưa mua
 // Đồ phần vườn mở rộng chỉ hiện khi vườn đã mở rộng (trước đó chúng chưa có chỗ trong cảnh; danh sách đỡ dài).
 const decoVisible = entry => entry.area !== 'garden2' || isGardenExpanded();
-const decoShown = () => decoAll ? previewAllNew(getDeco(), getDeco().zone, decoVisible).deco : previewDeco(getDeco(), decoPick);
+const decoShown = () => previewDeco(getDeco(), decoPick);
 const coin = amount => `<span class="amt"><i class="ico-coin"></i>${amount}</span>`; // xu + số không bị ngắt dòng
 // Nhãn trạng thái của một món trên ô: [chữ, kiểu nhãn]
 function decoBadge(entry, status) {
@@ -236,14 +236,7 @@ function decoGroupTitle(group) {
 }
 function renderDeco() {
   const unlocked = decoUnlockedLevel(), deco = getDeco();
-  const newItems = decoCat === 'furniture' ? previewAllNew(deco, deco.zone, decoVisible).items : [];
-  const previewing = new Set(decoAll ? newItems.map(entry => entry.id) : []);
   $('deco').querySelectorAll('.chip').forEach(chip => { chip.textContent = ZONES[deco.zone].cats[chip.dataset.cat]; });
-  const all = $('deco-preview-all');
-  all.hidden = !newItems.length;
-  all.setAttribute('aria-pressed', decoAll);
-  all.innerHTML = decoAll ? '✕ Stop preview' : `👁 Preview all new <b>${newItems.length}</b>`;
-  $('deco-hint').hidden = decoCat !== 'furniture';
   $('deco-grid').classList.toggle('compact', decoCat === 'furniture');
   $('deco-grid').replaceChildren(...slotGroups(deco.zone, decoCat).map(group => group.filter(decoVisible)).filter(group => group.length).map(group => {
     const box = document.createElement('div');
@@ -256,7 +249,7 @@ function renderDeco() {
       const status = itemStatus(deco, entry, unlocked), [label, kind] = decoBadge(entry, status);
       const action = decoPick === entry ? decoActionLabel(entry, status) : null;
       const node = document.createElement('button');
-      node.className = `deco-item ${status}${decoPick === entry ? ' picked' : ''}${previewing.has(entry.id) ? ' previewing' : ''}`;
+      node.className = `deco-item ${status}${decoPick === entry ? ' picked' : ''}`;
       node.dataset.id = entry.id;
       const thumb = entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>`
         : decoThumbnail ? `<img class="thumb thumb-3d" src="${decoThumbnail(entry)}" alt="">`
@@ -271,7 +264,6 @@ function renderDeco() {
 }
 function pickDeco(entry) {
   decoPick = entry;
-  decoAll = false;
   applyRoom(decoShown());
   if (entry) room3d?.focus(entry.id);
   renderDeco();
@@ -286,13 +278,6 @@ $('deco-grid').addEventListener('click', event => {
   if (status === 'locked') showToast(`Unlocks at level ${entry.lock}`);
   if (status === 'poor') showToast(`Need ${entry.price - getDeco().coins} more coins`);
 });
-$('deco-preview-all').onclick = () => {
-  decoPick = null;
-  decoAll = !decoAll;
-  playSound('pick');
-  applyRoom(decoShown());
-  renderDeco();
-};
 function applyDecoPick() {
   if (!decoPick) return;
   const unlocked = decoUnlockedLevel();
@@ -344,7 +329,6 @@ document.addEventListener('click', event => {
   if (zone === getDeco().zone) return;
   setDeco({ ...getDeco(), zone });
   decoPick = null;
-  decoAll = false;
   renderZoneSwitch();
   renderDeco();
   applyRoom(getDeco()); // camera Deco lướt sang khu vừa chọn (nút chọn khu giờ chỉ còn ở Deco)
@@ -435,5 +419,4 @@ function runQC() {
 }
 $('dev-qc').onclick = () => { closeAllSettings(); runQC(); };
 $('home-play').onclick = () => play.startLevel(unlockedCount(loadProgress()) - 1);
-$('home-journey').onclick = showMap;
 $('map-back').onclick = () => showTab('home');

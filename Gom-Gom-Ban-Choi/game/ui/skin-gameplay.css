@@ -1,0 +1,81 @@
+/* Màn chơi theo Figma (file UI, frame "Gameplay" 23:442, khung 393 × 852).
+   - Ảnh nền vườn, pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (skins/figma-game/).
+   - Bàn chơi, ô, thùng gỗ, mèo: vẽ lại bằng CSS / SVG (cat-art.mjs, board-art.mjs) theo cùng kiểu đổ bóng với bản Figma.
+   Kích thước nhân theo --u (= bề ngang khung / 393). File nạp sau ui-portrait.css nên chỉ ghi đè phần nhìn. */
+.shell{--u:calc(min(100vw,480px) / 393);background:#9fd172 url('./skins/figma-game/garden-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+.shell>.topbar{display:none}
+/* Bỏ dòng thông báo (mục tiêu / cộng điểm) dưới bàn như bản Figma */
+.shell>.message-row{display:none}
+
+/* ---------- HUD: điểm | đầu mèo Moves | nút cài đặt ---------- */
+.fg-hud{position:relative;z-index:5;display:grid;grid-template-columns:1fr calc(86 * var(--u)) 1fr;align-items:center;gap:0;
+  margin:calc(30 * var(--u)) calc(-28 * var(--u)) calc(6 * var(--u));height:calc(86 * var(--u))}
+.fg-hud .progress.fg-score{justify-self:start;width:calc(169 * var(--u));height:calc(56 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
+  background:url('./skins/figma-game/score-bar.png') center/100% 100% no-repeat}
+/* Thanh điểm vẽ trong lòng rãnh vàng nhạt của pill */
+.fg-score .progress-track{position:absolute;left:28%;right:28%;top:37%;bottom:37%;height:auto;border-radius:999px;background:none;box-shadow:none}
+.fg-score .progress-fill{background:#8fd46a80}
+.fg-score .progress-text{font-family:var(--display);font-size:calc(13 * var(--u));color:#6b3329;text-shadow:none}
+.fg-score .progress-text strong{font-size:calc(14 * var(--u));color:#e2566c;-webkit-text-stroke:.6px #8c2f3a;text-shadow:none}
+.fg-menu{position:relative;width:calc(86 * var(--u));height:calc(86 * var(--u))}
+.fg-moves.moves-box{position:relative;display:block;width:100%;height:100%;padding:0;border:0;border-radius:0;box-shadow:none;color:#6b3329;
+  background:url('./skins/figma-game/moves-badge.png') center/100% 100% no-repeat}
+.fg-moves .fg-level{position:absolute;left:28%;right:28%;top:21%;font-family:var(--display);font-size:calc(7.5 * var(--u));font-weight:800;line-height:1;letter-spacing:0;text-transform:none;white-space:nowrap;text-align:center}
+.fg-moves .fg-moves-label{position:absolute;inset:36% 0 auto;font-family:var(--display);font-size:calc(13 * var(--u));font-weight:800;line-height:1;letter-spacing:0;text-transform:none;text-align:center}
+.fg-moves strong{position:absolute;inset:48% 0 auto;font-family:var(--display);font-size:calc(27 * var(--u));font-weight:800;line-height:1;text-align:center;
+  color:#f26a80;-webkit-text-stroke:calc(1.6 * var(--u)) #6b2a28;paint-order:stroke fill}
+.fg-moves.moves-box.danger{background-color:transparent}
+.fg-moves.moves-box.danger strong{color:#ff3b4f}
+/* Nút cài đặt: cùng ảnh + đĩa nâu với nút ở Home (.fh-round / .fh-gear trong ui-portrait.css, --u lấy từ .shell) */
+.fg-settings{justify-self:end;position:relative;z-index:6;width:calc(54 * var(--u));height:calc(54 * var(--u));margin-right:calc(26 * var(--u))}
+.fg-settings .settings-menu{top:calc(100% + 6px);right:0}
+body.low-moves .fg-score{outline:0}
+
+/* ---------- Bàn chơi: khay kem vàng, mép dưới dày, ô lõm bo tròn (vẽ bằng CSS theo shading Figma) ---------- */
+.board{padding:calc(10 * var(--u));border-radius:calc(22 * var(--u));gap:calc(6 * var(--u));
+  background:linear-gradient(#fbe7b2,#f5d998);
+  box-shadow:inset 0 2px 0 #fff6d9,inset 0 0 0 2px #f0cf8a,0 0 0 2px #e5bd74,0 calc(10 * var(--u)) 0 #e2b46a,0 calc(12 * var(--u)) 0 #c99a52,0 calc(22 * var(--u)) calc(20 * var(--u)) #6b4a1c55}
+.cell{border-radius:calc(12 * var(--u));background:linear-gradient(#efcf8a,#f4d898 45%,#f6dda2);
+  box-shadow:inset 0 calc(4 * var(--u)) calc(5 * var(--u)) #c3954f70,inset 0 -1px 0 #fff1cc}
+.cell.block{background:none;box-shadow:none}
+.cell.block .crate{filter:drop-shadow(0 calc(3 * var(--u)) calc(2 * var(--u)) #5a331655)}
+.board .cat{filter:drop-shadow(0 calc(2 * var(--u)) calc(1.5 * var(--u)) #5a331640)}
+
+/* ---------- Dock: khung kem có dấu chân, thẻ đang bóc trái to; NEXT trên, HOLD dưới ở cột phải ---------- */
+.shell>.dock{order:3}
+.shell>.booster-bar{order:4}
+.dock.draw-area{width:calc(283 * var(--u));margin:calc(14 * var(--u)) auto 0;padding:calc(16 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u));
+  grid-template-columns:1fr calc(62 * var(--u));grid-template-rows:auto auto;grid-template-areas:"card next" "card hold";gap:calc(4 * var(--u)) calc(14 * var(--u));
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/dock-panel.png') 60 fill / calc(22 * var(--u)) stretch}
+.dock .card-column{grid-area:card;align-self:center}
+.dock .next-column{grid-area:next}
+.dock .hold-column{grid-area:hold}
+.dock .hold-column,.dock .next-column{flex-direction:column-reverse;gap:calc(2 * var(--u))}
+.dock .hold-column{flex-direction:column}
+.dock-label{order:2;font-family:var(--display);font-size:calc(12 * var(--u));font-weight:800;letter-spacing:0;color:#6a3229;opacity:1}
+.dock .next-cards{order:1}
+.dock .hold-slot,.dock .next-slot{width:calc(61 * var(--u));height:calc(59 * var(--u));--card-w:calc(61 * var(--u));--card-h:calc(59 * var(--u));
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
+/* Ô HOLD trống: ô có dấu cộng của Figma; có thẻ thì dùng ô trơn như NEXT / thẻ đang bóc */
+.dock .hold-slot:not(:has(.piece-grid)){border-image:none;background:url('./skins/figma-game/slot.png') center/100% 100% no-repeat}
+.dock .hold-slot:not(:has(.piece-grid))>span{visibility:hidden}
+.dock #active-card,.dock .piece-card{width:calc(158 * var(--u));height:calc(153 * var(--u));--card-w:calc(158 * var(--u));--card-h:calc(153 * var(--u));
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/slot-blank.png') 70 fill / calc(26 * var(--u)) stretch}
+.dock .hold-slot.drop-target{box-shadow:0 0 0 3px #3fbf8f,0 0 18px #9ff0d4}
+.dock .hold-slot.drop-blocked{box-shadow:0 0 0 3px #d9534f}
+
+/* ---------- Booster: khung kem dài, 3 nút đầu mèo, số lượng ở góc dưới trái ---------- */
+.booster-bar{width:calc(283 * var(--u));height:calc(66 * var(--u));margin:calc(14 * var(--u)) auto 0;padding:0;gap:calc(10 * var(--u));align-items:center;
+  background:url('./skins/figma-game/booster-frame.png') center/100% 100% no-repeat}
+.booster-bar .boost{width:calc(62 * var(--u));height:calc(62 * var(--u));border:0;border-radius:0;box-shadow:none}
+.boost[data-boost="hammer"]{background:url('./skins/figma-game/booster-hammer.png') center/contain no-repeat}
+.boost[data-boost="swap"]{background:url('./skins/figma-game/booster-swap.png') center/contain no-repeat}
+.boost[data-boost="moves"]{background:url('./skins/figma-game/booster-moves.png') center/contain no-repeat}
+.boost>svg,.boost>.boost-plus{visibility:hidden}
+.boost.suggest,.boost.armed{outline:0;filter:drop-shadow(0 0 5px #ffcf5a) drop-shadow(0 0 2px #ffcf5a)}
+.booster-bar .boost-count{left:calc(1 * var(--u));right:auto;top:auto;bottom:calc(1 * var(--u));min-width:calc(20 * var(--u));height:calc(20 * var(--u));padding:0 3px;
+  border:calc(2 * var(--u)) solid #8a3e30;background:#fff3d6;color:#7a3528;font-size:calc(12 * var(--u))}
+.booster-bar .boost.empty .boost-count{left:50%;bottom:calc(-6 * var(--u));translate:-50% 0}
+
+/* Mũi tên xoay quanh thẻ: nhuộm nâu như mẫu Figma */
+.dock .rotate-hint{filter:brightness(.55) sepia(1) saturate(2.2) hue-rotate(-12deg)}

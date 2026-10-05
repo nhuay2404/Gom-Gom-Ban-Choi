@@ -10,6 +10,10 @@ export const BOARD = { W: 6, H: 6, PREVIEW_COUNT: 1 };
 export const HOLD = { UNLOCK_LEVEL: 11 };
 export const holdUnlocked = levelIndex => levelIndex + 1 >= HOLD.UNLOCK_LEVEL;
 
+// Chuồng mèo (giới thiệu ở màn 15): mèo bị nhốt chiếm ô, không gom được; mỗi lần gom sát bên mất một khóa,
+// hết LOCKS khóa thì chuồng vỡ, mèo được thả ra thành mèo thường tại chỗ. Búa mở chuồng ngay.
+export const CAGE = { LOCKS: 2 };
+
 // Nhịp animation màn chơi (gom mèo, xoay thẻ, thắng)
 export const TIMING = {
   ROTATE_MS: 340,      // xoay thẻ đang bóc
@@ -84,5 +88,6 @@ export const ADAPTIVE = {
   ASSIST_MAX: 0.6,
   ASSIST_MIN: 0.2,
   CRATE_PER_CELLS: 10,    // bật element crate cho màn chưa có thùng: khoảng 1 thùng / bấy nhiêu ô trong bàn
+  CAGE_CATS: 2,           // bật element chuồng (cao thủ): nhốt bấy nhiêu mèo đặt sẵn
   CROWDED_BLOCKS: 6,      // bàn có từ bấy nhiêu ô vật cản = màn chật: hết lượt thì thêm thẻ đôi thay vì thẻ 3 ô (đỡ kẹt)
 };

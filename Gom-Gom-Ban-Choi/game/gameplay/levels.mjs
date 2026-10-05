@@ -13,7 +13,7 @@
 //   19   Màn nghỉ                           20   BOSS chương 2
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
-// `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold'), bảng vào màn gắn nhãn NEW.
+// `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold' | 'cage'), bảng vào màn gắn nhãn NEW.
 // `expand` = khuôn hình (board-shapes.mjs) khi độ khó thích ứng cần bàn to hơn cho màn 6×6 vuông.
 //
 // Bàn: các chuỗi cùng độ dài, 6×6 tới 8×8, hình dạng tuỳ màn (chương 1 chủ yếu 6×6, chương 2 to dần và
@@ -143,21 +143,23 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Open Field', feature: 'Big ring board, 6 breeds', tier: 'normal',
-    moves: 14, target: 290, cats: 'OGWTSK', assist: 0.4,
-    board: ['K..O...S', '...O.T..', '.WW...T.', 'G..##...', 'G..##.K.', '..S...O.', '.T...S..', 'O...K..W'],
+    // Giới thiệu chuồng mèo: 4 chuồng đặt cạnh các cặp mèo sẵn để lần gom đầu tiên đã chạm chuồng.
+    name: 'Open Field', feature: 'Cat cages', tier: 'normal', introduces: 'cage',
+    moves: 16, target: 285, cats: 'OGWTSK', assist: 0.4,
+    board: ['K..O...S', '...O.Tk.', '.WW.o.T.', 'G..##...', 'G..##.K.', '.tS...O.', '.T...S..', 'O..wK..W'],
     deck: [],
+    tutorial: [{ type: 'info', text: 'New: cat cages! Caged cats can\'t be matched. Make a match next to a cage twice to break it and free the cat.' }],
   },
   {
     name: 'Crate Maze', feature: 'Heart board + crates', tier: 'hard',
     moves: 16, target: 260, cats: 'OGWTSK', assist: 0.4,
-    board: ['#X.##.X#', '..O.G...', '.X.S.X..', 'XW..K..X', '#..T..X#', '##X..O##', '###..###'],
+    board: ['#X.##.X#', '..O.G.k.', '.X.S.X..', 'XW..K..X', '#..To.X#', '##X..O##', '###..###'],
     deck: [],
   },
   {
     name: 'Divided', feature: 'A metal wall splits the board', tier: 'hard',
     moves: 15, target: 250, cats: 'OGWTSK', assist: 0.4,
-    board: ['...MM...', '.O..M.G.', '..MM..S.', '.K..MM..', '.G.M..O.', '..MM.T..', 'W..M....'],
+    board: ['.s.MM...', '.O..M.G.', '..MM..S.', '.K..MM.w', '.G.M..O.', '..MM.T..', 'W..M.g..'],
     deck: [],
   },
   {
@@ -165,7 +167,7 @@ export const LEVELS = [
     // -> người chơi thua sát nút, muốn chơi lại hoặc dùng booster. Ngay sau là màn nghỉ 19.
     name: 'Iron Gate', feature: 'Crates + metal', tier: 'hard',
     moves: 18, target: 340, cats: 'OGWTSK', assist: 0.3,
-    board: ['...X.X..', '.O..MG..', 'XMM..MMX', '...W.K..', '.S..X.T.', 'XMM..MMX', '..O..K..', '..X..X..'],
+    board: ['...X.X..', '.O..MG..', 'XMM..MMX', 't..W.K..', '.S..X.T.', 'XMM..MMX', '..O..K.o', '..X..X..'],
     deck: [],
   },
   {
@@ -177,17 +179,20 @@ export const LEVELS = [
   {
     name: 'Steel Fortress', feature: 'Boss: cross board', tier: 'boss',
     moves: 22, target: 420, cats: 'OGWTSK', assist: 0.4,
-    board: ['##....##', '##MOGM##', '..X..X..', '.TKMMS..', '..SMMW.T', '..W..K..', '##MX.M##', '##.O..##'],
+    board: ['##.w..##', '##MOGM##', '..X..X..', '.TKMMS..', '..SMMW.T', '..W..K..', '##MX.M##', '##.Ok.##'],
     deck: [],
   },
 ];
 
 // Ô ngoài bàn ('#') chặn ô như kim loại (không đặt được, không vỡ, búa không đập được) nhưng không vẽ.
+// Chữ thường ('o', 'k'...) = mèo bị nhốt trong chuồng (tuning.mjs CAGE): { group, cage: số khóa còn lại }.
 export function parseBoard(rows) {
   return rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
     : ch === '#' ? { block: true, metal: true, void: true }
-      : { group: LETTERS[ch], locked: true, starting: true }));
+      : ch !== ch.toUpperCase() ? { group: LETTERS[ch.toUpperCase()], locked: true, starting: true, cage: CAGE.LOCKS }
+        : { group: LETTERS[ch], locked: true, starting: true }));
 }
+import { CAGE } from './tuning.mjs';
 export { boardSize } from './board-shapes.mjs';
 
 export function parseCard(spec) {

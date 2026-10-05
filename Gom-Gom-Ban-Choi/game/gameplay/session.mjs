@@ -103,7 +103,7 @@ export function hold(s) {
 
 // Đặt thẻ đang bóc tại ô `anchor` (góc trên-trái của hình thẻ). Trả về đủ thông tin để giao diện diễn:
 //   result  = { board (sau khi đặt, trước khi gom), indices (các ô vừa đặt) }
-//   match   = { board (sau khi gom), cleared, clusters, groups, broken (thùng vừa vỡ) }
+//   match   = { board (sau khi gom), cleared, clusters, groups, broken (thùng vừa vỡ), caged (chuồng vừa mất khóa), freed (chuồng vừa vỡ) }
 //   gained  = điểm vừa được · win / lose / stuck · fit (thẻ mới bóc có chỗ đặt không)
 export function place(s, anchor) {
   if (s.over) return { ok: false };
@@ -130,13 +130,19 @@ export function place(s, anchor) {
 }
 
 // ---------- Booster (không tốn lượt; kho booster do boosters.mjs giữ, ở đây chỉ là luật trên bàn) ----------
-// Búa: đập vỡ một con mèo hoặc một thùng gỗ. Kim loại và ô trống thì không đập được.
+// Búa: đập vỡ một con mèo hoặc một thùng gỗ; đập vào chuồng thì mở chuồng, thả mèo ra tại chỗ (`freed`).
+// Kim loại và ô trống thì không đập được.
 export const canSmash = (s, index) => !!s.board[index] && !s.board[index].metal;
 export function smash(s, index) {
   if (s.over || tutorialStep(s)) return { ok: false };
   if (!canSmash(s, index)) return { ok: false, error: s.board[index]?.metal ? 'Metal can\'t be smashed.' : 'Pick a cat or a crate.' };
   const object = s.board[index];
   s.board = s.board.slice();
+  if (object.cage) {
+    const { cage, ...cat } = object;
+    s.board[index] = cat;
+    return { ok: true, object, freed: true };
+  }
   s.board[index] = null;
   return { ok: true, object };
 }

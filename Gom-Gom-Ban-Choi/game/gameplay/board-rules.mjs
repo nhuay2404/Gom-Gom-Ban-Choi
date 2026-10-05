@@ -5,15 +5,16 @@ function neighbor(index, delta, width, height) {
   return next;
 }
 
+// Mèo trong chuồng (`cage` > 0) không thuộc cụm nào.
 export function connectedGroup(board, width, height, source) {
-  const group = board[source]?.group;
+  const group = board[source]?.cage ? null : board[source]?.group;
   if (!group) return [];
   const visited = new Set([source]), pending = [source];
   while (pending.length) {
     const current = pending.pop();
     for (const direction of [1, -1, width, -width]) {
       const next = neighbor(current, direction, width, height);
-      if (next < 0 || visited.has(next) || board[next]?.group !== group) continue;
+      if (next < 0 || visited.has(next) || board[next]?.group !== group || board[next].cage) continue;
       visited.add(next); pending.push(next);
     }
   }
@@ -70,6 +71,8 @@ export function slideDirectional(board, width, height, source, delta) {
 // Thùng gỗ ({ block: true }, không có group) chiếm ô, không bao giờ nằm trong cụm; ô bị gom nằm sát thùng
 // (trên/dưới/trái/phải) thì thùng vỡ theo. `broken` = các ô thùng vừa vỡ.
 // Khối kim loại ({ block: true, metal: true }) cũng chiếm ô nhưng không bao giờ vỡ.
+// Mèo trong chuồng ({ group, cage }) chiếm ô, không vào cụm; gom sát bên thì chuồng mất một khóa (`caged`), hết khóa thì
+// mèo được thả (`freed`) và từ lượt sau gom được như mèo thường.
 export function clearMatches(board, width, height, size = 4) {
   const seen = new Set(), cleared = [], groups = [], clusters = [];
   board.forEach((cell, index) => {
@@ -78,17 +81,24 @@ export function clearMatches(board, width, height, size = 4) {
     cluster.forEach(i => seen.add(i));
     if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); clusters.push(cluster); }
   });
-  if (!cleared.length) return { board, cleared, groups, clusters, broken: [] };
-  const nextBoard = board.slice(), broken = new Set();
+  if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [] };
+  const nextBoard = board.slice(), broken = new Set(), hit = new Set();
   cleared.forEach(index => {
     nextBoard[index] = null;
     for (const delta of [1, -1, width, -width]) {
       const other = neighbor(index, delta, width, height);
       if (other >= 0 && board[other]?.block && !board[other].metal) broken.add(other);
+      if (other >= 0 && board[other]?.cage) hit.add(other);
     }
   });
   broken.forEach(index => { nextBoard[index] = null; });
-  return { board: nextBoard, cleared, groups, clusters, broken: [...broken] };
+  // Chuồng: mỗi lần gom (dù nhiều ô của cụm chạm vào) chỉ mất một khóa; hết khóa thì mèo được thả ra tại chỗ.
+  const caged = [], freed = [];
+  hit.forEach(index => {
+    const { cage, ...cat } = board[index];
+    if (cage > 1) { nextBoard[index] = { ...board[index], cage: cage - 1 }; caged.push(index); } else { nextBoard[index] = cat; freed.push(index); }
+  });
+  return { board: nextBoard, cleared, groups, clusters, broken: [...broken], caged, freed };
 }
 
 // Điểm tụ của cụm khi gom: ô vừa đặt nằm trong cụm, ưu tiên ô gần tâm cụm nhất.

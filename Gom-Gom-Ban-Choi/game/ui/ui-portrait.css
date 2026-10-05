@@ -196,39 +196,70 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .zone-switch button{flex:none;min-height:40px;padding:0 12px;border-radius:999px;font-weight:900;font-size:13px;color:var(--cream-ink);white-space:nowrap}
 .zone-switch button.on{background:var(--green);color:#fff;box-shadow:none}
 .zone-switch button.locked{opacity:.6}
-.home-stage .zone-switch{position:absolute;z-index:3;left:50%;translate:-50% 0;top:calc(max(14px,env(safe-area-inset-top)) + 100px)}
 .screen>.zone-switch{flex:none}
 .room.is-3d[data-zone]{background:var(--sky)} /* khu nhà có cả vườn: trời xanh cả khi đang ở phòng khách */
-@media(max-height:680px){.home-stage .zone-switch{top:calc(max(14px,env(safe-area-inset-top)) + 84px)}.zone-switch button{min-height:36px;font-size:12px}}
+@media(max-height:680px){.zone-switch button{min-height:36px;font-size:12px}}
 
 /* ===== Deco: ô đồ (chạm lần 2 để mua / đặt qua hộp xác nhận) ===== */
 .result-coins{margin:-8px 0 14px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:900;font-size:16px;color:#c9601c}
-/* ===== Home cho chơi một tay (bố cục theo vùng ngón cái) =====
-   Trên: chỉ để xem. Giữa: phòng mèo co giãn theo màn. Dưới: PLAY to + Levels, ngay trên thanh điều hướng. Không cuộn. */
-.screen.home{overflow:hidden;height:100dvh;gap:10px;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
-.home-top{min-height:44px}
+/* ===== Home theo Figma (file UI, frame "Home" 10:5, khung 393 × 852) =====
+   Mọi toạ độ lấy đúng từ khung thiết kế, nhân với --u (= bề ngang khung / 393). Hàng trên neo theo mép trên,
+   PLAY + thanh tab neo theo mép dưới (cùng khoảng cách tới đáy như thiết kế) để máy thấp / cao vẫn vừa.
+   Vườn ở giữa là cảnh 3D thật: camera canh vào ô .fh-island (đúng chỗ ảnh đảo vườn trong Figma). */
+.screen.home{overflow:hidden;height:100dvh;padding:0}
 .round-button.small{width:40px;height:40px;font-size:18px}
-/* Phòng mèo tràn viền: phủ kín cả màn, không bo góc, không viền; thanh trên + khung PLAY nổi đè lên */
+/* Phòng mèo tràn viền: phủ kín cả màn, không bo góc; nền trời là ảnh Figma (đêm vẫn dùng màu đêm) */
 .screen>.home-stage{position:absolute;inset:0;z-index:0;width:auto;display:flex;flex-direction:column}
 .room.home-room{flex:1 1 auto;min-height:0;aspect-ratio:auto;border-radius:0;box-shadow:none}
-.screen.home>.home-top,.screen.home>.home-actions{position:relative;z-index:1}
-.screen.home>.home-top{pointer-events:none}
-.screen.home>.home-top>*{pointer-events:auto}
-.screen.home>.home-actions{margin-top:auto}
-.home-actions{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:24px;
-  background:#fff3d1f2;border:1px solid var(--cream-edge);box-shadow:none}
-.home-level{margin:0;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-size:15px;font-weight:800;color:var(--cream-ink)}
-.home-buttons{display:flex;gap:8px;align-items:stretch}
-.home-buttons .pill-button.big{flex:1;min-height:52px;padding:8px 0;border-radius:18px;font-size:22px}
-.square-button{flex:none;width:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:18px;
-  font-weight:900;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--cream-ink);
-  background:var(--panel);box-shadow:inset 0 0 0 1px var(--cream-edge)}
-.square-button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
-.square-button:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--cream-edge)}
+.room.home-room:not(.night),.room.home-room.is-3d:not(.night)[data-zone]{background:#bfe6fb url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
+.screen.home>.fh-layer{--u:calc(min(100vw,480px) / 393);position:absolute;z-index:1;top:0;bottom:0;left:50%;translate:-50% 0;
+  width:min(100vw,480px);max-width:none;pointer-events:none}
+.fh-layer>*{position:absolute;pointer-events:auto;padding:0;border:0;background:center/100% 100% no-repeat}
+.fh-layer button:active{translate:0 calc(2 * var(--u))}
+/* Hàng ví (pill có số in sẵn đã xoá; game tự viết số lên đúng chỗ) */
+.fh-pill b{position:absolute;top:0;bottom:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;
+  font-size:calc(17.5 * var(--u));line-height:1;color:#6b3329;white-space:nowrap}
+.fh-coins{left:calc(6 * var(--u));top:calc(56 * var(--u));width:calc(144 * var(--u));height:calc(48 * var(--u));background-image:url('./skins/figma-home/pill-coins.png')}
+.fh-coins b{left:calc(56 * var(--u));width:calc(56 * var(--u))}
+.fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./skins/figma-home/pill-gems.png')}
+.fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
+.fh-energy{left:calc(243 * var(--u));top:calc(58 * var(--u));width:calc(145 * var(--u));height:calc(48 * var(--u));background-image:url('./skins/figma-home/pill-energy.png')}
+/* Cột trái: Daily, Starter Pack */
+.fh-daily{left:calc(17 * var(--u));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./skins/figma-home/btn-daily.png')}
+.fh-starter{left:calc(17 * var(--u));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-home/btn-starter.png')}
+/* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
+.fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
+.fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}
+.fh-round::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;width:calc(49.68 * var(--u));height:calc(49.68 * var(--u));border-radius:50%;background:#6a3229}
+.fh-round::after{content:'';position:absolute;inset:0;background:center/100% 100% no-repeat}
+.fh-gear::after{background-image:url('./skins/figma-home/btn-settings.png')}
+.fh-help{left:calc(317 * var(--u));top:calc(178 * var(--u));width:calc(62 * var(--u));height:calc(62 * var(--u))}
+.fh-help::after{background-image:url('./skins/figma-home/btn-help.png')}
+.fh-settings .settings-menu{top:calc(100% + 6px)}
+/* Ô đảo vườn (không hiện): camera 3D canh vườn vào đây. Ô đảo Figma là 334–589; dời lên 25 vì tâm khu vườn 3D nằm
+   thấp hơn tâm hình nhìn thấy (camera nhìn chéo xuống), để vườn hiện đúng giữa chỗ đảo trong thiết kế. */
+/* Màn thấp hơn khung thiết kế (thiếu d = 852u − 100dvh): dải vườn nới ra phần trống, nhưng không lấn cột nút trái (đáy 246) và nút PLAY. */
+.fh-layer>.fh-island{--d:calc(852 * var(--u) - 100dvh);left:calc(6 * var(--u));width:calc(382 * var(--u));pointer-events:none;visibility:hidden;
+  top:max(calc(252 * var(--u)), calc(309 * var(--u) - var(--d) / 2));bottom:max(calc(236 * var(--u)), calc(288 * var(--u) - var(--d) / 2))}
+/* PLAY + thanh tab: neo đáy, cách đáy đúng như thiết kế (852 − 690 = 162, 852 − 782 = 70) */
+.fh-play{left:calc(76 * var(--u));bottom:calc(162 * var(--u));width:calc(244 * var(--u));height:calc(67 * var(--u));background-image:url('./skins/figma-home/play-button.png')}
+/* Thanh tab chung (dựng bằng CSS theo Figma, giữ nguyên ở Home / Map / Deco / Shop): nền kem viền nâu, ô đang chọn là viên
+   xanh lá bóng, chấm "!" đỏ ở Shop. Cách đáy 70 như khung Figma 393 × 852. */
+#tabbar.fh-tabbar{--u:calc(min(100vw,480px) / 393);position:fixed;z-index:50;left:50%;translate:-50% 0;bottom:calc(70 * var(--u));width:calc(337 * var(--u));height:calc(64 * var(--u));
+  display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:0;
+  padding:calc(5 * var(--u));border-radius:999px;background:#fbf2d6;border:calc(3 * var(--u)) solid #9b6338;box-shadow:inset 0 calc(2 * var(--u)) 0 #fffaea,0 calc(3 * var(--u)) 0 #c08a58}
+.fh-tabbar button{min-height:0;padding:0;letter-spacing:0;text-transform:none;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));border-radius:999px;
+  font-family:var(--display);font-size:calc(12.5 * var(--u));font-weight:800;line-height:1;color:#7a4026}
+.fh-tabbar svg{width:calc(28 * var(--u));height:calc(28 * var(--u));fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.fh-tabbar button[aria-current="page"]{color:#fff;background:linear-gradient(#6cb85a,#4e9a43);border:calc(2 * var(--u)) solid #3f7d34;
+  box-shadow:inset 0 calc(3 * var(--u)) 0 #8ed27a,0 calc(2 * var(--u)) 0 #2f6427;text-shadow:0 1px 0 #2f6427}
+@media(prefers-reduced-motion:no-preference){.fh-tabbar button[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
+.fh-tabbar button[aria-current="page"] svg{fill:#fbf2d6;stroke:#2f6427;stroke-width:1.6}
+.fh-alert{position:absolute;top:calc(-2 * var(--u));right:calc(6 * var(--u));width:calc(17 * var(--u));height:calc(17 * var(--u));display:grid;place-items:center;border-radius:50%;
+  font-style:normal;font-size:calc(12 * var(--u));font-weight:900;color:#fff;background:#f03a4f;border:calc(1.5 * var(--u)) solid #fff}
 /* Thanh điều hướng: chạm dễ hơn bằng ngón cái */
 .tabbar{width:min(320px,calc(100% - 48px));padding:4px;bottom:calc(10px + env(safe-area-inset-bottom))}
 .tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}
-@media(max-height:680px){.home-buttons .pill-button.big{min-height:46px;font-size:20px}.home-level{font-size:14px}}
 .room-canvas.carrying{cursor:grabbing}
 
 /* ===== Bảng vào màn theo độ khó (tier): chill · normal · hard · boss ===== */
@@ -351,14 +382,8 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .map-end{position:absolute;translate:-50% -50%;padding:6px 14px;border-radius:999px;font-weight:900;font-size:13px;white-space:nowrap;
   color:var(--cream-ink);background:var(--panel);border:1px dashed var(--cream-edge);pointer-events:none}
 
-/* ---------- Deco: danh sách gom theo chỗ đặt, nhãn trạng thái, thanh hành động ---------- */
-/* Chú thích + nút xem trước mọi món mới */
-.deco-tools{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.deco-preview-all{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-weight:900;font-size:13px;
-  color:#fff;background:#e8833a;box-shadow:0 2px 0 #b9622a}
-.deco-preview-all b{min-width:20px;padding:0 6px;border-radius:999px;background:#fff;color:#c0612a;font-size:12px}
-.deco-preview-all[aria-pressed="true"]{background:var(--cream-ink);box-shadow:0 2px 0 #3f2914}
-/* Nhãn trạng thái (dùng chung cho chú thích + ô) */
+/* ---------- Deco: danh sách gom theo chỗ đặt, nhãn trạng thái ---------- */
+/* Nhãn trạng thái trên ô đồ */
 .badge{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:2px 7px;border-radius:999px;font-style:normal;font-weight:900;font-size:11px;
   line-height:1.35;white-space:nowrap;color:var(--cream-ink);background:#fff;border:1.5px solid var(--cream-edge)}
 .badge .ico-coin{width:12px;height:12px}
@@ -370,8 +395,6 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .badge.poor{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
 .badge.lock{color:#7b7166;background:#ece7e0;border-color:transparent}
 /* Nhóm: các món trong một khung = chọn một (chung chỗ). Đồ: 2 khung mỗi hàng; tường / sàn / mèo: một khung rộng. */
-.deco-hint{margin:0;font-size:12px;font-weight:800;line-height:1.3;color:var(--cream-ink);opacity:.8}
-.deco-hint[hidden]{display:none}
 .deco-groups{display:grid;grid-template-columns:1fr;gap:8px}
 .deco-groups.compact{grid-template-columns:repeat(2,minmax(0,1fr))}
 .deco-group{display:flex;flex-direction:column;gap:4px;padding:5px;border-radius:18px;background:#fff8e4e6;border:1.5px dashed #e2bd72}
@@ -391,9 +414,19 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .deco-item.locked .thumb{filter:grayscale(.7)}
 /* Đang xem thử trong phòng: viền vàng dày + nhãn nổi */
 .deco-item.picked{border-color:#f2a93c;box-shadow:0 0 0 3px #ffd97a;transform:translateY(-2px);z-index:1}
-.deco-item.picked::before,.deco-item.previewing::before{content:'👁';position:absolute;top:-7px;left:-5px;width:22px;height:22px;display:grid;place-items:center;
-  border-radius:50%;background:#f2a93c;font-size:12px;box-shadow:0 1px 0 #b9622a}
-.deco-item.previewing{border-color:#f2a93c;border-style:dashed}
 /* Món đang chọn: nhãn thành nút hành động (mua / đổi / đặt / gỡ) */
 .badge.act{color:#fff;background:var(--green,#5cae4a);border-color:transparent;padding:3px 9px;font-size:12px;box-shadow:0 2px 0 #3f7d2f;cursor:pointer}
 .deco-item.using .badge.act{color:var(--cream-ink);background:#fff;border-color:var(--cream-edge);box-shadow:0 2px 0 #d9c39a}
+
+/* Thanh tab chung nằm cao hơn thanh cũ (cách đáy 70/393 bề ngang + cao 64): nới đệm đáy màn Deco / Shop / Map để nội dung
+   cuộn không bị che; nút "Home" cũ ở đáy Map thừa vì thanh tab đã có Home. */
+.screen:not(.home){padding-bottom:calc(min(100vw,480px) / 393 * 146 + env(safe-area-inset-bottom))}
+.map-foot{display:none}
+.map-list{padding-bottom:calc(min(100vw,480px) / 393 * 146)}
+
+/* Deco theo Figma: nền trời giống Home hub (cảnh 3D trong suốt, không viền kem); mục + danh sách đồ nằm trong khung kem viền nâu
+   có dấu chân (frame 4 của Figma "Deco", 9-slice giữ góc khi danh sách dài). */
+.screen.deco{background:#bfe6fb url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
+.room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
+.deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border-image:url('./skins/figma-game/deco-panel.png') 90 fill / 28px stretch}
+.deco-panel .chips{padding:0 10px 2px}

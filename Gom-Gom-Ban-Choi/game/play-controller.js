@@ -10,7 +10,7 @@ import * as game from './gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier, levelMechanics } from './gameplay/progression.mjs';
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from './gameplay/tuning.mjs';
 import { spendBooster, boostersUnlocked } from './gameplay/boosters.mjs';
-import { CRATE_SVG, METAL_SVG } from './ui/board-art.mjs';
+import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG } from './ui/board-art.mjs';
 import { playSound } from './ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from './deco/deco-data.mjs';
@@ -259,9 +259,46 @@ function placeAt(anchor) {
   const ghosts = spawnMergeGhosts(merges, result);
   const done = animateMerges(ghosts, merges);
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
   finishTurn(turn);
+}
+
+// Chuồng mèo khi có gom sát bên: chuồng còn khóa thì rung + một ổ khóa bật ra; chuồng vỡ thì song sắt văng ra, mèo được thả.
+// Ô chuồng đã được vẽ lại theo trạng thái mới (bớt ổ khóa / hết chuồng), anim chạy chồng lên sau khi cụm gom xong.
+function rattleCages(match, delay) {
+  if (reduceMotion.matches || (!match.caged?.length && !match.freed?.length)) return;
+  setTimeout(() => {
+    const layer = fxLayer();
+    match.caged.forEach(index => {
+      const cell = cellEl(index);
+      if (!cell) return;
+      cell.classList.add('cage-hit');
+      cell.addEventListener('animationend', () => cell.classList.remove('cage-hit'), { once: true });
+      flyBits(layer, cell, 'cage-lock', 1);
+    });
+    match.freed.forEach(index => {
+      const cell = cellEl(index);
+      if (!cell) return;
+      flyBits(layer, cell, 'cage-bar', 6);
+      flyBits(layer, cell, 'cage-lock', 1);
+      spawnPuff(cell);
+    });
+  }, delay);
+}
+function flyBits(layer, cell, className, count) {
+  for (let i = 0; i < count; i++) {
+    const bit = document.createElement('span');
+    bit.className = className;
+    bit.style.cssText = `left:${cell.offsetLeft + cell.offsetWidth / 2}px;top:${cell.offsetTop + cell.offsetHeight / 2}px`;
+    layer.append(bit);
+    const angle = count > 1 ? (i / count) * Math.PI * 2 + Math.random() * .5 : -Math.PI / 2 + (Math.random() - .5), dist = cell.offsetWidth * (.6 + Math.random() * .5);
+    bit.animate([
+      { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist + 22}px)) rotate(${(Math.random() - .5) * 540}deg)`, opacity: 0 },
+    ], { duration: 620, easing: 'cubic-bezier(.2, .7, .4, 1)', fill: 'forwards' }).finished.then(() => bit.remove());
+  }
 }
 
 // Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
@@ -487,7 +524,8 @@ function finishTurn(turn) {
   if (match.clusters.length) playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
   else playSound('pick');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}` : '';
+  const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}` : '';
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
@@ -744,11 +782,13 @@ function renderBoard() {
       cell.innerHTML = object.metal ? METAL_SVG : CRATE_SVG;
       return;
     }
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}`;
-    cell.setAttribute('aria-label', object ? `${object.name}, locked` : `Cell ${index + 1}, empty`);
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}`;
+    cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty`
+      : object.cage ? `Caged ${categories[object.group].name}, ${object.cage} lock${object.cage > 1 ? 's' : ''} left. Match next to it to break the cage` : `${object.name}, locked`);
     if (!object) return;
     cell.style.setProperty('--group-color', categories[object.group].color);
     addArt(cell, object);
+    if (object.cage) cell.insertAdjacentHTML('beforeend', cageSvg(object.cage));
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
       cell.classList.add('drop');
       cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
@@ -948,6 +988,7 @@ function smashAt(cell) {
   hammerArmed = false;
   playSound('merge', 1);
   if (turn.object.block) breakCrates([index], 0);
+  else if (turn.freed) rattleCages({ caged: [], freed: [index] }, 0);
   else if (!reduceMotion.matches) {
     const ghost = cell.cloneNode(true);
     ghost.classList.add('smash-ghost');
@@ -957,7 +998,7 @@ function smashAt(cell) {
       { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
     spawnPuff(cell);
   }
-  render(turn.object.block ? 'Crate smashed!' : `Bye, ${categories[turn.object.group].name}!`);
+  render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${categories[turn.object.group].name} is free!` : `Bye, ${categories[turn.object.group].name}!`);
 }
 
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
@@ -1126,7 +1167,7 @@ export function startLevel(index, skipIntro = false) {
   const { plan } = state;
   $('intro-number').textContent = `Level ${index + 1}${DDA_DEBUG ? ` · ${plan.profile} ${plan.shift >= 0 ? '+' : ''}${plan.shift} (${plan.baseCount}→${plan.count})${plan.deal ? ` · ${plan.deal}` : ''}` : ''}`;
   const mechanics = [...(level.introduces === 'hold' ? ['hold'] : []), ...levelMechanics(state.level)];
-  const MECH = { crate: ['Crates', CRATE_SVG], metal: ['Metal blocks', METAL_SVG], hold: ['Hold slot', HOLD_SVG] };
+  const MECH = { crate: ['Crates', CRATE_SVG], metal: ['Metal blocks', METAL_SVG], hold: ['Hold slot', HOLD_SVG], cage: ['Cat cages', CAGE_ICON_SVG] };
   $('intro-mechanics').hidden = !mechanics.length;
   $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${MECH[kind][0]}">${MECH[kind][1]}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
   dialog.showModal();

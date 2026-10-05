@@ -22,7 +22,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const BREEDS = 'OGWTSK';
 
 // ---------- Element và nhãn độ khó ----------
-export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board'];
+export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board', 'cage'];
 export function levelElements(level) {
   const cells = level.board.join('');
   return {
@@ -31,8 +31,13 @@ export function levelElements(level) {
     crate: cells.includes('X'),
     wall: cells.includes('M'),
     board: !isPlainSquare(level.board),
+    // Mèo trong chuồng (chữ thường, có ổ khóa): element riêng — chiếm ô, phải gom sát bên CAGE.LOCKS lần mới thả ra.
+    cage: /[a-z]/.test(cells),
   };
 }
+// Màn đầu tiên có chuồng: trước màn này không tự nhốt mèo (chưa giới thiệu cơ chế).
+const CAGE_FROM = LEVELS.findIndex(l => /[a-z]/.test(l.board.join('')));
+const levelIndexOf = level => LEVELS.findIndex(l => l.name === level.name);
 export const elementCount = level => Object.values(levelElements(level)).filter(Boolean).length;
 export const difficultyOf = count => (count <= 1 ? 'easy' : count <= 3 ? 'medium' : 'hard');
 export const MAX_ELEMENTS = ELEMENTS.length;
@@ -44,7 +49,8 @@ function recolor(rows, cats) {
   const { W, H } = boardSize(rows);
   const cells = rows.join('').split('');
   cells.forEach((ch, i) => {
-    if ('.XM#'.includes(ch) || cats.includes(ch)) return;
+    if ('.XM#'.includes(ch) || cats.includes(ch.toUpperCase())) return;
+    if (ch !== ch.toUpperCase()) { cells[i] = '.'; return; } // mèo trong chuồng thuộc giống bị bỏ: bỏ luôn chuồng
     cells[i] = '.';
     for (const pick of cats) {
       cells[i] = pick;
@@ -95,7 +101,32 @@ const OFF = {
   crate: l => ({ ...l, board: l.board.map(row => row.replaceAll('X', '.')) }),
   wall: l => ({ ...l, board: l.board.map(row => row.replaceAll('M', '.')) }),
   board: l => ({ ...l, board: compactBoard(l.board) }),
+  cage: l => ({ ...l, board: uncage(l.board) }),
 };
+
+// Thả mèo khỏi chuồng: chữ thường -> chữ hoa; thả ra mà sinh cụm gom sẵn thì bỏ con mèo đó (ô trống).
+function uncage(rows) {
+  const { W, H } = boardSize(rows), cells = rows.join('').split('');
+  cells.forEach((ch, i) => {
+    if (ch === ch.toUpperCase()) return;
+    cells[i] = ch.toUpperCase();
+    if (clearMatches(parseBoard([cells.join('')]), W, H, MATCH_SIZE).cleared.length) cells[i] = '.';
+  });
+  return rows.map((_, r) => cells.slice(r * W, (r + 1) * W).join(''));
+}
+// Nhốt `want` mèo đặt sẵn vào chuồng (chọn ổn định theo bàn). Mèo trong chuồng không vào cụm nên không sinh cụm gom sẵn.
+function cageCats(rows, want) {
+  const { W } = boardSize(rows), cells = rows.join('').split('');
+  const cats = cells.map((ch, i) => (/[A-Z]/.test(ch) && !'XM'.includes(ch) ? i : -1)).filter(i => i >= 0);
+  let h = hashOf(rows.join(''));
+  while (want > 0 && cats.length) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    const i = cats.splice(h % cats.length, 1)[0];
+    cells[i] = cells[i].toLowerCase();
+    want--;
+  }
+  return rows.map((_, r) => cells.slice(r * W, (r + 1) * W).join(''));
+}
 // Bật một element (khó hơn). Không tự thêm kim loại (không bao giờ vỡ nên đặt bừa dễ làm bàn bí).
 const ON = {
   // Bàn rộng hơn: màn có thùng thì thêm thùng vào phần mới để giữ mật độ (bàn rộng mà thưa thùng lại dễ hơn).
@@ -112,10 +143,12 @@ const ON = {
     for (const ch of BREEDS) if (cats.length < A.MANY_COLORS && !cats.includes(ch)) cats += ch;
     return { ...l, cats };
   },
+  // Nhốt mèo: chỉ từ màn giới thiệu chuồng trở đi.
+  cage: l => (CAGE_FROM >= 0 && levelIndexOf(l) >= CAGE_FROM ? { ...l, board: cageCats(l.board, A.CAGE_CATS) } : l),
 };
-// Tắt: ít thấy -> dễ thấy; bàn và wall thường là bản sắc của màn nên tắt sau cùng.
-const OFF_ORDER = ['moves', 'colors', 'crate', 'board', 'wall'];
-const ON_ORDER = ['moves', 'colors', 'board', 'crate'];
+// Tắt: ít thấy -> dễ thấy; chuồng tắt trước thùng (mèo bị nhốt chặn cả cặp sẵn), bàn và wall là bản sắc nên tắt sau cùng.
+const OFF_ORDER = ['moves', 'colors', 'cage', 'crate', 'board', 'wall'];
+const ON_ORDER = ['moves', 'colors', 'board', 'crate', 'cage'];
 
 // Bản màn có (gần nhất có thể) `target` element bật.
 //   noMoves: không siết lượt khi tăng khó (người suy nghĩ kỹ)
@@ -124,7 +157,7 @@ export function buildVariant(base, target, { noMoves = false, swap = false, keep
   let level = { ...base };
   const canOn = key => !levelElements(level)[key] && !(noMoves && key === 'moves') && !keep.includes(key);
   if (swap) {
-    const add = ON_ORDER.find(canOn), drop = ['crate', 'wall'].find(key => levelElements(level)[key]);
+    const add = ON_ORDER.find(canOn), drop = ['cage', 'crate', 'wall'].find(key => levelElements(level)[key]);
     if (add && drop) level = OFF[drop](ON[add](level));
   }
   // Hạ xuống Easy (0–1 element): ra bản cơ bản hoàn toàn — bàn 6×6 gọn, không vật cản, lượt thoải mái, ≤4 giống.
@@ -310,6 +343,13 @@ export function pickLayout(profile, levelIndex, p) {
   return layoutOf(want);
 }
 
+// Bố trí sinh sẵn (level-layouts.mjs) có trước khi có chuồng mèo: chép chuồng của bản gốc sang những ô còn trống của
+// bản sinh sẵn. Bản nhẹ / thoáng ('-1', '-2') bỏ chuồng cho dễ hơn.
+function withCages(rows, baseRows, layout) {
+  if (layout === '-1' || layout === '-2' || rows.length !== baseRows.length || rows[0].length !== baseRows[0].length) return rows;
+  return rows.map((row, r) => [...row].map((ch, c) => (ch === '.' && /[a-z]/.test(baseRows[r][c]) ? baseRows[r][c] : ch)).join(''));
+}
+
 // Bản màn cho lần vào màn kế tiếp. `level` là dữ liệu màn đã chỉnh, đưa thẳng vào createSession.
 export function planLevel(profile, levelIndex) {
   const base = LEVELS[levelIndex], baseCount = elementCount(base);
@@ -327,7 +367,7 @@ export function planLevel(profile, levelIndex) {
   // vật cản và hình bàn do bản sinh sẵn quyết định; buildVariant chỉ còn chỉnh lượt và màu.
   // Hạ hẳn về Easy thì giữ luật "màn dễ là 6×6 gọn không vật cản" của buildVariant, không dùng bố trí sinh sẵn.
   const layout = target <= 1 ? '0' : pickLayout(profile, levelIndex, p);
-  const fromLayout = layout !== '0' ? { ...base, board: LAYOUTS[base.name][layout] } : base;
+  const fromLayout = layout !== '0' ? { ...base, board: withCages(LAYOUTS[base.name][layout], base.board, layout) } : base;
   let level = buildVariant(fromLayout, target, layout !== '0' ? { ...p, keep: LAYOUT_KEYS } : p);
   if (p.extraMoves) level = { ...level, moves: level.moves + p.extraMoves };
   // Lý do các lần thua liên tiếp ở chính màn này (bỏ ngang không tính vào lý do nào).

@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./ui/gom-gom.css">
   <link rel="stylesheet" href="./ui/board-grid.css">
   <link rel="stylesheet" href="./ui/ui-portrait.css">
+  <link rel="stylesheet" href="./ui/skin-gameplay.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./gom-gom.js"></script>
 </head>
@@ -20,6 +21,7 @@
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 3.5 20.5 11V20.5H14.5V14h-5v6.5h-6Z"/></symbol>
     <symbol id="i-deco" viewBox="0 0 24 24"><path d="M6 11V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3M3 14a2 2 0 0 1 4 0v1.5h10V14a2 2 0 0 1 4 0v5.5H3ZM6 19.5V21M18 19.5V21"/></symbol>
     <symbol id="i-shop" viewBox="0 0 24 24"><path d="M5 8.5h14l-1.2 12H6.2ZM9 8.5V7a3 3 0 0 1 6 0v1.5"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M2.5 4h3l2.2 10.5h10.6L20.5 7H6.6"/><circle cx="9.2" cy="19" r="1.6" fill="currentColor"/><circle cx="16.8" cy="19" r="1.6" fill="currentColor"/></symbol>
     <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4.5 3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2Z M9 4.5v13M15 6.5v13"/></symbol>
     <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4ZM16 9.5l5 5M21 9.5l-5 5"/></symbol>
@@ -33,23 +35,26 @@
 
   <!-- ===== Màn chơi (bố cục L2: HUD gọn, bàn lớn, dock ngón cái) ===== -->
   <main class="shell">
-    <header class="topbar">
-      <button id="open-map" class="round-button icon" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
-      <h1 id="level-title">Level 1</h1>
-      <div class="top-actions settings">
-        <button class="round-button icon settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="game-settings-menu"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
-        <div id="game-settings-menu" class="settings-menu" hidden>
-          <label class="settings-row" for="game-sound"><button id="game-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
-          <label class="settings-row" for="game-help"><button id="game-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
-        </div>
-      <button id="restart" class="round-button" aria-label="Restart this level" title="Restart">↻</button></div>
-    </header>
-    <section class="hud" aria-label="Game info">
-      <div class="progress" role="img" aria-label="Score progress">
+    <!-- HUD theo Figma (frame Gameplay 23:442): thanh điểm trái, đầu mèo Moves giữa, nút cài đặt phải (menu: Home / chơi lại /
+         âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (ui/skins/figma-game/), số do game viết. -->
+    <section class="hud fg-hud" aria-label="Game info">
+      <div class="progress fg-score" role="img" aria-label="Score progress">
         <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
         <span class="progress-text"><strong id="score">0</strong> / <span id="highscore">120</span></span>
       </div>
-      <div class="moves-box"><span>Moves</span><strong id="moves">20</strong></div>
+      <div class="fg-menu">
+        <div class="moves-box fg-moves" aria-label="Moves left">
+          <span id="level-title" class="fg-level">Level 1</span><span class="fg-moves-label">Moves</span><strong id="moves">20</strong></div>
+      </div>
+      <div class="settings fg-settings">
+        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="game-settings-menu"></button>
+        <div id="game-settings-menu" class="settings-menu" hidden>
+          <label class="settings-row" for="open-map"><button id="open-map" class="round-button small icon" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button><span>Home</span></label>
+          <label class="settings-row" for="restart"><button id="restart" class="round-button small" aria-label="Restart this level" title="Restart">↻</button><span>Restart</span></label>
+          <label class="settings-row" for="game-sound"><button id="game-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
+          <label class="settings-row" for="game-help"><button id="game-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
+        </div>
+      </div>
     </section>
     <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
@@ -79,34 +84,37 @@
   </main>
 
   <!-- ===== Home / Deco / Shop: các tab có thanh điều hướng nổi ===== -->
-  <!-- Home cho chơi một tay: trên = chỉ xem (xu, sao), giữa = phòng mèo (kéo xoay, chạm cưng), dưới = nút chơi trong tầm ngón cái -->
+  <!-- Home theo Figma (file UI, frame "Home" 10:5, khung 393 × 852): ảnh nút / pill cắt từ Figma (ui/skins/figma-home/),
+       đặt đúng toạ độ khung thiết kế (CSS nhân theo --u = bề ngang / 393). Vườn ở giữa vẫn là cảnh 3D thật (mèo, đồ đã đặt). -->
   <section id="home" class="screen home" hidden>
-    <header class="screen-top home-top">
-      <div class="wallet"><span class="pill-stat" aria-label="Coins"><i class="ico-coin"></i><b id="home-coins">0</b></span></div>
-      <!-- Cài đặt: gom ngày/đêm, âm thanh, hướng dẫn vào một nút bánh răng, bấm mới xổ menu -->
-      <div class="top-actions settings">
-        <button class="round-button small icon settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    <div class="home-stage">
+      <!-- Khu nhà (vườn + phòng khách nối liền): kéo trên khu nhà để đi, kéo ở trời để xoay, chụm để zoom -->
+      <div id="home-room" class="room home-room"></div>
+    </div>
+    <div class="fh-layer">
+      <!-- Hàng ví: xu (số thật), kim cương + năng lượng (chưa có hệ thống, chạm báo "Coming soon") -->
+      <span class="fh-pill fh-coins" aria-label="Coins"><b id="home-coins">0</b></span>
+      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+      <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop) -->
+      <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
+      <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
+      <!-- Cột phải: cài đặt (ngày / đêm, âm thanh, dev) và hướng dẫn -->
+      <div class="settings fh-settings">
+        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
         <div id="settings-menu" class="settings-menu" hidden>
           <label class="settings-row" for="night-toggle"><button id="night-toggle" class="round-button small icon" aria-pressed="false"></button><span>Day / Night</span></label>
           <label class="settings-row" for="home-sound"><button id="home-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
-          <label class="settings-row" for="home-help"><button id="home-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
           <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
           <label class="settings-row dev-only" for="dev-unlock" hidden><button id="dev-unlock" class="round-button small" aria-label="Dev: unlock all progress" title="Dev: unlock all progress">🔓</button><span>Dev: Unlock all</span></label>
           <label class="settings-row dev-only" for="dev-reset" hidden><button id="dev-reset" class="round-button small" aria-label="Dev: reset all progress" title="Dev: reset all progress">↺</button><span>Dev: Reset progress</span></label>
           <label class="settings-row dev-only" for="dev-qc" hidden><button id="dev-qc" class="round-button small" aria-label="Dev: QC 3D models" title="Dev: QC 3D models">🔍</button><span>Dev: QC models</span></label>
         </div>
       </div>
-    </header>
-    <div class="home-stage">
-      <!-- Khu nhà (vườn + phòng khách nối liền): kéo trên khu nhà để đi, kéo ở trời để xoay, chụm để zoom -->
-      <div id="home-room" class="room home-room"></div>
-    </div>
-    <div class="home-actions">
-      <p class="home-level"><span id="home-level">Level 1</span></p>
-      <div class="home-buttons">
-        <button id="home-play" class="pill-button big">Play</button>
-        <button id="home-journey" class="square-button" aria-label="All levels"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Levels</span></button>
-      </div>
+      <button id="home-help" class="fh-round fh-help" aria-label="How to play" title="How to play"></button>
+      <!-- Ô đảo vườn trong bản Figma: không hiện, chỉ để camera 3D canh vườn vào đúng chỗ này -->
+      <span class="fh-island" aria-hidden="true"></span>
+      <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>
   </section>
   <section id="deco" class="screen deco" hidden>
@@ -120,19 +128,17 @@
         <button role="tab" data-zone="bedroom">Bedroom</button>
       </div>
     <div id="deco-room" class="room deco-view"><span class="room-hint">Drag to rotate · pinch to zoom</span></div>
+    <!-- Khung kem viền nâu có dấu chân (frame 4 trong Figma "Deco") chứa mục + danh sách đồ -->
+    <div class="deco-panel">
     <div class="chips" role="tablist" aria-label="Categories">
       <button class="chip on" role="tab" aria-selected="true" data-cat="furniture">Furniture</button>
       <button class="chip" role="tab" aria-selected="false" data-cat="walls">Walls</button>
       <button class="chip" role="tab" aria-selected="false" data-cat="floors">Floors</button>
       <button class="chip" role="tab" aria-selected="false" data-cat="cats">Cats</button>
     </div>
-    <!-- Gợi ý + nút xem trước mọi món chưa mua (chỉ ở mục đồ) -->
-    <div class="deco-tools">
-      <p id="deco-hint" class="deco-hint">Each box is one spot in the room. Pick one item for it.</p>
-      <button id="deco-preview-all" class="deco-preview-all" aria-pressed="false" hidden></button>
-    </div>
     <!-- Danh sách gom theo chỗ đặt: các món trong một khung là "chọn một" (chung một vị trí trong phòng) -->
     <div id="deco-grid" class="deco-groups"></div>
+    </div>
   </section>
 
   <section id="shop" class="screen shop" hidden>
@@ -160,10 +166,12 @@
     <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
   </section>
 
-  <nav id="tabbar" class="tabbar" aria-label="Main" hidden>
+  <!-- Thanh tab chung (kiểu Figma, dựng bằng CSS): giữ nguyên ở Home / Map / Deco / Shop -->
+  <nav id="tabbar" class="tabbar fh-tabbar" aria-label="Main" hidden>
     <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" data-tab="map"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Map</span></button>
     <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><use href="#i-deco"/></svg><span>Deco</span></button>
-    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-shop"/></svg><span>Shop</span></button>
+    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-cart"/></svg><span>Shop</span><i class="fh-alert" aria-hidden="true">!</i></button>
   </nav>
   <div id="toast" class="toast" role="status" hidden></div>
 
@@ -231,7 +239,7 @@
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
+    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make 2 matches next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
 </body>
 </html>

@@ -598,7 +598,8 @@ export function createRoom() {
   //                góc nhìn từ trên xuống cố định (không kéo lên cao / xuống thấp được);
   //                chụm 2 ngón = zoom: phóng to vào chỗ đang chụm, thu nhỏ thì trôi dần về giữa khu nhà.
   //   room (Deco): khoá vào khu đang trang trí, kéo = xoay quanh phòng, chụm = zoom
-  const HUB_POLAR = Math.acos(HOME_VIEW.y / HOME_VIEW.length()), HUB_MAX = 30 * reach;
+  // HUB_MIN: Home cho zoom sát gấp đôi Deco (9) để ngắm mèo / đồ đạc cận cảnh.
+  const HUB_POLAR = Math.acos(HOME_VIEW.y / HOME_VIEW.length()), HUB_MAX = 30 * reach, HUB_MIN = 4.5 * reach;
   let hub = false;
   function setMode(mode) {
     hub = mode === 'hub';
@@ -608,6 +609,7 @@ export function createRoom() {
     controls.touches = { ONE: hub ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     controls.mouseButtons = { LEFT: hub ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
     controls.maxDistance = hub ? HUB_MAX : 18 * reach * zoneReach(zoneId);
+    controls.minDistance = (hub ? HUB_MIN : 9 * reach);
   }
   // Deco: vườn đã mở rộng dài gấp đôi nên lùi camera xa hơn (và cho thu nhỏ xa hơn) để thấy trọn cả vườn.
   const WIDE = 1.4;
@@ -653,8 +655,10 @@ export function createRoom() {
   scene.add(sun.target);
   sun.castShadow = true;
   // Vùng bóng đổ phủ cả vườn lẫn phòng khách (±9 cho phòng 6 m, nới theo ROOM_HALF); map 2048.
-  const SHADOW_SPAN = 10.5 * HALF / 3; // đủ phủ cả khu nhà (vườn mở rộng dài sang phải, phòng ngủ chéo trái-sau)
-  sun.shadow.mapSize.set(2048, 2048);
+  // Đủ phủ cả khu nhà khi mở hết (vườn mở rộng dài sang phải + phòng ngủ chéo trái-sau): khung cũ 10.5 bị hụt, lùi camera ra
+  // thấy vệt cắt chéo nửa sáng nửa tối trên nền vườn (mép khung bóng). Nới khung thì tăng mapSize để bóng vẫn nét.
+  const SHADOW_SPAN = 16 * HALF / 3;
+  sun.shadow.mapSize.set(4096, 4096);
   Object.assign(sun.shadow.camera, { left: -SHADOW_SPAN, right: SHADOW_SPAN, top: SHADOW_SPAN, bottom: -SHADOW_SPAN, near: 1, far: 40 });
   sun.shadow.bias = -.0015;
   sun.shadow.camera.layers.enable(SHADOW_ONLY_LAYER); // mây vườn mở rộng: chỉ đổ bóng, không hiện
@@ -678,6 +682,9 @@ export function createRoom() {
   const siteBase = at(rbox(BASE_W, .5, BASE_W - LZ, .18, '#fff4da'), 0, -.52, LZ / 2);
   const bedroomBase = at(rbox(BASE_W + .6, .5, BASE_W, .18, '#fff4da'), ZONE_OFFSET.bedroom[0] + .3, -.52, ZONE_OFFSET.bedroom[1]);
   site.add(gardenBase, siteBase, bedroomBase);
+  // Nền cỏ / sàn lùi theo độ dốc (FLOOR_OFFSET). Lùi camera ra xa thì mặt cỏ nhìn xiên bị đẩy lùi hơn 27 cm, khối đế kem nằm
+  // bên dưới đè lên cỏ thành mảng kem cắt chéo. Đế lùi cùng mức nên luôn nằm sau mặt cỏ / sàn.
+  [gardenBase, siteBase, bedroomBase].forEach(base => base.traverse(node => { if (node.material) Object.assign(node.material, FLOOR_OFFSET); }));
 
   const groundMat = Object.assign(mat('#9fd46a', { roughness: .95 }), FLOOR_OFFSET), soil = mat('#8a6a45');
   const ground = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), soil), 0, -.15, 0);
@@ -699,6 +706,7 @@ export function createRoom() {
   garden.add(gardenExt);
   const extBase = at(rbox(BASE_W, .5, BASE_W, .18, '#fff4da'), GARDEN_EXT_X, -.52, 0);
   site.add(extBase);
+  extBase.traverse(node => { if (node.material) Object.assign(node.material, FLOOR_OFFSET); }); // như các đế khác (xem trên)
   const hillMat = mat('#9fd46a', { roughness: .95 });
   const decor2 = garden2Decor();
   gardenExt.add(buildHill(hillMat), decor2);
@@ -1104,7 +1112,8 @@ export function createRoom() {
   // Đồ có dây / bản lề thì lắc theo: bóng treo, xích đu (pendulum.kick), nắp thùng, nắp hộp (springy bump).
   const WOBBLE = {
     lamp: 1, plant: .9, lantern: 1, birdbath: .7, catnip: .9, cattree: .45, table: .6, yarn: .5, catbed: .35, armchair: .2,
-    shelf: .12, tank: .15, hammock: .5, stump: .15, bench: .2, cathouse: .15, sandbox: .1, pond: 0, rug: 0, flowers: 0,
+    shelf: .12, tank: .15, hammock: .5, stump: .15, bench: .2, cathouse: .15, sandbox: .1, pond: 0, flowers: 0,
+    rug: 0, bedrug: 0, // thảm (kể cả chăn chắp vá, thảm mây cùng chỗ đặt) nằm bẹt trên sàn: mèo đi qua không rung
   };
   const TILT = { K: 70, DAMP: 5, GAIN: 18, MAX: .15 }; // lò xo ~1.3 lần lắc/giây, nghiêng tối đa ~8.5°
   const tiltAxis = new THREE.Vector3(), tiltQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);

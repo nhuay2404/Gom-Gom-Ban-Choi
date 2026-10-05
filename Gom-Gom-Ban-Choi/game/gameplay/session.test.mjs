@@ -50,7 +50,11 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   assert.deepEqual(levelMechanics(LEVELS[4]), ['crate']);     // màn 5 giới thiệu thùng
   assert.deepEqual(levelMechanics(LEVELS[8]), ['crate', 'metal']);
   const withTutorial = LEVELS.map((level, i) => (level.tutorial ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11], 'màn 1–2 và 11 là tutorial; màn 5 và 8 chỉ có bong bóng giới thiệu cơ chế');
+  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 15], 'màn 1–2 và 11 là tutorial; màn 5, 8, 15 chỉ có bong bóng giới thiệu cơ chế');
+  // Chuồng mèo giới thiệu ở màn 15, các màn sau (trừ màn nghỉ 19) đều có chuồng.
+  assert.equal(LEVELS[14].introduces, 'cage');
+  const caged = LEVELS.map((level, i) => (levelMechanics(level).includes('cage') ? i + 1 : null)).filter(Boolean);
+  assert.deepEqual(caged, [15, 16, 17, 18, 20]);
   assert.equal(LEVELS[HOLD.UNLOCK_LEVEL - 1].introduces, 'hold');
   // Màn đầu 6×6; chương 2 đa số bàn to / có hình.
   const big = LEVELS.map((level, i) => (boardSize(level.board).W > 6 ? i + 1 : null)).filter(Boolean);
@@ -191,4 +195,33 @@ test('booster: kho mặc định, dùng, mua bằng xu', async () => {
   assert.deepEqual(buyBooster(stock, 100, 'swap').coins, 100 - BOOSTERS.PRICE.swap);
   assert.equal(boostersUnlocked(1), false);
   assert.equal(boostersUnlocked(2), true);
+});
+
+test('chuồng mèo: không gom được, gom sát bên 2 lần thì vỡ và thả mèo; búa mở chuồng ngay', async () => {
+  const { CAGE } = await import('./tuning.mjs');
+  assert.equal(CAGE.LOCKS, 2);
+  // Hàng: [cam][cam][ ][cam-trong-chuồng] — đặt cam vào ô trống: chỉ 3 con ngoài chuồng được gom, chuồng mất 1 khóa.
+  const s = game.createSession(2, { rng: seeded(9) });
+  s.board = parseBoard(['OO.o..', '......', '......', '......', '......', '......']);
+  assert.equal(s.board[3].cage, 2);
+  s.active = { offsets: [[0, 0]], items: [{ group: 'orange', name: 'Orange cat' }] };
+  let turn = game.place(s, 2);
+  assert.deepEqual(turn.match.cleared.sort((a, b) => a - b), [0, 1, 2]);
+  assert.deepEqual(turn.match.caged, [3]);
+  assert.equal(s.board[3].cage, 1);
+  // Gom lần 2 sát chuồng: chuồng vỡ, mèo thành mèo thường (gom được ở lượt sau).
+  s.board[9] = { group: 'gray', locked: true }; s.board[10] = { group: 'gray', locked: true };
+  s.active = { offsets: [[0, 0]], items: [{ group: 'gray', name: 'Gray cat' }] };
+  turn = game.place(s, 11);
+  assert.deepEqual(turn.match.freed, [3]);
+  assert.equal(s.board[3].group, 'orange');
+  assert.ok(!s.board[3].cage);
+  // Không đặt thẻ lên chuồng được; búa mở chuồng.
+  s.board[20] = { group: 'white', locked: true, cage: 2 };
+  s.active = { offsets: [[0, 0]], items: [{ group: 'white', name: 'White cat' }] };
+  assert.equal(game.place(s, 20).ok, false);
+  const smashed = game.smash(s, 20);
+  assert.ok(smashed.ok && smashed.freed);
+  assert.equal(s.board[20].group, 'white');
+  assert.ok(!s.board[20].cage);
 });

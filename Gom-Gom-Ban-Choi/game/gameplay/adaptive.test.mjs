@@ -6,7 +6,7 @@ import { isPlainSquare } from './board-shapes.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
 import { LAYOUTS } from './level-layouts.mjs';
-import { elementCount, difficultyOf, buildVariant, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip } from './adaptive.mjs';
+import { levelElements, MAX_ELEMENTS, elementCount, difficultyOf, buildVariant, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip } from './adaptive.mjs';
 
 const fresh = () => ({ attempts: [], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 });
 // Profile đã qua giai đoạn người mới: 10 lần thắng 2 sao ở các màn 6–15.
@@ -20,7 +20,7 @@ test('nhãn độ khó theo số element: 0–1 Easy, 2–3 Medium, 4–5 Hard',
   assert.deepEqual([0, 1, 2, 3, 4, 5].map(difficultyOf), ['easy', 'easy', 'medium', 'medium', 'hard', 'hard']);
   assert.equal(elementCount(LEVELS[0]), 0);   // Hello, Kitty
   assert.equal(elementCount(LEVELS[8]), 5);   // Iron & Oak: lượt chật, 5 giống, thùng, kim loại, bàn 7×7
-  assert.equal(elementCount(LEVELS[16]), 3);  // Divided: 6 giống, kim loại, bàn 8×7
+  assert.equal(elementCount(LEVELS[16]), 4);  // Divided: 6 giống, chuồng mèo (tính như crate), kim loại, bàn 8×7
 });
 
 test('mọi bản biến thể: bàn hợp lệ, không có sẵn cụm gom, đạt đúng số element khi tắt bớt', () => {
@@ -32,11 +32,12 @@ test('mọi bản biến thể: bàn hợp lệ, không có sẵn cụm gom, đ�
       assert.equal(clearMatches(board, W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} → ${target}`);
       assert.ok(level.moves > 0 && level.cats.length >= 2, `màn ${i + 1} → ${target}`);
       // Mèo trên bàn chỉ thuộc các giống của màn (bộ chia thẻ phát đúng các giống này).
-      assert.ok([...level.board.join('')].every(ch => '.XM#'.includes(ch) || level.cats.includes(ch)), `màn ${i + 1} → ${target}`);
+      // (chữ thường = mèo trong chuồng, cùng giống với chữ hoa)
+      assert.ok([...level.board.join('')].every(ch => '.XM#'.includes(ch) || level.cats.includes(ch.toUpperCase())), `màn ${i + 1} → ${target}`);
       // Hạ xuống Easy luôn ra bản cơ bản (0 element, bàn 6×6 vuông, không vật cản); các mức khác đúng số element.
       const toEasy = target <= 1 && target < elementCount(base);
       if (target <= elementCount(base)) assert.equal(elementCount(level), toEasy ? 0 : target, `màn ${i + 1} → ${target}`);
-      if (toEasy) assert.ok(isPlainSquare(level.board) && !/[XM]/.test(level.board.join('')), `màn ${i + 1} → ${target}: Easy`);
+      if (toEasy) assert.ok(isPlainSquare(level.board) && !/[XMa-z]/.test(level.board.join('')), `màn ${i + 1} → ${target}: Easy`);
     }
   });
 });
@@ -67,7 +68,7 @@ test('đang vật lộn: mỗi lần thua bớt 1 element, tối đa 2', () => {
     counts.push(plan.count);
     p = recordAttempt(p, try_(17, false, { profile: plan.profile, shift: plan.shift })).profile;
   }
-  assert.deepEqual(counts, [5, 5, 4, 3]);
+  assert.deepEqual(counts, [6, 6, 5, 4]); // Iron Gate: đủ 6 element (có cả chuồng)
   assert.equal(detectProfile(p, 17).id, 'frustrated'); // thua lần thứ 4 -> sắp bỏ game
 });
 
@@ -93,13 +94,19 @@ test('thua sát nút: giữ độ khó, tới lần thứ 4 mới +2 lượt', (
 
 test('cao thủ: thắng 3 màn liền sạch sẽ thì +1 element, chỉ siết lượt / thêm màu', () => {
   const hot = withTries(veteran(), try_(10, true, { stars: 3 }), try_(11, true, { stars: 3 }), try_(12, true, { stars: 2 }));
-  const plan = planLevel(hot, 15); // Crate Maze: 6 giống + crate + bàn tim = 3 element
+  const plan = planLevel(hot, 15); // Crate Maze: 6 giống + crate + bàn tim + chuồng = 4 element
   assert.equal(plan.profile, 'skilled');
-  assert.equal(plan.count, 4);
+  assert.equal(plan.count, 5);
   assert.ok(plan.level.moves < LEVELS[15].moves);
   // Bố trí "hiểm" sinh sẵn: nhiều thùng hơn bản gốc, giữ nguyên hình bàn và mèo đặt sẵn.
   assert.equal(plan.layout, '+1');
-  assert.equal(plan.level.board.join(''), LAYOUTS[LEVELS[15].name]['+1'].join(''));
+  // Chuồng của bản gốc được chép vào những ô còn trống của bản sinh sẵn.
+  const cagesOf = rows => [...rows.join('')].map((ch, i) => (/[a-z]/.test(ch) ? `${i}${ch}` : '')).filter(Boolean);
+  assert.equal(plan.level.board.join('').replace(/[a-z]/g, '.'), LAYOUTS[LEVELS[15].name]['+1'].join(''));
+  const variant = LAYOUTS[LEVELS[15].name]['+1'].join('');
+  const expected = cagesOf(LEVELS[15].board).filter(cage => variant[parseInt(cage, 10)] === '.');
+  assert.ok(expected.length > 0);
+  assert.deepEqual(cagesOf(plan.level.board), expected);
   const crates = rows => [...rows.join('')].filter(ch => ch === 'X').length;
   assert.ok(crates(plan.level.board) > crates(LEVELS[15].board));
 });
@@ -250,7 +257,7 @@ test('bố trí crate/wall theo profile: vật lộn -> nhẹ, sát nút giữ �
   const count = rows => [...rows.join('')].filter(c => c === 'X' || c === 'M').length;
   assert.ok(count(easier.level.board) < count(LEVELS[9].board));
   // Hình bàn và mèo đặt sẵn không đổi.
-  const shape = rows => rows.join('').replace(/[XM]/g, '.');
+  const shape = rows => rows.join('').replace(/[XMa-z]/g, '.');
   assert.equal(shape(easier.level.board), shape(LEVELS[9].board));
   // Sát nút sau khi chơi bản '-1': giữ bản '-1'.
   const near = withTries(veteran(), try_(9, false, { ratio: 0.9, layout: '-1' }), try_(9, false, { ratio: 0.9, layout: '-1' }));
@@ -266,4 +273,19 @@ test('bố trí crate/wall theo profile: vật lộn -> nhẹ, sát nút giữ �
       assert.equal(shape(rows), shape(base.board), name);
     }
   }
+});
+
+test('mèo trong chuồng là element riêng: tắt = thả mèo, bật = nhốt mèo (chỉ từ màn có chuồng)', () => {
+  const caged = LEVELS.find(l => /[a-z]/.test(l.board.join('')));
+  assert.equal(levelElements(caged).cage, true);
+  assert.equal(levelElements({ ...caged, board: caged.board.map(r => r.toUpperCase()) }).cage, false);
+  // Hạ khó: chuồng bị tắt trước thùng, mèo được thả (không mất mèo, không sinh cụm gom sẵn).
+  const easier = buildVariant(caged, elementCount(caged) - 1);
+  const { W, H } = boardSize(easier.board);
+  if (!levelElements(easier).cage) assert.equal(clearMatches(parseBoard(easier.board), W, H, MATCH_SIZE).cleared.length, 0);
+  // Bật chuồng ở màn sau khi giới thiệu: có mèo bị nhốt; màn đầu game thì không.
+  const later = LEVELS.findIndex(l => l === caged) + 1;
+  const plain = { ...LEVELS[later], board: LEVELS[later].board.map(r => r.toUpperCase()) };
+  assert.equal(levelElements(buildVariant(plain, MAX_ELEMENTS)).cage, true);
+  assert.equal(levelElements(buildVariant(LEVELS[3], MAX_ELEMENTS)).cage, false);
 });

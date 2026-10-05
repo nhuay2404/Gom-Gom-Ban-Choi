@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
 import { HILL, hillProfile, groundHeight, GARDEN_EXT_X } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
-import { pendulum, ropeBetween } from './garden-scene.mjs';
+import { pendulum, ropeBetween, rock } from './garden-scene.mjs';
 
 const TAU = Math.PI * 2;
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
@@ -121,7 +121,7 @@ export const GARDEN2_BUILD = {
       at(rbox(.16, .16, .05, .025, '#9fd0f0'), 0, 1.25, .34), // ô cửa sổ
       blades);
     mill.userData.sink = .46; // nền đá đặt chìm vào đỉnh đồi (đỉnh tròn), không phải lơ lửng / lún lỗi
-    mill.userData.spot = [.75, 0, .55]; // chỗ mèo ngồi ngắm cánh quạt (độ cao lấy theo mặt đồi)
+    mill.userData.spot = [.85, 0, .62]; // chỗ mèo ngồi ngắm cánh quạt, cách tâm 1.05: ngoài nền đá (.62) + nửa thân mèo
     mill.userData.blades = blades;
     mill.userData.update = t => { blades.rotation.z -= (.4 + 2.2 * windAt(t)) * tick(t); };
     return mill;
@@ -134,7 +134,7 @@ export const GARDEN2_BUILD = {
     const turbine = group(at(cyl(.5, .58, .7, '#c8c2b8', 20), 0, -.1, 0), at(cyl(.07, .13, 2.5, '#f5f8fb', 16), 0, 1.45, 0),
       at(rbox(.26, .26, .55, .1, '#f5f8fb'), 0, 2.7, .05), at(box(.02, .6, .02, '#e8617f'), 0, 1.6, .1), rotor);
     turbine.userData.sink = .46;
-    turbine.userData.spot = [.7, 0, .5];
+    turbine.userData.spot = [.85, 0, .62];
     turbine.userData.update = t => { rotor.rotation.z -= (.8 + 3.2 * windAt(t)) * tick(t); };
     return turbine;
   },
@@ -253,7 +253,10 @@ export const GARDEN2_BUILD = {
   // ---------- Lửa trại: lửa bập bùng, tàn lửa bay lên, khói tan dần; mèo nằm sưởi ----------
   campfire() {
     const tick = ticker();
-    const stones = [...Array(10)].map((_, k) => { const a = k / 10 * TAU; return squash(at(ball(.12, k % 2 ? '#b5aea3' : '#c8c2b8'), Math.cos(a) * .42, .05, Math.sin(a) * .42), 1.2, .6, 1); });
+    const stones = [...Array(10)].map((_, k) => { // vòng đá: mỗi viên một hình, xoay lệch nhau
+      const a = k / 10 * TAU, s = squash(at(rock(.12, k % 2 ? '#b5aea3' : '#c8c2b8', k * 7.3 + 1), Math.cos(a) * .42, .03, Math.sin(a) * .42), 1.2, .75, 1);
+      s.rotation.y = -a + (k % 3) * .7; return s;
+    });
     const logs = [0, 1, 2, 3].map(k => { const l = at(cyl(.05, .06, .62, '#8a5a3a', 10), 0, .14, 0); l.rotation.set(1.1, k * Math.PI / 2 + .4, 0, 'YXZ'); return l; });
     const flameMat = (c, e) => mat(c, { emissive: e, emissiveIntensity: 1.3 });
     const flames = [[0, .55, .2, '#ff7a3d', '#ff5a1a'], [.08, .4, .14, '#ffb347', '#ff8a1a'], [-.07, .36, .12, '#ffd66b', '#ffb92a']]
@@ -395,11 +398,16 @@ export const GARDEN2_BUILD = {
     const house = group(at(rbox(.7, .55, .6, .06, '#f3d5a8'), 0, 1.77, .25), at(cone(.6, .4, '#e8617f', 4), 0, 2.25, .25).rotateY(Math.PI / 4),
       at(rbox(.26, .34, .02, .01, '#4a2e20'), .12, 1.68, .556)); // ô cửa tối (cách vách 6 mm)
     const rails = [-.53, .53].map(x => at(box(.04, .3, 1, wood), x, 1.62, .35));
-    const ladder = group(at(box(.04, 1.45, .04, '#9a6a45'), -.2, .72, 1.05), at(box(.04, 1.45, .04, '#9a6a45'), .2, .72, 1.05),
-      ...[.3, .65, 1, 1.3].map(y => at(box(.4, .035, .05, '#b37444'), 0, y, 1.05)));
+    // Thang ngả vào nhà cây: chân chạm đất ở z = FOOT, đầu tì lên mép trước sàn (z .85, y 1.49), nhô quá mép một chút.
+    const TOP = 1.49, EDGE = .85, FOOT = 1.3, RUN = FOOT - EDGE, LEN = Math.hypot(TOP, RUN) + .08;
+    const ladder = group(at(box(.04, LEN, .04, '#9a6a45'), -.2, LEN / 2, 0), at(box(.04, LEN, .04, '#9a6a45'), .2, LEN / 2, 0),
+      ...[.2, .42, .64, .86].map(f => at(box(.4, .035, .05, '#b37444'), 0, f * (LEN - .08), 0)));
+    ladder.position.set(0, 0, FOOT);
+    ladder.rotation.x = -Math.atan2(RUN, TOP); // ngả đầu thang về phía sàn (-z)
+    const rung = f => [0, f * TOP + .02, FOOT - f * RUN + .07]; // chỗ mèo đứng: trên bậc, nhích ra trước một chút
     const node = group(tree.trunk, tree.canopy, deck, house, ...rails, ladder);
     node.userData.sink = tree.trunk.userData.sink;
-    node.userData.steps = [[0, .67, 1.12], [0, 1.03, 1.12], [0, 1.49, .62]]; // bậc thang -> sàn nhà cây
+    node.userData.steps = [rung(.42), rung(.64), [0, 1.49, .62]]; // bậc thang (theo độ dốc thang) -> sàn nhà cây
     node.userData.update = t => tree.update(t, windAt(t));
     return node;
   },
@@ -473,7 +481,7 @@ function streamBase(withBridge) {
   const banks = [];
   for (let k = 0; k < 16; k++) {
     const u = -1.1 + k / 15 * 2.2, side = k % 2 ? 1 : -1, z = side * (Wd + .06 + rnd(0, .06));
-    const s = squash(ball(rnd(.06, .1), k % 3 ? '#c8c2b8' : '#b5aea3'), 1.3, .55, 1); s.position.set(u, .03, z); banks.push(s);
+    const s = squash(rock(rnd(.06, .1), k % 3 ? '#c8c2b8' : '#b5aea3', k * 3.7 + 11), 1.3, .7, 1); s.position.set(u, .01, z); s.rotation.y = k * 1.9; banks.push(s);
   }
   for (let k = 0; k < 6; k++) { const h = rnd(.25, .4); const r = at(cone(.02, h, k % 2 ? '#5fa83e' : '#7cc256', 6), .75 + rnd(-.1, .15), h / 2, -Wd - .12 + rnd(-.05, .05)); r.rotation.z = rnd(-.2, .2); banks.push(r); }
   const leaf = squash(ball(.05, '#7fc45a'), 1.4, .3, .9); leaf.position.y = .045;
@@ -512,7 +520,7 @@ export function garden2Decor() {
     decor.add(onSlope(squash(mesh(new THREE.CylinderGeometry(.16, .18, .06, 10), k % 2 ? '#d9d2c4' : '#c8c2b8'), 1.2, 1, 1), x, z, .02));
   }
   // Đá tảng chôn nửa trên sườn + cỏ lún phún (instanced) + hoa dại.
-  [[2.9, -.6, .22], [-.2, -2.3, .18], [2.4, -3.1, .16]].forEach(([x, z, r]) => decor.add(onSlope(squash(mesh(new THREE.SphereGeometry(r, 12, 9), '#b5aea3'), 1.2, .7, 1), x, z, r * .1)));
+  [[2.9, -.6, .22], [-.2, -2.3, .18], [2.4, -3.1, .16]].forEach(([x, z, r]) => decor.add(onSlope(squash(rock(r, '#b5aea3', x * 13 + z * 7), 1.2, .85, 1), x, z, 0))); // đá tảng: hình góc cạnh ngẫu nhiên
   let seed = 11; const rnd = (a, b) => { seed = (seed * 16807) % 2147483647; return a + seed / 2147483647 * (b - a); };
   const tuftGeo = new THREE.ConeGeometry(.025, .14, 5), flowerGeo = new THREE.SphereGeometry(.035, 8, 6);
   const tufts = new THREE.InstancedMesh(tuftGeo, mat('#6fae46'), 70), flowers = new THREE.InstancedMesh(flowerGeo, mat('#ffffff'), 36);

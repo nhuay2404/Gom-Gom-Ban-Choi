@@ -391,3 +391,15 @@ body.card-dragging .tutorial-hand{visibility:hidden}
   body.low-moves:not(.afk) .cell.petted .cat[data-low]{animation:pet-hop .5s cubic-bezier(.3,1.5,.5,1) 2}
   body.low-moves:not(.afk) .cell.merge-ghost .cat[data-low]{animation:none}
 }
+
+/* Chuồng mèo: song sắt đứng thẳng như mèo (cùng góc nghiêng bàn), mèo bên trong hơi tối; mất khóa thì rung, vỡ thì song văng ra */
+.cell.caged{position:relative;cursor:default}
+.cell.caged .cat{filter:saturate(.75) brightness(.92)}
+.cell.caged .cage-bars{position:absolute;inset:-4%;width:108%;height:108%;pointer-events:none;transform:rotateX(calc(var(--tilt) * -1)) translateZ(4px);transform-origin:50% 95%;filter:drop-shadow(0 2px 1px #1d361250)}
+/* (translateZ: mèo đứng thẳng bị đẩy lên trước ~1px trong không gian 3D của bàn, chuồng phải nằm trước mèo) */
+.cell.cage-hit .cage-bars{animation:cage-shake .42s ease-in-out}
+@keyframes cage-shake{0%,100%{rotate:0deg}20%{rotate:-6deg}45%{rotate:5deg}70%{rotate:-3deg}}
+.cage-bar{position:absolute;z-index:5;width:5px;height:26px;border-radius:3px;background:#7d8794;box-shadow:inset 1px 0 #c9d1da;pointer-events:none}
+.cage-lock{position:absolute;z-index:5;width:16px;height:16px;border-radius:5px;background:#f2c335;border:2px solid #8a6a1c;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.cell.cage-hit .cage-bars{animation:none}}
+body.hammer-armed .board .cell.caged{cursor:crosshair}

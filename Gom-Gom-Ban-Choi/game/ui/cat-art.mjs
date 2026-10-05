@@ -142,28 +142,31 @@ function afkFaces(cat, group, ink) {
   };
 }
 
+// Viền giống viền toon của mèo 3D ở Home (OUTLINE_STYLES.default.brown trong deco/toon.mjs).
+const TOON_INK = '#4a2c1f';
 function catSvg(group) {
   const cat = categories[group], id = `cat-${group}`, mood = cat.mood;
   const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
   const [earOuter, earInner] = EARS[cat.ears];
   const mirror = 'transform="matrix(-1 0 0 1 100 0)"';
-  const earFill = cat.mask || `url(#${id}-fur)`;
+  const earFill = cat.mask || cat.fur;
   const innerFill = cat.mask ? '#b88a78' : '#f6a8b4';
   const stripes = cat.stripe ? `<g stroke="${cat.stripe}" stroke-width="4" stroke-linecap="round" fill="none" opacity=".9">
       <path d="M44 31v8M50 30v10M56 31v8M9 56h8M9 64h6M91 56h-8M91 64h-6"/></g>` : '';
-  const ears = `<g stroke="${shade(cat.mask || cat.fur, .1)}" stroke-width="5" stroke-linejoin="round">
+  const ears = `<g stroke="${TOON_INK}" stroke-width="3" stroke-linejoin="round">
       <path d="${earOuter}" fill="${earFill}"/><path d="${earOuter}" fill="${earFill}" ${mirror}/></g>
     <path d="${earInner}" fill="${innerFill}"/><path d="${earInner}" fill="${innerFill}" ${mirror}/>`;
   // Thân dưới lúc bị nhấc bổng: bụng + 2 chân sau lủng lẳng + đuôi. Mặc định ẩn (visibility là presentation
   // attribute nên CSS của từng chế độ có thể bật lên).
   const leg = cat.mask || cat.fur;
   const hang = `<g class="hang" visibility="hidden">
-      <path d="M78 104 Q98 112 93 132" fill="none" stroke="${shade(leg, -.08)}" stroke-width="7" stroke-linecap="round"/>
-      <path d="M17 72 L83 72 Q88 102 75 122 Q50 131 25 122 Q12 102 17 72Z" fill="url(#${id}-fur)" stroke="${shade(cat.fur, -.12)}" stroke-width="2"/>
+      <path d="M78 104 Q98 112 93 132" fill="none" stroke="${TOON_INK}" stroke-width="10" stroke-linecap="round"/>
+      <path d="M78 104 Q98 112 93 132" fill="none" stroke="${shade(leg, -.08)}" stroke-width="6.4" stroke-linecap="round"/>
+      <path d="M17 72 L83 72 Q88 102 75 122 Q50 131 25 122 Q12 102 17 72Z" fill="${cat.fur}" stroke="${TOON_INK}" stroke-width="2"/>
       <ellipse cx="50" cy="104" rx="19" ry="16" fill="${cat.belly}"/>
-      <g fill="${leg}" stroke="${shade(leg, -.15)}" stroke-width="1.5">
+      <g fill="${leg}" stroke="${TOON_INK}" stroke-width="2">
         <rect x="27" y="112" width="15" height="22" rx="7.5"/><rect x="58" y="112" width="15" height="22" rx="7.5"/></g>
-      <ellipse cx="34.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/><ellipse cx="65.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/>
+      <g stroke="${TOON_INK}" stroke-width="2"><ellipse cx="34.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/><ellipse cx="65.5" cy="132" rx="7.5" ry="5" fill="${cat.paw}"/></g>
       <g fill="#f4a3b3"><ellipse cx="34.5" cy="133" rx="3" ry="2"/><ellipse cx="65.5" cy="133" rx="3" ry="2"/>
         <circle cx="30.5" cy="130" r="1.3"/><circle cx="34.5" cy="129" r="1.3"/><circle cx="38.5" cy="130" r="1.3"/>
         <circle cx="61.5" cy="130" r="1.3"/><circle cx="65.5" cy="129" r="1.3"/><circle cx="69.5" cy="130" r="1.3"/></g>
@@ -181,13 +184,12 @@ function catSvg(group) {
     <ellipse class="ground" cx="50" cy="101" rx="40" ry="5" fill="#10240b" opacity=".22"/>
     ${cat.ears === 'fold' ? '' : ears}
     ${hang}
-    <path class="base" d="${BODY}" transform="translate(0 9)" fill="url(#${id}-side)" stroke="url(#${id}-side)" stroke-width="6" stroke-linejoin="round"/>
-    <path d="${BODY}" fill="url(#${id}-fur)" stroke="${shade(cat.fur, .1)}" stroke-width="6" stroke-linejoin="round"/>
+    <path class="base" d="${BODY}" transform="translate(0 9)" fill="${cat.side}" stroke="${TOON_INK}" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="${BODY}" fill="${cat.fur}" stroke="${TOON_INK}" stroke-width="2.8" stroke-linejoin="round"/>
     ${cat.ears === 'fold' ? ears : ''}
     ${stripes}
     ${cat.muzzle ? `<path d="M50 50 C66 50 76 62 76 76 L76 91 L24 91 L24 76 C24 62 34 50 50 50Z" fill="${cat.belly}"/>` : `<ellipse cx="50" cy="80" rx="24" ry="11" fill="${cat.belly}" opacity=".9"/>`}
     ${cat.mask ? `<ellipse cx="50" cy="63" rx="19" ry="14" fill="${cat.mask}" opacity=".85"/>` : ''}
-    <path d="M8 70 Q8 90 22 91 L78 91 Q92 90 92 70 Q92 86 78 88 L22 88 Q8 86 8 70Z" fill="#000" opacity=".1"/>
     <ellipse cx="26" cy="67" rx="6" ry="3.4" fill="#ff8fa0" class="blush"/><ellipse cx="74" cy="67" rx="6" ry="3.4" fill="#ff8fa0" class="blush"/>
     <g class="calm">${face(cat, group, mood, ink)}</g>
     <g class="annoyed" fill="none" stroke="${group === 'tuxedo' ? '#f3e7cf' : ink}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -206,12 +208,10 @@ function catSvg(group) {
         <path d="M11 30 L13 35 L18 37 L13 39 L11 44 L9 39 L4 37 L9 35Z"/><path d="M90 24 L91.5 28 L95.5 29.5 L91.5 31 L90 35 L88.5 31 L84.5 29.5 L88.5 28Z"/></g>
     </g>
     <path d="M46.8 63.5 L53.2 63.5 L50 67Z" fill="#ef8595"/>
-    <g stroke="${cat.side}" stroke-width="1.5">
+    <g stroke="${TOON_INK}" stroke-width="1.8">
       <ellipse cx="33" cy="91" rx="10" ry="6.5" fill="${cat.paw}"/><ellipse cx="67" cy="91" rx="10" ry="6.5" fill="${cat.paw}"/>
-      <path d="M30 88v4M36 88v4M64 88v4M70 88v4" stroke-linecap="round" opacity=".6"/>
+      <path d="M30 88v4M36 88v4M64 88v4M70 88v4" stroke-linecap="round" stroke-width="1.6" opacity=".55"/>
     </g>
-    <ellipse cx="30" cy="37" rx="11" ry="4.5" fill="#fff" opacity=".35" transform="rotate(-12 30 37)"/>
-    <path d="M14 46 Q12 58 13 68" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".25"/>
   </svg>`;
 }
 

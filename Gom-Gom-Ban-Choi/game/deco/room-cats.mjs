@@ -634,7 +634,9 @@ class Cat {
     const len = Math.hypot(dx, dz) || 1; dx /= len; dz /= len;
     const base = this.world.reachable(hill.x + dx * (hill.r + .3), hill.z + dz * (hill.r + .3));
     yield* this.walkTo(base.x, base.z);
-    const top = goal || { x: hill.x + dx * .3, z: hill.z + dz * .3 };
+    // Đỉnh đồi có cối xay / tua-bin đứng giữa: dừng ngoài nền đá (bán kính vật cản + nửa thân mèo) chứ không lọt vào trong.
+    const mill = this.world.furniture.windmill?.visible ? this.world.center('windmill').r + CAT_BODY.D / 2 + .08 : .3;
+    const top = goal || { x: hill.x + dx * mill, z: hill.z + dz * mill };
     for (const k of [.25, .5, .75, 1]) { // chặng ngắn: sườn đồi lồi không cao quá đường nhảy (mèo không xuyên sườn)
       const x = base.x + (top.x - base.x) * k, z = base.z + (top.z - base.z) * k;
       yield* this.jumpTo(x, this.world.groundAt(x, z), z);

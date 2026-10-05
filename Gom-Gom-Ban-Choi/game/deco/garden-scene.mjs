@@ -22,6 +22,24 @@ const rbox = (w, h, d, r, color) => mesh(roundedBox(w, h, d, ROUND, r), color);
 const box = (w, h, d, color) => mesh(new THREE.BoxGeometry(w, h, d), color);
 const cyl = (top, bottom, h, color, seg = radialSegments(Math.max(top, bottom))) => mesh(new THREE.CylinderGeometry(top, bottom, h, seg), color);
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, ...sphereSegments(r)), color);
+// Đá tự nhiên: khối 20 mặt chia 1 lần, mỗi đỉnh đẩy lệch theo nhiễu (cùng vị trí -> cùng độ lệch, mặt không bị hở),
+// kéo dẹt / méo không đều, đáy mài phẳng để đá nằm vững trên đất. Mặt phẳng từng mảnh (flat normal) cho ra cạnh đá góc cạnh.
+// `seed` khác nhau -> mỗi viên một hình. Kích thước ~ bán kính r (trước khi caller scale thêm).
+export function rock(r, color, seed = 1) {
+  const geo = new THREE.IcosahedronGeometry(r, 1), pos = geo.attributes.position, v = new THREE.Vector3();
+  const hash = (x, y, z) => { const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7 + seed * 19.3) * 43758.5453; return h - Math.floor(h); };
+  const sx = .85 + hash(1, 2, 3) * .5, sz = .85 + hash(4, 5, 6) * .5, tilt = (hash(7, 8, 9) - .5) * .5;
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const k = .78 + hash(+v.x.toFixed(4), +v.y.toFixed(4), +v.z.toFixed(4)) * .4; // lồi lõm từng đỉnh ±20%
+    v.multiplyScalar(k);
+    v.x *= sx; v.z *= sz; v.y = v.y * .8 + v.x * tilt; // méo hai chiều, nghiêng mặt trên
+    v.y = Math.max(v.y, -r * .35); // đáy phẳng
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals(); // khối 20 mặt không dùng chung đỉnh -> pháp tuyến phẳng từng mặt
+  return mesh(geo, color);
+}
 // group() rỗng thì không gọi add(): Three.js báo lỗi khi add() không có đối số.
 const group = (...children) => { const g = new THREE.Group(); if (children.length) g.add(...children); return g; };
 
@@ -87,6 +105,54 @@ export function pendulum(pivot, length, ...children) {
 
 // Vật liệu phát sáng (lửa, đèn).
 const glow = (color, emissive, intensity = 1) => mat(color, { emissive, emissiveIntensity: intensity });
+
+// ---------- Nước ----------
+// Mặt nước toon: gợn tròn loang chậm từ tâm + đốm lấp lánh, vẽ ngay trong shader (theo toạ độ của chính mặt nước).
+// Mặc định KHÔNG trong suốt: vật trong suốt bị sắp lại thứ tự vẽ mỗi khi xoay camera -> dễ chập chờn với viền.
+// Gọi waterTick(t) trong userData.update của món có nước để gợn chuyển động.
+const waterTime = { value: 0 };
+const waterTick = t => { waterTime.value = t; };
+function waterMat(color = '#8fd0ef', extra = {}) {
+  if (!TOON) return mat(color, { roughness: .15, ...extra });
+  const material = toonMat({ color, ...extra });
+  const toonCompile = material.onBeforeCompile;
+  material.onBeforeCompile = function (shader) {
+    toonCompile.call(this, shader);
+    shader.uniforms.waterTime = waterTime;
+    shader.vertexShader = 'varying vec3 vWaterPos;\n' + shader.vertexShader
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWaterPos = position;');
+    shader.fragmentShader = 'uniform float waterTime;\nvarying vec3 vWaterPos;\n' + shader.fragmentShader
+      .replace('#include <emissivemap_fragment>', `{
+        float d = length(vWaterPos.xz);
+        float ring = smoothstep(.86, .95, sin(d * 15.0 - waterTime * 1.8) * .5 + .5) * smoothstep(.0, .12, d);
+        float glint = smoothstep(.95, .99, (sin(vWaterPos.x * 13.0 + waterTime * 1.1) * sin(vWaterPos.z * 15.0 - waterTime * .9)) * .5 + .5);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), max(ring * .22, glint * .55));
+      }
+      #include <emissivemap_fragment>`);
+  };
+  return material;
+}
+// Mặt nước phẳng mỏng: không viền (viền toon quanh đĩa mỏng thành vệt tối ở mép bát).
+const waterDisc = (radius, y, material = waterMat()) => {
+  const water = at(mesh(new THREE.CylinderGeometry(radius, radius, .01, radialSegments(radius)), material), 0, y, 0);
+  water.castShadow = false;
+  water.userData.noOutline = true;
+  return water;
+};
+// Texture sọc xanh–trắng cho dòng nước: cuộn offset theo thời gian là thấy nước chảy dọc ống.
+function flowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64; canvas.height = 4;
+  const g = canvas.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 64, 0);
+  grad.addColorStop(0, '#bfe9fb'); grad.addColorStop(.35, '#ffffff'); grad.addColorStop(.5, '#e6f7ff'); grad.addColorStop(.8, '#9fdcf6'); grad.addColorStop(1, '#bfe9fb');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 4);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  return texture;
+}
+const flowMat = texture => (TOON ? toonMat({ color: '#ffffff', map: texture }) : mat('#ffffff', { map: texture, roughness: .1 }));
 
 export const GARDEN_BUILD = {
   // Bồn hoa là mặt đất đi được (mép thấp, mèo không lún chân). Mèo giẫm qua thì hoa rạp ra hai bên rồi bật lại.
@@ -238,14 +304,14 @@ export const GARDEN_BUILD = {
     // Đi quanh mép, mỗi viên cách viên trước ít hơn bề ngang của nó -> viền liền mà vẫn lổn nhổn tự nhiên.
     for (let a = 0; a < TAU - .12;) {
       const size = rnd(.09, .16), r = edge(a) + size * .55;
-      const s = ball(size, STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))]);
-      s.scale.set(rnd(1.1, 1.5), rnd(.5, .75), rnd(.9, 1.2));
-      s.position.set(Math.cos(a) * r, size * .35, Math.sin(a) * r); s.rotation.y = rnd(0, TAU);
+      const s = rock(size, STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))], rnd(0, 1000));
+      s.scale.set(rnd(1.1, 1.4), rnd(.6, .9), rnd(.9, 1.15));
+      s.position.set(Math.cos(a) * r, size * .2, Math.sin(a) * r); s.rotation.y = rnd(0, TAU);
       stones.add(s);
       if (rnd(0, 1) < .35) { // sỏi nhỏ lăn ra ngoài viền
-        const p = ball(rnd(.04, .065), STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))]);
+        const p = rock(rnd(.04, .065), STONE_COLORS[Math.floor(rnd(0, STONE_COLORS.length))], rnd(0, 1000));
         const pr = r + size * rnd(.9, 1.3), pa = a + rnd(-.08, .08);
-        p.scale.y = .6; p.position.set(Math.cos(pa) * pr, .02, Math.sin(pa) * pr); stones.add(p);
+        p.scale.y = .75; p.rotation.y = rnd(0, TAU); p.position.set(Math.cos(pa) * pr, .01, Math.sin(pa) * pr); stones.add(p);
       }
       a += size * 1.25 / edge(a);
     }
@@ -269,6 +335,7 @@ export const GARDEN_BUILD = {
       const fish = group(ball(.07, color), at(mesh(new THREE.ConeGeometry(.05, .1, 10), color), -.1, 0, 0));
       fish.children[0].scale.set(1.4, .6, .8); fish.children[1].rotation.z = Math.PI / 2;
       fish.userData.phase = i * Math.PI;
+      markOutlineUnit(fish); // cá là khối viền riêng: viền cá đè lên bồn vẫn đậm
       return fish;
     });
     mergeStatic(stones); mergeStatic(reeds); mergeStatic(pad); // đá / lau / lá súng tĩnh: gộp theo màu
@@ -326,9 +393,13 @@ export const GARDEN_BUILD = {
     bird.position.set(0, .95, .28);
     bird.rotation.y = -Math.PI / 2;
     bird.userData.home = bird.position.clone();
+    markOutlineUnit(bird); // chim là khối viền riêng: viền chim đè lên bát nước vẫn đậm
+    // Các lớp tách độ cao rõ (không hai mặt trùng nhau -> hết chớp z-fighting khi xoay): mặt bát .91 < mặt nước .925
+    // < vành bát hình xuyến (đỉnh ~.94) che mép nước. Trước đây mặt nước trùng đúng mặt bát (.91) nên giật sáng tối.
     const bath = group(at(cyl(.25, .3, .08, '#cfd8e0'), 0, .04, 0), at(cyl(.09, .12, .7, '#cfd8e0'), 0, .43, 0), at(cyl(.36, .2, .14, '#dfe6ec'), 0, .84, 0),
-      at(cyl(.3, .3, .02, '#8fd0ef'), 0, .9, 0), bird);
+      waterDisc(.32, .92), at(mesh(new THREE.TorusGeometry(.335, .028, 10, 48), '#dfe6ec'), 0, .912, 0).rotateX(Math.PI / 2), bird);
     bath.userData.bird = bird;
+    bath.userData.update = waterTick;
     return bath;
   },
   bench() {
@@ -418,25 +489,76 @@ export const GARDEN_BUILD = {
   },
   // Đài phun nước (thay hồ cá): bồn đá tròn có cá vàng bơi; mèo rình cá rồi khều nước.
   'pond-fountain'() {
-    const water = mesh(new THREE.CylinderGeometry(.74, .74, .02, 48), mat('#6fc3e0', { roughness: .15, transparent: true, opacity: .85 }));
+    // Bồn dưới giữ trong suốt nhẹ để thấy cá bơi dưới mặt nước.
+    const water = mesh(new THREE.CylinderGeometry(.74, .74, .02, 48), waterMat('#6fc3e0', { transparent: true, opacity: .85 }));
     water.castShadow = false;
-    const jet = mat('#dff4ff', { transparent: true, opacity: .6, roughness: .1 });
-    const spray = at(mesh(new THREE.SphereGeometry(.12, 16, 12), jet), 0, 1.08, 0);
+    water.userData.noOutline = true;
+    // ----- Dòng nước: tia giữa phụt lên Y0 rồi xoè ra ARCS vòi cong (parabol) rơi xuống bồn dưới ở bán kính R_LAND,
+    // bay qua trên vành bát trên. Sọc trên ống cuộn theo thời gian = nước chảy; hạt nước bay theo vòi; gợn tròn nơi nước rơi.
+    const ARCS = 8, Y0 = 1.16, R_LAND = .58, Y_LAND = .29, LIFT = 1.0;
+    const DROP = (Y0 + LIFT * R_LAND - Y_LAND) / (R_LAND * R_LAND);
+    const arcAt = (a, r, out = new THREE.Vector3()) => out.set(Math.cos(a) * r, Y0 + LIFT * r - DROP * r * r, Math.sin(a) * r);
+    const flow = flowTexture(), jetFlow = flow.clone();
+    flow.repeat.set(3, 1); jetFlow.repeat.set(1, 1);
+    const streams = [...Array(ARCS)].map((_, i) => {
+      const a = i / ARCS * TAU, points = [...Array(17)].map((__, k) => arcAt(a, k / 16 * R_LAND));
+      const stream = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 32, .019, 8), flowMat(flow));
+      stream.castShadow = false;
+      stream.userData.noOutline = true; // ống nước mảnh: viền làm nó thành nét đen
+      return stream;
+    });
+    const jetColumn = at(mesh(new THREE.CylinderGeometry(.02, .03, Y0 - .93, 12, 1, true), flowMat(jetFlow)), 0, (Y0 + .93) / 2, 0);
+    jetColumn.userData.noOutline = true;
+    // Bọt trắng trên đỉnh tia: vài viên nhấp nhô lệch pha.
+    const foam = [...Array(5)].map((_, i) => at(ball(.03 - (i % 2) * .008, '#ffffff'), Math.cos(i * 1.26) * .035, Y0, Math.sin(i * 1.26) * .035));
+    foam.forEach(f => { f.castShadow = false; f.userData.noOutline = true; });
+    // Hạt nước bay dọc các vòi (một InstancedMesh, cập nhật vị trí mỗi khung).
+    const DROPS = 32, dummy = new THREE.Object3D(), dropPos = new THREE.Vector3();
+    const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(.016, 8, 6), TOON ? toonMat({ color: '#e6f7ff' }) : mat('#e6f7ff'), DROPS);
+    drops.castShadow = false;
+    drops.frustumCulled = false;
+    // Gợn tròn nơi nước rơi: vòng trắng nở ra rồi mờ dần, lệch pha từng vòi; cao hơn mặt nước 1 cm (không z-fighting).
+    const ripples = [...Array(ARCS)].map((_, i) => {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.035, .05, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2;
+      arcAt(i / ARCS * TAU, R_LAND, ring.position).y = Y_LAND;
+      return ring;
+    });
     const koi = ['#f39a45', '#ffd23f'].map((color, i) => {
       const fish = group(ball(.06, color), at(mesh(new THREE.ConeGeometry(.045, .09, 10), color), -.09, 0, 0));
       fish.children[0].scale.set(1.4, .6, .8); fish.children[1].rotation.z = Math.PI / 2;
       fish.userData.phase = i * Math.PI;
+      markOutlineUnit(fish); // cá là khối viền riêng: viền cá đè lên bồn vẫn đậm
       return fish;
     });
     // Các lớp tách độ cao rõ ràng (không có hai mặt trùng nhau -> không chớp z-fighting):
     // bệ đá (đỉnh .26) < mặt nước (.28) < vành bồn hình xuyến (đỉnh ~.34) bao quanh mép nước.
     const fountain = group(at(cyl(.82, .9, .26, '#d9d2c4'), 0, .13, 0), at(water, 0, .27, 0),
       at(mesh(new THREE.TorusGeometry(.8, .07, 12, 56), '#d9d2c4'), 0, .28, 0).rotateX(Math.PI / 2),
-      at(cyl(.1, .14, .55, '#d9d2c4'), 0, .55, 0), at(cyl(.3, .14, .12, '#e3ddd1'), 0, .86, 0), at(cyl(.26, .26, .02, '#8fd0ef'), 0, .92, 0),
-      at(mesh(new THREE.CylinderGeometry(.035, .05, .14, 12), jet), 0, .99, 0), spray, ...koi); // tia nước nối mặt bát lên chùm bọt
+      at(cyl(.1, .14, .55, '#d9d2c4'), 0, .55, 0), at(cyl(.3, .14, .12, '#e3ddd1'), 0, .86, 0),
+      // bát trên: mặt bát .92 < mặt nước .935 < vành xuyến (đỉnh ~.945) che mép nước
+      waterDisc(.27, .93), at(mesh(new THREE.TorusGeometry(.285, .025, 10, 40), '#e3ddd1'), 0, .92, 0).rotateX(Math.PI / 2),
+      jetColumn, ...foam, ...streams, drops, ...ripples, ...koi);
     fountain.userData.fish = koi;
     fountain.userData.update = t => {
-      spray.scale.setScalar(1 + Math.sin(t * 6) * .15);
+      waterTick(t);
+      flow.offset.x = -t * 1.4; // sọc chạy từ đỉnh xuống theo vòi
+      jetFlow.offset.y = -t * 2.2; // sọc chạy lên trong tia giữa
+      foam.forEach((f, i) => { f.position.y = Y0 + Math.sin(t * 9 + i * 1.7) * .02; f.scale.setScalar(.85 + Math.sin(t * 7 + i) * .2); });
+      for (let i = 0; i < DROPS; i++) {
+        const s = (t * .55 + i * .618) % 1, a = (i % ARCS) / ARCS * TAU + Math.sin(i * 3.1) * .12;
+        arcAt(a, s * R_LAND * (1.02 + (i % 3) * .03), dropPos);
+        dummy.position.copy(dropPos);
+        dummy.scale.setScalar(Math.sin(s * Math.PI) * .9 + .3);
+        dummy.updateMatrix();
+        drops.setMatrixAt(i, dummy.matrix);
+      }
+      drops.instanceMatrix.needsUpdate = true;
+      ripples.forEach((ring, i) => {
+        const k = (t * .8 + i * .37) % 1;
+        ring.scale.set(1 + k * 2.4, 1 + k * 2.4, 1); // nở trong mặt phẳng vòng, không giãn theo pháp tuyến
+        ring.material.opacity = (1 - k) * .8;
+      });
       koi.forEach(f => { const a = t * .5 + f.userData.phase; f.position.set(Math.cos(a) * .5, .265, Math.sin(a) * .5); f.rotation.y = -a - Math.PI / 2; });
     };
     return fountain;
@@ -465,6 +587,7 @@ export const GARDEN_BUILD = {
     bird.position.set(0, .98, .22);
     bird.rotation.y = -Math.PI / 2;
     bird.userData.home = bird.position.clone();
+    markOutlineUnit(bird); // chim là khối viền riêng: viền chim đè lên bát nước vẫn đậm
     const seeds = [...Array(8)].map((_, i) => at(ball(.025, '#c9953a'), Math.cos(i * 2.4) * .12, .92, Math.sin(i * 2.4) * .1 - .05));
     const posts = [[-.27, -.24], [.27, -.24], [-.27, .24], [.27, .24]].map(([x, z]) => at(cyl(.015, .015, .6, '#8a5a3a', 6), x, 1.18, z));
     const feeder = group(at(cyl(.22, .26, .06, '#6b4a35'), 0, .03, 0), at(cyl(.045, .05, .85, '#8a5a3a'), 0, .45, 0),
@@ -633,8 +756,8 @@ function cornerBush(sx, sz, { seed, accent, color }) {
   // Gốc: vài viên sỏi, chỉ ở phía trong vườn (bụi sát góc hàng rào, rải đều quanh gốc sẽ lọt ra ngoài rào lên viền đế).
   const inward = Math.atan2(-sz, -sx);
   for (let i = 0; i < 3; i++) {
-    const a = inward + rnd(-.6, .6), pebble = at(ball(rnd(.035, .06), i % 2 ? '#c8c2b8' : '#b5aea3'), Math.cos(a) * .5, .02, Math.sin(a) * .5);
-    pebble.scale.y = .55; bush.add(pebble);
+    const a = inward + rnd(-.6, .6), pebble = at(rock(rnd(.035, .06), i % 2 ? '#c8c2b8' : '#b5aea3', rnd(0, 1000)), Math.cos(a) * .5, .01, Math.sin(a) * .5);
+    pebble.scale.y = .75; pebble.rotation.y = rnd(0, TAU); bush.add(pebble);
   }
   return markOutlineUnit(mergeStatic(bush)); // lá rời / hoa là InstancedMesh, giữ nguyên
 }
