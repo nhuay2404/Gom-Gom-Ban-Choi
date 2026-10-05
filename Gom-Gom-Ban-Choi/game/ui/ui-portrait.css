@@ -465,14 +465,17 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 
 /* Deco: header + chọn khu + cảnh 3D đứng yên; chỉ danh sách đồ cuộn bên trong khung kem (cảnh 3D không đè lên đồ). */
 .screen.deco{overflow:hidden;gap:10px}
-.screen.deco>.screen-top,.screen.deco>.zone-switch{position:relative;z-index:6}
+.screen.deco>.wallet-hud,.screen.deco>.zone-switch{position:relative;z-index:6}
 .room.deco-view{position:relative;top:auto;max-height:34vh;aspect-ratio:auto;height:calc(min(100vw,480px) * .62)}
 .deco-panel{flex:1 1 0;min-height:0;padding-bottom:14px}
 .deco-panel .chips{flex:none}
 .deco-groups{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -4px;padding:2px 4px 10px;
   -webkit-mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent)}
 .deco-groups::-webkit-scrollbar{display:none}
-.room.deco-view.is-3d{-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+.room.deco-view.is-3d{-webkit-mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 28px),transparent)}
+/* Deco: bỏ chữ "Deco" ở hàng đầu, chỉ giữ ví xu bên phải */
+.screen.deco .screen-title{display:none}
+.screen.deco>.screen-top{justify-content:flex-end}
 
 /* Map 3D (deco/map-world.mjs): canvas phủ kín màn, trời vẽ trong cảnh; bản 2D (#map-list) chỉ là dự phòng. */
 .map-3d{display:none;position:absolute;inset:0;touch-action:none}
@@ -483,15 +486,15 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .map-canvas:active{cursor:grabbing}
 
 /* ===== Shop theo Figma (frame "Shop" 23:499) — đơn vị --u = bề ngang khung / 393 như Home ===== */
-.screen.shop{--u:calc(min(100vw,480px) / 393);--ink:#5b2e1c;gap:calc(16 * var(--u));padding-inline:0;padding-top:calc(56 * var(--u) + env(safe-area-inset-top));
+.screen.shop{--u:calc(min(100vw,480px) / 393);--ink:#5b2e1c;gap:calc(16 * var(--u));padding-inline:0;padding-top:calc(18 * var(--u) + env(safe-area-inset-top));
   background:#9fdcff url('./skins/figma-shop/bg.jpg') 50% 0/cover no-repeat}
 .screen.shop>*{width:calc(338 * var(--u));max-width:none}
-/* Hàng ví: cùng ảnh pill + toạ độ với Home (Figma), số xu viết lên đúng chỗ */
-.screen.shop>.shop-hud{position:relative;width:calc(393 * var(--u));height:calc(50 * var(--u))}
-.shop-hud>*{position:absolute;padding:0;border:0;background-color:transparent;background-position:center;background-size:100% 100%;background-repeat:no-repeat}
-.shop-hud>.fh-coins{top:0}
-.shop-hud>.fh-gems,.shop-hud>.fh-energy{top:calc(2 * var(--u))}
-.shop-hud button:active{translate:0 calc(2 * var(--u))}
+/* Hàng ví dùng chung Deco + Shop: cùng ảnh pill, cỡ và toạ độ với Home (cách mép trên 18u, xem .fh-layer), số xu viết lên đúng chỗ */
+.screen>.wallet-hud{position:relative;flex:none;align-self:center;width:calc(393 * var(--u));max-width:none;height:calc(50 * var(--u))}
+.wallet-hud>*{position:absolute;padding:0;border:0;background-color:transparent;background-position:center;background-size:100% 100%;background-repeat:no-repeat}
+.wallet-hud>.fh-coins{top:0}
+.wallet-hud>.fh-gems,.wallet-hud>.fh-energy{top:calc(2 * var(--u))}
+.wallet-hud button:active{translate:0 calc(2 * var(--u))}
 /* Banner gói khởi đầu: ảnh Figma (chữ + giá in sẵn, nội dung cố định) */
 .shop-starter{aspect-ratio:338/126;padding:0;border:0;background:url('./skins/figma-shop/starter.png') 50% 0/117.16% 104.76% no-repeat;margin-bottom:calc(8 * var(--u))}
 .shop-starter:active{translate:0 calc(2 * var(--u))}
@@ -521,3 +524,18 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
   -webkit-text-stroke:calc(3.5 * var(--u)) #2f6f35;paint-order:stroke fill}
 .screen.shop .coin-pack:active{translate:0 calc(2 * var(--u))}
 .screen.shop .soon-note{width:calc(338 * var(--u))}
+
+/* Home: hàng ví + cột nút hai bên nhích lên sát mép trên (bản Figma chừa trống phía trên nhiều) */
+.fh-layer>.fh-pill,.fh-layer>.fh-btn,.fh-layer>.fh-settings,.fh-layer>.fh-help{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
+
+/* Deco: hàng ví cùng vị trí với Home / Shop */
+.screen.deco{--u:calc(min(100vw,480px) / 393);padding-top:calc(18 * var(--u) + env(safe-area-inset-top))}
+
+/* Thanh điều hướng hub: hẹp lại (các nút sát nhau hơn) và xuống gần đáy màn hình; nút PLAY xuống theo */
+#tabbar.fh-tabbar{bottom:calc(16 * var(--u) + env(safe-area-inset-bottom));width:calc(292 * var(--u));grid-template-columns:1.2fr 1fr 1fr 1fr}
+.fh-play{bottom:calc(104 * var(--u) + env(safe-area-inset-bottom))}
+/* Chừa dưới theo vị trí mới của thanh điều hướng (cao 64u, cách đáy 16u) */
+.screen,.screen:not(.home){padding-bottom:calc(min(100vw,480px) / 393 * 92 + env(safe-area-inset-bottom))}
+.map-list{padding-bottom:calc(min(100vw,480px) / 393 * 96)}
+/* Map 3D: trời mây giống Home (cảnh 3D vẽ trong suốt phía trên) */
+.map.is-3d{background:#8ed4fc url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}

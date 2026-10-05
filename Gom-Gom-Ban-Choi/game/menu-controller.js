@@ -2,7 +2,7 @@
 // Bản đồ màn, Home / Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
 // và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở gom-gom.js).
 import { categories, catMarkup, addArt as addCatArt } from './ui/cat-art.mjs';
-import { LEVELS } from './gameplay/levels.mjs';
+import { LEVELS, LETTERS } from './gameplay/levels.mjs';
 import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from './gameplay/progression.mjs';
 import { BOOSTERS } from './gameplay/tuning.mjs';
 import { playSound, soundOn, setSound } from './ui/sound.mjs';
@@ -96,8 +96,12 @@ const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld }) => {
   });
 }).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
 function mapLevels() {
-  const open = unlockedCount(loadProgress());
-  return LEVELS.map((level, index) => ({ locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style }));
+  const open = unlockedCount(loadProgress()), seen = new Set();
+  return LEVELS.map((level, index) => {
+    // Giống mèo lần đầu xuất hiện ở màn này: bản đồ dựng mèo 3D giống đó cạnh màn.
+    const newCats = [...level.cats].filter(ch => !seen.has(ch)).map(ch => (seen.add(ch), LETTERS[ch]));
+    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats };
+  });
 }
 async function showMap3d() {
   await map3dReady;
@@ -299,7 +303,7 @@ function renderDeco() {
 function pickDeco(entry) {
   decoPick = entry;
   applyRoom(decoShown());
-  if (entry) room3d?.focus(entry.id);
+  room3d?.focus(entry?.id ?? null); // chọn món = quay về món + zoom vào món; bỏ chọn = zoom quanh giữa khu
   renderDeco();
 }
 $('deco-grid').addEventListener('click', event => {

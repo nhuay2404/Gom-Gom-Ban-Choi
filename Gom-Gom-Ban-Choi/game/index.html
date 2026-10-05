@@ -118,10 +118,11 @@
     </div>
   </section>
   <section id="deco" class="screen deco" hidden>
-    <header class="screen-top">
-      <h2 class="screen-title">Deco</h2>
-      <span class="pill-stat"><i class="ico-coin"></i><b id="deco-coins">0</b></span>
-    </header>
+    <div class="wallet-hud">
+      <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
+      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+    </div>
     <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">
         <button role="tab" data-zone="garden">Garden</button>
         <button role="tab" data-zone="living">Living room</button>
@@ -144,7 +145,7 @@
   <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, banner gói khởi đầu, thẻ booster kem viền nâu,
        dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu-controller.js điền). -->
   <section id="shop" class="screen shop" hidden>
-    <div class="shop-hud">
+    <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
       <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
       <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>

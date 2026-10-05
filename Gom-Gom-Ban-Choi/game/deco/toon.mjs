@@ -69,7 +69,7 @@ void RE_IndirectDiffuse_Toon( const in vec3 irradiance, const in vec3 geometryPo
 #define RE_IndirectDiffuse RE_IndirectDiffuse_Toon`;
 // Màu pastel: giảm độ đậm rồi pha trắng, làm trên không gian sRGB (như pha màu trên giấy) cho cả màu khối lẫn texture
 // (cỏ, sàn...). Không đụng cat-art.mjs nên mèo 2D trên bàn chơi giữ nguyên màu.
-export const PASTEL = { sat: 1.12, white: .16 }; // sat > 1 bù lại độ đậm bị trắng pha loãng: sáng nhẹ mà màu vẫn tươi
+export const PASTEL = { sat: 1.35, white: .08 }; // sat > 1 bù lại độ đậm bị trắng pha loãng: sáng nhẹ mà màu vẫn tươi
 const PASTEL_CHUNK = `#include <color_fragment>
 {
   vec3 pastel = pow( max( diffuseColor.rgb, vec3( 0.0 ) ), vec3( 1.0 / 2.2 ) );
@@ -217,9 +217,9 @@ export function renderOutlineIds(renderer, scene, camera) {
 export const MAP_INK = '#5b2e1c';
 export const OUTLINE_STYLES = {
   default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
-  cat: { px: 5.6, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
+  cat: { px: 4.6, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
   // tai mèo: khối nhỏ nên cùng số px trông mảnh hơn thân, dày hơn chút cho cân
-  catEar: { px: 6.4, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },
+  catEar: { px: 5.3, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;

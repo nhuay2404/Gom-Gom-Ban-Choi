@@ -2502,3 +2502,15 @@ export function createCatLife(ctx) {
     },
   };
 }
+
+// Mèo 3D đứng yên (không có "não" / hoạt hình) cho cảnh khác dùng, vd. bản đồ màn (map-world.mjs) khoe giống mèo mới mở.
+// Mặt / mắt dán ôm lên mặt trước bo tròn một lần (trong phòng việc này làm mỗi frame theo thân đang biến dạng).
+export function catModel(breed) {
+  const rig = buildRig(breed);
+  for (const decal of [rig.face, rig.eyes]) {
+    const flat = decal.userData.flat, attr = decal.geometry.attributes.position, a = attr.array;
+    for (let i = 0; i < a.length; i += 3) a[i + 2] = frontSurface(flat[i], flat[i + 1]) + decal.userData.lift;
+    attr.needsUpdate = true;
+  }
+  return rig.root;
+}

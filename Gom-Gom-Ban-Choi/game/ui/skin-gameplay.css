@@ -1,22 +1,27 @@
 /* Màn chơi theo Figma (file UI, frame "Gameplay" 23:442, khung 393 × 852).
-   - Ảnh nền vườn, pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (skins/figma-game/).
+   - Ảnh nền đồng cỏ (image 116), pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (skins/figma-game/).
    - Bàn chơi, ô, thùng gỗ, mèo: vẽ lại bằng CSS / SVG (cat-art.mjs, board-art.mjs) theo cùng kiểu đổ bóng với bản Figma.
    Kích thước nhân theo --u (= bề ngang khung / 393). File nạp sau ui-portrait.css nên chỉ ghi đè phần nhìn. */
-.shell{--u:calc(min(100vw,480px) / 393);background:#9fd172 url('./skins/figma-game/garden-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+.shell{--u:calc(min(100vw,480px) / 393);background:#a7d662 url('./skins/figma-game/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
 .shell>.topbar{display:none}
 /* Bỏ dòng thông báo (mục tiêu / cộng điểm) dưới bàn như bản Figma */
 .shell>.message-row{display:none}
 
 /* ---------- HUD: điểm | đầu mèo Moves | nút cài đặt ---------- */
 .fg-hud{position:relative;z-index:5;display:grid;grid-template-columns:1fr calc(86 * var(--u)) 1fr;align-items:center;gap:0;
-  margin:calc(30 * var(--u)) calc(-18 * var(--u)) calc(6 * var(--u));height:calc(86 * var(--u))}
+  margin:calc(16 * var(--u)) calc(-18 * var(--u)) calc(4 * var(--u));height:calc(80 * var(--u))}
 .fg-hud .progress.fg-score{justify-self:start;width:calc(169 * var(--u));height:calc(56 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
   background:url('./skins/figma-game/score-bar.png') center/100% 100% no-repeat}
-/* Thanh điểm vẽ trong lòng rãnh vàng nhạt của pill */
-.fg-score .progress-track{position:absolute;left:28%;right:28%;top:37%;bottom:37%;height:auto;border-radius:999px;background:none;box-shadow:none}
-.fg-score .progress-fill{background:#8fd46a80}
-.fg-score .progress-text{font-family:var(--display);font-size:calc(13 * var(--u));color:#6b3329;text-shadow:none}
-.fg-score .progress-text strong{font-size:calc(14 * var(--u));color:#e2566c;-webkit-text-stroke:.6px #8c2f3a;text-shadow:none}
+/* Thanh điểm: phủ kín rãnh vàng nhạt của pill (17–83% ngang), thanh kẹo xanh có vệt bóng, đầy thì chuyển vàng; chữ trắng viền nâu
+   đọc được cả trên phần đã đầy lẫn phần trống. */
+.fg-score .progress-track{position:absolute;left:17.5%;right:17.5%;top:34%;bottom:33%;height:auto;padding:calc(1.5 * var(--u));border-radius:999px;background:none;box-shadow:none;overflow:hidden}
+.fg-score .progress-fill{min-width:0;border-radius:999px;background:linear-gradient(#a6e88a,#5cbf4c 70%,#4aa83f);
+  box-shadow:inset 0 calc(-2 * var(--u)) 0 #3c8f3466,inset 0 calc(2 * var(--u)) 0 #d9ffc699}
+.fg-score .progress-fill:not([style*="width: 0"]){min-width:calc(14 * var(--u))}
+.fg-score.full .progress-fill{background:linear-gradient(#ffe88a,#ffc93d 70%,#f0ae22);box-shadow:inset 0 calc(-2 * var(--u)) 0 #c9861a66,inset 0 calc(2 * var(--u)) 0 #fff6c899}
+.fg-score .progress-text{gap:calc(3 * var(--u));font-family:var(--display);font-size:calc(14 * var(--u));font-weight:800;color:#fff;text-shadow:none;
+  -webkit-text-stroke:calc(3 * var(--u)) #6b3329;paint-order:stroke fill}
+.fg-score .progress-text strong{font-size:calc(15 * var(--u));color:#ff8fa6;-webkit-text-stroke:calc(3 * var(--u)) #6b2a28;paint-order:stroke fill;text-shadow:none}
 .fg-menu{position:relative;width:calc(86 * var(--u));height:calc(86 * var(--u))}
 .fg-moves.moves-box{position:relative;display:block;width:100%;height:100%;padding:0;border:0;border-radius:0;box-shadow:none;color:#6b3329;
   background:url('./skins/figma-game/moves-badge.png') center/100% 100% no-repeat}
@@ -31,6 +36,9 @@
 .fg-settings .settings-menu{top:calc(100% + 6px);right:0}
 body.low-moves .fg-score{outline:0}
 
+/* Bàn nằm giữa khoảng trống còn lại (bàn ít hàng / bàn ngang không dồn lên trên, chừa khoảng hở lớn phía trên dock) */
+.shell .board-wrap{align-items:center}
+
 /* ---------- Bàn chơi: khay kem vàng, mép dưới dày, ô lõm bo tròn (vẽ bằng CSS theo shading Figma) ---------- */
 .board{padding:calc(10 * var(--u));border-radius:calc(22 * var(--u));gap:calc(6 * var(--u));
   background:linear-gradient(#fbe7b2,#f5d998);
@@ -44,30 +52,30 @@ body.low-moves .fg-score{outline:0}
 /* ---------- Dock: khung kem có dấu chân, thẻ đang bóc trái to; NEXT trên, HOLD dưới ở cột phải ---------- */
 .shell>.dock{order:3}
 .shell>.booster-bar{order:4}
-.dock.draw-area{width:calc(283 * var(--u));margin:calc(14 * var(--u)) auto 0;padding:calc(16 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u));
-  grid-template-columns:1fr calc(62 * var(--u));grid-template-rows:auto auto;grid-template-areas:"card next" "card hold";gap:calc(4 * var(--u)) calc(14 * var(--u));
+.dock.draw-area{width:calc(262 * var(--u));margin:calc(10 * var(--u)) auto 0;padding:calc(12 * var(--u)) calc(14 * var(--u)) calc(10 * var(--u));
+  grid-template-columns:1fr calc(54 * var(--u));grid-template-rows:auto auto;grid-template-areas:"card next" "card hold";gap:calc(4 * var(--u)) calc(14 * var(--u));
   background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/dock-panel.png') 60 fill / calc(22 * var(--u)) stretch}
 .dock .card-column{grid-area:card;align-self:center}
 .dock .next-column{grid-area:next}
 .dock .hold-column{grid-area:hold}
 .dock .hold-column,.dock .next-column{flex-direction:column-reverse;gap:calc(2 * var(--u))}
 .dock .hold-column{flex-direction:column}
-.dock-label{order:2;font-family:var(--display);font-size:calc(12 * var(--u));font-weight:800;letter-spacing:0;color:#6a3229;opacity:1}
+.dock-label{order:2;font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;letter-spacing:0;color:#6a3229;opacity:1}
 .dock .next-cards{order:1}
-.dock .hold-slot,.dock .next-slot{width:calc(61 * var(--u));height:calc(59 * var(--u));--card-w:calc(61 * var(--u));--card-h:calc(59 * var(--u));
+.dock .hold-slot,.dock .next-slot{width:calc(54 * var(--u));height:calc(52 * var(--u));--card-w:calc(54 * var(--u));--card-h:calc(52 * var(--u));
   background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
 /* Ô HOLD trống: ô có dấu cộng của Figma; có thẻ thì dùng ô trơn như NEXT / thẻ đang bóc */
 .dock .hold-slot:not(:has(.piece-grid)){border-image:none;background:url('./skins/figma-game/slot.png') center/100% 100% no-repeat}
 .dock .hold-slot:not(:has(.piece-grid))>span{visibility:hidden}
-.dock #active-card,.dock .piece-card{width:calc(158 * var(--u));height:calc(153 * var(--u));--card-w:calc(158 * var(--u));--card-h:calc(153 * var(--u));
+.dock #active-card,.dock .piece-card{width:calc(146 * var(--u));height:calc(136 * var(--u));--card-w:calc(146 * var(--u));--card-h:calc(136 * var(--u));
   background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/slot-blank.png') 70 fill / calc(26 * var(--u)) stretch}
 .dock .hold-slot.drop-target{box-shadow:0 0 0 3px #3fbf8f,0 0 18px #9ff0d4}
 .dock .hold-slot.drop-blocked{box-shadow:0 0 0 3px #d9534f}
 
 /* ---------- Booster: khung kem dài, 3 nút đầu mèo, số lượng ở góc dưới trái ---------- */
-.booster-bar{width:calc(283 * var(--u));height:calc(66 * var(--u));margin:calc(14 * var(--u)) auto 0;padding:0;gap:calc(10 * var(--u));align-items:center;
+.booster-bar{width:calc(262 * var(--u));height:calc(56 * var(--u));margin:calc(8 * var(--u)) auto 0;padding:0;gap:calc(10 * var(--u));align-items:center;
   background:url('./skins/figma-game/booster-frame.png') center/100% 100% no-repeat}
-.booster-bar .boost{width:calc(62 * var(--u));height:calc(62 * var(--u));border:0;border-radius:0;box-shadow:none}
+.booster-bar .boost{width:calc(52 * var(--u));height:calc(52 * var(--u));border:0;border-radius:0;box-shadow:none}
 .boost[data-boost="hammer"]{background:url('./skins/figma-game/booster-hammer.png') center/contain no-repeat}
 .boost[data-boost="swap"]{background:url('./skins/figma-game/booster-swap.png') center/contain no-repeat}
 .boost[data-boost="moves"]{background:url('./skins/figma-game/booster-moves.png') center/contain no-repeat}

@@ -4,13 +4,15 @@
 import * as THREE from 'three';
 import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
 import { roundedBox } from './mesh-detail.mjs';
+import { catModel } from './room-cats.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ); SWING / FREQ: đường uốn sang hai bên.
 const WORLD = { R: 11, STEP: .3, SWING: 1.55, FREQ: .95, ROAD: 1.05, EDGE: .2 };
 const INK = MAP_INK;
+const SKY_FOG = 0x8ed4fc;
 const COLORS = {
-  sky: ['#7fcbff', '#c9efff', '#eefaff'], grass: '#8fd16a', grassDark: '#79bf57',
-  road: 0xfcd9a6, roadDone: 0xf9b6cb, pedestal: 0xfff1d6, pedestalSide: 0xe7c48f,
+  grass: '#8fd16a', grassDark: '#79bf57',
+  road: 0xfcd9a6, roadDone: 0xf9b6cb,
   body: { normal: 0xf2557f, chill: 0xf2557f, hard: 0xf2557f, boss: 0x8f5fdc, locked: 0x8a6f62 },
 };
 // Góc nhìn: camera đứng trên đỉnh trống nhìn chéo xuống; bề ngang thấy được ~ ±HALF_W đơn vị ở chỗ màn đang chọn.
@@ -60,13 +62,6 @@ function grassTexture() {
       });
     }
   }, { repeat: true });
-}
-function skyTexture() {
-  return canvasTexture(4, 256, (g, w, h) => {
-    const grad = g.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, COLORS.sky[0]); grad.addColorStop(.55, COLORS.sky[1]); grad.addColorStop(1, COLORS.sky[2]);
-    g.fillStyle = grad; g.fillRect(0, 0, w, h);
-  });
 }
 const PAW_PATH = new Path2D('M12 20.6c-3 0-5.5-1.8-5.5-4.3S9 11.4 12 11.4s5.5 2.4 5.5 4.9-2.5 4.3-5.5 4.3ZM5.6 12.4a2.4 2.6 0 1 1 0-5.2 2.4 2.6 0 0 1 0 5.2Zm4-3.6a2.5 2.7 0 1 1 0-5.4 2.5 2.7 0 0 1 0 5.4Zm4.8 0a2.5 2.7 0 1 1 0-5.4 2.5 2.7 0 0 1 0 5.4Zm4 3.6a2.4 2.6 0 1 1 0-5.2 2.4 2.6 0 0 1 0 5.2Z');
 const pawTexture = color => canvasTexture(64, 64, (g) => { g.scale(64 / 24, 64 / 24); g.fillStyle = color; g.fill(PAW_PATH); });
@@ -197,20 +192,84 @@ function rock(rnd) {
   m.scale.y = .6; m.position.y = .08; m.rotation.y = rnd() * 3;
   return withInk(m, .06);
 }
-function cloud(rnd) {
-  const g = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
-  for (let k = 0; k < 4; k++) {
-    const puff = new THREE.Mesh(new THREE.SphereGeometry(1 + rnd() * .8, 14, 10), mat);
-    puff.position.set((k - 1.5) * 1.4, rnd() * .6, rnd() * .5);
-    g.add(puff);
+
+// ---------- Bệ màn boss: bánh kem hai tầng (các màn khác dùng bệ thường) ----------
+// Tầng đế vàng bánh quy có hạt ngọc trai viền mép, tầng trên phủ kem (hồng màn đã mở / kem nâu màn khoá / tím boss) có
+// viền kem gợn sóng, mặt bánh kem trắng; quanh chân bệ là cụm cỏ + hoa nhỏ. Hình học + vật liệu dùng chung mọi màn.
+const PED = {
+  base: new THREE.CylinderGeometry(.8, .86, .2, 36), tier: new THREE.CylinderGeometry(.7, .74, .17, 36), plate: new THREE.CylinderGeometry(.64, .67, .06, 36),
+  pearl: new THREE.SphereGeometry(.05, 10, 8), scallop: new THREE.SphereGeometry(.085, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+  tuft: new THREE.ConeGeometry(.06, .2, 5), petal: new THREE.SphereGeometry(.045, 8, 6),
+};
+const pedMat = {
+  biscuit: toonMat({ color: 0xf0c27a }), pearl: toonMat({ color: 0xfffaf0, rim: .4 }), cream: toonMat({ color: 0xfff6ea }),
+  leaf: toonMat({ color: 0x5fb548 }), petalPink: toonMat({ color: 0xff9ec0 }), petalWhite: toonMat({ color: 0xffffff }), heart: toonMat({ color: 0xffd23f }),
+  tier: { open: toonMat({ color: 0xff9ab8 }), locked: toonMat({ color: 0xd9c2b0 }), boss: toonMat({ color: 0xc4a3f2 }) },
+};
+// Bệ thường (mọi màn trừ boss): đế tròn vàng đất + mặt kem, không trang trí.
+const PLAIN_BASE = new THREE.CylinderGeometry(.72, .8, .26, 32), PLAIN_TOP = new THREE.CylinderGeometry(.66, .7, .08, 32);
+const plainMat = { side: toonMat({ color: 0xe7c48f }), top: toonMat({ color: 0xfff1d6 }) };
+function plainPedestal() {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(PLAIN_BASE, plainMat.side); base.position.y = .13; base.castShadow = base.receiveShadow = true;
+  const top = new THREE.Mesh(PLAIN_TOP, plainMat.top); top.position.y = .3; top.receiveShadow = true;
+  g.add(withInk(base, .04), top);
+  return { group: g, parts: [base, top], top: .34 };
+}
+function pedestal(kind) {
+  const g = new THREE.Group(), parts = [];
+  const base = new THREE.Mesh(PED.base, pedMat.biscuit); base.position.y = .1;
+  const tier = new THREE.Mesh(PED.tier, pedMat.tier[kind]); tier.position.y = .285;
+  const plate = new THREE.Mesh(PED.plate, pedMat.cream); plate.position.y = .395;
+  for (const m of [base, tier]) { m.castShadow = m.receiveShadow = true; g.add(withInk(m, .035)); }
+  plate.receiveShadow = true; g.add(plate);
+  parts.push(base, tier, plate);
+  // Ngọc trai quanh mép đế, viền kem gợn sóng quanh mép tầng trên.
+  for (let k = 0; k < 18; k++) {
+    const a = k / 18 * Math.PI * 2, pearl = new THREE.Mesh(PED.pearl, pedMat.pearl);
+    pearl.position.set(Math.cos(a) * .8, .2, Math.sin(a) * .8); g.add(pearl);
   }
-  g.scale.set(1, .62, .5);
-  return g;
+  for (let k = 0; k < 14; k++) {
+    const a = (k + .5) / 14 * Math.PI * 2, scallop = new THREE.Mesh(PED.scallop, pedMat.cream);
+    scallop.position.set(Math.cos(a) * .69, .355, Math.sin(a) * .69); scallop.scale.set(1, .8, 1); g.add(scallop);
+  }
+  // Cụm cỏ + hoa quanh chân bệ (lệch nhịp cho tự nhiên, chừa phía trước để không che mặt bệ).
+  [[-.95, .25], [-.78, -.55], [.9, .35], [.62, -.72], [-.2, -.95], [.25, -.92]].forEach(([x, z], k) => {
+    const tuft = new THREE.Group();
+    for (let j = 0; j < 3; j++) {
+      const blade = new THREE.Mesh(PED.tuft, pedMat.leaf);
+      blade.position.set((j - 1) * .06, .09, 0); blade.rotation.z = (j - 1) * .35; tuft.add(blade);
+    }
+    if (k % 2 === 0) {
+      const mat = k % 4 ? pedMat.petalWhite : pedMat.petalPink;
+      for (let j = 0; j < 5; j++) { const a = j / 5 * Math.PI * 2, petal = new THREE.Mesh(PED.petal, mat); petal.position.set(Math.cos(a) * .05, .22, Math.sin(a) * .05); tuft.add(petal); }
+      const heart = new THREE.Mesh(PED.petal, pedMat.heart); heart.position.y = .24; heart.scale.setScalar(.8); tuft.add(heart);
+    }
+    tuft.position.set(x, 0, z); tuft.rotation.y = k * 1.3;
+    g.add(tuft);
+  });
+  return { group: g, parts, top: .43 };
+}
+// Mèo 3D (cùng model với Home) đứng cạnh màn mở giống mới, có viền nâu kiểu sticker như khối đầu mèo.
+function newCatModel(breed) {
+  const cat = catModel(breed), solids = [];
+  cat.traverse(node => { if (node.isMesh && node.material?.isMeshToonMaterial && !node.material.transparent && !node.userData.noOutline) solids.push(node); });
+  solids.forEach(mesh => withInk(mesh, .07));
+  cat.traverse(node => { if (node.isMesh) node.castShadow = true; });
+  return cat;
+}
+function newBadgeTexture() {
+  return canvasTexture(160, 64, (g, w, h) => {
+    g.fillStyle = '#ff5f8a'; g.strokeStyle = '#5b2e1c'; g.lineWidth = 6;
+    g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 26); g.fill(); g.stroke();
+    g.font = '900 34px "Baloo 2", Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 7; g.lineJoin = 'round'; g.strokeText('NEW!', w / 2, h / 2 + 2); g.fillStyle = '#fff'; g.fillText('NEW!', w / 2, h / 2 + 2);
+  });
 }
 
 // ---------- Cảnh ----------
 export function createMapWorld(container, { onPick, avatarSvg } = {}) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
@@ -221,8 +280,9 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
 
   const scene = new THREE.Scene();
   toonLook(renderer, scene);
-  scene.background = skyTexture();
-  scene.fog = new THREE.Fog(COLORS.sky[1], 17, 29);
+  // Trời: canvas trong suốt, nền là ảnh trời mây của Home (.map.is-3d trong ui-portrait.css); sương chân trời cùng màu trời ở ảnh.
+  scene.background = null;
+  scene.fog = new THREE.Fog(SKY_FOG, 17, 29);
   const camera = new THREE.PerspectiveCamera(40, 1, .1, 120);
   camera.position.set(0, WORLD.R + CAM.height, CAM.back);
   camera.lookAt(0, WORLD.R + CAM.aimUp, -CAM.aimAhead);
@@ -237,13 +297,6 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
   sun.shadow.bias = -.0008;
   sun.shadow.intensity = TOON_LIGHT.shadow;
   scene.add(sun, sun.target);
-
-  // Mây đứng yên trên trời, sau đường chân trời (không lăn theo trống).
-  let cloudSeed = 3;
-  const cloudRnd = () => ((cloudSeed = (cloudSeed * 16807) % 2147483647) / 2147483647);
-  [[-7, 6.5, -26], [6, 8.5, -30], [-1, 11, -34], [9, 4.5, -24], [-10, 10, -32]].forEach(([x, y, z]) => {
-    const c = cloud(cloudRnd); c.position.set(x, WORLD.R + y, z); scene.add(c);
-  });
 
   // Trống cỏ: xoay quanh trục X; mọi thứ trên đường (màn, đường, cây) là con của trống.
   const drum = new THREE.Group();
@@ -319,14 +372,11 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
     return holder;
   }
 
-  function levelNode(index, { locked, tier, current }) {
+  function levelNode(index, { locked, tier, current, newCats = [] }) {
     const g = new THREE.Group();
-    // Bệ tròn hai tầng: mặt kem, hông vàng đất; màn đang chơi có vòng sáng hồng nhấp nháy quanh bệ.
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(.72, .8, .26, 32), toonMat({ color: COLORS.pedestalSide }));
-    base.position.y = .13; base.castShadow = base.receiveShadow = true;
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(.66, .7, .08, 32), toonMat({ color: COLORS.pedestal }));
-    top.position.y = .3; top.receiveShadow = true;
-    g.add(withInk(base, .04), top);
+    // Màn boss: bệ bánh kem (pedestal()), còn lại bệ thường; màn đang chơi có vòng sáng hồng nhấp nháy quanh bệ.
+    const ped = tier === 'boss' ? pedestal(locked ? 'locked' : 'boss') : plainPedestal();
+    g.add(ped.group);
     let ring = null;
     if (current) {
       ring = new THREE.Mesh(new THREE.TorusGeometry(.86, .06, 8, 40), new THREE.MeshBasicMaterial({ color: 0xff7fa6, transparent: true, opacity: .8 }));
@@ -335,7 +385,7 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
     }
     // Đầu mèo đứng trên bệ, ngả nhẹ ra sau cho mặt hướng về camera.
     const head = new THREE.Group();
-    head.position.y = .36;
+    head.position.y = ped.top;
     const tilt = new THREE.Group();
     tilt.rotation.x = -.42;
     head.add(tilt);
@@ -388,9 +438,29 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
       g.add(avatar);
     }
     g.add(head);
-    for (const mesh of [base, top, rim, body, face]) { mesh.userData.level = index; mesh.userData.locked = locked; pickables.push(mesh); }
+    // Màn mở giống mèo mới: mèo 3D đứng phía ngoài đường (phía mép màn hình), mèo đại diện đứng phía trong; có nhãn NEW!.
+    // Mèo đứng trong một nhóm ngả về camera như khối đầu mèo (catTilt, chỉnh mỗi frame), không thì từ trên cao chỉ thấy đỉnh thân.
+    const side = pathX(index) >= 0 ? 1 : -1, cats = [], catTilt = new THREE.Group();
+    g.add(catTilt);
+    newCats.forEach((breed, k) => {
+      const cat = newCatModel(breed);
+      cat.scale.setScalar(1.35);
+      cat.position.set(side * (1.08 + k * .8), 0, .2 - k * .2);
+      cat.rotation.y = -side * .3;
+      catTilt.add(cat);
+      cats.push(cat);
+    });
+    if (newCats.length) {
+      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: newBadgeTexture() }));
+      badge.scale.set(.78, .31, 1);
+      badge.position.set(side * (1.08 + (newCats.length - 1) * .4), 1.25, .3);
+      g.add(badge);
+      cats.push(badge);
+    }
+    if (avatar && newCats.length) avatar.position.x = -side * 1.05;
+    for (const mesh of [...ped.parts, rim, body, face]) { mesh.userData.level = index; mesh.userData.locked = locked; pickables.push(mesh); }
     const holder = plant(g, pathX(index), index, 0);
-    return { holder, head, tilt, ring, avatar, index, locked, phase: index * .7 };
+    return { holder, head, tilt, catTilt, ring, avatar, cats, baseY: ped.top, index, locked, phase: index * .7 };
   }
 
   function sign(t) {
@@ -417,7 +487,8 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
       const t = t0 + rnd() * (t1 - t0), side = rnd() < .5 ? -1 : 1;
       const clear = Math.abs(pathX(t)) + 1.4;
       const x = side * (clear + rnd() * 4.5);
-      if (Math.abs(x - pathX(t)) < 1.3) continue;
+      // Chừa chỗ quanh mỗi màn cho bệ + mèo mới đứng cạnh (cây / bụi không che).
+      if (Math.abs(x - pathX(t)) < (Math.abs(t - Math.round(t)) < .6 ? 2.6 : 1.3)) continue;
       const roll = rnd(), far = Math.abs(x) > 3.2;
       const obj = far && roll < .55 ? tree(rnd) : roll < .3 ? bush(rnd) : roll < .8 ? flower(rnd) : rock(rnd);
       obj.rotation.y = rnd() * Math.PI * 2;
@@ -541,12 +612,15 @@ export function createMapWorld(container, { onPick, avatarSvg } = {}) {
       if (!node.holder.visible) continue;
       // Ngả mặt về phía camera: màn càng gần (đã lăn về phía camera) càng ngả ra sau, không bị nhìn dẹt từ trên xuống.
       node.tilt.rotation.x = Math.max(-1.25, Math.min(-.2, -.62 + (angleOf(node.index) - scroll) * 1.1));
+      node.catTilt.rotation.x = node.tilt.rotation.x * .75;
       const bob = node.locked || reduceMotion ? 0 : Math.sin(time * 2.2 + node.phase) * .04;
       node.press = Math.max(0, (node.press || 0) - dt * 4);
-      node.head.position.y = .36 + bob + (node.ring ? Math.abs(Math.sin(time * 3)) * .12 : 0) - node.press * .1;
+      node.head.position.y = node.baseY + bob + (node.ring ? Math.abs(Math.sin(time * 3)) * .12 : 0) - node.press * .1;
       node.head.scale.set(1 + node.press * .08, 1 - node.press * .1, 1);
       if (node.ring) { const p = (time * 1.2) % 1; node.ring.scale.setScalar(1 + p * .35); node.ring.material.opacity = .85 * (1 - p); }
       if (node.avatar) node.avatar.position.y = 1.05 + (reduceMotion ? 0 : Math.sin(time * 3.4) * .08);
+      // Mèo mới nhún nhẹ lệch nhịp, nhãn NEW! bập bềnh.
+      if (!reduceMotion) node.cats.forEach((c, k) => { if (c.isSprite) c.position.y = 1.25 + Math.sin(time * 2.6) * .06; else c.scale.y = 1.35 * (1 + Math.sin(time * 3 + k * 1.7) * .03); });
     }
     renderer.render(scene, camera);
   }

@@ -628,7 +628,7 @@ export function createRoom() {
     controls.mouseButtons.LEFT = THREE.MOUSE[action];
   }
   // Giữ tâm nhìn trong khu nhà (các khu đã mở) khi kéo ở Home.
-  const panBox = new THREE.Box3(), tmpCenter = new THREE.Vector3(), clampDelta = new THREE.Vector3();
+  const panBox = new THREE.Box3(), tmpCenter = new THREE.Vector3(), clampDelta = new THREE.Vector3(), itemBox = new THREE.Box3(), tmpGoal = new THREE.Vector3();
   function clampPan() {
     panBox.makeEmpty();
     openZones().forEach(zone => {
@@ -945,6 +945,8 @@ export function createRoom() {
     if (expanded && !wasExpanded && applied) revealPending = 'garden2'; // vườn vừa mở rộng: đồi + đồ trang trí mọc lên
     if (zone !== zoneId || expanded !== wasExpanded) {
       zoneId = zone;
+      zoomFocus = null;
+      if (!hub) controls.minDistance = 9 * reach;
       // Deco: lướt sang khu vừa chọn, giữ độ zoom đang dùng (sang / rời vườn mở rộng: nhân / chia WIDE)
       if (!hub) {
         const r = camera.position.distanceTo(controls.target);
@@ -1011,9 +1013,14 @@ export function createRoom() {
   }
 
   // Quay camera về phía một món đồ (camera đứng đối diện, nhìn món đồ tựa lưng vào tường).
-  let turn = null;
+  // Món đó cũng thành tâm zoom ở Deco (zoomFocus): zoom vào thì tâm nhìn trượt dần tới món, zoom ra thì về giữa khu.
+  // focus(null) = bỏ chọn, zoom lại quanh giữa khu.
+  let turn = null, zoomFocus = null;
   function focus(id) {
-    const place = id && PLACES[slotOf(itemById(id) || { id })];
+    const slot = id && slotOf(itemById(id) || { id }), place = slot && PLACES[slot];
+    zoomFocus = place ? slot : null;
+    // Đang chọn một món: cho zoom sát hơn (6 thay vì 9) để ngắm món cận cảnh; bỏ chọn thì về giới hạn cũ.
+    if (!hub) controls.minDistance = (zoomFocus ? 6 : 9) * reach;
     if (!place || !id) return;
     const from = controls.getAzimuthalAngle();
     let to = Math.atan2(-place[0], -place[1]);
@@ -1212,6 +1219,18 @@ export function createRoom() {
       const k = Math.min(1, (radius - lastRadius) / Math.max(.05, HUB_MAX - lastRadius));
       clampDelta.copy(siteCenter()).sub(controls.target).multiplyScalar(k);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
+    }
+    // Deco: zoom vào (khoảng cách giảm) kéo tâm nhìn về món đang chọn theo đúng tỉ lệ đã zoom, nên zoom sát hết cỡ thì
+    // món nằm giữa khung; zoom ra thì tâm trôi về giữa khu (zoom ra hết = thấy trọn khu như lúc đầu).
+    if (!hub && !glide && !turn && lastRadius && Math.abs(radius - lastRadius) > 1e-3) {
+      const item = zoomFocus && furniture[zoomFocus];
+      const zoomIn = radius < lastRadius, goal = zoomIn && item?.visible ? itemBox.setFromObject(item).getCenter(tmpGoal) : zoneCenter(zoneId, tmpGoal);
+      if (zoomIn ? item?.visible : true) {
+        const k = zoomIn ? Math.min(1, (lastRadius - radius) / Math.max(.05, lastRadius - controls.minDistance))
+          : Math.min(1, (radius - lastRadius) / Math.max(.05, controls.maxDistance - lastRadius));
+        clampDelta.copy(goal).sub(controls.target).multiplyScalar(k);
+        controls.target.add(clampDelta); camera.position.add(clampDelta);
+      }
     }
     lastRadius = radius;
     if (gardenExt.userData.grow !== undefined) { // vườn vừa mở rộng: đồi + đồ trang trí mọc lên
