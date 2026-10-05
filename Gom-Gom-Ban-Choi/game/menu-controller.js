@@ -15,8 +15,10 @@ let play = null;
 export function connectPlay(playController) { play = playController; }
 
 // Bản đồ saga: màn 1 ở đáy, các nút nằm trên một con đường uốn hình sin đi lên (như Candy Crush).
-const MAP = { STEP: 112, TOP: 230, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
-const MAP_DECOR = ['🌸', '🌳', '🍄', '🌼', '🌷', '🌲', '🪴', '🌻'];
+const MAP = { STEP: 118, TOP: 230, BOTTOM: 150, SWING: 0.3, FREQ: 0.95 };
+const PAW_SVG = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg>';
+const EAR_SVG = '<svg viewBox="0 0 24 24"><path class="ear-out" d="M3 22 6.5 4.5Q7.5 1.5 10 3.5L22 13Z"/><path class="ear-in" d="M8 16.5 9.5 8.5 15.5 13.5Z"/></svg>';
+const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9Z"/></svg>';
 const LOCK_SVG = '<svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5.5 11h13v9.5h-13Z"/></svg>';
 const mapPoint = (index, width, height) => ({
   x: width * (0.5 + MAP.SWING * Math.sin(index * MAP.FREQ)),
@@ -42,14 +44,19 @@ function renderMap() {
       ${open > 1 ? `<path class="road-done" d="${mapPath(points.slice(0, open))}"/>` : ''}
       <path class="road-dots" d="${mapPath(points)}"/>
     </svg>`;
-  // Cây cỏ lác đác ở phía đối diện chỗ đường uốn tới.
-  road.append(...points.map((p, index) => {
-    const decor = document.createElement('span');
-    decor.className = 'map-decor';
-    decor.textContent = MAP_DECOR[index % MAP_DECOR.length];
-    decor.style.cssText = `left:${width * (p.x > width / 2 ? 0.14 : 0.86)}px;top:${p.y + MAP.STEP * 0.4}px`;
-    return decor;
-  }));
+  // Dấu chân mèo trên đường giữa hai màn (2 dấu mỗi đoạn, theo design Figma "Map").
+  const bezier = (q, p, t) => {
+    const mid = (q.y - p.y) / 2, u = 1 - t;
+    return { x: u * u * u * q.x + 3 * u * t * (u * q.x + t * p.x) + t * t * t * p.x,
+      y: u * u * u * q.y + 3 * u * u * t * (q.y - mid) + 3 * u * t * t * (p.y + mid) + t * t * t * p.y };
+  };
+  road.append(...points.slice(1).flatMap((p, i) => [0.38, 0.62].map((t, k) => {
+    const paw = document.createElement('span'), at = bezier(points[i], p, t);
+    paw.className = `map-paw${i + 1 < open ? ' done' : ''}`;
+    paw.innerHTML = PAW_SVG;
+    paw.style.cssText = `left:${(at.x + (k ? 7 : -7)).toFixed(1)}px;top:${at.y.toFixed(1)}px;rotate:${k ? 18 : -18}deg`;
+    return paw;
+  })));
   road.append(...LEVELS.map((level, index) => {
     const node = document.createElement('button');
     const stars = progress.stars[index] || 0, locked = index >= open, tier = levelTier(level), current = index === open - 1;
@@ -58,7 +65,8 @@ function renderMap() {
     node.disabled = locked;
     node.title = `${level.name} · ${play.mapTier(index, current).label}`;
     node.setAttribute('aria-label', `Level ${index + 1}: ${level.name}${locked ? ' (locked)' : stars ? ' (cleared)' : ''}`);
-    node.innerHTML = `<b>${locked ? LOCK_SVG : index + 1}</b>`
+    node.innerHTML = `${EAR_SVG.replace('<svg', '<svg class="ear l"')}${EAR_SVG.replace('<svg', '<svg class="ear r"')}<b>${index + 1}${locked ? LOCK_SVG : ''}</b>`
+      + `<span class="map-stars">${[0, 1, 2].map(i => i < stars ? STAR_SVG.replace('<svg', '<svg class="on"') : STAR_SVG).join('')}</span>`
       + (tier === 'boss' ? '<span class="map-crown" aria-hidden="true">👑</span>' : '')
       + (current ? `<span class="map-avatar" aria-hidden="true">${catMarkup.orange}</span>` : '');
     node.onclick = () => { $('map').hidden = true; play.startLevel(index); };
@@ -185,7 +193,6 @@ document.addEventListener('click', event => {
   const cat = event.target.closest('.room-cat');
   if (cat) petRoomCat(cat);
 });
-const roomHint = $('deco-room').querySelector('.room-hint');
 buildFlatRooms();
 import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
@@ -193,7 +200,7 @@ import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d.setNight(night);
   decoThumbnail = thumbnail;
   $('home-room').replaceChildren();
-  $('deco-room').replaceChildren(roomHint);
+  $('deco-room').replaceChildren();
   $('home-room').classList.add('is-3d');
   $('deco-room').classList.add('is-3d');
   const open = TABS.find(tab => !$(tab).hidden);

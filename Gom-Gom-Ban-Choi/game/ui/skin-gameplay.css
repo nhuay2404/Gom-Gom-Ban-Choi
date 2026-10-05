@@ -9,7 +9,7 @@
 
 /* ---------- HUD: điểm | đầu mèo Moves | nút cài đặt ---------- */
 .fg-hud{position:relative;z-index:5;display:grid;grid-template-columns:1fr calc(86 * var(--u)) 1fr;align-items:center;gap:0;
-  margin:calc(30 * var(--u)) calc(-28 * var(--u)) calc(6 * var(--u));height:calc(86 * var(--u))}
+  margin:calc(30 * var(--u)) calc(-18 * var(--u)) calc(6 * var(--u));height:calc(86 * var(--u))}
 .fg-hud .progress.fg-score{justify-self:start;width:calc(169 * var(--u));height:calc(56 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
   background:url('./skins/figma-game/score-bar.png') center/100% 100% no-repeat}
 /* Thanh điểm vẽ trong lòng rãnh vàng nhạt của pill */

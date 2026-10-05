@@ -351,6 +351,7 @@ body.afk .cat .afk-sleepy{opacity:1;translate:0 0;transition-delay:.12s}
 @keyframes map-glow{to{box-shadow:0 0 0 8px #fff8}}
 
 /* ===== Tutorial ===== */
+.shell,.tutorial,dialog{-webkit-user-select:none;user-select:none}
 .tutorial{position:fixed;inset:0;z-index:30;pointer-events:none}
 .tutorial.blocking{pointer-events:auto}
 .tutorial-dim{position:absolute;inset:0;width:100%;height:100%;fill:#2b1a10a6;animation:tut-fade .3s ease both}

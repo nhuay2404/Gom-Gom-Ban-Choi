@@ -428,5 +428,48 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
    có dấu chân (frame 4 của Figma "Deco", 9-slice giữ góc khi danh sách dài). */
 .screen.deco{background:#bfe6fb url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
 .room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
-.deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border-image:url('./skins/figma-game/deco-panel.png') 90 fill / 28px stretch}
-.deco-panel .chips{padding:0 10px 2px}
+.screen.deco{overflow-x:hidden}
+.deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('./skins/figma-game/deco-panel.png') 90 fill / 28px stretch}
+.deco-panel .chips{padding:0 10px 2px;scrollbar-width:none}
+
+/* ===== Map theo Figma (file UI, frame "Map" 23:495): nền cỏ, đường kẹo viền nâu, nút đầu mèo + 3 sao ===== */
+.map{--map-ink:#5b2e1c;background:#bfe4a0 url('./skins/figma-map/grass-bg.jpg') 50% 0/cover no-repeat}
+.map-head{background:linear-gradient(#c6f6ff,#c6f6ff00);padding-bottom:40px}
+.map-head h2{visibility:hidden}
+.road-edge{stroke:var(--map-ink);stroke-width:46}
+.road-fill{stroke:#fcd9a6;stroke-width:36}
+.road-done{stroke:#f9b6cb;stroke-width:36}
+.road-dots{display:none}
+.map-paw{position:absolute;translate:-50% -50%;width:17px;height:17px;pointer-events:none}
+.map-paw svg{display:block;width:100%;height:100%;fill:#f7a3bd}
+.map-paw.done svg{fill:#ef5f8b}
+.map-node{width:64px;height:60px}
+.map-node b,.map-node.done b,.map-node:not(.locked).tier-chill b,.map-node:not(.locked).tier-hard b{position:relative;z-index:1;display:flex;flex-direction:column;gap:0;
+  width:100%;height:100%;margin:0;border:3px solid var(--map-ink);border-radius:16px;font-family:var(--display);font-size:30px;line-height:1;color:#fff;
+  background:linear-gradient(#ff7d9c,#f2557f);box-shadow:inset 0 0 0 3px #ffe3ea;
+  -webkit-text-stroke:5px var(--map-ink);paint-order:stroke fill;text-shadow:none}
+.map-node:not(.locked).tier-boss b{background:linear-gradient(#b48cf0,#8858d6);box-shadow:inset 0 0 0 3px #f1e6ff}
+.map-node.locked b{width:100%;height:100%;margin:0;border-color:var(--map-ink);background:linear-gradient(#9b8073,#7f665a);box-shadow:inset 0 0 0 3px #e9ddd5;font-size:24px}
+.map-node.locked b svg{width:16px;height:16px;margin-top:1px;stroke:#fff;stroke-width:3.4}
+.map-node .ear{position:absolute;z-index:0;top:-14px;width:28px;height:28px;overflow:visible}
+.map-node .ear.l{left:-1px;rotate:-6deg}
+.map-node .ear.r{right:-1px;rotate:6deg;scale:-1 1}
+.ear-out{fill:#fff;stroke:var(--map-ink);stroke-width:2.6;stroke-linejoin:round}
+.ear-in{fill:#ff8fb0}
+.map-node.locked .ear-out{fill:#ece2dc}
+.map-stars{position:absolute;z-index:2;left:50%;bottom:-13px;translate:-50% 0;display:flex;gap:1px;padding:2px 4px;border-radius:999px;background:var(--map-ink)}
+.map-stars svg{width:15px;height:15px;fill:#8b6b5c}
+.map-stars svg.on{fill:#ffd23f}
+.map-node.current b{animation:map-glow 1.2s ease-in-out infinite alternate}
+.map-avatar{z-index:3}
+
+/* Deco: header + chọn khu + cảnh 3D đứng yên; chỉ danh sách đồ cuộn bên trong khung kem (cảnh 3D không đè lên đồ). */
+.screen.deco{overflow:hidden;gap:10px}
+.screen.deco>.screen-top,.screen.deco>.zone-switch{position:relative;z-index:6}
+.room.deco-view{position:relative;top:auto;max-height:34vh;aspect-ratio:auto;height:calc(min(100vw,480px) * .62)}
+.deco-panel{flex:1 1 0;min-height:0;padding-bottom:14px}
+.deco-panel .chips{flex:none}
+.deco-groups{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -4px;padding:2px 4px 10px;
+  -webkit-mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 18px),transparent)}
+.deco-groups::-webkit-scrollbar{display:none}
+.room.deco-view.is-3d{-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}

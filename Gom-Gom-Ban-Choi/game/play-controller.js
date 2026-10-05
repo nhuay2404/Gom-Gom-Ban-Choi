@@ -1100,7 +1100,7 @@ function renderTutorial() {
     $('tutorial-next').hidden = step.type !== 'info';
     bubble.classList.toggle('center', step.type === 'info');
     bubble.style.top = step.type === 'info' ? '' : `${$('board').getBoundingClientRect().bottom + 8}px`;
-    bubble.animate([{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], { duration: 260, easing: 'ease-out' });
+    bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
     animateHand(step, holes);
   });
 }
