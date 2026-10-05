@@ -97,7 +97,7 @@ export const CATALOG = [
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', price: 0, breed: 'siamese', lock: 9 },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', price: 0, breed: 'tuxedo', lock: 10 },
 ];
-// Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá.
+// Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
 // Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
 // nên mèo vẫn chơi được như cũ (ví dụ đài phun nước vẫn có cá để rình, tủ đầu giường vẫn có bình hoa để đẩy rơi).
 // Mỗi slot chỉ đặt được một món: đặt món khác thì nó thay chỗ món đang ở đó.
@@ -124,6 +124,17 @@ const VARIANTS = [
   ['cattree', 'cattree-cactus', 'Cactus tower', '#4f9f5a'],
   ['shelf', 'shelf-wardrobe', 'Wardrobe', '#8fc9f2'],
   ['tank', 'tank-birdcage', 'Bird cage', '#d9a13a'],
+  // lựa chọn thứ 3 cho từng chỗ trong phòng khách
+  ['rug', 'rug-fish', 'Fish rug', '#8fc9f2'],
+  ['armchair', 'armchair-papasan', 'Papasan chair', '#ec5b8c'],
+  ['plant', 'plant-tulips', 'Tulip pot', '#ff8fb6'],
+  ['yarn', 'yarn-ballpit', 'Ball pit', '#ffd23f'],
+  ['catbed', 'catbed-heart', 'Heart cushion', '#ff8fb8'],
+  ['table', 'table-crate', 'Crate table', '#c98a55'],
+  ['lamp', 'lamp-lantern', 'Paper lantern', '#fff1d6'],
+  ['cattree', 'cattree-castle', 'Cat castle', '#e6dfd2'],
+  ['shelf', 'shelf-cubby', 'Cubby shelf', '#f5f0e6'],
+  ['tank', 'tank-hamster', 'Hamster home', '#ffd66b'],
   // --- Phòng ngủ ---
   ['bed', 'bed-canopy', 'Canopy bed', '#ffb3c4'],
   ['bedrug', 'bedrug-cloud', 'Cloud rug', '#f4f8ff'],
@@ -134,6 +145,16 @@ const VARIANTS = [
   ['closet', 'closet-dresser', 'Vanity dresser', '#ffc9d5'],
   ['plushie', 'plushie-dino', 'Dino plush', '#7fc45a'],
   ['catsteps', 'catsteps-bridge', 'Rope bridge', '#b9854a'],
+  // lựa chọn thứ 3 cho từng chỗ trong phòng ngủ
+  ['bed', 'bed-kitty', 'Kitty bed', '#f7c99a'],
+  ['bedrug', 'bedrug-star', 'Star rug', '#ffd66b'],
+  ['laundry', 'laundry-washer', 'Mini washer', '#f5f8fb'],
+  ['bedside', 'bedside-books', 'Book stack', '#e8617f'],
+  ['desk', 'desk-piano', 'Piano', '#5a3a2e'],
+  ['chair', 'chair-stool', 'Mushroom stool', '#e8617f'],
+  ['closet', 'closet-ladder', 'Plant shelf', '#d9a36a'],
+  ['plushie', 'plushie-bunny', 'Bunny plush', '#fff4f6'],
+  ['catsteps', 'catsteps-clouds', 'Cloud steps', '#9fd0f0'],
   // --- Vườn mở rộng ---
   ['windmill', 'windmill-turbine', 'Wind turbine', '#f5f8fb'],
   ['sunflowers', 'sunflowers-scarecrow', 'Scarecrow', '#e9c25a'],
@@ -144,9 +165,9 @@ const VARIANTS = [
   ['swingtree', 'swingtree-treehouse', 'Treehouse', '#c98a55'],
   ['slide', 'slide-seesaw', 'Seesaw', '#7fc45a'],
 ];
-// Chèn mỗi phương án ngay sau món gốc; giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
+// Chèn mỗi phương án sau món gốc + các phương án cùng chỗ đã chèn (giữ thứ tự khai báo); giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
 VARIANTS.forEach(([slot, id, name, color]) => {
-  const at = CATALOG.findIndex(entry => entry.id === slot), base = CATALOG[at];
+  const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
   CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
 });
 export const itemById = id => CATALOG.find(entry => entry.id === id);

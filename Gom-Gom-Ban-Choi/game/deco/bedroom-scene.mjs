@@ -377,6 +377,128 @@ export const BEDROOM_BUILD = {
     node.userData.steps = [[.6, .65, 0], [.62, 1.33, 0], [-.62, 1.38, 0]];
     return node;
   },
+
+  // ===== Phương án thứ hai cho từng chỗ (lựa chọn thứ 3): cùng khuôn khổ món gốc, điểm neo ghi trong userData =====
+  // Giường mèo: đầu giường hình mặt mèo (tai nhọn, mắt, mũi, ria).
+  'bed-kitty'() {
+    const face = '#f7c99a', pink = '#ff8fb8', dark = '#4a2e20', z = -1.22;
+    const ear = s => [squash(at(mesh(new THREE.ConeGeometry(.26, .4, 20), face), s * .7, 1.38, z + .04), 1, 1, .4), squash(at(mesh(new THREE.ConeGeometry(.15, .26, 16), pink), s * .7, 1.34, z + .1), 1, 1, .4)];
+    const whisker = (s, tilt) => at(box(.3, .015, .02, dark), s * .62, .86 + tilt * .2, z + .085).rotateZ(-s * tilt);
+    const bed = group(...bedBase({ wood: '#f5f0e6', duvet: '#ffd27a', duvetLine: '#f0b84a', pillow: '#fffaf0', headboard: false }),
+      at(rbox(2.1, 1.0, .14, .07, face), 0, .72, z), ...ear(-1), ...ear(1),
+      ...[-1, 1].flatMap(s => [at(ball(.075, dark), s * .36, .98, z + .06), at(ball(.025, '#ffffff'), s * .34, 1.01, z + .13), whisker(s, .25), whisker(s, -.15)]),
+      squash(at(ball(.06, pink), 0, .86, z + .07), 1.3, .8, 1),
+      squash(at(ball(.13, '#ffd27a'), .6, .66, .3), 1, .5, 1), squash(at(ball(.07, '#f7c99a'), -.55, .66, .55), 1, .5, 1)); // gối tròn + gối nhỏ
+    bed.userData.seat = [.15, .63, .15];
+    return bed;
+  },
+  // Thảm ngôi sao: phẳng, nằm gọn trong khung thảm lông.
+  'bedrug-star'() {
+    const star = (R, r) => {
+      const pts = [];
+      for (let k = 0; k < 10; k++) { const a = k / 10 * TAU + Math.PI / 2, d = k % 2 ? r : R; pts.push(new THREE.Vector2(Math.cos(a) * d, Math.sin(a) * d)); }
+      return new THREE.Shape(pts);
+    };
+    const slab = (shape, h, color) => { const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false }); geo.rotateX(-Math.PI / 2); return mesh(geo, color); };
+    const rug = group(slab(star(1.12, .52), .035, '#ffd66b'), slab(star(.8, .37), .04, '#fff1b8'),
+      ...[0, 1, 2, 3, 4].map(k => { const a = k / 5 * TAU + Math.PI / 2; return at(cyl(.07, .07, .045, '#ff8fb8', 16), Math.cos(a) * .3, .0225, -Math.sin(a) * .3); }));
+    rug.traverse(node => { node.castShadow = false; });
+    rug.userData.top = .04;
+    return rug;
+  },
+  // Máy giặt mini (thay giỏ đồ giặt): mèo nhảy lên nóc nằm (máy ấm).
+  'laundry-washer'() {
+    const body = '#f5f8fb', trim = '#c8c2b8';
+    const glass = at(cyl(.15, .15, .03, mat('#9fd0f0', { transparent: true, opacity: .85 }), 28), 0, .4, .31).rotateX(Math.PI / 2);
+    const washer = group(...legs4(.24, .22, .04, trim, .03), at(rbox(.62, .8, .58, .06, body), 0, .44, 0),
+      at(rbox(.6, .14, .04, .02, '#e3ddd1'), 0, .74, .29), at(cyl(.04, .04, .03, '#ec5b8c', 16), .2, .74, .32).rotateX(Math.PI / 2),
+      ...[-.2, -.12].map(x => at(ball(.018, '#7fc45a'), x, .74, .315)),
+      at(mesh(new THREE.TorusGeometry(.17, .03, 10, 36), trim), 0, .4, .3), glass,
+      squash(at(ball(.1, '#ff8fb8'), -.03, .36, .27), 1, .6, .5), squash(at(ball(.08, '#ffd66b'), .05, .44, .27), 1, .6, .5)); // quần áo trong lồng giặt
+    washer.userData.seat = [0, .86, 0];
+    return washer;
+  },
+  // Chồng sách to (thay tủ đầu giường): đồng hồ báo thức trên cùng là thứ mèo đẩy rơi.
+  'bedside-books'() {
+    const books = [['#e8617f', .6, .44, 0], ['#3b8fe0', .56, .42, .12], ['#7fc45a', .58, .4, -.08], ['#ffd66b', .5, .38, .18]];
+    const stack = group();
+    books.forEach(([color, w, d, rot], i) => {
+      const book = group(at(rbox(w, .12, d, .03, color), 0, .06, 0), at(box(w - .05, .09, d - .03, '#fffaf0'), .03, .06, 0));
+      book.position.y = i * .12; book.rotation.y = rot;
+      stack.add(book);
+    });
+    const clock = group(at(cyl(.085, .085, .06, '#b79cf0', 20), 0, 0, 0).rotateX(Math.PI / 2),
+      at(cyl(.065, .065, .01, '#fffaf0', 20), 0, 0, .032).rotateX(Math.PI / 2), at(box(.008, .045, .006, '#2b2f3a'), 0, .018, .04),
+      at(ball(.035, '#ffd66b'), -.055, .085, 0), at(ball(.035, '#ffd66b'), .055, .085, 0));
+    clock.position.set(.12, .57, .05);
+    stack.add(clock, at(rbox(.2, .03, .14, .01, '#ff8fb8'), -.14, .495, -.06));
+    stack.userData.mug = clock;
+    clock.userData.home = clock.position.clone();
+    stack.userData.top = .48;
+    return stack;
+  },
+  // Đàn piano (thay bàn máy tính): đàn đứng kê tường; mèo nhảy lên nóc đàn nằm.
+  'desk-piano'() {
+    const wood = '#5a3a2e', black = '#1f1f24';
+    const keys = [];
+    for (let i = 0; i < 13; i++) if (i % 7 !== 2 && i % 7 !== 6) keys.push(at(box(.035, .03, .12, black), -.62 + i * .1 + .05, .8, .24));
+    const piano = group(at(rbox(1.5, 1.15, .5, .05, wood), 0, .575, -.1), at(rbox(1.56, .05, .54, .02, '#7a4e3a'), 0, 1.175, -.1),
+      at(rbox(1.5, .08, .32, .03, wood), 0, .72, .24), at(box(1.36, .03, .24, '#fffaf0'), 0, .775, .27), ...keys,
+      ...[-1, 1].map(s => at(cyl(.04, .035, .68, wood, 12), s * .68, .34, .34)), at(rbox(1.3, .06, .1, .03, wood), 0, .06, .26),
+      at(box(.5, .3, .02, '#fffaf0'), 0, .98, .17).rotateX(-.2), at(box(.6, .03, .06, wood), 0, .83, .19),
+      at(cyl(.06, .07, .14, '#8fc9f2', 14), .55, 1.27, -.15), at(ball(.06, '#ff8fb8'), .55, 1.38, -.15),
+      at(rbox(.22, .16, .04, .02, '#e0a874'), -.5, 1.28, -.25));
+    piano.userData.seat = [-.15, 1.2, -.08];
+    piano.userData.top = 1.2;
+    return piano;
+  },
+  // Ghế nấm (thay ghế gaming): mũ nấm đỏ chấm trắng, mặt ngồi ~.55.
+  'chair-stool'() {
+    const R = .36, Y = .42, H = .126;
+    const spot = (a, d, r) => {
+      const x = Math.cos(a) * d, z = Math.sin(a) * d, y = Y + H * Math.sqrt(1 - (d / R) ** 2);
+      return squash(at(ball(r, '#fffaf0'), x, y, z), 1, .4, 1);
+    };
+    return group(at(cyl(.13, .18, .42, '#fff4e0', 20), 0, .21, 0), squash(at(ball(R, '#e8617f'), 0, Y, 0), 1, H / R, 1),
+      spot(0, 0, .07), ...[0, 1, 2, 3, 4].map(k => spot(k * 1.26 + .3, .22, .055)), ...[0, 1, 2].map(k => spot(k * 2.1 + 1, .3, .04)));
+  },
+  // Kệ cây cảnh (thay tủ quần áo): kệ gỗ 4 tầng bày chậu cây, sách, giỏ; dây trường xuân rủ xuống; mèo nằm trên nóc.
+  'closet-ladder'() {
+    const wood = '#d9a36a', parts = [...[-1, 1].map(s => at(box(.05, 1.76, .5, wood), s * .63, .88, 0))];
+    [.08, .52, .96, 1.4].forEach(y => parts.push(at(rbox(1.3, .04, .48, .02, wood), 0, y, 0)));
+    parts.push(at(rbox(1.36, .05, .52, .025, '#c98a55'), 0, 1.785, 0));
+    const pot = (x, y, color, leaf) => [at(cyl(.09, .07, .14, color, 16), x, y + .07, 0), at(ball(.11, leaf), x, y + .2, 0)];
+    parts.push(...pot(-.4, .1, '#e98b5a', '#7fc45a'), ...pot(.35, .54, '#8fc9f2', '#5fae46'), ...pot(-.15, .98, '#fff4e0', '#4f9a3a'),
+      at(rbox(.36, .22, .3, .04, '#e6c79a'), .3, .21, 0), ...[0, 1, 2].map(i => at(box(.07, .3, .3, ['#ec5b8c', '#3b8fe0', '#ffd23f'][i]), -.45 + i * .08, .69, 0)),
+      at(rbox(.26, .2, .04, .02, '#ffd9c4'), .35, 1.1, -.18), at(cyl(.07, .06, .1, '#b79cf0', 14), .3, 1.47, 0), at(ball(.08, '#7fc45a'), .3, 1.57, 0));
+    for (let k = 0; k < 6; k++) parts.push(at(ball(.035, k % 2 ? '#5fae46' : '#7fc45a'), -.08 + k * .01, .93 - k * .09, .27 + (k % 2) * .02)); // dây trường xuân rủ từ chậu tầng 3
+    const shelf = group(...parts);
+    shelf.userData.seat = [.25, 1.81, .02];
+    return shelf;
+  },
+  // Thỏ bông (thay gấu bông): tai dài, ôm củ cà rốt; mèo rúc ngủ bên cạnh.
+  'plushie-bunny'() {
+    const fur = '#fff4f6', pink = '#ffb3c4', dark = '#4a2e20';
+    const bunny = group(squash(at(ball(.36, fur), 0, .36, 0), 1, 1.05, .92), squash(at(ball(.22, '#ffe6ec'), 0, .34, .25), 1, 1.1, .45),
+      at(ball(.26, fur), 0, .86, .03), squash(at(ball(.1, '#ffffff'), 0, .8, .24), 1.2, .8, 1),
+      at(ball(.03, dark), -.1, .92, .25), at(ball(.03, dark), .1, .92, .25), squash(at(ball(.035, pink), 0, .84, .3), 1.2, .8, 1),
+      ...[-1, 1].flatMap(s => [squash(at(ball(.09, fur), s * .12, 1.27, -.02), .55, 2.2, .5), squash(at(ball(.06, pink), s * .12, 1.27, .015), .45, 1.9, .3),
+        squash(at(ball(.13, fur), s * .32, .45, .14), .8, 1.25, .8), squash(at(ball(.15, fur), s * .19, .12, .3), 1, .8, 1.4), at(ball(.06, pink), s * .19, .12, .48)]),
+      at(mesh(new THREE.ConeGeometry(.06, .26, 12), '#ff9f43'), 0, .46, .36).rotateX(Math.PI * .9), at(ball(.05, '#7fc45a'), 0, .6, .38));
+    bunny.children.forEach(part => { part.position.y += .02; }); // thân tròn ngồi chạm sàn, không lún
+    bunny.userData.seat = [.38, 0, .38];
+    return bunny;
+  },
+  // Bậc mây (thay bậc leo): ba đám mây gắn tường làm bậc, đệm mặt trăng trên cùng; tấm cào móng dưới chân.
+  'catsteps-clouds'() {
+    const cloud = (x, y) => group(...[[-.14, 0, .13], [.14, 0, .13], [0, .03, .17]].map(([dx, dy, r]) => squash(at(ball(r, '#eaf4ff'), x + dx, y + dy, 0), 1, .45, .95)),
+      at(box(.36, .14, .1, '#9fd0f0'), x, y - .06, -.22)); // tấm gắn tường (mặt sau cách tường 1 cm)
+    const steps = [[-.35, .64], [.35, 1.19], [-.2, 1.77]];
+    const node = group(...steps.map(([x, y]) => cloud(x, y)), squash(at(ball(.14, '#ffd66b'), -.2, 1.86, 0), 1.3, .4, 1),
+      at(rbox(.7, .02, .5, .008, '#b9854a'), 0, .01, .15));
+    node.userData.steps = steps.map(([x, y]) => [x, y + .08, 0]);
+    return node;
+  },
 };
 
 // ---------- Trang trí cố định trên tường phòng ngủ (u = trục ngang của tường, +z = mặt hướng vào phòng) ----------

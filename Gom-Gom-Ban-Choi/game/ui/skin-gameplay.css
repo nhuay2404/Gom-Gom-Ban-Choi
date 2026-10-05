@@ -121,10 +121,12 @@ body.low-moves .fg-score{outline:0}
 .fg-score .progress-text{font-size:calc(14 * var(--u))}
 .fg-score .progress-text strong{font-size:calc(16 * var(--u))}
 /* Bánh răng bám mép phải màn (màn rộng: dời ra ngoài khung một đoạn --gutter); khung màn chơi chỉ cắt theo chiều dọc để nó không bị cắt */
-.fg-hud .fg-settings{justify-self:end;width:calc(40 * var(--u));height:calc(40 * var(--u));margin:calc(8 * var(--u)) calc(14 * var(--u)) 0 0;opacity:.85;translate:calc(var(--gutter) - env(safe-area-inset-right)) 0}
+/* Cùng cỡ, cùng độ đậm, cùng khoảng cách mép phải (18u) với nút cài đặt ngoài menu (.hub-settings): tính theo --hub-u. */
+.fg-hud .fg-settings{justify-self:end;width:calc(54 * var(--hub-u));height:calc(54 * var(--hub-u));margin:calc(8 * var(--u)) calc(18 * var(--hub-u)) 0 0;opacity:1;translate:calc(var(--gutter) - env(safe-area-inset-right)) 0}
 .shell{overflow:visible clip}
 body{overflow-x:clip}
-.fg-hud .fg-settings .fh-round::before{width:calc(36 * var(--u));height:calc(36 * var(--u))}
+.fg-hud .fg-settings .fh-round::before{width:calc(49.68 * var(--hub-u));height:calc(49.68 * var(--hub-u))}
+.fg-hud .fg-settings .fh-gear:active{translate:0 calc(2 * var(--hub-u))}
 
 /* ---------- Bảng kết quả theo Figma: thắng (Level Complete!) / thua (Try Again!) ---------- */
 .result-dialog{width:calc(340 * var(--u));max-width:calc(100% - 24px);overflow:visible;margin-top:calc(150 * var(--u));

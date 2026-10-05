@@ -6,7 +6,8 @@
      máy thấp hơn (màn ngang, desktop thấp) thì khung hẹp lại cho vừa chiều cao, hai bên là nền tràn viền.
    Điện thoại dọc (≥ 9:16) vẫn rộng đúng bằng màn hình như cũ. */
 /* --gutter: khoảng trống hai bên khung (0 trên điện thoại dọc). Nút rìa (Daily, Starter Pack, cài đặt) cộng / trừ nó để bám mép màn. */
-:root{--frame-w:min(100vw, 480px, 100dvh * 393 / 700);--u:calc(var(--frame-w) / 393);--gutter:calc((100vw - var(--frame-w)) / 2)}
+/* --hub-u: đơn vị khung gốc, không bị màn chơi ghi đè (.shell co --u theo chiều cao) — cho thứ phải y hệt giữa menu và màn chơi (nút cài đặt). */
+:root{--frame-w:min(100vw, 480px, 100dvh * 393 / 700);--u:calc(var(--frame-w) / 393);--hub-u:calc(var(--frame-w) / 393);--gutter:calc((100vw - var(--frame-w)) / 2)}
 *{box-sizing:border-box}
 body{margin:0;min-width:320px;min-height:100dvh;background:#8cc45e}
 button{font:inherit;color:inherit;cursor:pointer;background:0 0;border:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .14s,box-shadow .14s,opacity .14s}

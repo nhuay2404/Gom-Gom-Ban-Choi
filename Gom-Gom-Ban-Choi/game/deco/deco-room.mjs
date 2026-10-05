@@ -36,6 +36,7 @@ const cyl = (top, bottom, h, color, seg = radialSegments(Math.max(top, bottom)))
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, ...sphereSegments(r)), color);
 // group() rỗng thì không gọi add(): Three.js báo lỗi khi add() không có đối số.
 const group = (...children) => { const g = new THREE.Group(); if (children.length) g.add(...children); return g; };
+const squash = (node, sx, sy, sz) => { node.scale.set(sx, sy, sz); return node; };
 
 // Lá hình tim (trầu bà): gốc lá ở (0, 0), ngọn ở (0, L), mặt lá trong mặt phẳng xy (pháp tuyến +z), dày vài mm.
 // droop: ngọn cong về phía -z (võng xuống khi lá ngửa lên); cup: hai mép cong về +z (lá khum).
@@ -451,6 +452,167 @@ const BUILD = {
     });
     return cage;
   },
+  // ===== Phương án thứ hai cho từng chỗ (lựa chọn thứ 3): cùng khuôn khổ + điểm neo của món gốc =====
+  // Thảm hình cá (thay thảm): phẳng, nằm gọn trong khung thảm gốc (3.1 × 2.2); mặt thảm .0525 như thảm hồng.
+  'rug-fish'() {
+    const blue = '#8fc9f2', light = '#cfe9ff', fin = '#6fb3e6';
+    const tri = (r, h, color, x, y) => { const t = at(cyl(r, r, h, color, 3), x, y, 0); t.rotation.y = -Math.PI / 2; return t; }; // một đỉnh chĩa về -x (vào thân cá)
+    const body = at(cyl(.95, .95, .04, blue, 48), -.25, .02, 0), belly = at(cyl(.8, .8, .045, light, 40), -.25, .0225, 0);
+    body.scale.set(1.15, 1, .75); belly.scale.set(1.15, 1, .72);
+    const rug = group(body, belly, tri(.5, .04, blue, 1.2, .02), tri(.36, .045, light, 1.16, .0225),
+      ...[-1, 1].map(s => at(cyl(.3, .3, .035, fin, 3), -.15, .0175, s * .72)), // vây lưng / vây bụng ló ra mép thân
+      at(cyl(.13, .13, .0575, '#fffaf0', 20), -1.02, .02875, -.2), at(cyl(.06, .06, .0625, '#2b2f3a', 16), -1.04, .03125, -.2), // mắt
+      ...[[.05, .22, .14], [.4, -.18, .11], [-.4, -.36, .09], [-.55, .3, .08]].map(([x, z, r]) => at(cyl(r, r, .0575, '#ffd66b', 20), x, .02875, z))); // đốm vảy
+    rug.traverse(node => { node.castShadow = false; });
+    rug.userData.top = .0525;
+    return rug;
+  },
+  // Ghế papasan (thay ghế bành): bát mây trên chân trống, nệm tròn dày; lòng nệm ~.7 (mèo đáp .66 lún vào nệm).
+  'armchair-papasan'() {
+    const wicker = '#d9a36a', dark = '#b9854a';
+    return group(at(cyl(.3, .36, .26, dark), 0, .13, 0), at(cyl(.56, .3, .3, wicker), 0, .43, 0),
+      at(mesh(new THREE.TorusGeometry(.53, .035, 8, 48), dark), 0, .58, 0).rotateX(Math.PI / 2),
+      squash(at(ball(.5, '#ec5b8c'), 0, .6, .02), 1, .24, .96), // nệm
+      squash(at(ball(.2, '#ffd9c4'), 0, .78, -.3), 1.4, .8, .6), squash(at(ball(.12, '#ffd66b'), .26, .72, -.18), 1, .7, 1)); // gối tựa + gối nhỏ
+  },
+  // Chậu tulip (thay cây cảnh): cụm hoa là `leaves` (mèo gặm thì rung).
+  'plant-tulips'() {
+    let seed = 11;
+    const rnd = (lo, hi) => { seed = (seed * 16807) % 2147483647; return lo + (seed / 2147483647) * (hi - lo); };
+    const colors = ['#ff8fb6', '#e5483a', '#ffd23f', '#fffaf0', '#ff8fb6', '#b79cf0', '#e5483a'];
+    const leaves = group();
+    colors.forEach((color, i) => {
+      const a = i * 2.4, r = i ? rnd(.08, .18) : 0, h = rnd(.32, .48), x = Math.sin(a) * r, z = Math.cos(a) * r;
+      leaves.add(at(cyl(.012, .012, h, '#5a9a3e', 6), x, .5 + h / 2, z),
+        at(cyl(.07, .045, .13, color, 12), x, .5 + h + .05, z), at(ball(.046, color), x, .5 + h - .01, z));
+      const leaf = squash(at(ball(.05, '#5fae46'), x + Math.sin(a) * .05, .62, z + Math.cos(a) * .05), .45, 2.6, 1.1);
+      leaf.rotation.set(Math.cos(a) * .35, 0, -Math.sin(a) * .35);
+      leaves.add(leaf);
+    });
+    mergeStatic(leaves);
+    const pot = group(at(cyl(.3, .24, .42, '#8fc9f2'), 0, .21, 0), at(cyl(.33, .33, .08, '#6fb3e6'), 0, .44, 0),
+      at(cyl(.28, .28, .02, '#7a4a2a'), 0, .485, 0), ...[0, 1, 2].map(k => at(ball(.035, '#fffaf0'), Math.sin(k * 2.1) * .27, .24, Math.cos(k * 2.1) * .27)), leaves);
+    pot.userData.leaves = leaves;
+    return pot;
+  },
+  // Bể bóng (thay giỏ len): chậu tròn đầy bóng màu; quả bóng vàng trên cùng là đồ chơi mèo khều ra sàn.
+  'yarn-ballpit'() {
+    const colors = ['#ec5b8c', '#3b8fe0', '#ffd23f', '#4fb34a', '#ff7a3d', '#b79cf0'];
+    const balls = [];
+    for (let i = 0; i < 16; i++) {
+      const a = i * 2.4, r = i < 6 ? .14 : .28, y = i < 6 ? .38 : .3 + (i % 3) * .02;
+      balls.push(at(ball(.085, colors[i % colors.length]), Math.sin(a) * r, y, Math.cos(a) * r));
+    }
+    const toy = at(ball(.11, '#ffd23f'), .05, .44, .12);
+    const pit = group(at(cyl(.42, .38, .32, '#fff3d1'), 0, .16, 0), at(mesh(new THREE.TorusGeometry(.42, .04, 10, 40), '#ec5b8c'), 0, .32, 0).rotateX(Math.PI / 2),
+      ...[.08, .2].map(y => at(mesh(new THREE.TorusGeometry(.385 + y * .1, .018, 6, 40), '#8fc9f2'), 0, y, 0).rotateX(Math.PI / 2)), ...balls, toy);
+    pit.userData.toy = toy;
+    toy.userData.home = toy.position.clone();
+    return pit;
+  },
+  // Nệm trái tim (thay ổ mèo): viền tim phồng + nệm lót; mèo nằm ở .14 như ổ gốc.
+  'catbed-heart'() {
+    const heart = s => {
+      const pts = [];
+      for (let k = 0; k < 64; k++) {
+        const t = k / 64 * TAU;
+        pts.push(new THREE.Vector2(16 * Math.sin(t) ** 3 / 17 * s, ((13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 + .15) * s));
+      }
+      return new THREE.Shape(pts);
+    };
+    const slab = (shape, depth, bevel, color, y) => {
+      const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 24 });
+      geo.rotateX(-Math.PI / 2).translate(0, bevel, 0); // nằm phẳng, đáy ở y = 0; đỉnh tim quay ra sau (-z), mũi tim ra trước
+      return at(mesh(geo, color), 0, y, 0);
+    };
+    const ring = heart(.62); ring.holes.push(new THREE.Path(heart(.44).getPoints()));
+    return group(slab(heart(.5), .06, .03, '#ffc9d5', 0), slab(heart(.4), .04, .03, '#fff7ea', .07), slab(ring, .16, .05, '#ff8fb8', 0));
+  },
+  // Bàn thùng gỗ (thay bàn nhỏ): hai thùng chồng + tấm ván; mặt bàn .81, chai sữa là thứ mèo đẩy rơi.
+  'table-crate'() {
+    const wood = '#c98a55', light = '#e0a874';
+    const slats = (w, d, y) => [-1, 1].map(s => at(box(w + .02, .06, .03, light), 0, y, s * (d / 2 + .005)));
+    const bottle = group(at(cyl(.07, .075, .16, '#fffaf0', 16), 0, 0, 0), at(cyl(.04, .07, .05, '#fffaf0', 16), 0, .1, 0), at(cyl(.042, .042, .03, '#3b8fe0', 16), 0, .14, 0),
+      at(cyl(.076, .076, .05, '#8fc9f2', 16), 0, -.02, 0));
+    bottle.position.set(.15, .9, .1);
+    const table = group(at(rbox(.8, .38, .6, .04, wood), 0, .19, 0), ...slats(.8, .6, .2),
+      at(rbox(.7, .36, .54, .04, wood), 0, .56, 0), ...slats(.7, .54, .57),
+      at(rbox(.88, .04, .68, .015, light), 0, .79, 0), bottle,
+      at(rbox(.24, .04, .18, .01, '#ec5b8c'), -.2, .83, -.16), at(rbox(.2, .04, .16, .01, '#ffd23f'), -.2, .87, -.16));
+    table.userData.mug = bottle;
+    bottle.userData.home = bottle.position.clone();
+    return table;
+  },
+  // Đèn lồng giấy (thay đèn đứng): quả cầu giấy phát sáng treo trên cần cong; mèo nằm sưởi dưới đèn.
+  'lamp-lantern'() {
+    const wood = '#9a6a45', R = .28, Y = 1.62;
+    const paper = at(ball(R, mat('#fff1d6', { emissive: '#ffcf7a', emissiveIntensity: .7 })), 0, Y, 0);
+    const ribs = [-.6, -.2, .2, .6].map(k => {
+      const rib = at(mesh(new THREE.TorusGeometry(Math.sqrt(1 - k * k) * R * 1.01, .006, 6, 36), '#e0a93c'), 0, Y + k * R, 0).rotateX(Math.PI / 2);
+      rib.userData.noOutline = true;
+      return rib;
+    });
+    const arm = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, 1.7, -.15], [0, 2.02, -.13], [0, 2.06, 0], [0, 1.95, 0]].map(p => new THREE.Vector3(...p))), 16, .025, 8), wood);
+    const light = new THREE.PointLight('#ffcf7a', 5, 6, 1.6);
+    light.position.set(0, Y, 0);
+    return group(at(cyl(.22, .26, .05, wood), 0, .025, -.15), at(cyl(.03, .03, 1.7, wood), 0, .87, -.15), arm,
+      at(cyl(.06, .08, .05, '#e0a93c'), 0, Y + R + .02, 0), at(cyl(.008, .008, .07, '#e0a93c', 6), 0, Y + R + .08, 0), paper, ...ribs,
+      at(cyl(.07, .05, .04, '#e0a93c'), 0, Y - R - .01, 0), at(cyl(.012, .025, .14, '#ec5b8c', 8), 0, Y - R - .1, 0), light);
+  },
+  // Lâu đài (thay cây cho mèo): hai tháp đá đúng chỗ hai cột, sàn gỗ tầng giữa (~1.15), đỉnh tháp có tường lỗ châu mai (~1.87).
+  'cattree-castle'() {
+    const stone = '#e6dfd2', flagColor = '#ec5b8c';
+    const windows = (x, z, r, ys) => ys.map(y => at(rbox(.07, .12, .06, .03, '#6b5a4a'), x, y, z + r - .015));
+    const crenels = [...Array(8)].map((_, k) => { const a = k / 8 * TAU; return at(box(.1, .1, .08, stone), .22 + Math.cos(a) * .32, 1.92, .18 + Math.sin(a) * .32).rotateY(-a); });
+    const flag = group(at(cyl(.012, .012, .5, '#9a6a45', 6), 0, .25, 0), at(box(.2, .12, .01, flagColor), .1, .43, 0));
+    flag.position.set(.22 + .3, 1.87, .18 - .1);
+    return hangingToy(group(at(rbox(1, .12, 1, .05, '#c8e6a8'), 0, .06, 0),
+      at(cyl(.13, .14, 1.05, stone), -.25, .6, -.2), ...windows(-.25, -.2, .13, [.45]),
+      at(cyl(.15, .17, 1.7, stone), .22, .9, .18), ...windows(.22, .18, .15, [.5, 1.2]),
+      at(rbox(.72, .1, .72, .04, '#c98a55'), -.1, 1.1, -.12), ...[-.3, -.1, .1].map(x => at(box(.02, .005, .7, '#a87444'), x, 1.153, -.12)),
+      at(cyl(.36, .36, .14, stone), .22, 1.8, .18), ...crenels, flag), '#ffd23f', '#8a6a4a');
+  },
+  // Kệ ô vuông (thay kệ sách): 3 × 4 ô có giỏ vải, sách, chậu cây; nóc cao 2 như kệ sách gốc.
+  'shelf-cubby'() {
+    const wood = '#f5f0e6', edge = '#e3ddd1', parts = [at(box(1.6, 2, .04, edge), 0, 1, -.23), at(box(.06, 2, .5, wood), -.77, 1, 0), at(box(.06, 2, .5, wood), .77, 1, 0)];
+    [-.26, .26].forEach(x => parts.push(at(box(.04, 1.94, .48, wood), x, 1, .01)));
+    [.03, .52, 1.01, 1.49, 1.97].forEach(y => parts.push(at(box(1.6, .06, .5, wood), 0, y, 0)));
+    const cols = [-.52, 0, .52], rows = [.06, .55, 1.04, 1.52];
+    const bins = ['#ec5b8c', '#8fc9f2', '#ffd66b', '#7fc45a', '#b79cf0'];
+    rows.forEach((y, r) => cols.forEach((x, c) => {
+      const k = r * 3 + c;
+      if (k % 3 === 0) parts.push(at(rbox(.42, .36, .4, .05, bins[k % bins.length]), x, y + .18, .02), at(rbox(.14, .04, .03, .015, '#fffaf0'), x, y + .28, .225));
+      else if (k % 3 === 1) for (let i = 0; i < 4; i++) parts.push(at(box(.07, .3 + (i % 2) * .05, .32, bins[(k + i) % bins.length]), x - .15 + i * .085, y + .17 + (i % 2) * .025, 0));
+      else parts.push(at(cyl(.1, .08, .16, '#e98b5a', 16), x, y + .08, 0), at(ball(.12, '#7fc45a'), x, y + .24, 0));
+    }));
+    return group(...parts);
+  },
+  // Nhà chuột hamster (thay bể cá): lồng có bánh xe quay + nhà gỗ; chuột chạy quanh lồng, mèo ngồi xem.
+  'tank-hamster'() {
+    const frame = '#ffd66b', Y0 = .78, Y1 = 1.36;
+    const bars = [];
+    for (let i = 0; i <= 10; i++) for (const z of [-.25, .25]) bars.push(new THREE.CylinderGeometry(.007, .007, Y1 - Y0, 6).translate(-.53 + i * .106, (Y0 + Y1) / 2, z));
+    for (let i = 1; i < 5; i++) for (const x of [-.53, .53]) bars.push(new THREE.CylinderGeometry(.007, .007, Y1 - Y0, 6).translate(x, (Y0 + Y1) / 2, -.25 + i * .1));
+    const cage = mesh(mergeGeometries(bars), '#c8c2b8');
+    cage.userData.noOutline = true; // song lồng mảnh: viền toon sẽ thành mớ nét đen
+    const wheel = group(at(mesh(new THREE.TorusGeometry(.16, .018, 8, 32), '#ec5b8c'), 0, 0, 0),
+      ...[0, 1, 2].map(k => at(box(.3, .012, .012, '#ec5b8c'), 0, 0, 0).rotateZ(k * Math.PI / 3)), at(cyl(.025, .025, .06, '#fffaf0', 12), 0, 0, 0).rotateX(Math.PI / 2));
+    wheel.position.set(.3, Y0 + .2, -.05);
+    const hamster = group(squash(ball(.07, '#f3c08a'), 1.25, .9, 1), at(ball(.04, '#fffaf0'), .07, -.01, 0), ...[-1, 1].map(s => at(ball(.022, '#f3a6a6'), .04, .05, s * .04)));
+    hamster.userData.phase = 0;
+    const home = group(at(rbox(1.2, .7, .62, .05, '#b9854a'), 0, .35, 0), at(rbox(1.12, .08, .54, .03, frame), 0, .74, 0), at(box(1.06, .02, .48, '#f3dfb0'), 0, .785, 0),
+      cage, at(rbox(1.12, .05, .54, .02, frame), 0, Y1 + .025, 0), wheel, at(box(.05, .2, .05, '#fffaf0'), .3, Y0 + .1, -.12),
+      at(rbox(.24, .16, .2, .03, '#e98b5a'), -.32, Y0 + .09, -.08), at(cyl(.001, .17, .12, '#ec5b8c', 4), -.32, Y0 + .23, -.08).rotateY(Math.PI / 4),
+      at(cyl(.035, .035, .18, '#8fc9f2', 12), -.5, 1.1, .2), at(cyl(.008, .008, .06, '#c8c2b8', 6), -.5, .98, .2), hamster);
+    home.userData.fish = [hamster]; // mèo ngồi xem chuột chạy
+    home.userData.update = t => {
+      wheel.rotation.z = -t * 3;
+      const a = t * .9;
+      hamster.position.set(-.05 + Math.sin(a) * .28, Y0 + .07, .1 + Math.sin(a * 2) * .06);
+      hamster.rotation.y = Math.cos(a) > 0 ? 0 : Math.PI;
+    };
+    return home;
+  },
 };
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
@@ -460,7 +622,9 @@ Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, GARDEN2_BUILD);
 // cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem room-cats.mjs useFurniture.
 // Món đồ không có bộ phận nào cử động riêng (mèo / hiệu ứng không giữ tham chiếu tới khối con): gộp khối cùng màu.
 const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox', 'armchair', 'bench', 'slide',
-  'bed', 'bed-canopy', 'bedrug', 'bedrug-cloud', 'desk', 'desk-study', 'chair-beanbag', 'closet', 'closet-dresser', 'plushie', 'plushie-dino', 'laundry', 'catsteps-bridge']);
+  'bed', 'bed-canopy', 'bedrug', 'bedrug-cloud', 'desk', 'desk-study', 'chair-beanbag', 'closet', 'closet-dresser', 'plushie', 'plushie-dino', 'laundry', 'catsteps-bridge',
+  'rug-fish', 'armchair-papasan', 'catbed-heart', 'shelf-cubby', 'bed-kitty', 'bedrug-star', 'laundry-washer', 'desk-piano', 'chair-stool',
+  'closet-ladder', 'plushie-bunny', 'catsteps-clouds']);
 function buildItem(entry) {
   const node = BUILD[entry.id]();
   if (STATIC_ITEMS.has(entry.id)) mergeStatic(node);
