@@ -270,37 +270,6 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 .tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}
 .room-canvas.carrying{cursor:grabbing}
 
-/* ===== Bảng vào màn theo độ khó (tier): chill · normal · hard · boss ===== */
-.level-dialog{--tier:#3fa55f}
-.level-dialog[data-tier="chill"]{--tier:#2f9e8f;background:#e3f6ec}
-.level-dialog[data-tier="hard"]{--tier:#e0602f;background:#ffe6cf;border-color:#f2a46b}
-.level-dialog[data-tier="boss"]{--tier:#ffcf5a;background:#3d1426;border:2px solid #ffcf5a;color:#fff3dc}
-.level-dialog[data-tier] .level-number{color:var(--tier)}
-.level-dialog[data-tier="boss"] .level-number{font-size:22px;letter-spacing:2px;text-shadow:0 2px 0 #0006}
-.level-dialog[data-tier="hard"]::backdrop{background:#5a2a1080}
-.level-dialog[data-tier="boss"]::backdrop{background:#12040acc}
-.intro-tier{display:inline-flex;align-items:center;gap:6px;margin:0 auto 8px;padding:5px 14px 5px 10px;border-radius:999px;
-  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--tier);box-shadow:none}
-.intro-tier svg{width:20px;height:20px;fill:#fff;stroke:#fff;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round}
-.level-dialog[data-tier="chill"] .intro-tier svg{fill:none;stroke-width:2.2}
-.level-dialog[data-tier="boss"] .intro-tier{color:#2d0f1c;font-size:18px;padding:7px 18px 7px 12px}
-.level-dialog[data-tier="boss"] .intro-tier svg{fill:#2d0f1c;stroke:#2d0f1c}
-.intro-mechanics{display:flex;justify-content:center;gap:10px;margin:10px 0 4px}
-.intro-mechanics .mechanic{position:relative;width:46px;height:46px;display:grid;place-items:center}
-.intro-mechanics .mechanic svg{width:100%;height:100%}
-.intro-mechanics .mechanic b{position:absolute;top:-8px;right:-14px;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:900;letter-spacing:.5px;color:#fff;background:#e8617f;box-shadow:none;transform:rotate(8deg)}
-.level-dialog[data-tier="boss"] .pill-button:not(.ghost){background:var(--red);box-shadow:none}
-.level-dialog[data-tier="boss"] .pill-button.ghost{background:#ffffff1f;color:#fff3dc;box-shadow:none}
-@media(prefers-reduced-motion:no-preference){
-  .level-dialog[data-tier="boss"][open]{animation:boss-enter .6s cubic-bezier(.3,1.4,.5,1)}
-  .level-dialog[data-tier="boss"][open] .intro-tier{animation:boss-badge 1.4s ease-in-out .6s infinite}
-  .level-dialog[data-tier="hard"][open]{animation:hard-enter .45s cubic-bezier(.3,1.5,.5,1)}
-  .intro-mechanics .mechanic.new{animation:mech-pop .5s cubic-bezier(.3,1.6,.5,1) .15s both}
-}
-@keyframes boss-enter{0%{transform:scale(.6);opacity:0}45%{transform:scale(1.06) rotate(-1.5deg);opacity:1}60%{transform:rotate(1.5deg)}75%{transform:rotate(-1deg)}100%{transform:none}}
-@keyframes boss-badge{50%{transform:scale(1.08);box-shadow:none}}
-@keyframes hard-enter{from{transform:translateY(18px) scale(.92);opacity:0}}
-@keyframes mech-pop{from{transform:scale(.3)}}
 /* Bản đồ: màu nút theo cấp độ */
 .map-node:not(.locked).tier-chill b{background:var(--teal);box-shadow:none}
 .map-node:not(.locked).tier-hard b{background:var(--orange);box-shadow:none}

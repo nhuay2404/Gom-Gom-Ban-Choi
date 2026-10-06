@@ -7,10 +7,10 @@ import { clusterPoints } from './gameplay/scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './ui/cat-art.mjs';
 import { LEVELS } from './gameplay/levels.mjs';
 import * as game from './gameplay/session.mjs';
-import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier, levelMechanics } from './gameplay/progression.mjs';
+import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from './gameplay/progression.mjs';
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from './gameplay/tuning.mjs';
 import { spendBooster, boostersUnlocked } from './gameplay/boosters.mjs';
-import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG } from './ui/board-art.mjs';
+import { CRATE_SVG, METAL_SVG, cageSvg } from './ui/board-art.mjs';
 import { playSound } from './ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from './deco/deco-data.mjs';
@@ -1104,7 +1104,7 @@ function tutorialHoles(step) {
 function renderTutorial() {
   const layer = $('tutorial'), step = tutorialStep();
   layer.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
-  if (!step || state.over || $('intro-dialog').open || !$('map').hidden || menus.menuOpen()) {
+  if (!step || state.over || !$('map').hidden || menus.menuOpen()) {
     layer.hidden = true;
     return;
   }
@@ -1167,45 +1167,25 @@ $('tutorial-next').onclick = () => { game.continueTutorial(state); renderTutoria
 addEventListener('resize', () => { if (tutorialStep()) renderTutorial(); });
 
 // ===== Tiến độ (lưu trong máy), bản đồ màn, giới thiệu màn, kết quả =====
-// Nhãn độ khó ở bảng vào màn và bản đồ: Easy / Medium / Hard theo số element của bản màn sẽ chơi (adaptive.mjs),
-// boss giữ nhãn Boss. `style` = kiểu màu có sẵn trong CSS (data-tier, .tier-*); 'normal' là màu mặc định.
+// Nhãn độ khó trên bản đồ (kiểu màu nút màn): Easy / Medium / Hard theo số element của bản màn gốc (adaptive.mjs),
+// boss giữ nhãn Boss. `style` = kiểu màu có sẵn trong CSS (.tier-*); 'normal' là màu mặc định.
 const TIERS = {
-  easy: { style: 'chill', label: 'Easy', icon: '<svg viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14Zm0 0 7-7"/></svg>' },
-  medium: { style: 'normal', label: 'Medium', icon: '<svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6l-5.4 2.9 1.2-6-4.5-4.2 6.1-.7Z"/></svg>' },
-  hard: { style: 'hard', label: 'Hard', icon: '<svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/></svg>' },
-  boss: { style: 'boss', label: 'Boss', icon: '<svg viewBox="0 0 24 24"><path d="M4 18 3 7l5 4 4-6 4 6 5-4-1 11Z M5 21h14"/></svg>' },
+  easy: { style: 'chill', label: 'Easy' }, medium: { style: 'normal', label: 'Medium' },
+  hard: { style: 'hard', label: 'Hard' }, boss: { style: 'boss', label: 'Boss' },
 };
-const tierOf = (index, plan = planLevel(profile, index)) => TIERS[levelTier(LEVELS[index]) === 'boss' ? 'boss' : plan.difficulty];
-// Bản đồ: chỉ màn đang mở hiện độ khó đã chỉnh; các màn khác hiện nhãn bản gốc để người chơi không thấy cả bản đồ đổi theo.
-export const mapTier = (index, current) => tierOf(index, current ? undefined : { difficulty: difficultyOf(elementCount(LEVELS[index])) });
-// ?dda trên URL: hiện profile đang nhận diện ở bảng vào màn (để QA), người chơi thường không thấy.
+export const mapTier = index => TIERS[levelTier(LEVELS[index]) === 'boss' ? 'boss' : difficultyOf(elementCount(LEVELS[index]))];
+// ?dda trên URL: ghi profile đang nhận diện ra console mỗi lần vào màn (để QA), người chơi thường không thấy.
 const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
-// Vật cản có trong màn (đọc từ bàn): hiện icon ở bảng vào màn, cơ chế mới gắn NEW.
 
-// Icon ô Hold cho bảng vào màn (màn mở Hold).
-const HOLD_SVG = '<svg viewBox="0 0 46 46"><rect x="5" y="7" width="36" height="32" rx="9" fill="#f5dc9c" stroke="#c79a4f" stroke-width="2.5"/><path d="M23 15v16M15 23h16" stroke="#d38a3a" stroke-width="4" stroke-linecap="round"/></svg>';
-export function startLevel(index, skipIntro = false) {
-  const level = LEVELS[index];
+// Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
+export function startLevel(index) {
   menus.hideMenus();
   $('map').hidden = true;
   newGame(index);
-  if (skipIntro) return renderTutorial();
-  // Bảng vào màn "móc" người chơi bằng bố cục theo độ khó: nhãn cấp độ + màu nền; boss nền tối, bảng rung, nút đỏ.
-  // Nhãn và vật cản lấy từ bản màn đã chỉnh theo profile (state.level), không phải bản gốc.
-  const tier = tierOf(index, state.plan), dialog = $('intro-dialog'), badge = $('intro-tier');
-  dialog.dataset.tier = tier.style;
-  badge.hidden = false;
-  badge.innerHTML = `${tier.icon}<span>${tier.label}</span>`;
   const { plan } = state;
-  $('intro-number').textContent = `Level ${index + 1}${DDA_DEBUG ? ` · ${plan.profile} ${plan.shift >= 0 ? '+' : ''}${plan.shift} (${plan.baseCount}→${plan.count})${plan.deal ? ` · ${plan.deal}` : ''}` : ''}`;
-  const mechanics = [...(level.introduces === 'hold' ? ['hold'] : []), ...levelMechanics(state.level)];
-  const MECH = { crate: ['Crates', CRATE_SVG], metal: ['Metal blocks', METAL_SVG], hold: ['Hold slot', HOLD_SVG], cage: ['Cat cages', CAGE_ICON_SVG] };
-  $('intro-mechanics').hidden = !mechanics.length;
-  $('intro-mechanics').innerHTML = mechanics.map(kind => `<span class="mechanic${level.introduces === kind ? ' new' : ''}" title="${MECH[kind][0]}">${MECH[kind][1]}${level.introduces === kind ? '<b>NEW</b>' : ''}</span>`).join('');
-  dialog.showModal();
-  renderTutorial(); // bảng giới thiệu đang mở -> ẩn, đóng bảng thì hiện
+  if (DDA_DEBUG) console.info(`Level ${index + 1} · ${plan.profile} ${plan.shift >= 0 ? '+' : ''}${plan.shift} (${plan.baseCount}→${plan.count})${plan.deal ? ` · ${plan.deal}` : ''}`);
+  renderTutorial();
 }
-$('intro-dialog').addEventListener('close', () => { startTracking(); renderTutorial(); });
 
 const levelsCleared = () => clearedCount(loadProgress());
 
@@ -1278,10 +1258,9 @@ function endLevel(win, reason = '') {
   $('result-retry').hidden = win;
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 0 : 700);
 }
-$('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1, true); };
+$('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1); };
 $('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
 $('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };
-$('intro-map').onclick = () => { $('intro-dialog').close(); menus.showMap(); };
 
 $('tutorial-avatar').innerHTML = catMarkup.orange;
 
