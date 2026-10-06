@@ -661,7 +661,8 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .deco-side .deco-lock svg{width:calc(24 * var(--u));height:calc(24 * var(--u));stroke-width:2.4}
 .deco-lock .shackle{transition:translate .2s;translate:3px -2px}
 .deco-lock[aria-pressed="true"] .shackle{translate:none}
-#deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.5}
+#deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
+#deco.ui-locked .deco-lock:active{opacity:.6}
 #deco.ui-locked .deco-side>[data-key]{visibility:hidden}
 #deco.ui-locked>.wallet-hud,#deco.ui-locked>.deco-dock,#deco.ui-locked>.deco-pins,#deco.ui-locked>.deco-pop{display:none}
 body.deco-locked #tabbar{display:none}

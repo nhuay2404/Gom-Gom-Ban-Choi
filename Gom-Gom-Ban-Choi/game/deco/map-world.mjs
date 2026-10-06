@@ -188,6 +188,9 @@ const extrude = (shape, depth, bevel) => {
   return g;
 };
 const HEAD = { w: 1.22, h: 1.14, r: .42, depth: .24, bevel: .06, inset: .13 };
+// Nửa bề dày khối đầu tính cả bo cạnh + viền nâu: khoảng mép sau cách tâm đáy (nâng khối đầu khi ngả, xem frame()).
+const HEAD_BACK = HEAD.depth / 2 + HEAD.bevel + .04;
+const HEAD_SET_BACK = .36; // khối đầu đứng lùi về sau tâm bục (mặt bục bán kính ~.66 nên mép sau khối đầu vẫn nằm trên bục)
 const headGeo = {
   rim: extrude(roundedRectShape(HEAD.w, HEAD.h, HEAD.r), HEAD.depth, HEAD.bevel),
   face: extrude(roundedRectShape(HEAD.w - HEAD.inset * 2, HEAD.h - HEAD.inset * 2, HEAD.r - HEAD.inset * .8), .05, .03),
@@ -900,6 +903,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     // Đầu mèo đứng trên bệ, ngả nhẹ ra sau cho mặt hướng về camera.
     const head = new THREE.Group();
     head.position.y = ped.top;
+    // Đứng lùi về phía sau mặt bục (−z = xa camera): đứng giữa bục thì nhìn từ trên xuống khối đầu che gần hết mặt bục, như cắm vào bục.
+    head.position.z = -HEAD_SET_BACK;
     const tilt = new THREE.Group();
     tilt.rotation.x = -.42;
     head.add(tilt);
@@ -1354,6 +1359,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       setInk(node.ink, inkOpacity(angleOf(node.index) - scroll));
       // Ngả mặt về phía camera: màn càng gần (đã lăn về phía camera) càng ngả ra sau, không bị nhìn dẹt từ trên xuống.
       node.tilt.rotation.x = Math.max(-1.25, Math.min(-.2, -.62 + (angleOf(node.index) - scroll) * 1.1));
+      // Ngả quanh tâm đáy thì mép đáy phía sau (dày HEAD_BACK) chúi xuống dưới mặt bục (tới ~.17 khi ngả hết cỡ): nâng khối đầu
+      // lên đúng phần đó để đáy luôn đặt trên mặt bục, không cắm vào bục.
+      node.tilt.position.y = HEAD_BACK * Math.sin(-node.tilt.rotation.x);
       node.catTilt.rotation.x = node.tilt.rotation.x * .75;
       const bob = node.locked || reduceMotion ? 0 : Math.sin(time * 2.2 + node.phase) * .04;
       node.press = Math.max(0, (node.press || 0) - dt * 4);

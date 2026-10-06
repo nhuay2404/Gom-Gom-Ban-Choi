@@ -298,9 +298,14 @@ const BUILD = {
     return group(...parts);
   },
   tank() {
-    const glass = mesh(new THREE.BoxGeometry(1.1, .72, .52), mat('#dff4ff', { transparent: true, opacity: .22, roughness: .1 }));
-    const water = mesh(new THREE.BoxGeometry(1.04, .56, .46), mat('#6fc3e0', { transparent: true, opacity: .5, roughness: .2 }));
-    glass.castShadow = water.castShadow = false;
+    // Nước chỉ vẽ mặt trong phía sau (BackSide): thành nền xanh PHÍA SAU cá, không phủ lên cá (trước đây hộp nước 50% + kính 22%
+    // đè lên trước cá: thân cá bạc màu như bóng ma trong khi viền cá vẽ sau vẫn đậm). Kính chỉ còn một lớp sáng rất mỏng.
+    // Cả hai không nhận / đổ bóng (bóng cá in lên mặt nước thành mảng xám đục) và không ghi depth (khỏi nhấp nháy khi xoay).
+    const glass = mesh(new THREE.BoxGeometry(1.1, .72, .52), mat('#e8f8ff', { transparent: true, opacity: .14, roughness: .1, depthWrite: false }));
+    const water = mesh(new THREE.BoxGeometry(1.04, .56, .46), mat('#7fd0ea', { transparent: true, opacity: .75, roughness: .2, side: THREE.BackSide, depthWrite: false }));
+    // Mặt nước phía trước rất mỏng: bể vẫn có sắc xanh khi nhìn từ trên xuống mà cá chỉ nhạt đi chút ít.
+    const waterFront = mesh(new THREE.BoxGeometry(1.04, .56, .46), mat('#7fd0ea', { transparent: true, opacity: .22, roughness: .2, depthWrite: false }));
+    for (const node of [glass, water, waterFront]) node.castShadow = node.receiveShadow = false;
     const fish = ['#f39a45', '#ffd66b', '#ff8fa0'].map((color, i) => {
       const tail = mesh(new THREE.ConeGeometry(.05, .09, 20), color);
       tail.rotation.z = Math.PI / 2; tail.position.x = -.1;
@@ -309,7 +314,7 @@ const BUILD = {
       f.userData.phase = i * 2.1;
       return f;
     });
-    const tank = group(at(rbox(1.2, .7, .62, .05, '#b9854a'), 0, .35, 0), at(glass, 0, 1.07, 0), at(water, 0, 1, 0),
+    const tank = group(at(rbox(1.2, .7, .62, .05, '#b9854a'), 0, .35, 0), at(glass, 0, 1.07, 0), at(water, 0, 1, 0), at(waterFront, 0, 1, 0),
       at(box(1.04, .06, .46, '#f3dfb0'), 0, .76, 0), ...fish.map(f => at(f, 0, 1, 0)));
     tank.userData.fish = fish; // mèo ngồi xem cá bơi
     tank.userData.update = t => fish.forEach(f => {
@@ -734,9 +739,11 @@ export function thumbnail(entry) {
 
 export function createRoom() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  // Pixel ratio tối đa 1.5 + PCFShadowMap (giống bản đồ màn): GPU điện thoại yếu về fill-rate, dpr 2 + PCFSoft làm cảnh Deco
+  // rớt 30–50 ms/khung; xem bằng mắt ở khung 375×812 gần như không khác (viền, hàng rào, bóng mèo vẫn nét).
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.className = 'room-canvas';
   const scene = new THREE.Scene();
   physicalLook(renderer, scene);
@@ -853,10 +860,15 @@ export function createRoom() {
     if (radius != null) setGoal('r', radius);
   }
   // Xoay ngang tới góc `to` (rad) theo đường ngắn nhất, cùng nhịp với cú lướt.
+  // Góc đọc từ camera (spherical.theta) luôn bị gói về (−π, π], còn đích / điểm ngắm thì liền mạch (có thể vượt π). Mọi so sánh
+  // phải quy về cùng một vòng (wrapPi), nếu không thì khi camera quay qua mốc ±π (món ở nửa trước khu: gốc cây → đèn lồng...)
+  // góc đọc được nhảy 2π, lò xo tưởng còn cách đích gần một vòng nên quay mãi không dừng.
+  const wrapPi = a => ((((a + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
   function turnToward(to) {
     startGlide(glide.active ? glide.smooth * 3200 : 700);
-    const from = cameraNow('th');
-    setGoal('th', from + ((((to - from) % TAU) + TAU + Math.PI) % TAU - Math.PI));
+    // Đang xoay dở: lấy điểm ngắm hiện tại làm mốc (cùng vòng với nó), không lấy góc đọc từ camera (có thể lệch 2π).
+    const from = 'th' in glide.goal ? glide.aim.th : cameraNow('th');
+    setGoal('th', from + wrapPi(to - from));
   }
   // Đích của cú lướt cũng nằm trong khung kéo được (clampPan): không thì tới gần mép, clampPan kéo ngược lại mỗi khung -> rung.
   const tmpGlide = new THREE.Vector3();
@@ -878,6 +890,8 @@ export function createRoom() {
     const half = glide.smooth * .5, t = controls.target;
     spherical.setFromVector3(camDir.subVectors(camera.position, t));
     const cur = { x: t.x, y: t.y, z: t.z, r: spherical.radius, th: spherical.theta };
+    // Góc camera về cùng vòng với điểm ngắm (xem wrapPi ở turnToward).
+    if ('th' in glide.goal) cur.th = glide.aim.th + wrapPi(cur.th - glide.aim.th);
     let settled = true;
     for (const key of GLIDE_KEYS) {
       if (!(key in glide.goal)) continue;
@@ -1643,8 +1657,15 @@ export function createRoom() {
   const camDir = new THREE.Vector3(), spherical = new THREE.Spherical();
   let lastFrame = 0, lastRadius = 0;
   let onFrame = null;
+  // Kéo khi đã zoom sát (hub: Home / Deco): OrbitControls trượt đúng theo ngón tay ở khoảng cách hiện tại, nên zoom càng sát thì
+  // mỗi cú vuốt đi được càng ít — phải vuốt nhiều lần, cảm giác nặng. Tăng dần tốc độ trượt (tới ×PAN_BOOST khi zoom sát hết) và
+  // cho trôi xa hơn khi thả tay (giảm damping tới COAST_BOOST); zoom ra hết thì giữ như cũ.
+  const PAN_BOOST = 1.8, COAST_BOOST = .55;
   function frame(now) {
-    controls.dampingFactor = 1 - (1 - DAMPING) ** (Math.min(.1, (now - (lastFrame || now)) / 1000 || 1 / 60) * 60);
+    const zoomIn = hub ? THREE.MathUtils.clamp((controls.maxDistance - camera.position.distanceTo(controls.target)) / Math.max(1e-3, controls.maxDistance - controls.minDistance), 0, 1) : 0;
+    controls.panSpeed = 1 + (PAN_BOOST - 1) * zoomIn;
+    const damping = DAMPING * (1 - (1 - COAST_BOOST) * zoomIn);
+    controls.dampingFactor = 1 - (1 - damping) ** (Math.min(.1, (now - (lastFrame || now)) / 1000 || 1 / 60) * 60);
     const t = now / 1000;
     stepGlide(Math.min(.05, (now - (lastFrame || now)) / 1000 || 1 / 60));
     if (hub && !glide.active) clampPan();
