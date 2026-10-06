@@ -162,6 +162,37 @@ const bitmap = (group, mood) => CAT_IMAGES[group][mood];
 const HAS_BITMAP = new Set(Object.keys(CAT_IMAGES));
 // Khung ảnh trong hệ toạ độ 100 × 106 của art cũ: ảnh vuông, đáy (bàn chân) chạm ~y = 101 như chân mèo SVG cũ.
 const BITMAP_BOX = 'x="5" y="11" width="90" height="90"';
+// Thân dưới lúc bị nhấc / kéo, vẽ theo đúng ngôn ngữ ảnh Figma: KHỐI vuông màu phẳng, cạnh vát bằng dải màu tối hơn (không viền
+// nâu), bụng kem, chân là khối bát giác (góc vát) có 2 vạch ngón như chân trước trong ảnh. Màu lấy mẫu thẳng từ ảnh từng giống:
+//   fur = lông mặt trước   side = dải vát / mặt khuất   belly = mảng bụng   paw / pawSide = chân + mép vát chân   toe = vạch ngón
+//   stripe = sọc lông (mèo cam, xám, tabby)   tail = [viền, lõi] đuôi khi khác màu lông (mèo Xiêm: đuôi sẫm như tai / chân)
+// Toạ độ theo khung 100 × 106 (ảnh ở x 5..95, y 11..101): thân ảnh rộng x ~17..84, đáy ~y 99; thân dưới nằm sau ảnh, lòi ra từ y ~99.
+const HANG_COLORS = {
+  orange: { fur: '#fba33b', side: '#f0600f', belly: '#fbf2dd', paw: '#fbf2dd', pawSide: '#e6d3b4', toe: '#bf9c7c', stripe: '#f07a1e' },
+  gray: { fur: '#a8aab8', side: '#575969', belly: '#fcfcfc', paw: '#f7f5f2', pawSide: '#d9d9de', toe: '#5f606e', stripe: '#6c6e7c' },
+  white: { fur: '#f7f6f2', side: '#d6d0c7', belly: '#fdfcfa', paw: '#f7f5f2', pawSide: '#ddd6cc', toe: '#8d817d' },
+  tuxedo: { fur: '#322d30', side: '#1f1a1d', belly: '#f9f4ea', paw: '#f8f0e5', pawSide: '#d8cdbf', toe: '#7e7165' },
+  siamese: { fur: '#f7e5ce', side: '#7a4530', belly: '#e3c39f', paw: '#6a3521', pawSide: '#4c2416', toe: '#bf8069', tail: ['#4c2416', '#6a3521'] },
+  tabby: { fur: '#b6ad9a', side: '#514c48', belly: '#fbf5ed', paw: '#f3ede1', pawSide: '#d4ccbd', toe: '#5f5548', stripe: '#6b645c' },
+};
+// Đa giác bát giác (hình chữ nhật vát góc c)
+const oct = (x, y, w, h, c) => `M${x + c} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h - c}L${x + w - c} ${y + h}H${x + c}L${x} ${y + h - c}V${y + c}Z`;
+function blockHang(group) {
+  const c = HANG_COLORS[group], [tailEdge, tailCore] = c.tail || [c.side, c.fur];
+  const paw = x => `<path d="${oct(x, 110, 18, 23, 3.5)}" fill="${c.pawSide}"/><path d="${oct(x + 1.2, 110, 15.6, 19.6, 3)}" fill="${c.paw}"/>
+      <g fill="${c.toe}"><rect x="${x + 5.2}" y="124" width="2.6" height="6.4" rx="1.3"/><rect x="${x + 10.2}" y="124" width="2.6" height="6.4" rx="1.3"/></g>`;
+  const stripes = c.stripe ? `<g fill="${c.stripe}"><rect x="20" y="92" width="7" height="3" rx="1.5"/><rect x="20" y="99" width="5" height="3" rx="1.5"/>
+      <rect x="73" y="92" width="7" height="3" rx="1.5"/><rect x="75" y="99" width="5" height="3" rx="1.5"/></g>` : '';
+  return `<g class="hang" visibility="hidden">
+      <path d="M78 102 Q97 108 94 129" fill="none" stroke="${tailEdge}" stroke-width="8" stroke-linecap="round"/>
+      <path d="M78 102 Q97 108 94 129" fill="none" stroke="${tailCore}" stroke-width="4.6" stroke-linecap="round"/>
+      <path d="${oct(18, 84, 64, 34, 7)}" fill="${c.side}"/>
+      <path d="${oct(18, 84, 64, 29, 6)}" fill="${c.fur}"/>
+      <path d="${oct(33, 94, 34, 18, 5)}" fill="${c.belly}"/>
+      ${stripes}
+      ${paw(24)}${paw(58)}
+    </g>`;
+}
 function bitmapCatSvg(group, hang) {
   const img = (mood, extra = '') => `<image href="${bitmap(group, mood)}" ${BITMAP_BOX} ${extra}/>`;
   const afk = (name, mood) => `<g class="afk afk-${name}" visibility="hidden">${img(mood)}</g>`;
@@ -206,8 +237,8 @@ function catSvg(group) {
         <circle cx="30.5" cy="130" r="1.3"/><circle cx="34.5" cy="129" r="1.3"/><circle cx="38.5" cy="130" r="1.3"/>
         <circle cx="61.5" cy="130" r="1.3"/><circle cx="65.5" cy="129" r="1.3"/><circle cx="69.5" cy="130" r="1.3"/></g>
     </g>`;
-  // Giống có ảnh Figma: dùng ảnh (giữ thân dưới lúc bị nhấc của SVG). Art SVG bên dưới chỉ còn làm dự phòng.
-  if (HAS_BITMAP.has(group)) return bitmapCatSvg(group, hang);
+  // Giống có ảnh Figma: dùng ảnh + thân dưới vẽ kiểu khối cùng màu ảnh (blockHang). Art SVG bên dưới chỉ còn làm dự phòng.
+  if (HAS_BITMAP.has(group)) return bitmapCatSvg(group, blockHang(group));
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
       <radialGradient id="cry-iris" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#6b5a86"/><stop offset=".6" stop-color="#3a2f4a"/><stop offset="1" stop-color="#241c2e"/></radialGradient>
