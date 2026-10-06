@@ -49,6 +49,22 @@ function catSpots(index, count, gap) {
 }
 // Điểm trên mặt trống (toạ độ của trống, chưa xoay): góc a đi về phía xa (-z) khi tăng.
 const onDrum = (x, a, lift = 0) => new THREE.Vector3(x, (WORLD.R + lift) * Math.cos(a), -(WORLD.R + lift) * Math.sin(a));
+// Bọc vật trong một nhóm đứng thẳng trên mặt trống tại (x, t): trục y của nhóm = pháp tuyến mặt trống.
+function onDrumAt(object, x, t, lift = 0) {
+  const holder = new THREE.Group(), a = angleOf(t);
+  holder.position.copy(onDrum(x, a, lift));
+  holder.rotation.x = -a;
+  holder.userData.angle = a;
+  holder.add(object);
+  return holder;
+}
+
+// ---------- Bộ nhớ đệm dùng chung giữa các lần dựng lại bản đồ ----------
+// Mỗi lần thắng màn bản đồ dựng lại: texture chữ / chất liệu theo màu tạo một lần rồi dùng lại (không tạo mới, không rò bộ nhớ GPU).
+const cache = new Map();
+const cached = (key, make) => cache.get(key) ?? cache.set(key, make()).get(key);
+const matOf = (color, rim = 0) => cached(`toon|${color}|${rim}`, () => toonMat({ color, rim }));
+const seeded = seed => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 // ---------- Texture vẽ bằng canvas ----------
 function canvasTexture(w, h, draw, { repeat = false } = {}) {
@@ -91,8 +107,13 @@ function grassTexture() {
   }, { repeat: true });
 }
 const PAW_PATH = new Path2D('M12 20.6c-3 0-5.5-1.8-5.5-4.3S9 11.4 12 11.4s5.5 2.4 5.5 4.9-2.5 4.3-5.5 4.3ZM5.6 12.4a2.4 2.6 0 1 1 0-5.2 2.4 2.6 0 0 1 0 5.2Zm4-3.6a2.5 2.7 0 1 1 0-5.4 2.5 2.7 0 0 1 0 5.4Zm4.8 0a2.5 2.7 0 1 1 0-5.4 2.5 2.7 0 0 1 0 5.4Zm4 3.6a2.4 2.6 0 1 1 0-5.2 2.4 2.6 0 0 1 0 5.2Z');
-const pawTexture = color => canvasTexture(64, 64, (g) => { g.scale(64 / 24, 64 / 24); g.fillStyle = color; g.fill(PAW_PATH); });
+const pawMat = color => cached(`paw|${color}`, () => new THREE.MeshBasicMaterial({
+  map: canvasTexture(64, 64, (g) => { g.scale(64 / 24, 64 / 24); g.fillStyle = color; g.fill(PAW_PATH); }), transparent: true, depthWrite: false,
+}));
 // Mặt trước khối đầu mèo: số trắng viền nâu (bóng nâu nhẹ phía dưới), ổ khoá trắng nếu chưa mở.
+function faceMat(number, locked) {
+  return cached(`face|${number}|${locked}`, () => new THREE.MeshBasicMaterial({ map: faceTexture(number, locked), transparent: true, fog: true }));
+}
 function faceTexture(number, locked) {
   return canvasTexture(256, 256, (g, w) => {
     const ink = '#5b2e1c', y = locked ? 100 : 132;
@@ -170,24 +191,31 @@ const headGeo = {
   ear: extrude(roundedPolygonShape([[-.24, -.14], [.2, -.14], [-.06, .26]], .1), .16, .045),
   earInner: extrude(roundedPolygonShape([[-.14, -.08], [.1, -.08], [-.04, .15]], .06), .03, .015),
 };
-const FACE_Z = HEAD.depth / 2 + HEAD.bevel + .02;
+const FACE_Z = HEAD.depth / 2 + HEAD.bevel + .02, FACE_GEO = new THREE.PlaneGeometry(1.14, 1.14);
 
 // Cây kiểu Animal Crossing: thân nâu + tán tròn / tán nón; bụi cây; hoa 3D nhỏ; đá.
 const decorMats = {
   trunk: toonMat({ color: 0x9a6a43 }), leaf: toonMat({ color: 0x5fb548 }), leafDark: toonMat({ color: 0x3f9a45 }), pine: toonMat({ color: 0x3e8f4a }),
   bush: toonMat({ color: 0x6cc154 }), rock: toonMat({ color: 0xb8b0a2 }), petal: toonMat({ color: 0xffffff }), petalPink: toonMat({ color: 0xff9ec0 }), heart: toonMat({ color: 0xffd23f }),
 };
+// Hình học dùng chung cho đồ trang trí (kích thước khác nhau thì scale mesh), không tạo lưới mới cho mỗi món.
+const DECOR_GEO = {
+  trunk: new THREE.CylinderGeometry(.11, .15, .7, 8), cone: [new THREE.ConeGeometry(.62, .85, 9), new THREE.ConeGeometry(.46, .85, 9)],
+  crown: new THREE.SphereGeometry(.62, 14, 10), ball: new THREE.SphereGeometry(1, 12, 8), petal: new THREE.SphereGeometry(.07, 8, 6),
+  heart: new THREE.SphereGeometry(.055, 8, 6), rock: new THREE.DodecahedronGeometry(1, 0),
+  stem: new THREE.CylinderGeometry(.045, .06, .16, 8), cap: new THREE.SphereGeometry(.15, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+};
 function tree(rnd) {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.11, .15, .7, 8), decorMats.trunk);
+  const trunk = new THREE.Mesh(DECOR_GEO.trunk, decorMats.trunk);
   trunk.position.y = .35; g.add(trunk);
   if (rnd() < .45) {
     for (let k = 0; k < 2; k++) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(.62 - k * .16, .85, 9), decorMats.pine);
+      const cone = new THREE.Mesh(DECOR_GEO.cone[k], decorMats.pine);
       cone.position.y = .85 + k * .45; g.add(withInk(cone, .04));
     }
   } else {
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(.62, 14, 10), rnd() < .5 ? decorMats.leaf : decorMats.leafDark);
+    const crown = new THREE.Mesh(DECOR_GEO.crown, rnd() < .5 ? decorMats.leaf : decorMats.leafDark);
     crown.position.y = 1.15; crown.scale.y = .92; g.add(withInk(crown, .04));
   }
   g.scale.setScalar(.85 + rnd() * .45);
@@ -196,7 +224,8 @@ function tree(rnd) {
 function bush(rnd) {
   const g = new THREE.Group();
   for (let k = 0; k < 3; k++) {
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(.28 + rnd() * .1, 12, 8), decorMats.bush);
+    const ball = new THREE.Mesh(DECOR_GEO.ball, decorMats.bush);
+    ball.scale.setScalar(.28 + rnd() * .1);
     ball.position.set((k - 1) * .3, .2 + (k === 1 ? .08 : 0), rnd() * .1);
     g.add(withInk(ball, .05));
   }
@@ -205,18 +234,18 @@ function bush(rnd) {
 function flower(rnd) {
   const g = new THREE.Group(), mat = rnd() < .45 ? decorMats.petalPink : decorMats.petal;
   for (let k = 0; k < 5; k++) {
-    const petal = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6), mat);
+    const petal = new THREE.Mesh(DECOR_GEO.petal, mat);
     const a = k / 5 * Math.PI * 2;
     petal.position.set(Math.cos(a) * .08, .12, Math.sin(a) * .08);
     g.add(petal);
   }
-  const heart = new THREE.Mesh(new THREE.SphereGeometry(.055, 8, 6), decorMats.heart);
+  const heart = new THREE.Mesh(DECOR_GEO.heart, decorMats.heart);
   heart.position.y = .14; g.add(heart);
   return g;
 }
 function rock(rnd) {
-  const m = new THREE.Mesh(new THREE.DodecahedronGeometry(.22 + rnd() * .12, 0), decorMats.rock);
-  m.scale.y = .6; m.position.y = .08; m.rotation.y = rnd() * 3;
+  const m = new THREE.Mesh(DECOR_GEO.rock, decorMats.rock), s = .22 + rnd() * .12;
+  m.scale.set(s, s * .6, s); m.position.y = .08; m.rotation.y = rnd() * 3;
   return withInk(m, .06);
 }
 // Trang trí thêm hai bên đường: nấm, khóm hoa, cụm cỏ, hàng rào gỗ, đèn lồng, biển chỉ đường, ao nhỏ, bướm.
@@ -232,9 +261,9 @@ function mushroom(rnd) {
   const g = new THREE.Group(), n = 1 + Math.floor(rnd() * 3);
   for (let k = 0; k < n; k++) {
     const m = new THREE.Group(), s = k ? .65 + rnd() * .2 : 1;
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(.045, .06, .16, 8), sceneryMats.stem);
+    const stem = new THREE.Mesh(DECOR_GEO.stem, sceneryMats.stem);
     stem.position.y = .08; m.add(withInk(stem, .1));
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(.15, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2), rnd() < .3 ? sceneryMats.capPink : sceneryMats.cap);
+    const cap = new THREE.Mesh(DECOR_GEO.cap, rnd() < .3 ? sceneryMats.capPink : sceneryMats.cap);
     cap.position.y = .14; cap.scale.y = .8; m.add(withInk(cap, .07));
     // Chấm trắng trên mũ nấm.
     for (let j = 0; j < 4; j++) {
@@ -324,9 +353,11 @@ function pond(rnd) {
 // Bướm: thân nhỏ + hai cánh vỗ (cánh xoay quanh thân trong frame()); không gộp vì có phần cử động.
 const WING_GEO = (() => { const g = new THREE.CircleGeometry(.09, 12); g.scale(1, .8, 1); g.translate(.08, 0, 0); g.rotateX(-Math.PI / 2); return g; })();
 const WING_COLORS = [0xffb3d1, 0xfff07a, 0xbfe4ff, 0xffffff];
+const BUG_GEO = new THREE.CylinderGeometry(.018, .018, .12, 6), BUG_MAT = new THREE.MeshBasicMaterial({ color: INK });
+const WING_MATS = WING_COLORS.map(color => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, fog: true }));
 function butterfly(rnd) {
-  const g = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: WING_COLORS[Math.floor(rnd() * WING_COLORS.length)], side: THREE.DoubleSide, fog: true });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .12, 6), new THREE.MeshBasicMaterial({ color: INK }));
+  const g = new THREE.Group(), mat = WING_MATS[Math.floor(rnd() * WING_COLORS.length)];
+  const body = new THREE.Mesh(BUG_GEO, BUG_MAT);
   body.rotation.x = Math.PI / 2; g.add(body);
   const wings = [-1, 1].map(side => { const w = new THREE.Mesh(WING_GEO, mat); w.scale.x = side; g.add(w); return w; });
   g.userData.wings = wings;
@@ -511,7 +542,7 @@ function zoneGate(label) {
   g.add(box(half * 2 + .4, .18, .22, furnMats.woodDark, 0, 1.55, 0));
   const board = box(1.7, .42, .08, furnMats.white, 0, 1.92, 0);
   g.add(board);
-  const text = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), new THREE.MeshBasicMaterial({ map: signTexture(label, 84), transparent: true }));
+  const text = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), cached(`sign|${label}`, () => new THREE.MeshBasicMaterial({ map: signTexture(label, 84), transparent: true })));
   text.position.set(0, 1.92, .05); g.add(text);
   g.traverse(n => { if (n.isMesh) n.castShadow = true; });
   return g;
@@ -636,13 +667,19 @@ function newBadgeTexture() {
   });
 }
 
+const PAW_GEO = new THREE.PlaneGeometry(.34, .34);
+// Hình học khai báo một lần ở cấp module: dựng lại bản đồ không giải phóng các hình này.
+const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.values(PED), PLAIN_BASE, PLAIN_TOP, STAR_GEO, DOT_GEO, TUFT_GEO,
+  WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat()]);
+
 // ---------- Cảnh ----------
 export function createMapWorld(container, { onPick, onClaim } = {}) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  // Điện thoại DPR 3: vẽ ở 1.5 là đủ nét cho cảnh toon (ít điểm ảnh hơn ~1.8 lần so với 2).
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   // Tường giấy dán của phòng khách / phòng ngủ phủ lên ảnh trời phía sau canvas, hiện dần khi lướt vào vùng đó.
   const walls = Object.fromEntries(ZONES.filter(z => z.wall).map(z => {
     const div = document.createElement('div');
@@ -707,7 +744,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   const pickables = [];
   // Trống nhỏ (cong mạnh) nên cả con đường quấn gần trọn một vòng: chỉ hiện vật gần camera, phần đã qua chân trời
   // hoặc sau lưng camera ẩn đi, không thì đầu đường (màn 1) lộ ra ngay sau màn cuối.
-  const culled = [];
+  const culled = [], unbuilt = [];
   const VISIBLE = { behind: -1.25, ahead: 1.45 };
   let nodes = [], levelCount = 0, scroll = 0, target = 0, velocity = 0, focusIndex = 0, running = false, lastFrame = 0;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -743,11 +780,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   }
   // Đặt vật đứng thẳng trên mặt trống tại (x, t): trục y của vật = pháp tuyến mặt trống.
   function plant(object, x, t, lift = 0) {
-    const holder = new THREE.Group(), a = angleOf(t);
-    holder.position.copy(onDrum(x, a, lift));
-    holder.rotation.x = -a;
-    holder.add(object);
-    holder.userData.angle = a;
+    const holder = onDrumAt(object, x, t, lift);
     culled.push(holder);
     content.add(holder);
     return holder;
@@ -780,14 +813,14 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     tilt.rotation.x = -.42;
     head.add(tilt);
     const bodyColor = locked ? COLORS.body.locked : (COLORS.body[tier] ?? COLORS.body.normal);
-    const cream = toonMat({ color: locked ? 0xf1e7e1 : 0xfff3ee, rim: .3 });
+    const cream = matOf(locked ? 0xf1e7e1 : 0xfff3ee, .3);
     const cat = new THREE.Group();
     cat.position.y = HEAD.h / 2 + .02;
     tilt.add(cat);
     const rim = new THREE.Mesh(headGeo.rim, cream);
     rim.castShadow = true;
     cat.add(withInk(rim, 0, .075));
-    const bodyMat = toonMat({ color: bodyColor, rim: .35 });
+    const bodyMat = matOf(bodyColor, .35);
     const body = new THREE.Mesh(headGeo.face, bodyMat);
     body.position.z = HEAD.depth / 2 + HEAD.bevel - .02;
     cat.add(body);
@@ -800,16 +833,16 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const outer = new THREE.Mesh(headGeo.ear, cream);
       outer.castShadow = true;
       ear.add(withInk(outer, 0, .065));
-      const inner = new THREE.Mesh(headGeo.earInner, toonMat({ color: 0xff8fb3 }));
+      const inner = new THREE.Mesh(headGeo.earInner, matOf(0xff8fb3));
       inner.position.set(-.02, .01, .11);
       ear.add(inner);
       cat.add(ear);
     }
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.14, 1.14), new THREE.MeshBasicMaterial({ map: faceTexture(index + 1, locked), transparent: true, fog: true }));
+    const face = new THREE.Mesh(FACE_GEO, faceMat(index + 1, locked));
     face.position.z = FACE_Z + .03;
     cat.add(face);
     if (tier === 'boss' && !locked) {
-      const crown = new THREE.Group(), gold = toonMat({ color: 0xffc83d, rim: .4 });
+      const crown = new THREE.Group(), gold = matOf(0xffc83d, .4);
       crown.add(withInk(new THREE.Mesh(new THREE.CylinderGeometry(.28, .28, .14, 16), gold), .06));
       for (let k = 0; k < 5; k++) {
         const spike = new THREE.Mesh(new THREE.ConeGeometry(.07, .2, 6), gold);
@@ -853,7 +886,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       cats.push(cat);
     });
     if (newCats.length) {
-      const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: claimable ? claimBadgeTexture() : newBadgeTexture() }));
+      const badge = new THREE.Sprite(claimable ? cached('badge|claim', () => new THREE.SpriteMaterial({ map: claimBadgeTexture() })) : cached('badge|new', () => new THREE.SpriteMaterial({ map: newBadgeTexture() })));
       // Nút Claim to hơn, nổi cao hơn đầu mèo cho dễ bấm.
       badge.scale.set(...(claimable ? [1.25, .45, 1] : [.78, .31, 1]));
       badge.userData.baseY = claimable ? 1.75 : 1.25;
@@ -874,15 +907,15 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   }
 
   function sign(t) {
-    const g = new THREE.Group(), wood = toonMat({ color: 0xc8925a });
+    const g = new THREE.Group(), wood = sceneryMats.wood;
     for (const x of [-.9, .9]) {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(.06, .07, 1.1, 8), wood);
       post.position.set(x, .55, 0); g.add(withInk(post, .1));
     }
-    const board = new THREE.Mesh(roundedBox(2.3, .72, .12, 2, .05), toonMat({ color: 0xf3d5a4 }));
+    const board = new THREE.Mesh(roundedBox(2.3, .72, .12, 2, .05), matOf(0xf3d5a4));
     board.position.y = 1.05; board.castShadow = true;
     g.add(withInk(board, .03));
-    const text = new THREE.Mesh(new THREE.PlaneGeometry(2.2, .69), new THREE.MeshBasicMaterial({ map: signTexture('More levels coming soon!'), transparent: true }));
+    const text = new THREE.Mesh(new THREE.PlaneGeometry(2.2, .69), cached('sign|end', () => new THREE.MeshBasicMaterial({ map: signTexture('More levels coming soon!'), transparent: true })));
     text.position.set(0, 1.05, .07);
     g.add(text);
     g.rotation.x = -.25;
@@ -901,8 +934,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       cap.receiveShadow = true;
       plant(cap, x, START_T, lift);
     };
-    half(WORLD.ROAD / 2 + WORLD.EDGE, .015, toonMat({ color: INK }));
-    half(WORLD.ROAD / 2, .03, toonMat({ color }));
+    half(WORLD.ROAD / 2 + WORLD.EDGE, .015, matOf(INK));
+    half(WORLD.ROAD / 2, .03, matOf(color));
     let seed = 777;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const side = (WORLD.ROAD / 2 + WORLD.EDGE + .45) * Math.hypot(1, pathSlope(START_T));
@@ -922,7 +955,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       deco(flower(rnd), dx, -dz / LEVEL_GAP);
     }
     // Dấu chân to ở giữa nắp: chỗ mèo bắt đầu hành trình
-    const paw = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), new THREE.MeshBasicMaterial({ map: pawTexture(color === COLORS.roadDone ? '#ef5f8b' : '#f7a3bd'), transparent: true, depthWrite: false }));
+    const paw = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), pawMat(color === COLORS.roadDone ? '#ef5f8b' : '#f7a3bd'));
     paw.rotation.set(-Math.PI / 2, 0, turn);
     plant(paw, x, START_T - .12, .045);
   }
@@ -930,6 +963,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   // Trang trí hai bên đường, chia theo đoạn: mỗi đoạn quanh một màn (t từ i - .5 tới i + .5) là một nhóm gộp chất liệu
   // (mergeStatic) và ẩn / hiện như một khối theo góc trống. Phủ hết phần cỏ thấy được ở mọi vị trí cuộn (cả trước màn 1
   // và sau biển "coming soon"); mỗi đoạn có hạt giống riêng nên dựng lại vẫn y hệt.
+  // Chọn chỗ (rẻ) làm ngay cho mọi đoạn; dựng model + gộp (đắt) thì lười: đoạn nào sắp hiện mới dựng (frame()), phần còn
+  // lại dựng dần lúc rảnh (buildIdle), nên mở bản đồ không bị khựng. Mỗi món có hạt giống riêng nên dựng lúc nào cũng y hệt.
   function decorate(levels) {
     const end = levels.length - 1, placed = [];
     // Vùng chừa quanh mỗi màn: bằng bệ (màn đang chơi rộng hơn vì bệ to + quầng sáng); mèo mới chừa riêng theo đúng
@@ -953,76 +988,78 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       for (const z of ZONES) if (z.label && Math.abs(t - z.from) * LEVEL_GAP < .5 + r && Math.abs(x - pathX(z.from)) < 1.3 + r) return false;
       return placed.every(p => Math.hypot(p.x - x, (p.t - t) * LEVEL_GAP) > p.r + r);
     };
-    const put = (chunk, object, x, t, r, lift = 0) => {
-      const holder = new THREE.Group(), a = angleOf(t);
-      holder.position.copy(onDrum(x, a, lift));
-      holder.rotation.x = -a;
-      holder.add(object);
-      chunk.add(holder);
-      placed.push({ x, t, r });
-    };
     const first = Math.floor(VISIBLE.behind / WORLD.STEP) - 1, last = Math.ceil(end + VISIBLE.ahead / WORLD.STEP) + 1;
     for (let i = first; i <= last; i++) {
-      let seed = 1000 + (i - first) * 7919;
-      const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      const rnd = seeded(1000 + (i - first) * 7919), items = [];
+      // Ghi món sẽ dựng: make(rnd) tạo model; shadow: món đủ to mới đổ bóng (hoa, cỏ, đá nhỏ bỏ qua pass bóng).
+      const put = (make, x, t, r, turn, shadow = true) => {
+        items.push({ make, x, t, turn, shadow, seed: 1 + Math.floor(rnd() * 2147483645) });
+        placed.push({ x, t, r });
+      };
       const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = zone !== 'garden';
       if (indoor) floorPiece(i, zone);
       // Đèn lồng giữa hai màn, đổi bên mỗi đoạn; hàng rào ngắn phía bên kia (cách hai đoạn một lần).
       const lampSide = i % 2 ? 1 : -1, edge = (WORLD.ROAD / 2 + WORLD.EDGE + .35) * Math.hypot(1, pathSlope(mid));
-      if (onRoad && free(pathX(mid) + lampSide * edge, mid, .2)) put(chunk, indoor ? floorLamp() : lantern(), pathX(mid) + lampSide * edge, mid, .2);
+      if (onRoad && free(pathX(mid) + lampSide * edge, mid, .2)) put(indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
       if (onRoad && i % 3 === 0 && free(pathX(mid) - lampSide * edge, mid, .5)) {
-        const f = indoor ? pottedPlant(rnd) : fence(1.2);
-        f.rotation.y = -Math.atan(pathSlope(mid));
-        put(chunk, f, pathX(mid) - lampSide * edge, mid, .5);
+        put(indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)));
       }
       // Biển chỉ đường mỗi 5 đoạn, ao nhỏ mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
       if (onRoad && !indoor && i % 5 === 2) {
         const t = i + .25, x = pathX(t) - lampSide * edge;
-        if (free(x, t, .3)) { const s = signpost(); s.rotation.y = -Math.atan(pathSlope(t)); put(chunk, s, x, t, .3); }
+        if (free(x, t, .3)) put(signpost, x, t, .3, -Math.atan(pathSlope(t)));
       }
       if (i % 4 === 1) {
         const t = mid + (rnd() - .5) * .3, wide = pathX(t) > 0 ? -1 : 1, x = pathX(t) + wide * (2.5 + rnd() * .8);
-        if (free(x, t, 1.15)) { const p = indoor ? rug(rnd) : pond(rnd); p.rotation.y = (rnd() - .5) * .6; put(chunk, p, x, t, 1.15); }
+        if (free(x, t, 1.15)) put(indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, false);
       }
       // Rải ngẫu nhiên: gần đường là hoa / nấm / cỏ / đá / bụi, xa đường mới có cây (cây cao không che màn).
       // Dồn phần lớn món vào dải thấy được trên màn dọc (cách đường tới ~4), một ít ra xa cho màn rộng.
-      for (let k = 0; k < 34; k++) {
+      for (let k = 0; k < 26; k++) {
         const t = i - .5 + rnd(), side = rnd() < .5 ? -1 : 1, dist = .95 + Math.pow(rnd(), 1.4) * 5.2, x = pathX(t) + side * dist;
         if (Math.abs(x) > 8) continue;
         const roll = rnd();
-        let obj, r;
+        let make, r, shadow = true;
         if (zone === 'living') {
-          if (dist > 2.3 && roll < .22) { obj = bookshelf(rnd); r = .65; }
-          else if (dist > 1.6 && roll < .36) { obj = sofa(rnd, rnd() < .4 ? 1 : 2); r = .75; }
-          else if (roll < .46) { obj = coffeeTable(); r = .5; }
-          else if (roll < .62) { obj = pottedPlant(rnd, dist > 2.3); r = .35; }
-          else if (roll < .76) { obj = yarnBall(rnd); r = .2; }
-          else if (roll < .9) { obj = floorCushion(rnd); r = .32; }
+          if (dist > 2.3 && roll < .22) { make = bookshelf; r = .65; }
+          else if (dist > 1.6 && roll < .36) { const seats = rnd() < .4 ? 1 : 2; make = g => sofa(g, seats); r = .75; }
+          else if (roll < .46) { make = coffeeTable; r = .5; }
+          else if (roll < .62) { const big = dist > 2.3; make = g => pottedPlant(g, big); r = .35; }
+          else if (roll < .76) { make = yarnBall; r = .2; shadow = false; }
+          else if (roll < .9) { make = floorCushion; r = .32; shadow = false; }
           else continue;
         } else if (zone === 'bedroom') {
-          if (dist > 2.3 && roll < .2) { obj = dresser(rnd); r = .6; }
-          else if (dist > 1.8 && roll < .34) { obj = bed(rnd); r = .9; }
-          else if (roll < .46) { obj = nightstand(); r = .3; }
-          else if (roll < .58) { obj = catBed(rnd); r = .45; }
-          else if (roll < .7) { obj = teddy(); r = .25; }
-          else if (roll < .82) { obj = floorCushion(rnd); r = .32; }
-          else if (roll < .9) { obj = yarnBall(rnd); r = .2; }
+          if (dist > 2.3 && roll < .2) { make = dresser; r = .6; }
+          else if (dist > 1.8 && roll < .34) { make = bed; r = .9; }
+          else if (roll < .46) { make = nightstand; r = .3; }
+          else if (roll < .58) { make = catBed; r = .45; shadow = false; }
+          else if (roll < .7) { make = teddy; r = .25; shadow = false; }
+          else if (roll < .82) { make = floorCushion; r = .32; shadow = false; }
+          else if (roll < .9) { make = yarnBall; r = .2; shadow = false; }
           else continue;
-        } else if (dist > 2.3 && roll < .38) { obj = tree(rnd); r = .7; }
-        else if (roll < .5) { obj = bush(rnd); r = .5; }
-        else if (roll < .68) { obj = flowerPatch(rnd); r = .45; }
-        else if (roll < .78) { obj = mushroom(rnd); r = .3; }
-        else if (roll < .9) { obj = flower(rnd); r = .12; }
-        else if (roll < .95) { obj = tuft(); r = .1; }
-        else { obj = rock(rnd); r = .3; }
+        } else if (dist > 2.3 && roll < .38) { make = tree; r = .7; }
+        else if (roll < .5) { make = bush; r = .5; }
+        else if (roll < .68) { make = flowerPatch; r = .45; shadow = false; }
+        else if (roll < .78) { make = mushroom; r = .3; shadow = false; }
+        else if (roll < .9) { make = flower; r = .12; shadow = false; }
+        else if (roll < .95) { make = tuft; r = .1; shadow = false; }
+        else { make = rock; r = .3; shadow = false; }
         if (!free(x, t, r)) continue;
-        obj.rotation.y = rnd() * Math.PI * 2;
-        put(chunk, obj, x, t, r);
+        put(make, x, t, r, rnd() * Math.PI * 2, shadow);
       }
-      chunk.traverse(n => { if (n.isMesh && n.material !== inkMat && n.material !== sceneryMats.water) n.castShadow = true; });
-      mergeStatic(chunk);
       chunk.userData.angle = angleOf(i);
+      chunk.userData.build = () => {
+        delete chunk.userData.build;
+        for (const { make, x, t, turn, shadow, seed } of items) {
+          const object = make(seeded(seed));
+          object.rotation.y = turn;
+          if (shadow) object.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
+          chunk.add(onDrumAt(object, x, t));
+        }
+        mergeStatic(chunk);
+      };
       culled.push(chunk);
+      unbuilt.push(chunk);
       content.add(chunk);
       // Bướm bay quanh một chỗ trống gần đường (một con mỗi đoạn, không gộp vì cánh vỗ).
       const t = i - .5 + rnd(), x = pathX(t) + (rnd() < .5 ? -1 : 1) * (1.2 + rnd() * 2.5);
@@ -1032,30 +1069,57 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       }
     }
   }
+  // Dựng dần các đoạn trang trí chưa dựng lúc trình duyệt rảnh, đoạn gần chỗ đang xem trước.
+  const idle = window.requestIdleCallback ?? (fn => setTimeout(() => fn({ timeRemaining: () => 8 }), 30));
+  let idleQueued = false;
+  function buildIdle() {
+    if (idleQueued) return;
+    idleQueued = true;
+    idle(deadline => {
+      idleQueued = false;
+      for (let i = unbuilt.length - 1; i >= 0; i--) if (!unbuilt[i].userData.build) unbuilt.splice(i, 1);
+      if (!unbuilt.length) return;
+      unbuilt.sort((a, b) => Math.abs(a.userData.angle - scroll) - Math.abs(b.userData.angle - scroll));
+      do unbuilt.shift().userData.build(); while (unbuilt.length && deadline.timeRemaining() > 6);
+      if (unbuilt.length) buildIdle();
+    });
+  }
 
   // Vẽ lại toàn bộ đường + màn theo tiến độ hiện tại. levels: [{ locked, tier, current }].
+  // Tiến độ không đổi (mở lại bản đồ) thì giữ nguyên cảnh, không dựng lại.
+  let builtKey = '';
   function render(levels) {
+    const key = JSON.stringify(levels);
+    if (key === builtKey) return;
+    builtKey = key;
+    // Trả bộ nhớ GPU của cảnh cũ (hình học dùng chung giữ lại; chất liệu / texture nằm trong cache dùng chung).
+    content.traverse(n => { if (n.geometry && !SHARED_GEO.has(n.geometry)) n.geometry.dispose(); });
     content.clear();
     pickables.length = 0;
     culled.length = 0;
+    unbuilt.length = 0;
     flyers = [];
     levelCount = levels.length;
     const open = levels.filter(l => !l.locked).length;
     const end = levelCount - 1;
-    ribbon(START_T, end + .9, WORLD.ROAD + WORLD.EDGE * 2, .015, toonMat({ color: INK }));
+    ribbon(START_T, end + .9, WORLD.ROAD + WORLD.EDGE * 2, .015, matOf(INK));
     const doneTo = Math.max(START_T, open - 1);
-    if (open > 0) ribbon(START_T, doneTo, WORLD.ROAD, .03, toonMat({ color: COLORS.roadDone }));
-    ribbon(doneTo, end + .9, WORLD.ROAD, .03, toonMat({ color: COLORS.road }));
+    if (open > 0) ribbon(START_T, doneTo, WORLD.ROAD, .03, matOf(COLORS.roadDone));
+    ribbon(doneTo, end + .9, WORLD.ROAD, .03, matOf(COLORS.road));
     startCap(doneTo > START_T ? COLORS.roadDone : COLORS.road);
-    // Dấu chân mèo: 3 dấu trái / phải xen kẽ giữa mỗi hai màn, hồng đậm trên đoạn đã đi.
-    const pawDone = new THREE.MeshBasicMaterial({ map: pawTexture('#ef5f8b'), transparent: true, depthWrite: false });
-    const pawTodo = new THREE.MeshBasicMaterial({ map: pawTexture('#f7a3bd'), transparent: true, depthWrite: false });
-    const pawGeo = new THREE.PlaneGeometry(.34, .34);
-    for (let i = 0; i < end; i++) [.32, .5, .68].forEach((f, k) => {
-      const t = i + f, paw = new THREE.Mesh(pawGeo, i + 1 < open ? pawDone : pawTodo), right = k % 2;
-      paw.rotation.set(-Math.PI / 2, 0, (right ? -1 : 1) * .3 - Math.atan(pathSlope(t)));
-      plant(paw, pathX(t) + (right ? .16 : -.16), t, .045);
-    });
+    // Dấu chân mèo: 3 dấu trái / phải xen kẽ giữa mỗi hai màn, hồng đậm trên đoạn đã đi (gộp 3 dấu một đoạn thành một mesh).
+    for (let i = 0; i < end; i++) {
+      const group = new THREE.Group(), mat = pawMat(i + 1 < open ? '#ef5f8b' : '#f7a3bd');
+      [.32, .5, .68].forEach((f, k) => {
+        const t = i + f, paw = new THREE.Mesh(PAW_GEO, mat), right = k % 2;
+        paw.rotation.set(-Math.PI / 2, 0, (right ? -1 : 1) * .3 - Math.atan(pathSlope(t)));
+        group.add(onDrumAt(paw, pathX(t) + (right ? .16 : -.16), t, .045));
+      });
+      mergeStatic(group);
+      group.userData.angle = angleOf(i + .5);
+      culled.push(group);
+      content.add(group);
+    }
     nodes = levels.map((l, i) => levelNode(i, l));
     sign(end + .95);
     for (const z of ZONES) if (z.label && z.from < end) {
@@ -1064,6 +1128,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       plant(gate, pathX(z.from), z.from);
     }
     decorate(levels);
+    buildIdle();
   }
 
   // ---------- Cuộn / chạm ----------
@@ -1086,7 +1151,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     try { canvas.setPointerCapture(e.pointerId); } catch { /* sự kiện giả / con trỏ đã nhả */ }
   });
   canvas.addEventListener('pointermove', e => {
-    if (!drag) { hover(e); return; }
+    // Đổi con trỏ khi rê chuột qua màn (chỉ chuột: cảm ứng không có hover, khỏi raycast mỗi lần chạm di chuyển).
+    if (!drag) { if (e.pointerType === 'mouse') hover(e); return; }
     const dy = e.clientY - drag.y, now = performance.now(), dt = Math.max(1, now - drag.t);
     drag.moved += Math.abs(dy) + Math.abs(e.clientX - drag.x);
     drag.y = e.clientY; drag.x = e.clientX; drag.t = now;
@@ -1158,6 +1224,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     scene.fog.color.copy(fogMix);
   }
   function frame(now) {
+    // Đứng yên (không kéo, trống đã lăn tới chỗ): chỉ còn anim nhún / bướm nên vẽ 30 hình/giây cho đỡ tốn pin.
+    const settled = !drag && Math.abs(velocity) < 1e-5 && Math.abs(target - scroll) < 1e-4;
+    if (settled && lastFrame && now - lastFrame < 30) return;
     const dt = lastFrame ? Math.min(50, now - lastFrame) / 1000 : 0;
     lastFrame = now;
     if (!drag) {
@@ -1170,6 +1239,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     for (const object of culled) {
       const rel = object.userData.angle - scroll;
       object.visible = rel > VISIBLE.behind && rel < VISIBLE.ahead;
+      // Đoạn trang trí sắp hiện mà lúc rảnh chưa kịp dựng: dựng ngay.
+      if (object.visible && object.userData.build) object.userData.build();
     }
     for (const node of nodes) {
       if (!node.holder.visible) continue;
