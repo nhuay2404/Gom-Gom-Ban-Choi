@@ -109,7 +109,7 @@ function rotateActive() {
   const before = [...$('active-card').querySelectorAll('.piece-object')].map(piece => centerOf(piece.getBoundingClientRect()));
   const turn = game.rotate(state);
   if (!turn.ok) return;
-  playSound('pick');
+  playSound('rotate');
   state.preview = null;
   state.animateHints = true; // render() sẽ cho mũi tên trượt theo cung thay vì nhảy
   render();
@@ -244,6 +244,7 @@ function holdActive() {
 function placeAt(anchor) {
   if (state.over || state.animating) return;
   const turn = game.place(state, anchor);
+  if (turn.error) playSound('invalid');
   if (turn.error === 'tutorial') return render('Drag onto the glowing cell!', true);
   if (turn.error) return render(turn.error, true);
   if (!turn.ok) return;
@@ -522,7 +523,7 @@ function finishTurn(turn) {
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   if (match.clusters.length) playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
-  else playSound('pick');
+  else playSound('place');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
   const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}` : '';
@@ -645,7 +646,7 @@ function moveCardDrag(event) {
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
   document.body.classList.add('card-dragging');
   if (!cardDrag.ghost) {
-    playSound('pick');
+    playSound('lift');
     cardDrag.ghost = $('active-card').cloneNode(true);
     cardDrag.ghost.removeAttribute('id');
     cardDrag.ghost.className = 'piece-card drag-ghost';
@@ -888,7 +889,7 @@ function rotateWhileDragging(event) {
   event.stopPropagation();
   const turn = game.rotate(state);
   if (!turn.ok) return;
-  playSound('pick');
+  playSound('rotate');
   state.preview = null;
   render();
   if (turn.tutorialAdvanced) showNextTutorial(250);
@@ -933,6 +934,7 @@ function petCat(cell) {
   cell.classList.add('petted');
   clearTimeout(cell.petTimer);
   cell.petTimer = setTimeout(() => cell.classList.remove('petted'), 1100);
+  playSound('pet');
   if (reduceMotion.matches) return;
   const layer = fxLayer();
   for (let i = 0; i < 4; i++) {
@@ -1018,7 +1020,7 @@ function smashAt(cell) {
   if (!turn.ok) return render(turn.error || '', !!turn.error);
   useBooster('hammer');
   hammerArmed = false;
-  playSound('merge', 1);
+  playSound('smash');
   if (turn.object.block) breakCrates([index], 0);
   else if (turn.freed) rattleCages({ caged: [], freed: [index] }, 0);
   else if (!reduceMotion.matches) {
@@ -1056,6 +1058,8 @@ function renderLowMoves() {
   box.classList.toggle('danger', live && left <= LOW_MSG_AT);
   box.classList.toggle('warn', live && left > LOW_MSG_AT && left <= Math.ceil(state.level.moves * 0.3));
   const low = live && left <= LOW_CATS_AT;
+  // Vừa chuyển sang "sắp hết lượt": mèo kêu lo lắng một tiếng (không kêu lại mỗi lượt)
+  if (low && !document.body.classList.contains('low-moves')) playSound('worried');
   document.body.classList.toggle('low-moves', low);
   if (!low) return;
   const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
@@ -1219,6 +1223,7 @@ function leaveResult() {
 function endLevel(win, reason = '') {
   state.over = true;
   state.outcome ??= { win, reason, stars: 0 };
+  if (!win) playSound('lose');
   const gift = recordTry(win, win ? 'win' : state.moves > 0 ? 'stuck' : 'moves');
   if (gift) storeBoosters({ ...getBoosters(), moves: getBoosters().moves + 1 });
   // Thua sát nút mà chưa dùng booster: mời dùng +lượt ở lần sau (luật sát nút giữ nguyên độ khó).

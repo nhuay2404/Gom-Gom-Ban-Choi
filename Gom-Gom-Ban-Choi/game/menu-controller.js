@@ -258,6 +258,7 @@ function petRoomCat(cat) {
   cat.classList.add('petted');
   clearTimeout(cat.petTimer);
   cat.petTimer = setTimeout(() => cat.classList.remove('petted'), 1100);
+  playSound('pet');
   if (reduceMotion.matches) return;
   const room = cat.closest('.room'), box = room.getBoundingClientRect(), rect = cat.getBoundingClientRect();
   for (let i = 0; i < 4; i++) {

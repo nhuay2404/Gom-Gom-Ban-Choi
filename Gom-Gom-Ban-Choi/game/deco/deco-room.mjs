@@ -1483,14 +1483,14 @@ export function createRoom() {
     controls.enableRotate = false; controls.enableZoom = false; controls.enablePan = false; controls.autoRotate = false; stopGlide();
     const p = carryPoint(event);
     cats.pickUp(cat, p?.x ?? cat.x, p?.z ?? cat.z);
-    playSound('pick');
+    playSound('catLift');
     navigator.vibrate?.(12);
     renderer.domElement.classList.add('carrying');
   }
   function endCarry() {
     if (!carrying) return;
     cats.drop(carrying.cat);
-    playSound('draw');
+    playSound('mew');
     carrying = null;
     controls.enableRotate = true; controls.enableZoom = true; controls.enablePan = hub;
     renderer.domElement.classList.remove('carrying');
@@ -1540,6 +1540,7 @@ export function createRoom() {
       const cat = cats.hit(raycaster);
       if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
+        if (mood !== 'sleepy') playSound(mood === 'grumpy' ? 'grumpy' : 'pet');
         if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
         else if (mood === 'warning') spawnHearts(x, y, '♥', 1);
         else spawnHearts(x, y);
