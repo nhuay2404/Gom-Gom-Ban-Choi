@@ -345,18 +345,32 @@ function renderDeco() {
   // Món đã xây thì thẻ biến mất (đổi kiểu: chạm món trong cảnh). Xây hết: ẩn cả hàng thẻ, hàng chọn khu tụt xuống sát thanh tab.
   const todo = decoBases(deco.zone).filter(base => !isOwned(deco, base));
   cards.hidden = !todo.length;
-  cards.replaceChildren(...todo.map(base => {
+  // Cập nhật thẻ tại chỗ (giữ nguyên phần tử + ảnh thumbnail đã giải mã): dựng lại cả hàng mỗi lần chạm thẻ thì trình duyệt
+  // phải giải mã lại hàng chục ảnh PNG + vẽ lại, đúng khung hình camera bắt đầu lướt -> giật.
+  const existing = new Map([...cards.children].map(card => [card.dataset.id, card]));
+  const next = todo.map(base => {
     const status = itemStatus(deco, base, unlocked), picked = decoPick === base;
-    const card = document.createElement('button');
-    card.className = `deco-card ${status}${picked ? ' picked' : ''}`;
-    card.dataset.id = base.id;
-    card.setAttribute('role', 'listitem');
-    const foot = status === 'locked' ? `<em class="deco-card-price lock">🔒 Lv ${base.lock}</em>`
+    let card = existing.get(base.id);
+    if (!card) {
+      card = document.createElement('button');
+      card.dataset.id = base.id;
+      card.setAttribute('role', 'listitem');
+    }
+    const className = `deco-card ${status}${picked ? ' picked' : ''}`;
+    if (card.className !== className) card.className = className;
+    const art = thumbOf(base), foot = status === 'locked' ? `<em class="deco-card-price lock">🔒 Lv ${base.lock}</em>`
       : picked && status === 'buy' ? `<em class="deco-card-price act" data-act="buy">Buy ${coin(base.price)}</em>`
       : `<em class="deco-card-price">${coin(base.price)}</em>`;
-    card.innerHTML = `<span class="deco-card-art">${thumbOf(base)}</span><span class="deco-card-name">${base.name}</span>${foot}`;
+    if (card.artHtml !== art) { card.artHtml = art; card.innerHTML = `<span class="deco-card-art">${art}</span><span class="deco-card-name">${base.name}</span>${foot}`; }
+    else if (card.footHtml !== foot) card.lastElementChild.outerHTML = foot;
+    card.footHtml = foot;
     return card;
-  }));
+  });
+  if (next.length !== cards.children.length || next.some((card, i) => cards.children[i] !== card)) cards.replaceChildren(...next);
+  // Chuẩn bị trước lúc rảnh: model các thẻ xem thử được + ảnh các kiểu trong bảng đổi món của khu (không thì lần đầu chạm
+  // phải dựng / chụp ngay trong khung hình, camera đứng hình lúc đang lướt).
+  room3d?.prewarm(todo.filter(base => itemStatus(deco, base, unlocked) !== 'locked'));
+  warmDecoThumbs(deco.zone);
   // Đổi khu: về đầu hàng thẻ
   if (lastCardZone !== deco.zone) { lastCardZone = deco.zone; cards.scrollLeft = 0; }
   renderDecoPop();
@@ -433,6 +447,25 @@ function closeDecoPop(render = true) {
   room3d?.lockView(false);
   room3d?.focus(null, false);
   if (render) renderDeco();
+}
+// Ảnh thumbnail (render model + mã hoá PNG, ~20–60 ms mỗi ảnh) cho mọi kiểu đồ / tường / sàn của khu: chụp từng ảnh một lúc
+// trình duyệt rảnh, để mở bảng đổi món không phải chụp hàng loạt ngay lúc camera đang lướt tới món.
+const idleCall = globalThis.requestIdleCallback ?? (fn => setTimeout(() => fn({ timeRemaining: () => 12 }), 40));
+let thumbQueue = [], thumbZone = '', thumbPending = false;
+function warmDecoThumbs(zone) {
+  if (!decoThumbnail) return;
+  if (zone !== thumbZone) {
+    thumbZone = zone;
+    thumbQueue = [...CATALOG.filter(entry => entry.cat === 'furniture' && entry.zone === zone && decoVisible(entry)),
+      ...catalogFor(zone, 'walls'), ...catalogFor(zone, 'floors')];
+  }
+  if (thumbPending || !thumbQueue.length) return;
+  thumbPending = true;
+  idleCall(deadline => {
+    thumbPending = false;
+    while (thumbQueue.length && deadline.timeRemaining() > 10) decoThumbnail(thumbQueue.shift());
+    if (!$('deco').hidden) warmDecoThumbs(thumbZone);
+  });
 }
 function decoPopOptions(deco) {
   if (decoPop.key === 'cats') return CATALOG.filter(entry => entry.cat === 'cats');
@@ -545,8 +578,8 @@ function placeDecoPop() {
     const box = room3d?.screenRectOf(decoPop.key) || { left: decoPop.x, right: decoPop.x, top: decoPop.y };
     // Mép trên của khung bao trọn model (cả món phẳng như thảm: mép sau của thảm): bảng nằm trên hẳn, không đè lên phần nào.
     const cx = (box.left + box.right) / 2, need = top + h + gap - box.top;
-    // Còn thiếu chỗ sau cú lướt: trượt bù từ từ; chạm mép khu nhà (không dời được nữa) thì thôi, không giằng co rung camera.
-    if (need > 1 && !decoPop.stuck && room3d && !room3d.nudge(Math.min(need * .12, 8))) decoPop.stuck = true;
+    // Còn thiếu chỗ sau cú lướt: lướt bù một lần (room3d.nudge tự làm mượt, đang lướt thì đợi); chạm mép khu nhà thì thôi.
+    if (need > 1 && !decoPop.stuck && room3d && !room3d.nudge(need)) decoPop.stuck = true;
     x = clamp(cx - w / 2, minX, maxX - w);
     y = Math.max(box.top - gap - h, top);
     pop.style.setProperty('--tail', `${clamp(cx - x, 18, w - 18)}px`);

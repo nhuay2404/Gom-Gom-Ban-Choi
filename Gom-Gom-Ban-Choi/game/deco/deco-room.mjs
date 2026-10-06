@@ -802,12 +802,97 @@ export function createRoom() {
     clampDelta.set(THREE.MathUtils.clamp(t.x, panBox.min.x, panBox.max.x) - t.x, 0, THREE.MathUtils.clamp(t.z, panBox.min.z, panBox.max.z) - t.z);
     if (clampDelta.lengthSq()) { t.add(clampDelta); camera.position.add(clampDelta); }
   }
-  // Lướt tâm nhìn (và camera theo cùng) tới một điểm.
-  let glide = null;
-  // `radius`: độ xa camera lúc tới nơi (bỏ trống = giữ nguyên).
+  // Lướt camera (tâm nhìn, độ xa, góc xoay ngang) tới đích bằng lò xo tắt dần tới hạn (SmoothDamp) hai tầng, không theo thời gian
+  // cố định: "điểm ngắm" đuổi theo đích, camera đuổi theo điểm ngắm. Một tầng thì cú lướt bắt đầu bằng gia tốc lớn nhất (giật nhẹ
+  // ở đầu); hai tầng cho đường cong chữ S: tăng tốc mềm, đậu êm. Vận tốc được giữ khi đổi đích giữa chừng (chạm món khác lúc đang
+  // lướt, bảng đổi món cần trượt bù...) nên không khựng, không quay ngược; không phụ thuộc tốc độ khung hình. Một bộ duy nhất cho
+  // cả lướt + xoay + zoom (trước đây là hai hoạt ảnh thời gian cố định chạy chồng nhau, giằng co với quán tính của OrbitControls).
+  const GLIDE_KEYS = ['x', 'y', 'z', 'r', 'th'];
+  const glide = { active: false, smooth: .22, goal: {}, aim: {}, vAim: {}, vCur: {} };
+  // Unity SmoothDamp cho một số: trả về giá trị mới, vận tốc ghi vào box[key].
+  function smoothDamp(current, goal, box, key, smooth, dt) {
+    const omega = 2 / smooth, x = omega * dt, exp = 1 / (1 + x + .48 * x * x + .235 * x * x * x);
+    const change = current - goal, temp = (box[key] + omega * change) * dt;
+    box[key] = (box[key] - omega * temp) * exp;
+    return goal + (change + temp) * exp;
+  }
+  // Bỏ quán tính đang trôi của OrbitControls (thả tay khi đang kéo / chụm) để nó không đẩy ngược cú lướt.
+  function stopInertia() {
+    controls._sphericalDelta?.set(0, 0, 0);
+    controls._panOffset?.set(0, 0, 0);
+    if ('_scale' in controls) controls._scale = 1;
+  }
+  function stopGlide() {
+    glide.active = false;
+    glide.goal = {};
+  }
+  // Giá trị hiện tại của từng trục camera (tâm nhìn x / y / z, độ xa r, góc xoay ngang th).
+  function cameraNow(key) {
+    if (key === 'x' || key === 'y' || key === 'z') return controls.target[key];
+    spherical.setFromVector3(camDir.subVectors(camera.position, controls.target));
+    return key === 'r' ? spherical.radius : spherical.theta;
+  }
+  // Đặt đích cho một trục; trục chưa chạy thì điểm ngắm xuất phát đúng chỗ camera, vận tốc 0 (đang chạy thì giữ nguyên đà).
+  function setGoal(key, value) {
+    if (!(key in glide.goal)) { glide.aim[key] = cameraNow(key); glide.vAim[key] = 0; glide.vCur[key] = 0; }
+    glide.goal[key] = value;
+  }
+  // Cú lướt mới (camera đang đứng yên) đợi một khung: khung ngay sau cú chạm thường nặng (món vừa hiện, bảng / thẻ vẽ lại),
+  // để nó trôi qua lúc camera còn đứng yên thì chuyển động nhìn thấy bắt đầu đều, không khựng ở bước đầu.
+  function startGlide(ms) {
+    if (!glide.active) glide.hold = 1;
+    glide.active = true;
+    glide.smooth = ms / 3200;
+    stopInertia();
+  }
+  // `radius`: độ xa camera lúc tới nơi (bỏ trống = giữ nguyên). `ms`: độ dài cảm nhận của cú lướt (≈ thời gian tới gần đích).
   function glideTo(to, ms = 700, radius) {
-    const r = camera.position.distanceTo(controls.target);
-    glide = { from: controls.target.clone(), to: to.clone(), start: performance.now(), ms, fromR: r, toR: radius ?? r };
+    startGlide(ms);
+    const goal = clampGoal(tmpGlide.copy(to));
+    setGoal('x', goal.x); setGoal('y', goal.y); setGoal('z', goal.z);
+    if (radius != null) setGoal('r', radius);
+  }
+  // Xoay ngang tới góc `to` (rad) theo đường ngắn nhất, cùng nhịp với cú lướt.
+  function turnToward(to) {
+    startGlide(glide.active ? glide.smooth * 3200 : 700);
+    const from = cameraNow('th');
+    setGoal('th', from + ((((to - from) % TAU) + TAU + Math.PI) % TAU - Math.PI));
+  }
+  // Đích của cú lướt cũng nằm trong khung kéo được (clampPan): không thì tới gần mép, clampPan kéo ngược lại mỗi khung -> rung.
+  const tmpGlide = new THREE.Vector3();
+  function clampGoal(p) {
+    if (!hub) return p;
+    panBox.makeEmpty();
+    openZones().forEach(zone => {
+      zoneCenter(zone, tmpCenter);
+      const edge = decoMode ? HALF + DECO_OVERSHOOT : HALF * .8;
+      panBox.expandByPoint(tmpCenter.clone().addScalar(-edge)).expandByPoint(tmpCenter.clone().addScalar(edge));
+    });
+    p.x = THREE.MathUtils.clamp(p.x, panBox.min.x, panBox.max.x);
+    p.z = THREE.MathUtils.clamp(p.z, panBox.min.z, panBox.max.z);
+    return p;
+  }
+  function stepGlide(dt) {
+    if (!glide.active) return;
+    if (glide.hold > 0) { glide.hold--; return; }
+    const half = glide.smooth * .5, t = controls.target;
+    spherical.setFromVector3(camDir.subVectors(camera.position, t));
+    const cur = { x: t.x, y: t.y, z: t.z, r: spherical.radius, th: spherical.theta };
+    let settled = true;
+    for (const key of GLIDE_KEYS) {
+      if (!(key in glide.goal)) continue;
+      // Xoay ngang chậm hơn chút so với trượt: quay góc lớn trên vòng xa trông nhanh hơn trượt cùng thời gian.
+      const smooth = key === 'th' ? half * 1.15 : half;
+      glide.aim[key] = smoothDamp(glide.aim[key], glide.goal[key], glide.vAim, key, smooth, dt);
+      cur[key] = smoothDamp(cur[key], glide.aim[key], glide.vCur, key, smooth, dt);
+      const eps = key === 'th' ? 1e-4 : 1e-3;
+      if (Math.abs(cur[key] - glide.goal[key]) > eps || Math.abs(glide.vCur[key]) > eps || Math.abs(glide.vAim[key]) > eps) settled = false;
+    }
+    if (settled) for (const key of Object.keys(glide.goal)) cur[key] = glide.goal[key];
+    t.set(cur.x, cur.y, cur.z);
+    spherical.radius = cur.r; spherical.theta = cur.th;
+    camera.position.setFromSpherical(spherical).add(t);
+    if (settled) stopGlide();
   }
 
   const hemi = new THREE.HemisphereLight('#fff8e8', '#e0b98a', 1.15 * (TOON ? TOON_LIGHT.hemi : 1));
@@ -1031,6 +1116,31 @@ export function createRoom() {
     }
     return furniture[id];
   }
+  // Deco: dựng sẵn (ẩn) món sắp được xem thử + tạo viền + biên dịch shader lúc trình duyệt rảnh. Không làm trước thì lần đầu chạm
+  // thẻ, khung hình đầu tiên phải dựng model + biên dịch shader (đứng hình 100–400 ms ngay lúc camera bắt đầu lướt).
+  const idle = globalThis.requestIdleCallback ?? (fn => setTimeout(() => fn({ timeRemaining: () => 12 }), 40));
+  const warmQueue = [];
+  let warmPending = false;
+  function prewarm(entries) {
+    for (const entry of entries) if (!warmQueue.includes(entry)) warmQueue.push(entry);
+    if (warmPending || !warmQueue.length) return;
+    warmPending = true;
+    idle(deadline => {
+      warmPending = false;
+      while (warmQueue.length && deadline.timeRemaining() > 6) {
+        const entry = warmQueue.shift(), current = furniture[slotOf(entry)];
+        // Chỗ đang có món hiện trong cảnh, hoặc đã dựng sẵn đúng món này: bỏ qua.
+        if (!PLACES[slotOf(entry)] || current?.visible || current?.userData.itemId === entry.id) continue;
+        const node = piece(entry);
+        addOutlines(node);
+        // compileAsync chỉ duyệt vật đang hiện: bật tạm trong lúc gom chất liệu (đồng bộ), biên dịch chạy nền.
+        node.visible = true;
+        renderer.compileAsync(node, camera, scene).catch(() => {});
+        node.visible = false;
+      }
+      prewarm([]);
+    });
+  }
 
   // Ngày / đêm: đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc, đèn đứng, máy sưởi) rực hơn,
   // bướm đi ngủ, mèo hay ngủ hơn (room-cats.mjs đọc ctx.night).
@@ -1192,11 +1302,11 @@ export function createRoom() {
   // Quay camera về phía một món đồ (camera đứng đối diện, nhìn món đồ tựa lưng vào tường).
   // Món đó cũng thành tâm zoom ở Deco (zoomFocus): zoom vào thì tâm nhìn trượt dần tới món, zoom ra thì về giữa khu.
   // focus(null) = bỏ chọn, zoom lại quanh giữa khu.
-  let turn = null, zoomFocus = null;
-  // turnTo = false: giữ góc xoay đang có (chạm thẳng vào món trong cảnh: người chơi đang nhìn thấy nó rồi).
+  let zoomFocus = null;
+  // turn = false: giữ góc xoay đang có (chạm thẳng vào món trong cảnh: người chơi đang nhìn thấy nó rồi).
   const FOCUS_ZOOM = 12; // khoảng cách camera = cỡ món × FOCUS_ZOOM (FOV toon hẹp), kẹp trong 55%–110% độ xa mặc định
   // lift (px): món nằm thấp hơn giữa khung chừng ấy — chừa chỗ phía trên cho bảng đổi món, tính sẵn trong cú lướt.
-  function focus(id, turnTo = true, lift = 0) {
+  function focus(id, turn = true, lift = 0) {
     const slot = id && slotOf(itemById(id) || { id }), place = slot && PLACES[slot];
     zoomFocus = place ? slot : null;
     selectedSlot = zoomFocus;
@@ -1214,11 +1324,7 @@ export function createRoom() {
       if (lift) goal.add(groundShift(lift, radius, groundFwd)); // tâm nhìn vượt qua món về phía trước: món tụt xuống dưới giữa khung
       glideTo(goal, 750, radius);
     }
-    if (!turnTo) return;
-    const from = controls.getAzimuthalAngle();
-    let to = Math.atan2(-place[0], -place[1]);
-    to = from + ((((to - from) % TAU) + TAU + Math.PI) % TAU - Math.PI);
-    turn = { from, to, start: performance.now() };
+    if (turn) turnToward(Math.atan2(-place[0], -place[1]));
   }
 
   // ---------- Deco: chạm món / bề mặt, sáng nhẹ món có đồ mới, toạ độ màn hình của món (để đặt bảng đổi món cạnh nó) ----------
@@ -1257,7 +1363,7 @@ export function createRoom() {
   const insideZone = (zone, p, margin) => { const r = zoneRect(zone); return p.x > r.x0 + margin && p.x < r.x1 - margin && p.z > r.z0 + margin && p.z < r.z1 - margin; };
   // Deco: người chơi kéo cảnh sang hẳn khu khác (tâm nhìn vào sâu trong khu đó .4 m) thì Deco đổi theo khu đang ở giữa.
   function followDrag() {
-    if (!decoMode || !onZoneView || glide || turn || insideZone(zoneId, controls.target, 0)) return;
+    if (!decoMode || !onZoneView || glide.active || insideZone(zoneId, controls.target, 0)) return;
     const next = Object.keys(opened).find(zone => opened[zone] && zone !== zoneId && insideZone(zone, controls.target, .4));
     if (!next) return;
     zoneId = next;
@@ -1323,13 +1429,14 @@ export function createRoom() {
     return out.multiplyScalar(dy * perPx / Math.max(.3, Math.cos(polar)));
   }
   // Trả về false nếu không dời được (tâm nhìn đã chạm mép khu nhà): bên gọi thôi đẩy, khỏi giằng co với giới hạn kéo.
+  // Không dời phụt: bắt đầu một cú lướt ngắn tới chỗ đã dời (đang lướt thì đợi lướt xong, đo lại rồi mới bù).
   function nudge(dy) {
-    if (!container || !dy || glide) return true; // đang lướt tới món: đợi lướt xong
+    if (!container || !dy || glide.active) return true;
     groundShift(dy, camera.position.distanceTo(controls.target), groundFwd);
-    const before = controls.target.clone();
-    controls.target.add(groundFwd); camera.position.add(groundFwd);
-    if (hub) clampPan();
-    return before.distanceToSquared(controls.target) > 1e-6;
+    const goal = clampGoal(tmpGoal.copy(controls.target).add(groundFwd));
+    if (goal.distanceToSquared(controls.target) < 1e-6) return false;
+    glideTo(goal, 420);
+    return true;
   }
   function screenOf(slot) {
     const node = furniture[slot];
@@ -1359,7 +1466,7 @@ export function createRoom() {
   const carryPoint = event => { aim(event); return raycaster.ray.intersectPlane(carryPlane, hit) ? hit : null; };
   function startCarry(cat, event) {
     carrying = { cat, id: event.pointerId };
-    controls.enableRotate = false; controls.enableZoom = false; controls.enablePan = false; controls.autoRotate = false; turn = null; glide = null;
+    controls.enableRotate = false; controls.enableZoom = false; controls.enablePan = false; controls.autoRotate = false; stopGlide();
     const p = carryPoint(event);
     cats.pickUp(cat, p?.x ?? cat.x, p?.z ?? cat.z);
     playSound('pick');
@@ -1448,7 +1555,8 @@ export function createRoom() {
   }
 
   let resumeTimer = 0, autoRotate = false;
-  controls.addEventListener('start', () => { clearTimeout(resumeTimer); controls.autoRotate = false; turn = null; if (hub) glide = null; });
+  // Người chơi chạm kéo / chụm: dừng cú lướt ngay (giữ chỗ đang tới), quyền điều khiển về tay người chơi.
+  controls.addEventListener('start', () => { clearTimeout(resumeTimer); controls.autoRotate = false; stopGlide(); });
   controls.addEventListener('end', () => { resumeTimer = setTimeout(() => { controls.autoRotate = autoRotate; }, 2500); });
 
   // ---------- Đồ đạc rung nhẹ khi mèo đi sát qua ----------
@@ -1538,34 +1646,20 @@ export function createRoom() {
   function frame(now) {
     controls.dampingFactor = 1 - (1 - DAMPING) ** (Math.min(.1, (now - (lastFrame || now)) / 1000 || 1 / 60) * 60);
     const t = now / 1000;
-    if (turn) {
-      const k = Math.min(1, (now - turn.start) / 650), ease = 1 - (1 - k) ** 3;
-      spherical.setFromVector3(camera.position.clone().sub(controls.target));
-      spherical.theta = turn.from + (turn.to - turn.from) * ease;
-      camera.position.setFromSpherical(spherical).add(controls.target);
-      if (k === 1) turn = null;
-    }
-    if (glide) {
-      // ease-out bậc 4: bắt đầu ngay theo tay chạm, chậm dần và đậu êm vào chỗ (không khựng ở đầu như ease-in-out)
-      const k = Math.min(1, (now - glide.start) / glide.ms), ease = 1 - (1 - k) ** 4;
-      clampDelta.lerpVectors(glide.from, glide.to, ease).sub(controls.target);
-      controls.target.add(clampDelta); camera.position.add(clampDelta);
-      if (glide.toR !== glide.fromR) camera.position.sub(controls.target).setLength(glide.fromR + (glide.toR - glide.fromR) * ease).add(controls.target);
-      if (k === 1) glide = null;
-    }
-    if (hub) clampPan();
+    stepGlide(Math.min(.05, (now - (lastFrame || now)) / 1000 || 1 / 60));
+    if (hub && !glide.active) clampPan();
     followDrag();
     controls.update();
     // Home: thu nhỏ thì tâm nhìn trôi dần về giữa khu nhà (thu nhỏ hết cỡ = thấy trọn khu nhà ở giữa màn hình).
     const radius = camera.position.distanceTo(controls.target);
-    if (hub && !glide && lastRadius && radius > lastRadius + 1e-3) {
+    if (hub && !glide.active && lastRadius && radius > lastRadius + 1e-3) {
       const k = Math.min(1, (radius - lastRadius) / Math.max(.05, HUB_MAX - lastRadius));
       clampDelta.copy(decoMode ? zoneCenter(zoneId, tmpCenter) : siteCenter()).sub(controls.target).multiplyScalar(k);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
     }
     // Deco: zoom vào (khoảng cách giảm) kéo tâm nhìn về món đang chọn theo đúng tỉ lệ đã zoom, nên zoom sát hết cỡ thì
     // món nằm giữa khung; zoom ra thì tâm trôi về giữa khu (zoom ra hết = thấy trọn khu như lúc đầu).
-    if (!hub && !glide && !turn && lastRadius && Math.abs(radius - lastRadius) > 1e-3) {
+    if (!hub && !glide.active && lastRadius && Math.abs(radius - lastRadius) > 1e-3) {
       const item = zoomFocus && furniture[zoomFocus];
       const zoomIn = radius < lastRadius, goal = zoomIn && item?.visible ? itemBox.setFromObject(item).getCenter(tmpGoal) : zoneCenter(zoneId, tmpGoal);
       if (zoomIn ? item?.visible : true) {
@@ -1676,13 +1770,13 @@ export function createRoom() {
       decoMode = !!options.deco;
       autoRotate = !!options.autoRotate;
       controls.autoRotate = autoRotate;
-      glide = null;
+      stopGlide();
       // Deco: tâm nhìn về đúng khu đang trang trí (giữ góc xoay / độ xa đang có). Home: bắt đầu từ vườn.
       const home = zoneCenter(hub && !decoMode ? 'garden' : zoneId);
       clampDelta.subVectors(home, controls.target);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
       // Home luôn mở ở góc nhìn đẹp mặc định, dù ở Deco người chơi đã xoay/zoom tới đâu.
-      if (options.resetView) { turn = null; camera.position.copy(HOME_VIEW).add(home).setY(HOME_VIEW.y + home.y - .8); }
+      if (options.resetView) { camera.position.copy(HOME_VIEW).add(home).setY(HOME_VIEW.y + home.y - .8); }
       // Deco ở vườn đã mở rộng: lùi xa hơn góc Home mặc định cho thấy trọn cả vườn.
       if (decoMode && zoneReach(zoneId) > 1) camera.position.sub(controls.target).setLength(HOME_VIEW.length() * WIDE).add(controls.target);
       controls.update();
@@ -1717,6 +1811,8 @@ export function createRoom() {
     refit: () => resize(),
     // Deco: khoá / mở khoá điều khiển camera (bảng đổi kiểu món đang mở).
     lockView,
+    // Deco: dựng sẵn (ẩn) các món sắp xem thử lúc rảnh, để lần chạm đầu không đứng hình.
+    prewarm,
     // Deco: hiệu ứng hạt tại một chỗ — kind = 'preview' | 'swap' | 'buy'.
     fx: playFx,
     setNight,
