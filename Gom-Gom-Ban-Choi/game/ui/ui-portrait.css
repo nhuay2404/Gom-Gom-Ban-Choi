@@ -227,13 +227,15 @@ body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
 /* Cột trái: Daily, Starter Pack */
 .fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./skins/figma-home/btn-daily.png')}
 .fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-home/btn-starter.png')}
-/* Feedback: dưới Starter Pack, vẽ bằng CSS theo kiểu hai nút ảnh Figma (ô kem bo góc viền nâu, icon + chữ nâu đậm); mở form góp ý. */
-.fh-feedback{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(250 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));box-sizing:border-box;
+/* Feedback: dưới Starter Pack, vẽ bằng CSS theo kiểu hai nút ảnh Figma (ô kem bo góc viền nâu, icon + chữ nâu đậm); mở form góp ý.
+   Cỡ = phần ô nhìn thấy trong ảnh Daily / Starter (ảnh 60u có lề trong suốt + chỗ cho chấm "!": ô thật ~53 × 55u, lùi vào ~4u),
+   cách Starter đúng bằng khoảng Daily → Starter (~8.5u). */
+.fh-feedback{left:calc(21 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(253.5 * var(--u));width:calc(53 * var(--u));height:calc(55 * var(--u));box-sizing:border-box;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));text-decoration:none;
-  background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.5 * var(--u)) solid #6b3329!important;border-radius:calc(14 * var(--u));
-  box-shadow:inset 0 0 0 calc(2 * var(--u)) #fff,0 calc(2.5 * var(--u)) 0 #6b332955}
-.fh-feedback svg{width:calc(30 * var(--u));height:calc(30 * var(--u));fill:#ff8fb0;stroke:#6b3329;stroke-width:1.8;stroke-linejoin:round;color:#fff}
-.fh-feedback span{font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;line-height:1;color:#6b3329}
+  background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.8 * var(--u)) solid #6b3329!important;border-radius:calc(12 * var(--u));
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff,0 calc(2.5 * var(--u)) 0 #6b332955}
+.fh-feedback svg{width:calc(25 * var(--u));height:calc(25 * var(--u));fill:#ff8fb0;stroke:#6b3329;stroke-width:1.8;stroke-linejoin:round;color:#fff}
+.fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
 .fh-feedback:active{translate:0 calc(2 * var(--u))}
 /* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
 .fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
@@ -675,3 +677,140 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 /* Mèo 3D ở màn thưởng: khung vuông to hơn art 2D, canvas phủ kín khung. */
 .cr-cat.cr-3d{width:min(78vw,320px);aspect-ratio:1}
 .cr-cat canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ===== Deco kiểu "xây chỗ" (như Monopoly Go): cảnh 3D phủ cả màn; dưới đáy là hàng chọn khu + MỘT hàng thẻ món vuốt ngang
+   (nằm ngay trên thanh tab). Bảng đổi món nổi cạnh món vừa chạm, đuôi chỉ vào món (vị trí do menu-controller.js đặt). ===== */
+.screen.deco,.screen.deco:not(.home){padding:0;gap:0;overflow:hidden}
+.screen.deco>.room.deco-view,.screen.deco>.room.deco-view.is-3d{position:absolute;inset:0;z-index:0;width:auto;height:auto;max-height:none;margin:0;border:0;
+  -webkit-mask-image:none;mask-image:none}
+.screen.deco>.wallet-hud{position:absolute;z-index:6;top:calc(18 * var(--u) + env(safe-area-inset-top));left:50%;translate:-50% 0}
+/* Nút mèo: cột trái, cùng toạ độ cột nút ở Home */
+.deco-side{position:absolute;z-index:6;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(17 * var(--u) + env(safe-area-inset-left));width:auto;
+  display:flex;flex-direction:column;gap:calc(8 * var(--u))}
+.deco-side button{display:flex;flex-direction:column;align-items:center;justify-content:center;width:calc(58 * var(--u));height:calc(58 * var(--u));min-height:0;padding:0;
+  border:calc(3 * var(--u)) solid #73392a;border-radius:calc(16 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6,0 calc(3 * var(--u)) 0 #73392a44;
+  color:#73392a;font-weight:900;font-size:calc(11 * var(--u));line-height:1.1;letter-spacing:0;text-transform:none}
+.deco-side button.on{color:#fff;border-color:#2f7d3a;background:linear-gradient(#93df82,#5fbe57)}
+.deco-side svg{width:calc(26 * var(--u));height:calc(26 * var(--u));fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.deco-side button:active{translate:0 calc(2 * var(--u))}
+/* Đáy: chọn khu + hàng thẻ */
+.deco-dock{position:absolute;z-index:6;left:0;right:0;bottom:calc(86 * var(--u) + env(safe-area-inset-bottom));width:auto;display:flex;flex-direction:column;align-items:center;gap:6px;
+  pointer-events:none}
+.deco-dock>*{pointer-events:auto}
+.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px)}
+.deco-dock .zone-switch button{min-height:36px;padding:0 12px}
+.zone-switch button small{margin-left:3px;font-size:11px;opacity:.8}
+.deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:var(--frame-w);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  padding:8px 12px 6px;scrollbar-width:none;touch-action:pan-x}
+.deco-cards::-webkit-scrollbar{display:none}
+.deco-card{position:relative;flex:none;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;width:92px;min-height:0;padding:0 0 7px;
+  border:3px solid #73392a;border-radius:16px;background:#fffdf6;box-shadow:0 3px 0 #73392a55;overflow:hidden;color:#5b2e1c;letter-spacing:0;text-transform:none;
+  transition:transform .15s,box-shadow .15s}
+.deco-card-art{display:grid;place-items:center;width:100%;height:70px;background:linear-gradient(#cfeefe,#eaf8ff);border-bottom:2px solid #e8dcc4}
+.deco-card .thumb{width:62px;height:62px;border-radius:10px;background:var(--c,#ddd)}
+.deco-card .thumb-3d{object-fit:contain;background:transparent}
+.deco-card-name{max-width:86px;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:900}
+.deco-card-price{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-height:22px;padding:0 8px;border-radius:999px;background:#fff4cc;border:1.5px solid #f2c95a;
+  font-style:normal;font-weight:900;font-size:12px;color:#5b2e1c;white-space:nowrap}
+.deco-card-price .ico-coin{width:13px;height:13px}
+.deco-card-price.lock{background:#ece7e0;border-color:transparent;color:#7b7166}
+.deco-card-price.act{background:linear-gradient(#93df82,#5fbe57);border-color:#2f7d3a;color:#fff;box-shadow:0 2px 0 #2f7d3a}
+.deco-card.poor .deco-card-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
+.deco-card.locked{opacity:.7}
+.deco-card.locked .thumb{filter:grayscale(.8)}
+.deco-card.picked{transform:translateY(-6px);border-color:#f2a93c;box-shadow:0 0 0 3px #ffd97a,0 6px 0 #73392a33}
+/* Bảng đổi món: nổi cạnh món, đuôi chỉ vào món (--tail = toạ độ ngang của món trong bảng) */
+.deco-pop{position:absolute;z-index:8;top:0;left:0;width:max-content;max-width:calc(100% - 16px);display:flex;flex-direction:column;gap:6px;padding:8px 10px 10px;
+  border:3px solid #73392a;border-radius:18px;background:#fffdf6;box-shadow:0 6px 0 #73392a33,0 10px 24px #0000002a;color:#5b2e1c}
+.deco-pop[hidden]{display:none}
+@media(prefers-reduced-motion:no-preference){.deco-pop.show{animation:deco-pop-in .2s cubic-bezier(.3,1.5,.5,1)}}
+@keyframes deco-pop-in{from{opacity:0;scale:.85}}
+.deco-pop-head{display:flex;align-items:center;gap:8px;padding:2px 4px 0}
+.deco-pop-head b{flex:1;min-width:0;font-family:var(--display);font-size:17px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deco-pop-items{display:flex;gap:6px;max-width:min(330px,calc(100vw - 40px));overflow-x:auto;scrollbar-width:none;padding:2px}
+.deco-pop-items::-webkit-scrollbar{display:none}
+.deco-opt{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:72px;min-height:0;padding:5px 3px;border-radius:14px;
+  background:#fff;border:2.5px solid #eadfc8;color:#5b2e1c;font-size:10.5px;font-weight:900;letter-spacing:0;text-transform:none}
+.deco-opt .thumb{width:52px;height:52px;border-radius:10px;background:var(--c,#ddd)}
+.deco-opt .thumb-3d{object-fit:contain;background:transparent}
+.deco-opt .cat-thumb{background:none}
+.deco-opt .cat-thumb .cat{width:100%;height:100%}
+.deco-opt-name{max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deco-opt.using{border-color:#4f8a34;background:#f3faec}
+.deco-opt.locked{opacity:.55}
+.deco-opt-tag{position:absolute;top:2px;right:4px;font-size:13px;color:#3fae3a}
+.deco-opt-tag.lock{color:inherit;font-size:11px}
+/* Kiểu chưa có: hiện giá, chạm = sang Shop đúng món */
+.deco-opt.in-shop{background:#fdf6e8;border-style:dashed}
+.deco-opt.in-shop .thumb{opacity:.85}
+.deco-opt-price{display:inline-flex;align-items:center;gap:2px;margin-top:1px;padding:0 6px;border-radius:999px;background:#fff4cc;border:1.5px solid #f2c95a;
+  font-style:normal;font-size:10.5px;line-height:1.5;white-space:nowrap}
+.deco-opt-price .ico-coin{width:11px;height:11px}
+.deco-opt-price.lock{background:#ece7e0;border-color:transparent;color:#7b7166}
+.deco-opt.poor .deco-opt-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
+.deco-opt.needBase,.deco-opt.locked{opacity:.6}
+.deco-pop-tail{position:absolute;left:var(--tail,50%);bottom:-10px;width:16px;height:16px;translate:-50% 0;rotate:45deg;background:#fffdf6;
+  border-right:3px solid #73392a;border-bottom:3px solid #73392a}
+.deco-pop[data-side="below"] .deco-pop-tail{bottom:auto;top:-10px;border:0;border-left:3px solid #73392a;border-top:3px solid #73392a}
+
+/* ===== Shop → Decoration: kiểu khác của món + tường / sàn khác (mua vào kho, đổi trong Deco) ===== */
+.screen.shop .shop-deco{display:flex;flex-direction:column;gap:calc(8 * var(--u))}
+.shop-deco-title{margin:0;text-align:center;font-family:var(--display);font-size:calc(24 * var(--u));font-weight:800;color:#fff;-webkit-text-stroke:calc(5 * var(--u)) #73392a;paint-order:stroke fill}
+.shop-deco-tabs{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.shop-deco-tabs button{min-height:32px;padding:0 12px;border-radius:999px;background:#fff8e4;border:2px solid #e2bd72;color:#5b2e1c;font-weight:900;font-size:12.5px;
+  letter-spacing:0;text-transform:none}
+.shop-deco-tabs button.on{background:var(--green);border-color:#2f7d3a;color:#fff}
+/* Mỗi hàng = một chỗ đặt (hoặc tường / sàn): tiêu đề + dải thẻ vuốt ngang (3 thẻ vừa khung, nhiều hơn thì vuốt) */
+.shop-deco-grid{display:flex;flex-direction:column;gap:calc(10 * var(--u))}
+.shop-deco-row{display:flex;flex-direction:column;gap:calc(4 * var(--u));min-width:0}
+.shop-deco-row-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 calc(4 * var(--u));font-family:var(--display);
+  font-size:calc(16 * var(--u));font-weight:800;color:#fff;-webkit-text-stroke:calc(3.5 * var(--u)) #73392a;paint-order:stroke fill}
+.shop-deco-row-title small{font-family:var(--ui-font,inherit);font-size:calc(11 * var(--u));font-weight:900;color:#73392a;-webkit-text-stroke:0;
+  padding:1px 8px;border-radius:999px;background:#fff8e4}
+.shop-deco-strip{display:flex;flex-wrap:nowrap;gap:calc(6 * var(--u));overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  padding:2px calc(2 * var(--u)) 4px;scrollbar-width:none;touch-action:pan-x pan-y}
+.shop-deco-strip::-webkit-scrollbar{display:none}
+.shop-deco-strip>.shop-deco-item{flex:none;width:calc((100% - 12 * var(--u)) / 3.15);scroll-snap-align:start}
+.shop-deco-item{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;min-height:0;padding:calc(6 * var(--u)) calc(4 * var(--u)) calc(7 * var(--u));
+  border:calc(3 * var(--u)) solid #73392a;border-radius:calc(14 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:#5b2e1c;letter-spacing:0;text-transform:none}
+.shop-deco-item .thumb{width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:10px;background:var(--c,#ddd)}
+.shop-deco-item .thumb-3d{object-fit:contain;background:transparent}
+.shop-deco-item span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--display);font-size:calc(13.5 * var(--u));font-weight:800;line-height:1.15}
+.shop-deco-item small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(10 * var(--u));font-weight:900;color:#a0705a}
+.shop-deco-item em{display:flex;align-items:center;justify-content:center;gap:3px;width:100%;margin-top:calc(4 * var(--u));padding:calc(3 * var(--u)) 0;border:calc(2 * var(--u)) solid #2f7d3a;
+  border-radius:999px;background:linear-gradient(#93df82,#5fbe57);font-style:normal;font-weight:900;font-size:calc(13 * var(--u));color:#fff;white-space:nowrap}
+.shop-deco-item em .ico-coin{width:calc(15 * var(--u));height:calc(15 * var(--u))}
+.shop-deco-item.poor em{border-color:#8b7a63;background:linear-gradient(#cdbfa6,#ad9d80)}
+.shop-deco-item.owned em{border-color:#a9d48a;background:#eef8e4;color:#4f8a34}
+.shop-deco-item.locked em,.shop-deco-item.needBase em{border-color:transparent;background:#ece7e0;color:#7b7166;font-size:calc(11.5 * var(--u))}
+.shop-deco-item.locked .thumb,.shop-deco-item.needBase .thumb{filter:grayscale(.7);opacity:.75}
+.shop-deco-item:active{translate:0 calc(2 * var(--u))}
+/* Ghim "NEW" trên món có đồ mới thay được (bám theo món, menu-controller.js placeDecoPins) */
+.deco-pins{position:absolute;inset:0;z-index:5;width:auto;pointer-events:none}
+.deco-pin{position:absolute;left:0;top:0;will-change:transform}
+.deco-pin[hidden]{display:none}
+.deco-pin::before{content:"NEW";position:absolute;left:0;bottom:6px;translate:-50% 0;padding:2px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;
+  font-size:10px;font-weight:900;line-height:1.2;box-shadow:0 2px 0 #c43d62}
+.deco-pin{font-size:0}
+@media(prefers-reduced-motion:no-preference){.deco-pin::before{animation:deco-pin-bob 1s ease-in-out infinite alternate}}
+@keyframes deco-pin-bob{to{translate:-50% -5px}}
+/* Bảng mở từ cột trái: nằm bên phải nút, đuôi chỉ sang trái */
+.deco-pop[data-side="right"] .deco-pop-tail{left:-10px;top:var(--tail-y,30px);bottom:auto;translate:0 -50%;border:0;border-left:3px solid #73392a;border-bottom:3px solid #73392a}
+.deco-pop[data-side="left"] .deco-pop-tail{left:auto;right:-10px;top:var(--tail-y,30px);bottom:auto;translate:0 -50%;border:0;border-right:3px solid #73392a;border-top:3px solid #73392a}
+.deco-pop.side .deco-pop-items{flex-wrap:wrap;max-width:min(240px,calc(100vw - 120px))}
+/* Xây hết các chỗ trong khu: ẩn hàng thẻ */
+.deco-cards[hidden]{display:none}
+/* Shop: món vừa được gọi từ Deco nháy viền */
+@media(prefers-reduced-motion:no-preference){.shop-deco-item.flash{animation:shop-flash .4s ease-in-out 4 alternate}}
+.shop-deco-item.flash{box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6,0 0 0 4px #ffd23f}
+@keyframes shop-flash{to{box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6,0 0 0 7px #ffd23f}}
+/* Shop 2 tab: "Shop" (gói khởi đầu, booster, gói xu) / "Decoration" (chỉ đồ trang trí) — data-page trên #shop */
+.shop-pages{display:flex;gap:calc(4 * var(--u));padding:calc(4 * var(--u));border-radius:999px;background:#fff8e4;border:calc(3 * var(--u)) solid #73392a;
+  box-shadow:0 calc(3 * var(--u)) 0 #73392a44}
+.shop-pages button{flex:1;min-height:calc(38 * var(--u));padding:0;border-radius:999px;background:transparent;border:0;color:#73392a;font-family:var(--display);
+  font-size:calc(17 * var(--u));font-weight:800;letter-spacing:0;text-transform:none}
+.shop-pages button[aria-selected="true"]{color:#fff;background:linear-gradient(#93df82,#5fbe57);box-shadow:inset 0 calc(2 * var(--u)) 0 #ffffff55;
+  -webkit-text-stroke:calc(3 * var(--u)) #2f6f35;paint-order:stroke fill}
+.screen.shop[data-page="store"]>.shop-deco{display:none}
+.screen.shop[data-page="deco"]>:not(.wallet-hud):not(.shop-pages):not(.shop-deco){display:none}
+.screen.shop[data-page="deco"] .shop-deco-title{display:none} /* tên tab đã là Decoration */
