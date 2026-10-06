@@ -391,6 +391,9 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 /* Deco theo Figma: nền trời giống Home hub (cảnh 3D trong suốt, không viền kem); mục + danh sách đồ nằm trong khung kem viền nâu
    có dấu chân (frame 4 của Figma "Deco", 9-slice giữ góc khi danh sách dài). */
 .screen.deco{background:#bfe6fb url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
+/* Deco ban đêm (nút mặt trăng): nền trời đêm từ Figma (mây xanh tím, trăng, sao) thay trời xanh; ảnh đã có sao nên bỏ dải sao chữ */
+.screen.deco.night{background:#0a1a3c url('./skins/figma-home/night-sky-bg.jpg') 50% 0/cover no-repeat}
+.screen.deco.night .room.deco-view.is-3d.night::before{display:none}
 .room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
 .screen.deco{overflow-x:hidden}
 .deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('./skins/figma-game/deco-panel.png') 90 fill / 28px stretch}

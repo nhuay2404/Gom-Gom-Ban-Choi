@@ -827,6 +827,7 @@ function applyNight() {
   button.setAttribute('aria-label', night ? 'Night, tap for day' : 'Day, tap for night');
   button.title = night ? 'Night' : 'Day';
   $('deco-room').classList.toggle('night', night);
+  $('deco').classList.toggle('night', night); // nền trời đêm của màn Deco (ui-portrait.css)
   room3d?.setNight(night);
 }
 $('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
