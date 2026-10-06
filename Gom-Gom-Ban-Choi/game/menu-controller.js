@@ -324,6 +324,7 @@ const thumbOf = entry => entry.breed ? `<span class="thumb cat-thumb">${catMarku
 const decoBases = zone => slotGroups(zone, 'furniture').map(group => group[0]).filter(decoVisible);
 const builtCount = (deco, zone) => { const bases = decoBases(zone); return [bases.filter(base => isOwned(deco, base)).length, bases.length]; };
 let decoPop = null; // bảng đổi món đang mở: { zone, key (chỗ đặt | 'walls' | 'floors' | 'cats'), x, y }
+let popPreview = null; // kiểu chưa mua đang xem thử trong bảng (chạm nút giá để mua)
 let lastCardZone = '';
 
 function renderDeco() {
@@ -426,6 +427,7 @@ function onScenePick(pick) {
   openDecoPop(pick);
 }
 function openDecoPop(spec) {
+  if (popPreview) { popPreview = null; applyRoom(getDeco()); } // đang xem thử ở bảng khác: bỏ xem
   decoPop = spec;
   // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
   room3d?.lockView(!['cats', 'walls', 'floors'].includes(spec.key));
@@ -443,6 +445,8 @@ function openDecoPop(spec) {
 function closeDecoPop(render = true) {
   if (!decoPop) return;
   decoPop = null;
+  // Đóng bảng khi đang xem thử một kiểu chưa mua: phòng trở về đồ đang dùng.
+  if (popPreview) { popPreview = null; applyRoom(getDeco()); }
   $('deco-pop').hidden = true;
   room3d?.lockView(false);
   room3d?.focus(null, false);
@@ -483,10 +487,13 @@ function renderDecoPop() {
   $('deco-pop-items').replaceChildren(...options.map(entry => {
     const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
     const node = document.createElement('button');
-    node.className = `deco-opt ${status}${shop ? ' in-shop' : ''}`;
+    const previewing = popPreview === entry;
+    node.className = `deco-opt ${status}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}`;
     node.dataset.id = entry.id;
-    const tag = status === 'using' ? '<b class="deco-opt-tag">✓</b>' : status === 'locked' && !shop ? '<b class="deco-opt-tag lock">🔒</b>' : '';
-    const price = !shop ? '' : status === 'locked' ? `<em class="deco-opt-price lock">🔒 Lv ${entry.lock}</em>` : `<em class="deco-opt-price">${coin(entry.price)}</em>`;
+    const tag = status === 'using' && !popPreview ? '<b class="deco-opt-tag">✓</b>' : status === 'locked' && !shop ? '<b class="deco-opt-tag lock">🔒</b>' : '';
+    // Đang xem thử: nút giá thành nút mua (chạm để mua + đặt luôn)
+    const price = !shop ? '' : status === 'locked' ? `<em class="deco-opt-price lock">🔒 Lv ${entry.lock}</em>`
+      : previewing ? `<em class="deco-opt-price buy-now">Buy ${coin(entry.price)}</em>` : `<em class="deco-opt-price">${coin(entry.price)}</em>`;
     node.innerHTML = `${thumbOf(entry)}<span class="deco-opt-name">${entry.name}</span>${tag}${price}`;
     return node;
   }));
@@ -502,9 +509,38 @@ $('deco-pop-items').addEventListener('click', event => {
     if (next.error) return showToast(next.error);
     setDeco(next);
   } else if (!isOwned(deco, entry)) {
-    return goShopItem(entry); // kiểu chưa có: sang Shop, cuộn tới đúng món đó
+    // Kiểu chưa có: chạm lần đầu = xem thử trong phòng (chưa trừ xu); ưng thì chạm vào nút giá để mua + đặt luôn.
+    // Chạm lại chính món đang xem = thôi xem. Không chuyển sang Shop.
+    const fxKey = entry.cat === 'furniture' ? slotOf(entry) : entry.cat;
+    if (popPreview === entry && event.target.closest('.deco-opt-price')) {
+      const bought = buyToStock(deco, entry, unlocked);
+      if (bought.error) return showToast(bought.error === 'Not enough coins' ? `Need ${entry.price - deco.coins} more coins` : bought.error);
+      const placed = useItem(bought, entry);
+      popPreview = null;
+      setDeco(placed.error ? bought : placed);
+      refreshWallet();
+      playSound('reward');
+      if (!room3d) buildFlatRooms();
+      applyRoom(getDeco());
+      room3d?.fx(fxKey, 'buy'); // pháo giấy + vòng sáng khi mua
+      renderDeco();
+      return renderDecoPop();
+    }
+    const status = shopStatus(deco, entry, unlocked);
+    if (status === 'locked') return showToast(`Unlocks at level ${entry.lock}`);
+    if (status === 'needBase') return showToast(`Build the ${itemById(entry.slot).name.toLowerCase()} first`);
+    popPreview = popPreview === entry ? null : entry;
+    playSound('pick');
+    if (!room3d) buildFlatRooms();
+    applyRoom(previewDeco(getDeco(), popPreview));
+    if (popPreview) room3d?.fx(fxKey, 'preview'); // lấp lánh khi xem thử
+    if (popPreview && status === 'poor') showToast(`Need ${entry.price - deco.coins} more coins`);
+    return renderDecoPop();
   } else {
-    if (status === 'using') return;
+    const wasPreviewing = !!popPreview;
+    popPreview = null;
+    // Chạm món đang dùng khi đang xem thử món khác = thôi xem, phòng trở về như cũ.
+    if (status === 'using') { if (wasPreviewing) { applyRoom(getDeco()); renderDecoPop(); } return; }
     const next = useItem(deco, entry);
     if (next.error) return showToast(next.error);
     setDeco(next);
@@ -521,17 +557,6 @@ document.addEventListener('pointerdown', event => {
   if (!decoPop || event.target.closest('#deco-pop, .deco-side, .room-canvas')) return;
   closeDecoPop();
 }, true);
-function goShopItem(entry) {
-  playSound('pick');
-  shopZone = entry.zone;
-  closeDecoPop(false);
-  setShopPage('deco');
-  showTab('shop');
-  const card = $('shop-deco-grid').querySelector(`[data-id="${entry.id}"]`);
-  card?.scrollIntoView({ block: 'center', inline: 'center', behavior: reduceMotion.matches ? 'auto' : 'smooth' }); // cuộn cả hàng ngang tới món
-  card?.classList.add('flash');
-  setTimeout(() => card?.classList.remove('flash'), 1600);
-}
 // Nút khoá (cột trái, dưới Ground): ẩn mọi UI mua bán / ví / thao tác + thanh tab để ngắm nhà; chỉ còn nút khoá và cài đặt,
 // cả hai mờ đi (CSS: #deco.ui-locked, body.deco-locked). Rời Deco / mở lại Deco thì tự mở khoá.
 let decoLocked = false;
@@ -624,8 +649,8 @@ function renderShopDeco() {
     tab.textContent = ZONES[zone].name;
     return tab;
   }));
-  // Mỗi chỗ đặt (và tường, sàn) là MỘT hàng: các kiểu cùng chỗ nằm chung hàng, nhiều thì vuốt ngang. Tường / sàn lên đầu, rồi các
-  // chỗ đồ theo thứ tự danh mục; hàng chưa mua được gì (chưa xây chỗ / khoá theo màn) xuống cuối.
+  // Tường và sàn: mỗi thứ MỘT hàng vuốt ngang. Đồ đạc: một lưới chung "Decoration" (3 món mỗi dòng, xếp liền theo thứ tự, không
+  // xuống dòng riêng cho từng chỗ đặt) — các kiểu cùng chỗ vẫn đứng cạnh nhau; chỗ chưa mua được gì (chưa xây / khoá theo màn) xuống cuối.
   const names = ZONES[shopZone].cats, rows = new Map();
   shopCatalog(shopZone).filter(decoVisible).forEach(entry => {
     const key = entry.slot || entry.cat;
@@ -633,30 +658,31 @@ function renderShopDeco() {
   });
   const rank = key => (key === 'walls' ? -2 : key === 'floors' ? -1 : 0) + (rows.get(key).some(([, status]) => status === 'buy' || status === 'poor' || status === 'owned') ? 0 : 10);
   const keys = [...rows.keys()].sort((a, b) => rank(a) - rank(b));
-  $('shop-deco-grid').replaceChildren(...keys.map(key => {
+  const card = ([entry, status]) => {
+    const node = document.createElement('button');
+    node.className = `shop-deco-item ${status}`;
+    node.dataset.id = entry.id;
+    const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `🔒 Lv ${entry.lock}` : status === 'needBase' ? '🔒 Build first' : coin(entry.price);
+    node.innerHTML = `${thumbOf(entry)}<span>${entry.name}</span><em>${price}</em>`;
+    return node;
+  };
+  const section = (title, items, listClass) => {
     const row = document.createElement('section');
     row.className = 'shop-deco-row';
-    // Tiêu đề hàng chỉ cho tường / sàn; hàng đồ đạc không cần tên (thẻ đã có ảnh + tên món)
-    const items = rows.get(key);
-    if (key === 'walls' || key === 'floors') {
-      const owned = items.filter(([, status]) => status === 'owned').length;
-      row.innerHTML = `<h4 class="shop-deco-row-title">${names[key]}<small>${owned}/${items.length} owned</small></h4>`;
-    } else if (key === keys.find(other => other !== 'walls' && other !== 'floors')) {
-      row.innerHTML = '<h4 class="shop-deco-row-title">Decoration</h4>'; // một tiêu đề chung trên cụm đồ đạc (dưới Floors / Ground)
-    }
-    const strip = document.createElement('div');
-    strip.className = 'shop-deco-strip';
-    strip.append(...items.map(([entry, status]) => {
-      const card = document.createElement('button');
-      card.className = `shop-deco-item ${status}`;
-      card.dataset.id = entry.id;
-      const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `🔒 Lv ${entry.lock}` : status === 'needBase' ? '🔒 Build first' : coin(entry.price);
-      card.innerHTML = `${thumbOf(entry)}<span>${entry.name}</span><em>${price}</em>`;
-      return card;
-    }));
-    row.append(strip);
+    row.innerHTML = `<h4 class="shop-deco-row-title">${title}</h4>`;
+    const list = document.createElement('div');
+    list.className = listClass;
+    list.append(...items.map(card));
+    row.append(list);
     return row;
-  }));
+  };
+  const sections = ['walls', 'floors'].filter(key => rows.has(key)).map(key => {
+    const items = rows.get(key), owned = items.filter(([, status]) => status === 'owned').length;
+    return section(`${names[key]}<small>${owned}/${items.length} owned</small>`, items, 'shop-deco-strip');
+  });
+  const furniture = keys.filter(key => key !== 'walls' && key !== 'floors').flatMap(key => rows.get(key));
+  if (furniture.length) sections.push(section('Decoration', furniture, 'shop-deco-wrap'));
+  $('shop-deco-grid').replaceChildren(...sections);
 }
 $('shop-deco-tabs').addEventListener('click', event => {
   const tab = event.target.closest('[data-zone]');

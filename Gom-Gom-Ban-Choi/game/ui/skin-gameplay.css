@@ -128,6 +128,27 @@ body.low-moves .board-shape{filter:drop-shadow(0 var(--edge) 0 #e2b46a) drop-sha
 body{overflow-x:clip}
 .fg-hud .fg-settings .fh-round::before{width:calc(49.68 * var(--hub-u));height:calc(49.68 * var(--hub-u))}
 .fg-hud .fg-settings .fh-gear:active{translate:0 calc(2 * var(--hub-u))}
+/* ---------- HUD mới theo Figma (image 107): bảng hồng tai mèo — badge "Level N", MỘT ô Move rộng (đã bỏ ô Goal), thanh điểm
+   (đã bỏ 3 sao: điểm / mục tiêu ghi trên thanh). Ảnh skins/figma-game/hud-panel.png cắt ghép từ ảnh Figma, số liệu là chữ thật.
+   Mọi vị trí tính theo % ảnh gốc 2172 × 724; bảng 336 × 112 như Figma (x 29, y 46 trong khung 393). Bánh răng nằm góc phải trên. */
+.fg-hud{display:block;height:calc(112 * var(--u));margin:calc(4 * var(--u)) 0 calc(2 * var(--u))}
+.fg-panel{position:relative;width:calc(336 * var(--u));height:calc(112 * var(--u));margin:0 auto;background:url('./skins/figma-game/hud-panel.png') center/100% 100% no-repeat;
+  filter:drop-shadow(0 calc(3 * var(--u)) calc(3 * var(--u)) #6b2a2833)}
+.fg-panel .fg-level{position:absolute;left:44%;width:12%;top:12%;height:12%;display:grid;place-items:center;white-space:nowrap;
+  font-family:var(--display);font-size:calc(12 * var(--u));font-weight:800;line-height:1;color:#6b2416}
+.fg-panel .fg-moves.moves-box{position:absolute;left:19.9%;right:19.8%;top:31.4%;bottom:31.2%;width:auto;height:auto;display:grid;place-items:center;
+  padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+.fg-panel .fg-moves .fg-moves-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)} /* chữ Move đã có trong ảnh */
+.fg-panel .fg-moves strong{position:static;inset:auto;margin-top:calc(5 * var(--u));font-family:var(--display);font-size:calc(34 * var(--u));font-weight:800;line-height:1;
+  color:#f4868f;-webkit-text-stroke:calc(2.4 * var(--u)) #6b2416;paint-order:stroke fill;text-shadow:0 calc(2 * var(--u)) 0 #6b241640}
+.fg-panel .fg-moves.moves-box.danger strong{color:#ff3b4f}
+.fg-hud .fg-panel .progress.fg-score{position:absolute;left:19.5%;top:76.5%;width:61%;height:8.4%;margin:0;padding:0;
+  border:0;border-radius:999px;background:none;box-shadow:none}
+.fg-panel .fg-score .progress-track{position:absolute;inset:0;padding:0;border-radius:999px;overflow:hidden;background:none;box-shadow:none}
+.fg-panel .fg-score .progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:calc(3 * var(--u));
+  font-size:calc(10.5 * var(--u));line-height:1;-webkit-text-stroke:calc(2.6 * var(--u)) #4a2014}
+.fg-panel .fg-score .progress-text strong{font-size:calc(11.5 * var(--u));color:#fff;-webkit-text-stroke:calc(2.6 * var(--u)) #4a2014}
+.fg-hud .fg-settings{position:absolute;top:0;right:0;margin:0}
 
 /* ---------- Bảng kết quả theo Figma: thắng (Level Complete!) / thua (Try Again!) ---------- */
 .result-dialog{width:calc(340 * var(--u));max-width:calc(100% - 24px);overflow:visible;margin-top:calc(150 * var(--u));

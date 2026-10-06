@@ -659,8 +659,9 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
    + cài đặt, cả hai mờ đi (vẫn bấm được). */
 .deco-side .deco-lock{width:calc(50 * var(--u));height:calc(50 * var(--u));margin:calc(4 * var(--u)) auto 0;border-radius:50%;transition:opacity .2s}
 .deco-side .deco-lock svg{width:calc(24 * var(--u));height:calc(24 * var(--u));stroke-width:2.4}
-.deco-lock .shackle{transition:translate .2s;translate:3px -2px}
-.deco-lock[aria-pressed="true"] .shackle{translate:none}
+/* Nút ngắm nhà: mắt mở = UI đang hiện (chạm để ẩn), mắt nhắm = đang ẩn UI (chạm để hiện lại) */
+.deco-lock .eye-shut,.deco-lock[aria-pressed="true"] .eye-open{display:none}
+.deco-lock[aria-pressed="true"] .eye-shut{display:inline}
 #deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
 #deco.ui-locked .deco-lock:active{opacity:.6}
 #deco.ui-locked .deco-side>[data-key]{visibility:hidden}
@@ -723,6 +724,12 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-opt-price.lock{background:#ece7e0;border-color:transparent;color:#7b7166}
 .deco-opt.poor .deco-opt-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
 .deco-opt.needBase,.deco-opt.locked{opacity:.6}
+/* Kiểu chưa mua đang xem thử: viền cam nổi, nút giá thành nút mua xanh lá (chạm để mua + đặt luôn), nhún nhẹ để mời bấm */
+.deco-opt.previewing{border-style:solid;border-color:#f08a2c;background:#fff4e2;box-shadow:0 0 0 2px #ffd8a8}
+.deco-opt-price.buy-now{background:#4cb850;border-color:#2e8a3e;color:#fff;font-weight:900;box-shadow:0 2px 0 #2e8a3e}
+.deco-opt.poor .deco-opt-price.buy-now{background:#e9e3da;border-color:#cbbfae;color:#9a8b78;box-shadow:none}
+@media(prefers-reduced-motion:no-preference){.deco-opt-price.buy-now{animation:buy-now-pulse 1s ease-in-out infinite}}
+@keyframes buy-now-pulse{50%{transform:scale(1.08)}}
 .deco-pop-tail{position:absolute;left:var(--tail,50%);bottom:-10px;width:16px;height:16px;translate:-50% 0;rotate:45deg;background:#fffdf6;
   border-right:3px solid #73392a;border-bottom:3px solid #73392a}
 .deco-pop[data-side="below"] .deco-pop-tail{bottom:auto;top:-10px;border:0;border-left:3px solid #73392a;border-top:3px solid #73392a}
@@ -745,6 +752,8 @@ body.deco-locked .hub-settings{opacity:.5}
   padding:2px calc(2 * var(--u)) 4px;scrollbar-width:none;touch-action:pan-x pan-y}
 .shop-deco-strip::-webkit-scrollbar{display:none}
 .shop-deco-strip>.shop-deco-item{flex:none;width:calc((100% - 12 * var(--u)) / 3.15);scroll-snap-align:start}
+/* Đồ đạc: lưới 3 cột, các món xếp liền nhau theo thứ tự (không mỗi chỗ đặt một hàng) */
+.shop-deco-wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(6 * var(--u))}
 .shop-deco-item{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;min-height:0;padding:calc(6 * var(--u)) calc(4 * var(--u)) calc(7 * var(--u));
   border:calc(3 * var(--u)) solid #73392a;border-radius:calc(14 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:#5b2e1c;letter-spacing:0;text-transform:none}
 .shop-deco-item .thumb{width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:10px;background:var(--c,#ddd)}

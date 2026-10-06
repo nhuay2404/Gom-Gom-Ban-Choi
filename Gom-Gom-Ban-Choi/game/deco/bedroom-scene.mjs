@@ -63,7 +63,10 @@ const rgbKeys = () => canvasTex('keys-rgb', 256, 80, (g, w, h) => {
     g.fillStyle = '#2b2f3a'; g.fillRect(8 + col * 17.6, 8 + row * 18, 11, 11);
   }
 });
-const screen = (w, h, texture) => new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: texture }));
+// Màn hình áp sát mặt nắp / vỏ (laptop: cách 5 mm): zoom xa thì độ chính xác depth không phân biệt nổi -> màn hình và nắp tranh
+// nhau từng khung (nhấp nháy "giật"). polygonOffset kéo màn hình về phía camera trong depth test (như tấm dán mặt mèo) -> luôn nằm trên.
+const screen = (w, h, texture) => new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+  new THREE.MeshBasicMaterial({ map: texture, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 }));
 
 // Phần gắn bản lề rung như lò xo khi bị chạm (bản sao gọn của springy() trong deco-room.mjs).
 function springy(node, parts) {

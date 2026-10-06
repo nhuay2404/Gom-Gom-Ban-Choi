@@ -143,7 +143,40 @@ function afkFaces(cat, group, ink) {
   };
 }
 
-const BITMAP = { orange: 'ui/skins/cats/orange.png' };
+// Mèo vẽ sẵn từ Figma (lưới 6 giống × 6 biểu cảm, file "UI" image 130–170): ui/skins/cats/<giống>-<biểu cảm>.png (ảnh 300 px).
+// Mỗi biểu cảm là một ảnh, gắn đúng tên nhóm mà CSS đang bật / tắt cho mặt SVG cũ (calm / joy / annoyed / afk-*), nên mọi
+// trạng thái (vui khi gom, khó chịu khi bị kéo / nhấc, buồn ngủ khi AFK, mếu khi sắp hết lượt...) dùng lại nguyên luật CSS cũ.
+//   calm     = mặt thường            focus   = mắt to, chú ý (thẻ đang cầm, xem gom-gom.css)
+//   joy      = cười ^^ (gom, vuốt)   annoyed = cau có (đang kéo / bị nhấc)
+//   sleepy   = lim dim (AFK)         worried = mếu (mọi mặt sắp hết lượt)
+// Đường dẫn viết nguyên văn (không ghép chuỗi) để tools/build-single-html.mjs nhúng được ảnh vào bản HTML một file.
+const CAT_IMAGES = {
+  orange: { calm: 'ui/skins/cats/orange-calm.png', focus: 'ui/skins/cats/orange-focus.png', joy: 'ui/skins/cats/orange-joy.png', annoyed: 'ui/skins/cats/orange-annoyed.png', sleepy: 'ui/skins/cats/orange-sleepy.png', worried: 'ui/skins/cats/orange-worried.png' },
+  gray: { calm: 'ui/skins/cats/gray-calm.png', focus: 'ui/skins/cats/gray-focus.png', joy: 'ui/skins/cats/gray-joy.png', annoyed: 'ui/skins/cats/gray-annoyed.png', sleepy: 'ui/skins/cats/gray-sleepy.png', worried: 'ui/skins/cats/gray-worried.png' },
+  white: { calm: 'ui/skins/cats/white-calm.png', focus: 'ui/skins/cats/white-focus.png', joy: 'ui/skins/cats/white-joy.png', annoyed: 'ui/skins/cats/white-annoyed.png', sleepy: 'ui/skins/cats/white-sleepy.png', worried: 'ui/skins/cats/white-worried.png' },
+  tuxedo: { calm: 'ui/skins/cats/tuxedo-calm.png', focus: 'ui/skins/cats/tuxedo-focus.png', joy: 'ui/skins/cats/tuxedo-joy.png', annoyed: 'ui/skins/cats/tuxedo-annoyed.png', sleepy: 'ui/skins/cats/tuxedo-sleepy.png', worried: 'ui/skins/cats/tuxedo-worried.png' },
+  siamese: { calm: 'ui/skins/cats/siamese-calm.png', focus: 'ui/skins/cats/siamese-focus.png', joy: 'ui/skins/cats/siamese-joy.png', annoyed: 'ui/skins/cats/siamese-annoyed.png', sleepy: 'ui/skins/cats/siamese-sleepy.png', worried: 'ui/skins/cats/siamese-worried.png' },
+  tabby: { calm: 'ui/skins/cats/tabby-calm.png', focus: 'ui/skins/cats/tabby-focus.png', joy: 'ui/skins/cats/tabby-joy.png', annoyed: 'ui/skins/cats/tabby-annoyed.png', sleepy: 'ui/skins/cats/tabby-sleepy.png', worried: 'ui/skins/cats/tabby-worried.png' },
+};
+const bitmap = (group, mood) => CAT_IMAGES[group][mood];
+const HAS_BITMAP = new Set(Object.keys(CAT_IMAGES));
+// Khung ảnh trong hệ toạ độ 100 × 106 của art cũ: ảnh vuông, đáy (bàn chân) chạm ~y = 101 như chân mèo SVG cũ.
+const BITMAP_BOX = 'x="5" y="11" width="90" height="90"';
+function bitmapCatSvg(group, hang) {
+  const img = (mood, extra = '') => `<image href="${bitmap(group, mood)}" ${BITMAP_BOX} ${extra}/>`;
+  const afk = (name, mood) => `<g class="afk afk-${name}" visibility="hidden">${img(mood)}</g>`;
+  return `<svg class="cat mood-${categories[group].mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
+    ${hang}
+    <g class="calm calm-idle">${img('calm')}</g>
+    <g class="calm calm-focus">${img('focus')}</g>
+    <g class="annoyed">${img('annoyed')}</g>
+    ${afk('sleepy', 'sleepy')}${['sad', 'worried', 'crying', 'disappointed', 'sulky'].map(name => afk(name, 'worried')).join('')}
+    <g class="joy" visibility="hidden">${img('joy')}</g>
+  </svg>`;
+}
+// Tải trước mọi biểu cảm (ảnh nhỏ ~15 KB): đổi mặt lần đầu không bị nháy trống.
+export const catBitmaps = Object.values(CAT_IMAGES).flatMap(Object.values);
+if (typeof Image !== 'undefined') for (const src of catBitmaps) new Image().src = src;
 function catSvg(group) {
   const cat = categories[group], mood = cat.mood;
   const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
@@ -173,11 +206,8 @@ function catSvg(group) {
         <circle cx="30.5" cy="130" r="1.3"/><circle cx="34.5" cy="129" r="1.3"/><circle cx="38.5" cy="130" r="1.3"/>
         <circle cx="61.5" cy="130" r="1.3"/><circle cx="65.5" cy="129" r="1.3"/><circle cx="69.5" cy="130" r="1.3"/></g>
     </g>`;
-  // Mèo cam dùng ảnh vẽ sẵn từ Figma (đã có mặt + biểu cảm riêng): chỉ giữ thân dưới lúc bị nhấc, không chồng lớp mặt SVG.
-  if (BITMAP[group]) return `<svg class="cat mood-${mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
-    ${hang}
-    <image href="${BITMAP[group]}" x="9" y="2" width="82" height="97" preserveAspectRatio="xMidYMax meet"/>
-  </svg>`;
+  // Giống có ảnh Figma: dùng ảnh (giữ thân dưới lúc bị nhấc của SVG). Art SVG bên dưới chỉ còn làm dự phòng.
+  if (HAS_BITMAP.has(group)) return bitmapCatSvg(group, hang);
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
       <radialGradient id="cry-iris" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#6b5a86"/><stop offset=".6" stop-color="#3a2f4a"/><stop offset="1" stop-color="#241c2e"/></radialGradient>

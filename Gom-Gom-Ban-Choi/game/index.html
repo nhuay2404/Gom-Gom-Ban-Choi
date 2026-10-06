@@ -53,13 +53,14 @@
     <!-- HUD theo Figma (frame Gameplay 23:442): thanh điểm trái, đầu mèo Moves giữa, nút cài đặt phải (menu: Home / chơi lại /
          âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (ui/skins/figma-game/), số do game viết. -->
     <section class="hud fg-hud" aria-label="Game info">
-      <div class="progress fg-score" role="img" aria-label="Score progress">
-        <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
-        <span class="progress-text"><strong id="score">0</strong> / <span id="highscore">120</span></span>
-      </div>
-      <div class="fg-menu">
-        <div class="moves-box fg-moves" aria-label="Moves left">
-          <span id="level-title" class="fg-level">Level 1</span><span class="fg-moves-label">Moves</span><strong id="moves">20</strong></div>
+      <!-- Bảng HUD theo Figma (image 107, đã bỏ ô Goal + 3 sao): badge Level, ô Move rộng, thanh điểm (điểm / mục tiêu) -->
+      <div class="fg-panel">
+        <span id="level-title" class="fg-level">Level 1</span>
+        <div class="moves-box fg-moves" aria-label="Moves left"><span class="fg-moves-label">Moves</span><strong id="moves">20</strong></div>
+        <div class="progress fg-score" role="img" aria-label="Score progress">
+          <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
+          <span class="progress-text"><strong id="score">0</strong> / <span id="highscore">120</span></span>
+        </div>
       </div>
       <div class="settings fg-settings">
         <!-- Cùng popup Settings với Home / Map / Deco (thêm hàng Home / Restart chỉ khi đang chơi) -->
@@ -157,7 +158,7 @@
       <button data-key="walls"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3ZM3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/></svg><span>Walls</span></button>
       <button data-key="floors"><svg viewBox="0 0 24 24"><path d="M6.5 6h11L21 19H3ZM4.7 12.5h14.6M12 6v13M9.2 6 7.5 19M14.8 6l1.7 13"/></svg><span>Floors</span></button>
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
-      <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/><rect x="5.5" y="11" width="13" height="9.5" rx="2.2"/><path d="M12 14.6v2.4"/></svg></button>
+      <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
     </div>
     <div class="deco-dock">
       <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">

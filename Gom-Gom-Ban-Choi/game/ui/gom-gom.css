@@ -107,6 +107,10 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 .cat .eyes{transform-box:fill-box;transform-origin:50% 60%;animation:cat-blink var(--blink-dur,5s) var(--blink-delay,0s) infinite}
 .cat .blush{opacity:.45;transition:opacity .2s}
 .cat .annoyed{display:none}
+/* Mèo ảnh Figma (cat-art.mjs): hai mặt thường — calm-idle trên bàn, calm-focus (mắt to, chú ý) ở thẻ đang cầm chưa kéo */
+.cat .calm-focus,#active-card .cat .calm-idle{display:none}
+#active-card .cat .calm-focus{display:inline}
+#active-card.dragging .cat .calm-focus{display:none}
 .drag-ghost .cat .calm,.piece-card.dragging .cat .calm{display:none}
 .drag-ghost .cat .annoyed,.piece-card.dragging .cat .annoyed{display:inline}
 .drag-ghost .cat .blush{opacity:.85}
