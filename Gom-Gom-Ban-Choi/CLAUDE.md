@@ -122,6 +122,12 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   mèo (ZONE_OFFSET + LINKS `open: true`: lối thông thoáng, không có cửa). Deco: camera lùi xa hơn (`WIDE`) cho thấy trọn.
 - Phần khoá ở màn game chưa có (vườn mở rộng: màn 30): xem bằng Dev: Unlock all (bật cờ `gomgom-dev-all-zones`).
 
+**Camera / chọn khu ở Deco**
+- Deco chỉ đổi khu theo cảnh (`followDrag` trong deco-room.mjs) khi chính người chơi kéo cảnh và **không** có món đang chọn.
+  Camera tự lướt / zoom (focus món, glide, autoRotate, trôi quán tính) không bao giờ được đổi khu hay bỏ chọn món — lỗi cũ:
+  chọn võng sát rào sau vườn, camera lướt tới gần phòng khách nên Deco nhảy sang phòng khách và tắt võng.
+  Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
+
 ## Khác
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.

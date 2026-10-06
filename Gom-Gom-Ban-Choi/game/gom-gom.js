@@ -22,4 +22,4 @@ const shownAt = performance.now(), wait = ms => new Promise(resolve => setTimeou
 document.fonts?.ready.then(() => step(60));
 Promise.race([menus.sceneReady, wait(8000)])
   .then(() => { step(100); return wait(Math.max(350, 1000 - (performance.now() - shownAt))); })
-  .then(() => { loading.classList.add('done'); loading.addEventListener('transitionend', () => loading.remove(), { once: true }); });
+  .then(() => loading.classList.add('done')); // giữ lại phần tử: chuyển tab Home / Deco / Shop dùng lại màn này (menu-controller.js switchTab)

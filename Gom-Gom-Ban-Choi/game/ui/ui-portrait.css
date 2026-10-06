@@ -705,12 +705,15 @@ body.deco-locked .hub-settings{opacity:.5}
 @keyframes deco-pop-in{from{opacity:0;scale:.85}}
 .deco-pop-head{display:flex;align-items:center;gap:8px;padding:2px 4px 0}
 .deco-pop-head b{flex:1;min-width:0;font-family:var(--display);font-size:17px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.deco-pop-items{display:flex;gap:6px;max-width:min(330px,calc(100vw - 40px));overflow-x:auto;scrollbar-width:none;padding:2px}
+/* Mọi lựa chọn hiện hết, không phải vuốt: thẻ hẹp vừa 4 thẻ một hàng trên màn 375 px, nhiều hơn thì xuống hàng */
+.deco-pop-items{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(340px,calc(100vw - 40px));padding:2px}
 .deco-pop-items::-webkit-scrollbar{display:none}
-.deco-opt{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:72px;min-height:0;padding:5px 3px;border-radius:14px;
+.deco-opt{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;width:74px;min-height:0;padding:5px 3px;border-radius:14px;
   background:#fff;border:2.5px solid #eadfc8;color:#5b2e1c;font-size:10.5px;font-weight:900;letter-spacing:0;text-transform:none}
 .deco-opt .thumb{width:52px;height:52px;border-radius:10px;background:var(--c,#ddd)}
 .deco-opt .thumb-3d{object-fit:contain;background:transparent}
+/* Món đã có (không có nút giá): ảnh nở ra lấp chỗ nút giá, model vừa khít thẻ thay vì nhỏ lọt thỏm ở nửa trên */
+.deco-opt:not(.in-shop) .thumb-3d{flex:1 1 auto;width:100%;height:auto;min-height:52px;max-height:76px}
 .deco-opt .cat-thumb{background:none}
 .deco-opt .cat-thumb .cat{width:100%;height:100%}
 .deco-opt-name{max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

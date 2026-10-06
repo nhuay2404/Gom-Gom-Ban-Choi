@@ -230,13 +230,42 @@ const DECO_VIEW = {
 };
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
 $('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
-$('home-starter').onclick = () => { playSound('pick'); setShopPage('store'); showTab('shop'); }; // gói khởi đầu nằm đầu tab Shop
+$('home-starter').onclick = () => { playSound('pick'); setShopPage('store'); switchTab('shop'); }; // gói khởi đầu nằm đầu tab Shop
 $('tabbar').addEventListener('click', event => {
   const tab = event.target.closest('.tab');
   if (!tab || tab.getAttribute('aria-current')) return;
   playSound('pick');
-  showTab(tab.dataset.tab);
+  switchTab(tab.dataset.tab);
 });
+// Chuyển tab Home / Deco / Shop: dựng cảnh 3D + chụp thumbnail model chặn luồng chính một lúc (màn hình đứng hình, ảnh hiện
+// lần lượt). Hiện màn loading của lúc mở game trước, đợi nó vẽ lên màn hình rồi mới dựng tab, vẽ xong khung đầu mới mờ đi.
+const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+const TAB_LOADING_MIN = 350; // ms: hiện ít nhất chừng này cho khỏi chớp
+let tabLoad = 0;
+// Tab + khu đã dựng một lần (cảnh 3D đã nạp, ảnh thumbnail đã chụp và giữ trong bộ nhớ): lần sau dựng lại rất nhanh nên
+// chuyển thẳng, không hiện màn loading. Chỉ lần đầu vào một tab / khu (việc nặng, đứng hình thấy rõ) mới hiện.
+const tabsBuilt = new Set(['home']); // Home (bản đồ) dựng sẵn dưới màn loading lúc mở game
+const tabKey = tab => tab === 'deco' ? `deco:${getDeco().zone}` : tab === 'shop' ? `shop:${shopZone}` : tab;
+const tabNeedsLoading = tab => !!room3d && !tabsBuilt.has(tabKey(tab));
+export async function switchTab(tab) {
+  const screen = $('loading'), fill = $('loading-fill'), id = ++tabLoad, shownAt = performance.now();
+  if (!screen || !tabNeedsLoading(tab)) { showTab(tab); if (room3d) tabsBuilt.add(tabKey(tab)); return; }
+  // Hiện ngay (không mờ dần vào): luồng chính bị chặn khi màn còn trong suốt thì người chơi vẫn thấy tab cũ đứng hình.
+  screen.style.transition = 'none';
+  fill.style.transition = 'none';
+  fill.style.width = '30%';
+  screen.classList.remove('done');
+  await nextFrame(); await nextFrame();
+  screen.style.transition = ''; fill.style.transition = '';
+  if (id !== tabLoad) return;
+  showTab(tab);
+  if (room3d) tabsBuilt.add(tabKey(tab));
+  fill.style.width = '100%';
+  // Khung đầu của tab mới (cảnh 3D, ảnh thumbnail) đã vẽ xong.
+  await nextFrame(); await nextFrame();
+  await new Promise(resolve => setTimeout(resolve, Math.max(0, TAB_LOADING_MIN - (performance.now() - shownAt))));
+  if (id === tabLoad) screen.classList.add('done');
+}
 
 // Phòng CSS phẳng (dự phòng khi không nạp được 3D): tranh, cửa sổ, chậu cây, thảm và mèo; chạm mèo để cưng.
 function buildRoom(room, cats) {
@@ -483,7 +512,7 @@ function renderDecoPop() {
   const deco = getDeco(), unlocked = decoUnlockedLevel(), names = ZONES[decoPop.zone].cats;
   const options = decoPopOptions(deco);
   const using = options.find(entry => itemStatus(deco, entry, unlocked) === 'using');
-  const title = { cats: `Cats · ${deco.cats.length}/${MAX_ROOM_CATS}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? using?.name ?? itemById(decoPop.key).name;
+  const title = { cats: `Cats · ${deco.cats.length}/${MAX_ROOM_CATS}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
   $('deco-pop-title').textContent = title;
   $('deco-pop-items').replaceChildren(...options.map(entry => {
     const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
@@ -491,11 +520,12 @@ function renderDecoPop() {
     const previewing = popPreview === entry;
     node.className = `deco-opt ${status}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}`;
     node.dataset.id = entry.id;
+    node.setAttribute("aria-label", entry.name); node.title = entry.name; // tên hiện ở dòng tiêu đề bảng, không lặp trong thẻ
     const tag = status === 'using' && !popPreview ? '<b class="deco-opt-tag">✓</b>' : status === 'locked' && !shop ? '<b class="deco-opt-tag lock">🔒</b>' : '';
     // Đang xem thử: nút giá thành nút mua (chạm để mua + đặt luôn)
     const price = !shop ? '' : status === 'locked' ? `<em class="deco-opt-price lock">🔒 Lv ${entry.lock}</em>`
       : previewing ? `<em class="deco-opt-price buy-now">Buy ${coin(entry.price)}</em>` : `<em class="deco-opt-price">${coin(entry.price)}</em>`;
-    node.innerHTML = `${thumbOf(entry)}<span class="deco-opt-name">${entry.name}</span>${tag}${price}`;
+    node.innerHTML = `${thumbOf(entry)}${tag}${price}`;
     return node;
   }));
   $('deco-pop').classList.toggle('side', !!decoPop.side);

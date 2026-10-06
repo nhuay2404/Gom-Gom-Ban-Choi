@@ -1332,9 +1332,9 @@ class Cat {
       this.kick(node, .15); // lốp treo (xích đu) nhún nhẹ khi mèo đáp vào
       // Võng vải: thân võng xuống theo lòng võng, vải quấn ép hai bên (kiểu "burrito").
       // Lốp xe: giữa thân lún xuống lòng lốp; dây treo tì vào thân tự ấn thành rãnh (ropesTouching).
-      this.contact = kind === 'hammock-tire' ? { sag: 1, squeeze: .45 } : { sag: .35, squeeze: .5 }; // võng vải: phần bó theo lòng vải do holdInTrough lo
+      this.contact = hangsFromBeam(kind) ? { sag: 1, squeeze: .45 } : { sag: .35, squeeze: .5 }; // võng vải: phần bó theo lòng vải do holdInTrough lo
       this.jigV.y -= 1.2; // đáp vào chỗ mềm: lún xuống rồi rung rinh
-      if (kind === 'hammock-tire') yield* this.turnTo(this.heading + Math.PI * .9, 3);
+      if (hangsFromBeam(kind)) yield* this.turnTo(this.heading + Math.PI * .9, 3);
       else { // võng vải: nằm dọc theo lòng võng (nằm ngang thì đầu / chân thò qua thành vải)
         const axis = local(1, 0, 0).sub(center);
         yield* this.turnTo(Math.atan2(axis.x, axis.z) + (chance(.5) ? 0 : Math.PI), 3);
@@ -2155,6 +2155,8 @@ class Cat {
 
 // ---------- Cả đàn: chọn hành vi, vật cản, đồ chơi rơi/lăn ----------
 // Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
+// Hammock variants that hang from a beam and swing like a pendulum (not a cloth sling).
+const hangsFromBeam = kind => kind === 'hammock-tire' || kind === 'hammock-basket';
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
 const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4 };

@@ -502,6 +502,124 @@ export const BEDROOM_BUILD = {
     node.userData.steps = steps.map(([x, y]) => [x, y + .08, 0]);
     return node;
   },
+
+  // ===== Lựa chọn thứ 4 cho từng chỗ trong phòng ngủ: phong cách hiện đại, tông đen / xám (cùng điểm neo với món gốc) =====
+  // Giường bọc nỉ xám đậm: đầu giường ô nệm cao, chăn than chì; mèo nằm trên chăn như giường gốc.
+  'bed-platform'() {
+    const z = -1.22;
+    const bed = group(...bedBase({ wood: '#2b2e33', duvet: '#4a4e55', duvetLine: '#3a3d43', pillow: '#c9ccd1', headboard: false }),
+      at(rbox(2.2, 1.1, .16, .07, '#3a3d43'), 0, .74, z), ...[-.72, -.24, .24, .72].map(x => at(rbox(.44, .8, .04, .02, '#45494f'), x, .8, z + .1)),
+      at(box(2.24, .02, .02, mat('#c8ccd2', { metalness: .8, roughness: .35 })), 0, 1.3, z + .08),
+      at(rbox(1.96, .06, .5, .03, '#6b7078'), 0, .64, .95)); // khăn phủ cuối giường
+    bed.userData.seat = [.15, .63, .15];
+    return bed;
+  },
+  // Thảm sọc đen trắng: phẳng, nằm gọn trong khung thảm lông.
+  'bedrug-mono'() {
+    const rug = group(at(rbox(2.4, .035, 1.9, .015, '#2b2e33'), 0, .0175, 0),
+      ...[-.6, -.3, 0, .3, .6].map(z => at(box(2.1, .045, .12, '#d6d8dc'), 0, .0225, z)));
+    rug.traverse(node => { node.castShadow = false; });
+    rug.userData.top = .045;
+    return rug;
+  },
+  // Giỏ đồ giặt nỉ xám có quai da: quần áo xám / đen bên trong; mèo chui vào nằm (.5).
+  'laundry-hamper'() {
+    const felt = '#4a4e55', leather = '#26282c';
+    const hamper = group(at(cyl(.36, .32, .5, felt, 28), 0, .25, 0), at(mesh(new THREE.TorusGeometry(.36, .025, 8, 36), mat(leather)), 0, .5, 0).rotateX(Math.PI / 2),
+      ...[-1, 1].map(s => at(rbox(.16, .05, .03, .015, leather), s * .3, .44, s * .16).rotateY(s * .5 + Math.PI / 2)),
+      squash(at(ball(.3, '#6b7078'), 0, .44, 0), 1, .35, 1), squash(at(ball(.16, '#26282c'), -.1, .52, .08), 1.2, .4, 1), squash(at(ball(.14, '#d6d8dc'), .12, .53, -.06), 1, .45, 1.2),
+      at(rbox(.11, .3, .07, .035, '#d6d8dc'), .33, .4, .12).rotateZ(.3));
+    hamper.userData.seat = [0, .5, 0];
+    return hamper;
+  },
+  // Tủ đầu giường đen chân crôm: loa thông minh + đồng hồ xám (mèo đẩy rơi).
+  'bedside-noir'() {
+    const chrome = mat('#c8ccd2', { metalness: .8, roughness: .35 });
+    const clock = group(at(rbox(.18, .1, .08, .03, '#45494f'), 0, 0, 0), at(box(.12, .05, .01, glow('#1a1c20', '#7fd0ff', .9)), 0, 0, .046));
+    clock.position.set(.15, .63, .06);
+    const speaker = at(cyl(.07, .07, .16, '#6b7078', 20), -.16, .66, -.06);
+    const stand = group(...legs4(.22, .15, .12, chrome, .015), at(rbox(.56, .42, .42, .04, '#26282c'), 0, .33, 0), at(rbox(.6, .03, .46, .015, '#3a3d43'), 0, .555, 0),
+      at(box(.5, .006, .02, chrome), 0, .33, .215), speaker, at(cyl(.05, .05, .01, '#9aa0a8', 20), -.16, .745, -.06), clock);
+    stand.userData.mug = clock;
+    clock.userData.home = clock.position.clone();
+    stand.userData.top = .58;
+    return stand;
+  },
+  // Bàn setup tối: mặt bàn đen, hai màn hình, dải LED trắng lạnh; mèo nằm chễm chệ trên bàn phím (.77).
+  'desk-setup'() {
+    const top = '#26282c', dark = '#1a1c20', frame = '#3a3d43';
+    const monitor = x => group(at(rbox(.22, .02, .16, .01, dark), 0, .775, -.16), at(box(.04, .26, .04, dark), 0, .9, -.2),
+      at(rbox(.62, .4, .04, .02, dark), 0, 1.15, -.2), at(screen(.56, .34, docScreen()), 0, 1.15, -.174)).translateX(x);
+    const keys = screen(.5, .15, rgbKeys()); keys.rotation.x = -Math.PI / 2; keys.position.set(0, .801, .12);
+    const desk = group(at(rbox(1.7, .05, .72, .02, top), 0, .74, 0),
+      ...[-1, 1].map(s => at(rbox(.06, .72, .62, .02, frame), s * .78, .36, 0)), at(box(1.5, .08, .03, frame), 0, .66, -.3),
+      at(box(1.6, .015, .015, glow('#d6eaff', '#d6eaff', 1.2)), 0, .71, .35),
+      monitor(-.34), monitor(.34), at(rbox(.56, .03, .18, .01, dark), 0, .78, .12), keys,
+      at(rbox(.3, .006, .24, .003, '#45494f'), .55, .768, .1), squash(at(ball(.04, dark), .55, .785, .12), 1, .55, 1.4),
+      at(cyl(.045, .04, .1, '#9aa0a8', 14), -.6, .815, .18));
+    desk.userData.seat = [0, .77, .12];
+    desk.userData.top = .77;
+    return desk;
+  },
+  // Ghế văn phòng lưng lưới đen: xoay khi mèo đáp lên, mặt ngồi .55 như ghế gốc.
+  'chair-office'() {
+    const dark = '#1f2125', chrome = '#9aa0a8';
+    const spokes = [0, 1, 2, 3, 4].flatMap(k => {
+      const a = k / 5 * TAU, spoke = at(box(.34, .035, .05, chrome), Math.cos(a) * .17, .1, Math.sin(a) * .17);
+      spoke.rotation.y = -a;
+      return [spoke, at(ball(.035, dark), Math.cos(a) * .32, .035, Math.sin(a) * .32)];
+    });
+    const back = group(at(rbox(.52, .78, .06, .03, dark), 0, 0, 0), at(rbox(.42, .64, .02, .01, '#45494f'), 0, 0, .04), at(rbox(.34, .1, .08, .04, '#3a3d43'), 0, -.2, .06));
+    back.position.set(0, .58, -.27); back.rotation.x = -.1;
+    const arm = s => group(at(box(.035, .2, .035, dark), s * .3, .2, -.02), at(rbox(.07, .035, .28, .015, dark), s * .3, .31, 0));
+    const seat = group(at(rbox(.54, .1, .54, .05, dark), 0, .06, 0), at(rbox(.44, .04, .46, .02, '#45494f'), 0, .12, .02), back, arm(1), arm(-1));
+    seat.position.y = .4;
+    const chair = group(...spokes, at(cyl(.035, .035, .32, chrome, 12), 0, .26, 0), seat);
+    let last = 0;
+    seat.userData.v = 0;
+    chair.userData.spin = v => { seat.userData.v += v; };
+    chair.userData.update = t => {
+      const dt = Math.min(.05, Math.max(0, t - (last || t))); last = t;
+      seat.userData.v += (-5 * seat.rotation.y - 1.1 * seat.userData.v) * dt;
+      seat.rotation.y += seat.userData.v * dt;
+    };
+    seat.userData.restPos = seat.position.clone();
+    chair.userData.ride = seat;
+    chair.userData.seat = [0, .55, .02];
+    return chair;
+  },
+  // Tủ áo đen mờ tay nắm crôm: nóc cao 2.06 như tủ gốc, mèo nằm canh phòng.
+  'closet-noir'() {
+    const body = '#26282c', door = '#2f3236', chrome = mat('#c8ccd2', { metalness: .8, roughness: .35 });
+    const closet = group(at(rbox(1.36, .1, .58, .03, '#1a1c20'), 0, .05, 0),
+      at(rbox(1.3, 1.92, .6, .06, body), 0, 1.06, 0), at(rbox(1.4, .06, .66, .03, '#3a3d43'), 0, 2.03, 0),
+      ...[-1, 1].flatMap(s => [at(rbox(.6, 1.78, .03, .015, door), s * .32, 1.06, .3), at(rbox(.025, .5, .03, .012, chrome), s * .06, 1.1, .335)]),
+      at(rbox(.36, .26, .3, .04, '#6b7078'), -.36, 2.19, 0), at(rbox(.26, .16, .26, .03, '#9aa0a8'), -.36, 2.4, .02));
+    closet.userData.seat = [.25, 2.06, .02];
+    return closet;
+  },
+  // Cá mập bông xám: nằm sấp, vây lưng, bụng trắng; mèo rúc ngủ bên cạnh.
+  'plushie-shark'() {
+    const grey = '#6b7078', belly = '#e6e8eb';
+    const shark = group(squash(at(ball(.3, grey), 0, .24, 0), 1.6, .8, 1), squash(at(ball(.24, belly), 0, .18, .04), 1.5, .5, .9),
+      at(mesh(new THREE.ConeGeometry(.12, .24, 16), grey), -.04, .5, 0).rotateZ(.25), at(mesh(new THREE.ConeGeometry(.13, .26, 16), grey), -.44, .3, 0).rotateZ(Math.PI / 2.4),
+      ...[-1, 1].map(s => squash(at(ball(.1, grey), .1, .12, s * .26), 1.4, .4, 1)),
+      ...[-1, 1].map(s => at(ball(.03, '#1a1c20'), .4, .3, s * .17)), at(box(.16, .012, .02, '#1a1c20'), .44, .19, 0));
+    shark.children.forEach(part => { part.position.y += .02; });
+    shark.userData.seat = [.38, 0, .38];
+    return shark;
+  },
+  // Kệ treo tường thép đen: ba bậc nỉ xám gắn giá sắt, đệm trên cùng; tấm cào móng xám dưới chân.
+  'catsteps-floating'() {
+    const steel = '#1f2125', felt = '#6b7078';
+    const step = (x, y) => group(at(rbox(.56, .05, .32, .02, felt), x, y, 0), at(box(.52, .03, .03, steel), x, y - .04, .14),
+      ...[-.2, .2].map(dx => at(box(.03, .18, .03, steel), x + dx, y - .12, -.13)));
+    const steps = [[-.35, .65], [.35, 1.2], [-.2, 1.75]];
+    const node = group(...steps.map(([x, y]) => step(x, y)), at(rbox(.5, .06, .28, .03, '#3a3d43'), -.2, 1.8, 0),
+      at(rbox(.7, .02, .5, .008, '#45494f'), 0, .01, .15));
+    node.userData.steps = [[-.35, .68, 0], [.35, 1.23, 0], [-.2, 1.84, 0]];
+    return node;
+  },
 };
 
 // ---------- Trang trí cố định trên tường phòng ngủ (u = trục ngang của tường, +z = mặt hướng vào phòng) ----------

@@ -16,7 +16,7 @@ const SKY_FOG = 0x8ed4fc;
 const COLORS = {
   grass: '#8fd16a', grassDark: '#79bf57',
   road: 0xfcd9a6, roadDone: 0xf9b6cb,
-  body: { normal: 0xf2557f, chill: 0xf2557f, hard: 0xf2557f, boss: 0x8f5fdc, locked: 0x8a6f62 },
+  body: { normal: 0xf2557f, chill: 0xf2557f, hard: 0xf2557f, boss: 0x6d2fd6, locked: 0x8a6f62 },
 };
 // Góc nhìn: camera đứng trên đỉnh trống nhìn chéo xuống; bề ngang thấy được ~ ±HALF_W đơn vị ở chỗ màn đang chọn.
 const CAM = { height: 11.5, back: 9.5, aimAhead: -1, aimUp: 0, halfW: 3.9 };
@@ -111,12 +111,12 @@ const pawMat = color => cached(`paw|${color}`, () => new THREE.MeshBasicMaterial
   map: canvasTexture(64, 64, (g) => { g.scale(64 / 24, 64 / 24); g.fillStyle = color; g.fill(PAW_PATH); }), transparent: true, depthWrite: false,
 }));
 // Mặt trước khối đầu mèo: số trắng viền nâu (bóng nâu nhẹ phía dưới), ổ khoá trắng nếu chưa mở.
-function faceMat(number, locked) {
-  return cached(`face|${number}|${locked}`, () => new THREE.MeshBasicMaterial({ map: faceTexture(number, locked), transparent: true, fog: true }));
+function faceMat(number, locked, boss = false) {
+  return cached(`face|${number}|${locked}|${boss}`, () => new THREE.MeshBasicMaterial({ map: faceTexture(number, locked, boss), transparent: true, fog: true }));
 }
-function faceTexture(number, locked) {
+function faceTexture(number, locked, boss) {
   return canvasTexture(256, 256, (g, w) => {
-    const ink = '#5b2e1c', y = locked ? 100 : 132;
+    const ink = boss && !locked ? '#3a1a6e' : '#5b2e1c', y = locked ? 100 : 132;
     g.font = `900 ${locked ? 124 : 158}px "Baloo 2", Nunito, sans-serif`;
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     g.lineWidth = 22; g.strokeStyle = ink; g.fillStyle = ink;
@@ -627,18 +627,18 @@ const currentAssets = () => currentFx ??= {
   star: toonMat({ color: 0xffd23f, rim: .45 }),
 };
 
-// ---------- Bệ màn boss: bánh kem hai tầng (các màn khác dùng bệ thường) ----------
-// Tầng đế vàng bánh quy có hạt ngọc trai viền mép, tầng trên phủ kem (hồng màn đã mở / kem nâu màn khoá / tím boss) có
-// viền kem gợn sóng, mặt bánh kem trắng; quanh chân bệ là cụm cỏ + hoa nhỏ. Hình học + vật liệu dùng chung mọi màn.
+// ---------- Bệ màn boss: bục hoàng gia (các màn khác dùng bệ thường) ----------
+// Đế bát giác vàng, thân bát giác tím (màn khoá: nâu xám) có đai vàng ở mép trên, tám viên đá quý hồng gắn quanh thân,
+// hai cột vàng phía sau đỉnh đá quý; mặt bục tròn kem vàng. Hình học + vật liệu dùng chung mọi màn.
 const PED = {
-  base: new THREE.CylinderGeometry(.8, .86, .2, 36), tier: new THREE.CylinderGeometry(.7, .74, .17, 36), plate: new THREE.CylinderGeometry(.64, .67, .06, 36),
-  pearl: new THREE.SphereGeometry(.05, 10, 8), scallop: new THREE.SphereGeometry(.085, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-  tuft: new THREE.ConeGeometry(.06, .2, 5), petal: new THREE.SphereGeometry(.045, 8, 6),
+  base: new THREE.CylinderGeometry(.88, .95, .16, 8), body: new THREE.CylinderGeometry(.74, .8, .2, 8), plate: new THREE.CylinderGeometry(.64, .67, .07, 32),
+  band: new THREE.TorusGeometry(.74, .035, 6, 8), gem: new THREE.OctahedronGeometry(.09, 0), post: new THREE.CylinderGeometry(.05, .06, .5, 8),
+  petal: new THREE.SphereGeometry(.045, 8, 6),
 };
 const pedMat = {
-  biscuit: toonMat({ color: 0xf0c27a }), pearl: toonMat({ color: 0xfffaf0, rim: .4 }), cream: toonMat({ color: 0xfff6ea }),
-  leaf: toonMat({ color: 0x5fb548 }), petalPink: toonMat({ color: 0xff9ec0 }), petalWhite: toonMat({ color: 0xffffff }), heart: toonMat({ color: 0xffd23f }),
-  tier: { open: toonMat({ color: 0xff9ab8 }), locked: toonMat({ color: 0xd9c2b0 }), boss: toonMat({ color: 0xc4a3f2 }) },
+  gold: toonMat({ color: 0xffc83d, rim: .4 }), goldLocked: toonMat({ color: 0xe0cdb8 }), plate: toonMat({ color: 0xfff3c9 }),
+  gem: toonMat({ color: 0xff5fa8, rim: .5 }), gemLocked: toonMat({ color: 0xcdb8a6 }),
+  body: { boss: toonMat({ color: 0x7b3fe4 }), locked: toonMat({ color: 0xb4a090 }) },
 };
 // Bệ thường (mọi màn trừ boss): đế tròn vàng đất + mặt kem, không trang trí.
 const PLAIN_BASE = new THREE.CylinderGeometry(.72, .8, .26, 32), PLAIN_TOP = new THREE.CylinderGeometry(.66, .7, .08, 32);
@@ -651,38 +651,26 @@ function plainPedestal() {
   return { group: g, parts: [base, top], top: .34 };
 }
 function pedestal(kind) {
-  const g = new THREE.Group(), parts = [];
-  const base = new THREE.Mesh(PED.base, pedMat.biscuit); base.position.y = .1;
-  const tier = new THREE.Mesh(PED.tier, pedMat.tier[kind]); tier.position.y = .285;
-  const plate = new THREE.Mesh(PED.plate, pedMat.cream); plate.position.y = .395;
-  for (const m of [base, tier]) { m.castShadow = m.receiveShadow = true; g.add(withInk(m, .035)); }
+  const g = new THREE.Group(), locked = kind === 'locked';
+  const gold = locked ? pedMat.goldLocked : pedMat.gold, gem = locked ? pedMat.gemLocked : pedMat.gem;
+  const base = new THREE.Mesh(PED.base, gold); base.position.y = .08; base.rotation.y = Math.PI / 8;
+  const body = new THREE.Mesh(PED.body, pedMat.body[kind]); body.position.y = .26; body.rotation.y = Math.PI / 8;
+  const plate = new THREE.Mesh(PED.plate, pedMat.plate); plate.position.y = .395;
+  for (const m of [base, body]) { m.castShadow = m.receiveShadow = true; g.add(withInk(m, .035)); }
   plate.receiveShadow = true; g.add(plate);
-  parts.push(base, tier, plate);
-  // Ngọc trai quanh mép đế, viền kem gợn sóng quanh mép tầng trên.
-  for (let k = 0; k < 18; k++) {
-    const a = k / 18 * Math.PI * 2, pearl = new THREE.Mesh(PED.pearl, pedMat.pearl);
-    pearl.position.set(Math.cos(a) * .8, .2, Math.sin(a) * .8); g.add(pearl);
+  // Đai vàng quanh mép trên thân bục.
+  const band = new THREE.Mesh(PED.band, gold); band.rotation.order = 'YXZ'; band.rotation.set(Math.PI / 2, Math.PI / 8, 0); band.position.y = .355; g.add(band);
+  // Tám đá quý gắn ra ngoài tám mặt thân bục.
+  for (let k = 0; k < 8; k++) {
+    const a = k * Math.PI / 4, m = new THREE.Mesh(PED.gem, gem);
+    m.position.set(Math.sin(a) * .8, .26, Math.cos(a) * .8); m.scale.set(1, 1.3, .8); m.rotation.y = a; g.add(m);
   }
-  for (let k = 0; k < 14; k++) {
-    const a = (k + .5) / 14 * Math.PI * 2, scallop = new THREE.Mesh(PED.scallop, pedMat.cream);
-    scallop.position.set(Math.cos(a) * .69, .355, Math.sin(a) * .69); scallop.scale.set(1, .8, 1); g.add(scallop);
+  // Hai cột vàng phía sau, đỉnh gắn đá quý.
+  for (const side of [-1, 1]) {
+    const post = new THREE.Mesh(PED.post, gold); post.position.set(side * .78, .41, -.5); post.castShadow = true; g.add(withInk(post, .05));
+    const top = new THREE.Mesh(PED.gem, gem); top.position.set(side * .78, .72, -.5); top.scale.setScalar(1.2); g.add(top);
   }
-  // Cụm cỏ + hoa quanh chân bệ (lệch nhịp cho tự nhiên, chừa phía trước để không che mặt bệ).
-  [[-.95, .25], [-.78, -.55], [.9, .35], [.62, -.72], [-.2, -.95], [.25, -.92]].forEach(([x, z], k) => {
-    const tuft = new THREE.Group();
-    for (let j = 0; j < 3; j++) {
-      const blade = new THREE.Mesh(PED.tuft, pedMat.leaf);
-      blade.position.set((j - 1) * .06, .09, 0); blade.rotation.z = (j - 1) * .35; tuft.add(blade);
-    }
-    if (k % 2 === 0) {
-      const mat = k % 4 ? pedMat.petalWhite : pedMat.petalPink;
-      for (let j = 0; j < 5; j++) { const a = j / 5 * Math.PI * 2, petal = new THREE.Mesh(PED.petal, mat); petal.position.set(Math.cos(a) * .05, .22, Math.sin(a) * .05); tuft.add(petal); }
-      const heart = new THREE.Mesh(PED.petal, pedMat.heart); heart.position.y = .24; heart.scale.setScalar(.8); tuft.add(heart);
-    }
-    tuft.position.set(x, 0, z); tuft.rotation.y = k * 1.3;
-    g.add(tuft);
-  });
-  return { group: g, parts, top: .43 };
+  return { group: g, parts: [base, body, plate], top: .43 };
 }
 // Mèo 3D (cùng model với Home) đứng cạnh màn mở giống mới, có viền nâu kiểu sticker như khối đầu mèo.
 // Mèo trên bản đồ chỉ cao vài chục px: model của Deco (thân 10 phân đoạn, đuôi / chân / bàn chân 14–20 cạnh) quá mịn.
@@ -909,7 +897,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     tilt.rotation.x = -.42;
     head.add(tilt);
     const bodyColor = locked ? COLORS.body.locked : (COLORS.body[tier] ?? COLORS.body.normal);
-    const cream = matOf(locked ? 0xf1e7e1 : 0xfff3ee, .3);
+    const isBoss = tier === 'boss', royal = isBoss && !locked;
+    const cream = matOf(locked ? 0xf1e7e1 : royal ? 0xffd86b : 0xfff3ee, .3);
     const cat = new THREE.Group();
     cat.position.y = HEAD.h / 2 + .02;
     tilt.add(cat);
@@ -929,23 +918,29 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const outer = new THREE.Mesh(headGeo.ear, cream);
       outer.castShadow = true;
       ear.add(withInk(outer, 0, .065));
-      const inner = new THREE.Mesh(headGeo.earInner, matOf(0xff8fb3));
+      const inner = new THREE.Mesh(headGeo.earInner, matOf(royal ? 0xff5fa8 : 0xff8fb3));
       inner.position.set(-.02, .01, .11);
       ear.add(inner);
       cat.add(ear);
     }
-    const face = new THREE.Mesh(FACE_GEO, faceMat(index + 1, locked));
+    const face = new THREE.Mesh(FACE_GEO, faceMat(index + 1, locked, isBoss));
     face.position.z = FACE_Z + .03;
     cat.add(face);
-    if (tier === 'boss' && !locked) {
-      const crown = new THREE.Group(), gold = matOf(0xffc83d, .4);
+    if (royal) {
+      const crown = new THREE.Group(), gold = matOf(0xffc83d, .4), jewel = matOf(0xff5fa8, .5), pearl = matOf(0xffffff, .4);
       crown.add(withInk(new THREE.Mesh(new THREE.CylinderGeometry(.28, .28, .14, 16), gold), .06));
       for (let k = 0; k < 5; k++) {
         const spike = new THREE.Mesh(new THREE.ConeGeometry(.07, .2, 6), gold);
         const a = k / 5 * Math.PI * 2;
         spike.position.set(Math.cos(a) * .22, .16, Math.sin(a) * .22);
         crown.add(spike);
+        const tip = new THREE.Mesh(PED.petal, pearl);
+        tip.position.set(Math.cos(a) * .22, .28, Math.sin(a) * .22); tip.scale.setScalar(.9);
+        crown.add(tip);
       }
+      const gem = new THREE.Mesh(PED.gem, jewel);
+      gem.position.set(0, 0, .32); gem.scale.set(.8, 1.1, .6);
+      crown.add(gem);
       crown.position.y = 1.5; crown.rotation.z = .2;
       tilt.add(crown);
     }
@@ -1212,7 +1207,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     startCap(doneTo > START_T ? COLORS.roadDone : COLORS.road);
     // Dấu chân mèo: 3 dấu trái / phải xen kẽ giữa mỗi hai màn, hồng đậm trên đoạn đã đi (gộp 3 dấu một đoạn thành một mesh).
     for (let i = 0; i < end; i++) {
-      const group = new THREE.Group(), mat = pawMat(i + 1 < open ? '#ef5f8b' : '#f7a3bd');
+      const group = new THREE.Group(), mat = pawMat(i + 1 < open ? '#ef5f8b' : '#6b4226');
       [.32, .5, .68].forEach((f, k) => {
         const t = i + f, paw = new THREE.Mesh(PAW_GEO, mat), right = k % 2;
         paw.rotation.set(-Math.PI / 2, 0, (right ? -1 : 1) * .3 - Math.atan(pathSlope(t)));

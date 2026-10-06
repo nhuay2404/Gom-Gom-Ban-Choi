@@ -151,7 +151,7 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
 test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tường / sàn / mèo là một nhóm', () => {
   const groups = slotGroups('garden', 'furniture');
   groups.forEach(group => assert.ok(group.every(e => (e.slot || e.id) === (group[0].slot || group[0].id)), 'cùng chỗ'));
-  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom']);
+  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom', 'flowers-tulips']);
   assert.equal(groups.flat().length, catalogFor('garden', 'furniture').length, 'không sót món nào');
   assert.equal(slotGroups('living', 'walls').length, 1);
   assert.equal(slotGroups('living', 'cats').length, 1);
@@ -164,7 +164,7 @@ test('previewAllNew: mỗi chỗ hiện một món chưa mua, không trừ xu, k
   const { deco: shown, items } = previewAllNew(deco, 'garden');
   const ids = items.map(e => e.id);
   assert.ok(ids.includes('stump-hay') && !ids.includes('stump'), 'món đã mua không nằm trong danh sách');
-  assert.ok(!ids.includes('flowers') && !ids.includes('flowers-mushroom'), 'món miễn phí coi như đã có');
+  assert.ok(!ids.includes('flowers') && !ids.includes('flowers-mushroom') && !ids.includes('flowers-tulips'), 'món miễn phí coi như đã có');
   assert.ok(ids.includes('catnip'), 'chỗ chưa mua gì: ưu tiên món gốc');
   const slots = shown.zones.garden.placed.map(id => itemById(id).slot || id);
   assert.equal(new Set(slots).size, slots.length, 'mỗi chỗ chỉ một món');
