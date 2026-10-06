@@ -1,4 +1,4 @@
-// Test luật một ván (session.mjs) + dữ liệu 20 màn + tiến độ. Chạy: npm test
+// Test luật một ván (session.mjs) + dữ liệu 40 màn + tiến độ. Chạy: npm test
 // Khi port sang Cocos: chuyển nguyên file này sang TS, chạy trên core/ mới — qua hết là luật khớp bản web.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,7 +28,7 @@ function playTutorial(index) {
 }
 
 test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
-  assert.equal(LEVELS.length, 20);
+  assert.equal(LEVELS.length, 40);
   LEVELS.forEach((level, i) => {
     const board = parseBoard(level.board), { W, H } = boardSize(level.board);
     assert.ok(level.board.every(row => row.length === W), `màn ${i + 1}: các hàng cùng độ dài`);
@@ -44,6 +44,8 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   assert.equal(levelTier(LEVELS[19]), 'boss');
   assert.equal(levelTier(LEVELS[7]), 'chill');
   assert.equal(levelTier(LEVELS[18]), 'chill');
+  [29, 39].forEach(i => assert.equal(levelTier(LEVELS[i]), 'boss', `màn ${i + 1} là boss`));
+  [26, 36].forEach(i => assert.equal(levelTier(LEVELS[i]), 'chill', `màn ${i + 1} là màn nghỉ`));
   assert.equal(LEVELS[4].introduces, 'crate');
   assert.equal(LEVELS[7].introduces, 'metal');
   assert.deepEqual(levelMechanics(LEVELS[2]), []);            // màn 3 chưa có vật cản
@@ -54,7 +56,8 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   // Chuồng mèo giới thiệu ở màn 15, các màn sau (trừ màn nghỉ 19) đều có chuồng.
   assert.equal(LEVELS[14].introduces, 'cage');
   const caged = LEVELS.map((level, i) => (levelMechanics(level).includes('cage') ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(caged, [15, 16, 17, 18, 20]);
+  assert.deepEqual(caged.filter(n => n <= 20), [15, 16, 17, 18, 20]);
+  assert.ok(caged.filter(n => n > 20).length >= 10, "chương 3–4: phần lớn màn có chuồng");
   assert.equal(LEVELS[HOLD.UNLOCK_LEVEL - 1].introduces, 'hold');
   // Màn đầu 6×6; chương 2 đa số bàn to / có hình.
   const big = LEVELS.map((level, i) => (boardSize(level.board).W > 6 ? i + 1 : null)).filter(Boolean);

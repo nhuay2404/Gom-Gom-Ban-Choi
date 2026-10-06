@@ -1,5 +1,7 @@
 // Sinh offline các bản bố trí crate/wall theo mức độ khó cho từng màn, ghi vào game/gameplay/level-layouts.mjs.
-// Chạy: node tools/generate-layouts.mjs [số ván bot mỗi ứng viên, mặc định 80]
+// Chạy: node tools/generate-layouts.mjs [số ván bot mỗi ứng viên, mặc định 80] [--from=21] [--to=40]
+//   --from/--to: chỉ sinh các màn trong khoảng (1-based); các màn khác giữ nguyên bản cũ trong level-layouts.mjs.
+//   Chạy cả 40 màn lâu (~15 phút), nên chia khoảng và chạy song song.
 //
 // Mỗi mức có luật số lượng riêng (crate C, wall W của bản gốc):
 //   -2  thoáng     crate ≈ C/2, wall ≈ W/2           -1 nhẹ       crate C−1..C−2, wall W hoặc W−1
@@ -64,8 +66,13 @@ function candidate(base, wantC, wantW, rng, moveShare) {
 
 const winRate = (level, salt) => Array.from({ length: RUNS }, (_, r) => play(level, salt * 7919 + r * 104729 + 17, PLAYER)).filter(x => x.win).length / RUNS;
 
-const out = {};
+const arg = name => Number(process.argv.find(a => a.startsWith(`--${name}=`))?.split('=')[1]);
+const FROM = arg('from') || 1, TO = arg('to') || LEVELS.length;
+const { LAYOUTS: previous } = await import('../game/gameplay/level-layouts.mjs');
+// Giữ bản cũ của các màn ngoài khoảng (và chỉ của màn còn tồn tại).
+const out = Object.fromEntries(Object.entries(previous).filter(([name]) => { const i = LEVELS.findIndex(l => l.name === name); return i >= 0 && (i + 1 < FROM || i + 1 > TO); }));
 LEVELS.forEach((level, index) => {
+  if (index + 1 < FROM || index + 1 > TO) return;
   if (!isAdaptive(level)) return;
   const C = count(level.board, 'X'), W = count(level.board, 'M');
   if (!C && !W && index < crateFrom) return;

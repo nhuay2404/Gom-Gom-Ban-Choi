@@ -1,4 +1,4 @@
-// 20 màn của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
+// 40 màn của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
 // (bộ mô phỏng tools/simulate-levels.mjs dùng chung file này để cân độ khó).
 //
 // Tiến trình (độ khó răng cưa: lên dần, thả ở màn nghỉ, lên cao hơn ở boss):
@@ -11,6 +11,9 @@
 //   12–18 Xào lại cơ chế: thùng -> kim loại -> cả hai, hai vòng, vòng sau khó hơn
 //   18   Bottleneck (bức tường độ khó trước màn nghỉ + Boss)
 //   19   Màn nghỉ                           20   BOSS chương 2
+//   21–30 Chương 3 (phòng khách, mở sau màn 20): lặp nhịp thường -> khó -> nghỉ (27) -> thắt nút (29) -> BOSS 30
+//   31–40 Chương 4 (phòng ngủ, mở sau màn 30): như chương 3, đông vật cản hơn; nghỉ 37, thắt nút 39, BOSS 40
+//   Màn 21–40 dựng bằng script một lần: đặt mèo theo cặp không tạo cụm gom sẵn, mục tiêu điểm cân bằng bot
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
 // `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold' | 'cage'), bảng vào màn gắn nhãn NEW.
@@ -180,6 +183,129 @@ export const LEVELS = [
     name: 'Steel Fortress', feature: 'Boss: cross board', tier: 'boss',
     moves: 22, target: 420, cats: 'OGWTSK', assist: 0.4,
     board: ['##.w..##', '##MOGM##', '..X..X..', '.TKMMS..', '..SMMW.T', '..W..K..', '##MX.M##', '##.Ok.##'],
+    deck: [],
+  },
+
+  // ===== Chương 3: phòng khách (mở sau màn 20) — xào lại mọi cơ chế, thêm chuồng mèo vào hầu hết các màn =====
+  {
+    name: "Cozy Corner", feature: "Crates around the room", tier: 'normal',
+    moves: 15, target: 320, cats: 'OGWTS', assist: 0.4,
+    board: ['.....TT', '..G....', 'T....SS', 'T.XX...', '.GG....', 'OXOO...', 'X...T.X'],
+    deck: [],
+  },
+  {
+    name: "Sofa Rows", feature: "Rows of metal", tier: 'normal',
+    moves: 15, target: 300, cats: 'OGWTSK', assist: 0.4,
+    board: ['#MMO..#', '.......', '...MM..', 'SG.....', 'SGOOSO.', '...M...', '#WWOO.#'],
+    deck: [],
+  },
+  {
+    name: "Bookshelf", feature: "Metal shelves + crates", tier: 'hard',
+    moves: 17, target: 370, cats: 'OGWTSK', assist: 0.4,
+    board: ['S...S..O', 'S.MMM...', '...MMM.S', '...X.MMS', '.......X', 'X.KK....', 'KX..MW..', 'KTT..TT.'],
+    deck: [],
+  },
+  {
+    name: "Cat Nap Cages", feature: "Cages on a hexagon", tier: 'normal',
+    moves: 16, target: 270, cats: 'OGWTSK', assist: 0.4,
+    board: ['##..tT##', '#Kk.sS.#', '.......k', '.......O', '...K..GO', '#..G...#', '##.G..##'],
+    deck: [],
+  },
+  {
+    name: "Rug Pattern", feature: "Diamond board + crates", tier: 'normal',
+    moves: 15, target: 300, cats: 'OGWTS', assist: 0.4,
+    board: ['##.X.##', '#.X.T.#', 'TTW..G.', '....XGO', 'X..WWXO', '#...SX#', '##...##'],
+    deck: [],
+  },
+  {
+    name: "Lock & Box", feature: "Crates + cages", tier: 'hard',
+    moves: 17, target: 360, cats: 'OGWTSK', assist: 0.4,
+    board: ['.W..XX..', 'oW......', 'O....X..', '......K.', '...TTsSX', '.K.X....', 'G...W..X', 'G..Kk...'],
+    deck: [],
+  },
+  {
+    name: "Teacup", feature: "Heart board, take a breather", tier: 'chill',
+    moves: 20, target: 380, cats: 'OGWT', assist: 0.5,
+    board: ['#..##..#', '.G..O...', '.G....M.', '...MO..G', '#.O.OM.#', '##OW..##', '###W.###'],
+    deck: [],
+  },
+  {
+    name: "Hallway Split", feature: "Metal wall + cages", tier: 'hard',
+    moves: 17, target: 410, cats: 'OGWTSK', assist: 0.4,
+    board: ['..M.MWW.', '.tTWW..M', '..OM....', '.GO##..w', 'TG.##...', 'T.G.MG..', '....M...', '....M...'],
+    deck: [],
+  },
+  {
+    name: "Window Bars", feature: "Metal + crates + cages", tier: 'hard',
+    moves: 18, target: 410, cats: 'OGWTSK', assist: 0.3,
+    board: ['.....MM.', '......XX', '..SS....', 'MM.OOXO.', 'S.T..MMW', '..t.SSX.', '.MM.X.TT', 'Ss......'],
+    deck: [],
+  },
+  {
+    name: "Living Room Fortress", feature: "Boss: cross board", tier: 'boss',
+    moves: 22, target: 470, cats: 'OGWTSK', assist: 0.4,
+    board: ['##X.WX##', '##..WK##', 'OOWwMKGM', 'kKS..X..', '..S.....', 'X..gXM..', '##MT..##', '##M..M##'],
+    deck: [],
+  },
+  // ===== Chương 4: phòng ngủ (mở sau màn 30) — bàn đông vật cản hơn, mục tiêu cao hơn =====
+  {
+    name: "Pillow Fort", feature: "Crates everywhere", tier: 'normal',
+    moves: 15, target: 320, cats: 'OGWTSK', assist: 0.4,
+    board: ['.S.....', '.SOX..X', 'SX.KWX.', '...KX..', '....X..', 'S....OO', 'SGG....'],
+    deck: [],
+  },
+  {
+    name: "Blanket Fold", feature: "Triangle board + cages", tier: 'normal',
+    moves: 16, target: 300, cats: 'OGWTSK', assist: 0.4,
+    board: ['###.M###', '##..kO##', '##W.SS##', '#.W....#', '#..T...#', '.MS.WWs.', '..SMM.S.'],
+    deck: [],
+  },
+  {
+    name: "Night Lights", feature: "Hexagon + crates + metal", tier: 'normal',
+    moves: 16, target: 340, cats: 'OGWTSK', assist: 0.4,
+    board: ['##.T.X##', '#..TS.M#', '..MOS.O.', 'K..S.WW.', 'K.GG.X.X', '#......#', '##M.X.##'],
+    deck: [],
+  },
+  {
+    name: "Wardrobe", feature: "Tall metal + cages", tier: 'hard',
+    moves: 18, target: 360, cats: 'OGWTSK', assist: 0.4,
+    board: ['KKMM.SS.', '..X...W.', 'W.....WT', '........', 'OoXWw..X', '....MMM.', '..MMMTW.', '....MMW.'],
+    deck: [],
+  },
+  {
+    name: "Dream Cages", feature: "Many cages", tier: 'normal',
+    moves: 16, target: 300, cats: 'OGWTSK', assist: 0.4,
+    board: ['#....W#', '.Skk...', 'O.SSTG.', '.owWT..', '.o.....', '.......', '#.....#'],
+    deck: [],
+  },
+  {
+    name: "Toy Pile", feature: "Heart board + many crates", tier: 'hard',
+    moves: 17, target: 370, cats: 'OGWTSK', assist: 0.4,
+    board: ['#.X##GG#', '.TTX.TX.', '..X..T.X', '.SS.K...', '#XTXsS.#', '##TX..##', '###X.###'],
+    deck: [],
+  },
+  {
+    name: "Nap Time", feature: "Diamond board, take a breather", tier: 'chill',
+    moves: 20, target: 370, cats: 'OGWT', assist: 0.5,
+    board: ['##.W.##', '#..W..#', '...MW.T', '...M..T', '..OO...', '#..G.T#', '##.G.##'],
+    deck: [],
+  },
+  {
+    name: "Moonlit Maze", feature: "Ring board, all obstacles", tier: 'hard',
+    moves: 18, target: 340, cats: 'OGWTSK', assist: 0.4,
+    board: ['.tTM..GS', '.kk..SG.', '.M.M.SXM', '..K##..X', '.XK##...', '..GM.OO.', '.....S..', '..XM....'],
+    deck: [],
+  },
+  {
+    name: "Last Gate", feature: "Metal + crates + cages", tier: 'hard',
+    moves: 19, target: 380, cats: 'OGWTSK', assist: 0.3,
+    board: ['..S.XT..', '.X...T.X', 'G..MMM..', 'G.wW..G.', '.MM.tT..', '....X...', 'tMMMMM..', 'TSSXXT..'],
+    deck: [],
+  },
+  {
+    name: "Bedroom Fortress", feature: "Boss: cross board", tier: 'boss',
+    moves: 24, target: 500, cats: 'OGWTSK', assist: 0.4,
+    board: ['##.MM.##', '##WMO.##', '..WT.TM.', 'M..t.TXs', 'O.MGMMOS', 'XXX...o.', '##X.KX##', '##TTk.##'],
     deck: [],
   },
 ];

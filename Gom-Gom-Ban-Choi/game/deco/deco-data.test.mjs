@@ -16,14 +16,14 @@ test('save mới: xu = tổng sao × COINS_PER_STAR, bắt đầu ở vườn v�
   assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom']);
 });
 
-test('vườn mở rộng (thắng màn 30): cùng khu vườn, đồ mới nằm trong danh mục vườn, khoá từ màn 31', () => {
-  assert.equal(gardenExpanded(29), false);
-  assert.equal(gardenExpanded(30), true);
+test('vườn mở rộng (thắng màn 10): cùng khu vườn, đồ mới nằm trong danh mục vườn, khoá từ màn 11', () => {
+  assert.equal(gardenExpanded(9), false);
+  assert.equal(gardenExpanded(10), true);
   const ext = CATALOG.filter(e => e.area === 'garden2');
   assert.ok(ext.length >= 16, 'đồ phần mở rộng + phương án thay thế');
   ext.forEach(e => {
     assert.equal(e.zone, 'garden', `${e.id} thuộc vườn`);
-    assert.ok(e.lock >= 31, `${e.id} khoá từ màn 31`);
+    assert.ok(e.lock >= 11, `${e.id} khoá từ màn 11`);
     assert.ok(catalogFor('garden', e.cat).includes(e), `${e.id} có trong danh mục vườn`);
   });
   assert.equal(catalogFor('garden', 'walls').filter(e => e.area).length, 0, 'không có rào riêng');
@@ -68,8 +68,8 @@ test('save có trước phòng ngủ: thêm khu phòng ngủ mặc định, gi�
   assert.equal(deco.zones.bedroom.floor, 'bfloor-oak', 'phòng ngủ mặc định sàn Oak');
   assert.equal(deco.zones.living.floor, 'floor-oak', 'phòng khách mặc định sàn Oak');
   assert.equal(itemById('bfloor-oak').price, 0);
-  assert.equal(zoneOpen('bedroom', 14), false);
-  assert.equal(zoneOpen('bedroom', 15), true);
+  assert.equal(zoneOpen('bedroom', 29), false);
+  assert.equal(zoneOpen('bedroom', 30), true);
 });
 
 test('mọi món nội thất có chỗ đặt + bán kính vật cản; các khu nối liền qua cửa', async () => {
@@ -112,8 +112,8 @@ test('xem trước không trừ xu; khu phòng khách mở khi thắng màn 10',
   const preview = previewDeco(deco, itemById('catnip'));
   assert.equal(preview.coins, deco.coins);
   assert.ok(preview.zones.garden.placed.includes('catnip'));
-  assert.equal(zoneOpen('living', 9), false);
-  assert.equal(zoneOpen('living', 10), true);
+  assert.equal(zoneOpen('living', 19), false);
+  assert.equal(zoneOpen('living', 20), true);
 });
 
 test('danh mục: mỗi khu có đủ 4 nhóm, mèo dùng chung', () => {

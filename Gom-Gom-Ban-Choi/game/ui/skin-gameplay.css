@@ -46,7 +46,7 @@ body.low-moves .fg-score{outline:0}
 /* Bàn nằm giữa khoảng trống còn lại (bàn ít hàng / bàn ngang không dồn lên trên, chừa khoảng hở lớn phía trên dock) */
 .shell .board-wrap{align-items:center}
 
-/* ---------- Bàn chơi: khay gỗ ấm có vân, mép dưới dày; ô là mặt gỗ sáng hơi lõm ----------
+/* ---------- Bàn chơi: khay kem vàng (như bản Figma), mép dưới dày; ô kem lõm bo tròn ----------
    Mọi số đo của bàn (lề, khe, bo góc, độ dày mép) tính theo --c = bước một ô (bề ngang bàn / số cột), KHÔNG theo --u:
    bàn co lại (màn thấp, bàn 8 cột) thì khe + bo góc co theo, ô vẫn vuông bo nhẹ chứ không thành hình tròn.
    --bw lặp lại đúng công thức bề ngang bàn (.board-wrap>.board trong ui-portrait.css); cqw/cqh lấy theo .board-wrap. */
@@ -54,19 +54,20 @@ body.low-moves .fg-score{outline:0}
   --edge:calc(var(--c) * .22);
   padding:var(--pad);border-radius:calc(var(--rad) * 1.6);gap:var(--gap)}
 .board{
-  background:
-    repeating-linear-gradient(90deg,#0000 0 calc(var(--c) * .9),#8a4f2414 calc(var(--c) * .9) calc(var(--c) * .93)),
-    repeating-linear-gradient(0deg,#0000 0 3px,#ffffff0d 3px 5px,#0000 5px 9px),
-    linear-gradient(#d9a066,#c98d55 60%,#bf8249);
-  box-shadow:inset 0 2px 0 #f6cf98,inset 0 0 0 2px #b97a43,0 0 0 2px #8f5629,0 var(--edge) 0 #9a5f30,0 calc(var(--edge) * 1.25) 0 #7a4622,
-    0 calc(var(--edge) * 2) calc(var(--edge) * 2) #4a2a1255}
-/* Bàn có hình: các mảnh chồng mép lên nhau, nên chỉ tô màu gỗ trơn + mép dày (vân / viền trong sẽ lộ đường nối giữa mảnh) */
+  background:linear-gradient(#fbe7b2,#f5d998);
+  box-shadow:inset 0 2px 0 #fff6d9,inset 0 0 0 2px #f0cf8a,0 0 0 2px #e5bd74,0 var(--edge) 0 #e2b46a,0 calc(var(--edge) * 1.2) 0 #c99a52,
+    0 calc(var(--edge) * 2) calc(var(--edge) * 2) #6b4a1c55}
+/* Bàn có hình: các mảnh chồng mép lên nhau, nên chỉ tô màu kem trơn + mép dày (viền trong sẽ lộ đường nối giữa mảnh) */
 .board.shaped{background:none;box-shadow:none}
-.board-shape i{background:#cf9459;box-shadow:0 var(--edge) 0 #9a5f30,0 calc(var(--edge) * 1.25) 0 #7a4622}
-.board-shape{filter:drop-shadow(0 calc(var(--edge) * .9) calc(var(--edge) * 1.2) #4a2a1240)}
+/* Mép dày vẽ một lần trên cả khối hình (drop-shadow theo đường bao chung), không vẽ riêng từng mảnh: mép từng mảnh bo góc
+   bị mặt mảnh bên cạnh đè lên thành vết đứt ở chỗ hai mảnh giáp nhau. */
+.board-shape i{background:#f8e0a5;box-shadow:none}
+.board-shape{filter:drop-shadow(0 var(--edge) 0 #e2b46a) drop-shadow(0 calc(var(--edge) * .2) 0 #c99a52) drop-shadow(0 calc(var(--edge) * .9) calc(var(--edge) * 1.2) #6b4a1c40)}
+/* Sắp hết lượt: viền đỏ cảnh báo (board-grid.css) cộng thêm vào mép dày, không thay mất mép */
+body.low-moves .board-shape{filter:drop-shadow(0 var(--edge) 0 #e2b46a) drop-shadow(0 calc(var(--edge) * .2) 0 #c99a52) drop-shadow(3px 0 0 #d9442f99) drop-shadow(-3px 0 0 #d9442f99) drop-shadow(0 3px 0 #d9442f99) drop-shadow(0 -3px 0 #d9442f99)}
 .cell{border-radius:var(--rad);
-  background:repeating-linear-gradient(100deg,#0000 0 calc(var(--c) * .22),#a8693612 calc(var(--c) * .22) calc(var(--c) * .25)),linear-gradient(#e6b77c,#efc690 45%,#f3cf9c);
-  box-shadow:inset 0 calc(var(--c) * .08) calc(var(--c) * .1) #8f562a80,inset 0 -1px 0 #ffe4bb}
+  background:linear-gradient(#efcf8a,#f4d898 45%,#f6dda2);
+  box-shadow:inset 0 calc(var(--c) * .07) calc(var(--c) * .09) #c3954f70,inset 0 -1px 0 #fff1cc}
 .cell.block{background:none;box-shadow:none}
 .cell.block .crate{filter:drop-shadow(0 calc(3 * var(--u)) calc(2 * var(--u)) #5a331655)}
 .board .cat{filter:drop-shadow(0 calc(2 * var(--u)) calc(1.5 * var(--u)) #5a331640)}
@@ -203,3 +204,49 @@ body{overflow-x:clip}
 .result-round[hidden],.result-wide[hidden]{display:none}
 .result-round:active,.result-wide:active{translate:0 calc(2 * var(--u))}
 body.card-holding,body.card-holding *{touch-action:none}
+
+/* ---------- Hộp kết quả lúc THUA theo Figma (frame Gameplay 73:680, popup "Try Again!") ----------
+   Khung, mèo ló đầu + bụi hoa, tim vỡ có tia, chữ tiêu đề, nhãn level, ô điểm, nút Home / chơi lại: ảnh cắt từ Figma
+   (skins/figma-fail/, đã xoá số / chữ in sẵn). Mọi mảnh đặt đúng toạ độ trong khung popup 304.6 × 403 của Figma;
+   số liệu (level, điểm, xu) vẫn do play-controller.js ghi vào đúng phần tử cũ. */
+.result-dialog.lose{width:calc(304.6 * var(--u));height:calc(403 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
+  background:url('./skins/figma-fail/panel.png') center/100% 100% no-repeat}
+.result-dialog.lose>*{position:absolute;margin:0}
+.result-dialog.lose .result-peek{left:calc(38.9 * var(--u));top:calc(-98 * var(--u));width:calc(228.2 * var(--u));height:calc(104 * var(--u));translate:none;
+  background:url('./skins/figma-fail/cat-peek.png') center/100% 100% no-repeat}
+.result-dialog.lose .result-peek>*{display:none}
+.result-dialog.lose .result-hero{left:calc(51 * var(--u));top:calc(6 * var(--u));width:calc(204 * var(--u));height:calc(153 * var(--u));
+  background:url('./skins/figma-fail/heart.png') center/100% 100% no-repeat}
+.result-dialog.lose .result-hero>*{display:none}
+/* Chữ "Try Again!" là ảnh; chữ thật giữ cho trình đọc màn hình */
+.result-dialog.lose .result-title{left:calc(52 * var(--u));top:calc(127 * var(--u));width:calc(207 * var(--u));height:calc(48 * var(--u));
+  font-size:0;color:transparent;text-shadow:none;-webkit-text-stroke:0;background:url('./skins/figma-fail/title.png') center/100% 100% no-repeat}
+.result-dialog.lose .result-sub{left:calc(88 * var(--u));top:calc(179 * var(--u));width:calc(130 * var(--u));height:calc(23 * var(--u));
+  display:grid;place-items:center;font-family:var(--display);font-size:calc(11.5 * var(--u));font-weight:800;line-height:1;color:#6b1f12;
+  background:url('./skins/figma-fail/level-pill.png') center/100% 100% no-repeat}
+.result-dialog.lose .result-sub::before,.result-dialog.lose .result-sub::after{display:none}
+/* Ô điểm: ảnh có sẵn chữ "Score", đồng xu, tia; game ghi điểm vào rãnh giữa, số xu cạnh đồng xu */
+.result-dialog.lose .result-box{left:calc(35 * var(--u));top:calc(195 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));
+  padding:0;border:0;border-radius:0;background:url('./skins/figma-fail/score-box.png') center/100% 100% no-repeat}
+.result-dialog.lose .result-label,.result-dialog.lose .result-note{display:none}
+.result-dialog.lose .result-score{position:absolute;left:31.8%;width:36.7%;top:21%;height:23%;min-width:0;padding:0;display:grid;place-items:center;
+  background:none;font-size:calc(19 * var(--u));line-height:1;color:#6b1f12}
+.result-dialog.lose .result-coins,.result-dialog.lose .result-box::after{position:absolute;left:47%;top:57%;width:auto;margin:0;padding:0;border:0;
+  display:flex;flex-direction:column;align-items:flex-start;gap:0;font-family:var(--display);line-height:.95}
+.result-dialog.lose .result-coins .ico-coin{display:none}
+.result-dialog.lose .result-coins b{font-size:calc(21 * var(--u));color:#6b1f12}
+.result-dialog.lose .result-coins small{margin:0;font-size:calc(12 * var(--u));color:#9a7864}
+/* Thua không được xu: vẫn có đồng xu trong ảnh nên ghi +0 */
+.result-dialog.lose .result-box:has(.result-coins[hidden])::after{content:'+0';font-size:calc(21 * var(--u));font-weight:800;color:#6b1f12}
+/* Nút: Home tròn kem, chơi lại hồng dài */
+.result-dialog.lose .result-actions{inset:0;pointer-events:none}
+.result-dialog.lose .result-actions>*{position:absolute;pointer-events:auto;border:0;border-radius:0;box-shadow:none;background:center/100% 100% no-repeat}
+.result-dialog.lose .result-actions svg{display:none}
+.result-dialog.lose #result-map{left:calc(15 * var(--u));top:calc(324 * var(--u));width:calc(58 * var(--u));height:calc(58 * var(--u));background-image:url('./skins/figma-fail/btn-home.png')}
+.result-dialog.lose #result-retry{left:calc(81 * var(--u));top:calc(323 * var(--u));width:calc(206 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-fail/btn-retry.png')}
+.result-dialog.lose .result-actions>button:active{translate:0 calc(2 * var(--u))}
+/* Hộp tự focus nút đầu (Home) khi mở: bỏ khung focus mặc định (vuông, lệch hình nút), dùng quầng sáng theo hình nút. Vị trí khung như Figma (đỉnh khung ở y = 272),
+   màn thấp thì kéo lên cho vừa. */
+.result-dialog.lose .result-actions>button:focus{outline:none}
+.result-dialog.lose .result-actions>button:focus-visible{filter:drop-shadow(0 0 calc(4 * var(--u)) #ffd23f)}
+.result-dialog.lose{margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}

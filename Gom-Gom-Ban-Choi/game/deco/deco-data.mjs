@@ -4,18 +4,17 @@ import { ECONOMY } from '../gameplay/tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { COINS_PER_STAR, MAX_ROOM_CATS } = ECONOMY;
 
-// Vườn là khu của màn 1–10. Phòng khách mở khi thắng màn 10, phòng ngủ khi thắng màn 15 (màn 16–20).
+// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 (thắng màn 10) -> Phòng khách (thắng màn 20) -> Phòng ngủ (thắng màn 30).
 export const ZONES = {
   garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
-  living: { name: 'Living room', unlockAfter: 10, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  bedroom: { name: 'Bedroom', unlockAfter: 15, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  living: { name: 'Living room', unlockAfter: 20, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  bedroom: { name: 'Bedroom', unlockAfter: 30, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
-// Vườn mở rộng (dành cho màn 31–40): thắng màn 30 thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
-// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2', khoá từ màn 31).
-// Game hiện có 20 màn nên người chơi chưa mở được; xem trước bằng nút Dev: Unlock all.
-export const GARDEN_EXPANSION = { unlockAfter: 30, name: 'Garden expansion' };
+// Vườn mở rộng (Vườn 2): thắng màn 10 thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
+// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2', mở dần từ màn 11).
+export const GARDEN_EXPANSION = { unlockAfter: 10, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
 
 // `lock` = level phải mở tới (1-based) thì mới mua được. Giá 0 = có sẵn từ đầu.
@@ -62,13 +61,13 @@ export const CATALOG = [
   // --- Phòng ngủ (mở cả khu khi thắng màn 15; đồ mở dần ở màn 16–19) ---
   { id: 'bed', zone: 'bedroom', cat: 'furniture', name: 'Cozy bed', price: 0, color: '#8fc9f2' },
   { id: 'bedrug', zone: 'bedroom', cat: 'furniture', name: 'Fluffy rug', price: 0, color: '#e6dcff' },
-  { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', price: 100, color: '#e9c58f', lock: 16 },
-  { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', price: 120, color: '#f3d5a8', lock: 16 },
-  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', price: 260, color: '#3a3f4a', lock: 16 },
-  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', price: 180, color: '#e8617f', lock: 17 },
-  { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', price: 220, color: '#fff4e0', lock: 17 },
-  { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', price: 150, color: '#d9a36a', lock: 18 },
-  { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', price: 240, color: '#c98a55', lock: 19 },
+  { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', price: 100, color: '#e9c58f', lock: 36 },
+  { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', price: 120, color: '#f3d5a8', lock: 36 },
+  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', price: 260, color: '#3a3f4a', lock: 36 },
+  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', price: 180, color: '#e8617f', lock: 37 },
+  { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', price: 220, color: '#fff4e0', lock: 37 },
+  { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', price: 150, color: '#d9a36a', lock: 38 },
+  { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', price: 240, color: '#c98a55', lock: 39 },
   { id: 'bwall-lavender', zone: 'bedroom', cat: 'walls', name: 'Lavender', price: 0, color: '#ebe3f8' },
   { id: 'bwall-blush', zone: 'bedroom', cat: 'walls', name: 'Blush', price: 100, color: '#ffe0e6' },
   { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', price: 100, color: '#dcebd6' },
@@ -81,14 +80,14 @@ export const CATALOG = [
   { id: 'bfloor-carpet', zone: 'bedroom', cat: 'floors', name: 'Lilac carpet', price: 120, color: '#d9d4f2' },
   { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', price: 150, color: '#f2d7c9' },
   // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
-  { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', price: 0, color: '#f3d5a8', lock: 31 },
-  { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', price: 0, color: '#ffd23f', lock: 31 },
-  { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', price: 200, color: '#8fc9f2', lock: 31 },
-  { id: 'campfire', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Campfire', price: 260, color: '#ff7a3d', lock: 32 },
-  { id: 'kite', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Kite', price: 220, color: '#e8617f', lock: 33 },
-  { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', price: 280, color: '#6fc3e0', lock: 34 },
-  { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', price: 320, color: '#6fbf4a', lock: 35 },
-  { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', price: 340, color: '#ffb347', lock: 37 },
+  { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', price: 0, color: '#f3d5a8', lock: 11 },
+  { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', price: 0, color: '#ffd23f', lock: 11 },
+  { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', price: 200, color: '#8fc9f2', lock: 11 },
+  { id: 'campfire', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Campfire', price: 260, color: '#ff7a3d', lock: 12 },
+  { id: 'kite', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Kite', price: 220, color: '#e8617f', lock: 13 },
+  { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', price: 280, color: '#6fc3e0', lock: 14 },
+  { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', price: 320, color: '#6fbf4a', lock: 15 },
+  { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', price: 340, color: '#ffb347', lock: 17 },
   // --- Mèo (dùng chung) ---
   { id: 'cat-orange', cat: 'cats', name: 'Orange cat', price: 0, breed: 'orange' },
   { id: 'cat-gray', cat: 'cats', name: 'Gray cat', price: 0, breed: 'gray' },

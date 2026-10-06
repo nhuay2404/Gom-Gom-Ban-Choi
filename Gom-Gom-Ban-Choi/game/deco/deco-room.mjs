@@ -1258,7 +1258,10 @@ export function createRoom() {
       return;
     }
     if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > MOVE_TOLERANCE) clearTimeout(holdTimer); // đang xoay phòng
+    // Chuột (không phải cảm ứng) lướt qua mèo khi không bấm: mèo quay mặt ra màn hình nhìn bạn.
+    if (event.pointerType === 'mouse' && !event.buttons) { aim(event); cats.hover(cats.hit(raycaster)); }
   });
+  renderer.domElement.addEventListener('pointerleave', () => cats.hover(null));
   const release = event => {
     clearTimeout(holdTimer);
     if (carrying && event.pointerId === carrying.id) { endCarry(); down = null; return; }

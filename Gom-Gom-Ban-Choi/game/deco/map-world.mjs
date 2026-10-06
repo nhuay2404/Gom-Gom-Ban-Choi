@@ -110,10 +110,10 @@ function faceTexture(number, locked) {
     }
   });
 }
-function signTexture(text) {
+function signTexture(text, size = 38) {
   return canvasTexture(512, 160, (g, w, h) => {
     g.fillStyle = '#7a4a2a';
-    g.font = '800 38px "Baloo 2", Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `800 ${size}px "Baloo 2", Nunito, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, w / 2, h / 2);
   });
 }
@@ -334,6 +334,189 @@ function butterfly(rnd) {
   return g;
 }
 
+// ---------- Vùng trong nhà: phòng khách (màn 20–29), phòng ngủ (từ màn 30) ----------
+// Ranh giới nằm giữa hai màn (t = chỉ số màn): màn 20 = index 19 nên phòng khách bắt đầu từ t = 18.5.
+const ZONES = [
+  { id: 'garden', from: -Infinity },
+  { id: 'living', from: 18.5, label: 'Living Room', fog: 0xf7dfc0, wall: 'repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 22px,transparent 22px 44px),linear-gradient(#fde9cc,#f3cfa3)' },
+  { id: 'bedroom', from: 28.5, label: 'Bedroom', fog: 0xe6d6f6, wall: 'radial-gradient(circle at 12px 12px,rgba(255,255,255,.5) 0 4px,transparent 5px) 0 0/32px 32px,linear-gradient(#efe4fd,#d8c4f1)' },
+];
+const zoneAt = t => ZONES.reduce((z, next) => (t >= next.from ? next : z), ZONES[0]).id;
+function floorTexture(kind) {
+  return canvasTexture(512, 512, (g, w, h) => {
+    let seed = kind === 'living' ? 31 : 57;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    if (kind === 'living') {
+      // Sàn gỗ: 8 hàng ván, mỗi ván lệch nhịp, vân gỗ mảnh.
+      const rows = 8, rh = h / rows;
+      for (let r = 0; r < rows; r++) {
+        let x = -rnd() * 200;
+        while (x < w) {
+          const len = 160 + rnd() * 140, tone = ['#d9a56b', '#cf9a5f', '#e2b47c', '#d49f64'][Math.floor(rnd() * 4)];
+          g.fillStyle = tone; g.fillRect(x, r * rh, len, rh);
+          g.strokeStyle = 'rgba(140,90,50,.25)'; g.lineWidth = 2;
+          for (let k = 0; k < 2; k++) { const y = r * rh + rh * (.3 + rnd() * .4); g.beginPath(); g.moveTo(x + 10, y); g.bezierCurveTo(x + len * .3, y - 4, x + len * .6, y + 4, x + len - 10, y); g.stroke(); }
+          g.fillStyle = '#a8713f'; g.fillRect(x, r * rh, 3, rh);
+          x += len;
+        }
+        g.fillStyle = '#a8713f'; g.fillRect(0, r * rh, w, 3);
+      }
+    } else {
+      // Thảm phòng ngủ: tím nhạt, sọc mờ + tim / sao nhỏ.
+      g.fillStyle = '#d9c7f2'; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.18)';
+      for (let x = 0; x < w; x += 64) g.fillRect(x, 0, 32, h);
+      for (let i = 0; i < 22; i++) {
+        const x = rnd() * w, y = rnd() * h;
+        g.fillStyle = rnd() < .5 ? '#ffb3d1' : '#fff6c2';
+        g.beginPath(); g.arc(x - 4, y, 5, 0, Math.PI * 2); g.arc(x + 4, y, 5, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.moveTo(x - 9, y + 2); g.lineTo(x, y + 12); g.lineTo(x + 9, y + 2); g.fill();
+      }
+    }
+  }, { repeat: true });
+}
+const furnMats = {
+  wood: toonMat({ color: 0xd59a5c }), woodDark: toonMat({ color: 0x9a6a43 }), white: toonMat({ color: 0xfff6ea }),
+  sofa: [toonMat({ color: 0x7ec4cf }), toonMat({ color: 0xf2a65a }), toonMat({ color: 0xf28fa8 })], cushion: toonMat({ color: 0xffe08a }),
+  pot: toonMat({ color: 0xe07a50 }), leaf: toonMat({ color: 0x5fb548 }), shade: new THREE.MeshBasicMaterial({ color: 0xfff0c0, fog: true }),
+  books: [toonMat({ color: 0xf2605a }), toonMat({ color: 0x6aa8f0 }), toonMat({ color: 0xffd23f }), toonMat({ color: 0x8fd16a })],
+  yarn: [toonMat({ color: 0xff8fb3 }), toonMat({ color: 0x8ec5ff }), toonMat({ color: 0xffd36e })],
+  blanket: [toonMat({ color: 0xa98be0 }), toonMat({ color: 0xff9ec0 }), toonMat({ color: 0x8fd0c4 })], teddy: toonMat({ color: 0xc58b5a }),
+  rug: [toonMat({ color: 0xf6c8a0 }), toonMat({ color: 0xffb3c8 }), toonMat({ color: 0xc9b3f0 })],
+};
+const choose = (rnd, list) => list[Math.floor(rnd() * list.length)];
+const box = (w, h, d, mat, x = 0, y = 0, z = 0, ink = .06) => {
+  const m = new THREE.Mesh(roundedBox(w, h, d, 2, Math.min(w, h, d) * .25), mat);
+  m.position.set(x, y, z);
+  return ink ? withInk(m, ink) : m;
+};
+function sofa(rnd, seats = 2) {
+  const g = new THREE.Group(), mat = choose(rnd, furnMats.sofa), w = seats * .55 + .3;
+  g.add(box(w, .26, .6, mat, 0, .2, 0), box(w, .42, .16, mat, 0, .45, -.24), box(.16, .36, .6, mat, -w / 2 + .08, .34, 0), box(.16, .36, .6, mat, w / 2 - .08, .34, 0));
+  for (let k = 0; k < seats; k++) g.add(box(.5, .1, .42, mat, (k - (seats - 1) / 2) * .55, .38, .04, .08));
+  g.add(box(.3, .28, .1, furnMats.cushion, -w / 2 + .35, .55, -.13, .1));
+  return g;
+}
+function coffeeTable() {
+  const g = new THREE.Group();
+  g.add(box(.85, .08, .55, furnMats.wood, 0, .34, 0));
+  for (const [x, z] of [[-.34, -.2], [.34, -.2], [-.34, .2], [.34, .2]]) g.add(box(.07, .32, .07, furnMats.woodDark, x, .16, z, .12));
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(.06, .05, .1, 10), furnMats.white);
+  cup.position.set(.15, .43, .05); g.add(withInk(cup, .1));
+  return g;
+}
+function pottedPlant(rnd, big = false) {
+  const g = new THREE.Group(), s = big ? 1.5 : 1;
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(.18, .13, .28, 12), furnMats.pot);
+  pot.position.y = .14; g.add(withInk(pot, .07));
+  for (let k = 0; k < 5; k++) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(.13 + rnd() * .06, 10, 8), furnMats.leaf);
+    const a = k / 5 * Math.PI * 2;
+    leaf.position.set(Math.cos(a) * .12, .38 + (k % 2) * .12, Math.sin(a) * .12); leaf.scale.y = 1.3;
+    g.add(withInk(leaf, .06));
+  }
+  g.scale.setScalar(s);
+  return g;
+}
+function floorLamp() {
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .9, 8), furnMats.woodDark);
+  pole.position.y = .45; g.add(pole);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(.16, .18, .05, 14), furnMats.woodDark);
+  foot.position.y = .025; g.add(withInk(foot, .08));
+  const shade = new THREE.Mesh(new THREE.CylinderGeometry(.14, .24, .26, 14), furnMats.shade);
+  shade.position.y = .98; g.add(withInk(shade, .07));
+  return g;
+}
+function bookshelf(rnd) {
+  const g = new THREE.Group();
+  g.add(box(.95, .82, .32, furnMats.woodDark, 0, .41, 0, .04));
+  for (let row = 0; row < 2; row++) {
+    let x = -.38;
+    while (x < .34) {
+      const bw = .07 + rnd() * .05, bh = .2 + rnd() * .08;
+      g.add(box(bw, bh, .22, choose(rnd, furnMats.books), x + bw / 2, .14 + row * .34 + bh / 2, .06, 0));
+      x += bw + .015;
+    }
+  }
+  return g;
+}
+function yarnBall(rnd) {
+  const g = new THREE.Group(), mat = choose(rnd, furnMats.yarn);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(.16, 14, 10), mat);
+  ball.position.y = .16; g.add(withInk(ball, .08));
+  for (let k = 0; k < 3; k++) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(.16, .012, 6, 24), furnMats.white);
+    band.position.y = .16; band.rotation.set(k * 1.1, k * .7, 0); g.add(band);
+  }
+  return g;
+}
+function floorCushion(rnd) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(.3, 14, 10), rnd() < .5 ? furnMats.cushion : choose(rnd, furnMats.sofa));
+  m.scale.set(1, .35, 1); m.position.y = .1;
+  return withInk(m, .06);
+}
+// Thảm tròn hai lớp (thay ao nhỏ ở trong nhà).
+function rug(rnd) {
+  const g = new THREE.Group(), [a, b] = [choose(rnd, furnMats.rug), furnMats.white];
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(.95, .95, .02, 36), a);
+  outer.scale.z = .75; outer.position.y = .02; outer.receiveShadow = true; g.add(outer);
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(.6, .6, .02, 32), b);
+  inner.scale.z = .75; inner.position.y = .03; inner.receiveShadow = true; g.add(inner);
+  return g;
+}
+function bed(rnd) {
+  const g = new THREE.Group();
+  g.add(box(1, .22, 1.45, furnMats.wood, 0, .13, 0), box(1, .55, .1, furnMats.woodDark, 0, .4, -.72));
+  g.add(box(.92, .12, 1.35, furnMats.white, 0, .3, 0, 0), box(.95, .1, .9, choose(rnd, furnMats.blanket), 0, .37, .25, .06));
+  g.add(box(.6, .12, .26, furnMats.white, 0, .41, -.48, .08));
+  return g;
+}
+function nightstand() {
+  const g = new THREE.Group();
+  g.add(box(.42, .4, .36, furnMats.wood, 0, .2, 0), box(.3, .02, .02, furnMats.woodDark, 0, .25, .19, 0));
+  const lamp = new THREE.Mesh(new THREE.CylinderGeometry(.08, .13, .16, 12), furnMats.shade);
+  lamp.position.y = .55; g.add(withInk(lamp, .08));
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .1, 6), furnMats.woodDark);
+  stem.position.y = .44; g.add(stem);
+  return g;
+}
+// Tủ ngăn kéo thấp (tủ cao nhìn từ trên xuống trông như đổ nghiêng).
+function dresser(rnd) {
+  const g = new THREE.Group(), mat = rnd() < .5 ? furnMats.white : furnMats.wood;
+  g.add(box(.9, .6, .45, mat, 0, .3, 0, .04), box(.8, .02, .02, furnMats.woodDark, 0, .3, .23, 0));
+  for (const [x, y] of [[-.2, .45], [.2, .45], [-.2, .15], [.2, .15]]) g.add(box(.12, .04, .04, furnMats.woodDark, x, y, .25, 0));
+  return g;
+}
+function teddy() {
+  const g = new THREE.Group(), m = furnMats.teddy, ball = (r, x, y, z) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 9), m); s.position.set(x, y, z); g.add(withInk(s, .08)); };
+  ball(.17, 0, .17, 0); ball(.13, 0, .42, .02); ball(.05, -.1, .53, 0); ball(.05, .1, .53, 0);
+  ball(.06, -.15, .1, .1); ball(.06, .15, .1, .1);
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), furnMats.white);
+  snout.position.set(0, .4, .13); g.add(snout);
+  return g;
+}
+function catBed(rnd) {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.32, .11, 10, 24), choose(rnd, furnMats.blanket));
+  ring.rotation.x = Math.PI / 2; ring.position.y = .11; g.add(withInk(ring, .05));
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .06, 20), furnMats.white);
+  pad.position.y = .05; g.add(pad);
+  return g;
+}
+// Cổng chuyển vùng bắc ngang đường: hai cột + xà ngang + bảng tên phòng.
+function zoneGate(label) {
+  const g = new THREE.Group(), half = WORLD.ROAD / 2 + WORLD.EDGE + .25;
+  for (const x of [-half, half]) g.add(box(.18, 1.5, .18, furnMats.woodDark, x, .75, 0));
+  g.add(box(half * 2 + .4, .18, .22, furnMats.woodDark, 0, 1.55, 0));
+  const board = box(1.7, .42, .08, furnMats.white, 0, 1.92, 0);
+  g.add(board);
+  const text = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), new THREE.MeshBasicMaterial({ map: signTexture(label, 84), transparent: true }));
+  text.position.set(0, 1.92, .05); g.add(text);
+  g.traverse(n => { if (n.isMesh) n.castShadow = true; });
+  return g;
+}
+
 // ---------- Đánh dấu màn đang chơi (thay cho icon mèo cũ) ----------
 // Quầng sáng mềm trên cỏ quanh bệ, ngôi sao vàng viền nâu lơ lửng trên đầu, vài đốm lấp lánh quanh khối đầu.
 function haloTexture() {
@@ -449,8 +632,16 @@ export function createMapWorld(container, { onPick } = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Tường giấy dán của phòng khách / phòng ngủ phủ lên ảnh trời phía sau canvas, hiện dần khi lướt vào vùng đó.
+  const walls = Object.fromEntries(ZONES.filter(z => z.wall).map(z => {
+    const div = document.createElement('div');
+    div.style.cssText = `position:absolute;inset:0;pointer-events:none;opacity:0;background:${z.wall}`;
+    container.append(div);
+    return [z.id, div];
+  }));
   container.append(renderer.domElement);
   const canvas = renderer.domElement;
+  canvas.style.position = 'relative';
   canvas.className = 'map-canvas';
 
   const scene = new THREE.Scene();
@@ -485,6 +676,23 @@ export function createMapWorld(container, { onPick } = {}) {
 
   const content = new THREE.Group();
   drum.add(content);
+  // Sàn trong nhà: dải trống phủ ngay trên cỏ từng đoạn một màn (θ của CylinderGeometry = π/2 + góc trống).
+  const floorMats = {};
+  for (const id of ['living', 'bedroom']) {
+    const tex = floorTexture(id);
+    tex.repeat.set(LEVEL_GAP / 2.2, 40 / 2.2);
+    floorMats[id] = toonMat({ color: 0xffffff, map: tex });
+  }
+  function floorPiece(i, zone) {
+    const a0 = angleOf(i - .5);
+    const geo = new THREE.CylinderGeometry(WORLD.R + .004, WORLD.R + .004, 40, 24, 1, true, Math.PI / 2 + a0, WORLD.STEP);
+    const mesh = new THREE.Mesh(geo, floorMats[zone]);
+    mesh.rotation.z = Math.PI / 2;
+    mesh.receiveShadow = true;
+    mesh.userData.angle = angleOf(i);
+    culled.push(mesh);
+    content.add(mesh);
+  }
   const pickables = [];
   // Trống nhỏ (cong mạnh) nên cả con đường quấn gần trọn một vòng: chỉ hiện vật gần camera, phần đã qua chân trời
   // hoặc sau lưng camera ẩn đi, không thì đầu đường (màn 1) lộ ra ngay sau màn cuối.
@@ -661,6 +869,44 @@ export function createMapWorld(container, { onPick } = {}) {
     plant(g, pathX(t), t);
   }
 
+  // Điểm xuất phát (đầu đường, trước màn 1): nắp nửa tròn cho viền + mặt đường thay cho vết cắt thẳng, dấu chân to giữa nắp,
+  // vòng hoa ôm quanh nắp, khóm hoa hai bên, bụi cây + đèn lồng phía sau. Màu mặt nắp = màu đoạn đầu đường (đã đi: hồng, chưa: kem).
+  const START_T = -.8;
+  function startCap(color) {
+    const x = pathX(START_T), turn = -Math.atan(pathSlope(START_T));
+    // Nửa đĩa phẳng hướng về phía camera (+z = t nhỏ hơn), quay theo hướng đường cho khớp mép dải băng.
+    const half = (r, lift, material) => {
+      const cap = new THREE.Mesh(new THREE.CircleGeometry(r, 36, Math.PI, Math.PI).rotateX(-Math.PI / 2), material);
+      cap.rotation.y = turn;
+      cap.receiveShadow = true;
+      plant(cap, x, START_T, lift);
+    };
+    half(WORLD.ROAD / 2 + WORLD.EDGE, .015, toonMat({ color: INK }));
+    half(WORLD.ROAD / 2, .03, toonMat({ color }));
+    let seed = 777;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const side = (WORLD.ROAD / 2 + WORLD.EDGE + .45) * Math.hypot(1, pathSlope(START_T));
+    const deco = (object, dx, dt) => {
+      object.traverse(n => { if (n.isMesh) n.castShadow = true; });
+      plant(object, x + dx, START_T + dt);
+    };
+    deco(flowerPatch(rnd), -side, .05);
+    deco(flowerPatch(rnd), side, .05);
+    deco(lantern(), -side - .15, -.35);
+    deco(bush(rnd), side + .25, -.4);
+    deco(bush(rnd), .35, -.95);
+    // Vòng hoa ôm sát mép nắp (nửa vòng phía camera), cách đều nhau
+    const ring = WORLD.ROAD / 2 + WORLD.EDGE + .2;
+    for (let k = 0; k <= 8; k++) {
+      const a = Math.PI * k / 8, dx = Math.cos(a) * ring, dz = Math.sin(a) * ring;
+      deco(flower(rnd), dx, -dz / LEVEL_GAP);
+    }
+    // Dấu chân to ở giữa nắp: chỗ mèo bắt đầu hành trình
+    const paw = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), new THREE.MeshBasicMaterial({ map: pawTexture(color === COLORS.roadDone ? '#ef5f8b' : '#f7a3bd'), transparent: true, depthWrite: false }));
+    paw.rotation.set(-Math.PI / 2, 0, turn);
+    plant(paw, x, START_T - .12, .045);
+  }
+
   // Trang trí hai bên đường, chia theo đoạn: mỗi đoạn quanh một màn (t từ i - .5 tới i + .5) là một nhóm gộp chất liệu
   // (mergeStatic) và ẩn / hiện như một khối theo góc trống. Phủ hết phần cỏ thấy được ở mọi vị trí cuộn (cả trước màn 1
   // và sau biển "coming soon"); mỗi đoạn có hạt giống riêng nên dựng lại vẫn y hệt.
@@ -683,6 +929,8 @@ export function createMapWorld(container, { onPick } = {}) {
       }
       const signT = end + .95;
       if (Math.abs(t - signT) * LEVEL_GAP < .8 + r && Math.abs(x - pathX(signT)) < 1.6 + r) return false;
+      // Cổng chuyển vùng bắc ngang đường.
+      for (const z of ZONES) if (z.label && Math.abs(t - z.from) * LEVEL_GAP < .5 + r && Math.abs(x - pathX(z.from)) < 1.3 + r) return false;
       return placed.every(p => Math.hypot(p.x - x, (p.t - t) * LEVEL_GAP) > p.r + r);
     };
     const put = (chunk, object, x, t, r, lift = 0) => {
@@ -697,23 +945,24 @@ export function createMapWorld(container, { onPick } = {}) {
     for (let i = first; i <= last; i++) {
       let seed = 1000 + (i - first) * 7919;
       const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-      const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end;
+      const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = zone !== 'garden';
+      if (indoor) floorPiece(i, zone);
       // Đèn lồng giữa hai màn, đổi bên mỗi đoạn; hàng rào ngắn phía bên kia (cách hai đoạn một lần).
       const lampSide = i % 2 ? 1 : -1, edge = (WORLD.ROAD / 2 + WORLD.EDGE + .35) * Math.hypot(1, pathSlope(mid));
-      if (onRoad && free(pathX(mid) + lampSide * edge, mid, .2)) put(chunk, lantern(), pathX(mid) + lampSide * edge, mid, .2);
+      if (onRoad && free(pathX(mid) + lampSide * edge, mid, .2)) put(chunk, indoor ? floorLamp() : lantern(), pathX(mid) + lampSide * edge, mid, .2);
       if (onRoad && i % 3 === 0 && free(pathX(mid) - lampSide * edge, mid, .5)) {
-        const f = fence(1.2);
+        const f = indoor ? pottedPlant(rnd) : fence(1.2);
         f.rotation.y = -Math.atan(pathSlope(mid));
         put(chunk, f, pathX(mid) - lampSide * edge, mid, .5);
       }
       // Biển chỉ đường mỗi 5 đoạn, ao nhỏ mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
-      if (onRoad && i % 5 === 2) {
+      if (onRoad && !indoor && i % 5 === 2) {
         const t = i + .25, x = pathX(t) - lampSide * edge;
         if (free(x, t, .3)) { const s = signpost(); s.rotation.y = -Math.atan(pathSlope(t)); put(chunk, s, x, t, .3); }
       }
       if (i % 4 === 1) {
         const t = mid + (rnd() - .5) * .3, wide = pathX(t) > 0 ? -1 : 1, x = pathX(t) + wide * (2.5 + rnd() * .8);
-        if (free(x, t, 1.15)) { const p = pond(rnd); p.rotation.y = (rnd() - .5) * .6; put(chunk, p, x, t, 1.15); }
+        if (free(x, t, 1.15)) { const p = indoor ? rug(rnd) : pond(rnd); p.rotation.y = (rnd() - .5) * .6; put(chunk, p, x, t, 1.15); }
       }
       // Rải ngẫu nhiên: gần đường là hoa / nấm / cỏ / đá / bụi, xa đường mới có cây (cây cao không che màn).
       // Dồn phần lớn món vào dải thấy được trên màn dọc (cách đường tới ~4), một ít ra xa cho màn rộng.
@@ -722,7 +971,24 @@ export function createMapWorld(container, { onPick } = {}) {
         if (Math.abs(x) > 8) continue;
         const roll = rnd();
         let obj, r;
-        if (dist > 2.3 && roll < .38) { obj = tree(rnd); r = .7; }
+        if (zone === 'living') {
+          if (dist > 2.3 && roll < .22) { obj = bookshelf(rnd); r = .65; }
+          else if (dist > 1.6 && roll < .36) { obj = sofa(rnd, rnd() < .4 ? 1 : 2); r = .75; }
+          else if (roll < .46) { obj = coffeeTable(); r = .5; }
+          else if (roll < .62) { obj = pottedPlant(rnd, dist > 2.3); r = .35; }
+          else if (roll < .76) { obj = yarnBall(rnd); r = .2; }
+          else if (roll < .9) { obj = floorCushion(rnd); r = .32; }
+          else continue;
+        } else if (zone === 'bedroom') {
+          if (dist > 2.3 && roll < .2) { obj = dresser(rnd); r = .6; }
+          else if (dist > 1.8 && roll < .34) { obj = bed(rnd); r = .9; }
+          else if (roll < .46) { obj = nightstand(); r = .3; }
+          else if (roll < .58) { obj = catBed(rnd); r = .45; }
+          else if (roll < .7) { obj = teddy(); r = .25; }
+          else if (roll < .82) { obj = floorCushion(rnd); r = .32; }
+          else if (roll < .9) { obj = yarnBall(rnd); r = .2; }
+          else continue;
+        } else if (dist > 2.3 && roll < .38) { obj = tree(rnd); r = .7; }
         else if (roll < .5) { obj = bush(rnd); r = .5; }
         else if (roll < .68) { obj = flowerPatch(rnd); r = .45; }
         else if (roll < .78) { obj = mushroom(rnd); r = .3; }
@@ -740,7 +1006,7 @@ export function createMapWorld(container, { onPick } = {}) {
       content.add(chunk);
       // Bướm bay quanh một chỗ trống gần đường (một con mỗi đoạn, không gộp vì cánh vỗ).
       const t = i - .5 + rnd(), x = pathX(t) + (rnd() < .5 ? -1 : 1) * (1.2 + rnd() * 2.5);
-      if (free(x, t, .3)) {
+      if (!indoor && free(x, t, .3)) {
         const fly = butterfly(rnd), holder = plant(fly, x, t);
         flyers.push({ fly, holder, phase: rnd() * 10, radius: .25 + rnd() * .25 });
       }
@@ -756,10 +1022,11 @@ export function createMapWorld(container, { onPick } = {}) {
     levelCount = levels.length;
     const open = levels.filter(l => !l.locked).length;
     const end = levelCount - 1;
-    ribbon(-.8, end + .9, WORLD.ROAD + WORLD.EDGE * 2, .015, toonMat({ color: INK }));
-    const doneTo = Math.max(-.8, open - 1);
-    if (open > 0) ribbon(-.8, doneTo, WORLD.ROAD, .03, toonMat({ color: COLORS.roadDone }));
+    ribbon(START_T, end + .9, WORLD.ROAD + WORLD.EDGE * 2, .015, toonMat({ color: INK }));
+    const doneTo = Math.max(START_T, open - 1);
+    if (open > 0) ribbon(START_T, doneTo, WORLD.ROAD, .03, toonMat({ color: COLORS.roadDone }));
     ribbon(doneTo, end + .9, WORLD.ROAD, .03, toonMat({ color: COLORS.road }));
+    startCap(doneTo > START_T ? COLORS.roadDone : COLORS.road);
     // Dấu chân mèo: 3 dấu trái / phải xen kẽ giữa mỗi hai màn, hồng đậm trên đoạn đã đi.
     const pawDone = new THREE.MeshBasicMaterial({ map: pawTexture('#ef5f8b'), transparent: true, depthWrite: false });
     const pawTodo = new THREE.MeshBasicMaterial({ map: pawTexture('#f7a3bd'), transparent: true, depthWrite: false });
@@ -771,6 +1038,11 @@ export function createMapWorld(container, { onPick } = {}) {
     });
     nodes = levels.map((l, i) => levelNode(i, l));
     sign(end + .95);
+    for (const z of ZONES) if (z.label && z.from < end) {
+      const gate = zoneGate(z.label);
+      gate.rotation.set(-.2, -Math.atan(pathSlope(z.from)), 0, 'YXZ');
+      plant(gate, pathX(z.from), z.from);
+    }
     decorate(levels);
   }
 
@@ -853,6 +1125,17 @@ export function createMapWorld(container, { onPick } = {}) {
   const observer = new ResizeObserver(resize);
   observer.observe(container);
 
+  // Sương + tường đổi theo vùng của màn đang ở giữa khung (pha trộn mượt quanh ranh giới, ±.6 màn).
+  const gardenFog = new THREE.Color(SKY_FOG), fogMix = new THREE.Color(), zoneFog = Object.fromEntries(ZONES.filter(z => z.fog).map(z => [z.id, new THREE.Color(z.fog)]));
+  function updateZone(t) {
+    fogMix.copy(gardenFog);
+    for (const z of ZONES) if (z.wall) {
+      const k = Math.min(1, Math.max(0, (t - z.from + .6) / 1.2));
+      walls[z.id].style.opacity = String(k);
+      fogMix.lerp(zoneFog[z.id], k);
+    }
+    scene.fog.color.copy(fogMix);
+  }
   function frame(now) {
     const dt = lastFrame ? Math.min(50, now - lastFrame) / 1000 : 0;
     lastFrame = now;
@@ -862,6 +1145,7 @@ export function createMapWorld(container, { onPick } = {}) {
     }
     drum.rotation.x = scroll;
     const time = now / 1000;
+    updateZone(scroll / WORLD.STEP);
     for (const object of culled) {
       const rel = object.userData.angle - scroll;
       object.visible = rel > VISIBLE.behind && rel < VISIBLE.ahead;
