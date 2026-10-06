@@ -376,6 +376,7 @@ $('deco-cards').addEventListener('click', event => {
   if (decoPick && status === 'poor') showToast(`Need ${base.price - getDeco().coins} more coins`);
 });
 function pickDeco(entry) {
+  if (entry?.cat === 'furniture') room3d?.fx(slotOf(entry), 'preview'); // lấp lánh nhẹ quanh món đang xem thử
   decoPick = entry;
   applyRoom(decoShown());
   room3d?.focus(entry?.id ?? null); // xem trước = quay về chỗ đó + zoom vào được; bỏ xem = zoom quanh giữa khu
@@ -389,6 +390,7 @@ function buildBase(base) {
   playSound('reward');
   showToast(`Built ${base.name}!`);
   if (!room3d) buildFlatRooms();
+  room3d?.fx(base.id, 'buy'); // pháo giấy + sao + vòng sáng
   decoPick = null;
   applyRoom(getDeco());
   room3d?.focus(base.id, false);
@@ -411,6 +413,8 @@ function onScenePick(pick) {
   }
   openDecoPop(pick);
 }
+  // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
+  room3d?.lockView(!['cats', 'walls', 'floors'].includes(spec.key));
 function openDecoPop(spec) {
   decoPop = spec;
   if (spec.key !== 'cats') setDeco(clearFresh(getDeco(), spec.zone, spec.key)); // đã xem món mới -> thôi sáng
@@ -426,6 +430,7 @@ function openDecoPop(spec) {
 }
 function closeDecoPop(render = true) {
   if (!decoPop) return;
+  room3d?.lockView(false);
   decoPop = null;
   $('deco-pop').hidden = true;
   room3d?.focus(null, false);
@@ -474,6 +479,7 @@ $('deco-pop-items').addEventListener('click', event => {
     setDeco(next);
   }
   playSound('pick');
+  if (entry.cat !== 'cats') room3d?.fx(entry.cat === 'furniture' ? slotOf(entry) : entry.cat, 'swap'); // làn khói + lấp lánh khi đổi kiểu
   if (!room3d) buildFlatRooms();
   applyRoom(getDeco());
   renderDeco();
@@ -637,7 +643,26 @@ function renderZoneSwitch() {
   const cleared = levelsCleared();
   document.querySelectorAll('.zone-switch button').forEach(button => {
     const zone = button.dataset.zone, open = isZoneOpen(zone, cleared);
+  shopBurst($('shop-deco-grid').querySelector(`[data-id="${entry.id}"]`));
     button.classList.toggle('on', zone === getDeco().zone);
+// Mua ở Shop thành công: sao + chấm màu bung ra từ thẻ món (DOM, không có cảnh 3D ở Shop).
+const BURST_COLORS = ['#ff6f91', '#ffd23f', '#5fbe57', '#5ab8ff', '#b48cf0'];
+function shopBurst(card) {
+  if (!card || reduceMotion.matches) return;
+  card.classList.remove('bought'); void card.offsetWidth; card.classList.add('bought');
+  const box = card.getBoundingClientRect(), cx = box.left + box.width / 2, cy = box.top + box.height * .4;
+  for (let i = 0; i < 16; i++) {
+    const bit = document.createElement('span'), a = (i / 16) * Math.PI * 2 + Math.random() * .3, d = 45 + Math.random() * 40, star = i % 3 === 0;
+    bit.className = `shop-burst${star ? ' star' : ''}`;
+    bit.textContent = star ? '✦' : '';
+    bit.style.left = `${cx}px`; bit.style.top = `${cy}px`;
+    bit.style.setProperty('--dx', `${Math.cos(a) * d}px`); bit.style.setProperty('--dy', `${Math.sin(a) * d - 20}px`);
+    bit.style.setProperty('--c', BURST_COLORS[i % BURST_COLORS.length]);
+    bit.style.animationDelay = `${Math.random() * 60}ms`;
+    document.body.append(bit);
+    bit.addEventListener('animationend', () => bit.remove());
+  }
+}
     button.classList.toggle('locked', !open);
     button.setAttribute('aria-selected', zone === getDeco().zone);
     const [built, total] = open ? builtCount(getDeco(), zone) : [0, 0];
@@ -656,7 +681,10 @@ document.addEventListener('click', event => {
   renderZoneSwitch();
   renderDeco();
   applyRoom(getDeco()); // camera Deco lướt sang khu vừa chọn (nút chọn khu giờ chỉ còn ở Deco)
+    // Khu đã xây hết mọi chỗ: ẩn khỏi hàng chọn khu (vẫn tới được bằng cách kéo cảnh / chạm đồ trong khu đó)
+    button.hidden = open && built === total;
 });
+  $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
 
 // Shop (tiền thật) vẫn là khung giao diện: bấm vào chỉ báo "sắp có".
 document.addEventListener('click', event => { if (event.target.closest('.soon')) showToast('Coming soon!'); });

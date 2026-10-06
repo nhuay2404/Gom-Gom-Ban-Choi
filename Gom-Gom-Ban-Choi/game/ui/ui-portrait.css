@@ -787,6 +787,14 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .shop-deco-item:active{translate:0 calc(2 * var(--u))}
 /* Ghim "NEW" trên món có đồ mới thay được (bám theo món, menu-controller.js placeDecoPins) */
 .deco-pins{position:absolute;inset:0;z-index:5;width:auto;pointer-events:none}
+.zone-switch[hidden],.zone-switch button[hidden]{display:none}
+/* Mua ở Shop thành công: chấm màu + sao bung ra từ thẻ, thẻ nảy nhẹ (menu-controller.js shopBurst) */
+.shop-burst{position:fixed;z-index:120;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;
+  animation:shop-burst .7s cubic-bezier(.2,.8,.3,1) both}
+.shop-burst.star{width:auto;height:auto;margin:-10px 0 0 -7px;background:none;color:#ffd23f;font-size:18px;line-height:1;text-shadow:0 0 6px #fff6c8}
+@keyframes shop-burst{0%{transform:translate(0,0) scale(.4);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}}
+.shop-deco-item.bought{animation:shop-bought .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes shop-bought{40%{scale:1.08}}
 .deco-pin{position:absolute;left:0;top:0;will-change:transform}
 .deco-pin[hidden]{display:none}
 .deco-pin::before{content:"NEW";position:absolute;left:0;bottom:6px;translate:-50% 0;padding:2px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;

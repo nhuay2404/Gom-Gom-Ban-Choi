@@ -15,6 +15,7 @@ import { TIMING, DRAG } from '../gameplay/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scene.mjs';
 import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
 import { runModelQC } from './qc.mjs';
+import { createDecoFx } from './deco-fx.mjs';
 import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum } from './garden-scene.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
@@ -1221,7 +1222,32 @@ export function createRoom() {
   }
 
   // ---------- Deco: chạm món / bề mặt, sáng nhẹ món có đồ mới, toạ độ màn hình của món (để đặt bảng đổi món cạnh nó) ----------
+  // Hiệu ứng hạt ở Deco (deco-fx.mjs): xem trước / đổi kiểu / mua món. key = chỗ đặt món, hoặc 'walls' / 'floors' (giữa khu).
+  const decoFx = createDecoFx(scene), fxBase = new THREE.Vector3(), fxSize = new THREE.Vector3();
+  function playFx(key, kind) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const node = furniture[key];
+    if (node?.visible) {
+      // Đo món ở cỡ thật (đang nảy thì scale chưa về 1)
+      const scale = node.scale.x;
+      node.scale.setScalar(1); node.updateMatrixWorld(true);
+      itemBox.setFromObject(node).getSize(fxSize);
+      node.scale.setScalar(scale); node.updateMatrixWorld(true);
+      itemBox.getCenter(fxBase).setY(node.position.y);
+      return decoFx.burst(kind, fxBase, Math.max(.3, itemBox.max.y - node.position.y), Math.max(fxSize.x, fxSize.z));
+    }
+    zoneCenter(zoneId, fxBase).setY(0); // đổi tường / sàn: hiệu ứng rộng giữa khu
+    decoFx.burst(kind, fxBase, 1.2, 5);
+  }
   let onPick = null, onZoneView = null, selectedSlot = null, highlights = new Set();
+  // Deco: đang mở bảng đổi kiểu một món thì khoá camera ở góc vừa căn (không kéo / xoay / zoom / nhấc mèo). Chạm vẫn nhận:
+  // chạm chỗ trống = đóng bảng, chạm món khác = sang món đó (camera lướt tới rồi khoá tiếp).
+  let viewLocked = false;
+  function lockView(on) {
+    viewLocked = !!on;
+    controls.enabled = !viewLocked;
+    if (viewLocked) { clearTimeout(resumeTimer); controls.autoRotate = false; }
+  }
   // Khung (toạ độ thế giới) của một khu: vườn theo hàng rào (đã mở rộng thì dài), phòng = sàn 8 × 8 quanh tâm khu.
   function zoneRect(zone) {
     if (zone === 'garden') return gardenBounds(expanded);
@@ -1363,7 +1389,7 @@ export function createRoom() {
     if (event.type !== 'pointermove') { twistAngle = angle; twistSum = 0; twisting = false; return; }
     const delta = ((angle - twistAngle) % TAU + TAU + Math.PI) % TAU - Math.PI;
     twistAngle = angle;
-    if (!hub || carrying) return;
+    if (!hub || carrying || viewLocked) return;
     if (!twisting) { twistSum += delta; if (Math.abs(twistSum) < TWIST_START) return; twisting = true; }
     // Vặn theo chiều kim đồng hồ trên màn hình thì khu nhà quay theo: camera quay ngược lại quanh tâm nhìn.
     twistOffset.subVectors(camera.position, controls.target).applyAxisAngle(upAxis, delta);
@@ -1375,7 +1401,7 @@ export function createRoom() {
     clearTimeout(holdTimer);
     aim(event);
     const cat = cats.hit(raycaster);
-    if (cat && !carrying) holdTimer = setTimeout(() => { if (down?.id === event.pointerId) startCarry(cat, event); }, HOLD_MS);
+    if (cat && !carrying && !viewLocked) holdTimer = setTimeout(() => { if (down?.id === event.pointerId) startCarry(cat, event); }, HOLD_MS);
   });
   renderer.domElement.addEventListener('pointermove', event => {
     if (carrying && event.pointerId === carrying.id) {
@@ -1591,6 +1617,7 @@ export function createRoom() {
       node.userData.update?.(t);
     });
     brush(Math.min(.05, (now - (lastFrame || now)) / 1000));
+    decoFx.update(Math.min(.05, (now - (lastFrame || now)) / 1000));
     // Bướm bay trong nhóm vườn: toạ độ theo tâm vườn, giống vị trí bồn hoa.
     if (furniture.flowers?.visible) flowerCenter.set(furniture.flowers.position.x, 0, furniture.flowers.position.z); else flowerCenter.set(0, 0, 0);
     butterflies.forEach(b => b.update(t, Math.min(.05, (now - (lastFrame || now)) / 1000), flowerCenter));
@@ -1645,6 +1672,7 @@ export function createRoom() {
       view = { zoomCap: 1, zoomFit: 1.05, insets: null, ...options.view };
       target.dataset.zone = zoneId;
       setMode(options.mode || 'room');
+      lockView(false);
       decoMode = !!options.deco;
       autoRotate = !!options.autoRotate;
       controls.autoRotate = autoRotate;
@@ -1687,6 +1715,10 @@ export function createRoom() {
     screenRectOf,
     nudge,
     refit: () => resize(),
+    // Deco: khoá / mở khoá điều khiển camera (bảng đổi kiểu món đang mở).
+    lockView,
+    // Deco: hiệu ứng hạt tại một chỗ — kind = 'preview' | 'swap' | 'buy'.
+    fx: playFx,
     setNight,
     // Dev: QC model (qc.mjs) — trả về danh sách lỗi { level, zone, what }.
     qc: () => runModelQC({ BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
