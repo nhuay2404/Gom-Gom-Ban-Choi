@@ -143,7 +143,10 @@ function signTexture(text, size = 38) {
 // Viền nâu kiểu sticker: vẽ lại khối ở mặt sau, phình nhẹ (đủ cho khối lồi như đầu mèo, bệ, cây).
 const inkMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
 // pad (đơn vị thế giới): nét dày đều mọi cạnh theo kích thước thật của khối, dùng cho khối dẹt (đầu mèo, tai).
+// Bản LOD xa (lowDetail): bỏ viền — ở gần chân trời viền chỉ còn 1 px mà tốn gấp đôi số tam giác.
+let lowDetail = false;
 function withInk(mesh, grow = .05, pad = 0) {
+  if (lowDetail) return mesh;
   const hull = new THREE.Mesh(mesh.geometry, inkMat);
   if (pad) {
     mesh.geometry.computeBoundingBox();
@@ -180,7 +183,7 @@ function roundedPolygonShape(points, r) {
   return s;
 }
 const extrude = (shape, depth, bevel) => {
-  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * .9, bevelSegments: 3, curveSegments: 12 });
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * .9, bevelSegments: 2, curveSegments: 7 });
   g.translate(0, 0, -depth / 2);
   return g;
 };
@@ -201,21 +204,27 @@ const decorMats = {
 // Hình học dùng chung cho đồ trang trí (kích thước khác nhau thì scale mesh), không tạo lưới mới cho mỗi món.
 const DECOR_GEO = {
   trunk: new THREE.CylinderGeometry(.11, .15, .7, 8), cone: [new THREE.ConeGeometry(.62, .85, 9), new THREE.ConeGeometry(.46, .85, 9)],
-  crown: new THREE.SphereGeometry(.62, 14, 10), ball: new THREE.SphereGeometry(1, 12, 8), petal: new THREE.SphereGeometry(.07, 8, 6),
-  heart: new THREE.SphereGeometry(.055, 8, 6), rock: new THREE.DodecahedronGeometry(1, 0),
+  crown: new THREE.SphereGeometry(.62, 14, 10), ball: new THREE.SphereGeometry(1, 12, 8), petal: new THREE.SphereGeometry(.07, 6, 4),
+  heart: new THREE.SphereGeometry(.055, 6, 4), rock: new THREE.DodecahedronGeometry(1, 0),
   stem: new THREE.CylinderGeometry(.045, .06, .16, 8), cap: new THREE.SphereGeometry(.15, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
 };
+// Bản LOD xa: cùng hình, ít cạnh hơn (~1/3 số tam giác).
+const DECOR_LOW = {
+  trunk: new THREE.CylinderGeometry(.11, .15, .7, 5), cone: [new THREE.ConeGeometry(.62, .85, 6), new THREE.ConeGeometry(.46, .85, 6)],
+  crown: new THREE.SphereGeometry(.62, 8, 6), ball: new THREE.SphereGeometry(1, 7, 5),
+};
+const dg = name => (lowDetail && DECOR_LOW[name]) || DECOR_GEO[name];
 function tree(rnd) {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(DECOR_GEO.trunk, decorMats.trunk);
+  const trunk = new THREE.Mesh(dg('trunk'), decorMats.trunk);
   trunk.position.y = .35; g.add(trunk);
   if (rnd() < .45) {
     for (let k = 0; k < 2; k++) {
-      const cone = new THREE.Mesh(DECOR_GEO.cone[k], decorMats.pine);
+      const cone = new THREE.Mesh(dg('cone')[k], decorMats.pine);
       cone.position.y = .85 + k * .45; g.add(withInk(cone, .04));
     }
   } else {
-    const crown = new THREE.Mesh(DECOR_GEO.crown, rnd() < .5 ? decorMats.leaf : decorMats.leafDark);
+    const crown = new THREE.Mesh(dg('crown'), rnd() < .5 ? decorMats.leaf : decorMats.leafDark);
     crown.position.y = 1.15; crown.scale.y = .92; g.add(withInk(crown, .04));
   }
   g.scale.setScalar(.85 + rnd() * .45);
@@ -224,7 +233,7 @@ function tree(rnd) {
 function bush(rnd) {
   const g = new THREE.Group();
   for (let k = 0; k < 3; k++) {
-    const ball = new THREE.Mesh(DECOR_GEO.ball, decorMats.bush);
+    const ball = new THREE.Mesh(dg('ball'), decorMats.bush);
     ball.scale.setScalar(.28 + rnd() * .1);
     ball.position.set((k - 1) * .3, .2 + (k === 1 ? .08 : 0), rnd() * .1);
     g.add(withInk(ball, .05));
@@ -287,7 +296,7 @@ function tuft() {
 }
 // Khóm hoa: vài bông + cụm cỏ rải trong vòng bán kính ~.4.
 function flowerPatch(rnd) {
-  const g = new THREE.Group(), n = 4 + Math.floor(rnd() * 4);
+  const g = new THREE.Group(), n = 3 + Math.floor(rnd() * 3);
   for (let k = 0; k < n; k++) {
     const a = rnd() * Math.PI * 2, r = rnd() * .38, f = k % 3 === 2 ? tuft() : flower(rnd);
     f.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
@@ -535,6 +544,39 @@ function catBed(rnd) {
   pad.position.y = .05; g.add(pad);
   return g;
 }
+// Bảng rải đồ hai bên đường theo vùng (decorate()). Mỗi đoạn thử `tries` chỗ, đặt tối đa `max` món, cách đường tới ~`spread`
+// (trong nhà gom vào dải thấy được trên màn dọc để ít món mà vẫn đủ đầy). Mỗi loại: r = bán kính
+// chừa chỗ, w = trọng số chọn, cap = trần số lượng trong một đoạn, minDist = chỉ đặt cách đường từ chừng này (đồ cao không che
+// màn), big = đồ to không lặp ở hai đoạn liền nhau, small = món nhỏ (không đổ bóng, bản LOD xa bỏ đi).
+// make(rnd, dist) trả về hàm dựng model. Trong nhà mỗi loại tối đa 1 / đoạn và ít món hẳn để phòng không rối.
+const SCATTER = {
+  garden: { tries: 26, max: 13, spread: 5.2, kinds: [
+    { kind: 'tree', make: () => tree, r: .7, w: 3, cap: 3, minDist: 2.3 },
+    { kind: 'bush', make: () => bush, r: .5, w: 2, cap: 2 },
+    { kind: 'patch', make: () => flowerPatch, r: .45, w: 2, cap: 2, shadow: false },
+    { kind: 'mushroom', make: () => mushroom, r: .3, w: 1, cap: 1, small: true },
+    { kind: 'flower', make: () => flower, r: .12, w: 2, cap: 3, small: true },
+    { kind: 'tuft', make: () => tuft, r: .1, w: 1, cap: 2, small: true },
+    { kind: 'rock', make: () => rock, r: .3, w: 1, cap: 1, small: true },
+  ] },
+  living: { tries: 22, max: 5, spread: 2.8, kinds: [
+    { kind: 'shelf', make: () => bookshelf, r: .65, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'sofa', make: rnd => { const seats = rnd() < .4 ? 1 : 2; return g => sofa(g, seats); }, r: .75, w: 2, cap: 1, minDist: 1.6, big: true },
+    { kind: 'table', make: () => coffeeTable, r: .5, w: 1.5, cap: 1 },
+    { kind: 'plant', make: (rnd, dist) => g => pottedPlant(g, dist > 2.3), r: .35, w: 1.5, cap: 1 },
+    { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
+    { kind: 'cushion', make: () => floorCushion, r: .32, w: 1, cap: 1, small: true },
+  ] },
+  bedroom: { tries: 22, max: 5, spread: 2.8, kinds: [
+    { kind: 'dresser', make: () => dresser, r: .6, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'bed', make: () => bed, r: .9, w: 2, cap: 1, minDist: 1.8, big: true },
+    { kind: 'nightstand', make: () => nightstand, r: .3, w: 1.5, cap: 1 },
+    { kind: 'catBed', make: () => catBed, r: .45, w: 1.5, cap: 1, shadow: false },
+    { kind: 'teddy', make: () => teddy, r: .25, w: 1, cap: 1, small: true },
+    { kind: 'cushion', make: () => floorCushion, r: .32, w: 1, cap: 1, small: true },
+    { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
+  ] },
+};
 // Cổng chuyển vùng bắc ngang đường: hai cột + xà ngang + bảng tên phòng.
 function zoneGate(label) {
   const g = new THREE.Group(), half = WORLD.ROAD / 2 + WORLD.EDGE + .25;
@@ -640,8 +682,35 @@ function pedestal(kind) {
   return { group: g, parts, top: .43 };
 }
 // Mèo 3D (cùng model với Home) đứng cạnh màn mở giống mới, có viền nâu kiểu sticker như khối đầu mèo.
-function newCatModel(breed) {
+// Mèo trên bản đồ chỉ cao vài chục px: model của Deco (thân 10 phân đoạn, đuôi / chân / bàn chân 14–20 cạnh) quá mịn.
+// coarse: thay lưới bằng bản ít cạnh (cùng kích thước, dùng chung giữa các con); mặt / mắt và tai (lưới đã uốn) giữ nguyên.
+function coarsen(mesh) {
+  const g = mesh.geometry, p = g.parameters || {};
+  let key = null, make = null;
+  if (g.type === 'BoxGeometry' && g.attributes.position.count > 600) {
+    // Thân hộp bo góc (RoundedBoxGeometry): đo kích thước thật từ khung bao.
+    g.computeBoundingBox();
+    const size = g.boundingBox.getSize(new THREE.Vector3());
+    key = `box|${size.toArray().map(n => n.toFixed(3))}`;
+    make = () => roundedBox(size.x, size.y, size.z, 3, Math.min(size.x, size.y, size.z) * .2);
+  } else if (g.type === 'CapsuleGeometry' && p.radialSegments > 8) {
+    key = `cap|${p.radius}|${p.length}`;
+    make = () => new THREE.CapsuleGeometry(p.radius, p.length, 3, 8);
+  } else if (g.type === 'SphereGeometry' && p.widthSegments > 8) {
+    // Bỏ qua cầu đã bị uốn lại (tai): khung bao không còn khớp bán kính gốc.
+    g.computeBoundingSphere();
+    if (Math.abs(g.boundingSphere.radius - p.radius) > p.radius * .02) return;
+    key = `sph|${p.radius}|${p.phiLength}|${p.thetaLength}`;
+    make = () => new THREE.SphereGeometry(p.radius, 9, 6, p.phiStart, p.phiLength, p.thetaStart, p.thetaLength);
+  } else if (g.type === 'CylinderGeometry' && p.radialSegments > 10) {
+    key = `cyl|${p.radiusTop}|${p.radiusBottom}|${p.height}|${p.openEnded}`;
+    make = () => new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, p.height, 8, 1, p.openEnded);
+  }
+  if (key) mesh.geometry = cached(`coarse|${key}`, make);
+}
+function newCatModel(breed, { coarse = false } = {}) {
   const cat = catModel(breed), solids = [];
+  if (coarse) cat.traverse(node => { if (node.isMesh) coarsen(node); });
   cat.traverse(node => { if (node.isMesh && node.material?.isMeshToonMaterial && !node.material.transparent && !node.userData.noOutline) solids.push(node); });
   solids.forEach(mesh => withInk(mesh, .07));
   cat.traverse(node => { if (node.isMesh) node.castShadow = true; });
@@ -670,7 +739,7 @@ function newBadgeTexture() {
 const PAW_GEO = new THREE.PlaneGeometry(.34, .34);
 // Hình học khai báo một lần ở cấp module: dựng lại bản đồ không giải phóng các hình này.
 const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.values(PED), PLAIN_BASE, PLAIN_TOP, STAR_GEO, DOT_GEO, TUFT_GEO,
-  WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat()]);
+  WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat(), ...Object.values(DECOR_LOW).flat()]);
 
 // ---------- Cảnh ----------
 export function createMapWorld(container, { onPick, onClaim } = {}) {
@@ -746,6 +815,28 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   // hoặc sau lưng camera ẩn đi, không thì đầu đường (màn 1) lộ ra ngay sau màn cuối.
   const culled = [], unbuilt = [];
   const VISIBLE = { behind: -1.25, ahead: 1.45 };
+  // LOD theo góc so với chỗ đang xem (rel; càng lớn càng gần chân trời). Không tắt / đổi phụt: viền mực mờ dần từ INK_FADE[0]
+  // tới INK_FADE[1] (dải dài sát chân trời, nơi viền vốn đã mảnh), hết hẳn viền rồi mới đổi sang bản xa (LOD_FAR: bỏ món nhỏ, lưới ít cạnh) — lúc đó
+  // vật đã nhỏ, không viền, nên đổi lưới gần như không thấy.
+  const INK_FADE = [.42, .95], LOD_FAR = 1;
+  const inkOpacity = rel => { const k = (INK_FADE[1] - rel) / (INK_FADE[1] - INK_FADE[0]); return k >= 1 ? 1 : k <= 0 ? 0 : k * k * (3 - 2 * k); };
+  // Mỗi cụm (một đoạn trang trí / một màn) có chất liệu viền riêng để mờ theo khoảng cách của chính nó.
+  const fadeMats = [];
+  function fadeInk(root) {
+    const meshes = [];
+    root.traverse(n => { if (n.material === inkMat) meshes.push(n); });
+    const mat = inkMat.clone();
+    mat.transparent = true;
+    meshes.forEach(m => { m.material = mat; });
+    fadeMats.push(mat);
+    return { mat, meshes, opacity: 1 };
+  }
+  function setInk(ink, opacity) {
+    if (!ink || Math.abs(ink.opacity - opacity) < .01) return;
+    ink.opacity = opacity;
+    ink.mat.opacity = opacity;
+    ink.meshes.forEach(m => { m.visible = opacity > .01; });
+  }
   let nodes = [], levelCount = 0, scroll = 0, target = 0, velocity = 0, focusIndex = 0, running = false, lastFrame = 0;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Bướm bay quanh chỗ đậu (cử động trong frame()).
@@ -878,7 +969,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     const cats = [], catTilt = new THREE.Group(), spots = catSpots(index, newCats.length, current ? 1.3 : 1.12);
     g.add(catTilt);
     newCats.forEach((breed, k) => {
-      const cat = newCatModel(breed), [dx, dz, turn] = spots[k];
+      const cat = newCatModel(breed, { coarse: true }), [dx, dz, turn] = spots[k];
       cat.scale.setScalar(1.35);
       cat.position.set(dx, 0, dz);
       cat.rotation.y = turn;
@@ -903,7 +994,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     }
     for (const mesh of [...ped.parts, rim, body, face]) { mesh.userData.level = index; mesh.userData.locked = locked; pickables.push(mesh); }
     const holder = plant(g, pathX(index), index, 0);
-    return { holder, head, tilt, catTilt, ring, halo, star, sparkles, current: !!current, cats, claimable: claimable && newCats.length > 0, baseY: ped.top, index, locked, phase: index * .7 };
+    // LOD: màn ở xa (gần chân trời) mờ dần viền mực của khối đầu, bệ và mèo mới.
+    const ink = fadeInk(g);
+    return { holder, ink, head, tilt, catTilt, ring, halo, star, sparkles, current: !!current, cats, claimable: claimable && newCats.length > 0, baseY: ped.top, index, locked, phase: index * .7 };
   }
 
   function sign(t) {
@@ -939,9 +1032,11 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     let seed = 777;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const side = (WORLD.ROAD / 2 + WORLD.EDGE + .45) * Math.hypot(1, pathSlope(START_T));
+    // Mọi món trang trí ở điểm xuất phát gộp chung một cụm (mergeStatic): vài chục khối nhỏ thành vài lệnh vẽ.
+    const decor = new THREE.Group();
     const deco = (object, dx, dt) => {
-      object.traverse(n => { if (n.isMesh) n.castShadow = true; });
-      plant(object, x + dx, START_T + dt);
+      object.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
+      decor.add(onDrumAt(object, x + dx, START_T + dt));
     };
     deco(flowerPatch(rnd), -side, .05);
     deco(flowerPatch(rnd), side, .05);
@@ -954,6 +1049,10 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const a = Math.PI * k / 8, dx = Math.cos(a) * ring, dz = Math.sin(a) * ring;
       deco(flower(rnd), dx, -dz / LEVEL_GAP);
     }
+    mergeStatic(decor);
+    decor.userData.angle = angleOf(START_T);
+    culled.push(decor);
+    content.add(decor);
     // Dấu chân to ở giữa nắp: chỗ mèo bắt đầu hành trình
     const paw = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), pawMat(color === COLORS.roadDone ? '#ef5f8b' : '#f7a3bd'));
     paw.rotation.set(-Math.PI / 2, 0, turn);
@@ -989,81 +1088,79 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       return placed.every(p => Math.hypot(p.x - x, (p.t - t) * LEVEL_GAP) > p.r + r);
     };
     const first = Math.floor(VISIBLE.behind / WORLD.STEP) - 1, last = Math.ceil(end + VISIBLE.ahead / WORLD.STEP) + 1;
+    let prevKinds = new Set();
     for (let i = first; i <= last; i++) {
-      const rnd = seeded(1000 + (i - first) * 7919), items = [];
-      // Ghi món sẽ dựng: make(rnd) tạo model; shadow: món đủ to mới đổ bóng (hoa, cỏ, đá nhỏ bỏ qua pass bóng).
-      const put = (make, x, t, r, turn, shadow = true) => {
-        items.push({ make, x, t, turn, shadow, seed: 1 + Math.floor(rnd() * 2147483645) });
+      const rnd = seeded(1000 + (i - first) * 7919), items = [], count = {};
+      // Ghi món sẽ dựng: make(rnd) tạo model; shadow: món đủ to mới đổ bóng (hoa, cỏ, đá nhỏ bỏ qua pass bóng);
+      // small: món nhỏ, bản LOD xa bỏ hẳn.
+      const put = (make, x, t, r, turn, { shadow = true, small = false, kind = '' } = {}) => {
+        items.push({ make, x, t, turn, shadow, small, seed: 1 + Math.floor(rnd() * 2147483645) });
         placed.push({ x, t, r });
+        if (kind) count[kind] = (count[kind] || 0) + 1;
       };
       const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = zone !== 'garden';
       if (indoor) floorPiece(i, zone);
-      // Đèn lồng giữa hai màn, đổi bên mỗi đoạn; hàng rào ngắn phía bên kia (cách hai đoạn một lần).
+      // Đèn giữa hai màn, đổi bên mỗi đoạn (trong nhà: đèn cây cách một đoạn); hàng rào / chậu cây phía bên kia mỗi 3 đoạn.
       const lampSide = i % 2 ? 1 : -1, edge = (WORLD.ROAD / 2 + WORLD.EDGE + .35) * Math.hypot(1, pathSlope(mid));
-      if (onRoad && free(pathX(mid) + lampSide * edge, mid, .2)) put(indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
+      if (onRoad && (!indoor || i % 2 === 0) && free(pathX(mid) + lampSide * edge, mid, .2)) put(indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
       if (onRoad && i % 3 === 0 && free(pathX(mid) - lampSide * edge, mid, .5)) {
-        put(indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)));
+        put(indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)), { kind: indoor ? 'plant' : '' });
       }
-      // Biển chỉ đường mỗi 5 đoạn, ao nhỏ mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
+      // Biển chỉ đường mỗi 5 đoạn, ao nhỏ / thảm mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
       if (onRoad && !indoor && i % 5 === 2) {
         const t = i + .25, x = pathX(t) - lampSide * edge;
         if (free(x, t, .3)) put(signpost, x, t, .3, -Math.atan(pathSlope(t)));
       }
       if (i % 4 === 1) {
         const t = mid + (rnd() - .5) * .3, wide = pathX(t) > 0 ? -1 : 1, x = pathX(t) + wide * (2.5 + rnd() * .8);
-        if (free(x, t, 1.15)) put(indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, false);
+        if (free(x, t, 1.15)) put(indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, { shadow: false });
       }
-      // Rải ngẫu nhiên: gần đường là hoa / nấm / cỏ / đá / bụi, xa đường mới có cây (cây cao không che màn).
-      // Dồn phần lớn món vào dải thấy được trên màn dọc (cách đường tới ~4), một ít ra xa cho màn rộng.
-      for (let k = 0; k < 26; k++) {
-        const t = i - .5 + rnd(), side = rnd() < .5 ? -1 : 1, dist = .95 + Math.pow(rnd(), 1.4) * 5.2, x = pathX(t) + side * dist;
+      // Rải theo bảng SCATTER của vùng: chọn ngẫu nhiên có trọng số, mỗi loại có trần số lượng trong đoạn; loại đã có ở
+      // đoạn trước bị giảm trọng số (món to không lặp ở hai đoạn liền nhau) để hai bên đường đa dạng mà không rối.
+      const plan = SCATTER[zone], fixed = items.length;
+      for (let k = 0; k < plan.tries && items.length - fixed < plan.max; k++) {
+        const t = i - .5 + rnd(), side = rnd() < .5 ? -1 : 1, dist = .95 + Math.pow(rnd(), 1.4) * plan.spread, x = pathX(t) + side * dist;
         if (Math.abs(x) > 8) continue;
-        const roll = rnd();
-        let make, r, shadow = true;
-        if (zone === 'living') {
-          if (dist > 2.3 && roll < .22) { make = bookshelf; r = .65; }
-          else if (dist > 1.6 && roll < .36) { const seats = rnd() < .4 ? 1 : 2; make = g => sofa(g, seats); r = .75; }
-          else if (roll < .46) { make = coffeeTable; r = .5; }
-          else if (roll < .62) { const big = dist > 2.3; make = g => pottedPlant(g, big); r = .35; }
-          else if (roll < .76) { make = yarnBall; r = .2; shadow = false; }
-          else if (roll < .9) { make = floorCushion; r = .32; shadow = false; }
-          else continue;
-        } else if (zone === 'bedroom') {
-          if (dist > 2.3 && roll < .2) { make = dresser; r = .6; }
-          else if (dist > 1.8 && roll < .34) { make = bed; r = .9; }
-          else if (roll < .46) { make = nightstand; r = .3; }
-          else if (roll < .58) { make = catBed; r = .45; shadow = false; }
-          else if (roll < .7) { make = teddy; r = .25; shadow = false; }
-          else if (roll < .82) { make = floorCushion; r = .32; shadow = false; }
-          else if (roll < .9) { make = yarnBall; r = .2; shadow = false; }
-          else continue;
-        } else if (dist > 2.3 && roll < .38) { make = tree; r = .7; }
-        else if (roll < .5) { make = bush; r = .5; }
-        else if (roll < .68) { make = flowerPatch; r = .45; shadow = false; }
-        else if (roll < .78) { make = mushroom; r = .3; shadow = false; }
-        else if (roll < .9) { make = flower; r = .12; shadow = false; }
-        else if (roll < .95) { make = tuft; r = .1; shadow = false; }
-        else { make = rock; r = .3; shadow = false; }
-        if (!free(x, t, r)) continue;
-        put(make, x, t, r, rnd() * Math.PI * 2, shadow);
+        const options = plan.kinds.filter(o => dist >= (o.minDist || 0) && (count[o.kind] || 0) < o.cap && !(o.big && prevKinds.has(o.kind)));
+        const weight = o => o.w * (prevKinds.has(o.kind) ? .3 : 1);
+        let roll = rnd() * options.reduce((sum, o) => sum + weight(o), 0), pick = null;
+        for (const o of options) if ((roll -= weight(o)) <= 0) { pick = o; break; }
+        if (!pick || !free(x, t, pick.r)) continue;
+        const make = pick.make(rnd, dist);
+        put(make, x, t, pick.r, rnd() * Math.PI * 2, { shadow: !pick.small && pick.shadow !== false, small: pick.small, kind: pick.kind });
       }
+      prevKinds = new Set(Object.keys(count));
       chunk.userData.angle = angleOf(i);
+      // Hai bản: gần (đủ chi tiết, viền mực, đổ bóng) và xa (LOD: bỏ món nhỏ + viền, lưới ít cạnh, không đổ bóng).
       chunk.userData.build = () => {
         delete chunk.userData.build;
+        const hi = new THREE.Group(), lo = new THREE.Group();
         for (const { make, x, t, turn, shadow, seed } of items) {
           const object = make(seeded(seed));
           object.rotation.y = turn;
           if (shadow) object.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
-          chunk.add(onDrumAt(object, x, t));
+          hi.add(onDrumAt(object, x, t));
         }
-        mergeStatic(chunk);
+        lowDetail = true;
+        try {
+          for (const { make, x, t, turn, small, seed } of items) {
+            if (small) continue;
+            const object = make(seeded(seed));
+            object.rotation.y = turn;
+            lo.add(onDrumAt(object, x, t));
+          }
+        } finally { lowDetail = false; }
+        mergeStatic(hi);
+        mergeStatic(lo);
+        chunk.add(hi, lo);
+        chunk.userData.lod = { hi, lo, ink: fadeInk(hi) };
       };
       culled.push(chunk);
       unbuilt.push(chunk);
       content.add(chunk);
-      // Bướm bay quanh một chỗ trống gần đường (một con mỗi đoạn, không gộp vì cánh vỗ).
+      // Bướm bay quanh một chỗ trống gần đường (một con mỗi hai đoạn, không gộp vì cánh vỗ).
       const t = i - .5 + rnd(), x = pathX(t) + (rnd() < .5 ? -1 : 1) * (1.2 + rnd() * 2.5);
-      if (!indoor && free(x, t, .3)) {
+      if (!indoor && i % 2 === 0 && free(x, t, .3)) {
         const fly = butterfly(rnd), holder = plant(fly, x, t);
         flyers.push({ fly, holder, phase: rnd() * 10, radius: .25 + rnd() * .25 });
       }
@@ -1094,6 +1191,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     builtKey = key;
     // Trả bộ nhớ GPU của cảnh cũ (hình học dùng chung giữ lại; chất liệu / texture nằm trong cache dùng chung).
     content.traverse(n => { if (n.geometry && !SHARED_GEO.has(n.geometry)) n.geometry.dispose(); });
+    fadeMats.splice(0).forEach(m => m.dispose());
     content.clear();
     pickables.length = 0;
     culled.length = 0;
@@ -1128,6 +1226,12 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       plant(gate, pathX(z.from), z.from);
     }
     decorate(levels);
+    // Các món lẻ còn viền (cổng phòng, biển cuối đường, cụm điểm xuất phát, đèn...): mỗi cụm một chất liệu viền mờ theo khoảng cách.
+    for (const object of culled) {
+      if (object.userData.lod || object.userData.build) continue;
+      const ink = fadeInk(object);
+      if (ink.meshes.length) object.userData.ink = ink; else fadeMats.pop().dispose();
+    }
     buildIdle();
   }
 
@@ -1241,9 +1345,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       object.visible = rel > VISIBLE.behind && rel < VISIBLE.ahead;
       // Đoạn trang trí sắp hiện mà lúc rảnh chưa kịp dựng: dựng ngay.
       if (object.visible && object.userData.build) object.userData.build();
+      const lod = object.userData.lod;
+      if (lod && object.visible) { const far = rel > LOD_FAR; lod.hi.visible = !far; lod.lo.visible = far; if (!far) setInk(lod.ink, inkOpacity(rel)); }
+      if (object.userData.ink && object.visible) setInk(object.userData.ink, inkOpacity(rel));
     }
     for (const node of nodes) {
       if (!node.holder.visible) continue;
+      setInk(node.ink, inkOpacity(angleOf(node.index) - scroll));
       // Ngả mặt về phía camera: màn càng gần (đã lăn về phía camera) càng ngả ra sau, không bị nhìn dẹt từ trên xuống.
       node.tilt.rotation.x = Math.max(-1.25, Math.min(-.2, -.62 + (angleOf(node.index) - scroll) * 1.1));
       node.catTilt.rotation.x = node.tilt.rotation.x * .75;
@@ -1264,8 +1372,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       // Mèo mới nhún nhẹ lệch nhịp, nhãn NEW! bập bềnh.
       if (!reduceMotion) node.cats.forEach((c, k) => { if (c.isSprite) { c.position.y = c.userData.baseY + Math.sin(time * 2.6) * .06; if (node.claimable) c.material.rotation = Math.sin(time * 5) * .06; } else c.scale.y = 1.35 * (1 + Math.sin(time * 3 + k * 1.7) * .03); });
     }
+    for (const { fly, holder } of flyers) if (holder.visible) fly.visible = holder.userData.angle - scroll <= LOD_FAR;
     if (!reduceMotion) for (const { fly, holder, phase, radius } of flyers) {
-      if (!holder.visible) continue;
+      if (!holder.visible || !fly.visible) continue;
       // Bướm lượn vòng quanh chỗ đậu, nhấp nhô, cánh vỗ nhanh; đầu bướm hướng theo chiều bay.
       const a = time * .9 + phase;
       fly.position.set(Math.cos(a) * radius, .55 + Math.sin(time * 2.1 + phase) * .15, Math.sin(a) * radius);

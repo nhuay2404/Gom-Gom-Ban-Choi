@@ -106,6 +106,10 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 **Hiệu năng**
 - Cầu / trụ dùng helper `ball()` / `cyl()` (số cạnh theo kích thước); nhiều khối nhỏ giống nhau dùng InstancedMesh;
   cụm trang trí tĩnh gộp bằng `mergeStatic()`.
+- Bản đồ màn (map-world.mjs): trang trí hai bên đường khai báo trong bảng `SCATTER` (trần số lượng mỗi loại / đoạn, đồ to không
+  lặp hai đoạn liền nhau); mỗi đoạn có hai bản LOD (gần: đủ chi tiết + viền; xa: bỏ món `small`, bỏ viền, lưới ít cạnh).
+  Viền không tắt phụt: mờ dần theo khoảng cách (`INK_FADE`), hết viền rồi mới đổi sang bản xa (`LOD_FAR`) — tắt đột ngột thì nhìn thấy rõ.
+  Mèo trên bản đồ dùng `newCatModel(breed, { coarse: true })` (lưới thô), màn thưởng dùng bản đủ chi tiết.
 
 **Dữ liệu**
 - Mỗi chỗ đặt (slot) có `PLACES` + `OBSTACLE_RADIUS`; id món là duy nhất giữa mọi khu (test kiểm).
