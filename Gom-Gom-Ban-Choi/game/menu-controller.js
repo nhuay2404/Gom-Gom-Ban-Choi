@@ -1,5 +1,5 @@
 // ===== Luồng điều khiển MENU (giao diện ngoài màn chơi) =====
-// Bản đồ màn, Home / Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
+// Home hub = bản đồ màn (ví, liveops), Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
 // và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở gom-gom.js).
 import { categories, catMarkup, addArt as addCatArt } from './ui/cat-art.mjs';
 import { LEVELS, LETTERS } from './gameplay/levels.mjs';
@@ -80,9 +80,9 @@ function renderMap() {
   list.replaceChildren(road);
 }
 
-// Thanh tab chung hiện ở Home / Map / Deco / Shop, đánh dấu mục đang mở.
-// Hub có nút cài đặt chung (Home / Map / Deco); Shop không có (banner gói khởi đầu nằm đúng chỗ đó).
-const SETTINGS_TABS = ['home', 'map', 'deco'];
+// Thanh tab chung hiện ở Home (bản đồ) / Deco / Shop, đánh dấu mục đang mở.
+// Home và Deco có nút cài đặt chung (cùng hàng ví); Shop không có (banner gói khởi đầu nằm đúng chỗ đó).
+const SETTINGS_TABS = ['home', 'deco'];
 function markTab(tab) {
   $('tabbar').hidden = false;
   $('hub-settings').hidden = !SETTINGS_TABS.includes(tab);
@@ -158,9 +158,11 @@ async function showMap3d() {
   map3d.start();
 }
 
+// Home hub chính là bản đồ màn (showTab('home') cũng dẫn tới đây).
 export function showMap() {
   hideMenus();
-  markTab('map');
+  markTab('home');
+  refreshWallet();
   $('map').hidden = false;
   $('tutorial').hidden = true;
   if (map3dFailed) showMap2d();
@@ -175,8 +177,9 @@ function showMap2d() {
 }
 addEventListener('resize', () => { if (!$('map').hidden && map3dFailed) renderMap(); });
 
-// ===== Home / Deco / Shop: các tab dùng chung thanh điều hướng nổi, chỉ hiện ngoài màn chơi =====
-const TABS = ['home', 'deco', 'shop'];
+// ===== Deco / Shop: các tab dùng chung thanh điều hướng nổi (cùng Home = bản đồ), chỉ hiện ngoài màn chơi =====
+// Khu nhà 3D (mèo đi lại, đồ đã đặt) chỉ còn ở Deco; Home cũ (vườn + nút PLAY) đã bỏ, bản đồ là hub.
+const TABS = ['deco', 'shop'];
 export const menuOpen = () => TABS.some(tab => !$(tab).hidden);
 let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
 let decoThumbnail = null; // chụp model 3D làm ảnh cho ô đồ (có sau khi nạp Three.js)
@@ -192,6 +195,8 @@ export function hideMenus() {
   map3d?.stop();
 }
 export function showTab(tab) {
+  if (tab === 'home') return showMap();
+  map3d?.stop();
   TABS.forEach(name => { $(name).hidden = name !== tab; });
   markTab(tab);
   $('map').hidden = true;
@@ -204,15 +209,14 @@ export function showTab(tab) {
   mountRoom(tab);
   $(tab).scrollTop = 0;
 }
-// Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10).
+// Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10). Chỉ Deco dựng cảnh này.
 const applyRoom = shown => room3d?.apply(shown, { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), gardenExpand: isGardenExpanded() });
 function mountRoom(tab) {
   if (!room3d) return;
-  if (tab === 'shop') return room3d.stop();
-  applyRoom(tab === 'deco' ? decoShown() : getDeco());
-  // Home = khu nhà: kéo để đi qua các khu, chụm để thu nhỏ xem toàn bộ. Deco = khoá vào khu đang trang trí.
-  // Deco điều khiển camera giống hệt Home (hub); deco: true bật phần riêng của Deco (khoá khu, chạm món để đổi...).
-  room3d.mount($(`${tab}-room`), { mode: 'hub', deco: tab === 'deco', resetView: true, view: tab === 'home' ? HOME_VIEW : DECO_VIEW });
+  if (tab !== 'deco') return room3d.stop();
+  applyRoom(decoShown());
+  // Kéo để đi qua các khu, chụm để thu nhỏ; deco: true bật phần riêng của Deco (khoá khu, chạm món để đổi...).
+  room3d.mount($('deco-room'), { mode: 'hub', deco: true, resetView: true, view: DECO_VIEW });
 }
 // Deco tràn viền: phòng nằm giữa hàng ví và dải thẻ dưới đáy; khung dọc nên cỡ phòng tính theo bề ngang (zoomFit nhỏ = to hơn).
 const DECO_VIEW = {
@@ -222,20 +226,14 @@ const DECO_VIEW = {
     return { top: $('deco').querySelector('.wallet-hud').getBoundingClientRect().bottom - room.top, bottom: room.bottom - $('deco').querySelector('.deco-dock').getBoundingClientRect().top };
   },
 };
-// Home tràn viền: phòng phủ cả màn, nút / pill đè lên; camera nhắm vào đúng ô đảo vườn của bản Figma (.fh-island).
-const HOME_VIEW = {
-  zoomCap: 1.15, zoomFit: .95, // ô đảo rộng hơn cao nhiều nên zoom chạm trần: zoomCap quyết định cỡ vườn
-  insets() {
-    const room = $('home-room').getBoundingClientRect(), island = document.querySelector('.fh-island').getBoundingClientRect();
-    return { top: island.top - room.top, bottom: room.bottom - island.bottom };
-  },
-};
+// PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
+$('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
 $('home-starter').onclick = () => { playSound('pick'); setShopPage('store'); showTab('shop'); }; // gói khởi đầu nằm đầu tab Shop
 $('tabbar').addEventListener('click', event => {
   const tab = event.target.closest('.tab');
   if (!tab || tab.getAttribute('aria-current')) return;
   playSound('pick');
-  if (tab.dataset.tab === 'map') showMap(); else showTab(tab.dataset.tab);
+  showTab(tab.dataset.tab);
 });
 
 // Phòng CSS phẳng (dự phòng khi không nạp được 3D): tranh, cửa sổ, chậu cây, thảm và mèo; chạm mèo để cưng.
@@ -250,7 +248,6 @@ function buildRoom(room, cats) {
   }));
 }
 function buildFlatRooms() {
-  buildRoom($('home-room'), getDeco().cats.slice(0, 3));
   buildRoom($('deco-room'), getDeco().cats.slice(0, 3));
 }
 function petRoomCat(cat) {
@@ -299,9 +296,7 @@ const roomReady = import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }
     renderZoneSwitch();
     renderDeco();
   });
-  $('home-room').replaceChildren();
   $('deco-room').replaceChildren();
-  $('home-room').classList.add('is-3d');
   $('deco-room').classList.add('is-3d');
   const open = TABS.find(tab => !$(tab).hidden);
   if (open) mountRoom(open);
@@ -376,10 +371,10 @@ $('deco-cards').addEventListener('click', event => {
   if (decoPick && status === 'poor') showToast(`Need ${base.price - getDeco().coins} more coins`);
 });
 function pickDeco(entry) {
-  if (entry?.cat === 'furniture') room3d?.fx(slotOf(entry), 'preview'); // lấp lánh nhẹ quanh món đang xem thử
   decoPick = entry;
   applyRoom(decoShown());
   room3d?.focus(entry?.id ?? null); // xem trước = quay về chỗ đó + zoom vào được; bỏ xem = zoom quanh giữa khu
+  if (entry?.cat === 'furniture') room3d?.fx(slotOf(entry), 'preview'); // lấp lánh nhẹ quanh món đang xem thử
   renderDeco();
 }
 function buildBase(base) {
@@ -390,10 +385,10 @@ function buildBase(base) {
   playSound('reward');
   showToast(`Built ${base.name}!`);
   if (!room3d) buildFlatRooms();
-  room3d?.fx(base.id, 'buy'); // pháo giấy + sao + vòng sáng
   decoPick = null;
   applyRoom(getDeco());
   room3d?.focus(base.id, false);
+  room3d?.fx(base.id, 'buy'); // pháo giấy + sao + vòng sáng
   renderDeco();
   renderZoneSwitch();
 }
@@ -413,10 +408,10 @@ function onScenePick(pick) {
   }
   openDecoPop(pick);
 }
-  // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
-  room3d?.lockView(!['cats', 'walls', 'floors'].includes(spec.key));
 function openDecoPop(spec) {
   decoPop = spec;
+  // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
+  room3d?.lockView(!['cats', 'walls', 'floors'].includes(spec.key));
   if (spec.key !== 'cats') setDeco(clearFresh(getDeco(), spec.zone, spec.key)); // đã xem món mới -> thôi sáng
   if (decoPick) { decoPick = null; applyRoom(getDeco()); }
   renderDeco();
@@ -430,9 +425,9 @@ function openDecoPop(spec) {
 }
 function closeDecoPop(render = true) {
   if (!decoPop) return;
-  room3d?.lockView(false);
   decoPop = null;
   $('deco-pop').hidden = true;
+  room3d?.lockView(false);
   room3d?.focus(null, false);
   if (render) renderDeco();
 }
@@ -479,9 +474,9 @@ $('deco-pop-items').addEventListener('click', event => {
     setDeco(next);
   }
   playSound('pick');
-  if (entry.cat !== 'cats') room3d?.fx(entry.cat === 'furniture' ? slotOf(entry) : entry.cat, 'swap'); // làn khói + lấp lánh khi đổi kiểu
   if (!room3d) buildFlatRooms();
   applyRoom(getDeco());
+  if (entry.cat !== 'cats') room3d?.fx(entry.cat === 'furniture' ? slotOf(entry) : entry.cat, 'swap'); // làn khói + lấp lánh khi đổi kiểu
   renderDeco();
 });
 // Không có nút đóng: chạm ra ngoài bảng là đóng. Chạm trong cảnh 3D do onScenePick lo (chạm món khác = đổi sang bảng của
@@ -629,22 +624,8 @@ $('shop-deco-grid').addEventListener('click', event => {
   showToast(entry.slot ? `Bought ${entry.name}! Tap the ${itemById(entry.slot).name.toLowerCase()} in Deco to swap` : `Bought ${entry.name}! Tap the ${entry.cat === 'walls' ? ZONES[entry.zone].cats.walls.toLowerCase() : ZONES[entry.zone].cats.floors.toLowerCase()} in Deco to use it`);
   renderShopDeco();
   renderShopBoosters();
-});
-
-// ===== Khu: vườn (màn 1–10; mở rộng khi thắng màn 30) / phòng khách (thắng màn 10) / phòng ngủ (15). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
-const levelsCleared = () => clearedCount(loadProgress());
-// Dev "mở hết khu" (nút Dev: Unlock all): xem được cả phần / món khoá ở màn game chưa có (vườn mở rộng: màn 30+). Lưu trong máy.
-const DEV_ZONES_KEY = 'gomgom-dev-all-zones';
-const devAllZones = () => DEV_MODE && readText(DEV_ZONES_KEY) === 'on';
-const isZoneOpen = (zone, cleared = levelsCleared()) => zoneOpen(zone, cleared) || devAllZones();
-const isGardenExpanded = () => gardenExpanded(levelsCleared()) || devAllZones();
-const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
-function renderZoneSwitch() {
-  const cleared = levelsCleared();
-  document.querySelectorAll('.zone-switch button').forEach(button => {
-    const zone = button.dataset.zone, open = isZoneOpen(zone, cleared);
   shopBurst($('shop-deco-grid').querySelector(`[data-id="${entry.id}"]`));
-    button.classList.toggle('on', zone === getDeco().zone);
+});
 // Mua ở Shop thành công: sao + chấm màu bung ra từ thẻ món (DOM, không có cảnh 3D ở Shop).
 const BURST_COLORS = ['#ff6f91', '#ffd23f', '#5fbe57', '#5ab8ff', '#b48cf0'];
 function shopBurst(card) {
@@ -663,11 +644,28 @@ function shopBurst(card) {
     bit.addEventListener('animationend', () => bit.remove());
   }
 }
+
+// ===== Khu: vườn (màn 1–10; mở rộng khi thắng màn 30) / phòng khách (thắng màn 10) / phòng ngủ (15). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
+const levelsCleared = () => clearedCount(loadProgress());
+// Dev "mở hết khu" (nút Dev: Unlock all): xem được cả phần / món khoá ở màn game chưa có (vườn mở rộng: màn 30+). Lưu trong máy.
+const DEV_ZONES_KEY = 'gomgom-dev-all-zones';
+const devAllZones = () => DEV_MODE && readText(DEV_ZONES_KEY) === 'on';
+const isZoneOpen = (zone, cleared = levelsCleared()) => zoneOpen(zone, cleared) || devAllZones();
+const isGardenExpanded = () => gardenExpanded(levelsCleared()) || devAllZones();
+const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
+function renderZoneSwitch() {
+  const cleared = levelsCleared();
+  document.querySelectorAll('.zone-switch button').forEach(button => {
+    const zone = button.dataset.zone, open = isZoneOpen(zone, cleared);
+    button.classList.toggle('on', zone === getDeco().zone);
     button.classList.toggle('locked', !open);
     button.setAttribute('aria-selected', zone === getDeco().zone);
     const [built, total] = open ? builtCount(getDeco(), zone) : [0, 0];
     button.innerHTML = open ? `${ZONES[zone].name} <small>${built}/${total}</small>` : `🔒 ${ZONES[zone].name}`;
+    // Khu đã xây hết mọi chỗ: ẩn khỏi hàng chọn khu (vẫn tới được bằng cách kéo cảnh / chạm đồ trong khu đó)
+    button.hidden = open && built === total;
   });
+  $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
 }
 document.addEventListener('click', event => {
   const button = event.target.closest('.zone-switch button');
@@ -681,10 +679,7 @@ document.addEventListener('click', event => {
   renderZoneSwitch();
   renderDeco();
   applyRoom(getDeco()); // camera Deco lướt sang khu vừa chọn (nút chọn khu giờ chỉ còn ở Deco)
-    // Khu đã xây hết mọi chỗ: ẩn khỏi hàng chọn khu (vẫn tới được bằng cách kéo cảnh / chạm đồ trong khu đó)
-    button.hidden = open && built === total;
 });
-  $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
 
 // Shop (tiền thật) vẫn là khung giao diện: bấm vào chỉ báo "sắp có".
 document.addEventListener('click', event => { if (event.target.closest('.soon')) showToast('Coming soon!'); });
@@ -745,14 +740,14 @@ function renderSoundButtons() {
 document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = () => { setSound(!soundOn()); renderSoundButtons(); }; });
 renderSoundButtons();
 
-// Ngày / đêm cho khu mèo (Home + Deco dùng chung một cảnh 3D). Lưu lại cho lần sau.
+// Ngày / đêm cho khu mèo (cảnh 3D ở Deco). Lưu lại cho lần sau.
 let night = readText(SAVE_KEYS.night) === 'on';
 function applyNight() {
   const button = $('night-toggle');
   button.setAttribute('aria-pressed', night);
   button.setAttribute('aria-label', night ? 'Night, tap for day' : 'Day, tap for night');
   button.title = night ? 'Night' : 'Day';
-  ['home-room', 'deco-room'].forEach(id => $(id).classList.toggle('night', night));
+  $('deco-room').classList.toggle('night', night);
   room3d?.setNight(night);
 }
 $('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
@@ -815,5 +810,3 @@ function runQC() {
   return report;
 }
 $('dev-qc').onclick = () => { closeAllSettings(); runQC(); };
-$('home-play').onclick = () => play.startLevel(unlockedCount(loadProgress()) - 1);
-$('map-back').onclick = () => showTab('home');

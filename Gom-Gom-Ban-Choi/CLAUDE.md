@@ -12,9 +12,9 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 |---|---|---|
 | `game/ui/` | Thiết kế UI 2D: CSS (`gom-gom.css`, `board-grid.css`, `ui-portrait.css`), ảnh skin (`skins/`), art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`), âm thanh (`sound.mjs`) | `UI:` |
 | `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
-| `game/deco/` | Cảnh 3D Home / Deco: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
+| `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
 | `game/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
-| `game/menu-controller.js` | Luồng điều khiển **menu**: Map, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
+| `game/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
 | `game/` (gốc, còn lại) | `index.html` (khung màn hình), `gom-gom.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
 
@@ -32,7 +32,7 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 2. Chạy **QC model**: mở `http://localhost:4400/?qc` (tự chạy) hoặc Settings → "Dev: QC models". Kết quả phải là
    **"all clear ✓"** — không được để lỗi nào. QC nằm ở `game/deco/qc.mjs`; muốn kiểm một model riêng lúc đang làm thì gọi
    `checkModel(() => node)` (trả về `issues`).
-3. Xem bằng mắt trên khung mobile (375×812): Home + Deco từng khu, xoay camera vài góc, và ảnh thumbnail của món
+3. Xem bằng mắt trên khung mobile (375×812): Deco từng khu, xoay camera vài góc, và ảnh thumbnail của món
    trong danh sách Deco. QC không thay được mắt người (vd. mắt / mũi bị chìm trong đầu thú bông).
 4. Nếu sửa hành vi mèo: cho mèo dùng thử món đó (lên + xuống) trước khi báo xong.
 

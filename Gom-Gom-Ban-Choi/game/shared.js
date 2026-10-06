@@ -26,7 +26,7 @@ let deco = loadDeco(totalStars(loadProgress()));
 export const getDeco = () => deco;
 export function setDeco(next) { deco = next; saveDeco(deco); }
 export function refreshWallet() {
-  ['home-coins', 'deco-coins', 'shop-coins'].forEach(id => { $(id).textContent = deco.coins.toLocaleString('en-US'); });
+  ['map-coins', 'deco-coins', 'shop-coins'].forEach(id => { $(id).textContent = deco.coins.toLocaleString('en-US'); });
 }
 
 // ===== Kho booster: dùng trong ván (play-controller) và mua ở Shop (menu-controller) =====

@@ -93,34 +93,10 @@
     </section>
   </main>
 
-  <!-- ===== Home / Deco / Shop: các tab có thanh điều hướng nổi ===== -->
-  <!-- Home theo Figma (file UI, frame "Home" 10:5, khung 393 × 852): ảnh nút / pill cắt từ Figma (ui/skins/figma-home/),
-       đặt đúng toạ độ khung thiết kế (CSS nhân theo --u = bề ngang / 393). Vườn ở giữa vẫn là cảnh 3D thật (mèo, đồ đã đặt). -->
-  <section id="home" class="screen home" hidden>
-    <div class="home-stage">
-      <!-- Khu nhà (vườn + phòng khách nối liền): kéo 1 ngón để đi, vặn 2 ngón để xoay, chụm để zoom -->
-      <div id="home-room" class="room home-room"></div>
-    </div>
-    <div class="fh-layer">
-      <!-- Hàng ví: xu (số thật), kim cương + năng lượng (chưa có hệ thống, chạm báo "Coming soon") -->
-      <span class="fh-pill fh-coins" aria-label="Coins"><b id="home-coins">0</b></span>
-      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
-      <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop) -->
-      <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
-      <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
-      <!-- Góp ý: mở form khảo sát (cùng link với dòng Feedback trong Settings) -->
-      <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
-      <!-- Cột phải: cài đặt (ngày / đêm, âm thanh, hướng dẫn, dev) -->
-      <!-- Ô đảo vườn trong bản Figma: không hiện, chỉ để camera 3D canh vườn vào đúng chỗ này -->
-      <span class="fh-island" aria-hidden="true"></span>
-      <button id="home-play" class="fh-play" aria-label="Play"></button>
-    </div>
-  </section>
 <!-- Cài đặt (Figma: frame Home 73:590): popup giữa màn hình, nền tối mờ; nút bánh răng ở Home mở (aria-controls).
        Day / Night + Sound dùng logic cũ; Music / Haptic / Notifications là lựa chọn được nhớ (game chưa có hệ thống tương ứng,
        Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev nằm cuối, cuộn xuống mới thấy. -->
-  <!-- Nút cài đặt dùng chung cho Home / Map / Deco: cùng vị trí, cùng cỡ (menu-controller.js markTab bật / tắt) -->
+  <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu-controller.js markTab bật / tắt) -->
   <div id="hub-settings" class="settings hub-settings" hidden>
     <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
   </div>
@@ -233,25 +209,35 @@
     </section>
   </section>
 
-  <!-- Thanh tab chung (kiểu Figma, dựng bằng CSS): giữ nguyên ở Home / Map / Deco / Shop -->
+  <!-- Thanh tab chung (kiểu Figma, dựng bằng CSS): Home (hub = bản đồ màn) / Deco / Shop -->
   <nav id="tabbar" class="tabbar fh-tabbar" aria-label="Main" hidden>
     <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
-    <button class="tab" data-tab="map"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Map</span></button>
     <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><use href="#i-deco"/></svg><span>Deco</span></button>
     <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-cart"/></svg><span>Shop</span></button>
   </nav>
   <div id="toast" class="toast" role="status" hidden></div>
 
-  <!-- Bản đồ hành trình kiểu saga: màn 1 ở đáy, đường uốn lượn đi lên; nút Home luôn nằm dưới đáy -->
+  <!-- Home hub = bản đồ hành trình kiểu saga (màn 1 ở đáy, đường uốn lượn đi lên). Lớp trên: hàng ví (xu thật; kim cương +
+       năng lượng chưa có hệ thống, chạm báo "Coming soon") cùng hàng với nút cài đặt chung (#hub-settings), cột liveops bên trái. -->
   <section id="map" class="map" hidden>
+    <div class="fh-layer hub-layer">
+      <div class="wallet-hud">
+        <span class="fh-pill fh-coins" aria-label="Coins"><b id="map-coins">0</b></span>
+        <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+        <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+      </div>
+      <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
+      <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
+      <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
+      <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
+      <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
+      <button id="home-play" class="fh-play" aria-label="Play"></button>
+    </div>
     <header class="map-head">
       <h2>Journey</h2>
     </header>
     <div id="map-list" class="map-list"></div>
     <div id="map-3d" class="map-3d"></div>
-    <footer class="map-foot">
-      <button id="map-back" class="map-back" aria-label="Back to Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg><span>Home</span></button>
-    </footer>
   </section>
   <!-- Tutorial: lớp mờ khoét lỗ (SVG mask), viền sáng, bàn tay chỉ đường, bong bóng lời thoại -->
   <div id="tutorial" class="tutorial" hidden>
