@@ -205,48 +205,67 @@ body{overflow-x:clip}
 .result-round:active,.result-wide:active{translate:0 calc(2 * var(--u))}
 body.card-holding,body.card-holding *{touch-action:none}
 
-/* ---------- Hộp kết quả lúc THUA theo Figma (frame Gameplay 73:680, popup "Try Again!") ----------
-   Khung, mèo ló đầu + bụi hoa, tim vỡ có tia, chữ tiêu đề, nhãn level, ô điểm, nút Home / chơi lại: ảnh cắt từ Figma
-   (skins/figma-fail/, đã xoá số / chữ in sẵn). Mọi mảnh đặt đúng toạ độ trong khung popup 304.6 × 403 của Figma;
-   số liệu (level, điểm, xu) vẫn do play-controller.js ghi vào đúng phần tử cũ. */
-.result-dialog.lose{width:calc(304.6 * var(--u));height:calc(403 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
-  background:url('./skins/figma-fail/panel.png') center/100% 100% no-repeat}
-.result-dialog.lose>*{position:absolute;margin:0}
-.result-dialog.lose .result-peek{left:calc(38.9 * var(--u));top:calc(-98 * var(--u));width:calc(228.2 * var(--u));height:calc(104 * var(--u));translate:none;
-  background:url('./skins/figma-fail/cat-peek.png') center/100% 100% no-repeat}
-.result-dialog.lose .result-peek>*{display:none}
-.result-dialog.lose .result-hero{left:calc(51 * var(--u));top:calc(6 * var(--u));width:calc(204 * var(--u));height:calc(153 * var(--u));
-  background:url('./skins/figma-fail/heart.png') center/100% 100% no-repeat}
-.result-dialog.lose .result-hero>*{display:none}
-/* Chữ "Try Again!" là ảnh; chữ thật giữ cho trình đọc màn hình */
-.result-dialog.lose .result-title{left:calc(52 * var(--u));top:calc(127 * var(--u));width:calc(207 * var(--u));height:calc(48 * var(--u));
-  font-size:0;color:transparent;text-shadow:none;-webkit-text-stroke:0;background:url('./skins/figma-fail/title.png') center/100% 100% no-repeat}
-.result-dialog.lose .result-sub{left:calc(88 * var(--u));top:calc(179 * var(--u));width:calc(130 * var(--u));height:calc(23 * var(--u));
-  display:grid;place-items:center;font-family:var(--display);font-size:calc(11.5 * var(--u));font-weight:800;line-height:1;color:#6b1f12;
-  background:url('./skins/figma-fail/level-pill.png') center/100% 100% no-repeat}
-.result-dialog.lose .result-sub::before,.result-dialog.lose .result-sub::after{display:none}
-/* Ô điểm: ảnh có sẵn chữ "Score", đồng xu, tia; game ghi điểm vào rãnh giữa, số xu cạnh đồng xu */
-.result-dialog.lose .result-box{left:calc(35 * var(--u));top:calc(195 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));
-  padding:0;border:0;border-radius:0;background:url('./skins/figma-fail/score-box.png') center/100% 100% no-repeat}
-.result-dialog.lose .result-label,.result-dialog.lose .result-note{display:none}
-.result-dialog.lose .result-score{position:absolute;left:31.8%;width:36.7%;top:21%;height:23%;min-width:0;padding:0;display:grid;place-items:center;
-  background:none;font-size:calc(19 * var(--u));line-height:1;color:#6b1f12}
-.result-dialog.lose .result-coins,.result-dialog.lose .result-box::after{position:absolute;left:47%;top:57%;width:auto;margin:0;padding:0;border:0;
+/* ---------- Bảng kết quả theo Figma: thắng (Group 33, frame 73:616) / thua (frame 73:680) ----------
+   Mọi mảnh là ảnh cắt từ Figma (skins/figma-result/, đúng vùng hiển thị trong Figma, 3×), đặt đúng toạ độ trong khung 304.6 × 403
+   (khung = ảnh panel). Số liệu (level, điểm, xu) vẫn do play-controller.js ghi vào phần tử cũ, nằm trên rãnh đã xoá số của ảnh. */
+.result-dialog{width:calc(304.6 * var(--u));height:calc(403 * var(--u));max-width:none;padding:0;border:0;border-radius:0;box-shadow:none;
+  background:url('./skins/figma-result/panel.png') center/100% 100% no-repeat;margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}
+.result-dialog>*{position:absolute;margin:0}
+.result-dialog .result-peek{z-index:1;translate:none;background:center/100% 100% no-repeat}
+.result-dialog .result-peek>*,.result-dialog .result-hero>.result-rays,.result-dialog .result-hero>.result-heart{display:none}
+.result-dialog.win .result-peek{left:calc(27 * var(--u));top:calc(-96 * var(--u));width:calc(252 * var(--u));height:calc(104 * var(--u));background-image:url('./skins/figma-result/win-cat.png')}
+.result-dialog.lose .result-peek{left:calc(32 * var(--u));top:calc(-98 * var(--u));width:calc(242 * var(--u));height:calc(104 * var(--u));background-image:url('./skins/figma-result/fail-cat.png')}
+.result-dialog .result-hero{z-index:2;background:center/100% 100% no-repeat}
+.result-dialog.win .result-hero{left:calc(-15.5 * var(--u));top:calc(-43 * var(--u));width:calc(336 * var(--u));height:calc(252 * var(--u));background-image:url('./skins/figma-result/win-stars.png')}
+.result-dialog.lose .result-hero{left:calc(51.5 * var(--u));top:calc(48 * var(--u));width:calc(204 * var(--u));height:calc(153 * var(--u));background-image:url('./skins/figma-result/fail-heart.png')}
+/* Sao chưa đạt: phủ một lớp làm xám đúng ngôi sao đó trong ảnh (ảnh luôn có 3 sao sáng). */
+.result-dialog .result-stars{position:absolute;inset:0;display:block}
+.result-dialog .result-stars i{position:absolute;border-radius:50%;width:auto;aspect-ratio:auto;margin:0}
+.result-dialog .result-stars i:nth-child(1){left:7%;top:37%;width:27%;height:36%}
+.result-dialog .result-stars i:nth-child(2){left:32%;top:20%;width:36%;height:46%}
+.result-dialog .result-stars i:nth-child(3){left:66%;top:37%;width:27%;height:36%}
+.result-dialog .result-stars i svg{display:none}
+.result-dialog .result-stars i:not(.on){-webkit-backdrop-filter:grayscale(1) brightness(1.15) opacity(.75);backdrop-filter:grayscale(1) brightness(1.15) opacity(.75)}
+/* Tiêu đề là ảnh; chữ thật giữ cho trình đọc màn hình */
+.result-dialog .result-title{z-index:3;font-size:0;color:transparent;-webkit-text-stroke:0;filter:none;background:center/100% 100% no-repeat}
+.result-dialog.win .result-title{left:calc(32 * var(--u));top:calc(122 * var(--u));width:calc(247 * var(--u));height:calc(58 * var(--u));background-image:url('./skins/figma-result/win-title.png')}
+.result-dialog.lose .result-title{left:calc(52 * var(--u));top:calc(210 * var(--u));width:calc(207 * var(--u));height:calc(48 * var(--u));background-image:url('./skins/figma-result/fail-title.png')}
+.result-dialog .result-sub{z-index:3;left:calc(95.5 * var(--u));top:calc(178 * var(--u));width:calc(116 * var(--u));height:calc(25 * var(--u));display:grid;place-items:center;padding:0 18%;
+  font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;line-height:1;color:#6b1f12;white-space:nowrap;background:url('./skins/figma-result/win-cleared.png') center/100% 100% no-repeat}
+.result-dialog .result-sub::before,.result-dialog .result-sub::after{display:none}
+/* Ô điểm (chỉ khi thắng): ảnh có chữ "Score" + đồng xu + tia; điểm ghi vào rãnh giữa, số xu cạnh đồng xu */
+.result-dialog .result-box{left:calc(35.5 * var(--u));top:calc(194.5 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));display:block;padding:0;border:0;border-radius:0;background:url('./skins/figma-result/win-score.png') center/100% 100% no-repeat}
+.result-dialog .result-label{display:none}
+.result-dialog .result-score{position:absolute;left:31.8%;width:36.7%;top:22%;height:19.6%;min-width:0;padding:0;display:grid;place-items:center;
+  background:none;font-family:var(--display);font-size:calc(25 * var(--u));font-weight:800;line-height:1;color:#6b1f12}
+.result-dialog .result-coins{position:absolute;left:47.5%;top:57%;width:auto;margin:0;padding:0;border:0;
   display:flex;flex-direction:column;align-items:flex-start;gap:0;font-family:var(--display);line-height:.95}
-.result-dialog.lose .result-coins .ico-coin{display:none}
-.result-dialog.lose .result-coins b{font-size:calc(21 * var(--u));color:#6b1f12}
-.result-dialog.lose .result-coins small{margin:0;font-size:calc(12 * var(--u));color:#9a7864}
-/* Thua không được xu: vẫn có đồng xu trong ảnh nên ghi +0 */
-.result-dialog.lose .result-box:has(.result-coins[hidden])::after{content:'+0';font-size:calc(21 * var(--u));font-weight:800;color:#6b1f12}
-/* Nút: Home tròn kem, chơi lại hồng dài */
-.result-dialog.lose .result-actions{inset:0;pointer-events:none}
-.result-dialog.lose .result-actions>*{position:absolute;pointer-events:auto;border:0;border-radius:0;box-shadow:none;background:center/100% 100% no-repeat}
-.result-dialog.lose .result-actions svg{display:none}
-.result-dialog.lose #result-map{left:calc(15 * var(--u));top:calc(324 * var(--u));width:calc(58 * var(--u));height:calc(58 * var(--u));background-image:url('./skins/figma-fail/btn-home.png')}
-.result-dialog.lose #result-retry{left:calc(81 * var(--u));top:calc(323 * var(--u));width:calc(206 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-fail/btn-retry.png')}
-.result-dialog.lose .result-actions>button:active{translate:0 calc(2 * var(--u))}
-/* Hộp tự focus nút đầu (Home) khi mở: bỏ khung focus mặc định (vuông, lệch hình nút), dùng quầng sáng theo hình nút. Vị trí khung như Figma (đỉnh khung ở y = 272),
-   màn thấp thì kéo lên cho vừa. */
-.result-dialog.lose .result-actions>button:focus{outline:none}
-.result-dialog.lose .result-actions>button:focus-visible{filter:drop-shadow(0 0 calc(4 * var(--u)) #ffd23f)}
-.result-dialog.lose{margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}
+.result-dialog .result-coins .ico-coin{display:none}
+.result-dialog .result-coins b{font-size:calc(27 * var(--u));font-weight:800;color:#6b1f12}
+.result-dialog .result-coins small{margin:0;align-self:flex-start;font-size:calc(12 * var(--u));font-weight:800;color:#9a7864}
+/* Ghi chú (mở khu, quà, mẹo, lý do thua): thắng = dòng chữ trắng ngay dưới khung; thua = dòng nhỏ dưới tiêu đề */
+.result-dialog .result-note{position:absolute;left:calc(14 * var(--u));right:calc(14 * var(--u));text-align:center;font-size:calc(11 * var(--u));line-height:1.25}
+.result-dialog.win .result-note{top:calc(410 * var(--u));color:#fff;text-shadow:0 1px 2px #2b1a10cc}
+.result-dialog.lose .result-note{top:calc(266 * var(--u))}
+.result-dialog.lose .result-sub,.result-dialog.lose .result-box{display:none}
+/* Nút: ảnh Figma (Home / chơi lại tròn kem, Next xanh, Retry hồng) */
+.result-dialog .result-actions{inset:0;pointer-events:none;z-index:4}
+.result-dialog .result-actions>*{position:absolute;pointer-events:auto;border:0;border-radius:0;box-shadow:none;background:center/100% 100% no-repeat}
+.result-dialog .result-actions svg{display:none}
+.result-dialog #result-map{left:calc(15 * var(--u));top:calc(324 * var(--u));width:calc(58 * var(--u));height:calc(58 * var(--u));background-image:url('./skins/figma-result/btn-home-round.png')}
+.result-dialog #result-replay{left:calc(78 * var(--u));top:calc(325 * var(--u));width:calc(56 * var(--u));height:calc(56 * var(--u));background-image:url('./skins/figma-result/btn-retry-round.png')}
+.result-dialog #result-next{left:calc(146 * var(--u));top:calc(325 * var(--u));width:calc(148 * var(--u));height:calc(56 * var(--u));background-image:url('./skins/figma-result/btn-next.png')}
+.result-dialog #result-retry{left:calc(81 * var(--u));top:calc(323 * var(--u));width:calc(206 * var(--u));height:calc(61 * var(--u));background-image:url('./skins/figma-result/btn-retry.png')}
+.result-dialog .result-actions>button[hidden]{display:none}
+.result-dialog .result-actions>button:active{translate:0 calc(2 * var(--u))}
+/* Hộp tự focus nút đầu (Home) khi mở: bỏ khung focus mặc định (vuông, lệch hình nút), dùng quầng sáng theo hình nút. */
+.result-dialog .result-actions>button:focus{outline:none}
+.result-dialog .result-actions>button:focus-visible{filter:drop-shadow(0 0 calc(4 * var(--u)) #ffd23f)}
+/* Hiện dần: sao / tim bật ra, tiêu đề rơi xuống */
+@media(prefers-reduced-motion:no-preference){
+  .result-dialog[open] .result-hero{animation:result-hero .55s .1s cubic-bezier(.3,1.6,.5,1) both}
+  .result-dialog[open] .result-title{animation:result-title .45s .25s cubic-bezier(.3,1.5,.5,1) both}
+  .result-dialog[open] .result-peek{animation:result-peek .5s cubic-bezier(.3,1.4,.5,1) both}}
+@keyframes result-hero{from{opacity:0;scale:.3}}
+@keyframes result-title{from{opacity:0;translate:0 calc(-16 * var(--u))}}
+@keyframes result-peek{from{translate:0 calc(40 * var(--u))}}

@@ -193,8 +193,10 @@ const zoneDefaults = zone => {
     floor: free.find(entry => entry.cat === 'floors').id,
   };
 };
+// Mèo có sẵn từ đầu; các giống khác phải nhận ở Map (nút Claim cạnh màn giống đó xuất hiện lần đầu, sau khi thắng màn đó).
+export const STARTER_CATS = ['gray', 'orange', 'white'];
 function defaults(totalStars) {
-  return { coins: totalStars * COINS_PER_STAR, cats: ['gray', 'orange', 'white'], zone: 'garden', expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
+  return { coins: totalStars * COINS_PER_STAR, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
@@ -225,12 +227,15 @@ export function loadDeco(totalStars) {
         const taken = new Set(zones.garden.placed.map(id => slotOf(itemById(id) || { id })));
         zones.garden = { ...zones.garden, placed: [...zones.garden.placed, ...free.filter(id => !taken.has(id))] };
       }
-      return clean({ ...base, ...saved, zones, expansionSeeded: true });
+      // Save có từ trước khi nhận mèo ở Map: mèo đang ở trong nhà coi như đã nhận.
+      const claimedCats = saved.claimedCats ?? [...new Set([...STARTER_CATS, ...(saved.cats || [])])];
+      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true });
     }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(totalStars);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
-      return { ...base, coins: (saved.coins ?? 0) + refund, cats: saved.cats || base.cats };
+      const cats = saved.cats || base.cats;
+      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])] };
     }
   }
   return defaults(totalStars);
@@ -243,8 +248,12 @@ const withZone = (deco, zone, change) => ({ ...deco, zones: { ...deco.zones, [zo
 
 // Trạng thái một món với người chơi hiện tại: locked / using / owned / buy / poor.
 export function itemStatus(deco, entry, unlockedLevel) {
+  // Mèo: chưa nhận ở Map thì khoá (dev "mở hết" — unlockedLevel = Infinity — thì bỏ qua).
+  if (entry.cat === 'cats') {
+    if (!isCatClaimed(deco, entry.breed) && unlockedLevel !== Infinity) return 'locked';
+    return deco.cats.includes(entry.breed) ? 'using' : 'owned';
+  }
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
-  if (entry.cat === 'cats') return deco.cats.includes(entry.breed) ? 'using' : 'owned';
   const zone = zoneState(deco, entry.zone);
   // Món giá 0 (kể cả phương án thay thế của món miễn phí) luôn coi như đã có, không cần "mua".
   const owned = zone.owned.includes(entry.id) || entry.price === 0, affordable = deco.coins >= entry.price ? 'buy' : 'poor';
@@ -252,6 +261,14 @@ export function itemStatus(deco, entry, unlockedLevel) {
   if (entry.cat === 'floors') return zone.floor === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (!owned) return affordable;
   return zone.placed.includes(entry.id) ? 'using' : 'owned';
+}
+
+export const isCatClaimed = (deco, breed) => (deco.claimedCats ?? STARTER_CATS).includes(breed);
+// Nhận mèo từ Map: ghi đã nhận, còn chỗ trong nhà thì thả vào nhà luôn.
+export function claimCat(deco, breed) {
+  if (isCatClaimed(deco, breed)) return deco;
+  const cats = deco.cats.length < MAX_ROOM_CATS && !deco.cats.includes(breed) ? [...deco.cats, breed] : deco.cats;
+  return { ...deco, claimedCats: [...(deco.claimedCats ?? STARTER_CATS), breed], cats };
 }
 
 // Món đang chiếm chỗ của `entry` (phương án khác cùng slot), nếu có.

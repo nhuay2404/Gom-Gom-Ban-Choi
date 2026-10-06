@@ -1259,7 +1259,6 @@ function endLevel(win, reason = '') {
   const expandedNow = win && coinsEarned > 0 && index + 1 === GARDEN_EXPANSION.unlockAfter && levelsCleared() === GARDEN_EXPANSION.unlockAfter;
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
-  $('result-coins').hidden = !coinsEarned;
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
   const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);

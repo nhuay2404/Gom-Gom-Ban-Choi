@@ -35,7 +35,9 @@ cpSync(game, join(work, 'game'), { recursive: true, filter: src => !/\.test\.mjs
 const js = execSync(
   'npx -y esbuild@0.24.0 game/gom-gom.js --bundle --format=esm --minify --log-level=warning',
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
-).replace(/<\/script/gi, '<\\/script');
+).replace(/<\/script/gi, '<\\/script')
+  // Ảnh JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs): nhúng thẳng thành data URI.
+  .replace(/(["'])(ui\/skins\/[^"']+\.(?:png|jpe?g|webp))\1/g, (_, q, file) => q + dataUri(file) + q);
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).

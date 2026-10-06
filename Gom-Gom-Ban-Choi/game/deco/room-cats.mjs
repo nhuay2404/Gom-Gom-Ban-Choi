@@ -794,19 +794,6 @@ class Cat {
     this.setPose('sit');
   }
   // Quay ra phía người chơi kêu meo meo.
-  // Chuột trỏ vào mèo: quay người đối diện màn hình, ngồi nhìn bạn (thỉnh thoảng chớp mắt chậm) tới khi chuột rời đi.
-  *faceYou() {
-    this.setPose('stand');
-    while (this.world.hovered === this) {
-      const cam = this.world.cameraPos?.();
-      if (cam) this.turnToward(this.facing(cam.x, cam.z), 7);
-      this.stepGait(Math.min(1, Math.abs(angDiff(this.heading, cam ? this.facing(cam.x, cam.z) : this.heading)) * 2));
-      this.setPose('sit'); this.lookGoal = 0; this.goal.tailUp = .8;
-      if (chance(.004)) yield* this.slowBlink();
-      yield;
-    }
-    yield* this.wait(.4);
-  }
   *meowAtYou() {
     const cam = this.world.cameraPos?.();
     if (cam) yield* this.turnTo(this.facing(cam.x, cam.z));
@@ -1737,6 +1724,10 @@ class Cat {
       spring(this, 'x', this.carryX, 140, .8, dt);
       spring(this, 'z', this.carryZ, 140, .8, dt);
       spring(this, 'y', CARRY_H, 90, .7, dt);
+      // Đang bị nhấc: xoay người cho mặt đối diện màn hình (theo camera, kể cả khi bạn xoay khu nhà), mắt nhìn thẳng.
+      const cam = this.world.cameraPos?.();
+      if (cam) this.turnToward(this.facing(cam.x, cam.z), 9);
+      this.lookGoal = 0;
       if (this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('half'); // bế lâu thì lim dim chịu trận
       yield;
     }
@@ -1973,10 +1964,6 @@ class Cat {
     const pose = this.pose, goal = this.goal, rig = this.rig;
     for (const key in goal) { const [k, z] = POSE_SPRING[key] || [80, .8]; spring(pose, key, goal[key], k, z, dt); }
     // Có động ở đâu đó (world.notice): mắt liếc + thân xoay theo; con đang rảnh đứng yên thì quay hẳn người lại nhìn.
-    if (this.world.hovered === this) { // đang được trỏ chuột: ngoái đầu nhìn ra màn hình (kể cả lúc đang bận trên đồ)
-      const cam = this.world.cameraPos?.();
-      if (cam) this.attention = { x: cam.x, z: cam.z, until: t + .25 };
-    }
     const att = !petting && this.attention && t < this.attention.until ? this.attention : null;
     if (att && this.interruptible() && this.speed < .05) this.turnToward(this.facing(att.x, att.z), 2.2);
     spring(this, 'look', att ? clamp(angDiff(this.yaw, this.facing(att.x, att.z)) * 1.6, -1, 1) : this.lookGoal, 90, .8, dt);
@@ -2455,12 +2442,6 @@ export function createCatLife(ctx) {
     carryHeight: CARRY_H,
     // Đàn mèo (chỉ đọc: x, z, y, speed, carried) để cảnh làm đồ đạc rung nhẹ khi mèo đi sát qua.
     bodies() { return world.cats; },
-    // Mèo đang được chuột trỏ vào (null = không con nào). Rảnh thì quay người ra nhìn; đang bận thì chỉ ngoái đầu (update).
-    hover(cat) {
-      if (world.hovered === cat) return;
-      world.hovered = cat;
-      if (cat && !cat.carried && cat.interruptible()) cat.interrupt(cat.faceYou());
-    },
     pickUp(cat, x, z) {
       cat.carried = true; cat.petUntil = 0;
       ({ x: cat.carryX, z: cat.carryZ } = world.bound(x, z));

@@ -143,6 +143,7 @@ function afkFaces(cat, group, ink) {
   };
 }
 
+const BITMAP = { orange: 'ui/skins/cats/orange.png' };
 function catSvg(group) {
   const cat = categories[group], mood = cat.mood;
   const ink = cat.mask || group === 'tuxedo' ? '#2a1d18' : '#4a3030';
@@ -172,6 +173,11 @@ function catSvg(group) {
         <circle cx="30.5" cy="130" r="1.3"/><circle cx="34.5" cy="129" r="1.3"/><circle cx="38.5" cy="130" r="1.3"/>
         <circle cx="61.5" cy="130" r="1.3"/><circle cx="65.5" cy="129" r="1.3"/><circle cx="69.5" cy="130" r="1.3"/></g>
     </g>`;
+  // Mèo cam dùng ảnh vẽ sẵn từ Figma (đã có mặt + biểu cảm riêng): chỉ giữ thân dưới lúc bị nhấc, không chồng lớp mặt SVG.
+  if (BITMAP[group]) return `<svg class="cat mood-${mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
+    ${hang}
+    <image href="${BITMAP[group]}" x="9" y="2" width="82" height="97" preserveAspectRatio="xMidYMax meet"/>
+  </svg>`;
   return `<svg class="cat mood-${mood}" viewBox="0 0 100 106" aria-hidden="true">
     <defs>
       <radialGradient id="cry-iris" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#6b5a86"/><stop offset=".6" stop-color="#3a2f4a"/><stop offset="1" stop-color="#241c2e"/></radialGradient>

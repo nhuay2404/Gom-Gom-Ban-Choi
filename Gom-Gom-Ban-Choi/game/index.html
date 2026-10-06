@@ -62,13 +62,8 @@
           <span id="level-title" class="fg-level">Level 1</span><span class="fg-moves-label">Moves</span><strong id="moves">20</strong></div>
       </div>
       <div class="settings fg-settings">
-        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="game-settings-menu"></button>
-        <div id="game-settings-menu" class="settings-menu" hidden>
-          <label class="settings-row" for="open-map"><button id="open-map" class="round-button small icon" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button><span>Home</span></label>
-          <label class="settings-row" for="restart"><button id="restart" class="round-button small" aria-label="Restart this level" title="Restart">↻</button><span>Restart</span></label>
-          <label class="settings-row" for="game-sound"><button id="game-sound" class="round-button small icon sound-toggle" aria-pressed="true"></button><span>Sound</span></label>
-          <label class="settings-row" for="game-help"><button id="game-help" class="round-button small" aria-label="How to play" title="How to play">?</button><span>How to play</span></label>
-        </div>
+        <!-- Cùng popup Settings với Home / Map / Deco (thêm hàng Home / Restart chỉ khi đang chơi) -->
+        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
       </div>
     </section>
     <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
@@ -134,6 +129,11 @@
         <button class="settings-close" aria-label="Close settings"><svg viewBox="0 0 24 24"><use href="#i-close"/></svg></button>
       </header>
       <div class="settings-body">
+        <!-- Chỉ hiện khi mở từ màn chơi: rời màn / chơi lại (hỏi lại trước, play-controller.js) -->
+        <div class="settings-links settings-ingame">
+          <button id="open-map" class="settings-link"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
+          <button id="restart" class="settings-link"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg><span>Restart</span></button>
+        </div>
         <!-- Khảo sát góp ý của người chơi (Google Form), mở tab mới -->
         <a class="settings-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer">
           <span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-feedback"/></svg></span>
@@ -273,9 +273,9 @@
     <div class="result-box">
       <span class="result-label">Score</span>
       <b id="result-score" class="result-score">0</b>
-      <p id="result-coins" class="result-coins" hidden></p>
-      <p id="result-note" class="result-note" hidden></p>
+      <p id="result-coins" class="result-coins"></p>
     </div>
+    <p id="result-note" class="result-note" hidden></p>
     <div class="result-actions">
       <button id="result-map" class="result-round" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
       <button id="result-replay" class="result-round" aria-label="Play again" title="Play again"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg></button>

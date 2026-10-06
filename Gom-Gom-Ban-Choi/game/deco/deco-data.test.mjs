@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../gameplay/save.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR, slotGroups, previewAllNew } from './deco-data.mjs';
+import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR, slotGroups, previewAllNew, claimCat, MAX_ROOM_CATS } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -171,4 +171,20 @@ test('previewAllNew: mỗi chỗ hiện một món chưa mua, không trừ xu, k
   ids.forEach(id => assert.ok(shown.zones.garden.placed.includes(id)));
   assert.equal(shown.coins, deco.coins);
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers', 'stump'], 'bản gốc không đổi');
+});
+
+test('mèo nhận ở Map: chưa nhận thì khoá (dù đã qua màn); nhận rồi thì vào nhà nếu còn chỗ; save cũ giữ mèo đang có', () => {
+  setStorageBackend(memoryStore());
+  const deco = loadDeco(0), tabby = itemById('cat-tabby');
+  assert.deepEqual(deco.claimedCats, ['gray', 'orange', 'white']);
+  assert.equal(itemStatus(deco, tabby, 40), 'locked');
+  const claimed = claimCat(deco, 'tabby');
+  assert.equal(itemStatus(claimed, tabby, 1), 'using');
+  assert.equal(claimCat(claimed, 'tabby'), claimed);
+  const full = { ...deco, cats: Array.from({ length: MAX_ROOM_CATS }, (_, k) => ['gray', 'orange', 'white', 'siamese', 'tuxedo'][k % 5]) };
+  assert.equal(itemStatus(claimCat(full, 'tabby'), tabby, 1), 'owned');
+  const store = memoryStore();
+  setStorageBackend(store);
+  writeJSON(SAVE_KEYS.deco, { ...deco, claimedCats: undefined, cats: ['gray', 'tabby'] });
+  assert.ok(loadDeco(0).claimedCats.includes('tabby'));
 });

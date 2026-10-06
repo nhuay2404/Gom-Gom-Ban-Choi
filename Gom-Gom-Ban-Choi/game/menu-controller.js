@@ -7,7 +7,7 @@ import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCoun
 import { BOOSTERS } from './gameplay/tuning.mjs';
 import { playSound, soundOn, setSound } from './ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
-import { ZONES, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, occupantOf } from './deco/deco-data.mjs';
+import { ZONES, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, occupantOf, claimCat, isCatClaimed } from './deco/deco-data.mjs';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): gom-gom.js nối vào lúc khởi động.
@@ -91,19 +91,59 @@ function markTab(tab) {
   });
 }
 // Bản đồ 3D (deco/map-world.mjs: trống cỏ lăn như Animal Crossing). Máy không có WebGL / lỗi nạp thì dùng bản đồ 2D ở trên.
-let map3d = null, map3dFailed = false;
-const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld }) => {
+let map3d = null, map3dFailed = false, catShowcase = null;
+const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld, catShowcase: showcase }) => {
+  catShowcase = showcase;
   map3d = createMapWorld($('map-3d'), {
     avatarSvg: catMarkup.orange,
     onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
+    onClaim: (breed, index) => showCatReward(breed, () => {
+      setDeco(claimCat(getDeco(), breed));
+      map3d.render(mapLevels());
+      map3d.focus(index, false);
+    }),
   });
 }).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
 function mapLevels() {
-  const open = unlockedCount(loadProgress()), seen = new Set();
+  const progress = loadProgress(), open = unlockedCount(progress), seen = new Set(), deco = getDeco();
   return LEVELS.map((level, index) => {
-    // Giống mèo lần đầu xuất hiện ở màn này: bản đồ dựng mèo 3D giống đó cạnh màn.
-    const newCats = [...level.cats].filter(ch => !seen.has(ch)).map(ch => (seen.add(ch), LETTERS[ch]));
-    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats };
+    // Giống mèo lần đầu xuất hiện ở màn này: bản đồ dựng mèo 3D giống đó cạnh màn (mèo đã nhận thì về nhà, không hiện nữa).
+    // Thắng màn rồi mà chưa nhận: nhãn NEW! thành nút Claim.
+    const newCats = [...level.cats].filter(ch => !seen.has(ch)).map(ch => (seen.add(ch), LETTERS[ch])).filter(breed => !isCatClaimed(deco, breed));
+    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats, claimable: !!progress.stars[index] };
+  });
+}
+// Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
+// Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
+const CAT_RARITY = { orange: 'Common', gray: 'Common', white: 'Common', tabby: 'Rare', siamese: 'Epic', tuxedo: 'Legendary' };
+function showCatReward(breed, onClaimed) {
+  const rarity = CAT_RARITY[breed] || 'Rare', name = categories[breed].name;
+  const screen = document.createElement('div');
+  screen.className = 'cat-reward';
+  screen.setAttribute('role', 'dialog');
+  screen.setAttribute('aria-label', `You got ${name}`);
+  screen.innerHTML = `<div class="cr-rays"></div><div class="cr-glow"></div>
+    <p class="cr-title">You got</p>
+    <div class="cr-cat cr-3d"><i class="cr-spark s1"></i><i class="cr-spark s2"></i><i class="cr-spark s3"></i><i class="cr-spark s4"></i></div>
+    <p class="cr-rarity r-${rarity.toLowerCase()}">${rarity}</p>
+    <p class="cr-name">${name}</p>
+    <p class="cr-tap">Tap to claim</p>`;
+  document.body.append(screen);
+  // Mèo 3D (cùng model trên Map); máy không dựng được 3D thì dùng art 2D.
+  let showcase = null;
+  try { showcase = catShowcase?.(screen.querySelector('.cr-cat'), breed, { reduceMotion }); } catch (error) { console.warn('Cat showcase off:', error); }
+  if (!showcase) screen.querySelector('.cr-cat').insertAdjacentHTML('afterbegin', catMarkup[breed]);
+  playSound('reward');
+  let ready = false, done = false;
+  setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion ? 0 : 900);
+  screen.addEventListener('click', () => {
+    if (!ready || done) return;
+    done = true;
+    playSound('pick');
+    onClaimed();
+    screen.classList.add('closing');
+    const roomy = getDeco().cats.includes(breed);
+    setTimeout(() => { showcase?.stop(); screen.remove(); showToast(roomy ? `${name} moved into your home!` : `${name} is waiting in Deco (room is full)`); }, reduceMotion ? 0 : 450);
   });
 }
 async function showMap3d() {
@@ -320,7 +360,7 @@ $('deco-grid').addEventListener('click', event => {
   if (decoPick === entry) return pickDeco(null); // chạm lại món đang xem = bỏ chọn
   pickDeco(entry);
   const status = itemStatus(getDeco(), entry, decoUnlockedLevel());
-  if (status === 'locked') showToast(`Unlocks at level ${entry.lock}`);
+  if (status === 'locked') showToast(entry.cat === 'cats' ? `Beat level ${entry.lock}, then claim it on the Map` : `Unlocks at level ${entry.lock}`);
   if (status === 'poor') showToast(`Need ${entry.price - getDeco().coins} more coins`);
 });
 function applyDecoPick() {
@@ -406,17 +446,26 @@ const menuOf = box => document.getElementById(box.querySelector('.settings-toggl
 const settingsBoxes = [...document.querySelectorAll('.settings')];
 const closeAllSettings = (except = null) => settingsBoxes.forEach(box => { if (box !== except) setSettingsOpen(box, false); });
 settingsBoxes.forEach(box => {
-  box.querySelector('.settings-toggle').onclick = () => { playSound('pick'); setSettingsOpen(box, menuOf(box).hidden); };
+  box.querySelector('.settings-toggle').onclick = () => {
+    playSound('pick');
+    // Mở từ màn chơi: popup hiện thêm hàng Home / Restart
+    menuOf(box).classList.toggle('in-game', box.classList.contains('fg-settings'));
+    setSettingsOpen(box, menuOf(box).hidden);
+  };
 });
 // Chạm ra ngoài thì đóng; với popup, chạm nền tối (ngoài khung) cũng đóng.
+// Bánh răng Home và màn chơi dùng chung một popup: giữ mọi hộp có popup chứa chỗ chạm (không chỉ hộp tìm thấy đầu tiên),
+// không thì chạm nút trong popup đang mở từ màn chơi lại đóng nó trước khi nút kịp chạy.
 document.addEventListener('pointerdown', event => {
-  const keep = settingsBoxes.find(box => box.contains(event.target)
-    || (menuOf(box).contains(event.target) && !(event.target === menuOf(box) && menuOf(box).classList.contains('settings-modal'))));
-  closeAllSettings(keep);
+  const inside = box => box.contains(event.target)
+    || (menuOf(box).contains(event.target) && !(event.target === menuOf(box) && menuOf(box).classList.contains('settings-modal')));
+  const keptMenus = new Set(settingsBoxes.filter(inside).map(menuOf));
+  settingsBoxes.forEach(box => { if (!keptMenus.has(menuOf(box))) setSettingsOpen(box, false); });
 });
 document.querySelectorAll('.settings-close').forEach(button => { button.onclick = () => { playSound('pick'); closeAllSettings(); }; });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
-$('game-help').onclick = () => { closeAllSettings(); $('help-dialog').showModal(); };
+// Home / Restart trong popup: đóng popup trước, play-controller.js hỏi lại rồi rời / chơi lại màn
+['open-map', 'restart'].forEach(id => $(id).addEventListener('click', () => closeAllSettings()));
 function renderSoundButtons() {
   document.querySelectorAll('.sound-toggle').forEach(button => {
     button.setAttribute('aria-pressed', soundOn());
