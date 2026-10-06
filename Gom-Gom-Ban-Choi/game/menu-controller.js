@@ -189,6 +189,7 @@ export function hideMenus() {
   TABS.forEach(tab => { $(tab).hidden = true; });
   $('tabbar').hidden = true;
   $('hub-settings').hidden = true;
+  setDecoLock(false);
   decoPick = null;
   closeDecoPop(false);
   room3d?.stop();
@@ -196,6 +197,7 @@ export function hideMenus() {
 }
 export function showTab(tab) {
   if (tab === 'home') return showMap();
+  setDecoLock(false);
   map3d?.stop();
   TABS.forEach(name => { $(name).hidden = name !== tab; });
   markTab(tab);
@@ -326,7 +328,7 @@ let lastCardZone = '';
 
 function renderDeco() {
   const deco = getDeco(), unlocked = decoUnlockedLevel(), fresh = freshKeys(deco, deco.zone);
-  room3d?.setHighlights(fresh);
+  room3d?.setHighlights(decoLocked ? new Set() : fresh);
   $('deco').querySelectorAll('.deco-side [data-key]').forEach(button => {
     button.querySelector('span').textContent = ZONES[deco.zone].cats[button.dataset.key];
     button.classList.toggle('on', decoPop?.key === button.dataset.key);
@@ -397,6 +399,7 @@ function buildBase(base) {
 // Chạm trong cảnh: món = bảng đổi món cạnh nó. Sàn / tường (chạm cỏ trống là chuyện thường) chỉ mở khi đã có kiểu khác mua ở Shop
 // và chưa có bảng nào đang mở; đang mở bảng thì chạm chỗ khác = đóng.
 function onScenePick(pick) {
+  if (decoLocked) return;
   const surface = pick.key === 'walls' || pick.key === 'floors';
   if (!pick.key || (surface && (decoPop || ownedOptions(getDeco(), pick.zone, pick.key).length < 2))) return closeDecoPop();
   // Món ở phòng khác: chuyển Deco sang phòng đó (hàng thẻ, nút, hàng chọn khu) rồi mở bảng — camera lướt thẳng tới món.
@@ -496,6 +499,22 @@ function goShopItem(entry) {
   card?.classList.add('flash');
   setTimeout(() => card?.classList.remove('flash'), 1600);
 }
+// Nút khoá (cột trái, dưới Ground): ẩn mọi UI mua bán / ví / thao tác + thanh tab để ngắm nhà; chỉ còn nút khoá và cài đặt,
+// cả hai mờ đi (CSS: #deco.ui-locked, body.deco-locked). Rời Deco / mở lại Deco thì tự mở khoá.
+let decoLocked = false;
+function setDecoLock(on) {
+  if (decoLocked === on) return;
+  decoLocked = on;
+  $('deco').classList.toggle('ui-locked', on);
+  document.body.classList.toggle('deco-locked', on);
+  const button = $('deco-lock');
+  button.setAttribute('aria-pressed', on);
+  button.setAttribute('aria-label', on ? 'Show buttons' : 'Hide buttons to view your home');
+  button.title = on ? 'Show UI' : 'Hide UI';
+  if (on) { decoPick = null; closeDecoPop(false); }
+  if (!$('deco').hidden) renderDeco();
+}
+$('deco-lock').onclick = () => { playSound('pick'); setDecoLock(!decoLocked); };
 // Cột trái (mèo / tường / sàn): bảng mở ngay bên phải nút, đuôi chỉ vào nút; chạm lại nút đang mở = đóng.
 $('deco').querySelector('.deco-side').addEventListener('click', event => {
   const button = event.target.closest('[data-key]');

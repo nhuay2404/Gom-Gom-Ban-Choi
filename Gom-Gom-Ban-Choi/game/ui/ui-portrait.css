@@ -655,6 +655,17 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .deco-side button.on{color:#fff;border-color:#2f7d3a;background:linear-gradient(#93df82,#5fbe57)}
 .deco-side svg{width:calc(26 * var(--u));height:calc(26 * var(--u));fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 .deco-side button:active{translate:0 calc(2 * var(--u))}
+/* Nút khoá giao diện: tròn, dưới nút Ground. Khoá = ẩn ví, thẻ mua, chọn khu, ghim NEW, bảng đổi món, thanh tab; chỉ còn nút khoá
+   + cài đặt, cả hai mờ đi (vẫn bấm được). */
+.deco-side .deco-lock{width:calc(50 * var(--u));height:calc(50 * var(--u));margin:calc(4 * var(--u)) auto 0;border-radius:50%;transition:opacity .2s}
+.deco-side .deco-lock svg{width:calc(24 * var(--u));height:calc(24 * var(--u));stroke-width:2.4}
+.deco-lock .shackle{transition:translate .2s;translate:3px -2px}
+.deco-lock[aria-pressed="true"] .shackle{translate:none}
+#deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.5}
+#deco.ui-locked .deco-side>[data-key]{visibility:hidden}
+#deco.ui-locked>.wallet-hud,#deco.ui-locked>.deco-dock,#deco.ui-locked>.deco-pins,#deco.ui-locked>.deco-pop{display:none}
+body.deco-locked #tabbar{display:none}
+body.deco-locked .hub-settings{opacity:.5}
 /* Đáy: chọn khu + hàng thẻ */
 .deco-dock{position:absolute;z-index:6;left:0;right:0;bottom:calc(86 * var(--u) + env(safe-area-inset-bottom));width:auto;display:flex;flex-direction:column;align-items:center;gap:6px;
   pointer-events:none}
