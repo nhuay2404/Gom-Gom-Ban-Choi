@@ -188,3 +188,27 @@ test('mèo nhận ở Map: chưa nhận thì khoá (dù đã qua màn); nhận r
   writeJSON(SAVE_KEYS.deco, { ...deco, claimedCats: undefined, cats: ['gray', 'tabby'] });
   assert.ok(loadDeco(0).claimedCats.includes('tabby'));
 });
+
+test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua vào kho (chưa đặt), báo món mới; đổi món thì hết "mới"', async () => {
+  const { shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isBase } = await import('./deco-data.mjs');
+  setStorageBackend(memoryStore());
+  let deco = { ...loadDeco(0), coins: 1000 };
+  assert.ok(shopCatalog('garden').every(entry => !isBase(entry)), 'Shop không bán món gốc');
+  assert.ok(shopCatalog('garden').some(entry => entry.id === 'fence-wood'), 'Shop bán rào khác');
+  const hay = itemById('stump-hay');
+  assert.equal(shopStatus(deco, hay, 99), 'needBase');
+  assert.ok(buyToStock(deco, hay, 99).error);
+  deco = applyAction(deco, itemById('stump'), 99); // xây chỗ ở Deco: mua + đặt món gốc
+  assert.ok(deco.zones.garden.placed.includes('stump'));
+  deco = buyToStock(deco, hay, 99);
+  assert.equal(deco.coins, 1000 - 80 - 80);
+  assert.ok(!deco.zones.garden.placed.includes('stump-hay'), 'mua ở Shop chưa đặt');
+  assert.deepEqual([...freshKeys(deco, 'garden')], ['stump']);
+  assert.deepEqual(ownedOptions(deco, 'garden', 'stump').map(e => e.id), ['stump', 'stump-hay']);
+  deco = useItem(deco, hay);
+  assert.ok(deco.zones.garden.placed.includes('stump-hay') && !deco.zones.garden.placed.includes('stump'));
+  assert.equal(freshKeys(deco, 'garden').size, 0);
+  deco = clearFresh(buyToStock(deco, itemById('fence-wood'), 99), 'garden', 'walls');
+  assert.equal(freshKeys(deco, 'garden').size, 0);
+  assert.equal(useItem(deco, itemById('fence-wood')).zones.garden.wall, 'fence-wood');
+});

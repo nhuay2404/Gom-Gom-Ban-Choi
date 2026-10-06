@@ -323,3 +323,40 @@ export function previewDeco(deco, entry) {
   if (entry.cat === 'floors') return withZone(deco, entry.zone, { floor: entry.id });
   return zone.placed.includes(entry.id) ? deco : withZone(deco, entry.zone, { placed: [...withoutSlot(zone.placed, entry), entry.id] });
 }
+
+// ===== Deco kiểu "xây chỗ" + Shop Decoration =====
+// Deco chỉ bán món gốc của từng chỗ (mua = mở khoá chỗ đó). Phương án thay thế của đồ, tường / sàn khác bán ở Shop
+// (mục Decoration): mua vào kho, chưa đặt, ghi vào `fresh` để Deco báo "có món mới thay được". Đổi món: chạm món trong cảnh.
+export const isBase = entry => entry.cat === 'furniture' && !entry.slot;
+// Món bán ở Shop: phương án thay thế của đồ + tường / sàn không miễn phí.
+export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && entry.price > 0)));
+// Trạng thái ở Shop: locked (chưa tới màn) / needBase (chưa xây chỗ ở Deco) / owned / buy / poor.
+export function shopStatus(deco, entry, unlockedLevel) {
+  if (entry.lock && unlockedLevel < entry.lock) return 'locked';
+  if (isOwned(deco, entry)) return 'owned';
+  if (entry.slot && !isOwned(deco, itemById(entry.slot))) return 'needBase';
+  return deco.coins >= entry.price ? 'buy' : 'poor';
+}
+export function buyToStock(deco, entry, unlockedLevel) {
+  const status = shopStatus(deco, entry, unlockedLevel);
+  if (status === 'locked') return { error: `Unlocks at level ${entry.lock}` };
+  if (status === 'needBase') return { error: `Build the ${itemById(entry.slot).name.toLowerCase()} in Deco first` };
+  if (status === 'owned') return { error: 'Already owned' };
+  if (status === 'poor') return { error: 'Not enough coins' };
+  const zone = zoneState(deco, entry.zone);
+  return { ...withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+}
+// Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
+export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))
+  .filter(entry => isOwned(deco, entry));
+// Dùng một món đã có (đồ: thay món đang ở chỗ đó; tường / sàn: đổi cả khu). Món vừa dùng thôi là "món mới".
+export function useItem(deco, entry) {
+  if (!isOwned(deco, entry)) return { error: 'Not owned yet' };
+  const zone = zoneState(deco, entry.zone), fresh = (deco.fresh || []).filter(id => id !== entry.id);
+  if (entry.cat === 'walls') return { ...withZone(deco, entry.zone, { wall: entry.id }), fresh };
+  if (entry.cat === 'floors') return { ...withZone(deco, entry.zone, { floor: entry.id }), fresh };
+  return { ...withZone(deco, entry.zone, { placed: [...withoutSlot(zone.placed, entry), entry.id] }), fresh };
+}
+// Món mới mua ở Shop mà chưa xem: đánh dấu theo chỗ (đồ) hoặc 'walls' / 'floors' của từng khu.
+export const freshKeys = (deco, zone) => new Set((deco.fresh || []).map(itemById).filter(entry => entry?.zone === zone).map(entry => entry.cat === 'furniture' ? slotOf(entry) : entry.cat));
+export const clearFresh = (deco, zone, key) => ({ ...deco, fresh: (deco.fresh || []).filter(id => { const entry = itemById(id); return !(entry && entry.zone === zone && (entry.cat === 'furniture' ? slotOf(entry) : entry.cat) === key); }) });

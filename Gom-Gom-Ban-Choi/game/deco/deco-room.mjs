@@ -752,6 +752,9 @@ export function createRoom() {
   controls.target.set(0, .8, 0);
   controls.enablePan = false;
   controls.enableDamping = true;
+  // Độ trôi khi thả tay: OrbitControls giảm theo TỪNG KHUNG HÌNH, máy chạy không đều (16 / 33 ms xen kẽ) thì camera trôi giật cục.
+  // frame() quy đổi lại theo thời gian thật mỗi khung (DAMPING = mức giảm của một khung 60 fps).
+  const DAMPING = .06;
   controls.minDistance = 9 * reach; controls.maxDistance = 18 * reach;
   controls.minPolarAngle = .45; controls.maxPolarAngle = 1.22;
   controls.autoRotateSpeed = .7;
@@ -766,6 +769,9 @@ export function createRoom() {
   // HUB_MIN: Home cho zoom sát gấp đôi Deco (9) để ngắm mèo / đồ đạc cận cảnh.
   const HUB_POLAR = Math.acos(HOME_VIEW.y / HOME_VIEW.length()), HUB_MAX = 30 * reach, HUB_MIN = 4.5 * reach;
   let hub = false;
+  // decoMode: đang ở màn Deco (khoá vào khu đang trang trí, chạm món để đổi, đồ cố định bỏ viền...). Camera Deco điều khiển
+  // giống hệt Home (hub: kéo = trượt, vặn 2 ngón = xoay, chụm = zoom) — hai thứ tách riêng.
+  let decoMode = false;
   function setMode(mode) {
     hub = mode === 'hub';
     controls.enablePan = hub;
@@ -781,11 +787,15 @@ export function createRoom() {
   const zoneReach = zone => zone === 'garden' && expanded ? WIDE : 1;
   // Giữ tâm nhìn trong khu nhà (các khu đã mở) khi kéo ở Home.
   const panBox = new THREE.Box3(), tmpCenter = new THREE.Vector3(), clampDelta = new THREE.Vector3(), itemBox = new THREE.Box3(), tmpGoal = new THREE.Vector3();
+  const DECO_OVERSHOOT = 5;
   function clampPan() {
     panBox.makeEmpty();
     openZones().forEach(zone => {
       zoneCenter(zone, tmpCenter);
-      panBox.expandByPoint(tmpCenter.clone().addScalar(-HALF * .8)).expandByPoint(tmpCenter.clone().addScalar(HALF * .8));
+      // Deco: tâm nhìn được ra hẳn ngoài mép khu (thêm DECO_OVERSHOOT m) — món kê sát tường sau vẫn hạ được xuống thấp để
+      // bảng đổi món phía trên không che model. Home giữ khung cũ.
+      const edge = decoMode ? HALF + DECO_OVERSHOOT : HALF * .8;
+      panBox.expandByPoint(tmpCenter.clone().addScalar(-edge)).expandByPoint(tmpCenter.clone().addScalar(edge));
     });
     const t = controls.target;
     clampDelta.set(THREE.MathUtils.clamp(t.x, panBox.min.x, panBox.max.x) - t.x, 0, THREE.MathUtils.clamp(t.z, panBox.min.z, panBox.max.z) - t.z);
@@ -824,6 +834,10 @@ export function createRoom() {
   // `site` chứa mọi khu, tâm vườn ở gốc toạ độ; mỗi phòng lệch ZONE_OFFSET[khu]. Mèo (room-cats.mjs) đi lại
   // tự do giữa các khu theo đúng toạ độ này, qua các cửa nối (LINKS).
   const site = new THREE.Group();
+  // Đồ trang trí cố định (không đổi được: tủ thấp, tranh, rèm, bụi góc vườn, đá / hoa phần vườn mở rộng...): ở Deco thì bỏ viền
+  // (stroke) để đồ đạc đổi được nổi bật hẳn lên. Home vẫn giữ viền như cũ. Xem frame().
+  const fixedDecor = [];
+  let fixedOutlineHidden = false;
   const garden = new THREE.Group();
   site.add(garden);
   scene.add(site);
@@ -852,6 +866,9 @@ export function createRoom() {
   doormat.position.set(DOOR.x, 0, -HALF + .3);
   doormat.traverse(node => { node.castShadow = false; node.userData.noOutline = true; }); // thảm chùi chân: không viền
   garden.add(ground, groundLong, cornersSquare, cornersLong, doormat);
+  fixedDecor.push(cornersSquare, cornersLong);
+  // Deco: chạm nền cỏ / sàn = đổi nền, chạm rào / tường = đổi rào (slotAt). Đồi + đồ trang trí phần mở rộng tính là nền.
+  [ground, groundLong].forEach(node => { node.userData.pickSurface = { zone: 'garden', key: 'floors' }; });
   // Phần vườn mở rộng (toạ độ vườn, x ≈ 4..12): đồi (cùng texture nền cỏ) + đồ trang trí cố định (lối đá, bóng mây...).
   // Chung nền + hàng rào với vườn; bệ diorama nối dài thêm một ô.
   const gardenExt = new THREE.Group();
@@ -862,6 +879,8 @@ export function createRoom() {
   const hillMat = mat('#9fd46a', { roughness: .95 });
   const decor2 = garden2Decor();
   gardenExt.add(buildHill(hillMat), decor2);
+  fixedDecor.push(decor2);
+  gardenExt.userData.pickSurface = { zone: 'garden', key: 'floors' };
   const butterflies2 = makeButterflies(garden);
   const sunCenter = new THREE.Vector3();
   let expanded = false;
@@ -899,7 +918,10 @@ export function createRoom() {
     const edge = mat('#c79a5f');
     const floor = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), edge), 0, -.15, 0);
     floor.material = [edge, edge, floorMat, edge, edge, edge]; // mặt trên (+y) là sàn
-    room.add(floor, spec.decor());
+    const decor = spec.decor();
+    room.add(floor, decor);
+    fixedDecor.push(decor);
+    floor.userData.pickSurface = { zone, key: 'floors' };
     const wallMats = [], stubs = [], leaves = {};
     const walls = WALL_DEFS.map(({ normal, pos, rot }, i) => {
       const wallMat = mat('#fff1d2', { transparent: true });
@@ -958,8 +980,10 @@ export function createRoom() {
       wall.traverse(node => { if (node.isMesh) node.castShadow = false; });
       Object.assign(wall.userData, { normal, opacity: 1 });
       room.add(wall);
+      wall.userData.pickSurface = { zone, key: 'walls' };
       return wall;
     });
+    fixedDecor.push(...walls); // tường + đồ treo tường (tranh, kệ, rèm...) gộp chung một khối
     return { zone, room, floorMat, wallMats, stubs, walls, leaves, floorId: '' };
   }
   const INTERIOR_SPECS = {
@@ -997,6 +1021,7 @@ export function createRoom() {
       node.position.set(ox + x, 0, oz + z);
       node.rotation.y = rot ?? Math.atan2(-x, -z); // quay mặt vào giữa khu của nó
       node.userData.yaw = node.rotation.y; // brush() nghiêng món đồ quanh chân đế, giữ nguyên hướng quay này
+      node.userData.pickSlot = id; // Deco: chạm món = mở bảng đổi món của chỗ này (slotAt)
       node.visible = false;
       node.userData.pop = 1;
       lightUp(node);
@@ -1098,12 +1123,10 @@ export function createRoom() {
     if (zone !== zoneId || expanded !== wasExpanded) {
       zoneId = zone;
       zoomFocus = null;
-      if (!hub) controls.minDistance = 9 * reach;
       // Deco: lướt sang khu vừa chọn, giữ độ zoom đang dùng (sang / rời vườn mở rộng: nhân / chia WIDE)
-      if (!hub) {
+      if (decoMode) {
         const r = camera.position.distanceTo(controls.target);
-        controls.maxDistance = 18 * reach * zoneReach(zone);
-        glideTo(zoneCenter(zone), 700, THREE.MathUtils.clamp(r * zoneReach(zone) / fromReach, 9 * reach, controls.maxDistance));
+        glideTo(zoneCenter(zone), 700, THREE.MathUtils.clamp(r * zoneReach(zone) / fromReach, controls.minDistance, controls.maxDistance));
       }
     }
     if (OPENABLE.some(id => opened[id] !== was[id]) || expanded !== wasExpanded || !applied) aimSun();
@@ -1121,6 +1144,7 @@ export function createRoom() {
       const cx = expanded ? GARDEN_EXT_X / 2 : 0;
       fence = buildFence(fenceEntry, HALF, opened.living ? [{ side: 0, u: DOOR.x - cx, w: DOOR.w }] : [], HALF + cx);
       fence.position.x = cx;
+      fence.userData.pickSurface = { zone: 'garden', key: 'walls' };
       garden.add(fence);
     }
     if (groundId !== groundEntry.id) {
@@ -1168,25 +1192,127 @@ export function createRoom() {
   // Món đó cũng thành tâm zoom ở Deco (zoomFocus): zoom vào thì tâm nhìn trượt dần tới món, zoom ra thì về giữa khu.
   // focus(null) = bỏ chọn, zoom lại quanh giữa khu.
   let turn = null, zoomFocus = null;
-  function focus(id) {
+  // turnTo = false: giữ góc xoay đang có (chạm thẳng vào món trong cảnh: người chơi đang nhìn thấy nó rồi).
+  const FOCUS_ZOOM = 12; // khoảng cách camera = cỡ món × FOCUS_ZOOM (FOV toon hẹp), kẹp trong 55%–110% độ xa mặc định
+  // lift (px): món nằm thấp hơn giữa khung chừng ấy — chừa chỗ phía trên cho bảng đổi món, tính sẵn trong cú lướt.
+  function focus(id, turnTo = true, lift = 0) {
     const slot = id && slotOf(itemById(id) || { id }), place = slot && PLACES[slot];
     zoomFocus = place ? slot : null;
-    // Đang chọn một món: cho zoom sát hơn (6 thay vì 9) để ngắm món cận cảnh; bỏ chọn thì về giới hạn cũ.
-    if (!hub) controls.minDistance = (zoomFocus ? 6 : 9) * reach;
+    selectedSlot = zoomFocus;
     if (!place || !id) return;
     // Đổi sang món khác: tâm nhìn lướt sang món mới, giữ độ zoom đang dùng. Vị trí tâm theo đúng tỉ lệ của zoom vào món
     // (giữa khu khi zoom ra hết, đúng món khi zoom sát hết): đang soi cận món cũ thì sang soi cận món mới.
-    const item = !hub && furniture[slot];
+    // Deco: tâm nhìn lướt tới món (giữ độ zoom), để món và bảng đổi món phía trên nó nằm giữa khung.
+    // Deco: món ra giữa khung, camera tự zoom theo cỡ món (món to lùi xa, món nhỏ tiến gần) để món chiếm chừng 1/4 chiều cao
+    // khung — còn đủ chỗ phía trên cho bảng đổi món mà không che model.
+    const item = decoMode && furniture[slot];
     if (item) {
-      const r = camera.position.distanceTo(controls.target);
-      const t = THREE.MathUtils.clamp((controls.maxDistance - r) / Math.max(.05, controls.maxDistance - controls.minDistance), 0, 1);
-      const center = zoneCenter(zoneId, new THREE.Vector3());
-      glideTo(center.lerp(itemBox.setFromObject(item).getCenter(tmpGoal), t), 600);
+      const size = itemBox.setFromObject(item).getSize(tmpCenter), span = Math.max(size.x, size.y * 1.4, size.z, .6);
+      const radius = THREE.MathUtils.clamp(span * FOCUS_ZOOM, HOME_VIEW.length() * .55, HOME_VIEW.length() * 1.1);
+      const goal = itemBox.getCenter(tmpGoal).setY(.8);
+      if (lift) goal.add(groundShift(lift, radius, groundFwd)); // tâm nhìn vượt qua món về phía trước: món tụt xuống dưới giữa khung
+      glideTo(goal, 750, radius);
     }
+    if (!turnTo) return;
     const from = controls.getAzimuthalAngle();
     let to = Math.atan2(-place[0], -place[1]);
     to = from + ((((to - from) % TAU) + TAU + Math.PI) % TAU - Math.PI);
     turn = { from, to, start: performance.now() };
+  }
+
+  // ---------- Deco: chạm món / bề mặt, sáng nhẹ món có đồ mới, toạ độ màn hình của món (để đặt bảng đổi món cạnh nó) ----------
+  let onPick = null, onZoneView = null, selectedSlot = null, highlights = new Set();
+  // Khung (toạ độ thế giới) của một khu: vườn theo hàng rào (đã mở rộng thì dài), phòng = sàn 8 × 8 quanh tâm khu.
+  function zoneRect(zone) {
+    if (zone === 'garden') return gardenBounds(expanded);
+    const [ox, oz] = ZONE_OFFSET[zone];
+    return { x0: ox - HALF, x1: ox + HALF, z0: oz - HALF, z1: oz + HALF };
+  }
+  const insideZone = (zone, p, margin) => { const r = zoneRect(zone); return p.x > r.x0 + margin && p.x < r.x1 - margin && p.z > r.z0 + margin && p.z < r.z1 - margin; };
+  // Deco: người chơi kéo cảnh sang hẳn khu khác (tâm nhìn vào sâu trong khu đó .4 m) thì Deco đổi theo khu đang ở giữa.
+  function followDrag() {
+    if (!decoMode || !onZoneView || glide || turn || insideZone(zoneId, controls.target, 0)) return;
+    const next = Object.keys(opened).find(zone => opened[zone] && zone !== zoneId && insideZone(zone, controls.target, .4));
+    if (!next) return;
+    zoneId = next;
+    zoomFocus = null;
+    if (container) container.dataset.zone = next;
+    onZoneView(next);
+  }
+
+  const GLOW = new THREE.Color('#fff0c8');
+  // Cộng emissive ấm lên vật liệu của món; vật liệu vốn tự phát sáng (đèn, lửa) giữ nguyên.
+  function glow(node, k) {
+    if ((node.userData.glow || 0) === k) return;
+    node.userData.glow = k;
+    if (!node.userData.glowMats) {
+      const mats = new Set();
+      node.traverse(child => {
+        if (child.isMesh && !child.userData.outline) [].concat(child.material).forEach(m => { if (m?.emissive && !m.emissive.getHex()) mats.add(m); });
+      });
+      node.userData.glowMats = [...mats];
+    }
+    for (const m of node.userData.glowMats) { m.emissive.copy(k ? GLOW : BLACK); m.emissiveIntensity = k || 1; }
+  }
+  const BLACK = new THREE.Color(0);
+  // Vật đang thấy được: cả chuỗi cha đều hiện, không phải tường đang mờ đi (tường chắn camera).
+  const shown = node => { for (let n = node; n; n = n.parent) if (!n.visible) return false; return ([].concat(node.material)[0]?.opacity ?? 1) > .5; };
+  // Món / bề mặt dưới điểm chạm (raycaster đã ngắm), chỉ trong khu đang trang trí: { zone, key } — key = chỗ đặt | 'walls' | 'floors'.
+  function pickAt() {
+    for (const hitInfo of raycaster.intersectObject(site, true)) {
+      if (!shown(hitInfo.object)) continue;
+      for (let node = hitInfo.object; node; node = node.parent) {
+        if (node.userData.pickSlot) return { zone: itemById(node.userData.itemId)?.zone, key: node.userData.pickSlot };
+        if (node.userData.pickSurface) return node.userData.pickSurface.zone === zoneId ? { ...node.userData.pickSurface } : null;
+      }
+      return null; // trúng vật khác (đồ trang trí cố định...) trước
+    }
+    return null;
+  }
+  // Toạ độ (px, theo khung chứa cảnh) của đỉnh món đồ ở một chỗ; null nếu món không hiện / ở sau camera.
+  const topPoint = new THREE.Vector3();
+  // Khung chữ nhật (px màn hình) bao trọn món đồ: 8 góc hộp bao chiếu lên màn hình. Để đặt bảng đổi món không đè lên model.
+  const corner = new THREE.Vector3();
+  function screenRectOf(slot) {
+    const node = furniture[slot];
+    if (!node?.visible || !container) return null;
+    itemBox.setFromObject(node);
+    const rect = renderer.domElement.getBoundingClientRect(), out = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+    for (let i = 0; i < 8; i++) {
+      corner.set(i & 1 ? itemBox.max.x : itemBox.min.x, i & 2 ? itemBox.max.y : itemBox.min.y, i & 4 ? itemBox.max.z : itemBox.min.z).project(camera);
+      if (corner.z > 1) return null;
+      const x = rect.left + (corner.x + 1) / 2 * rect.width, y = rect.top + (1 - corner.y) / 2 * rect.height;
+      out.left = Math.min(out.left, x); out.right = Math.max(out.right, x); out.top = Math.min(out.top, y); out.bottom = Math.max(out.bottom, y);
+    }
+    return out;
+  }
+  // Trượt khung nhìn để nội dung dịch xuống dy px trên màn hình (dy < 0: dịch lên): dời tâm nhìn theo hướng nhìn trên mặt đất.
+  // Mặt đất nhìn xiên góc polar nên 1 m dọc hướng nhìn chỉ chiếm cos(polar) m trên khung.
+  const groundFwd = new THREE.Vector3();
+  // Đoạn dời trên mặt đất (dọc hướng nhìn) để nội dung dịch dy px trên màn hình, khi camera cách tâm nhìn `dist` mét.
+  function groundShift(dy, dist, out) {
+    const perPx = 2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / camera.zoom / Math.max(1, viewFullH);
+    out.subVectors(controls.target, camera.position).setY(0).normalize();
+    const polar = Math.acos(THREE.MathUtils.clamp((camera.position.y - controls.target.y) / camera.position.distanceTo(controls.target), -1, 1));
+    return out.multiplyScalar(dy * perPx / Math.max(.3, Math.cos(polar)));
+  }
+  // Trả về false nếu không dời được (tâm nhìn đã chạm mép khu nhà): bên gọi thôi đẩy, khỏi giằng co với giới hạn kéo.
+  function nudge(dy) {
+    if (!container || !dy || glide) return true; // đang lướt tới món: đợi lướt xong
+    groundShift(dy, camera.position.distanceTo(controls.target), groundFwd);
+    const before = controls.target.clone();
+    controls.target.add(groundFwd); camera.position.add(groundFwd);
+    if (hub) clampPan();
+    return before.distanceToSquared(controls.target) > 1e-6;
+  }
+  function screenOf(slot) {
+    const node = furniture[slot];
+    if (!node?.visible || !container) return null;
+    itemBox.setFromObject(node).getCenter(topPoint).setY(itemBox.max.y);
+    topPoint.project(camera);
+    if (topPoint.z > 1) return null;
+    const rect = renderer.domElement.getBoundingClientRect();
+    return { x: rect.left + (topPoint.x + 1) / 2 * rect.width, y: rect.top + (1 - topPoint.y) / 2 * rect.height };
   }
 
   // Chạm mèo:
@@ -1270,6 +1396,11 @@ export function createRoom() {
         if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
         else if (mood === 'warning') spawnHearts(x, y, '♥', 1);
         else spawnHearts(x, y);
+      } else if (decoMode && onPick) { // Deco: chạm món / sàn / tường
+        const pick = pickAt() || {};
+        // Món ở phòng khác: phòng đó thành khu đang trang trí luôn (camera lướt thẳng tới món, không về giữa phòng trước)
+        if (pick.zone && pick.zone !== zoneId) { zoneId = pick.zone; zoomFocus = null; if (container) container.dataset.zone = zoneId; }
+        onPick({ ...pick, x: event.clientX, y: event.clientY });
       }
     }
     down = null;
@@ -1377,7 +1508,9 @@ export function createRoom() {
 
   const camDir = new THREE.Vector3(), spherical = new THREE.Spherical();
   let lastFrame = 0, lastRadius = 0;
+  let onFrame = null;
   function frame(now) {
+    controls.dampingFactor = 1 - (1 - DAMPING) ** (Math.min(.1, (now - (lastFrame || now)) / 1000 || 1 / 60) * 60);
     const t = now / 1000;
     if (turn) {
       const k = Math.min(1, (now - turn.start) / 650), ease = 1 - (1 - k) ** 3;
@@ -1387,19 +1520,21 @@ export function createRoom() {
       if (k === 1) turn = null;
     }
     if (glide) {
-      const k = Math.min(1, (now - glide.start) / glide.ms), ease = k < .5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+      // ease-out bậc 4: bắt đầu ngay theo tay chạm, chậm dần và đậu êm vào chỗ (không khựng ở đầu như ease-in-out)
+      const k = Math.min(1, (now - glide.start) / glide.ms), ease = 1 - (1 - k) ** 4;
       clampDelta.lerpVectors(glide.from, glide.to, ease).sub(controls.target);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
       if (glide.toR !== glide.fromR) camera.position.sub(controls.target).setLength(glide.fromR + (glide.toR - glide.fromR) * ease).add(controls.target);
       if (k === 1) glide = null;
     }
     if (hub) clampPan();
+    followDrag();
     controls.update();
     // Home: thu nhỏ thì tâm nhìn trôi dần về giữa khu nhà (thu nhỏ hết cỡ = thấy trọn khu nhà ở giữa màn hình).
     const radius = camera.position.distanceTo(controls.target);
     if (hub && !glide && lastRadius && radius > lastRadius + 1e-3) {
       const k = Math.min(1, (radius - lastRadius) / Math.max(.05, HUB_MAX - lastRadius));
-      clampDelta.copy(siteCenter()).sub(controls.target).multiplyScalar(k);
+      clampDelta.copy(decoMode ? zoneCenter(zoneId, tmpCenter) : siteCenter()).sub(controls.target).multiplyScalar(k);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
     }
     // Deco: zoom vào (khoảng cách giảm) kéo tâm nhìn về món đang chọn theo đúng tỉ lệ đã zoom, nên zoom sát hết cỡ thì
@@ -1440,6 +1575,12 @@ export function createRoom() {
       if (wall.userData.stub) wall.userData.stub.visible = o < .6;
     });
     }
+    // Deco: món có đồ mới mua (ở Shop) thay được thì sáng lên nhấp nháy; món đang mở bảng đổi sáng nhẹ đứng yên.
+    const pulse = (Math.sin(t * 4) + 1) / 2;
+    for (const [slot, node] of Object.entries(furniture)) {
+      const here = decoMode && node.visible && itemById(node.userData.itemId)?.zone === zoneId;
+      glow(node, !here ? 0 : highlights.has(slot) ? .12 + pulse * .28 : slot === selectedSlot ? .18 : 0);
+    }
     Object.values(furniture).forEach(node => {
       if (!node.visible) return;
       if (node.userData.pop < 1) {
@@ -1461,8 +1602,17 @@ export function createRoom() {
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
     rideAlong();
     lastFrame = now;
-    if (TOON) { addOutlines(scene); syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera); }
+    if (TOON) {
+      addOutlines(scene);
+      // Viền tạo lúc vẽ khung đầu tiên (addOutlines): bật / tắt viền đồ cố định khi chuyển giữa Home và Deco.
+      if (fixedOutlineHidden !== decoMode) {
+        fixedOutlineHidden = decoMode;
+        fixedDecor.forEach(root => root.traverse(node => { if (node.userData.outline) node.visible = !fixedOutlineHidden; }));
+      }
+      syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera);
+    }
     renderer.render(scene, camera);
+    onFrame?.(); // UI bám theo cảnh (bảng đổi món, ghim NEW): đặt ngay sau khi vẽ, cùng khung hình, không trễ một nhịp
   }
 
   const resize = () => {
@@ -1474,6 +1624,7 @@ export function createRoom() {
     // vẽ một khung con (cao h) của khung lớn cao h + |lệch|, rồi zoom theo đúng phần nhìn thấy đó.
     const { top = 0, bottom = 0 } = view.insets?.() || {};
     const visibleH = Math.max(1, h - top - bottom), shift = bottom - top, fullH = h + Math.abs(shift);
+    viewFullH = fullH;
     camera.aspect = w / fullH;
     if (shift) camera.setViewOffset(w, fullH, 0, Math.max(0, shift), w, h);
     else camera.clearViewOffset();
@@ -1481,6 +1632,7 @@ export function createRoom() {
     camera.zoom = Math.min(view.zoomCap, (w / visibleH) / view.zoomFit) * visibleH / fullH;
     camera.updateProjectionMatrix();
   };
+  let viewFullH = 1;
   const observer = new ResizeObserver(resize);
   let view = { zoomCap: 1, zoomFit: 1.05, insets: null };
 
@@ -1493,21 +1645,22 @@ export function createRoom() {
       view = { zoomCap: 1, zoomFit: 1.05, insets: null, ...options.view };
       target.dataset.zone = zoneId;
       setMode(options.mode || 'room');
+      decoMode = !!options.deco;
       autoRotate = !!options.autoRotate;
       controls.autoRotate = autoRotate;
       glide = null;
       // Deco: tâm nhìn về đúng khu đang trang trí (giữ góc xoay / độ xa đang có). Home: bắt đầu từ vườn.
-      const home = zoneCenter(hub ? 'garden' : zoneId);
+      const home = zoneCenter(hub && !decoMode ? 'garden' : zoneId);
       clampDelta.subVectors(home, controls.target);
       controls.target.add(clampDelta); camera.position.add(clampDelta);
       // Home luôn mở ở góc nhìn đẹp mặc định, dù ở Deco người chơi đã xoay/zoom tới đâu.
       if (options.resetView) { turn = null; camera.position.copy(HOME_VIEW).add(home).setY(HOME_VIEW.y + home.y - .8); }
       // Deco ở vườn đã mở rộng: lùi xa hơn góc Home mặc định cho thấy trọn cả vườn.
-      else if (!hub && zoneReach(zoneId) > 1) camera.position.sub(controls.target).setLength(HOME_VIEW.length() * WIDE).add(controls.target);
+      if (decoMode && zoneReach(zoneId) > 1) camera.position.sub(controls.target).setLength(HOME_VIEW.length() * WIDE).add(controls.target);
       controls.update();
       lastRadius = 0;
       // Phòng vừa mở: lùi ra rồi lướt tới giữa khu nhà để người chơi thấy phòng mới mọc lên.
-      if (hub && revealPending) {
+      if (hub && !decoMode && revealPending) {
         zoneGroup(revealPending).userData.grow = 0;
         revealPending = null;
         camera.position.sub(controls.target).multiplyScalar(1.45).add(controls.target);
@@ -1522,6 +1675,18 @@ export function createRoom() {
     stop() { renderer.setAnimationLoop(null); lastFrame = 0; },
     apply,
     focus,
+    // Deco: fn({ zone, key, x, y }) khi chạm món (key = chỗ đặt) / sàn / tường; chạm chỗ khác: chỉ có x, y.
+    onPick(fn) { onPick = fn; },
+    // Deco: fn(khu) khi người chơi kéo cảnh sang khu khác (khu đang ở giữa đổi).
+    onZoneView(fn) { onZoneView = fn; },
+    // fn() gọi sau mỗi lần vẽ cảnh — UI bám theo món dùng cái này thay cho requestAnimationFrame riêng.
+    onFrame(fn) { onFrame = fn; },
+    // Deco: các chỗ có món mới mua thay được (sáng nhấp nháy).
+    setHighlights(keys) { highlights = new Set(keys); },
+    screenOf,
+    screenRectOf,
+    nudge,
+    refit: () => resize(),
     setNight,
     // Dev: QC model (qc.mjs) — trả về danh sách lỗi { level, zone, what }.
     qc: () => runModelQC({ BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
