@@ -82,10 +82,21 @@ export function pastelColor(color) {
   c.lerp(new THREE.Color(l, l, l), 1 - PASTEL.sat).lerp(new THREE.Color(1, 1, 1), PASTEL.white);
   return c.convertSRGBToLinear();
 }
+// Đèn điểm (đèn đứng, lồng đèn, đuốc...): dải TONES ở trên gần như phẳng (mặt quay lưng vẫn sáng 90%) — đúng ý cho nắng, nhưng
+// với đèn thì đèn rọi sáng cả mặt quay lưng: đỉnh tường, mép tường, mặt sau chao đèn ửng cam như đèn xuyên tường. Riêng đèn
+// điểm: nhân thêm hệ số theo hướng mặt (mặt quay về đèn sáng, nghiêng dần tối, quay lưng = 0), chuyển mềm cho hợp toon.
+// Thêm trần độ sáng ở cự ly gần (≤ 1.5 × cường độ đèn): suy hao 1/d^1.6 làm mảng tường cách đèn .4 m sáng gấp ~13 lần chỗ cách
+// 2 m -> đốm cháy trắng sau chao đèn. Có trần thì quầng sáng loang đều, mềm như tranh. Cùng hệ số nhân mọi kênh nên giữ màu đèn.
+const POINT_FACING = 'directLight.color = min( directLight.color, pointLight.color * 1.5 ) * smoothstep( -0.05, 0.4, dot( geometryNormal, directLight.direction ) );';
+const LIGHTS_BEGIN = THREE.ShaderChunk.lights_fragment_begin.replace(
+  'getPointLightInfo( pointLight, geometryPosition, directLight );',
+  `getPointLightInfo( pointLight, geometryPosition, directLight );\n\t\t${POINT_FACING}`);
+if (LIGHTS_BEGIN === THREE.ShaderChunk.lights_fragment_begin) console.warn('toon: không tìm thấy vòng đèn điểm trong lights_fragment_begin');
 function toonShader(shader) {
   shader.uniforms.toonRim = { value: this.userData.toonRim };
   shader.uniforms.toonSpec = { value: this.userData.toonSpec };
   shader.fragmentShader = shader.fragmentShader
+    .replace('#include <lights_fragment_begin>', LIGHTS_BEGIN)
     .replace('#include <lights_toon_pars_fragment>', LIGHTS_CHUNK)
     .replace('#include <color_fragment>', PASTEL_CHUNK);
 }

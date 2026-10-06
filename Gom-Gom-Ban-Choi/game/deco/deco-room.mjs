@@ -29,6 +29,8 @@ function mesh(geometry, material) {
   return node;
 }
 const at = (node, x, y, z) => { node.position.set(x, y, z); return node; };
+// Khối chắn đèn trong tường: vô hình với camera, chỉ dùng khi vẽ bóng của đèn đồ đạc (xem castLampShadows).
+const LAMP_CASTER_MAT = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
 // Độ mịn kiểu subdivision: bo tròn nhiều nấc, trụ/cầu nhiều cạnh; vẫn nhẹ (vài chục nghìn tam giác cả phòng).
 const ROUND = 3, RADIAL = 32; // bo góc 3 nấc / trụ 32 cạnh là đủ mượt dưới viền toon; cầu / trụ mặc định chia theo cỡ (mesh-detail.mjs)
 const rbox = (w, h, d, r, color) => mesh(roundedBox(w, h, d, ROUND, r), color);
@@ -1072,6 +1074,21 @@ export function createRoom() {
         wall.add(at(sky, u, 1.55, .125), at(arch, u, 2.2, .125), // kính cách mặt tường .025: nhìn xa không chớp
           at(mesh(new THREE.BoxGeometry(1.34, .1, .12), frame), u, .88, .16));
       }
+      // Khối chắn đèn: bản sao mảng tường (không gồm khung cửa / đồ treo), vô hình (không ghi màu / depth), bình thường không đổ
+      // bóng; chỉ trong lượt vẽ bóng đèn (castLampShadows) nó là vật chắn DUY NHẤT. Mỏng một nửa tường, nằm giữa lòng tường: mặt
+      // tường phía đèn vẫn sáng, mặt bên kia + sàn phòng bên cạnh nằm trong bóng (đèn không còn rọi xuyên tường).
+      const casters = group(...wall.children.filter(node => node.isMesh && node.material === wallMat).map(piece => {
+        const caster = new THREE.Mesh(piece.geometry.clone(), LAMP_CASTER_MAT);
+        caster.position.copy(piece.position);
+        caster.scale.z = .5;
+        caster.castShadow = caster.receiveShadow = false;
+        caster.raycast = () => {}; // không chặn chạm tường / món
+        Object.assign(caster.userData, { noOutline: true, lampCaster: true });
+        return caster;
+      }));
+      casters.position.set(pos[0], 0, pos[1]);
+      casters.rotation.y = rot;
+      room.add(casters); // gắn vào phòng, không vào tường: tường mờ / ẩn khi camera nhìn xuyên thì vẫn chắn đèn
       spec.decorate(i, wall);
       mergeStatic(wall); // mảng tường + khung + đồ treo cùng chất liệu -> ít mesh (độ mờ vẫn chỉnh theo từng chất liệu)
       if (leaves[i]) wall.add(leaves[i]); // cánh cửa cử động theo trạng thái mở khoá: gắn sau khi gộp
@@ -1163,9 +1180,46 @@ export function createRoom() {
     day: { sky: '#fff8e8', ground: '#e0b98a', hemi: 1.15, sun: '#fff1d6', sunI: 1.7, glass: '#cfeaff', lamps: 1, env: .4 },
     night: { sky: '#7f8fd0', ground: '#3a3550', hemi: .4, sun: '#a9bcff', sunI: .6, glass: '#1e2747', lamps: 1.8, env: .1 },
   };
+  // Bóng của đèn đồ đạc: three.js lọc vật đổ bóng theo layer của camera CHÍNH (không theo camera bóng), nên không tách được
+  // bằng layer. Thay vào đó: khung nào có đèn cần vẽ lại bóng (mới hiện, hoặc dời chỗ — kể cả lúc nảy khi vừa đặt), tạm thời chỉ
+  // khối chắn tường được đổ bóng, nắng giữ bản đồ bóng cũ; vẽ xong trả lại như cũ. Đồ đạc / mèo không chắn đèn (chao đèn tự
+  // che bóng đèn, bóng mèo đứng yên một chỗ khi mèo đã đi).
+  const lampLights = new Set(), lampAt = new THREE.Vector3();
+  const onStage = node => { for (let n = node; n; n = n.parent) if (!n.visible) return false; return true; };
+  function castLampShadows() {
+    let due = false;
+    for (const light of lampLights) {
+      if (!light.parent) { lampLights.delete(light); continue; }
+      if (!onStage(light)) continue;
+      light.getWorldPosition(lampAt);
+      if (!light.userData.shadowAt?.equals(lampAt)) light.shadow.needsUpdate = true;
+      if (light.shadow.needsUpdate) { due = true; (light.userData.shadowAt ??= new THREE.Vector3()).copy(lampAt); }
+    }
+    if (!due) return null;
+    const flipped = [];
+    scene.traverse(node => {
+      if (!node.isMesh || node.castShadow === !!node.userData.lampCaster) return;
+      flipped.push(node);
+      node.castShadow = !node.castShadow;
+    });
+    const sunAuto = sun.shadow.autoUpdate;
+    sun.shadow.autoUpdate = false;
+    return () => { for (const node of flipped) node.castShadow = !node.castShadow; sun.shadow.autoUpdate = sunAuto; };
+  }
   function lightUp(node) { // đèn của đồ đạc sáng hơn ban đêm
     node.traverse(child => {
       if (!child.isPointLight) return;
+      // Đèn bị tường chắn: bóng đổ chỉ tính khối chắn tường, vẽ lại khi đèn mới hiện / dời chỗ (castLampShadows), không vẽ
+      // mỗi khung. Thiếu bước này đèn đứng phòng khách rọi sáng mặt tường + sàn phòng ngủ.
+      if (!child.castShadow) {
+        child.castShadow = true;
+        child.shadow.mapSize.set(256, 256);
+        Object.assign(child.shadow.camera, { near: .05, far: child.distance || 10 });
+        child.shadow.bias = -.004;
+        child.shadow.autoUpdate = false;
+        lampLights.add(child);
+      }
+      child.shadow.needsUpdate = true;
       child.userData.baseIntensity ??= child.intensity;
       child.intensity = child.userData.baseIntensity * LIGHTING[night ? 'night' : 'day'].lamps;
     });
@@ -1745,6 +1799,7 @@ export function createRoom() {
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
     rideAlong();
     lastFrame = now;
+    const restoreShadows = castLampShadows();
     if (TOON) {
       addOutlines(scene);
       // Viền tạo lúc vẽ khung đầu tiên (addOutlines): bật / tắt viền đồ cố định khi chuyển giữa Home và Deco.
@@ -1755,6 +1810,7 @@ export function createRoom() {
       syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera);
     }
     renderer.render(scene, camera);
+    restoreShadows?.();
     onFrame?.(); // UI bám theo cảnh (bảng đổi món, ghim NEW): đặt ngay sau khi vẽ, cùng khung hình, không trễ một nhịp
   }
 
