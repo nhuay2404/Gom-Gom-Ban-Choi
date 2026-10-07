@@ -279,10 +279,13 @@
       <p id="result-coins" class="result-coins"></p>
     </div>
     <p id="result-note" class="result-note" hidden></p>
+    <!-- Onboarding (onboarding.js): thắng màn mở khoá một phần của game thì hiện "Unlocked:" + nút Continue thay cho Home / chơi lại / Next -->
+    <div id="result-unlock" class="result-unlock" hidden></div>
     <div class="result-actions">
       <button id="result-map" class="result-round" aria-label="Home" title="Home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></button>
       <button id="result-replay" class="result-round" aria-label="Play again" title="Play again"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg></button>
       <button id="result-next" class="result-wide next" aria-label="Next level"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5Z"/></svg></button>
+      <button id="result-continue" class="result-continue" hidden>Continue</button>
       <button id="result-retry" class="result-wide retry" aria-label="Retry"><svg viewBox="0 0 24 24"><path d="M12 3.5v7M7.5 6.5a7.5 7.5 0 1 0 9 0"/></svg></button>
     </div>
   </dialog>

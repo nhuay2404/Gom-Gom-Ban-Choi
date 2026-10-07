@@ -11,6 +11,7 @@ import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, l
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from './gameplay/tuning.mjs';
 import { spendBooster, boostersUnlocked } from './gameplay/boosters.mjs';
 import { CRATE_SVG, METAL_SVG, cageSvg } from './ui/board-art.mjs';
+import * as ob from './onboarding.js';
 import { playSound } from './ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from './deco/deco-data.mjs';
@@ -871,11 +872,11 @@ function renderBoard() {
     }
     cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}`;
     cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty`
-      : object.cage ? `Caged ${categories[object.group].name}, ${object.cage} lock${object.cage > 1 ? 's' : ''} left. Match next to it to break the cage` : `${object.name}, locked`);
+      : object.cage ? `Caged ${categories[object.group].name}. Match next to it to break the lock` : `${object.name}, locked`);
     if (!object) return;
     cell.style.setProperty('--group-color', categories[object.group].color);
     addArt(cell, object);
-    if (object.cage) cell.insertAdjacentHTML('beforeend', cageSvg(object.cage));
+    if (object.cage) cell.insertAdjacentHTML('beforeend', cageSvg());
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
       cell.classList.add('drop');
       cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
@@ -1346,6 +1347,7 @@ function endLevel(win, reason = '') {
     coinsEarned = record.coins;
     if (coinsEarned) setDeco({ ...getDeco(), coins: getDeco().coins + coinsEarned });
   }
+  const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
   // Vừa mở một khu mới (thắng đúng màn mốc lần đầu): báo trong hộp kết quả.
   const unlockedZone = win && coinsEarned > 0 && Object.values(ZONES).find(z => z.unlockAfter > 0 && index + 1 === z.unlockAfter && levelsCleared() === z.unlockAfter);
   const expandedNow = win && coinsEarned > 0 && index + 1 === GARDEN_EXPANSION.unlockAfter && levelsCleared() === GARDEN_EXPANSION.unlockAfter;
@@ -1364,11 +1366,24 @@ function endLevel(win, reason = '') {
   $('result-title').textContent = win ? (last ? 'Journey Complete!' : 'Level Complete!') : 'Try Again!';
   $('result-sub').textContent = `Level ${index + 1} ${win ? 'cleared' : 'failed'}`;
   $('result-score').textContent = state.score.toLocaleString('en-US');
-  $('result-next').hidden = !win || last;
-  $('result-replay').hidden = !win;
+  const box = $('result-unlock');
+  box.hidden = !unlock;
+  if (unlock) box.innerHTML = `<span class="ru-title">Unlocked:</span><div class="ru-items">${UNLOCK_ITEMS[unlock].map(item => `<figure><span class="ru-icon">${item.icon}</span><figcaption>${item.name}</figcaption></figure>`).join('')}</div>`;
+  dialog.classList.toggle('has-unlock', !!unlock);
+  $('result-continue').hidden = !unlock;
+  $('result-next').hidden = !win || last || !!unlock;
+  $('result-replay').hidden = !win || !!unlock;
+  $('result-map').hidden = !!unlock;
   $('result-retry').hidden = win;
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 0 : 700);
 }
+// Thứ được mở khoá ở các màn onboarding (onboarding.js), hiện dưới "Unlocked:" ở bảng kết quả.
+const UNLOCK_ITEMS = {
+  garden: [{ name: 'Garden', icon: '<svg viewBox="0 0 24 24"><use href="#i-deco"/></svg>' }],
+  cats: [{ name: 'Orange cat', icon: catMarkup.orange }, { name: 'Gray cat', icon: catMarkup.gray }],
+  decor: [{ name: 'Decoration', icon: '<svg viewBox="0 0 24 24"><use href="#i-cart"/></svg>' }],
+};
+$('result-continue').onclick = () => { leaveResult(); menus.runOnboarding(); };
 $('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1); };
 $('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
 $('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };

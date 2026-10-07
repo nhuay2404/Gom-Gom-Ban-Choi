@@ -1629,7 +1629,7 @@ export function createRoom() {
     zoneCenter(zoneId, fxBase).setY(0); // đổi tường / sàn: hiệu ứng rộng giữa khu
     decoFx.burst(kind, fxBase, 1.2, 5);
   }
-  let onPick = null, onZoneView = null, selectedSlot = null, highlights = new Set();
+  let onPick = null, onZoneView = null, onCatEvent = null, selectedSlot = null, highlights = new Set();
   // Deco: đang mở bảng đổi kiểu một món thì khoá camera ở góc vừa căn (không kéo / xoay / zoom / nhấc mèo). Chạm vẫn nhận:
   // chạm chỗ trống = đóng bảng, chạm món khác = sang món đó (camera lướt tới rồi khoá tiếp).
   let viewLocked = false;
@@ -1724,6 +1724,21 @@ export function createRoom() {
     glideTo(goal, 420);
     return true;
   }
+  // Khung (px màn hình) bao con mèo thứ `index` (không có thì null): cho hướng dẫn chỉ vào mèo.
+  const catBox = new THREE.Box3();
+  function screenRectOfCat(index = 0) {
+    const cat = cats.bodies()[index];
+    if (!cat || !container) return null;
+    catBox.setFromObject(cat.rig.root);
+    const rect = renderer.domElement.getBoundingClientRect(), out = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+    for (let i = 0; i < 8; i++) {
+      corner.set(i & 1 ? catBox.max.x : catBox.min.x, i & 2 ? catBox.max.y : catBox.min.y, i & 4 ? catBox.max.z : catBox.min.z).project(camera);
+      if (corner.z > 1) return null;
+      const x = rect.left + (corner.x + 1) / 2 * rect.width, y = rect.top + (1 - corner.y) / 2 * rect.height;
+      out.left = Math.min(out.left, x); out.right = Math.max(out.right, x); out.top = Math.min(out.top, y); out.bottom = Math.max(out.bottom, y);
+    }
+    return out;
+  }
   function screenOf(slot) {
     const node = furniture[slot];
     if (!node?.visible || !container) return null;
@@ -1756,6 +1771,7 @@ export function createRoom() {
     const p = carryPoint(event);
     cats.pickUp(cat, p?.x ?? cat.x, p?.z ?? cat.z);
     playSound('catLift');
+    onCatEvent?.('carry');
     navigator.vibrate?.(12);
     renderer.domElement.classList.add('carrying');
   }
@@ -1811,6 +1827,7 @@ export function createRoom() {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
       if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
+        onCatEvent?.('pet');
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
         if (mood !== 'sleepy') playSound(mood === 'grumpy' ? 'grumpy' : 'pet');
         if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
@@ -2098,12 +2115,15 @@ export function createRoom() {
     onPick(fn) { onPick = fn; },
     // Deco: fn(khu) khi người chơi kéo cảnh sang khu khác (khu đang ở giữa đổi).
     onZoneView(fn) { onZoneView = fn; },
+    // Deco: fn('pet' | 'carry') khi người chơi chạm cưng / nhấc một con mèo (hướng dẫn mèo dùng).
+    onCatEvent(fn) { onCatEvent = fn; },
     // fn() gọi sau mỗi lần vẽ cảnh — UI bám theo món dùng cái này thay cho requestAnimationFrame riêng.
     onFrame(fn) { onFrame = fn; },
     // Deco: các chỗ có món mới mua thay được (sáng nhấp nháy).
     setHighlights(keys) { highlights = new Set(keys); },
     screenOf,
     screenRectOf,
+    screenRectOfCat,
     nudge,
     refit: () => resize(),
     // Deco: khoá / mở khoá điều khiển camera (bảng đổi kiểu món đang mở).

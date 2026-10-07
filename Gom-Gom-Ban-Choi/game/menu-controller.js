@@ -10,6 +10,7 @@ import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed,
   isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from './deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
+import * as ob from './onboarding.js';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): gom-gom.js nối vào lúc khởi động.
@@ -83,9 +84,11 @@ function renderMap() {
 
 // Thanh tab chung hiện ở Home (bản đồ) / Deco / Shop, đánh dấu mục đang mở.
 // Home và Deco có nút cài đặt chung (cùng hàng ví); Shop không có (banner gói khởi đầu nằm đúng chỗ đó).
-const SETTINGS_TABS = ['home', 'deco'];
+const SETTINGS_TABS = ['home', 'deco', 'shop'];
 function markTab(tab) {
-  $('tabbar').hidden = false;
+  // Onboarding: tab chưa mở thì ẩn; chỉ còn mỗi Home thì ẩn cả thanh tab.
+  $('tabbar').querySelectorAll('.tab').forEach(button => { button.hidden = !ob.tabOpen(button.dataset.tab); });
+  $('tabbar').hidden = ['deco', 'shop'].every(name => !ob.tabOpen(name));
   $('hub-settings').hidden = !SETTINGS_TABS.includes(tab);
   $('tabbar').querySelectorAll('.tab').forEach(button => {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
@@ -118,10 +121,11 @@ function mapLevels() {
 // Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
 // Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
 const CAT_RARITY = { orange: 'Common', gray: 'Common', white: 'Common', tabby: 'Rare', siamese: 'Epic', tuxedo: 'Legendary' };
-function showCatReward(breed, onClaimed) {
+// `keep`: sắp có màn thưởng kế tiếp nên giữ nền khi đóng (không mờ ra); `chained`: màn kế của một cặp, hiện luôn không mờ vào.
+function showCatReward(breed, onClaimed, { keep = false, chained = false } = {}) {
   const rarity = CAT_RARITY[breed] || 'Rare', name = categories[breed].name;
   const screen = document.createElement('div');
-  screen.className = 'cat-reward';
+  screen.className = `cat-reward${chained ? ' chained' : ''}`;
   screen.setAttribute('role', 'dialog');
   screen.setAttribute('aria-label', `You got ${name}`);
   screen.innerHTML = `<div class="cr-rays"></div><div class="cr-glow"></div>
@@ -133,19 +137,20 @@ function showCatReward(breed, onClaimed) {
   document.body.append(screen);
   // Mèo 3D (cùng model trên Map); máy không dựng được 3D thì dùng art 2D.
   let showcase = null;
-  try { showcase = catShowcase?.(screen.querySelector('.cr-cat'), breed, { reduceMotion }); } catch (error) { console.warn('Cat showcase off:', error); }
+  try { showcase = catShowcase?.(screen.querySelector('.cr-cat'), breed, { reduceMotion: reduceMotion.matches }); } catch (error) { console.warn('Cat showcase off:', error); }
   if (!showcase) screen.querySelector('.cr-cat').insertAdjacentHTML('afterbegin', catMarkup[breed]);
   playSound('reward');
   let ready = false, done = false;
-  setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion ? 0 : 900);
+  setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion.matches ? 0 : 900);
   screen.addEventListener('click', () => {
     if (!ready || done) return;
     done = true;
     playSound('pick');
     onClaimed();
     screen.classList.add('closing');
+    if (keep) screen.classList.add('keep');
     const roomy = getDeco().cats.includes(breed);
-    setTimeout(() => { showcase?.stop(); screen.remove(); showToast(roomy ? `${name} moved into your home!` : `${name} is waiting in Deco (room is full)`); }, reduceMotion ? 0 : 450);
+    setTimeout(() => { showcase?.stop(); screen.remove(); showToast(roomy ? `${name} moved into your home!` : `${name} is waiting in Deco (room is full)`); }, reduceMotion.matches ? 0 : 450);
   });
 }
 async function showMap3d() {
@@ -211,7 +216,7 @@ export function showTab(tab) {
   renderZoneSwitch();
   mountRoom(tab);
   $(tab).scrollTop = 0;
-  if (tab === 'deco' && readText(SAVE_KEYS.decoTour) !== 'done') setTimeout(() => { if (!$('deco').hidden && !decoLocked) runDecoTour(); }, 600);
+  if (tab === 'deco' && !ob.active() && readText(SAVE_KEYS.decoTour) !== 'done') setTimeout(() => { if (!$('deco').hidden && !decoLocked) runDecoTour(); }, 600);
 }
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10). Chỉ Deco dựng cảnh này.
 const applyRoom = shown => room3d?.apply(shown, { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), gardenExpand: isGardenExpanded() });
@@ -310,6 +315,8 @@ document.addEventListener('click', event => {
   const cat = event.target.closest('.room-cat');
   if (cat) petRoomCat(cat);
 });
+// Người mới: vườn chưa có mèo, nhận ở màn 2 (onboarding.js).
+if (ob.stage() === 'L1' && getDeco().cats.length) setDeco({ ...getDeco(), cats: [], claimedCats: [] });
 buildFlatRooms();
 // Cảnh 3D nạp xong (phòng + bản đồ): màn loading (gom-gom.js) đợi cái này rồi mới tắt.
 const roomReady = import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
@@ -668,7 +675,10 @@ function placeDecoPins() {
 // Lần đầu (vườn còn món chưa xây + món đó có kiểu thay thế): người chơi thao tác THẬT — chạm thẻ, Buy, chạm món trong nhà, đổi
 // kiểu, chạm tab Shop / Decoration. Để làm được: bù xu đủ mua món rẻ nhất, mua xong tặng một kiểu thay thế (kèm ghim NEW).
 // Chạy lại từ nút "?" (hoặc không có gì để xây): chỉ các bước đọc, không tặng gì.
-const tourDone = () => writeText(SAVE_KEYS.decoTour, 'done');
+const tourDone = () => {
+  writeText(SAVE_KEYS.decoTour, 'done');
+  if (ob.stage() === 'decor') ob.setStage('done'); // hết hướng dẫn Decoration = hết onboarding
+};
 function guidedTourPlan() {
   const deco = getDeco(), unlocked = decoUnlockedLevel();
   const bases = decoBases('garden').filter(base => !isOwned(deco, base) && base.price > 0 && itemStatus(deco, base, unlocked) !== 'locked').sort((a, b) => a.price - b.price);
@@ -720,7 +730,14 @@ function runDecoTour() {
   };
   startDecoTour([
     { target: card, text: `Tap ${base.name} to see how it looks in your home.`, until: () => decoPick === base,
-      before: () => { const el = card(); if (el) $('deco-cards').scrollLeft = Math.max(0, el.offsetLeft - 12); } },
+      // offsetLeft đo theo offsetParent (không phải khay) nên lệch; đo bằng rect để thẻ nằm gọn trong khay rồi mới sáng.
+      before: async () => {
+        const el = card(), tray = $('deco-cards');
+        if (!el) return;
+        tray.style.scrollBehavior = 'auto';
+        tray.scrollLeft += el.getBoundingClientRect().left - tray.getBoundingClientRect().left - 12;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      } },
     { target: () => card()?.querySelector('[data-act="buy"]'), text: 'Love it? Tap Buy to build it. We topped up your coins!', until: () => isOwned(getDeco(), base), after: gift },
     { target: () => room3d?.screenRectOf(slot), bubble: 'below', until: () => decoPop?.key === slot,
       text: `${base.name} is built! Tap it to swap its style. We gave you a new one.`,
@@ -735,6 +752,61 @@ function runDecoTour() {
   ], tourDone);
 }
 $('deco-help').onclick = () => { playSound('pick'); runDecoTour(); };
+
+// ---------- Onboarding (onboarding.js): hướng dẫn trong Deco sau các màn mở khoá ----------
+// Vùng giữa cảnh 3D: chỗ sáng cho các bước cử chỉ (kéo / zoom / xoay), chừa hàng ví và thanh tab.
+const roomArea = () => {
+  const r = $('deco-room').getBoundingClientRect();
+  return { left: r.left + r.width * .04, top: r.top + r.height * .14, width: r.width * .92, height: r.height * .5 };
+};
+function runBasicsTour() {
+  const watch = ob.watchGestures($('deco-room')), fresh = key => () => { watch.done[key] = false; };
+  setDecoLock(false);
+  closeDecoPop(false);
+  const gesture = (key, text) => ({ target: roomArea, text, before: fresh(key), until: () => watch.done[key], skippable: true });
+  startDecoTour([
+    { target: () => null, text: 'Welcome to your garden! First, let’s learn how to look around.', next: 'Show me' },
+    gesture('drag', 'Drag with one finger to look around the garden.'),
+    gesture('zoom', 'Pinch with two fingers to zoom in and out. (On a computer, scroll the wheel.)'),
+    gesture('twist', 'Twist two fingers to rotate your garden.'),
+    { target: () => null, text: 'Nice! The garden is empty, so let’s go find some cats. Play level 2!', next: 'Play level 2' },
+  ], () => { watch.stop(); ob.setStage('L2'); play.startLevel(1); });
+}
+function runCatTour() {
+  let petted = false, carried = false;
+  room3d?.onCatEvent(kind => { if (kind === 'pet') petted = true; else if (kind === 'carry') carried = true; });
+  setDecoLock(false);
+  closeDecoPop(false);
+  const cat = () => {
+    const r = room3d?.screenRectOfCat(0);
+    return r && { left: r.left - 24, top: r.top - 24, width: r.right - r.left + 48, height: r.bottom - r.top + 48 };
+  };
+  startDecoTour([
+    { target: () => null, text: 'Meet your new cats! They live in your garden now.', next: 'Aww!' },
+    { target: cat, text: 'Tap a cat to pet it.', before: () => { petted = false; }, until: () => petted, skippable: true },
+    { target: cat, text: 'Now press and hold a cat, then drag to carry it somewhere new.', before: () => { carried = false; }, until: () => carried, skippable: true },
+    { target: () => null, before: () => new Promise(resolve => setTimeout(resolve, 1400)), text: 'Great! More cats join as you play. Let’s keep going!', next: 'Play level 3' },
+  ], () => { room3d?.onCatEvent(null); ob.setStage('free'); play.startLevel(2); });
+}
+// Nhận một con mèo bằng màn "You got" rồi cho vào nhà; đợi người chơi chạm xong.
+const claimWithReward = (breed, options = {}) => new Promise(resolve => showCatReward(breed, () => {
+  setDeco(claimCat(getDeco(), breed));
+  setTimeout(resolve, reduceMotion.matches ? 0 : options.keep ? 250 : 500);
+}, options));
+// Chạy bước hướng dẫn đang chờ (gọi từ bảng kết quả bấm Continue, hoặc lúc mở game nếu đang dở).
+export async function runOnboarding() {
+  const stage = ob.stage();
+  if (stage === 'cats') {
+    const todo = ['orange', 'gray'].filter(breed => !isCatClaimed(getDeco(), breed));
+    for (const [i, breed] of todo.entries()) await claimWithReward(breed, { keep: i < todo.length - 1, chained: i > 0 });
+  }
+  if (!ob.pending()) return;
+  await switchTab('deco');
+  await new Promise(resolve => setTimeout(resolve, 600));
+  if (stage === 'basics') runBasicsTour();
+  else if (stage === 'cats') runCatTour();
+  else if (stage === 'decor') runDecoTour();
+}
 
 // ---------- Shop: 2 tab — "Shop" (gói khởi đầu, booster, gói xu) và "Decoration" (chỉ đồ trang trí) ----------
 function setShopPage(page) {
@@ -1013,6 +1085,7 @@ document.querySelectorAll('.dev-only').forEach(row => { row.hidden = !DEV_MODE; 
 $('dev-unlock').onclick = () => {
   closeAllSettings();
   saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
+  ob.setStage('done');
   writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
   setDeco({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) });
   playSound('reward');
@@ -1027,7 +1100,7 @@ $('dev-reset').onclick = () => {
 };
 $('dev-reset-cancel').onclick = () => $('dev-reset-dialog').close();
 $('dev-reset-ok').onclick = () => {
-  ['progress', 'deco', 'boosters', 'profile'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
+  ['progress', 'deco', 'boosters', 'profile', 'decoTour', 'onboarding'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
   try { localStorage.removeItem(DEV_ZONES_KEY); } catch {}
   location.reload();
 };

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
 import { roundedBox, mergeStatic } from './mesh-detail.mjs';
-import { catModel } from './room-cats.mjs';
+import { catModel, setCatFace } from './room-cats.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.
@@ -1439,6 +1439,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
 // ---------- Mèo 3D cho màn nhận thưởng ("You got") ----------
 // Canvas trong suốt riêng: mèo 3D (cùng model + viền nâu với mèo trên Map) xoay vào, nhún nhẹ, lắc qua lại cho thấy dáng 3D.
 // Trả về { stop() } để huỷ khi đóng màn thưởng.
+const RUN = 3.2, REST = 1.8; // giây: chạy vòng / nghỉ nhún nhảy
 export function catShowcase(container, breed, { reduceMotion = false } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -1450,14 +1451,14 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
   const sun = new THREE.DirectionalLight(0xffffff, TOON_LIGHT.sun);
   sun.position.set(-2, 4, 5);
   scene.add(sun);
-  const cat = newCatModel(breed), turn = new THREE.Group();
+  const cat = newCatModel(breed), turn = new THREE.Group(), rig = cat.userData.rig;
   turn.add(cat);
   scene.add(turn);
   // Khung hình theo kích thước thật của model: tâm khối ở giữa, camera lùi đủ xa cho cả con mèo (kể cả tai, đuôi).
   const box = new THREE.Box3().setFromObject(cat), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
   cat.position.sub(center);
   const camera = new THREE.PerspectiveCamera(30, 1, .1, 100), radius = Math.max(size.x, size.y, size.z) * .62;
-  camera.position.set(0, radius * .55, radius / Math.tan(15 * Math.PI / 180) * 1.05);
+  camera.position.set(0, radius * .55, radius / Math.tan(15 * Math.PI / 180) * 1.5); // lùi xa hơn để còn chỗ cho mèo chạy vòng
   camera.lookAt(0, 0, 0);
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
@@ -1474,11 +1475,26 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
     const t = (now - start) / 1000;
     if (reduceMotion) turn.rotation.y = -.35;
     else {
-      // Xoay một vòng khi xuất hiện (chậm dần), sau đó lắc trái phải + nhún.
+      // Xoay một vòng khi xuất hiện (mắt tròn xoe, miệng há "wow"), rồi lặp: chạy vòng vòng (mặt cười, nảy theo nhịp chân)
+      // -> về giữa quay mặt ra khách, nhún nhảy hai nhịp, vẫy tai vẫy đuôi, nghiêng đầu (biểu cảm luân phiên theo từng pha).
       const spin = Math.min(1, t / 1.1), ease = 1 - Math.pow(1 - spin, 3);
-      turn.rotation.y = (1 - ease) * Math.PI * 2 + Math.sin(t * 1.3) * .45 * ease;
-      turn.position.y = Math.abs(Math.sin(t * 3.2)) * size.y * .06 * ease;
-      turn.scale.y = 1 - Math.max(0, Math.cos(t * 6.4)) * .03 * ease;
+      const u = Math.max(0, t - 1.1) % (RUN + REST), running = t > 1.1 && u < RUN, resting = t > 1.1 && !running, r = running ? u / RUN : 0;
+      const lap = Math.PI * 4 * (r * r * (3 - 2 * r)), blend = Math.min(1, r / .12, (1 - r) / .12) * (running ? 1 : 0), e = blend * blend * (3 - 2 * blend);
+      const R = size.x * .62, step = t * 15, rest = resting ? u - RUN : 0;
+      turn.position.set(Math.cos(lap) * R * e, 0, Math.sin(lap) * R * .8 * e);
+      turn.rotation.y = t <= 1.1 ? (1 - ease) * Math.PI * 2 : running ? -lap * e : Math.sin(rest * 2.2) * .35 * Math.min(1, rest * 3);
+      const hop = running ? Math.abs(Math.sin(step * .5)) * .1 * e : resting ? Math.abs(Math.sin(rest * 6.2)) * .22 * Math.min(1, rest * 4) * Math.max(0, 1 - Math.max(0, rest - 1.1) * 4) : Math.abs(Math.sin(t * 3.2)) * .06;
+      turn.position.y = hop * size.y * ease;
+      // Vươn dài lúc bật lên, bẹp xuống lúc chạm đất.
+      const air = resting ? Math.sin(rest * 6.2) : 0;
+      turn.scale.set(1 + (resting ? -air * .06 : 0), 1 + (resting ? air * .12 : -Math.max(0, Math.cos(t * 6.4)) * .03 * ease), 1);
+      turn.rotation.z = resting ? Math.sin(rest * 3) * .1 : 0; // nghiêng đầu
+      const legSwing = running ? e : 0;
+      rig?.legs.forEach((leg, i) => { leg.hip.rotation.x = Math.sin(step + (i === 0 || i === 3 ? 0 : Math.PI)) * .9 * legSwing; });
+      rig?.tail.forEach((joint, i) => { joint.rotation.y = Math.sin(t * (resting ? 14 : 9) - i) * (resting ? .6 : .3); });
+      rig?.ears.forEach((ear, i) => { ear.rotation.z = (i ? 1 : -1) * -.18 + Math.sin(t * 12 + i * 2) * (resting ? .22 : .06); });
+      // Mặt: ngạc nhiên -> cười hí mắt khi chạy (thỉnh thoảng mở to mắt) -> sung sướng khi nhún nhảy.
+      if (rig) setCatFace(rig, breed, t <= 1.1 ? 'focus' : resting ? (rest < .35 ? 'focus' : 'happy') : (Math.floor(t * 1.2) % 3 === 2 ? 'open' : 'happy'), 'open');
     }
     renderer.render(scene, camera);
   });

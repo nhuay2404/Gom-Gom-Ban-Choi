@@ -200,27 +200,21 @@ test('booster: kho mặc định, dùng, mua bằng xu', async () => {
   assert.equal(boostersUnlocked(2), true);
 });
 
-test('chuồng mèo: không gom được, gom sát bên 2 lần thì vỡ và thả mèo; búa mở chuồng ngay', async () => {
+test('chuồng mèo: không gom được, gom sát bên một lần là bẻ khóa và thả mèo; búa mở chuồng ngay', async () => {
   const { CAGE } = await import('./tuning.mjs');
-  assert.equal(CAGE.LOCKS, 2);
-  // Hàng: [cam][cam][ ][cam-trong-chuồng] — đặt cam vào ô trống: chỉ 3 con ngoài chuồng được gom, chuồng mất 1 khóa.
+  assert.equal(CAGE.LOCKS, 1);
+  // Hàng: [cam][cam][ ][cam-trong-chuồng] — đặt cam vào ô trống: chỉ 3 con ngoài chuồng được gom, chuồng vỡ ngay (1 khóa).
   const s = game.createSession(2, { rng: seeded(9) });
   s.board = parseBoard(['OO.o..', '......', '......', '......', '......', '......']);
-  assert.equal(s.board[3].cage, 2);
-  s.active = { offsets: [[0, 0]], items: [{ group: 'orange', name: 'Orange cat' }] };
-  let turn = game.place(s, 2);
-  assert.deepEqual(turn.match.cleared.sort((a, b) => a - b), [0, 1, 2]);
-  assert.deepEqual(turn.match.caged, [3]);
   assert.equal(s.board[3].cage, 1);
-  // Gom lần 2 sát chuồng: chuồng vỡ, mèo thành mèo thường (gom được ở lượt sau).
-  s.board[9] = { group: 'gray', locked: true }; s.board[10] = { group: 'gray', locked: true };
-  s.active = { offsets: [[0, 0]], items: [{ group: 'gray', name: 'Gray cat' }] };
-  turn = game.place(s, 11);
+  s.active = { offsets: [[0, 0]], items: [{ group: 'orange', name: 'Orange cat' }] };
+  const turn = game.place(s, 2);
+  assert.deepEqual(turn.match.cleared.sort((a, b) => a - b), [0, 1, 2]);
   assert.deepEqual(turn.match.freed, [3]);
   assert.equal(s.board[3].group, 'orange');
   assert.ok(!s.board[3].cage);
   // Không đặt thẻ lên chuồng được; búa mở chuồng.
-  s.board[20] = { group: 'white', locked: true, cage: 2 };
+  s.board[20] = { group: 'white', locked: true, cage: 1 };
   s.active = { offsets: [[0, 0]], items: [{ group: 'white', name: 'White cat' }] };
   assert.equal(game.place(s, 20).ok, false);
   const smashed = game.smash(s, 20);

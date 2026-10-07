@@ -5,6 +5,7 @@
 import * as play from './play-controller.js';
 import * as menus from './menu-controller.js';
 import { loadProgress, unlockedCount } from './gameplay/progression.mjs';
+import * as ob from './onboarding.js';
 
 play.connectMenus(menus);
 menus.connectPlay(play);
@@ -14,6 +15,8 @@ play.newGame(unlockedCount(loadProgress()) - 1);
 menus.showTab('home');
 // Lần đầu chơi (chưa qua màn nào): vào thẳng level 1, không dừng ở Home. Thoát / xong màn thì về Home như thường.
 if (!loadProgress().stars.some(Boolean)) play.startLevel(0);
+// Đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn (tắt game giữa chừng): làm tiếp ngay.
+if (ob.pending()) menus.sceneReady.then(() => menus.runOnboarding());
 
 // Màn loading (index.html #loading): JS game đã chạy = 45%, font = 60%, cảnh 3D = 100% rồi mờ dần. Hiện tối thiểu ~1 s
 // cho khỏi chớp; quá 8 s (mạng chậm) thì vào game luôn, cảnh 3D tự hiện khi nạp xong.

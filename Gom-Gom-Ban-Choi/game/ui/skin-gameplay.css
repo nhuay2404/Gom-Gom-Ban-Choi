@@ -417,3 +417,19 @@ body.level-over .shell :is(.fg-panel,.booster-bar,.dock,.message-row){opacity:0;
 body.afk .shell .cat.bitmap .afk-sleepy{transition:opacity .5s ease var(--afk-d)}
 .shell .cat.bitmap .calm{transition:opacity 0s}
 body.afk .shell .cat.bitmap .calm{transition:opacity .15s linear calc(var(--afk-d) + .5s)}
+
+/* Onboarding: "Unlocked:" dưới bảng kết quả + nút Continue (thay Home / chơi lại / Next) */
+.result-dialog .result-unlock{left:0;right:0;top:calc(404 * var(--u));z-index:4;text-align:center;color:#fff;text-shadow:0 1px 3px #2b1a10cc}
+.result-unlock[hidden]{display:none}
+.result-unlock .ru-title{display:block;font-family:var(--display);font-size:calc(20 * var(--u));font-weight:800;letter-spacing:.02em}
+.result-unlock .ru-items{display:flex;justify-content:center;gap:calc(12 * var(--u));margin-top:calc(6 * var(--u))}
+.result-unlock figure{margin:0;display:grid;justify-items:center;gap:calc(3 * var(--u));width:calc(78 * var(--u))}
+.result-unlock .ru-icon{display:grid;place-items:center;width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:calc(18 * var(--u));background:#fdf6e8;border:calc(3 * var(--u)) solid #73392a;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:#73392a;overflow:hidden}
+.result-unlock .ru-icon>svg{width:calc(38 * var(--u));height:calc(38 * var(--u));fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.result-unlock .ru-icon .cat{width:90%;height:90%}
+.result-unlock figcaption{font-size:calc(12 * var(--u));font-weight:900}
+.result-dialog .result-actions>.result-continue{left:calc(49 * var(--u));top:calc(325 * var(--u));width:calc(206 * var(--u));height:calc(56 * var(--u));border:calc(3 * var(--u)) solid #2f7d3a;border-radius:calc(28 * var(--u));
+  background:linear-gradient(#93df82,#5fbe57);box-shadow:inset 0 calc(3 * var(--u)) 0 #ffffff66,0 calc(3 * var(--u)) 0 #2f7d3a;color:#fff;font-family:var(--display);font-size:calc(24 * var(--u));font-weight:800;text-shadow:0 calc(2 * var(--u)) 0 #2f7d3a;cursor:pointer}
+/* Onboarding: chưa mở Decoration thì chưa có thẻ xây, tường / sàn trong Deco (vẫn giữ chỗ để camera căn như cũ) */
+body.ob-no-build #deco .deco-dock,body.ob-no-build #deco .deco-side [data-key="walls"],body.ob-no-build #deco .deco-side [data-key="floors"]{visibility:hidden;pointer-events:none}
+body.onboarding #deco .deco-help{display:none}

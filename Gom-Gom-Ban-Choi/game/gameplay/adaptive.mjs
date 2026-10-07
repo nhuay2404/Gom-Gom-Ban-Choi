@@ -31,7 +31,7 @@ export function levelElements(level) {
     crate: cells.includes('X'),
     wall: cells.includes('M'),
     board: !isPlainSquare(level.board),
-    // Mèo trong chuồng (chữ thường, có ổ khóa): element riêng — chiếm ô, phải gom sát bên CAGE.LOCKS lần mới thả ra.
+    // Mèo trong chuồng (chữ thường, có ổ khóa): element riêng — chiếm ô, gom sát bên CAGE.LOCKS lần (1 ổ khóa) là thả ra.
     cage: /[a-z]/.test(cells),
   };
 }

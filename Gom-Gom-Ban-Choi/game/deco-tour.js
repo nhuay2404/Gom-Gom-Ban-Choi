@@ -66,7 +66,7 @@ export function startDecoTour(steps, onDone) {
     const step = steps[index], box = rectOf(step.target()), tap = !!step.until;
     const label = typeof step.text === 'function' ? step.text() : step.text;
     if (text.textContent !== label) text.textContent = label;
-    next.hidden = tap && !!box; // bước thao tác mà không đo được chỗ sáng: cho bấm Next để khỏi kẹt
+    next.hidden = tap && !!box && !step.skippable; // bước thao tác mà không đo được chỗ sáng: cho bấm Next để khỏi kẹt (bước cử chỉ: luôn cho qua)
     next.textContent = step.next || (index === steps.length - 1 ? 'Got it!' : 'Next');
     dots.textContent = steps.map((_, i) => (i === index ? '●' : '○')).join(' ');
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };

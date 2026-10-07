@@ -30,17 +30,18 @@ export const METAL_SVG = `<svg class="crate metal-block" viewBox="0 0 100 100" a
   <rect x="10" y="7" width="80" height="5" rx="2.5" fill="#fff" opacity=".55"/>
 </svg>`;
 
-// Chuồng mèo: song sắt phủ lên mèo bị nhốt + ổ khóa ở chân chuồng (mỗi ổ = một khóa còn lại, luật ở board-rules.mjs).
-const PADLOCK = x => `<g transform="translate(${x} 78)"><path d="M-6 0v-5a6 6 0 0 1 12 0v5" fill="none" stroke="#8a6a1c" stroke-width="3"/><rect x="-9" y="-1" width="18" height="15" rx="4" fill="#f2c335" stroke="#8a6a1c" stroke-width="2"/><circle cy="5" r="2" fill="#8a6a1c"/><rect x="-1" y="5" width="2" height="5" fill="#8a6a1c"/></g>`;
-export function cageSvg(locks) {
-  const pads = locks >= 2 ? PADLOCK(36) + PADLOCK(64) : PADLOCK(50);
+// Chuồng mèo: song sắt dày phủ lên mèo bị nhốt + MỘT ổ khóa lớn ở giữa chân chuồng (gom sát bên là bẻ khóa, luật ở board-rules.mjs).
+const PADLOCK = `<g transform="translate(50 74)"><path d="M-8 -2v-7a8 8 0 0 1 16 0v7" fill="none" stroke="#5a4210" stroke-width="5.5" stroke-linecap="round"/><path d="M-8 -2v-7a8 8 0 0 1 16 0v7" fill="none" stroke="#d8dde3" stroke-width="2.5" stroke-linecap="round"/><rect x="-14" y="-3" width="28" height="22" rx="6" fill="#f2c335" stroke="#5a4210" stroke-width="3"/><rect x="-10" y="0" width="20" height="5" rx="2.5" fill="#fff" opacity=".4"/><circle cy="9" r="3.2" fill="#5a4210"/><rect x="-1.6" y="9" width="3.2" height="7" rx="1.2" fill="#5a4210"/></g>`;
+export function cageSvg() {
   return `<svg class="cage-bars" viewBox="0 0 100 100" aria-hidden="true">
-  <rect x="7" y="8" width="86" height="80" rx="12" fill="none" stroke="#5d6672" stroke-width="5"/>
-  <g stroke="#7d8794" stroke-width="4" stroke-linecap="round"><path d="M25 12V84M42 12V84M58 12V84M75 12V84"/></g>
-  <g stroke="#c9d1da" stroke-width="1.5" stroke-linecap="round" opacity=".8"><path d="M24 14V82M41 14V82M57 14V82M74 14V82"/></g>
-  <rect x="7" y="8" width="86" height="9" rx="4.5" fill="#6b7480"/>
-  ${pads}
+  <rect x="6" y="6" width="88" height="84" rx="12" fill="none" stroke="#2f3640" stroke-width="10"/>
+  <rect x="6" y="6" width="88" height="84" rx="12" fill="none" stroke="#8d97a5" stroke-width="6"/>
+  <g stroke="#2f3640" stroke-width="9" stroke-linecap="round"><path d="M24 10V86M42 10V86M58 10V86M76 10V86"/></g>
+  <g stroke="#9aa4b1" stroke-width="5.5" stroke-linecap="round"><path d="M24 10V86M42 10V86M58 10V86M76 10V86"/></g>
+  <g stroke="#e4e9ef" stroke-width="1.8" stroke-linecap="round" opacity=".85"><path d="M22.5 14V82M40.5 14V82M56.5 14V82M74.5 14V82"/></g>
+  <rect x="6" y="6" width="88" height="12" rx="6" fill="#6b7480" stroke="#2f3640" stroke-width="2.5"/>
+  ${PADLOCK}
 </svg>`;
 }
 // Icon chuồng cho bảng vào màn.
-export const CAGE_ICON_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="10" y="10" width="80" height="80" rx="14" fill="#fff3d6"/>${cageSvg(2).replace(/<\/?svg[^>]*>/g, '')}</svg>`;
+export const CAGE_ICON_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="10" y="10" width="80" height="80" rx="14" fill="#fff3d6"/>${cageSvg().replace(/<\/?svg[^>]*>/g, '')}</svg>`;

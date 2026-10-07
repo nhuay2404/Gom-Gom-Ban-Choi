@@ -151,7 +151,7 @@ export const LEVELS = [
     moves: 16, target: 285, cats: 'OGWTSK', assist: 0.4,
     board: ['K..O...S', '...O.Tk.', '.WW.o.T.', 'G..##...', 'G..##.K.', '.tS...O.', '.T...S..', 'O..wK..W'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'New: cat cages! Caged cats can\'t be matched. Make a match next to a cage twice to break it and free the cat.' }],
+    tutorial: [{ type: 'info', text: 'New: cat cages! Caged cats can\'t be matched. Make a match next to a cage to break its lock and free the cat.' }],
   },
   {
     name: 'Crate Maze', feature: 'Heart board + crates', tier: 'hard',

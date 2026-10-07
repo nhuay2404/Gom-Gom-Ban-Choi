@@ -12,7 +12,7 @@ export const holdUnlocked = levelIndex => levelIndex + 1 >= HOLD.UNLOCK_LEVEL;
 
 // Chuồng mèo (giới thiệu ở màn 15): mèo bị nhốt chiếm ô, không gom được; mỗi lần gom sát bên mất một khóa,
 // hết LOCKS khóa thì chuồng vỡ, mèo được thả ra thành mèo thường tại chỗ. Búa mở chuồng ngay.
-export const CAGE = { LOCKS: 2 };
+export const CAGE = { LOCKS: 1 };
 
 // Nhịp animation màn chơi (gom mèo, xoay thẻ, thắng)
 export const TIMING = {

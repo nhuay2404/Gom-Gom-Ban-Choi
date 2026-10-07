@@ -2586,6 +2586,13 @@ export function createCatLife(ctx) {
   };
 }
 
+// Đổi mắt / miệng của một con mèo dựng bằng catModel (eyes: open | focus | blink | half | sleep | happy | annoyed; mouth: calm | open | chew | yawn | zig).
+export function setCatFace(rig, breed, eyes, mouth = 'calm') {
+  const faceTex = faceTexture(breed, mouth), eyesTex = eyesTexture(breed, eyes);
+  if (rig.faceMat.map !== faceTex) { rig.faceMat.map = faceTex; rig.faceMat.needsUpdate = true; }
+  if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
+}
+
 // Mèo 3D đứng yên (không có "não" / hoạt hình) cho cảnh khác dùng, vd. bản đồ màn (map-world.mjs) khoe giống mèo mới mở.
 // Mặt / mắt dán ôm lên mặt trước bo tròn một lần (trong phòng việc này làm mỗi frame theo thân đang biến dạng).
 export function catModel(breed) {
@@ -2595,5 +2602,6 @@ export function catModel(breed) {
     for (let i = 0; i < a.length; i += 3) a[i + 2] = frontSurface(flat[i], flat[i + 1]) + decal.userData.lift;
     attr.needsUpdate = true;
   }
+  rig.root.userData.rig = rig; // cho cảnh khoe mèo (catShowcase) cử động chân
   return rig.root;
 }
