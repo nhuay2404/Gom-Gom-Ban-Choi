@@ -305,6 +305,15 @@
       <button id="dev-reset-ok" class="pill-button">Reset</button>
     </div>
   </dialog>
+  <!-- Shop: xem thử món trang trí đặt trong cảnh Deco trước khi mua; nút giá ở dưới = xác nhận mua (menu-controller.js) -->
+  <dialog id="shop-preview" class="shop-preview">
+    <div class="shop-preview-head">
+      <h2 id="shop-preview-name">Item</h2>
+      <button id="shop-preview-close" class="settings-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div id="shop-preview-stage" class="shop-preview-stage"></div>
+    <button id="shop-preview-buy" class="shop-preview-buy"></button>
+  </dialog>
   <!-- Dev: kết quả QC model 3D (qc.mjs) -->
   <dialog id="qc-dialog" class="qc-dialog">
     <form method="dialog"><button class="round-button close-help" aria-label="Close">×</button></form>

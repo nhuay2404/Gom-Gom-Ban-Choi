@@ -144,6 +144,7 @@ export function syncOutlineResolution(renderer) {
   renderer.getDrawingBufferSize(sizeTmp);
   resolution.copy(sizeTmp);
   outlineShared.useIds.value = 0;
+  outlineShared.inkTint.value.setRGB(1, 1, 1);
 }
 
 // ---------- Viền trong mờ đi (kiểu Cats & Soup) ----------
@@ -165,7 +166,10 @@ function unitIdOf(object) {
   return (object.userData.outlineUnitId = (node || object).id);
 }
 const encodeId = (id, out) => out.set(id & 255, (id >> 8) & 255, (id >> 16) & 255);
-const outlineShared = { tIds: { value: null }, useIds: { value: 0 } };
+// inkTint: nhân vào màu viền. Viền không nhận ánh sáng, nên ban đêm (cảnh tối) viền giữ màu ngày sẽ sáng rực như dây đèn LED;
+// phòng chính gán tông đêm qua setOutlineTint() mỗi lần vẽ, ảnh thumbnail luôn dùng màu gốc (syncOutlineResolution đặt lại).
+const outlineShared = { tIds: { value: null }, useIds: { value: 0 }, inkTint: { value: new THREE.Color(1, 1, 1) } };
+export function setOutlineTint(color) { outlineShared.inkTint.value.copy(color); }
 const idMat = new THREE.ShaderMaterial({
   uniforms: { unitId: { value: new THREE.Vector3() } },
   vertexShader: `
@@ -276,6 +280,7 @@ function outlineMat(baseColor, styleName = 'default') {
     fragmentShader: `
       uniform vec3 color;
       uniform float toneAmount;
+      uniform vec3 inkTint;
       uniform float innerAlpha;
       uniform vec3 unitId;
       uniform sampler2D tIds;
@@ -300,7 +305,7 @@ function outlineMat(baseColor, styleName = 'default') {
             alpha = innerAlpha;
           }
         }
-        gl_FragColor = vec4(c, alpha);
+        gl_FragColor = vec4(c * inkTint, alpha);
         #include <colorspace_fragment>
       }`,
     side: THREE.BackSide,

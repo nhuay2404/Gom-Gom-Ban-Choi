@@ -7,7 +7,7 @@ import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createCatLife } from './room-cats.mjs';
-import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
+import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WINDOW_X, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
@@ -71,8 +71,8 @@ function curtainPanel(w, h, color) { // tấm rèm có nếp gấp dọc
 }
 function wallFrame(w, h, frameColor, artColor, u, y) { // khung tranh: viền gỗ + tranh màu + một vệt "hoạ tiết"
   return group(at(mesh(new THREE.BoxGeometry(w, h, .05), onWall(frameColor)), u, y, .13),
-    at(new THREE.Mesh(new THREE.PlaneGeometry(w - .1, h - .1), new THREE.MeshBasicMaterial({ color: artColor, transparent: true })), u, y, .16),
-    at(new THREE.Mesh(new THREE.CircleGeometry(Math.min(w, h) * .18, 20), new THREE.MeshBasicMaterial({ color: '#fff6e4', transparent: true })), u + w * .12, y + h * .1, .165));
+    at(new THREE.Mesh(new THREE.PlaneGeometry(w - .1, h - .1), new THREE.MeshBasicMaterial({ color: artColor, transparent: true, userData: { nightDim: true } })), u, y, .16),
+    at(new THREE.Mesh(new THREE.CircleGeometry(Math.min(w, h) * .18, 20), new THREE.MeshBasicMaterial({ color: '#fff6e4', transparent: true, userData: { nightDim: true } })), u + w * .12, y + h * .1, .165));
 }
 // Trang trí cho từng bức tường (toạ độ cục bộ của tường: u = trục ngang, mặt hướng vào phòng là +z).
 //   0 = tường sau (u = x phòng), 2 = tường trái (u = -z phòng), 3 = tường phải (u = z phòng).
@@ -94,7 +94,7 @@ function decorateWall(i, wall) {
     const flagShape = new THREE.Shape([new THREE.Vector2(-.1, 0), new THREE.Vector2(.1, 0), new THREE.Vector2(0, -.24)]);
     for (let k = 1; k < 10; k++) {
       const p = line.getPoint(k / 10), tan = line.getTangent(k / 10);
-      const flag = new THREE.Mesh(new THREE.ShapeGeometry(flagShape), new THREE.MeshBasicMaterial({ color: FLAGS[k % FLAGS.length], transparent: true, side: THREE.DoubleSide }));
+      const flag = new THREE.Mesh(new THREE.ShapeGeometry(flagShape), new THREE.MeshBasicMaterial({ color: FLAGS[k % FLAGS.length], transparent: true, side: THREE.DoubleSide, userData: { nightDim: true } }));
       flag.position.copy(p).setZ(.21); flag.rotation.z = Math.atan2(tan.y, tan.x);
       wall.add(flag);
     }
@@ -1359,6 +1359,9 @@ export function createRoom() {
   // Ngày / đêm: đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc, đèn đứng, máy sưởi) rực hơn,
   // bướm đi ngủ, mèo hay ngủ hơn (room-cats.mjs đọc ctx.night).
   let night = false;
+  // Tông viền toon theo ngày / đêm (toon.mjs setOutlineTint): đêm viền tối + ngả xanh theo ánh trăng, không sáng hơn khối nó bao.
+  const DAY_INK = new THREE.Color(1, 1, 1), NIGHT_INK = new THREE.Color().setRGB(.42, .46, .66);
+  const NIGHT_ART = new THREE.Color().setRGB(.38, .42, .62); // tranh treo ban đêm
   const LIGHTING = {
     day: { sky: '#fff8e8', ground: '#e0b98a', hemi: 1.15, sun: '#fff1d6', sunI: 1.7, glass: '#cfeaff', lamps: 1, env: .4 },
     night: { sky: '#7f8fd0', ground: '#3a3550', hemi: .4, sun: '#a9bcff', sunI: .6, glass: '#1e2747', lamps: 1.8, env: .1 },
@@ -1389,8 +1392,18 @@ export function createRoom() {
     sun.shadow.autoUpdate = false;
     return () => { for (const node of flipped) node.castShadow = !node.castShadow; sun.shadow.autoUpdate = sunAuto; };
   }
-  function lightUp(node) { // đèn của đồ đạc sáng hơn ban đêm
+  // Tranh / cờ trang trí dùng vật liệu không nhận sáng: ban đêm nhân tông đêm cho khỏi sáng rực như đèn (ảnh thumbnail không đổi:
+  // chỉ cảnh chính gọi). Lưu màu gốc lần đầu.
+  function nightArt(node) {
+    const m = node.material;
+    if (!m?.userData?.nightDim) return;
+    m.userData.dayColor ??= m.color.clone();
+    m.color.copy(m.userData.dayColor);
+    if (night) m.color.multiply(NIGHT_ART);
+  }
+  function lightUp(node) { // đèn của đồ đạc sáng hơn ban đêm; tranh treo tối lại
     node.traverse(child => {
+      nightArt(child);
       if (!child.isPointLight) return;
       // Đèn bị tường chắn: bóng đổ chỉ tính khối chắn tường, vẽ lại khi đèn mới hiện / dời chỗ (castLampShadows), không vẽ
       // mỗi khung. Thiếu bước này đèn đứng phòng khách rọi sáng mặt tường + sàn phòng ngủ.
@@ -1416,6 +1429,7 @@ export function createRoom() {
     windowGlass.forEach(m => m.color.set(look.glass));
     butterflies.forEach(b => { b.node.visible = !night; });
     Object.values(furniture).forEach(lightUp);
+    scene.traverse(nightArt);
   }
 
   // Mèo: đàn mèo khối 3D có "não" riêng (room-cats.mjs). Tim bay lên khi mèo cụng mũi / liếm lông nhau.
@@ -1555,6 +1569,24 @@ export function createRoom() {
   // focus(null) = bỏ chọn, zoom lại quanh giữa khu.
   let zoomFocus = null, userPanned = false;
   // turn = false: giữ góc xoay đang có (chạm thẳng vào món trong cảnh: người chơi đang nhìn thấy nó rồi).
+  // Shop (popup xem thử): đặt camera sát món cho món vừa khít khung (margin > 1 = chừa lề). Nhảy thẳng, không lướt; bỏ giới hạn
+  // zoom gần của Deco (mount() lần sau đặt lại qua setMode). Tường / sàn (không có model riêng): soi cả khu.
+  const fitSphere = new THREE.Sphere();
+  function frameItem(id, margin = 1.15) {
+    const entry = itemById(id), slot = entry && slotOf(entry), node = slot && furniture[slot];
+    stopGlide();
+    zoomFocus = null; userPanned = false;
+    if (node?.visible) itemBox.setFromObject(node).getBoundingSphere(fitSphere);
+    else { zoneCenter(entry?.zone || zoneId, fitSphere.center).setY(.8); fitSphere.radius = HALF * 1.1; }
+    const vHalf = THREE.MathUtils.degToRad(camera.fov / 2), hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
+    const dist = fitSphere.radius * margin / Math.sin(Math.min(vHalf, hHalf));
+    controls.minDistance = Math.min(controls.minDistance, dist * .5);
+    const dir = camDir.subVectors(camera.position, controls.target).normalize();
+    controls.target.copy(fitSphere.center);
+    camera.position.copy(fitSphere.center).addScaledVector(dir, dist);
+    controls.update();
+    lastRadius = dist;
+  }
   const FOCUS_ZOOM = 12; // khoảng cách camera = cỡ món × FOCUS_ZOOM (FOV toon hẹp), kẹp trong 55%–110% độ xa mặc định
   // lift (px): món nằm thấp hơn giữa khung chừng ấy — chừa chỗ phía trên cho bảng đổi món, tính sẵn trong cú lướt.
   function focus(id, turn = true, lift = 0) {
@@ -1993,7 +2025,7 @@ export function createRoom() {
         fixedOutlineHidden = decoMode;
         fixedDecor.forEach(root => root.traverse(node => { if (node.userData.outline) node.visible = !fixedOutlineHidden; }));
       }
-      syncOutlineResolution(renderer); renderOutlineIds(renderer, scene, camera);
+      syncOutlineResolution(renderer); setOutlineTint(night ? NIGHT_INK : DAY_INK); renderOutlineIds(renderer, scene, camera);
     }
     renderer.render(scene, camera);
     restoreShadows?.();
@@ -2061,6 +2093,7 @@ export function createRoom() {
     stop() { renderer.setAnimationLoop(null); lastFrame = 0; },
     apply,
     focus,
+    frameItem,
     // Deco: fn({ zone, key, x, y }) khi chạm món (key = chỗ đặt) / sàn / tường; chạm chỗ khác: chỉ có x, y.
     onPick(fn) { onPick = fn; },
     // Deco: fn(khu) khi người chơi kéo cảnh sang khu khác (khu đang ở giữa đổi).

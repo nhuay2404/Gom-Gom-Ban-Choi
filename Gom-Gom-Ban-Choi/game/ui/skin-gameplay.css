@@ -380,3 +380,40 @@ body.card-holding,body.card-holding *{touch-action:none}
   55%{opacity:1;scale:1.15}
   78%{scale:.94}
   100%{opacity:1;scale:1}}
+
+/* ---------- Bong bóng hướng dẫn (in-game + deco tour): cùng ngôn ngữ với bảng kết quả / cài đặt ----------
+   Khung kem viền nâu + vòng trắng trong + bóng đổ nâu, chữ nâu đỏ font display, nút Continue xanh giống nút Next của bảng kết quả. */
+.tutorial-bubble{border:3px solid #8a4128;border-radius:24px;background:#fffaf0;color:#6b2416;
+  box-shadow:inset 0 0 0 3px #fffdf7,0 4px 0 #8a412855,0 14px 30px #2b1a1055}
+.tutorial-bubble p{font-family:var(--display);font-weight:800;font-size:15px;line-height:1.3;color:#6b2416}
+.tutorial-bubble.center{padding:20px 20px 18px;width:min(330px,calc(100% - 32px));animation:result-pop .4s cubic-bezier(.3,1.5,.5,1) both}
+.tutorial-bubble.center p{font-size:18px;margin:2px 0 6px}
+.tutorial-avatar{border-radius:50%;background:#fff3dd;box-shadow:inset 0 0 0 2px #f1d6aa}
+.tutorial-bubble.center .tutorial-avatar{width:76px;height:76px}
+.tutorial-bubble .pill-button,.deco-tour-next{min-width:150px;padding:10px 26px;border:3px solid #1f7a2e;border-radius:999px;
+  background:linear-gradient(#7fdc6d,#36aa45);box-shadow:inset 0 3px 0 #c4f7b6aa,0 4px 0 #1f7a2e66;
+  font-family:var(--display);font-size:20px;font-weight:800;color:#fff;-webkit-text-stroke:3px #1f7a2e;paint-order:stroke fill}
+.tutorial-bubble .pill-button:active,.deco-tour-next:active{transform:none;translate:0 2px;box-shadow:inset 0 3px 0 #c4f7b6aa,0 2px 0 #1f7a2e66}
+.deco-tour-next{min-width:110px;font-size:17px}
+.deco-tour-skip{color:#9a6a52}
+@media(prefers-reduced-motion:reduce){.tutorial-bubble.center{animation:none}}
+/* Mèo trong bong bóng luôn tỉnh, kể cả khi người chơi AFK */
+.tutorial-avatar .cat .afk{display:none!important}
+.tutorial-avatar .cat .calm-idle{opacity:1!important;visibility:visible!important}
+/* Hướng dẫn chỉ dùng vòng highlight, bỏ bàn tay chỉ (emoji) */
+.tutorial-hand,.deco-tour-hand{display:none!important}
+/* Hết ván (body.level-over, play-controller.js: thanh điểm vừa đầy / thua): UI chơi mờ đi, giữ chỗ (không xô lệch bàn); nút cài đặt vẫn còn */
+.shell :is(.fg-panel,.booster-bar,.dock,.message-row){transition:opacity .3s ease,visibility 0s}
+body.level-over .shell :is(.fg-panel,.booster-bar,.dock,.message-row){opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s .3s}
+/* Bảng kết quả: căn giữa màn, lệch xuống một chút để chừa chỗ mèo ló đầu phía trên khung */
+.result-dialog{margin:auto;translate:0 calc(48 * var(--u))}
+/* Chuyển sang ngủ (AFK) của mèo ảnh: mặt ngủ hiện dần ĐÈ LÊN mặt thường (không trượt), mặt thường chỉ tắt khi mặt ngủ đã hiện
+   đủ -> không còn khoảnh khắc cả hai cùng mờ (thấy xuyên nền). Mỗi con lệch nhịp một chút để cả bàn không cùng chớp một lúc.
+   Thức dậy: mặt thường hiện lại ngay bên dưới, mặt ngủ mờ đi bên trên. */
+.shell .cat.bitmap{--afk-d:0s}
+.shell .cell:nth-child(3n+2) .cat.bitmap{--afk-d:.25s}
+.shell .cell:nth-child(3n) .cat.bitmap{--afk-d:.5s}
+.shell .cat.bitmap .afk-sleepy{translate:0 0;transition:opacity .3s ease}
+body.afk .shell .cat.bitmap .afk-sleepy{transition:opacity .5s ease var(--afk-d)}
+.shell .cat.bitmap .calm{transition:opacity 0s}
+body.afk .shell .cat.bitmap .calm{transition:opacity .15s linear calc(var(--afk-d) + .5s)}

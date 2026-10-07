@@ -12,6 +12,8 @@ menus.connectPlay(play);
 // Mở game luôn vào Home; màn chơi dựng sẵn phía sau ở level đang mở. PLAY vào thẳng level đó.
 play.newGame(unlockedCount(loadProgress()) - 1);
 menus.showTab('home');
+// Lần đầu chơi (chưa qua màn nào): vào thẳng level 1, không dừng ở Home. Thoát / xong màn thì về Home như thường.
+if (!loadProgress().stars.some(Boolean)) play.startLevel(0);
 
 // Màn loading (index.html #loading): JS game đã chạy = 45%, font = 60%, cảnh 3D = 100% rồi mờ dần. Hiện tối thiểu ~1 s
 // cho khỏi chớp; quá 8 s (mạng chậm) thì vào game luôn, cảnh 3D tự hiện khi nạp xong.

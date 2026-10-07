@@ -63,6 +63,14 @@ const rgbKeys = () => canvasTex('keys-rgb', 256, 80, (g, w, h) => {
     g.fillStyle = '#2b2f3a'; g.fillRect(8 + col * 17.6, 8 + row * 18, 11, 11);
   }
 });
+// Bàn phím laptop: phím trắng trên nền xám đậm + bàn di chuột (dán phẳng lên thân máy).
+const laptopKeys = () => canvasTex('keys-laptop', 256, 176, (g, w, h) => {
+  g.fillStyle = '#9aa0ad'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#5d6370'; g.fillRect(8, 8, w - 16, 92);
+  g.fillStyle = '#f4f5f8';
+  for (let row = 0; row < 4; row++) for (let col = 0; col < 12; col++) g.fillRect(13 + col * 19.4, 13 + row * 21.5, 16, 17);
+  g.fillStyle = '#c3c8d2'; g.fillRect(84, 112, 88, 54); // bàn di chuột
+});
 // Màn hình áp sát mặt nắp / vỏ (laptop: cách 5 mm): zoom xa thì độ chính xác depth không phân biệt nổi -> màn hình và nắp tranh
 // nhau từng khung (nhấp nháy "giật"). polygonOffset kéo màn hình về phía camera trong depth test (như tấm dán mặt mèo) -> luôn nằm trên.
 const screen = (w, h, texture) => new THREE.Mesh(new THREE.PlaneGeometry(w, h),
@@ -88,7 +96,8 @@ function bedBase({ wood, duvet, duvetLine, pillow = '#ffffff', headboard = true 
     at(rbox(1.9, .24, 2.36, .1, '#fffaf0'), 0, .44, 0),
     at(rbox(1.96, .13, 1.6, .06, duvet), 0, .56, .4),
     at(rbox(1.98, .09, .24, .045, '#ffffff'), 0, .6, -.36), // mép chăn gập lộ vỏ trắng
-    ...[0, .45, .9].map(z => at(box(1.9, .012, .025, duvetLine), 0, .628, z)), // đường chần bông
+    // đường chần bông: dải màu mảnh sát mặt chăn, KHÔNG viền toon (viền hull biến mỗi dải thành rãnh đen đậm)
+    ...[0, .45, .9].map(z => { const s = at(box(1.88, .004, .03, duvetLine), 0, .627, z); s.userData.noOutline = true; return s; }),
     ...[-.45, .45].map(x => { const p = at(rbox(.74, .16, .44, .08, pillow), x, .64, -.88); p.rotation.x = -.18; return p; }),
     at(rbox(2.06, .4, .1, .05, wood), 0, .35, 1.22), // chân giường thấp
   ];
@@ -182,9 +191,11 @@ export const BEDROOM_BUILD = {
   'desk-study'() {
     const wood = '#d9a36a';
     // Nắp dày 2.2 cm bo 1 cm (bo ≤ nửa bề dày), màn hình cách mặt nắp 5 mm: hết gập mặt + chớp z-fighting.
-    const laptop = group(at(rbox(.42, .02, .3, .008, '#d0d4dc'), 0, .01, 0));
+    // Thân máy dày 2.4 cm (đủ cho viền toon) + mặt bàn phím dán phẳng phía trên (polygonOffset như màn hình: không chớp)
+    const keys = screen(.38, .26, laptopKeys()); keys.rotation.x = -Math.PI / 2; keys.position.set(0, .0245, .01);
+    const laptop = group(at(rbox(.42, .024, .3, .008, '#b9bec9'), 0, .012, 0), keys);
     const lid = group(at(rbox(.42, .28, .022, .01, '#d0d4dc'), 0, .14, 0), at(screen(.38, .24, docScreen()), 0, .14, .016));
-    lid.position.set(0, .02, -.15); lid.rotation.x = -.25; laptop.add(lid);
+    lid.position.set(0, .024, -.15); lid.rotation.x = -.25; laptop.add(lid);
     laptop.position.set(-.1, .77, .02);
     const lampArm = group(at(cyl(.07, .08, .03, '#7fc4e8', 16), 0, .015, 0), at(cyl(.012, .012, .36, '#7fc4e8', 8), 0, .2, 0).rotateZ(-.3),
       at(cyl(.05, .1, .1, glow('#7fc4e8', '#fff0c0', .3), 16), .14, .38, 0).rotateZ(.9));
@@ -627,8 +638,8 @@ export const BEDROOM_BUILD = {
 const onWall = color => mat(color, { transparent: true });
 function wallFrame(w, h, frameColor, art, u, y) {
   return group(at(mesh(new THREE.BoxGeometry(w, h, .05), onWall(frameColor)), u, y, .13),
-    at(new THREE.Mesh(new THREE.PlaneGeometry(w - .1, h - .1), new THREE.MeshBasicMaterial({ color: art, transparent: true })), u, y, .16),
-    at(new THREE.Mesh(new THREE.CircleGeometry(Math.min(w, h) * .18, 20), new THREE.MeshBasicMaterial({ color: '#fff6e4', transparent: true })), u - w * .1, y + h * .12, .165));
+    at(new THREE.Mesh(new THREE.PlaneGeometry(w - .1, h - .1), new THREE.MeshBasicMaterial({ color: art, transparent: true, userData: { nightDim: true } })), u, y, .16),
+    at(new THREE.Mesh(new THREE.CircleGeometry(Math.min(w, h) * .18, 20), new THREE.MeshBasicMaterial({ color: '#fff6e4', transparent: true, userData: { nightDim: true } })), u - w * .1, y + h * .12, .165));
 }
 export function decorateBedroomWall(i, wall) {
   if (i === 0) {
@@ -651,7 +662,7 @@ export function decorateBedroomWall(i, wall) {
     }
     // Hai poster game phía trên bàn máy tính (x ≈ 2.45).
     wall.add(wallFrame(.62, .82, '#2b2f3a', '#b48ee8', 2, 1.95), wallFrame(.56, .56, '#2b2f3a', '#7fd0ff', 2.95, 2.05),
-      at(new THREE.Mesh(new THREE.CircleGeometry(.12, 5), new THREE.MeshBasicMaterial({ color: '#ffd66b', transparent: true })), 2, 1.85, .17));
+      at(new THREE.Mesh(new THREE.CircleGeometry(.12, 5), new THREE.MeshBasicMaterial({ color: '#ffd66b', transparent: true, userData: { nightDim: true } })), 2, 1.85, .17));
   }
   if (i === 2) { // ảnh dán cạnh giường (giường ở z ≈ -2.7 -> u ≈ 2.7) + kệ treo nhỏ có cây (tủ quần áo ở u ≈ -.7)
     wall.add(wallFrame(.4, .5, '#fff4e0', '#ffc9d5', 2.2, 1.7), wallFrame(.36, .36, '#fff4e0', '#c9e8b0', 2.75, 1.95), wallFrame(.32, .42, '#fff4e0', '#ffe2a0', 3.2, 1.6));

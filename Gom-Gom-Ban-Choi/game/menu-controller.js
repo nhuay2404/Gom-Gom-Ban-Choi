@@ -808,8 +808,14 @@ $('shop-deco-tabs').addEventListener('click', event => {
 $('shop-deco-grid').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.shop-deco-item')?.dataset.id);
   if (!entry) return;
+  const status = shopStatus(getDeco(), entry, decoUnlockedLevel());
+  if (status !== 'buy' && status !== 'poor') return buyDeco(entry); // đã có / khoá / chưa xây: báo lý do như cũ
+  playSound('pick');
+  openShopPreview(entry);
+});
+function buyDeco(entry) {
   const next = buyToStock(getDeco(), entry, decoUnlockedLevel());
-  if (next.error) return showToast(next.error === 'Not enough coins' ? `Need ${entry.price - getDeco().coins} more coins` : next.error);
+  if (next.error) { showToast(next.error === 'Not enough coins' ? `Need ${entry.price - getDeco().coins} more coins` : next.error); return false; }
   setDeco(next);
   refreshWallet();
   playSound('reward');
@@ -817,7 +823,40 @@ $('shop-deco-grid').addEventListener('click', event => {
   renderShopDeco();
   renderShopBoosters();
   shopBurst($('shop-deco-grid').querySelector(`[data-id="${entry.id}"]`));
-});
+  return true;
+}
+// Xem thử trước khi mua: popup dựng cảnh Deco (đúng khu của món) có đặt sẵn món đó, camera soi vào món; nút giá ở dưới = đồng ý mua.
+// Không có WebGL (room3d null): popup hiện ảnh thu nhỏ của món thay cho cảnh.
+let shopPreviewEntry = null;
+function openShopPreview(entry) {
+  shopPreviewEntry = entry;
+  $('shop-preview-name').textContent = entry.name;
+  $('shop-preview-buy').innerHTML = `Buy ${coin(entry.price)}`;
+  $('shop-preview-buy').classList.toggle('poor', getDeco().coins < entry.price);
+  const stage = $('shop-preview-stage');
+  stage.replaceChildren();
+  $('shop-preview').showModal();
+  if (!room3d) { stage.innerHTML = thumbOf(entry); return; }
+  applyRoom({ ...previewDeco(getDeco(), entry), zone: entry.zone });
+  room3d.mount(stage, { mode: 'room', deco: true, resetView: true });
+  // soi vào món sau khi khung đã có kích thước + cảnh vẽ xong một frame (đo cỡ món theo model đã dựng)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (shopPreviewEntry !== entry) return;
+    room3d.frameItem(entry.id); // món vừa khít khung popup
+    if (entry.cat === 'furniture') room3d.fx(slotOf(entry), 'preview');
+  }));
+}
+function closeShopPreview() {
+  if (!shopPreviewEntry) return;
+  shopPreviewEntry = null;
+  $('shop-preview').close();
+  if (room3d) { room3d.stop(); applyRoom(getDeco()); }
+}
+// addEventListener: nút dùng chung class .settings-close, code cài đặt gán đè onclick cho mọi nút class này
+$('shop-preview-close').addEventListener('click', closeShopPreview);
+$('shop-preview').addEventListener('cancel', event => { event.preventDefault(); closeShopPreview(); });
+$('shop-preview').addEventListener('click', event => { if (event.target === $('shop-preview')) closeShopPreview(); }); // chạm nền tối ngoài bảng
+$('shop-preview-buy').onclick = () => { const entry = shopPreviewEntry; if (entry && buyDeco(entry)) closeShopPreview(); };
 // Mua ở Shop thành công: sao + chấm màu bung ra từ thẻ món (DOM, không có cảnh 3D ở Shop).
 const BURST_COLORS = ['#ff6f91', '#ffd23f', '#5fbe57', '#5ab8ff', '#b48cf0'];
 function shopBurst(card) {

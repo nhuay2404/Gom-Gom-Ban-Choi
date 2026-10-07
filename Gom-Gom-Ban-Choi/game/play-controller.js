@@ -440,6 +440,7 @@ async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
   await scoreSettled(); // lượt gom cuối: đợi điểm bay hết vào thanh + thanh chạy đầy tới nóc rồi mèo mới bay lên
+  document.body.classList.add('level-over'); // thanh điểm vừa đầy: ẩn ngay UI chơi (xem endLevel)
   const occupied = state.board.map((object, index) => object?.group ? index : null).filter(index => index !== null);
   breakCrates(state.board.map((object, index) => object?.block && !object.metal ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
   if (!reduceMotion.matches && occupied.length) {
@@ -1162,6 +1163,22 @@ function armAfk() {
 }
 addEventListener('pointerdown', armAfk, { passive: true });
 addEventListener('pointerup', armAfk, { passive: true });
+
+// Mèo đứng yên trên bàn thỉnh thoảng đổi sang mặt vui / nháy mắt (ảnh joy) trong chốc lát, mỗi lần một con ngẫu nhiên.
+// Không chạy khi AFK (đang ngủ), sắp hết lượt (mặt lo), hết ván, đang có anim hay đang kéo thẻ.
+const IDLE_FACE = { EVERY: [1400, 3200], HOLD: 900 };
+function idleFace() {
+  setTimeout(idleFace, IDLE_FACE.EVERY[0] + Math.random() * (IDLE_FACE.EVERY[1] - IDLE_FACE.EVERY[0]));
+  const body = document.body.classList;
+  if (!state || state.over || state.animating || cardDrag || body.contains('afk') || body.contains('low-moves') || !$('map').hidden) return;
+  const cells = [...document.querySelectorAll('#board > .cell .cat.bitmap')].map(cat => cat.closest('.cell'))
+    .filter(cell => !cell.classList.contains('petted') && !cell.classList.contains('lifted') && !cell.classList.contains('idle-joy'));
+  const cell = cells[Math.floor(Math.random() * cells.length)];
+  if (!cell) return;
+  cell.classList.add('idle-joy');
+  setTimeout(() => cell.classList.remove('idle-joy'), IDLE_FACE.HOLD);
+}
+setTimeout(idleFace, 2000);
 addEventListener('pointermove', event => { if (event.buttons || event.pointerType === 'touch') armAfk(); }, { passive: true });
 armAfk();
 
@@ -1270,6 +1287,7 @@ const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 // Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
 export function startLevel(index) {
   menus.hideMenus();
+  document.body.classList.remove('level-over');
   $('map').hidden = true;
   newGame(index);
   const { plan } = state;
@@ -1309,6 +1327,9 @@ function leaveResult() {
 function endLevel(win, reason = '') {
   state.over = true;
   state.outcome ??= { win, reason, stars: 0 };
+  // Hết ván (thắng: đã ẩn từ lúc thanh điểm đầy, celebrateWin; thua: hết lượt / kẹt): ẩn mọi UI chơi (level / move / thanh
+  // điểm, booster, dock xoay / next / hold), chỉ còn bàn + bảng kết quả
+  document.body.classList.add('level-over');
   if (!win) playSound('lose');
   const gift = recordTry(win, win ? 'win' : state.moves > 0 ? 'stuck' : 'moves');
   if (gift) storeBoosters({ ...getBoosters(), moves: getBoosters().moves + 1 });

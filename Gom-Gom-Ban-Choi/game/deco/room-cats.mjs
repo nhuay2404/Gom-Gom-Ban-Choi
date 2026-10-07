@@ -4,7 +4,7 @@
 // (đi tới -> nhảy lên -> xoay vòng -> nằm ngủ ...) mà vẫn ngắt được bất cứ lúc nào (cưng mèo, AFK, dời đồ).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { categories, eyesMarkup } from '../ui/cat-art.mjs';
+import { categories } from '../ui/cat-art.mjs';
 import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from '../gameplay/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
@@ -84,47 +84,121 @@ function canvasTexture(key, draw, padX = 0) {
 }
 // Lớp mặt rộng hơn thân hai bên: ria mép (toon) chìa ra ngoài thân, nằm đè lên nét viền như tranh Cats & Soup.
 const FACE_PAD = .12;
-const ellipse = (g, x, y, rx, ry, fill) => { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fillStyle = fill; g.fill(); };
-function faceTexture(breed, mouth) {
-  return canvasTexture(`face:${breed}:${mouth}`, g => {
-    const cat = categories[breed];
-    if (cat.mask) { g.globalAlpha = .9; ellipse(g, .5, .58, .4, .32, cat.mask); g.globalAlpha = 1; }
-    if (cat.muzzle) { g.beginPath(); g.moveTo(.2, 1); g.bezierCurveTo(.22, .5, .78, .5, .8, 1); g.fillStyle = cat.belly; g.fill(); }
-    else { g.globalAlpha = .9; ellipse(g, .5, .95, .32, .13, cat.belly); g.globalAlpha = 1; }
-    if (cat.stripe) {
-      g.strokeStyle = cat.stripe; g.lineWidth = .04;
-      [.4, .5, .6].forEach(x => { g.beginPath(); g.moveTo(x, .03); g.lineTo(x, x === .5 ? .19 : .15); g.stroke(); });
-      const out = TOON ? .11 : .01; // toon: ria dài chìa qua mép thân
-      [.42, .54].forEach(y => { g.beginPath(); g.moveTo(-out, y); g.lineTo(.08, y); g.moveTo(1 + out, y); g.lineTo(.92, y); g.stroke(); });
-    }
-    g.globalAlpha = .55; ellipse(g, .19, .64, .075, .045, '#ff8fa0'); ellipse(g, .81, .64, .075, .045, '#ff8fa0'); g.globalAlpha = 1;
-    g.beginPath(); g.moveTo(.465, .585); g.lineTo(.535, .585); g.lineTo(.5, .625); g.closePath(); g.fillStyle = '#ef8595'; g.fill();
-    g.strokeStyle = '#4a3030'; g.lineWidth = .018;
-    if (mouth === 'calm') { g.beginPath(); g.moveTo(.43, .66); g.quadraticCurveTo(.465, .71, .5, .665); g.quadraticCurveTo(.535, .71, .57, .66); g.stroke(); }
-    if (mouth === 'open') { g.beginPath(); g.moveTo(.42, .655); g.quadraticCurveTo(.5, .82, .58, .655); g.closePath(); g.fillStyle = '#b8475a'; g.fill(); g.stroke(); ellipse(g, .5, .72, .04, .025, '#f28ba0'); }
-    if (mouth === 'chew') { ellipse(g, .5, .69, .035, .032, '#b8475a'); ellipse(g, .5, .705, .02, .014, '#f28ba0'); }
-    if (mouth === 'yawn') { ellipse(g, .5, .73, .075, .09, '#b8475a'); ellipse(g, .5, .78, .045, .03, '#f28ba0'); }
-    if (mouth === 'zig') { g.beginPath(); g.moveTo(.42, .68); g.lineTo(.46, .655); g.lineTo(.5, .68); g.lineTo(.54, .655); g.lineTo(.58, .68); g.stroke(); }
-  }, FACE_PAD);
-}
-// Mắt: vẽ thẳng SVG mắt của mèo 2D (cat-art.mjs) lên canvas, nên mắt 3D giống hệt mèo trên bàn chơi.
-// Khung nhìn 80×72 bắt đầu ở (10, 20) của art 2D = đúng vùng mặt, khớp vị trí mũi/má/miệng của lớp mặt.
-const EYE_KINDS = ['open', 'focus', 'blink', 'half', 'sleep', 'happy', 'annoyed'];
-function eyesTexture(breed, eyes) {
-  const key = `eyes:${breed}:${eyes}`;
+// Mặt + mắt 3D vẽ theo ảnh mèo 2D trong Figma (ui/skins/cats/<giống>-calm.png): mắt tròn to có vòng màu + 2 đốm sáng,
+// vằn trán / vằn má, mõm sáng (tuxedo: mảng trắng chữ V ngược, Xiêm: mặt nạ nâu), má hồng, miệng "ω".
+// Toạ độ SVG: khung mặt 100 × 90 (đúng tỉ lệ tấm dán W × H*.94); lớp mặt rộng thêm FACE_PAD mỗi bên (ria / vằn má chìa ra).
+// Màu lấy mẫu từ ảnh Figma (cùng bộ với HANG_COLORS trong cat-art.mjs); thân 3D cũng dùng các màu này (catLook).
+const FIGMA_LOOK = {
+  orange: { fur: '#fba33b', side: '#f0600f', belly: '#fbf2dd', paw: '#fbf2dd', stripe: '#f07a1e', ring: '#e8620f', ink: '#3b1d10',
+    stripes: 'orange', muzzle: 'wide' },
+  gray: { fur: '#a8aab8', side: '#575969', belly: '#fcfcfc', paw: '#f7f5f2', stripe: '#5f6170', ring: '#f5b70f', ink: '#2a2228',
+    stripes: 'gray', muzzle: 'round' },
+  white: { fur: '#f7f6f2', side: '#d6d0c7', belly: '#fdfcfa', paw: '#f7f5f2', stripe: '#b9b2ac', ring: '#1f7fe0', ink: '#3a2a26',
+    stripes: 'white', muzzle: 'none', brows: true },
+  tuxedo: { fur: '#322d30', side: '#1f1a1d', belly: '#f9f4ea', paw: '#f8f0e5', ring: '#f5b70f', ink: '#2a1d18', lidInk: '#f3e7cf',
+    muzzle: 'tuxedo' },
+  siamese: { fur: '#f7e5ce', side: '#d9bf9c', belly: '#f7e5ce', paw: '#6a3521', mask: '#7a4530', ring: '#1f7fe0', ink: '#2a1610', lidInk: '#f3e7cf',
+    muzzle: 'mask' },
+  tabby: { fur: '#b6ad9a', side: '#514c48', belly: '#fbf5ed', paw: '#f3ede1', stripe: '#5a544e', ring: '#f5b70f', ink: '#2a2420',
+    stripes: 'tabby', muzzle: 'chin', nose: '#5a4038' },
+};
+// Bộ màu dùng cho thân 3D: giữ cấu trúc categories (tai, kiểu đuôi...), đè màu bằng màu Figma.
+const catLook = breed => ({ ...categories[breed], ...FIGMA_LOOK[breed] });
+
+const EYE_X = [30, 70], EYE_Y = 41, EYE_R = 14;
+function svgTexture(key, viewBox, width, markup) {
   if (textures[key]) return textures[key];
   const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 460;
+  canvas.width = width; canvas.height = 460;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   textures[key] = texture;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 20 80 72" width="512" height="460" preserveAspectRatio="none">${eyesMarkup(breed, eyes)}</svg>`;
   const image = new Image();
-  image.onload = () => { canvas.getContext('2d').drawImage(image, 0, 0, 512, 460); texture.needsUpdate = true; };
-  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  image.onload = () => { canvas.getContext('2d').drawImage(image, 0, 0, width, 460); texture.needsUpdate = true; };
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="460" preserveAspectRatio="none">${markup}</svg>`)}`;
   return texture;
-}function zTexture() {
+}
+
+// Vằn lông từng giống (theo ảnh Figma): sọc trán + sọc má chìa từ mép thân vào.
+function stripeMarkup(look) {
+  const c = look.stripe, bar = (x, y, w, h, r = 2) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}"/>`;
+  const cheeks = (ys, len, h) => ys.map(y => bar(-3, y, len + 3, h) + bar(100 - len, y, len + 3, h)).join('');
+  switch (look.stripes) {
+    case 'orange': return bar(40, 0, 4.5, 15) + bar(47.8, 0, 4.5, 19) + bar(55.5, 0, 4.5, 15) + cheeks([36, 44], 11, 4);
+    case 'gray': return bar(40.5, 2, 5, 12) + bar(47.5, 2, 5, 13) + bar(54.5, 2, 5, 12) + cheeks([38, 47], 12, 4.2);
+    case 'white': return `<g opacity=".85">${bar(37, 0, 6, 13, 2.5) + bar(47, 0, 6, 16, 2.5) + bar(57, 0, 6, 13, 2.5)}</g>`;
+    case 'tabby': return `<g fill="${c}">
+        <path d="M50 0 L53 0 L51.5 20 Z M43 0 L46.5 0 L47 17 Z M57 0 L53.5 0 L53 17 Z M35 0 L39.5 0 L43 13 Z M65 0 L60.5 0 L57 13 Z"/>
+        <path d="M-2 30 L12 33 L12 36.5 L-2 35 Z M-2 41 L13 42.5 L13 46 L-2 46 Z M-2 52 L12 51 L11 54.5 L-2 57 Z"/>
+        <path d="M102 30 L88 33 L88 36.5 L102 35 Z M102 41 L87 42.5 L87 46 L102 46 Z M102 52 L88 51 L89 54.5 L102 57 Z"/></g>`;
+    default: return '';
+  }
+}
+function muzzleMarkup(look) {
+  const b = look.belly;
+  switch (look.muzzle) {
+    case 'wide': return `<path d="M4 90 L4 66 Q18 58 34 58 Q42 50 50 51 Q58 50 66 58 Q82 58 96 66 L96 90 Z" fill="${b}"/>`;
+    case 'round': return `<path d="M18 90 L18 62 Q18 54 30 54 L70 54 Q82 54 82 62 L82 90 Z" fill="${b}"/>`;
+    case 'tuxedo': return `<path d="M50 20 Q44 34 34 50 Q20 58 4 64 L4 90 L96 90 L96 64 Q80 58 66 50 Q56 34 50 20 Z" fill="${b}"/>`;
+    case 'mask': return `<ellipse cx="50" cy="52" rx="36" ry="31" fill="${look.mask}"/>`;
+    case 'chin': return `<path d="M14 90 L14 66 L22 60 L30 63 L38 56 L46 60 L50 54 L54 60 L62 56 L70 63 L78 60 L86 66 L86 90 Z" fill="${b}"/>`;
+    default: return '';
+  }
+}
+function faceTexture(breed, mouth) {
+  const look = catLook(breed), ink = look.ink, pad = FACE_PAD * 100;
+  const line = `fill="none" stroke="${ink}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+  const mouths = {
+    calm: `<path d="M44 61.5 Q47 65 50 61.8 Q53 65 56 61.5" ${line}/>`,
+    open: `<path d="M43.5 60.5 Q50 72 56.5 60.5 Z" fill="#b8475a" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="50" cy="66" rx="3" ry="2" fill="#f28ba0"/>`,
+    chew: `<path d="M41 62 Q44 58.5 47 62 Q50 58.5 53 62 Q56 58.5 59 62" ${line}/><circle cx="38" cy="58" r="3.2" fill="#ffffff" opacity=".35"/><circle cx="62" cy="58" r="3.2" fill="#ffffff" opacity=".35"/>`,
+    yawn: `<ellipse cx="50" cy="66" rx="5.5" ry="7" fill="#b8475a" stroke="${ink}" stroke-width="1.6"/><ellipse cx="50" cy="70" rx="3.4" ry="2.2" fill="#f28ba0"/>`,
+    zig: `<path d="M43 63 L46.5 60.5 L50 63 L53.5 60.5 L57 63" ${line}/>`,
+  };
+  const nose = look.nose ? `<path d="M47.6 56.6 L52.4 56.6 L50 59.4 Z" fill="${look.nose}"/>` : '';
+  const markup = `${muzzleMarkup(look)}${look.stripe ? stripeMarkup(look) : ''}
+    <ellipse cx="20" cy="56" rx="6.5" ry="3.6" fill="#ff8fa3" opacity=".75"/><ellipse cx="80" cy="56" rx="6.5" ry="3.6" fill="#ff8fa3" opacity=".75"/>
+    ${nose}${mouths[mouth] || mouths.calm}`;
+  return svgTexture(`face:${breed}:${mouth}`, `${-pad} 0 ${100 + 2 * pad} 90`, Math.round(512 * (1 + 2 * FACE_PAD)), markup);
+}
+
+// Mắt Figma: vòng màu dày + đồng tử đen to + đốm sáng lớn (trên phải) và nhỏ (dưới trái).
+const EYE_KINDS = ['open', 'focus', 'blink', 'half', 'sleep', 'happy', 'annoyed'];
+function figmaEye(look, x, r = EYE_R) {
+  return `<circle cx="${x}" cy="${EYE_Y}" r="${r}" fill="${look.ring}"/><circle cx="${x}" cy="${EYE_Y}" r="${r * .8}" fill="#120c0e"/>
+    <circle cx="${x + r * .3}" cy="${EYE_Y - r * .3}" r="${r * .3}" fill="#fff"/><circle cx="${x - r * .32}" cy="${EYE_Y + r * .34}" r="${r * .13}" fill="#fff"/>`;
+}
+function eyesMarkup3d(breed, kind) {
+  const look = catLook(breed), lid = look.lidInk || look.ink;
+  const stroke = (d, w = 2.6) => `<path d="${d}" fill="none" stroke="${lid}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const both = f => EYE_X.map((x, i) => f(x, i ? 1 : -1)).join('');
+  // Mày mảnh màu xám của mèo trắng (như ảnh Figma), đặt trên mắt mở
+  const brows = look.brows ? both((x, s) => stroke(`M${x - 9} ${EYE_Y - 15 + (s < 0 ? 0 : 0)} Q${x} ${EYE_Y - 17.5} ${x + 9} ${EYE_Y - 15}`, 1.6).replace(lid, '#9a918c')) : '';
+  // Mí trên che nửa mắt, viền mí đậm; slant: nghiêng vào trong (cau có)
+  const lidded = (cover, slant = 0) => both((x, s) => {
+    const r = EYE_R + 1, yIn = EYE_Y - r + cover * 2 * r + slant, yOut = EYE_Y - r + cover * 2 * r - slant * .4;
+    const xin = x - s * r, xout = x + s * r;
+    // Cắt mắt theo đường mí (clipPath) chứ không phủ mảng màu lông: lông 3D có đổ sáng nên mảng tô phẳng lộ thành viền vuông.
+    const clip = `lid${Math.round(x)}`, bottom = EYE_Y + r + 2;
+    return `<clipPath id="${clip}"><path d="M${xin} ${yIn} L${xout} ${yOut} L${xout} ${bottom} L${xin} ${bottom} Z"/></clipPath>`
+      + `<g clip-path="url(#${clip})">${figmaEye(look, x)}</g>${stroke(`M${xin - s} ${yIn} L${xout + s} ${yOut}`, 2.4)}`;
+  });
+  switch (kind) {
+    case 'focus': return both(x => figmaEye(look, x, EYE_R * 1.15));
+    case 'blink': return both(x => stroke(`M${x - 11} ${EYE_Y} Q${x} ${EYE_Y + 5} ${x + 11} ${EYE_Y}`));
+    case 'half': return lidded(.5) + brows;
+    case 'sleep': return both(x => stroke(`M${x - 11} ${EYE_Y + 1} Q${x} ${EYE_Y + 7} ${x + 11} ${EYE_Y + 1}`, 2.8));
+    case 'happy': return both(x => stroke(`M${x - 10.5} ${EYE_Y + 4} Q${x} ${EYE_Y - 9} ${x + 10.5} ${EYE_Y + 4}`, 3));
+    case 'annoyed': return lidded(.32, 6);
+    default: return both(x => figmaEye(look, x)) + brows;
+  }
+}
+function eyesTexture(breed, eyes) {
+  return svgTexture(`eyes:${breed}:${eyes}`, '0 0 100 90', 512, eyesMarkup3d(breed, eyes));
+}
+function zTexture() {
   return canvasTexture('zzz', g => {
     g.strokeStyle = '#7a8fd6'; g.lineWidth = .1;
     g.beginPath(); g.moveTo(.28, .25); g.lineTo(.72, .25); g.lineTo(.28, .75); g.lineTo(.72, .75); g.stroke();
@@ -267,7 +341,7 @@ function tailStyle(breed) {
 // ---------- Bộ khung một con mèo ----------
 function buildRig(breed) {
   EYE_KINDS.forEach(kind => eyesTexture(breed, kind)); // nạp sẵn mọi kiểu mắt: lần chớp đầu không bị trống
-  const cat = categories[breed];
+  const cat = catLook(breed);
   // Lông: nhám hoàn toàn, phản xạ thấp, thêm "sheen" (ánh mềm ở mép như lông/nhung thật) thay cho đốm bóng kiểu nhựa.
   const furMat = color => TOON ? toonMat({ color }) : new THREE.MeshPhysicalMaterial({ color, roughness: 1, metalness: 0, specularIntensity: .08,
     sheen: .25, sheenRoughness: .9, sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), .2) }); // dịu, không loá mép

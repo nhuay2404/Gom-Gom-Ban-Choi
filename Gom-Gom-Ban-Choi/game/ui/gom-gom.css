@@ -439,8 +439,8 @@ body.hammer-armed .board .cell.caged{cursor:crosshair}
 .shell .cat.bitmap .calm-idle>image,
 #active-card:not(.dragging) .cat.bitmap .calm-focus>image,
 :is(.drag-ghost,.piece-card.dragging,.cell.lifted) .cat.bitmap .annoyed>image,
-:is(.cell.merge-ghost,.cell.petted) .cat.bitmap .joy>image{opacity:1;transition:opacity .16s ease}
-:is(#active-card,.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.merge-ghost,.cell.petted) .cat.bitmap .calm-idle>image,
+:is(.cell.merge-ghost,.cell.petted,.cell.idle-joy) .cat.bitmap .joy>image{opacity:1;transition:opacity .16s ease}
+:is(#active-card,.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.merge-ghost,.cell.petted,.cell.idle-joy) .cat.bitmap .calm-idle>image,
 :is(.cell.merge-ghost,.cell.petted) .cat.bitmap .annoyed>image{opacity:0;transition:opacity .12s ease .14s}
 /* Bóng thẻ vừa tạo lúc bắt đầu kéo: mở đầu bằng mặt chú ý của thẻ đang cầm rồi chuyển dần sang mặt khó chịu */
 @starting-style{.drag-ghost .cat.bitmap .calm-focus>image{opacity:1}}

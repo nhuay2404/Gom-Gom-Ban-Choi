@@ -831,3 +831,20 @@ body.deco-locked .hub-settings{opacity:.5}
 @keyframes shop-burst{0%{transform:translate(0,0) scale(.4);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}}
 .shop-deco-item.bought{animation:shop-bought .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes shop-bought{40%{scale:1.08}}
+/* Shop: popup xem thử món trong cảnh Deco (cùng kiểu khung với bảng cài đặt), nút giá xanh ở dưới = mua */
+.shop-preview{width:min(360px,calc(100% - 24px));padding:14px 14px 16px;border-radius:24px;background:#fff7e8;border:3px solid #8a4128;
+  box-shadow:inset 0 0 0 3px #fffdf6,0 4px 0 #8a412855,0 18px 40px #2b1a1066;color:#5e1d10}
+.shop-preview[open]{display:flex;flex-direction:column;gap:12px;animation:result-pop .35s cubic-bezier(.3,1.5,.5,1) both}
+.shop-preview::backdrop{background:#2b1a1099}
+.shop-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-left:4px}
+.shop-preview-head h2{margin:0;font-family:var(--display);font-size:24px;font-weight:800;line-height:1.1;color:#5e1d10}
+.shop-preview-stage{position:relative;height:min(52vh,340px);border-radius:18px;overflow:hidden;background:#cfe9f7;box-shadow:inset 0 0 0 2px #ecd6b3;pointer-events:none}
+.shop-preview-stage canvas{display:block;width:100%!important;height:100%!important}
+.shop-preview-stage .thumb{display:block;width:100%;height:100%;object-fit:contain}
+.shop-preview-buy{display:flex;align-items:center;justify-content:center;gap:8px;height:58px;border:3px solid #1f7a2e;border-radius:999px;cursor:pointer;
+  background:linear-gradient(#7fdc6d,#36aa45);box-shadow:inset 0 3px 0 #c4f7b6aa,0 4px 0 #1f7a2e66;
+  font-family:var(--display);font-size:24px;font-weight:800;color:#fff;-webkit-text-stroke:3px #1f7a2e;paint-order:stroke fill}
+.shop-preview-buy .amt{display:inline-flex;align-items:center;gap:4px}
+.shop-preview-buy .ico-coin{width:28px;height:28px}
+.shop-preview-buy.poor{filter:grayscale(.6) brightness(.95)}
+.shop-preview-buy:active{translate:0 2px}
