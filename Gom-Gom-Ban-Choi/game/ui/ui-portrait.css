@@ -848,3 +848,6 @@ body.deco-locked .hub-settings{opacity:.5}
 .shop-preview-buy .ico-coin{width:28px;height:28px}
 .shop-preview-buy.poor{filter:grayscale(.6) brightness(.95)}
 .shop-preview-buy:active{translate:0 2px}
+/* Tên mục kèm ghi chú nhỏ bên dưới (vd. Day / Night: chỉ áp dụng cho Deco) */
+.settings-name.with-note{display:flex;flex-direction:column;line-height:1.1}
+.settings-name.with-note small{font-family:var(--ui-font);font-size:12px;font-weight:800;color:#a07a62}
