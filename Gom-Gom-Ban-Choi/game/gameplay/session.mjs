@@ -2,7 +2,7 @@
 // Giao diện (gom-gom.js trên web, component Cocos sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
-import { MATCH_SIZE, matchPoints } from './scoring.mjs';
+import { MATCH_SIZE, turnPoints } from './scoring.mjs';
 import { categories } from '../ui/cat-art.mjs';
 import { LEVELS, parseBoard, makeDealer, starsFor, boardSize } from './levels.mjs';
 import { BOARD, holdUnlocked } from './tuning.mjs';
@@ -104,14 +104,14 @@ export function hold(s) {
 // Đặt thẻ đang bóc tại ô `anchor` (góc trên-trái của hình thẻ). Trả về đủ thông tin để giao diện diễn:
 //   result  = { board (sau khi đặt, trước khi gom), indices (các ô vừa đặt) }
 //   match   = { board (sau khi gom), cleared, clusters, groups, broken (thùng vừa vỡ), caged (chuồng vừa mất khóa), freed (chuồng vừa vỡ) }
-//   gained  = điểm vừa được · win / lose / stuck · fit (thẻ mới bóc có chỗ đặt không)
+//   gained  = điểm vừa được (cụm + thùng vỡ) · win / lose / stuck · fit (thẻ mới bóc có chỗ đặt không)
 export function place(s, anchor) {
   if (s.over) return { ok: false };
   if (!tutorialAllows(s, 'place', anchor)) return { ok: false, error: 'tutorial' };
   const result = placeCard(s.board, s.W, s.H, anchor, s.active);
   if (result.error) return { ok: false, error: result.error };
   const match = clearMatches(result.board, s.W, s.H, MATCH_SIZE);
-  const gained = matchPoints(match.clusters);
+  const gained = turnPoints(match);
   s.board = match.board;
   s.score += gained;
   s.moves--;

@@ -14,6 +14,7 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 | `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
 | `game/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
+| `game/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
 | `game/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
 | `game/` (gốc, còn lại) | `index.html` (khung màn hình), `gom-gom.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |

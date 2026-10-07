@@ -295,6 +295,7 @@ body.afk .cat .afk-sleepy{opacity:1;translate:0 0;transition-delay:.12s}
 @media(prefers-reduced-motion:no-preference){
   body.afk .cat .afk-z path{animation:afk-z 2.2s ease-in-out infinite}
   body.afk .cat .afk-z .z2{animation-delay:.7s}
+  body.afk .cat .afk-z .z3{animation-delay:1.4s}
   body.afk .cat{animation:afk-breathe 2.6s ease-in-out infinite alternate}}
 @media(prefers-reduced-motion:reduce){body.afk .cat .afk-z path{opacity:1}}
 @keyframes afk-z{0%{opacity:0;translate:-2px 4px}25%{opacity:1}100%{opacity:0;translate:4px -8px}}
@@ -379,6 +380,13 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 .tutorial-avatar{flex:none;width:46px;height:46px}
 .tutorial-avatar .cat{width:100%;height:100%}
 .tutorial-bubble.center .tutorial-avatar{width:64px;height:64px}
+.tutorial.deco-tour{z-index:60}
+.deco-tour-bubble{flex-wrap:wrap;padding:12px 14px}
+.deco-tour-bubble p{flex:1 1 0;min-width:0}
+.deco-tour-foot{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.deco-tour-dots{font-style:normal;font-size:10px;letter-spacing:2px;color:#a9825f}
+.deco-tour-skip{border:0;background:none;font:inherit;font-size:13px;font-weight:800;color:#a9825f;padding:8px 4px;cursor:pointer}
+.deco-tour-next{min-width:96px;padding:9px 20px;font-size:15px}
 @keyframes tut-fade{from{opacity:0}}
 @keyframes tut-ring{to{box-shadow:0 0 0 5px #fff6c8}}
 
@@ -417,3 +425,40 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 .cage-lock{position:absolute;z-index:5;width:16px;height:16px;border-radius:5px;background:#f2c335;border:2px solid #8a6a1c;pointer-events:none}
 @media(prefers-reduced-motion:reduce){.cell.cage-hit .cage-bars{animation:none}}
 body.hammer-armed .board .cell.caged{cursor:crosshair}
+.deco-tour-blockers,.deco-tour-rings{position:absolute;inset:0}
+.deco-tour-blocker{position:absolute;pointer-events:auto}
+.deco-tour .tutorial-bubble{pointer-events:auto}
+.deco-tour-hand{pointer-events:none}
+/* ===== Đổi biểu cảm mèo ảnh (in-game) mượt: mọi mặt (calm-idle / calm-focus / annoyed / joy) luôn được vẽ chồng nhau, chỉ đổi
+   độ mờ của ảnh bên trong. Mặt mới hiện dần ngay (.16s); mặt cũ giữ nguyên rồi mới mờ đi (trễ .14s) để giữa chừng không bị
+   thủng thấy nền. Luật bật / tắt cũ (display / visibility ở trên) bị ghi đè trong khung chơi + bóng thẻ đang kéo. */
+:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed){display:inline!important}
+:is(.shell,.drag-ghost) .cat.bitmap .joy{visibility:visible!important}
+:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy)>image{opacity:0;transition:opacity .12s ease .14s}
+/* Mặt đang dùng (thứ tự ưu tiên: vui > khó chịu > chú ý > thường) */
+.shell .cat.bitmap .calm-idle>image,
+#active-card:not(.dragging) .cat.bitmap .calm-focus>image,
+:is(.drag-ghost,.piece-card.dragging,.cell.lifted) .cat.bitmap .annoyed>image,
+:is(.cell.merge-ghost,.cell.petted) .cat.bitmap .joy>image{opacity:1;transition:opacity .16s ease}
+:is(#active-card,.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.merge-ghost,.cell.petted) .cat.bitmap .calm-idle>image,
+:is(.cell.merge-ghost,.cell.petted) .cat.bitmap .annoyed>image{opacity:0;transition:opacity .12s ease .14s}
+/* Bóng thẻ vừa tạo lúc bắt đầu kéo: mở đầu bằng mặt chú ý của thẻ đang cầm rồi chuyển dần sang mặt khó chịu */
+@starting-style{.drag-ghost .cat.bitmap .calm-focus>image{opacity:1}}
+@media(prefers-reduced-motion:reduce){:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy)>image{transition:none}}
+/* Mèo căn giữa ô trong thẻ đang cầm / thẻ tiếp theo / ô gửi tạm: bỏ phần đệm trên còn lại từ kiểu khối nổi 3D cũ (khối giờ phẳng,
+   không còn nhấc lên), và ảnh mèo nằm thấp trong khung 100×106 (y 11–101) nên kéo lên ~5% ô cho tâm ảnh trùng tâm ô (dùng top, không dùng translate vì anim thở / rung của mèo ghi đè translate). */
+:is(.piece-card,.next-slot,.hold-slot) .piece-grid{padding-top:0}
+.piece-object .cat.bitmap{position:relative;top:-5.4%}
+/* ===== Mèo lúc bình thường (idle) trong màn chơi: thở nhẹ (phồng / xẹp từ chân) + lắc đầu rất khẽ, lệch nhịp từng con.
+   Dùng thuộc tính scale / rotate riêng (không đụng transform: scale(1.08) của mèo trong thẻ) và :where() để độ ưu tiên = 0:
+   mọi anim khác của mèo (AFK ngủ, sắp hết lượt, chạm nhảy, bị kéo...) đều thắng anim này. */
+@media(prefers-reduced-motion:no-preference){
+  :where(.shell) :where(.cat.bitmap){transform-origin:50% 92%;animation:cat-idle 2.6s ease-in-out infinite}
+  :where(.shell) :where(.cell:nth-child(3n+2),.piece-object:nth-child(2n)) :where(.cat.bitmap){animation-delay:-.9s;animation-duration:2.9s}
+  :where(.shell) :where(.cell:nth-child(3n),.piece-object:nth-child(3n)) :where(.cat.bitmap){animation-delay:-1.7s;animation-duration:2.4s}
+  :where(.shell) :where(.cell:nth-child(5n+1)) :where(.cat.bitmap){animation-delay:-.4s}}
+@keyframes cat-idle{0%,100%{scale:1 1;rotate:0deg}25%{rotate:-1.5deg}50%{scale:1.03 .965}75%{rotate:1.5deg}}
+/* Đang kéo thẻ ra khỏi khung xoay (đã có bóng kéo, body.card-dragging): mèo trong khung tạm biến mất — chúng đang nằm trên tay
+   người chơi. Thả ra (huỷ / gửi Hold) thì hiện lại nhẹ nhàng. Chỉ chạm để xoay (chưa kéo) thì không ẩn. */
+#active-card .piece-grid{transition:scale .18s cubic-bezier(.3,1.6,.5,1),opacity .15s ease}
+body.card-dragging #active-card .piece-grid{opacity:0;transition:none}

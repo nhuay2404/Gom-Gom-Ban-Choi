@@ -7,7 +7,7 @@
 import { parseBoard, makeDealer, starsFor, boardSize } from '../game/gameplay/levels.mjs';
 import { BOOSTERS } from '../game/gameplay/tuning.mjs';
 import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/gameplay/board-rules.mjs';
-import { MATCH_SIZE, matchPoints } from '../game/gameplay/scoring.mjs';
+import { MATCH_SIZE, turnPoints } from '../game/gameplay/scoring.mjs';
 
 export function mulberry32(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -23,7 +23,7 @@ function bestMove(board, card, rng, noise, W, H) {
     const next = board.slice();
     indices.forEach((index, i) => { next[index] = { group: card.items[i].group }; });
     const match = clearMatches(next, W, H, MATCH_SIZE);
-    const points = matchPoints(match.clusters);
+    const points = turnPoints(match);
     // Chưa gom được thì ưu tiên nước tạo cụm 2 (chuẩn bị gom), phạt nước làm bàn chật.
     let setup = 0;
     indices.forEach(index => { if (match.board[index]) setup += connectedGroup(match.board, W, H, index).length - 1; });

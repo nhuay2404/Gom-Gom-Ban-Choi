@@ -593,6 +593,42 @@ function zoneGate(label) {
   return g;
 }
 
+function startSignTexture() {
+  return canvasTexture(512, 160, (g, w, h) => {
+    g.fillStyle = '#7a4a2a';
+    g.font = '800 84px "Baloo 2", Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('START', w / 2, h / 2);
+    g.fillStyle = '#ef5f8b';
+    for (const x of [28, w - 28 - 64]) { g.save(); g.translate(x, h / 2 - 32); g.scale(64 / 24, 64 / 24); g.fill(PAW_PATH); g.restore(); }
+  });
+}
+// Cổng xuất phát: hai trụ gỗ đứng ngoài mép nắp đường, xà ngang, biển "START" kem có hai dấu chân hồng, bi hồng trên đỉnh trụ.
+// Biển đặt trên xà (không treo dưới) để mèo đi qua không vướng; hai thanh đỡ nhỏ nối xà với biển.
+function startGate() {
+  const g = new THREE.Group(), half = WORLD.ROAD / 2 + WORLD.EDGE + .2;
+  for (const x of [-half, half]) {
+    g.add(box(.36, .12, .36, sceneryMats.pale, x, .06, 0));
+    g.add(box(.2, 1.33, .2, furnMats.wood, x, .78, 0));
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 14, 10), sceneryMats.capPink);
+    ball.position.set(x, 1.57, 0); g.add(withInk(ball, .08));
+  }
+  g.add(box(half * 2 + .4, .2, .22, furnMats.woodDark, 0, 1.3, 0));
+  for (const x of [-.5, .5]) g.add(box(.1, .3, .1, furnMats.woodDark, x, 1.46, 0));
+  // Camera nhìn từ trên xuống nên biển ngả ra sau (mặt biển hướng lên camera) mới đọc được chữ.
+  const sign = new THREE.Group();
+  sign.position.y = 1.78; sign.rotation.x = -.7;
+  sign.add(box(1.5, .5, .08, furnMats.white, 0, 0, 0));
+  // Chữ + hai dấu chân vẽ chung một tấm (một lớp trong suốt duy nhất): tách thành nhiều tấm nhỏ thì thứ tự vẽ giữa chúng và
+  // viền mờ dần nhảy lung tung khi cuộn, dấu chân chớp.
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(1.4, .4375), cached('sign|start-paws', () => new THREE.MeshBasicMaterial({
+    map: startSignTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+  })));
+  face.position.z = .055; face.renderOrder = 2; sign.add(face);
+  g.add(sign);
+  g.traverse(n => { if (n.isMesh) n.castShadow = true; });
+  return g;
+}
+
 // ---------- Đánh dấu màn đang chơi (thay cho icon mèo cũ) ----------
 // Quầng sáng mềm trên cỏ quanh bệ, ngôi sao vàng viền nâu lơ lửng trên đầu, vài đốm lấp lánh quanh khối đầu.
 function haloTexture() {
@@ -1015,7 +1051,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     plant(g, pathX(t), t);
   }
 
-  // Điểm xuất phát (đầu đường, trước màn 1): nắp nửa tròn cho viền + mặt đường thay cho vết cắt thẳng, dấu chân to giữa nắp,
+  // Điểm xuất phát (đầu đường, trước màn 1): cổng xuất phát bắc ngang, nắp nửa tròn cho viền + mặt đường thay cho vết cắt thẳng, dấu chân to giữa nắp,
   // vòng hoa ôm quanh nắp, khóm hoa hai bên, bụi cây + đèn lồng phía sau. Màu mặt nắp = màu đoạn đầu đường (đã đi: hồng, chưa: kem).
   const START_T = -.8;
   function startCap(color) {
@@ -1043,9 +1079,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     deco(lantern(), -side - .15, -.35);
     deco(bush(rnd), side + .25, -.4);
     deco(bush(rnd), .35, -.95);
-    // Vòng hoa ôm sát mép nắp (nửa vòng phía camera), cách đều nhau
+    // Vòng hoa ôm sát mép nắp (nửa vòng phía camera), cách đều nhau; hai đầu vòng nhường chỗ cho hai trụ cổng xuất phát
     const ring = WORLD.ROAD / 2 + WORLD.EDGE + .2;
-    for (let k = 0; k <= 8; k++) {
+    for (let k = 1; k < 8; k++) {
       const a = Math.PI * k / 8, dx = Math.cos(a) * ring, dz = Math.sin(a) * ring;
       deco(flower(rnd), dx, -dz / LEVEL_GAP);
     }
@@ -1057,6 +1093,10 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     const paw = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), pawMat(color === COLORS.roadDone ? '#ef5f8b' : '#f7a3bd'));
     paw.rotation.set(-Math.PI / 2, 0, turn);
     plant(paw, x, START_T - .12, .045);
+    // Cổng xuất phát bắc ngang nắp, ngay trên dấu chân (nghiêng ra sau như cổng phòng).
+    const gate = startGate();
+    gate.rotation.set(-.2, turn, 0, 'YXZ');
+    plant(gate, x, START_T - .1);
   }
 
   // Trang trí hai bên đường, chia theo đoạn: mỗi đoạn quanh một màn (t từ i - .5 tới i + .5) là một nhóm gộp chất liệu

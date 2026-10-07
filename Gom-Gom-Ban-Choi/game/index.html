@@ -159,6 +159,7 @@
       <button data-key="floors"><svg viewBox="0 0 24 24"><path d="M6.5 6h11L21 19H3ZM4.7 12.5h14.6M12 6v13M9.2 6 7.5 19M14.8 6l1.7 13"/></svg><span>Floors</span></button>
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
       <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
+      <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.4a2.7 2.7 0 1 1 3.9 2.4c-.9.5-1.3 1-1.3 2M12 17v.2"/></svg></button>
     </div>
     <div class="deco-dock">
       <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">
@@ -174,7 +175,7 @@
     <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
-      <div id="deco-pop-items" class="deco-pop-items"></div>
+      <div id="deco-pop-scroll" class="deco-pop-scroll"><div id="deco-pop-items" class="deco-pop-items"></div></div>
       <i class="deco-pop-tail" aria-hidden="true"></i>
     </div>
   </section>
@@ -266,7 +267,6 @@
     </div>
     <div class="result-hero" aria-hidden="true">
       <div class="result-rays"></div>
-      <div id="result-stars" class="result-stars"><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i><i><svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z"/></svg></i></div>
       <svg class="result-heart" viewBox="0 0 100 90"><path d="M50 84 C20 62 6 46 6 28 A21 21 0 0 1 48 20 L42 36 L54 46 L44 60 Z" fill="#ff7c99" stroke="#c43d62" stroke-width="3.5" stroke-linejoin="round"/>
         <path d="M54 20 A21 21 0 0 1 94 28 C94 46 80 62 52 84 L58 62 L48 48 L60 36 Z" fill="#ff7c99" stroke="#c43d62" stroke-width="3.5" stroke-linejoin="round"/>
         <path d="M20 26 Q24 18 32 18" fill="none" stroke="#ffd0dc" stroke-width="5" stroke-linecap="round"/></svg>

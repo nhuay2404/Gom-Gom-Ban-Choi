@@ -16,6 +16,7 @@ export const SAVE_KEYS = {
   boosters: 'gomgom-rotate-boosters-v1',
   night: 'gomgom-rotate-night',
   profile: 'gomgom-rotate-profile-v1',
+  decoTour: 'gomgom-rotate-deco-tour-v1',
 };
 
 function defaultBackend() {

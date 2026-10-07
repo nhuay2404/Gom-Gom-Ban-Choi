@@ -34,7 +34,7 @@ body{font-family:var(--ui-font)}
 .moves-box.danger{border-color:var(--danger);background:#ffd9cf;box-shadow:none}
 .moves-box.danger strong{color:#d9301c}
 @media(prefers-reduced-motion:no-preference){.moves-box.danger strong{animation:moves-pulse .9s ease-in-out infinite}}
-body.low-moves .board{outline:3px solid #d9442f99;outline-offset:3px}
+body.low-moves .board{outline:0}
 
 /* Bàn: to nhất có thể nhưng màn chơi luôn vừa đúng một màn hình điện thoại (kể cả khi có hàng booster).
    Màn chơi cao đúng 100dvh; bàn chiếm phần còn lại giữa HUD và dock, luôn vuông: cạnh = min(bề ngang, chiều cao còn lại). */
@@ -665,6 +665,9 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 /* Nút ngắm nhà: mắt mở = UI đang hiện (chạm để ẩn), mắt nhắm = đang ẩn UI (chạm để hiện lại) */
 .deco-lock .eye-shut,.deco-lock[aria-pressed="true"] .eye-open{display:none}
 .deco-lock[aria-pressed="true"] .eye-shut{display:inline}
+.deco-side .deco-help{width:calc(50 * var(--u));height:calc(50 * var(--u));margin:0 auto;border-radius:50%}
+.deco-side .deco-help svg{width:calc(24 * var(--u));height:calc(24 * var(--u));stroke-width:2.4}
+#deco.ui-locked .deco-help{display:none}
 #deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
 #deco.ui-locked .deco-lock:active{opacity:.6}
 #deco.ui-locked .deco-side>[data-key]{visibility:hidden}
@@ -705,8 +708,25 @@ body.deco-locked .hub-settings{opacity:.5}
 @keyframes deco-pop-in{from{opacity:0;scale:.85}}
 .deco-pop-head{display:flex;align-items:center;gap:8px;padding:2px 4px 0}
 .deco-pop-head b{flex:1;min-width:0;font-family:var(--display);font-size:17px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* Mọi lựa chọn hiện hết, không phải vuốt: thẻ hẹp vừa 4 thẻ một hàng trên màn 375 px, nhiều hơn thì xuống hàng */
-.deco-pop-items{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(340px,calc(100vw - 40px));padding:2px}
+/* Tối đa 3 thẻ hiện cùng lúc (3 × 74 px + 2 khe); thẻ thứ 4 trở đi vuốt ngang mới thấy, thẻ dừng khít mép khi thả tay */
+.deco-pop-items{display:flex;gap:6px;width:max-content;max-width:min(240px,calc(100vw - 40px));overflow-x:auto;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px}
+.deco-pop-items>.deco-opt{scroll-snap-align:start}
+/* Gợi ý vuốt ngang: còn thẻ ở bên nào thì bên đó có dải mờ + mũi tên nhấp nhô (JS bật .more-left / .more-right) */
+.deco-pop-scroll{position:relative;max-width:100%}
+.deco-pop-scroll::before,.deco-pop-scroll::after{content:'';position:absolute;top:2px;bottom:2px;width:30px;display:none;pointer-events:none;z-index:1;
+  background-repeat:no-repeat;background-position:center;background-size:18px 18px}
+.deco-pop-scroll::after{right:0;border-radius:0 14px 14px 0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 4l8 8-8 8' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9 4l8 8-8 8' fill='none' stroke='%23d9542c' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(90deg,#fffdf600,#fffdf6 70%)}
+.deco-pop-scroll::before{left:0;border-radius:14px 0 0 14px;transform:scaleX(-1);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 4l8 8-8 8' fill='none' stroke='%23fff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9 4l8 8-8 8' fill='none' stroke='%23d9542c' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(90deg,#fffdf600,#fffdf6 70%)}
+.deco-pop-scroll.more-right::after,.deco-pop-scroll.more-left::before{display:block}
+@media(prefers-reduced-motion:no-preference){
+  .deco-pop-scroll.more-right::after{animation:deco-swipe-r 1s ease-in-out infinite}
+  .deco-pop-scroll.more-left::before{animation:deco-swipe-l 1s ease-in-out infinite}
+}
+@keyframes deco-swipe-r{50%{background-position:calc(50% + 4px) center,center}}
+@keyframes deco-swipe-l{50%{background-position:calc(50% + 4px) center,center}}
+.deco-pop.side .deco-pop-scroll::before,.deco-pop.side .deco-pop-scroll::after{display:none}
 .deco-pop-items::-webkit-scrollbar{display:none}
 .deco-opt{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;width:74px;min-height:0;padding:5px 3px;border-radius:14px;
   background:#fff;border:2.5px solid #eadfc8;color:#5b2e1c;font-size:10.5px;font-weight:900;letter-spacing:0;text-transform:none}

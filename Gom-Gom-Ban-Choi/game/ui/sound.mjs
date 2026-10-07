@@ -5,8 +5,9 @@
 //
 //   Giao diện / thao tác
 //   pick     chạm nút, chọn            bong bóng "póp" nhỏ đi lên
-//   lift     nhấc thẻ ra khỏi khay     bong bóng + chuông nhỏ
-//   rotate   xoay thẻ                  hai tiếng "tinh" thuỷ tinh
+//   lift     (không dùng: kéo thẻ ra khỏi khung xoay im lặng)
+//   rotate   xoay thẻ                  hai tiếng "tinh" rất nhỏ, ngắn, không vang
+//   fill     điểm bay vào thanh điểm   chuỗi nốt đi lên, mỗi đốm một nốt
 //   place    đặt thẻ (không gom)       "bộp" mềm + chuông trầm
 //   invalid  đặt sai chỗ / không được  hai tiếng "bông" trầm, nhẹ (không la mắng)
 //   draw     Hold / đổi thẻ            vút lên + chuông
@@ -101,7 +102,7 @@ const arpeggio = (notes, t, step, opts) => notes.forEach((frequency, i) => bell(
 const SOUNDS = {
   pick: t => pop(480, 900, t, { vol: .16, dur: .08 }),
   lift: t => { pop(420, 980, t, { vol: .17, dur: .1 }); bell(PENTA[5], t + .04, { vol: .05, decay: .2 }); },
-  rotate: t => { bell(PENTA[5], t, { vol: .07, decay: .14 }); bell(PENTA[7], t + .055, { vol: .06, decay: .18 }); },
+  rotate: t => { bell(PENTA[5], t, { vol: .03, decay: .07, wet: false }); bell(PENTA[7], t + .04, { vol: .025, decay: .09, wet: false }); },
   place: t => { pop(300, 150, t, { vol: .26, dur: .11 }); noise(t, .05, { vol: .05, freq: 900, q: 2 }); bell(PENTA[0], t + .01, { vol: .06, decay: .25 }); },
   invalid: t => { pop(330, 250, t, { vol: .14, dur: .12, type: 'triangle' }); pop(290, 220, t + .13, { vol: .12, dur: .14, type: 'triangle' }); },
   draw: t => { noise(t, .16, { vol: .07, freq: 700, to: 3000, q: 1.5 }); bell(PENTA[4], t + .1, { vol: .08, decay: .3 }); },
@@ -113,6 +114,8 @@ const SOUNDS = {
     arpeggio(PENTA.slice(start, start + n), t, .055, { vol: .12, decay: .45 });
     if (size >= 5) arpeggio([PENTA[6], PENTA[8], PENTA[7], PENTA[8]], t + n * .055, .04, { vol: .045, decay: .3 });
   },
+  // Điểm bay vào thanh: mỗi đốm chạm thanh một nốt, thấp -> cao (step = 0..10 trên thang ngũ cung, nốt đầu hạ một quãng tám)
+  fill: (t, step) => bell(PENTA[Math.min(10, Math.max(0, Math.round(step)))] / 2, t, { vol: .05, decay: .16, wet: false }),
   reward: t => { bell(PENTA[7], t, { vol: .1, decay: .25 }); bell(PENTA[9], t + .08, { vol: .1, decay: .45 }); },
   complete: t => {
     arpeggio([PENTA[0], PENTA[2], PENTA[3], PENTA[5]], t, .1, { vol: .14, decay: .5 });

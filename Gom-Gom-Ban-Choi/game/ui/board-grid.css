@@ -20,4 +20,3 @@
 .hold-column.locked { visibility: hidden; pointer-events: none; }
 /* Sắp hết lượt: viền đỏ ôm theo hình bàn (outline chữ nhật của .board chỉ hợp với bàn vuông) */
 body.low-moves .board.shaped { outline: none; }
-body.low-moves .board-shape { filter: drop-shadow(3px 0 0 #d9442f99) drop-shadow(-3px 0 0 #d9442f99) drop-shadow(0 3px 0 #d9442f99) drop-shadow(0 -3px 0 #d9442f99); }

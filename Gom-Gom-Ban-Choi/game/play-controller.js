@@ -3,7 +3,7 @@
 // tutorial, bảng vào màn, kết quả và metric cho độ khó thích ứng. Luật nằm ở gameplay/session.mjs; file này gọi luật rồi vẽ.
 // Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở gom-gom.js).
 import { mergeTarget, placementIndices } from './gameplay/board-rules.mjs';
-import { clusterPoints } from './gameplay/scoring.mjs';
+import { clusterPoints, POINTS_PER_CRATE } from './gameplay/scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './ui/cat-art.mjs';
 import { LEVELS } from './gameplay/levels.mjs';
 import * as game from './gameplay/session.mjs';
@@ -260,6 +260,7 @@ function placeAt(anchor) {
   const ghosts = spawnMergeGhosts(merges, result);
   const done = animateMerges(ghosts, merges);
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  match.broken?.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, DROP_MS + LIFT_MS + MERGE_MS * .7 + 120, 'crate'); });
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
@@ -426,7 +427,7 @@ async function animateMerges(ghosts, merges) {
         { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
       ], { duration: MERGE_MS, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }));
     });
-    showMergeScore(targetGhost, clusterPoints(cluster.length));
+    showMergeScore(targetGhost, clusterPoints(cluster.length), MERGE_MS * .6, scoreTier(cluster.length)); // điểm bật ra ngay lúc cụm chụm lại
   });
   await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
   ghosts.forEach(ghost => ghost.remove());
@@ -438,6 +439,7 @@ const emptiedBoard = () => state.board.map(cell => (cell?.void ? cell : null));
 async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
+  await scoreSettled(); // lượt gom cuối: đợi điểm bay hết vào thanh + thanh chạy đầy tới nóc rồi mèo mới bay lên
   const occupied = state.board.map((object, index) => object?.group ? index : null).filter(index => index !== null);
   breakCrates(state.board.map((object, index) => object?.block && !object.metal ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
   if (!reduceMotion.matches && occupied.length) {
@@ -505,16 +507,99 @@ function spawnFusion(x, y) {
   fxLayer().append(flash);
   flash.addEventListener('animationend', () => flash.remove());
 }
-function showMergeScore(cell, points) {
-  const wrap = document.querySelector('.board-wrap');
-  const box = wrap.getBoundingClientRect(), rect = cell.getBoundingClientRect();
+// Điểm cộng: số "+N" bật to ở chỗ gom (nảy quá cỡ rồi về), rồi vỡ thành các đốm sao vàng bay vòng cung vào đầu thanh điểm.
+// Thanh điểm / số điểm chỉ tăng khi đốm cuối cùng tới nơi (shownScore), đốm đầu tới thì thanh nảy + loé sáng.
+// Giảm chuyển động: không có pop / bay, thanh cập nhật ngay.
+let shownScore = 0, scoreFlights = 0, flightGen = 0;
+// Mỗi loại điểm một màu + một cỡ hiệu ứng (màu / cỡ chữ / đốm ở CSS .score-pop.t-* / .score-orb.t-*):
+//   crate (thùng vỡ, +10) · m3 · m4 · m5 · m6 · m7 (cụm 7 trở lên). Cụm càng to: chữ càng to, nảy càng mạnh, càng nhiều đốm bay.
+const SCORE_TIERS = {
+  crate: { orbs: 3, punch: 1.35 },
+  m3: { orbs: 5, punch: 1.5 },
+  m4: { orbs: 7, punch: 1.65 },
+  m5: { orbs: 9, punch: 1.8 },
+  m6: { orbs: 12, punch: 1.95 },
+  m7: { orbs: 16, punch: 2.15 },
+};
+const scoreTier = size => `m${Math.min(7, Math.max(3, size))}`;
+function showMergeScore(cell, points, delay = 300, tier = 'm3') {
+  const { orbs, punch } = SCORE_TIERS[tier];
+  if (reduceMotion.matches) return;
+  const rect = cell.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2, gen = flightGen;
+  scoreFlights++;
   const pop = document.createElement('span');
-  pop.className = 'merge-pop';
+  pop.className = `score-pop t-${tier}`;
   pop.textContent = `+${points}`;
-  pop.style.left = `${rect.left + rect.width / 2 - box.left}px`;
-  pop.style.top = `${rect.top + rect.height / 2 - box.top}px`;
-  wrap.append(pop);
-  pop.addEventListener('animationend', () => pop.remove());
+  pop.style.left = `${x}px`;
+  pop.style.top = `${y}px`;
+  document.body.append(pop);
+  const at = (dy, scale) => `translate(-50%, -50%) translateY(${dy}px) scale(${scale})`;
+  pop.animate([
+    { transform: at(0, .2), opacity: 0 },
+    { transform: at(-26, punch), opacity: 1, offset: .22 },
+    { transform: at(-30, .92), offset: .36 },
+    { transform: at(-32, 1.05), offset: .46 },
+    { transform: at(-34, 1), offset: .82 },
+    { transform: at(-34, .4), opacity: .2 },
+  ], { duration: 620, delay, easing: 'ease-out', fill: 'both' }).finished.catch(() => {}).then(() => {
+    pop.remove();
+    if (gen !== flightGen) return;
+    flyToBar(x, y - 34, points, gen, tier, orbs);
+  });
+}
+function flyToBar(x, y, points, gen, tier, count) {
+  const track = $('score-fill').parentElement, bar = track.getBoundingClientRect();
+  const tip = Math.min(1, (shownScore + points) / state.level.target);
+  const tx = bar.left + Math.max(bar.height / 2, bar.width * tip - bar.height / 2), ty = bar.top + bar.height / 2;
+  let landed = 0;
+  for (let i = 0; i < count; i++) {
+    const orb = document.createElement('span');
+    orb.className = `score-orb t-${tier}`;
+    orb.style.left = `${x}px`;
+    orb.style.top = `${y}px`;
+    document.body.append(orb);
+    // Toả ra quanh số rồi bay vòng cung (lệch sang một bên) vào đầu thanh, nhỏ dần
+    const angle = (i / count) * Math.PI * 2 + Math.random() * .5, spread = 26 + Math.random() * 14;
+    const sx = Math.cos(angle) * spread, sy = Math.sin(angle) * spread, dx = tx - x, dy = ty - y;
+    const bend = (i % 2 ? 1 : -1) * (40 + Math.random() * 30);
+    const at = (px, py, scale) => `translate(-50%, -50%) translate(${px}px, ${py}px) scale(${scale})`;
+    orb.animate([
+      { transform: at(0, 0, .3), opacity: 0 },
+      { transform: at(sx, sy, 1.2), opacity: 1, offset: .2 },
+      { transform: at(sx + (dx - sx) * .5 + bend, sy + (dy - sy) * .45, .95), offset: .6 },
+      { transform: at(dx, dy, .45), opacity: 1 },
+    ], { duration: 300 + i * 18, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards' }).finished.catch(() => {}).then(() => {
+      orb.remove();
+      if (gen !== flightGen) return;
+      playSound('fill', count > 1 ? (i / (count - 1)) * 10 : 5);
+      if (++landed === 1) bumpScoreBar();
+      if (landed < count) return;
+      shownScore = Math.min(state.score, shownScore + points);
+      if (--scoreFlights <= 0) { scoreFlights = 0; shownScore = state.score; }
+      renderScore();
+    });
+  }
+}
+// Đợi mọi điểm đang bay chạm thanh, rồi đợi thanh chạy xong (transition width .45s) + nghỉ một nhịp ngắn khi đã đầy.
+const SCORE_FILL_MS = 450, FULL_HOLD_MS = 350;
+async function scoreSettled() {
+  if (reduceMotion.matches) return;
+  const gen = flightGen;
+  while (scoreFlights > 0 && gen === flightGen) await wait(50);
+  await wait(SCORE_FILL_MS + FULL_HOLD_MS);
+}
+function bumpScoreBar() {
+  const box = $('score-fill').closest('.progress');
+  box.animate([{ scale: '1' }, { scale: '1.12 1.25' }, { scale: '.97' }, { scale: '1' }], { duration: 380, easing: 'ease-out' });
+  box.classList.remove('gain'); void box.offsetWidth; box.classList.add('gain');
+}
+// Số điểm + thanh: đang có điểm bay thì giữ số đã hiện (shownScore), bay xong mới tăng.
+function renderScore() {
+  if (!scoreFlights) shownScore = state.score;
+  $('score').textContent = shownScore;
+  const progress = Math.min(1, shownScore / state.level.target);
+  $('score-fill').style.width = `${progress * 100}%`;
+  $('score-fill').parentElement.parentElement.classList.toggle('full', progress >= 1);
 }
 
 function finishTurn(turn) {
@@ -646,7 +731,6 @@ function moveCardDrag(event) {
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
   document.body.classList.add('card-dragging');
   if (!cardDrag.ghost) {
-    playSound('lift');
     cardDrag.ghost = $('active-card').cloneNode(true);
     cardDrag.ghost.removeAttribute('id');
     cardDrag.ghost.className = 'piece-card drag-ghost';
@@ -711,13 +795,11 @@ function finishCardDrag(event) {
 }
 
 function render(message = '', error = false) {
-  $('score').textContent = state.score;
   $('highscore').textContent = state.level.target;
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('moves').textContent = state.moves;
-  const progress = Math.min(1, state.score / state.level.target);
-  $('score-fill').style.width = `${progress * 100}%`;
-  $('score-fill').parentElement.parentElement.classList.toggle('full', progress >= 1);
+  renderScore();
+  $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
   $('message').textContent = message;
   $('message').classList.toggle('error', error);
   renderBoard();
@@ -874,6 +956,8 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('suggest', plan.suggestBooster && boostersUnlocked(levelIndex));
   // Ván mới: thanh điểm về 0 ngay, không tụt dần từ ván trước.
   const fill = $('score-fill');
+  flightGen++; scoreFlights = 0; // điểm còn bay từ ván trước: bỏ
+  document.querySelectorAll('.score-pop, .score-orb').forEach(node => node.remove());
   fill.style.transition = 'none';
   render(`Reach ${level.target} points in ${level.moves} moves!`);
   void fill.offsetWidth;
@@ -1041,6 +1125,7 @@ const { AFK_MS } = TIMING;
 let afkTimer = 0;
 function goAfk() {
   if (state.over || state.animating || cardDrag) return armAfk();
+  if (document.body.classList.contains('low-moves')) return armAfk(); // sắp hết lượt: mèo lo lắng, không ngủ
   document.body.classList.add('afk');
   // Metric idle: tính cả khoảng chờ trước khi mèo ngủ (đã AFK_MS không chạm), chỉ khi đang trong ván.
   if (track && !track.done && !menus.menuOpen() && $('map').hidden) track.idleSince = now() - AFK_MS;
@@ -1061,6 +1146,7 @@ function renderLowMoves() {
   // Vừa chuyển sang "sắp hết lượt": mèo kêu lo lắng một tiếng (không kêu lại mỗi lượt)
   if (low && !document.body.classList.contains('low-moves')) playSound('worried');
   document.body.classList.toggle('low-moves', low);
+  if (low) document.body.classList.remove('afk');
   if (!low) return;
   const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
   // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
@@ -1254,7 +1340,6 @@ function endLevel(win, reason = '') {
   dialog.classList.toggle('lose', !win);
   // Mèo ló đầu: mèo cam vẽ sẵn (cat-art.mjs), thắng thì mặt vui (.joy), thua thì khóc (.afk-crying) — CSS chọn mặt theo class.
   if (!$('result-cat').firstChild) $('result-cat').innerHTML = catMarkup.orange;
-  $('result-stars').querySelectorAll('i').forEach((star, i) => star.classList.toggle('on', i < stars));
   $('result-title').textContent = win ? (last ? 'Journey Complete!' : 'Level Complete!') : 'Try Again!';
   $('result-sub').textContent = `Level ${index + 1} ${win ? 'cleared' : 'failed'}`;
   $('result-score').textContent = state.score.toLocaleString('en-US');
@@ -1282,3 +1367,16 @@ $('quit-cancel').onclick = () => $('quit-dialog').close();
 $('quit-ok').onclick = () => { $('quit-dialog').close(); recordQuit(); quitAction?.(); quitAction = null; };
 $('restart').onclick = () => confirmQuit('Restart this level?', () => startLevel(state.levelIndex));
 $('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showTab('home'));
+
+// Ảnh bảng kết quả (Figma 3×, panel ~850 KB): giải mã sẵn lúc rảnh, để lần đầu bảng bật lên không phải giải mã giữa anim (giật).
+(function preloadResultArt() {
+  const names = ['panel', 'win-cat', 'win-stars', 'win-title', 'win-score', 'win-cleared', 'fail-cat', 'fail-heart', 'fail-title', 'btn-next', 'btn-retry', 'btn-home-round', 'btn-retry-round'];
+  const keep = [];
+  const load = () => names.forEach(name => {
+    const img = new Image();
+    img.src = `./ui/skins/figma-result/${name}.png`;
+    img.decode?.().catch(() => {});
+    keep.push(img); // giữ tham chiếu để ảnh đã giải mã không bị dọn
+  });
+  (globalThis.requestIdleCallback ?? (fn => setTimeout(fn, 1500)))(load);
+})();

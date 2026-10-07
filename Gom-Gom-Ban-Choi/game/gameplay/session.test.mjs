@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as game from './session.mjs';
 import { LEVELS, parseBoard, parseCard, boardSize } from './levels.mjs';
 import { clearMatches } from './board-rules.mjs';
-import { MATCH_SIZE } from './scoring.mjs';
+import { MATCH_SIZE, POINTS_PER_CRATE } from './scoring.mjs';
 import { recordWin, unlockedCount, levelTier, levelMechanics } from './progression.mjs';
 import { ECONOMY, HOLD } from './tuning.mjs';
 
@@ -80,12 +80,12 @@ test('tutorial màn 1 và 2 chạy hết bằng session và thắng màn', () =>
   }
 });
 
-test('bước giới thiệu thùng gỗ (màn 5): gom sát thùng thì thùng vỡ', () => {
+test('bước giới thiệu thùng gỗ (màn 5): gom sát thùng thì thùng vỡ, thùng vỡ cũng ra điểm', () => {
   const s = game.createSession(4, { rng: seeded(5) });
   game.continueTutorial(s); // bong bóng info
   const turn = game.place(s, 8);
   assert.ok(turn.ok);
-  assert.equal(turn.gained, 30);
+  assert.equal(turn.gained, 30 + POINTS_PER_CRATE); // cụm 3 + một thùng
   assert.equal(turn.match.broken.length, 1);
 });
 

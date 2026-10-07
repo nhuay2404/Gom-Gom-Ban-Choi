@@ -195,13 +195,16 @@ function blockHang(group) {
 }
 function bitmapCatSvg(group, hang) {
   const img = (mood, extra = '') => `<image href="${bitmap(group, mood)}" ${BITMAP_BOX} ${extra}/>`;
-  const afk = (name, mood) => `<g class="afk afk-${name}" visibility="hidden">${img(mood)}</g>`;
+  const afk = (name, mood, extra = '') => `<g class="afk afk-${name}" visibility="hidden">${img(mood)}${extra}</g>`;
+  // Mặt ngủ (AFK): ba chữ z xanh viền trắng (to → nhỏ) bay lên ở góc trên phải đầu (CSS .afk-z path lo anim, lệch nhịp từng chữ)
+  const zzz = `<g class="afk-z" fill="none" stroke-linecap="round" stroke-linejoin="round">${[[68, 30, 13], [79, 15, 10.5], [88, 3, 8.5]].map(([x, y, w], i) =>
+    `<path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#fff" stroke-width="6.5"/><path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#5b6fc4" stroke-width="3.2"/>`).join('')}</g>`;
   return `<svg class="cat mood-${categories[group].mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
     ${hang}
     <g class="calm calm-idle">${img('calm')}</g>
     <g class="calm calm-focus">${img('focus')}</g>
     <g class="annoyed">${img('annoyed')}</g>
-    ${afk('sleepy', 'sleepy')}${['sad', 'worried', 'crying', 'disappointed', 'sulky'].map(name => afk(name, 'worried')).join('')}
+    ${afk('sleepy', 'sleepy', zzz)}${['sad', 'worried', 'crying', 'disappointed', 'sulky'].map(name => afk(name, 'worried')).join('')}
     <g class="joy" visibility="hidden">${img('joy')}</g>
   </svg>`;
 }
