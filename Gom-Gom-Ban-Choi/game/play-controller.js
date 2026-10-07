@@ -799,6 +799,7 @@ function finishCardDrag(event) {
 function render(message = '', error = false) {
   $('highscore').textContent = state.level.target;
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
+  $('level-title').dataset.digits = String(state.levelIndex + 1).length; // số 2 chữ số: chữ nhỏ lại cho lọt giữa hai lá trên badge
   $('moves').textContent = state.moves;
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
@@ -858,6 +859,7 @@ function renderBoard() {
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
+    cell.dataset.alt = (Math.floor(index / W) + index % W) % 2; // ô xen kẽ hai tông (bàn kiểu bàn cờ)
     if (object?.void) {
       cell.className = 'cell void';
       cell.disabled = true;

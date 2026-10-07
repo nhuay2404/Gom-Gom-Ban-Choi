@@ -1,8 +1,8 @@
 # Gom Gom Rotate — quy tắc làm việc
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
-Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 30 / phòng khách / phòng ngủ): `game/deco/deco-room.mjs`,
-`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs`;
+Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
+`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs`;
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
@@ -33,8 +33,8 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 2. Chạy **QC model**: mở `http://localhost:4400/?qc` (tự chạy) hoặc Settings → "Dev: QC models". Kết quả phải là
    **"all clear ✓"** — không được để lỗi nào. QC nằm ở `game/deco/qc.mjs`; muốn kiểm một model riêng lúc đang làm thì gọi
    `checkModel(() => node)` (trả về `issues`).
-3. Xem bằng mắt trên khung mobile (375×812): Deco từng khu, xoay camera vài góc, và ảnh thumbnail của món
-   trong danh sách Deco. QC không thay được mắt người (vd. mắt / mũi bị chìm trong đầu thú bông).
+3. Xem bằng mắt trên khung mobile (375×812): Deco từng khu, xoay camera vài góc, ảnh thumbnail của món
+   trong danh sách Deco, và popup xem trước của món ở Shop → Decoration. QC không thay được mắt người (vd. mắt / mũi bị chìm trong đầu thú bông).
 4. Nếu sửa hành vi mèo: cho mèo dùng thử món đó (lên + xuống) trước khi báo xong.
 
 Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép kiểm tra vào `qc.mjs` và ghi quy tắc vào file này.
@@ -84,7 +84,18 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Cánh cửa mở về phía **trống** (khai báo `swing`); lỗi cũ: cửa phòng ngủ mở đè lên tủ thấp.
 - Lối 1 m trước mỗi cửa / cổng để trống cho mèo đi.
 - Món to xoay chéo 45° chiếm nhiều chỗ ở góc (mái nhà mèo va võng / bụi): ưu tiên áp tường, quay mặt vào phòng.
-- Đồ trang trí cố định (livingDecor / bedroomDecor / decorateWall) cũng phải qua đủ các kiểm tra trên như đồ mua.
+- Đồ trang trí cố định (livingDecor / bedroomDecor / kitchenDecor / decorateWall) cũng phải qua đủ các kiểm tra trên như đồ mua.
+
+**Mặt trước, thumbnail và popup xem trước (Shop → Decoration)**
+- Mặt trước của model quay về **+z cục bộ**. Ảnh thumbnail chụp theo `THUMB_DIR` (deco-room.mjs) trong toạ độ model; popup
+  xem trước (`frameItem`) soi món theo đúng hướng đó xoay theo góc đặt món trong phòng — model dựng ngược hướng thì cả
+  thumbnail lẫn popup chỉ thấy mặt sau. Không tự đặt hướng camera riêng cho popup (lỗi cũ: giữ hướng camera đang có nên
+  thấy mặt sau / nhìn từ dưới).
+- Popup tự ẩn mọi thứ chắn giữa camera và món: tường, rào, món khác (kể cả món mà camera nằm lọt bên trong — ghế trước
+  bàn đàn), đồ trang trí cố định, mèo; tâm nhìn khoá vào món (không trôi về giữa khu). Đóng popup thì hiện lại.
+  Thêm loại vật mới vào cảnh (nhóm đồ cố định mới, vật trang trí mới...) thì phải nằm trong `site` / `fixedDecor` /
+  `furniture` / tường của `interiors` để popup thấy và ẩn được — QC `preview` báo nếu món còn bị che.
+  (Lỗi cũ: tường che máy giặt mini, ghế đè kín đàn piano, mèo đứng chắn trước món.)
 
 **Code**
 - Không chèn chú thích `//` vào giữa một dòng còn câu lệnh phía sau (test `code-rules.test.mjs` bắt lỗi này) (lỗi `sideboard.rotation.y` bị biến thành chú thích

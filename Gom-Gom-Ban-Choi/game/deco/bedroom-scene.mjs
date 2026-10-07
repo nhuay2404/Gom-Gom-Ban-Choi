@@ -191,8 +191,8 @@ export const BEDROOM_BUILD = {
   'desk-study'() {
     const wood = '#d9a36a';
     // Nắp dày 2.2 cm bo 1 cm (bo ≤ nửa bề dày), màn hình cách mặt nắp 5 mm: hết gập mặt + chớp z-fighting.
-    // Thân máy dày 2.4 cm (đủ cho viền toon) + mặt bàn phím dán phẳng phía trên (polygonOffset như màn hình: không chớp)
-    const keys = screen(.38, .26, laptopKeys()); keys.rotation.x = -Math.PI / 2; keys.position.set(0, .0245, .01);
+    // Thân máy dày 2.4 cm (đủ cho viền toon) + mặt bàn phím cách mặt thân 5 mm (QC: tấm phẳng ≥ 5 mm, không chớp z-fighting)
+    const keys = screen(.38, .26, laptopKeys()); keys.rotation.x = -Math.PI / 2; keys.position.set(0, .029, .01);
     const laptop = group(at(rbox(.42, .024, .3, .008, '#b9bec9'), 0, .012, 0), keys);
     const lid = group(at(rbox(.42, .28, .022, .01, '#d0d4dc'), 0, .14, 0), at(screen(.38, .24, docScreen()), 0, .14, .016));
     lid.position.set(0, .024, -.15); lid.rotation.x = -.25; laptop.add(lid);

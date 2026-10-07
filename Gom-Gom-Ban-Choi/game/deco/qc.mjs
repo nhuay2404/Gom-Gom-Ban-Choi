@@ -7,6 +7,8 @@
 //   bounds  : lấn qua tường phòng / hàng rào vườn (đồ phần vườn mở rộng: theo rào lúc đã mở rộng; đồ vườn gốc: rào vuông)
 //   overlap : chạm cánh cửa (mở lẫn đóng), đồ treo tường, đồ trang trí cố định, món khác cùng khu, bụi góc vườn
 //   lane    : vật cản của mèo chắn lối 1 m trước cửa / cổng (tính từ LINKS; lối thông thoáng `open` không tính)
+//   preview : popup xem trước ở Shop còn bị che sau khi đã ẩn vật chắn (chạy trong cảnh thật: deco-room.mjs qcPreview,
+//             menu-controller.js runQC gọi cho từng món, mọi khu mở)
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';
@@ -156,7 +158,7 @@ export function runModelQC(ctx) {
       decalIssues(decor).forEach(m => add('error', zone, `đồ trang trí sàn: ${m}`));
       ctx.wallDefs.forEach(({ pos, rot }, i) => {
         const g = new THREE.Group(); spec.decorate(i, g);
-        if (i === 0) { const sill = new THREE.Mesh(new THREE.BoxGeometry(1.34, .1, .12)); sill.position.set(spec.windowU, .88, .16); g.add(sill); } // gờ cửa sổ
+        if (i === 0 && spec.sill !== false) { const sill = new THREE.Mesh(new THREE.BoxGeometry(1.34, .1, .12)); sill.position.set(spec.windowU, .88, .16); g.add(sill); } // gờ cửa sổ
         g.position.set(pos[0], 0, pos[1]); g.rotation.y = rot;
         const list = parts(g);
         list.forEach(p => fixed.push({ zone, name: `đồ treo tường ${i} #${p.mesh.material.color?.getHexString?.() ?? ''}`, b: p.b }));

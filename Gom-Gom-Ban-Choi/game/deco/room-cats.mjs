@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { categories } from '../ui/cat-art.mjs';
-import { OBSTACLE_RADIUS, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
+import { OBSTACLE_RADIUS, OBSTACLE_EXTRA, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from '../gameplay/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
 
@@ -929,7 +929,7 @@ class Cat {
     if (!node?.visible || !this.claim(id)) return;
     const kind = node.userData.itemId || id; // món cụ thể đang đặt ở chỗ này (gốc hoặc phương án thay thế)
     const local = (x, y, z) => { node.updateMatrixWorld(true); return node.localToWorld(new THREE.Vector3(x, y, z)); };
-    const approach = local(0, 0, (FURNITURE[id].r || .5) + .35);
+    const approach = node.userData.approach ? local(...node.userData.approach) : local(0, 0, (FURNITURE[id].r || .5) + .35);
     const center = local(0, 0, 0);
     // Món đứng trên đồi (cối xay trên đỉnh): chỗ đứng trước nó nằm trên sườn đồi (vật cản khi đi bộ) -> hành vi tự trèo đồi.
     if (node.position.y < .05) {
@@ -980,8 +980,9 @@ class Cat {
       this.contact = { spread: .45 };
       yield* this.lookAround(rand(4, 7));
       this.tailWag = .25;
-    } else if (id === 'table') {
-      const top = local(-.2, .81, -.18);
+    } else if (id === 'table' || id === 'dining') {
+      // Bàn trà / bàn ăn: nhảy lên mặt bàn (bàn ăn có chỗ ngồi riêng: userData.seat), khều cốc rơi xuống sàn.
+      const top = node.userData.seat ? local(...node.userData.seat) : local(-.2, .81, -.18);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
       const mug = node.userData.mug;
       if (mug && !mug.userData.knocked) {
@@ -1037,7 +1038,7 @@ class Cat {
       this.setPose('sit'); this.face('annoyed', 'zig'); this.goal.paw = 1; yield* this.wait(.2); this.goal.paw = 0; // xoa mũi
       yield* this.wait(1);
       yield* this.groom();
-    } else if (id === 'plant') {
+    } else if (id === 'plant' || id === 'kplant') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1); // ngửi
       for (let i = 0; i < 3; i++) { this.face('blink', 'chew'); this.world.wiggle(node.userData.leaves); yield* this.wait(.45); this.face('open'); yield* this.wait(.3); }
@@ -1094,7 +1095,7 @@ class Cat {
       this.lookGoal = 0; this.tailWag = .25;
       this.setPose('loaf'); this.face('half'); this.contact = { spread: .45 };
       yield* this.sleep(rand(5, 9));
-    } else if (id === 'chair') {
+    } else if (id === 'chair' || id === 'kchair') {
       // Ghế gaming: đáp lên làm ghế xoay đung đưa, ngồi nhìn quanh rồi cuộn tròn trên đệm ghế.
       const seat = local(...node.userData.seat);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
@@ -1105,7 +1106,7 @@ class Cat {
       this.setPose('curl'); this.contact = { spread: .5, sag: .3 };
       yield* this.sleep(rand(5, 9));
       node.userData.spin?.(1.2); // đạp nhảy xuống: ghế xoay nhẹ
-    } else if (id === 'bedside') {
+    } else if (id === 'bedside' || id === 'cart') {
       // Tủ đầu giường: nhảy lên, nhìn bạn, khều đồng hồ báo thức rơi khỏi tủ (như cốc trên bàn).
       const top = local(-.12, node.userData.top, -.05);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
@@ -1125,8 +1126,8 @@ class Cat {
       } else {
         this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(3, 5));
       }
-    } else if (id === 'closet') {
-      // Tủ quần áo / bàn trang điểm: nhảy phốc lên nóc, nằm canh cả phòng.
+    } else if (id === 'closet' || id === 'fridge' || id === 'pantry') {
+      // Tủ quần áo / bàn trang điểm / tủ lạnh / tủ chén: nhảy phốc lên nóc, nằm canh cả phòng.
       const seat = local(...node.userData.seat);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.facingHome());
@@ -1433,6 +1434,41 @@ class Cat {
         this.goal.lean = .8; this.face('blink', 'chew'); yield* this.wait(2); // uống nước
         this.goal.lean = 0; this.face('open');
       }
+    } else if (id === 'stove') {
+      // Bếp nấu: nhảy lên mặt bếp còn ấm, nhồi bột rừ rừ rồi cuộn tròn ngủ gật.
+      const seat = local(...node.userData.seat);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      this.setPose('knead'); this.face('blink'); this.purr = 1;
+      this.contact = { spread: .3, sag: .2 };
+      yield* this.wait(rand(2, 3));
+      this.purr = 0;
+      yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
+      this.setPose('curl'); this.contact = { spread: .5, sag: .3 };
+      yield* this.sleep(rand(6, 10));
+    } else if (id === 'sink') {
+      // Bồn rửa: nhảy lên mặt bàn cạnh bồn, ngồi nhìn vòi nước rồi đưa chân quơ giọt nước, liếm chân.
+      const seat = local(...node.userData.seat), tap = local(...node.userData.tap);
+      yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
+      yield* this.turnTo(this.facing(tap.x, tap.z));
+      this.setPose('sit'); this.face('focus'); this.tailSpeed = 4;
+      yield* this.wait(1);
+      for (let i = 0; i < 3; i++) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('open'); yield* this.wait(.7); }
+      this.face('happy'); this.tailSpeed = 1.6;
+      yield* this.groom();
+    } else if (id === 'catfood') {
+      // Khay ăn: tới từng chén, cúi đầu ăn lạch cạch rồi liếm mép.
+      for (const [bx, by, bz] of node.userData.bowls) {
+        const spot = local(bx, 0, bz + .34), bowlAt = local(bx, by, bz);
+        yield* this.walkTo(spot.x, spot.z, { ignore: id, near: .05, pace: .7 });
+        yield* this.turnTo(this.facing(bowlAt.x, bowlAt.z));
+        this.setPose('crouch'); this.goal.lean = .7; this.face('blink', 'chew');
+        yield* this.wait(rand(2.5, 4));
+        this.goal.lean = 0; this.face('open');
+        yield* this.wait(.4);
+      }
+      this.setPose('sit'); this.face('happy');
+      yield* this.wait(.8);
+      yield* this.groom();
     } else if (id === 'bench') {
       const seat = local(0, .5, 0);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
@@ -2235,7 +2271,8 @@ const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
 const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4 };
 const GARDEN2_TOYS = { windmill: 1.1, sunflowers: 1, clothesline: 1.1, campfire: 1.3, kite: 1.2, stream: 1.3, swingtree: 1.5, slide: 1.6 };
-const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, garden2: GARDEN2_TOYS };
+const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.2, kchair: 1, catfood: 1.8, cart: 1.1, kplant: .8 };
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, garden2: GARDEN2_TOYS };
 // ctx.zones() = các khu đã mở (đọc lúc chạy: mở phòng khách không cần tạo lại đàn mèo).
 export function createCatLife(ctx) {
   const { scene, furniture, heartsAt, symbolAt } = ctx;
@@ -2267,7 +2304,8 @@ export function createCatLife(ctx) {
     },
     obstacles(ignore) {
       return Object.entries(furniture).filter(([id, node]) => node.visible && id !== ignore && FURNITURE[id]?.r)
-        .map(([id, node]) => ({ x: node.position.x, z: node.position.z, r: FURNITURE[id].r }))
+        .flatMap(([id, node]) => [{ x: node.position.x, z: node.position.z, r: FURNITURE[id].r },
+          ...(OBSTACLE_EXTRA[id] || []).map(([dx, dz, r]) => ({ x: node.position.x + dx, z: node.position.z + dz, r }))])
         .concat((ctx.staticObstacles?.() || []).filter(ob => ob.id !== ignore)); // đồi ở phần vườn mở rộng
     },
     // Độ cao mặt đất tại (x, z) khu nhà (đồi ở phần vườn mở rộng; còn lại 0) và vật cản đồi (null nếu vườn chưa mở rộng).
@@ -2355,7 +2393,7 @@ export function createCatLife(ctx) {
       if (garden && !ctx.night) add('butterfly', 1.1, () => cat.chaseButterfly()); // đêm bướm đi ngủ
       if (furniture.rug?.visible && !world.claims.has('rug')) add('rug', .6 * (garden ? .25 : 1), () => cat.rollOnRug());
       if (zone === 'garden2' && world.hill() && !world.claims.has('hill')) add('hill', .9, () => cat.hillTop());
-      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS, ...GARDEN2_TOYS })) {
+      for (const [id, weight] of Object.entries({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS, ...KITCHEN_TOYS, ...GARDEN2_TOYS })) {
         if (furniture[id]?.visible && !world.claims.has(id)) add(id, weight * there(id), () => cat.useFurniture(id));
       }
       const buddies = world.cats.filter(other => other !== cat && other.interruptible() && other.y < .01 && world.zoneAt(other.x, other.z) === zone);
@@ -2504,7 +2542,7 @@ export function createCatLife(ctx) {
     world.tween(.4, k => bird.scale.setScalar(Math.max(.01, k)));
   }
   function restoreToys() {
-    for (const id of ['table', 'yarn', 'bedside', 'clothesline']) {
+    for (const id of ['table', 'yarn', 'bedside', 'clothesline', 'dining', 'cart']) {
       const node = furniture[id];
       const item = node?.userData.mug || node?.userData.toy;
       if (!item?.userData.restoreAt || world.time < item.userData.restoreAt || world.claims.has(id)) continue;

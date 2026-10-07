@@ -1,14 +1,15 @@
-// Dữ liệu Deco: 3 khu (vườn — mở rộng thêm khi thắng màn 30, phòng khách, phòng ngủ), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
+// Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm bằng sao: mỗi sao mới = COINS_PER_STAR xu. Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../gameplay/tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { COINS_PER_STAR, MAX_ROOM_CATS } = ECONOMY;
 
-// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 (thắng màn 10) -> Phòng khách (thắng màn 20) -> Phòng ngủ (thắng màn 30).
+// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 (thắng màn 10) -> Phòng khách (thắng màn 20) -> Phòng ngủ (thắng màn 30) -> Bếp (thắng màn 40).
 export const ZONES = {
   garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
   living: { name: 'Living room', unlockAfter: 20, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   bedroom: { name: 'Bedroom', unlockAfter: 30, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  kitchen: { name: 'Kitchen', unlockAfter: 40, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
@@ -89,6 +90,29 @@ export const CATALOG = [
   { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', price: 150, color: '#f2d7c9' },
   { id: 'bfloor-graphite-tiles', zone: 'bedroom', cat: 'floors', name: 'Graphite tiles', price: 180, color: '#4a4e55' },
   { id: 'bfloor-smoke-carpet', zone: 'bedroom', cat: 'floors', name: 'Smoke carpet', price: 200, color: '#5c6068' },
+  // --- Bếp (mở cả khu khi thắng màn 40, nên đồ không cần khoá thêm theo màn) ---
+  { id: 'sink', zone: 'kitchen', cat: 'furniture', name: 'Sink counter', price: 0, color: '#fff4e0' },
+  { id: 'dining', zone: 'kitchen', cat: 'furniture', name: 'Dining table', price: 0, color: '#f3c2cc' },
+  { id: 'fridge', zone: 'kitchen', cat: 'furniture', name: 'Fridge', price: 220, color: '#bfe8d6' },
+  { id: 'stove', zone: 'kitchen', cat: 'furniture', name: 'Stove', price: 240, color: '#fff4e0' },
+  { id: 'pantry', zone: 'kitchen', cat: 'furniture', name: 'Pantry cupboard', price: 200, color: '#ffe9b0' },
+  { id: 'kchair', zone: 'kitchen', cat: 'furniture', name: 'Dining chairs (set of 4)', price: 120, color: '#d9a36a' },
+  { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Cat bowls', price: 90, color: '#f4a3b6' },
+  { id: 'cart', zone: 'kitchen', cat: 'furniture', name: 'Tea cart', price: 180, color: '#ffd66b' },
+  { id: 'kplant', zone: 'kitchen', cat: 'furniture', name: 'Monstera', price: 110, color: '#5fae46' },
+  { id: 'kwall-butter', zone: 'kitchen', cat: 'walls', name: 'Butter', price: 0, color: '#fff0c2' },
+  { id: 'kwall-mint', zone: 'kitchen', cat: 'walls', name: 'Mint', price: 100, color: '#d4efd0' },
+  { id: 'kwall-peach', zone: 'kitchen', cat: 'walls', name: 'Peach', price: 100, color: '#ffd9c4' },
+  { id: 'kwall-sky', zone: 'kitchen', cat: 'walls', name: 'Sky', price: 150, color: '#d4e9ff' },
+  { id: 'kwall-sage', zone: 'kitchen', cat: 'walls', name: 'Sage', price: 150, color: '#dcebd6' },
+  { id: 'kwall-brick', zone: 'kitchen', cat: 'walls', name: 'Brick', price: 180, color: '#e0a08a' },
+  { id: 'kwall-slate', zone: 'kitchen', cat: 'walls', name: 'Slate', price: 200, color: '#6b7280' },
+  { id: 'kfloor-oak', zone: 'kitchen', cat: 'floors', name: 'Oak', price: 0, color: '#e4b574' },
+  { id: 'kfloor-pine', zone: 'kitchen', cat: 'floors', name: 'Pine', price: 100, color: '#e9c493' },
+  { id: 'kfloor-terracotta-tiles', zone: 'kitchen', cat: 'floors', name: 'Terracotta tiles', price: 120, color: '#d9825b' },
+  { id: 'kfloor-mint-tiles', zone: 'kitchen', cat: 'floors', name: 'Mint tiles', price: 150, color: '#bfe3cf' },
+  { id: 'kfloor-checker', zone: 'kitchen', cat: 'floors', name: 'Checkerboard', price: 180, color: '#f4f1ea' },
+  { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', price: 200, color: '#5c6068' },
   // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
   { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', price: 0, color: '#f3d5a8', lock: 11 },
   { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', price: 0, color: '#ffd23f', lock: 11 },
@@ -196,6 +220,25 @@ const VARIANTS = [
   ['closet', 'closet-noir', 'Noir wardrobe', '#26282c'],
   ['plushie', 'plushie-shark', 'Shark plush', '#6b7078'],
   ['catsteps', 'catsteps-floating', 'Steel wall shelves', '#1f2125'],
+  // --- Bếp: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
+  ['sink', 'sink-farm', 'Farmhouse sink', '#d9a36a'],
+  ['dining', 'dining-square', 'Pine table', '#e9c58f'],
+  ['fridge', 'fridge-retro', 'Retro fridge', '#ffc9d5'],
+  ['stove', 'stove-wood', 'Wood stove', '#2f3238'],
+  ['pantry', 'pantry-rack', 'Pantry rack', '#d9a36a'],
+  ['kchair', 'kchair-stool', 'Bar stools', '#e8617f'],
+  ['catfood', 'catfood-feeder', 'Auto feeder', '#f5f8fb'],
+  ['cart', 'cart-produce', 'Fruit stand', '#ff6b4a'],
+  ['kplant', 'kplant-fig', 'Fiddle-leaf fig', '#3f8a3a'],
+  ['sink', 'sink-steel', 'Steel sink', '#c8ccd2'],
+  ['dining', 'dining-low', 'Tea table', '#c98a55'],
+  ['fridge', 'fridge-steel', 'Steel fridge', '#c8ccd2'],
+  ['stove', 'stove-red', 'Red range', '#e8483a'],
+  ['pantry', 'pantry-hutch', 'Dish hutch', '#8fc9f2'],
+  ['kchair', 'kchair-bench', 'Cushion bench', '#8fc9f2'],
+  ['catfood', 'catfood-stand', 'Raised feeder', '#d9a36a'],
+  ['cart', 'cart-coffee', 'Coffee cart', '#e8617f'],
+  ['kplant', 'kplant-herbs', 'Herb planter', '#8fd46a'],
   // --- Vườn mở rộng ---
   ['windmill', 'windmill-turbine', 'Wind turbine', '#f5f8fb'],
   ['sunflowers', 'sunflowers-scarecrow', 'Scarecrow', '#e9c25a'],

@@ -456,6 +456,10 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .screen.shop{--ink:#5b2e1c;overflow-x:hidden;gap:calc(16 * var(--u));padding-inline:0;padding-top:calc(18 * var(--u) + env(safe-area-inset-top));
   background:#9fdcff url('./skins/figma-shop/bg.jpg') 50% 0/cover no-repeat}
 .screen.shop>*{width:calc(338 * var(--u));max-width:none}
+/* Ẩn thanh cuộn của Shop: trang Decoration dài (có thanh cuộn) còn trang Shop ngắn (không có) -> bề ngang nội dung đổi theo
+   độ rộng thanh cuộn, ví / hàng tab / nút nhảy lệch + đổi cỡ mỗi lần chuyển trang. Vẫn vuốt / lăn chuột để cuộn như thường. */
+.screen.shop{scrollbar-width:none}
+.screen.shop::-webkit-scrollbar{display:none}
 /* Hàng ví dùng chung Deco + Shop: cùng ảnh pill, cỡ và toạ độ với Home (cách mép trên 18u, xem .fh-layer), số xu viết lên đúng chỗ */
 .screen>.wallet-hud{position:relative;flex:none;align-self:center;width:calc(393 * var(--u));max-width:none;height:calc(50 * var(--u))}
 .wallet-hud>*{position:absolute;padding:0;border:0;background-color:transparent;background-position:center;background-size:100% 100%;background-repeat:no-repeat}

@@ -10,9 +10,10 @@ import { createCatLife } from './room-cats.mjs';
 import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
-import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WINDOW_X, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
+import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WINDOW_X, KITCHEN_DOOR, KITCHEN_WINDOW_X, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
 import { TIMING, DRAG } from '../gameplay/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scene.mjs';
+import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './kitchen-scene.mjs';
 import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
 import { runModelQC } from './qc.mjs';
 import { createDecoFx } from './deco-fx.mjs';
@@ -104,8 +105,8 @@ function decorateWall(i, wall) {
       wallFrame(.5, .64, '#c98a55', '#bfe6ff', -1, 1.75), wallFrame(.42, .42, '#fff4e0', '#ffd66b', -.45, 1.95),
       wallFrame(.36, .46, '#e0b36a', '#c9e8b0', -.47, 1.45));
   }
-  if (i === 3) { // đồng hồ tròn + kệ treo trên ổ mèo (z phòng ≈ 2.7): chậu cây rủ lá + chồng sách nhỏ
-    wall.add(at(mesh(new THREE.CylinderGeometry(.34, .34, .06, 32), onWall('#ffffff')), -1.3, 2.2, .13).rotateX(Math.PI / 2));
+  if (i === 3) { // đồng hồ tròn (dời sang u .5: u -.6 là cửa sang bếp) + kệ treo trên ổ mèo (z phòng ≈ 2.7): chậu cây rủ lá + chồng sách nhỏ
+    wall.add(at(mesh(new THREE.CylinderGeometry(.34, .34, .06, 32), onWall('#ffffff')), .5, 2.2, .13).rotateX(Math.PI / 2));
     const shelfY = 1.55, u = 2.7;
     wall.add(at(mesh(roundedBox(1.2, .05, .28, ROUND, .015), onWall('#c98a55')), u, shelfY, .24));
     [[-.36, '#e98b5a'], [.12, '#8fc9f2']].forEach(([dx, potColor], n) => {
@@ -742,7 +743,7 @@ const BUILD = {
 };
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
-Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, GARDEN2_BUILD);
+Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, KITCHEN_BUILD, GARDEN2_BUILD);
 
 // Dựng một món trong danh mục. Phương án thay thế có model riêng (BUILD[id]) nhưng giữ khuôn khổ và các móc
 // cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem room-cats.mjs useFurniture.
@@ -756,7 +757,10 @@ const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox'
   'cathouse-barrel', 'cathouse-mushroom', 'bench-log', 'bench-sofa',
   // phòng khách / phòng ngủ: lựa chọn hiện đại tông đen / xám
   'rug-modern', 'armchair-lounge', 'catbed-pod', 'lamp-arc', 'shelf-metal', 'bed-platform', 'bedrug-mono', 'laundry-hamper', 'desk-setup',
-  'closet-noir', 'plushie-shark', 'catsteps-floating']);
+  'closet-noir', 'plushie-shark', 'catsteps-floating',
+  // bếp: món không có bộ phận cử động riêng (bàn ăn / xe đẩy giữ cốc cho mèo đẩy rơi nên không gộp)
+  'fridge', 'fridge-retro', 'fridge-steel', 'stove', 'stove-wood', 'stove-red', 'sink', 'sink-farm', 'sink-steel', 'pantry', 'pantry-rack', 'pantry-hutch',
+  'kchair', 'kchair-stool', 'kchair-bench', 'catfood', 'catfood-feeder', 'catfood-stand']);
 function buildItem(entry) {
   const node = BUILD[entry.id]();
   if (STATIC_ITEMS.has(entry.id)) mergeStatic(node);
@@ -769,7 +773,10 @@ function floorTexture(entry) {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const g = canvas.getContext('2d');
   g.fillStyle = entry.color; g.fillRect(0, 0, 512, 512);
-  if (entry.id.endsWith('-tiles')) {
+  if (entry.id.endsWith('-checker')) {
+    g.fillStyle = '#2f3238';
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if ((x + y) % 2) g.fillRect(x * 64, y * 64, 64, 64);
+  } else if (entry.id.endsWith('-tiles')) {
     g.fillStyle = '#ffffff55';
     for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if ((x + y) % 2) g.fillRect(x * 64, y * 64, 64, 64);
     g.strokeStyle = '#ffffff99'; g.lineWidth = 3;
@@ -848,6 +855,9 @@ function thumbSubject(entry) {
     at(box(1.5, .1, .03, trim), 0, .05, -.66), at(box(.03, .1, 1.5, trim), -.66, .05, 0),
     at(new THREE.Mesh(new THREE.PlaneGeometry(.42, .5), new THREE.MeshBasicMaterial({ color: '#cfeaff' })), .25, .72, -.665));
 }
+// Hướng nhìn ảnh thumbnail (toạ độ của model: mặt trước model quay về +z). Popup xem trước ở Shop soi món theo đúng hướng này
+// (xoay theo hướng món đặt trong phòng), nên món luôn hiện đúng mặt như ảnh thumbnail.
+export const THUMB_DIR = new THREE.Vector3(.75, .62, 1).normalize();
 export function thumbnail(entry) {
   if (thumbCache[entry.id]) return thumbCache[entry.id];
   const { renderer, scene, camera } = thumbStudio();
@@ -858,7 +868,7 @@ export function thumbnail(entry) {
   subject.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(subject), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
   const radius = size.length() / 2, distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * .82;
-  camera.position.copy(center).add(new THREE.Vector3(.75, .62, 1).normalize().multiplyScalar(distance));
+  camera.position.copy(center).add(THUMB_DIR.clone().multiplyScalar(distance));
   camera.lookAt(center);
   syncOutlineResolution(renderer);
   renderer.render(scene, camera);
@@ -1108,7 +1118,7 @@ export function createRoom() {
   sun.shadow.normalBias = .08; // thử thực tế: .05 vẫn còn sọc mờ trên vách nhà mèo, .08 sạch mà bóng mèo trên sàn vẫn dính chân
   scene.add(sun);
 
-  // ---------- Khu nhà: vườn + phòng khách + phòng ngủ nối liền (room-layout.mjs ZONE_OFFSET) ----------
+  // ---------- Khu nhà: vườn + phòng khách + phòng ngủ + bếp nối liền (room-layout.mjs ZONE_OFFSET) ----------
   // `site` chứa mọi khu, tâm vườn ở gốc toạ độ; mỗi phòng lệch ZONE_OFFSET[khu]. Mèo (room-cats.mjs) đi lại
   // tự do giữa các khu theo đúng toạ độ này, qua các cửa nối (LINKS).
   const site = new THREE.Group();
@@ -1121,10 +1131,11 @@ export function createRoom() {
   scene.add(site);
   // Bệ diorama: MỘT khối liền theo hình hợp các khu đang mở (vườn, phần vườn mở rộng, phòng khách, phòng ngủ), dựng lại khi
   // mở thêm khu (islandBaseGeometry). Mép bệ chìa ra ngoài khu .35 (phòng ngủ chìa thêm .3 về bên trái).
-  const LZ = ZONE_OFFSET.living[1], EDGE = HALF + .35, BX = ZONE_OFFSET.bedroom[0] + .3;
+  const LZ = ZONE_OFFSET.living[1], EDGE = HALF + .35, BX = ZONE_OFFSET.bedroom[0] + .3, KX = ZONE_OFFSET.kitchen[0] - .3;
   const BASE_RECTS = {
     garden: [-EDGE, EDGE, -EDGE, EDGE], living: [-EDGE, EDGE, LZ - EDGE, EDGE], garden2: [HALF, GARDEN_EXT_X + EDGE, -EDGE, EDGE],
     bedroom: [BX - EDGE - .3, BX + EDGE + .3, LZ - EDGE, LZ + EDGE],
+    kitchen: [KX - EDGE - .3, KX + EDGE + .3, LZ - EDGE, LZ + EDGE],
   };
   const islandBase = mesh(new THREE.BufferGeometry(), '#fff4da');
   let islandKey = '';
@@ -1254,8 +1265,9 @@ export function createRoom() {
         const sky = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.3), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true }));
         const arch = new THREE.Mesh(new THREE.CircleGeometry(.6, 32, 0, Math.PI), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true }));
         windowGlass.push(sky.material, arch.material); // ban đêm: cửa sổ tối lại
-        wall.add(at(sky, u, 1.55, .125), at(arch, u, 2.2, .125), // kính cách mặt tường .025: nhìn xa không chớp
-          at(mesh(new THREE.BoxGeometry(1.34, .1, .12), frame), u, .88, .16));
+        // kính cách mặt tường .025: nhìn xa không chớp. Cửa sổ bếp (spec.sill = false) không có gờ riêng: mặt bàn bồn rửa làm gờ.
+        wall.add(at(sky, u, 1.55, .125), at(arch, u, 2.2, .125));
+        if (spec.sill !== false) wall.add(at(mesh(new THREE.BoxGeometry(1.34, .1, .12), frame), u, .88, .16));
       }
       // Khối chắn đèn: bản sao mảng tường (không gồm khung cửa / đồ treo), vô hình (không ghi màu / depth), bình thường không đổ
       // bóng; chỉ trong lượt vẽ bóng đèn (castLampShadows) nó là vật chắn DUY NHẤT. Mỏng một nửa tường, nằm giữa lòng tường: mặt
@@ -1277,7 +1289,8 @@ export function createRoom() {
       if (leaves[i]) wall.add(leaves[i]); // cánh cửa cử động theo trạng thái mở khoá: gắn sau khi gộp
       wall.position.set(pos[0], 0, pos[1]);
       wall.rotation.y = rot;
-      wall.traverse(node => { if (node.isMesh) node.castShadow = false; });
+      // Tường trước hướng ra ngoài (vườn): bóng của cối xay / hàng rào / bụi cây ngoài vườn đổ lên mặt ngoài tường -> không nhận bóng.
+      wall.traverse(node => { if (node.isMesh) { node.castShadow = false; if (i === 1) node.receiveShadow = false; } });
       Object.assign(wall.userData, { normal, opacity: 1 });
       room.add(wall);
       wall.userData.pickSurface = { zone, key: 'walls' };
@@ -1291,13 +1304,18 @@ export function createRoom() {
     // ở tường trái (u = -z phòng); cánh cửa này đóng khi phòng ngủ còn khoá và mở về phía góc trước (z +), không đè lên
     // tủ thấp kê sát tường phía sau cửa. Bậc cửa phủ khe giữa hai sàn.
     living: {
-      doors: { 1: { u: -DOOR.x, leaf: true, threshold: true }, 2: { u: -BEDROOM_DOOR.z, leaf: true, swing: -1, threshold: true } },
+      doors: { 1: { u: -DOOR.x, leaf: true, threshold: true }, 2: { u: -BEDROOM_DOOR.z, leaf: true, swing: -1, threshold: true }, 3: { u: KITCHEN_DOOR.z, leaf: true, swing: -1, threshold: true } },
       windowU: DOOR.x, decorate: decorateWall, decor: livingDecor,
     },
     // Phòng ngủ: cửa ở tường phải (u = z phòng) tựa lưng vào cửa phòng khách; cánh cửa + bậc cửa đã có bên phòng khách.
     bedroom: {
       doors: { 3: { u: BEDROOM_DOOR.z, leaf: false, threshold: false } },
       windowU: BEDROOM_WINDOW_X, decorate: decorateBedroomWall, decor: bedroomDecor,
+    },
+    // Bếp: cửa ở tường trái (u = -z phòng) tựa lưng vào cửa phòng khách; cánh cửa + bậc cửa đã có bên phòng khách.
+    kitchen: {
+      doors: { 2: { u: -KITCHEN_DOOR.z, leaf: false, threshold: false } },
+      windowU: KITCHEN_WINDOW_X, sill: false, decorate: decorateKitchenWall, decor: kitchenDecor,
     },
   };
   const interiors = Object.fromEntries(Object.entries(INTERIOR_SPECS).map(([zone, spec]) => [zone, buildInterior(zone, spec)]));
@@ -1458,8 +1476,8 @@ export function createRoom() {
   const floorTextures = {};
   // zoneId = khu đang trang trí ở Deco (camera Deco khoá vào khu này). opened = các khu đã mở khoá.
   let zoneId = 'garden', applied = false, revealPending = null;
-  const opened = { garden: true, living: false, bedroom: false };
-  const OPENABLE = ['living', 'bedroom'];
+  const opened = { garden: true, living: false, bedroom: false, kitchen: false };
+  const OPENABLE = ['living', 'bedroom', 'kitchen'];
   const zoneGroup = zone => zone === 'garden2' ? gardenExt : interiors[zone]?.room; // nhóm "mọc lên" khi vừa mở
   // Các ô đi lại đã mở (mèo, giới hạn kéo camera, tâm khu nhà): vườn mở rộng thêm ô 'garden2' bên phải vườn.
   const openZones = () => [...Object.keys(opened).filter(zone => opened[zone]), ...(expanded ? ['garden2'] : [])];
@@ -1479,20 +1497,22 @@ export function createRoom() {
   }
   // Thảm của từng phòng: đồ đứng trong vùng thảm được nhấc lên mặt thảm (xem cuối apply()).
   const RUG_OF = { living: 'rug', bedroom: 'bedrug' }, RUG_REACH = { x: 1.2, z: .9 };
-  // `open` = { living, bedroom, gardenExpand }: khu nào đã mở (thắng màn 10 / 15), vườn đã mở rộng chưa (màn 30).
+  // `open` = { living, bedroom, kitchen, gardenExpand }: khu nào đã mở (thắng màn 20 / 30 / 40), vườn đã mở rộng chưa (màn 10).
   // Bỏ trống thì giữ như lần trước.
   function apply(deco, open = {}) {
     const was = { ...opened }, wasExpanded = expanded, fromReach = zoneReach(zoneId);
     for (const zone of OPENABLE) opened[zone] = open[zone] ?? opened[zone];
     expanded = open.gardenExpand ?? expanded;
     opened.bedroom &&= opened.living; // phòng ngủ đi qua phòng khách
+    opened.kitchen &&= opened.living; // bếp cũng đi qua phòng khách
     const zone = opened[deco.zone] ? deco.zone : 'garden';
     for (const id of ROOM_ZONES) interiors[id].room.visible = opened[id];
     gardenExt.visible = groundLong.visible = cornersLong.visible = expanded;
     ground.visible = cornersSquare.visible = !expanded;
-    rebuildIslandBase(['garden', ...(expanded ? ['garden2'] : []), ...(opened.living ? ['living'] : []), ...(opened.bedroom ? ['bedroom'] : [])]);
+    rebuildIslandBase(['garden', ...(expanded ? ['garden2'] : []), ...(opened.living ? ['living'] : []), ...(opened.bedroom ? ['bedroom'] : []), ...(opened.kitchen ? ['kitchen'] : [])]);
     doormat.visible = opened.living;
     setLeaf(interiors.living.leaves[2], opened.bedroom); // cửa phòng khách -> phòng ngủ: đóng khi phòng ngủ còn khoá
+    setLeaf(interiors.living.leaves[3], opened.kitchen); // cửa phòng khách -> bếp: đóng khi bếp còn khoá
     // Vừa mở một phòng trong lúc đang chơi: lần tới mở Home, phòng "mọc" lên (lần nạp game đầu thì hiện luôn).
     for (const id of OPENABLE) if (opened[id] && !was[id] && applied) revealPending = id;
     if (expanded && !wasExpanded && applied) revealPending = 'garden2'; // vườn vừa mở rộng: đồi + đồ trang trí mọc lên
@@ -1572,20 +1592,115 @@ export function createRoom() {
   // Shop (popup xem thử): đặt camera sát món cho món vừa khít khung (margin > 1 = chừa lề). Nhảy thẳng, không lướt; bỏ giới hạn
   // zoom gần của Deco (mount() lần sau đặt lại qua setMode). Tường / sàn (không có model riêng): soi cả khu.
   const fitSphere = new THREE.Sphere();
-  function frameItem(id, margin = 1.15) {
+  // Popup xem trước (Shop): camera nhìn món theo đúng hướng thumbnail (THUMB_DIR xoay theo hướng món trong phòng) — không
+  // giữ hướng camera cũ (lỗi chỉ thấy mặt sau / nhìn từ dưới). Mọi thứ chắn giữa camera và món (tường, rào, món khác, đồ
+  // trang trí cố định) được ẩn trong lúc xem (lỗi tường che máy giặt / đàn piano). Đóng popup (stop / mount) thì hiện lại.
+  function frameItem(id, margin = 1.35) {
     const entry = itemById(id), slot = entry && slotOf(entry), node = slot && furniture[slot];
+    clearPreviewHidden();
     stopGlide();
     zoomFocus = null; userPanned = false;
-    if (node?.visible) itemBox.setFromObject(node).getBoundingSphere(fitSphere);
-    else { zoneCenter(entry?.zone || zoneId, fitSphere.center).setY(.8); fitSphere.radius = HALF * 1.1; }
+    let dir = camDir.subVectors(camera.position, controls.target).normalize();
+    if (node?.visible) {
+      fullBox(node).getBoundingSphere(fitSphere);
+      dir = previewDir(node, camDir);
+    } else { zoneCenter(entry?.zone || zoneId, fitSphere.center).setY(.8); fitSphere.radius = HALF * 1.1; }
     const vHalf = THREE.MathUtils.degToRad(camera.fov / 2), hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
     const dist = fitSphere.radius * margin / Math.sin(Math.min(vHalf, hHalf));
     controls.minDistance = Math.min(controls.minDistance, dist * .5);
-    const dir = camDir.subVectors(camera.position, controls.target).normalize();
+    controls.maxDistance = Math.max(controls.maxDistance, dist * 1.5); // món to: không bị kẹp lại gần hơn rồi cắt khung
     controls.target.copy(fitSphere.center);
     camera.position.copy(fitSphere.center).addScaledVector(dir, dist);
     controls.update();
     lastRadius = dist;
+    if (node?.visible) { framing = true; hideOccluders(node); }
+  }
+  // Khung bao món ở cỡ thật: món vừa hiện đang nảy (pop) từ cỡ ~50% lên, đo lúc đó thì camera tiến quá gần, cắt mất món.
+  function fullBox(node) {
+    const keep = node.scale.clone();
+    node.scale.set(1, 1, 1);
+    node.updateMatrixWorld(true);
+    itemBox.setFromObject(node);
+    node.scale.copy(keep);
+    node.updateMatrixWorld(true);
+    return itemBox;
+  }
+  // Hướng thumbnail xoay theo hướng món (chỉ góc quay quanh trục đứng: món đang lắc nhẹ không làm lệch).
+  const previewFwd = new THREE.Vector3(), previewQ = new THREE.Quaternion(), UP_AXIS = new THREE.Vector3(0, 1, 0);
+  function previewDir(node, out) {
+    previewFwd.set(0, 0, 1).applyQuaternion(node.getWorldQuaternion(previewQ));
+    return out.copy(THUMB_DIR).applyAxisAngle(UP_AXIS, Math.atan2(previewFwd.x, previewFwd.z));
+  }
+  // Tia từ camera tới tâm + 8 góc (co vào 30%) của khung bao món: khối nào nằm trên tia trước món là vật chắn.
+  // Bỏ qua: chính món, nền / sàn, bệ diorama, mèo, cỏ / hoa rải (InstancedMesh), viền toon.
+  const previewHidden = [], occluderRay = new THREE.Raycaster(), samplePoint = new THREE.Vector3(), boxCenter = new THREE.Vector3();
+  function previewBlockers(node) {
+    const found = new Map(), walls = new Set(Object.values(interiors).flatMap(inside => inside.walls));
+    const others = new Set(Object.values(furniture).filter(other => other !== node));
+    const inWall = mesh => { for (let n = mesh; n; n = n.parent) if (walls.has(n)) return true; return false; };
+    fullBox(node).getCenter(boxCenter);
+    for (let i = 0; i < 9; i++) {
+      if (i === 8) samplePoint.copy(boxCenter);
+      else samplePoint.set(i & 1 ? itemBox.max.x : itemBox.min.x, i & 2 ? itemBox.max.y : itemBox.min.y, i & 4 ? itemBox.max.z : itemBox.min.z).lerp(boxCenter, .3);
+      const far = camera.position.distanceTo(samplePoint);
+      occluderRay.set(camera.position, samplePoint.clone().sub(camera.position).normalize());
+      occluderRay.far = far - .02;
+      for (const hitInfo of occluderRay.intersectObject(site, true)) {
+        const mesh = hitInfo.object;
+        if (!mesh.isMesh || mesh.isInstancedMesh || mesh.userData.outline || mesh === islandBase || !shown(mesh)) continue;
+        let owner = null, skip = false;
+        for (let n = mesh; n && n !== site; n = n.parent) {
+          if (n === node || n.userData.catRoot || n.userData.pickSurface?.key === 'floors') { skip = true; break; }
+          if (walls.has(n) || others.has(n)) { owner = n; break; }
+        }
+        if (!skip) found.set(owner || mesh, walls.has(owner) ? 'wall' : 'node');
+      }
+      // Tia chỉ bắt mặt trước của khối: camera nằm LỌT trong một món (ghế ngay trước bàn đàn) thì tia không thấy. Kiểm thêm
+      // bằng khung bao: món khác / tường / đồ trang trí cố định có khung chứa camera hoặc nằm trên tia cũng là vật chắn.
+      for (const other of others) if (other.visible && blocksRay(other, far)) found.set(other, 'node');
+      for (const wall of walls) if (wall.visible && wall.parent?.visible && blocksRay(wall, far)) found.set(wall, 'wall');
+      for (const root of fixedDecor) root.traverse(mesh => {
+        if (mesh.isMesh && !mesh.isInstancedMesh && !mesh.userData.outline && shown(mesh) && !inWall(mesh) && blocksRay(mesh, far)) found.set(mesh, 'node');
+      });
+    }
+    return found;
+  }
+  // Đang soi một món trong popup: tâm nhìn không trôi về giữa khu khi khoảng cách đổi chút ít (lỗi món lệch khỏi khung),
+  // mèo ẩn đi (mèo đi ngang trước món che mất món).
+  let framing = false;
+  const blockBox = new THREE.Box3(), blockHit = new THREE.Vector3();
+  function blocksRay(object, far) {
+    blockBox.setFromObject(object);
+    if (blockBox.isEmpty()) return false;
+    if (blockBox.clone().expandByScalar(.05).containsPoint(camera.position)) return true;
+    return !!occluderRay.ray.intersectBox(blockBox, blockHit) && blockHit.distanceTo(camera.position) < far - .05;
+  }
+  function hideOccluders(node) {
+    cats.bodies().forEach(cat => { cat.rig.root.visible = false; previewHidden.push([cat.rig.root, 'node']); });
+    for (const [blocker, kind] of previewBlockers(node)) {
+      if (kind === 'wall') { blocker.userData.forceHide = true; blocker.userData.opacity = 0; blocker.visible = false; }
+      else blocker.visible = false;
+      previewHidden.push([blocker, kind]);
+    }
+  }
+  // QC (dev): popup xem trước của một món còn bị che sau khi đã ẩn vật chắn. Trả về danh sách lỗi (chuỗi).
+  function qcPreview(id) {
+    const entry = itemById(id), node = entry && furniture[slotOf(entry)];
+    if (!node?.visible) return [`${id}: không dựng được để xem trước`];
+    frameItem(id);
+    const left = previewBlockers(node).size;
+    clearPreviewHidden();
+    return left ? [`${id}: popup xem trước vẫn bị che (${left} khối)`] : [];
+  }
+  function clearPreviewHidden() {
+    framing = false;
+    for (const [blocker, kind] of previewHidden.splice(0)) {
+      if (kind === 'wall') {
+        Object.assign(blocker.userData, { forceHide: false, opacity: 1 });
+        blocker.traverse(n => { if (n.material) { n.material.opacity = 1; n.material.depthWrite = true; } });
+      }
+      blocker.visible = true;
+    }
   }
   const FOCUS_ZOOM = 12; // khoảng cách camera = cỡ món × FOCUS_ZOOM (FOV toon hẹp), kẹp trong 55%–110% độ xa mặc định
   // lift (px): món nằm thấp hơn giữa khung chừng ấy — chừa chỗ phía trên cho bảng đổi món, tính sẵn trong cú lướt.
@@ -1970,7 +2085,7 @@ export function createRoom() {
     }
     // Deco: zoom vào (khoảng cách giảm) kéo tâm nhìn về món đang chọn theo đúng tỉ lệ đã zoom, nên zoom sát hết cỡ thì
     // món nằm giữa khung; zoom ra thì tâm trôi về giữa khu (zoom ra hết = thấy trọn khu như lúc đầu).
-    if (!hub && !glide.active && lastRadius && Math.abs(radius - lastRadius) > 1e-3) {
+    if (!hub && !framing && !glide.active && lastRadius && Math.abs(radius - lastRadius) > 1e-3) {
       const item = zoomFocus && furniture[zoomFocus];
       const zoomIn = radius < lastRadius, goal = zoomIn && item?.visible ? itemBox.setFromObject(item).getCenter(tmpGoal) : zoneCenter(zoneId, tmpGoal);
       if (zoomIn ? item?.visible : true) {
@@ -1996,7 +2111,7 @@ export function createRoom() {
     if (!room.visible) continue;
     camDir.copy(camera.position).sub(room.position).sub(site.position); // camera so với tâm phòng
     walls.forEach(wall => {
-      const behind = camDir.dot(wall.userData.normal) < -HALF + .2;
+      const behind = wall.userData.forceHide || camDir.dot(wall.userData.normal) < -HALF + .2;
       wall.userData.opacity += ((behind ? 0 : 1) - wall.userData.opacity) * .18;
       const o = wall.userData.opacity;
       wall.visible = o > .03;
@@ -2075,6 +2190,7 @@ export function createRoom() {
     // options.view = { insets() -> { top, bottom } px bị UI che, zoomCap, zoomFit } cho khung tràn viền.
     // options.mode = 'hub' (Home: kéo đi khắp khu nhà) | 'room' (Deco: khoá vào khu đang trang trí, mặc định).
     mount(target, options = {}) {
+      clearPreviewHidden();
       container = target;
       view = { zoomCap: 1, zoomFit: 1.05, insets: null, ...options.view };
       target.dataset.zone = zoneId;
@@ -2107,7 +2223,8 @@ export function createRoom() {
       resize();
       renderer.setAnimationLoop(frame);
     },
-    stop() { renderer.setAnimationLoop(null); lastFrame = 0; },
+    qcPreview,
+    stop() { clearPreviewHidden(); renderer.setAnimationLoop(null); lastFrame = 0; },
     apply,
     focus,
     frameItem,

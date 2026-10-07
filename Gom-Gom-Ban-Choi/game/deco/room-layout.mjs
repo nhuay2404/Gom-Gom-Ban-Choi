@@ -6,14 +6,14 @@ export const ROOM_HALF = 4;   // sàn 8 × 8 m, tâm ở gốc toạ độ
 export const WALL_H = 3;
 
 // Các khu nối liền nhau thành một "khu nhà": vườn ở giữa, phòng khách mọc ra phía sau vườn (-z), phòng ngủ nằm bên
-// trái phòng khách (-x). Toạ độ trong từng khu vẫn tính từ tâm khu đó (PLACES bên dưới), ZONE_OFFSET là tâm khu trong
+// trái phòng khách (-x), bếp nằm bên phải phòng khách (+x). Toạ độ trong từng khu vẫn tính từ tâm khu đó (PLACES bên dưới), ZONE_OFFSET là tâm khu trong
 // hệ toạ độ của vườn. Hai khu cạnh nhau cách tâm 2 × nửa khu + tường (.3).
 const ZONE_STEP = ROOM_HALF * 2 + .3;
 // Vườn mở rộng (thắng màn 30): vườn nới dài thêm một ô 8 × 8 về bên phải (+x), liền một mảnh nền + một hàng rào bao quanh
 // (x từ -ROOM_HALF tới GARDEN_EXT_X + ROOM_HALF). Đồ của phần mở rộng vẫn là đồ của vườn (PLACES theo toạ độ vườn).
 // 'garden2' chỉ còn là ô đi lại nội bộ cho mèo (room-cats.mjs) + tâm phần mở rộng, KHÔNG phải một khu Deco riêng.
 export const GARDEN_EXT_X = ROOM_HALF * 2;
-export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], garden2: [GARDEN_EXT_X, 0] };
+export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], garden2: [GARDEN_EXT_X, 0] };
 // Khung vườn (mặt trong hàng rào) khi chưa / đã mở rộng.
 export const gardenBounds = expanded => ({ x0: -ROOM_HALF, x1: expanded ? GARDEN_EXT_X + ROOM_HALF : ROOM_HALF, z0: -ROOM_HALF, z1: ROOM_HALF });
 // Cửa từ vườn vào phòng khách: trên tường +z của phòng (toạ độ phòng), cũng là cổng trên hàng rào -z của vườn.
@@ -22,11 +22,16 @@ export const DOOR = { x: -1.6, w: 1, h: 2.1 };
 // Cửa phòng khách <-> phòng ngủ: trên tường trái (-x) phòng khách = tường phải (+x) phòng ngủ, ở z (toạ độ phòng,
 // hai phòng cùng z) = BEDROOM_DOOR.z. Hai bên cửa chừa lối trống z ≈ BEDROOM_DOOR.z ± 0.6.
 export const BEDROOM_DOOR = { z: 2.3, w: 1, h: 2.1 };
+// Cửa phòng khách <-> bếp: trên tường phải (+x) phòng khách = tường trái (-x) bếp, ở z (toạ độ phòng, hai phòng cùng z) =
+// KITCHEN_DOOR.z. Nằm giữa bể cá (z ≈ .9) và cây cào móng (z ≈ -2.9) của phòng khách, sát bể cá hơn để cánh cửa mở hé (về phía
+// -z) không chạm cây cào móng; hai bên cửa chừa lối trống z ≈ KITCHEN_DOOR.z ± 0.6.
+export const KITCHEN_DOOR = { z: -.6, w: 1, h: 2.1 };
 // Các lối nối hai khu cho mèo (room-cats.mjs): at = toạ độ (khu nhà) của tâm lối theo trục dọc tường, w = bề rộng.
 // open: lối thông thoáng cả bề ngang (vườn <-> phần mở rộng, không có rào ngăn): mèo đi thẳng, không vòng qua cửa.
 export const LINKS = [
   { a: 'garden', b: 'living', at: ZONE_OFFSET.living[0] + DOOR.x, w: DOOR.w },
   { a: 'living', b: 'bedroom', at: ZONE_OFFSET.living[1] + BEDROOM_DOOR.z, w: BEDROOM_DOOR.w },
+  { a: 'living', b: 'kitchen', at: ZONE_OFFSET.living[1] + KITCHEN_DOOR.z, w: KITCHEN_DOOR.w },
   { a: 'garden', b: 'garden2', at: 0, w: ROOM_HALF * 2, open: true },
 ];
 
@@ -61,6 +66,12 @@ export const PLACES = {
   bed: [-2.4, -2.68, 0], bedside: [-.85, -3.55, 0], desk: [2.45, -3.6, 0], chair: [2.45, -2.45, Math.PI],
   closet: [-3.62, .7, Math.PI / 2], catsteps: [ROOM_HALF - .28, -.5, -Math.PI / 2], bedrug: [.2, .4, 0],
   plushie: [-3, 3], laundry: [.9, 3.1],
+  // bếp (cửa sang phòng khách ở tường trái z = -.6, cửa sổ tường sau x = .55 ngay trên bồn rửa): tủ lạnh góc sau-trái, bếp nấu cạnh
+  // tủ lạnh, bồn rửa dưới cửa sổ, quầy chữ L (bồn rửa + dãy quầy dọc tường sau rồi tường phải),
+  // tủ chén tường phải phía trước, bàn ăn giữa phòng, bốn ghế quanh bàn (gốc model = tâm bàn), chậu cây giữa tường trước, khay ăn của mèo góc trước-trái,
+  // xe đẩy tường phải. Đồ cố định (rèm, giá treo dụng cụ, bảng thực đơn, thảm, thùng rác): kitchenDecor().
+  fridge: [-3.05, -3.58, 0], stove: [-1.55, -3.62, 0], sink: [.55, -3.62, 0], pantry: [3.7, 2.95, -Math.PI / 2],
+  dining: [.1, .7], kchair: [.1, .7, 0], kplant: [1.9, 3.3, 0], catfood: [-3, 2.6], cart: [3.65, 1.6, -Math.PI / 2],
   // phần vườn mở rộng (toạ độ vườn, x ≈ 4..12; đồi ở sau-phải): cối xay gió trên đỉnh đồi, cây xích đu sau-trái, dây
   // phơi đồ dọc rào sau, lửa trại bên trái, hoa hướng dương giữa, diều cắm cọc trước chân đồi, suối nhỏ trước-phải, cầu
   // trượt trước-trái. Món không có hướng riêng quay mặt vào giữa phần mở rộng. Đồ cố định (lối đá, đá, hoa dại,
@@ -82,9 +93,19 @@ export const OBSTACLE_RADIUS = {
   catbed: .75, armchair: .8, cattree: .65, table: .62, shelf: .9, yarn: .5, plant: .45, tank: .8, lamp: .38, rug: 0,
   flowers: 0, stump: .45, catnip: .45, lantern: .28, sandbox: .62, cathouse: .75, pond: 1, hammock: .7, birdbath: .36, bench: .75,
   bed: 1.25, bedside: .35, desk: .8, chair: .42, closet: .75, catsteps: .32, bedrug: 0, plushie: .5, laundry: .38,
+  fridge: .6, stove: .55, sink: .78, pantry: .6, dining: .95, kchair: .01, kplant: .42, catfood: .5, cart: .55,
   windmill: .65, swingtree: .55, clothesline: .3, campfire: .7, sunflowers: .55, kite: .2, stream: .75, slide: .6,
+};
+
+// Vật cản phụ của món dài / chữ L (xoay 0): [dx, dz, bán kính] so với gốc món. Quầy bếp chữ L (sink): dãy sau dọc tường sau,
+// góc, dãy phải dọc tường phải (xem counterL trong kitchen-scene.mjs).
+export const OBSTACLE_EXTRA = {
+  kchair: [[-1.35, 0, .3], [1.35, 0, .3], [0, -1.3, .3], [0, 1.3, .3]],
+  sink: [[1.0, 0, .35], [1.7, 0, .35], [2.4, 0, .35], [3.1, .1, .4], [3.1, .8, .35], [3.1, 1.5, .35], [3.1, 2.2, .35], [3.1, 2.7, .35]],
 };
 
 // Cửa sổ vòm trên tường sau (phòng khách): chỗ mèo ngồi ngắm chim. Phòng ngủ cũng có cửa sổ (tường sau, x này).
 export const BEDROOM_WINDOW_X = .2;
+// Cửa sổ bếp (tường sau): ngay trên bồn rửa, không có gờ riêng (mặt bàn bồn rửa làm gờ).
+export const KITCHEN_WINDOW_X = .55;
 export const WINDOW = { x: -1.6, z: -ROOM_HALF + .5 };

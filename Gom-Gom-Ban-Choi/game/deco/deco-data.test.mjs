@@ -13,7 +13,7 @@ test('save mới: xu = tổng sao × COINS_PER_STAR, bắt đầu ở vườn v�
   assert.equal(deco.zone, 'garden');
   // cối xay + hướng dương (phần vườn mở rộng) đặt sẵn nhưng chỉ hiện khi vườn đã mở rộng
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers']);
-  assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom']);
+  assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom', 'kitchen']);
 });
 
 test('vườn mở rộng (thắng màn 10): cùng khu vườn, đồ mới nằm trong danh mục vườn, khoá từ màn 11', () => {
@@ -41,7 +41,7 @@ test('save cũ: gộp khu "garden2" thử nghiệm vào vườn; save trước k
     garden: { ...base.zones.garden, placed: ['flowers'] },
     garden2: { owned: ['windmill', 'kite', 'g2fence-old'], placed: ['windmill', 'kite', 'g2fence-old'], wall: 'g2fence-old', floor: 'g2ground-old' } } });
   const deco = loadDeco(0);
-  assert.deepEqual(Object.keys(deco.zones).sort(), ['bedroom', 'garden', 'living']);
+  assert.deepEqual(Object.keys(deco.zones).sort(), ['bedroom', 'garden', 'kitchen', 'living']);
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'kite']);
   assert.ok(deco.zones.garden.owned.includes('kite'));
   assert.equal(deco.zones.garden.wall, 'fence-white', 'giữ rào của vườn');
@@ -70,6 +70,23 @@ test('save có trước phòng ngủ: thêm khu phòng ngủ mặc định, gi�
   assert.equal(itemById('bfloor-oak').price, 0);
   assert.equal(zoneOpen('bedroom', 29), false);
   assert.equal(zoneOpen('bedroom', 30), true);
+});
+
+test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; mỗi chỗ có đúng 3 lựa chọn (món gốc + 2 phương án)', () => {
+  setStorageBackend(memoryStore());
+  const old = loadDeco(5);
+  const { kitchen, ...zones } = old.zones;
+  writeJSON(SAVE_KEYS.deco, { ...old, zones });
+  const deco = loadDeco(0);
+  assert.deepEqual(deco.zones.kitchen.placed, ['sink', 'dining']);
+  assert.equal(deco.zones.kitchen.floor, 'kfloor-oak', 'bếp mặc định sàn Oak');
+  assert.equal(deco.zones.kitchen.wall, 'kwall-butter');
+  assert.equal(zoneOpen('kitchen', 39), false);
+  assert.equal(zoneOpen('kitchen', 40), true);
+  const bases = CATALOG.filter(e => e.zone === 'kitchen' && e.cat === 'furniture' && !e.slot);
+  assert.equal(bases.length, 9);
+  bases.forEach(base => assert.equal(CATALOG.filter(e => e.slot === base.id).length, 2, `${base.id}: 3 lựa chọn`));
+  assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 3), true);
 });
 
 test('mọi món nội thất có chỗ đặt + bán kính vật cản; các khu nối liền qua cửa', async () => {
@@ -117,7 +134,7 @@ test('xem trước không trừ xu; khu phòng khách mở khi thắng màn 10',
 });
 
 test('danh mục: mỗi khu có đủ 4 nhóm, mèo dùng chung', () => {
-  for (const zone of ['garden', 'living', 'bedroom']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
+  for (const zone of ['garden', 'living', 'bedroom', 'kitchen']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
   assert.equal(new Set(CATALOG.map(entry => entry.id)).size, CATALOG.length, 'id trùng');
 });
 

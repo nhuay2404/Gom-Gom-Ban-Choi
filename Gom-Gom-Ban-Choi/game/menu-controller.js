@@ -219,7 +219,7 @@ export function showTab(tab) {
   if (tab === 'deco' && !ob.active() && readText(SAVE_KEYS.decoTour) !== 'done') setTimeout(() => { if (!$('deco').hidden && !decoLocked) runDecoTour(); }, 600);
 }
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10). Chỉ Deco dựng cảnh này.
-const applyRoom = shown => room3d?.apply(shown, { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), gardenExpand: isGardenExpanded() });
+const applyRoom = shown => room3d?.apply(shown, { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), kitchen: isZoneOpen('kitchen'), gardenExpand: isGardenExpanded() });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab !== 'deco') return room3d.stop();
@@ -948,7 +948,7 @@ function shopBurst(card) {
   }
 }
 
-// ===== Khu: vườn (màn 1–10; mở rộng khi thắng màn 30) / phòng khách (thắng màn 10) / phòng ngủ (15). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
+// ===== Khu: vườn (màn 1–10; mở rộng khi thắng màn 10) / phòng khách (thắng màn 20) / phòng ngủ (30) / bếp (40). Mỗi khu lưu đồ riêng, mèo dùng chung. =====
 const levelsCleared = () => clearedCount(loadProgress());
 // Dev "mở hết khu" (nút Dev: Unlock all): xem được cả phần / món khoá ở màn game chưa có (vườn mở rộng: màn 30+). Lưu trong máy.
 const DEV_ZONES_KEY = 'gomgom-dev-all-zones';
@@ -1107,7 +1107,16 @@ $('dev-reset-ok').onclick = () => {
 // QC model 3D (qc.mjs): liệt kê lỗi model / chỗ đặt đồ. Mở game với ?qc thì tự chạy khi phòng 3D sẵn sàng.
 function runQC() {
   if (!room3d) return showToast('3D room not ready yet');
-  const report = room3d.qc(), errors = report.filter(r => r.level === 'error');
+  const report = room3d.qc();
+  // Popup xem trước ở Shop: dựng thử từng món (mọi khu mở), soi như popup — còn bị che / quay mặt sau là lỗi.
+  for (const entry of CATALOG.filter(e => e.cat === 'furniture')) {
+    room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, gardenExpand: true });
+    room3d.qcPreview(entry.id).forEach(what => report.push({ level: 'error', zone: entry.zone, what: `preview: ${what}` }));
+  }
+  applyRoom(getDeco());
+  const open = TABS.find(tab => !$(tab).hidden);
+  if (open) mountRoom(open);
+  const errors = report.filter(r => r.level === 'error');
   console.table(report);
   $('qc-title').textContent = errors.length ? `Model QC: ${errors.length} error(s), ${report.length - errors.length} warning(s)` : report.length ? `Model QC: no errors, ${report.length} warning(s)` : 'Model QC: all clear ✓';
   $('qc-list').replaceChildren(...report.map(r => Object.assign(document.createElement('li'), { className: r.level, textContent: `[${r.zone}] ${r.what}` })));
