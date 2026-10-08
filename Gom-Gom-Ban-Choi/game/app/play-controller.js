@@ -1,23 +1,23 @@
 // ===== Luồng điều khiển MÀN CHƠI (gameplay) =====
 // Một ván từ lúc vào màn tới bảng kết quả: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, sắp hết lượt,
 // tutorial, bảng vào màn, kết quả và metric cho độ khó thích ứng. Luật nằm ở gameplay/session.mjs; file này gọi luật rồi vẽ.
-// Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở gom-gom.js).
-import { mergeTarget, placementIndices } from './gameplay/board-rules.mjs';
-import { clusterPoints, POINTS_PER_CRATE } from './gameplay/scoring.mjs';
-import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from './ui/cat-art.mjs';
-import { LEVELS } from './gameplay/levels.mjs';
-import * as game from './gameplay/session.mjs';
-import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from './gameplay/progression.mjs';
-import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from './gameplay/tuning.mjs';
-import { spendBooster, boostersUnlocked } from './gameplay/boosters.mjs';
-import { CRATE_SVG, METAL_SVG, cageSvg } from './ui/board-art.mjs';
+// Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở main.js).
+import { mergeTarget, placementIndices } from '../gameplay/board-rules.mjs';
+import { clusterPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
+import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from '../ui/cat-art.mjs';
+import { LEVELS } from '../gameplay/levels.mjs';
+import * as game from '../gameplay/session.mjs';
+import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from '../gameplay/tuning.mjs';
+import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
+import { CRATE_SVG, METAL_SVG, cageSvg } from '../ui/board-art.mjs';
 import * as ob from './onboarding.js';
-import { playSound } from './ui/sound.mjs';
-import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from './gameplay/adaptive.mjs';
-import { ZONES, GARDEN_EXPANSION } from './deco/deco-data.mjs';
+import { playSound } from '../ui/sound.mjs';
+import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
+import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
 import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES } from './shared.js';
 
-// Luồng menu (showTab, showMap, hideMenus, menuOpen): gom-gom.js nối vào lúc khởi động.
+// Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
 export function connectMenus(menuController) { menus = menuController; }
 

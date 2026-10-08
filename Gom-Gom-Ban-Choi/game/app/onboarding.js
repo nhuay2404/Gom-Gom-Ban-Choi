@@ -6,9 +6,9 @@
 //          Mèo đầu tiên nhận ở Map bằng nút Claim sau khi thắng màn 3 (menu-controller.js mapLevels), có chấm đỏ ở tab Home.
 //   decor  hướng dẫn mua đồ / đổi kiểu / Shop          -> xong là hết onboarding
 //   done   người chơi cũ (đã có sao) hoặc đã xong onboarding
-// Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (gom-gom.js).
-import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
-import { loadProgress } from './gameplay/progression.mjs';
+// Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (main.js).
+import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
+import { loadProgress } from '../gameplay/progression.mjs';
 
 const STAGES = ['L1', 'basics', 'L2', 'free', 'decor', 'done'];
 const UNLOCK_AT = { L1: { level: 0, kind: 'garden', next: 'basics' }, L2: { level: 1, kind: null, next: 'free' }, free: { level: 4, kind: 'decor', next: 'decor' } };

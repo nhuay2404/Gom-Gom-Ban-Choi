@@ -1,6 +1,6 @@
 # Gom Gom Rotate — Độ khó theo profile người chơi
 
-Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/gameplay/adaptive.mjs` (luật), `game/play-controller.js` (thu metric, hiện nhãn), `game/gameplay/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
+Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/gameplay/adaptive.mjs` (luật), `game/app/play-controller.js` (thu metric, hiện nhãn), `game/gameplay/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
 
 ## 1. Thang độ khó theo số element
 

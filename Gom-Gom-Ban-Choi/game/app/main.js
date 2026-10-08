@@ -4,7 +4,7 @@
 // Phần dùng chung (ví xu, kho booster, toast): shared.js.
 import * as play from './play-controller.js';
 import * as menus from './menu-controller.js';
-import { loadProgress, unlockedCount } from './gameplay/progression.mjs';
+import { loadProgress, unlockedCount } from '../gameplay/progression.mjs';
 import * as ob from './onboarding.js';
 
 play.connectMenus(menus);

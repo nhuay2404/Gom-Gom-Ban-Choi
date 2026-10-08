@@ -1,19 +1,19 @@
 // ===== Luồng điều khiển MENU (giao diện ngoài màn chơi) =====
 // Home hub = bản đồ màn (ví, liveops), Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
-// và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở gom-gom.js).
-import { categories, catMarkup, addArt as addCatArt } from './ui/cat-art.mjs';
-import { LEVELS, LETTERS } from './gameplay/levels.mjs';
-import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from './gameplay/progression.mjs';
-import { BOOSTERS } from './gameplay/tuning.mjs';
-import { playSound, soundOn, setSound } from './ui/sound.mjs';
-import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
+// và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở main.js).
+import { categories, catMarkup, addArt as addCatArt } from '../ui/cat-art.mjs';
+import { LEVELS, LETTERS } from '../gameplay/levels.mjs';
+import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../gameplay/progression.mjs';
+import { BOOSTERS } from '../gameplay/tuning.mjs';
+import { playSound, soundOn, setSound } from '../ui/sound.mjs';
+import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed,
-  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from './deco/deco-data.mjs';
+  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
-// Luồng màn chơi (startLevel, mapTier): gom-gom.js nối vào lúc khởi động.
+// Luồng màn chơi (startLevel, mapTier): main.js nối vào lúc khởi động.
 let play = null;
 export function connectPlay(playController) { play = playController; }
 
@@ -99,7 +99,7 @@ function markTab(tab) {
 }
 // Bản đồ 3D (deco/map-world.mjs: trống cỏ lăn như Animal Crossing). Máy không có WebGL / lỗi nạp thì dùng bản đồ 2D ở trên.
 let map3d = null, map3dFailed = false, catShowcase = null;
-const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld, catShowcase: showcase }) => {
+const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld, catShowcase: showcase }) => {
   catShowcase = showcase;
   map3d = createMapWorld($('map-3d'), {
     avatarSvg: catMarkup.orange,
@@ -328,8 +328,8 @@ document.addEventListener('click', event => {
 // Người mới: vườn chưa có mèo, nhận ở màn 2 (onboarding.js).
 if (ob.stage() === 'L1' && getDeco().cats.length) setDeco({ ...getDeco(), cats: [], claimedCats: [] });
 buildFlatRooms();
-// Cảnh 3D nạp xong (phòng + bản đồ): màn loading (gom-gom.js) đợi cái này rồi mới tắt.
-const roomReady = import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
+// Cảnh 3D nạp xong (phòng + bản đồ): màn loading (main.js) đợi cái này rồi mới tắt.
+const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
   if (DEV_MODE && new URLSearchParams(location.search).has('qc')) setTimeout(runQC, 500);
   room3d.setAmbient(ambient);

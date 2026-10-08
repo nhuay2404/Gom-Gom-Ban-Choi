@@ -13,15 +13,16 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 | `game/ui/` | Thiết kế UI 2D: CSS (`gom-gom.css`, `board-grid.css`, `ui-portrait.css`), ảnh skin (`skins/`), art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`), âm thanh (`sound.mjs`) | `UI:` |
 | `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
-| `game/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
-| `game/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
-| `game/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/` (gốc, còn lại) | `index.html` (khung màn hình), `gom-gom.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `code-rules.test.mjs` | theo phần sửa |
+| `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
+| `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
+| `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
+| `game/app/` | Điều khiển ứng dụng (xem 3 dòng trên) + `main.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
+| `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
 
 - Mỗi commit chỉ chạm một nhóm khi có thể: sửa giao diện → chỉ `game/ui/` (+ `index.html` nếu đổi khung);
   cân bằng / luật → `game/gameplay/` (+ `tools/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
-- Hai luồng không import nhau: `gom-gom.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
+- Hai luồng không import nhau: `app/main.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
   đổi màn hình thì gọi `menus.showTab / showMap / hideMenus / menuOpen`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
   Thêm hàm cho bên kia gọi: `export` ở file mình và ghi vào danh sách này. Trạng thái cả hai cùng đọc / ghi (xu, booster) đặt ở `shared.js`.
 - Module mới: logic thuần đặt ở `gameplay/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `gameplay/` không import từ `ui/` hay `deco/`

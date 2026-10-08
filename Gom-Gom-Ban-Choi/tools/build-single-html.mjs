@@ -33,7 +33,7 @@ if (!existsSync(join(work, 'node_modules', 'three', 'package.json'))
 rmSync(join(work, 'game'), { recursive: true, force: true });
 cpSync(game, join(work, 'game'), { recursive: true, filter: src => !/\.test\.mjs$/.test(src) });
 const js = execSync(
-  'npx -y esbuild@0.24.0 game/gom-gom.js --bundle --format=esm --minify --log-level=warning',
+  'npx -y esbuild@0.24.0 game/app/main.js --bundle --format=esm --minify --log-level=warning',
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
   // Ảnh JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs): nhúng thẳng thành data URI.

@@ -23,7 +23,7 @@ chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API
 | | `game/gameplay/tuning.mjs` | Mọi hằng số cảm giác chơi |
 | | `game/deco/room-layout.mjs` | Chỗ đặt đồ, bán kính vật cản, cửa sổ |
 | | `game/ui/cat-art.mjs`, `game/ui/board-art.mjs` | Art SVG dạng chuỗi (xuất ra PNG bằng tool) |
-| **Giao diện 2D (làm lại)** | `game/play-controller.js` (màn chơi), `game/menu-controller.js` (menu), `game/shared.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |
+| **Giao diện 2D (làm lại)** | `game/app/play-controller.js` (màn chơi), `game/app/menu-controller.js` (menu), `game/app/shared.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |
 | **3D (làm lại)** | `game/deco/deco-room.mjs`, `garden-scene.mjs` | Model glTF, camera xoay, tường tự mờ |
 | | `game/deco/room-cats.mjs` | Não mèo (generator) + lò xo chuyển động: **~70% chép được**, khung xương làm lại thành prefab |
 | **Âm thanh** | `game/ui/sound.mjs` | File WAV xuất sẵn + `AudioSource` |

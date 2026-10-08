@@ -6,8 +6,8 @@
 // Không có text = không hiện bong bóng, chỉ bàn tay minh hoạ cử chỉ (`gesture`) giữa chỗ sáng + nút Skip nhỏ.
 // Có `until` = bước thao tác: chỉ chỗ sáng chạm được (ngoài chỗ sáng bị chắn), không có nút Next, tự qua bước khi until() đúng.
 // Không có `until` = bước đọc: cả màn hình bị chắn, bấm Next để qua.
-import { catMarkup } from './ui/cat-art.mjs';
-import { playSound } from './ui/sound.mjs';
+import { catMarkup } from '../ui/cat-art.mjs';
+import { playSound } from '../ui/sound.mjs';
 
 const PAD = 8, POLL = 150;
 let layer = null, running = null;

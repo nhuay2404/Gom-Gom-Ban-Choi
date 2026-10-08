@@ -1,4 +1,4 @@
-/* Lưới bàn: số cột/hàng tuỳ màn (gom-gom.js đặt --cols / --rows), từ 6×6 tới 8×8 */
+/* Lưới bàn: số cột/hàng tuỳ màn (main.js đặt --cols / --rows), từ 6×6 tới 8×8 */
 .board {
   position: relative;
   grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr));

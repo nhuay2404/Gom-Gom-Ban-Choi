@@ -14,10 +14,10 @@
   <link rel="stylesheet" href="./ui/ui-portrait.css">
   <link rel="stylesheet" href="./ui/skin-gameplay.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-  <script type="module" src="./gom-gom.js"></script>
+  <script type="module" src="./app/main.js"></script>
 </head>
 <body>
-  <!-- Màn loading: hiện ngay khi mở trang (chỉ HTML/CSS, nền dấu chân của Shop), gom-gom.js đẩy thanh tiến độ theo
+  <!-- Màn loading: hiện ngay khi mở trang (chỉ HTML/CSS, nền dấu chân của Shop), main.js đẩy thanh tiến độ theo
        bước nạp thật (JS game -> font -> cảnh 3D) rồi mờ dần đi. -->
   <div id="loading" class="loading-screen" role="status" aria-live="polite">
     <div class="loading-paws" aria-hidden="true"><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i><i><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5.5" ry="4.6"/><circle cx="5.6" cy="10" r="2.4"/><circle cx="9.6" cy="6.2" r="2.5"/><circle cx="14.4" cy="6.2" r="2.5"/><circle cx="18.4" cy="10" r="2.4"/></svg></i></div>
@@ -138,7 +138,7 @@
           <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-globe"/></svg><span>Language</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
           <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-support"/></svg><span>Support</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
         </div>
-        <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (gom-gom.js bật lên) -->
+        <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (main.js bật lên) -->
         <div class="settings-dev dev-only" hidden>
           <button id="dev-unlock" class="settings-link"><span>🔓 Dev: Unlock all</span></button>
           <button id="dev-reset" class="settings-link"><span>↺ Dev: Reset progress</span></button>

@@ -52,10 +52,10 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | File | Nội dung |
 |---|---|
 | `index.html` | Trang game: thanh điểm, bàn chơi, thẻ đang bóc, ô gửi tạm, thẻ sắp tới, hộp hướng dẫn |
-| `gom-gom.js` | Điểm vào: nối hai luồng điều khiển bên dưới rồi mở game vào Home |
-| `menu-controller.js` | Luồng menu: bản đồ màn, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt (âm thanh, ngày / đêm), nút dev |
-| `shared.js` | Dùng chung cho hai luồng: ví xu, kho booster, toast |
-| `play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
+| `app/main.js` | Điểm vào: nối hai luồng điều khiển bên dưới rồi mở game vào Home |
+| `app/menu-controller.js` | Luồng menu: bản đồ màn, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt (âm thanh, ngày / đêm), nút dev |
+| `app/shared.js` | Dùng chung cho hai luồng: ví xu, kho booster, toast |
+| `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
 | `favicon.svg` | Icon tab trình duyệt |
 | **`ui/`** | **Thiết kế giao diện 2D** |
 | `ui/gom-gom.css` | Giao diện và hiệu ứng: theme vàng kem, thẻ, mũi tên xoay, anim |
