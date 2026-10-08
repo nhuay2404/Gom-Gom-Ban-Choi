@@ -16,6 +16,9 @@ const ZONE_STEP = ROOM_HALF * 2 + .4;
 export const GARDEN_EXT_X = ROOM_HALF * 2;
 export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], garden2: [GARDEN_EXT_X, 0] };
 // Khung vườn (mặt trong hàng rào) khi chưa / đã mở rộng.
+// Toạ độ texture của nền vườn tại (x, z) (toạ độ vườn): khối nền (deco-room.mjs, mặt trên BoxGeometry) trải texture mỗi ô 2·ROOM_HALF m.
+// Đồi (garden2-scene.mjs buildHill) dùng đúng công thức này để vân cỏ trên đồi liền với nền, không lộ đường viền ở chân đồi.
+export const gardenGroundUV = (x, z) => [(x + ROOM_HALF) / (ROOM_HALF * 2), (ROOM_HALF - z) / (ROOM_HALF * 2)];
 export const gardenBounds = expanded => ({ x0: -ROOM_HALF, x1: expanded ? GARDEN_EXT_X + ROOM_HALF : ROOM_HALF, z0: -ROOM_HALF, z1: ROOM_HALF });
 // Cửa từ vườn vào phòng khách: trên tường +z của phòng (toạ độ phòng), cũng là cổng trên hàng rào -z của vườn.
 // Mèo đi qua cửa này (room-cats.mjs); hai bên cửa (trong phòng lẫn ngoài vườn) chừa một lối trống x ≈ DOOR.x ± 0.6.

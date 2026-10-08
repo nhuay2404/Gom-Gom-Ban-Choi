@@ -108,8 +108,26 @@ function toonShader(shader) {
 // Nhận cùng tham số với MeshPhysicalMaterial, bỏ các thông số PBR mà toon không dùng.
 // Vật nhám (roughness cao) không có đốm bóng; nước / kính / kim loại có đốm nhẹ. rim: 0..1, mặc định tắt cho phẳng.
 const KEEP = ['color', 'map', 'emissive', 'emissiveIntensity', 'emissiveMap', 'transparent', 'opacity', 'side', 'wireframe', 'alphaTest', 'depthWrite'];
+// Bản mượt của dải nấc (cho địa hình: nền vườn, đồi): nối tâm các nấc bằng đường thẳng, nên mặt phẳng dưới nắng ra ĐÚNG độ sáng
+// của nấc cũ (nền không đổi màu) mà mặt cong không bị chia vòng. Lỗi cũ: lửa trại / đèn rọi lên sườn đồi thành các vòng cung sáng tối gãy khúc.
+const smoothGradientMap = (() => {
+  const W = 256, data = new Uint8Array(W);
+  const knots = BANDS.map(([edge, level], i) => [(edge + (BANDS[i + 1]?.[0] ?? 1)) / 2, level]);
+  for (let i = 0; i < W; i++) {
+    const x = (i + .5) / W;
+    let v = knots[0][1];
+    for (let k = 1; k < knots.length; k++) if (x >= knots[k - 1][0]) v = THREE.MathUtils.lerp(knots[k - 1][1], knots[k][1], THREE.MathUtils.clamp((x - knots[k - 1][0]) / (knots[k][0] - knots[k - 1][0]), 0, 1));
+    data[i] = Math.round(v * 255);
+  }
+  const tex = new THREE.DataTexture(data, W, 1, THREE.RedFormat);
+  tex.minFilter = tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  return tex;
+})();
+// smooth: true = sáng tối chuyển liên tục thay cho nấc cứng (địa hình cong nhận ánh đèn điểm).
 export function toonMat(params = {}) {
-  const picked = { gradientMap };
+  const picked = { gradientMap: params.smooth ? smoothGradientMap : gradientMap };
   for (const key of KEEP) if (params[key] !== undefined) picked[key] = params[key];
   const material = new THREE.MeshToonMaterial(picked);
   const glossy = (params.roughness ?? 1) < .5 || (params.metalness ?? 0) > .3;
@@ -257,10 +275,11 @@ function outlineMat(baseColor, styleName = 'default') {
   const key = `${styleName}:${ink.getHexString()}`;
   if (outlineMats.has(key)) return outlineMats.get(key);
   const material = new THREE.ShaderMaterial({
-    uniforms: { color: { value: ink }, width: { value: style.px }, wobble: { value: wobble }, toneAmount: { value: style.tone }, innerAlpha: { value: style.inner }, resolution: { value: resolution }, unitId: { value: new THREE.Vector3() }, ...outlineShared },
+    uniforms: { color: { value: ink }, thinScale: { value: 1 }, width: { value: style.px }, wobble: { value: wobble }, toneAmount: { value: style.tone }, innerAlpha: { value: style.inner }, resolution: { value: resolution }, unitId: { value: new THREE.Vector3() }, ...outlineShared },
     vertexShader: `
-      uniform float width; uniform float wobble; uniform vec2 resolution; uniform float zoom;
+      uniform float width; uniform float wobble; uniform vec2 resolution; uniform float zoom; uniform float thinScale;
       attribute vec3 outlineNormal;
+      attribute float outlineThin;
       varying vec3 vObj;
       varying float vDown;
       ${NOISE_GLSL}
@@ -268,12 +287,16 @@ function outlineMat(baseColor, styleName = 'default') {
         vObj = position;
         float w = width * zoom * (1.0 - wobble * 0.5 + wobble * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        float pixelWorld = 2.0 * -mv.z / (projectionMatrix[1][1] * resolution.y);
+        // Bộ phận mỏng (nan rào, tay vịn, chân ghế) nhìn từ xa chỉ rộng vài px: nét dày cố định đè kín cả bộ phận, nhấp nháy khi xoay.
+        // Nét mỗi bên không quá ~28% bề ngang thật của CHÍNH bộ phận đó trên màn hình (tối thiểu 1 px; outlineThin tính theo từng
+        // mảnh liền nhau của lưới nên hàng rào gộp vẫn đúng), nét mảnh dần theo khoảng cách.
+        w = min(w, max(outlineThin * thinScale / pixelWorld * 0.28, 1.0));
         // Mép dưới của vật đặt trên sàn (bồn hoa, chân mèo, đáy hộp...): phần viền phình ra phía dưới rơi lên mặt sàn ĐỨNG
         // TRƯỚC đáy vật, nên bị sàn che (viền phía gần camera mất / chập chờn khi xoay). Kéo riêng các đỉnh có pháp tuyến
         // hướng xuống về phía camera đúng bằng vài lần bề rộng viền (tính theo kích thước 1 px ở khoảng cách đó).
         // Không kéo đỉnh hướng lên / ngang để viền không chọc xuyên khối mỏng (tai mèo).
         float down = smoothstep(0.05, 0.6, -normalize(mat3(modelMatrix) * outlineNormal).y);
-        float pixelWorld = 2.0 * -mv.z / (projectionMatrix[1][1] * resolution.y);
         // Chỉ kéo tối đa 1.5 cm: kéo tỉ lệ khoảng cách thì zoom xa vượt bề dày vật dẹt (thảm, thảm chùi chân, đệm) và mặt đáy
         // viền trồi lên đè lên mặt trên của vật / của khối nằm trên nó thành mảng tối. Phần viền phình ra nằm trên sàn thì sàn
         // tự lùi lại theo độ dốc (FLOOR_OFFSET) nên không cần kéo xa. Mặt đáy viền còn đè lên chính khối thì bỏ (vDown).
@@ -306,12 +329,20 @@ function outlineMat(baseColor, styleName = 'default') {
         vec3 c = mix(color, mix(color, vec3(1.0), 0.55), tone * toneAmount + fiber * ${STROKE.grain.toFixed(3)});
         float alpha = 1.0;
         if (useIds > 0.5) { // đè lên chính khối của mình -> nét trong, mờ đi
-          vec3 behind = floor(texture2D(tIds, gl_FragCoord.xy / resolution).rgb * 255.0 + 0.5);
-          if (all(equal(behind, unitId))) {
-            // mặt đáy viền (bị kéo về phía camera) đè lên chính vật: không phải nét trong thật, bỏ (không thì vật tối khi zoom xa)
-            if (innerAlpha <= 0.0 || vDown > 0.5) discard;
-            alpha = innerAlpha;
+          // Texture ID không khử răng cưa còn màn hình thì có MSAA: nếu quyết định "nét trong / nét ngoài" theo MỘT pixel ID thì mép nét
+          // là mặt nạ cứng từng pixel -> răng cưa bậc thang, bò / nhấp nháy khi kéo, xoay, pinch (lỗi thật: mép đất / chân hàng rào).
+          // Nên lấy mẫu 3 × 3 pixel ID quanh điểm và chuyển MƯỢT: tỉ lệ pixel thuộc khối của mình (own) càng cao càng là nét trong.
+          vec2 idUv = gl_FragCoord.xy / resolution, idPx = 1.0 / resolution;
+          float own = 0.0;
+          for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++) {
+            vec3 behind = floor(texture2D(tIds, idUv + vec2(float(ox), float(oy)) * idPx).rgb * 255.0 + 0.5);
+            own += all(equal(behind, unitId)) ? 1.0 : 0.0;
           }
+          own /= 9.0;
+          // mặt đáy viền (bị kéo về phía camera) đè lên chính vật: không phải nét trong thật, bỏ (không thì vật tối khi zoom xa)
+          float inner = (innerAlpha <= 0.0 || vDown > 0.5) ? 0.0 : innerAlpha;
+          alpha = mix(1.0, inner, own);
+          if (alpha < 0.01) discard;
         }
         gl_FragColor = vec4(c * inkTint, alpha);
         #include <colorspace_fragment>
@@ -326,6 +357,7 @@ function outlineMat(baseColor, styleName = 'default') {
   });
   material.onBeforeRender = (renderer, scene, camera, geometry, hull) => {
     encodeId(unitIdOf(hull.parent), material.uniforms.unitId.value);
+    material.uniforms.thinScale.value = hull.parent.matrixWorld.getMaxScaleOnAxis();
     material.uniformsNeedUpdate = true;
   };
   outlineMats.set(key, material);
@@ -355,14 +387,51 @@ function ensureOutlineNormals(geometry) {
   geometry.setAttribute('outlineNormal', new THREE.BufferAttribute(out, 3));
 }
 
+// Bề ngang "mỏng" của từng mảnh liền nhau trong lưới (đơn vị mô hình), ghi thành thuộc tính đỉnh outlineThin: cạnh NHỎ THỨ HAI của hộp
+// bao mảnh đó. Nan rào .03 × .6 × .03 -> .03 (mỏng); tấm dẹt .02 × 1 × 1 -> 1 (tấm dẹt không bị bó nét); khối đặc -> cạnh của nó. Tính theo
+// mảnh chứ không theo cả lưới vì mergeStatic gộp cả hàng rào (hàng trăm nan) thành vài mesh: hộp bao cả lưới dài / cao hàng mét.
+function ensureOutlineThin(geometry) {
+  if (geometry.attributes.outlineThin) return;
+  const pos = geometry.attributes.position, index = geometry.index, n = pos.count;
+  const parent = new Int32Array(n).map((_, i) => i);
+  const find = i => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+  const union = (a, b) => { a = find(a); b = find(b); if (a !== b) parent[b] = a; };
+  // đỉnh trùng vị trí (đường nối UV / pháp tuyến của hộp) thuộc cùng một mảnh
+  const first = new Map();
+  for (let i = 0; i < n; i++) {
+    const key = `${pos.getX(i).toFixed(4)},${pos.getY(i).toFixed(4)},${pos.getZ(i).toFixed(4)}`;
+    if (first.has(key)) union(first.get(key), i); else first.set(key, i);
+  }
+  const tris = index ? index.count : n;
+  for (let t = 0; t + 2 < tris; t += 3) {
+    const a = index ? index.getX(t) : t, b = index ? index.getX(t + 1) : t + 1, c = index ? index.getX(t + 2) : t + 2;
+    union(a, b); union(a, c);
+  }
+  const box = new Map();
+  for (let i = 0; i < n; i++) {
+    const r = find(i), x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const bb = box.get(r) || box.set(r, [x, y, z, x, y, z]).get(r);
+    bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.min(bb[2], z);
+    bb[3] = Math.max(bb[3], x); bb[4] = Math.max(bb[4], y); bb[5] = Math.max(bb[5], z);
+  }
+  const thin = new Map();
+  for (const [r, bb] of box) thin.set(r, Math.max(.005, [bb[3] - bb[0], bb[4] - bb[1], bb[5] - bb[2]].sort((p, q) => p - q)[1]));
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) out[i] = thin.get(find(i));
+  geometry.setAttribute('outlineThin', new THREE.BufferAttribute(out, 1));
+}
 const FLAT = new Set(['PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'ShapeGeometry']);
 const noRaycast = () => {};
+// Kết cấu căn phòng / khu vườn (sàn, tường, nền cỏ, hàng rào, đồi, góc vườn) KHÔNG có viền: chỉ vật thể (đồ mua được, mèo, đồ trang trí)
+// mới có. Nhận biết: tổ tiên có userData.pickSurface (chạm vào là đổi nền / tường / rào ở Deco) hoặc userData.structure = true.
+const isStructure = node => { for (let n = node; n; n = n.parent) if (n.userData.pickSurface || n.userData.structure) return true; return false; };
 // Gắn viền cho mọi khối toon đặc chưa có viền (gọi lại thoải mái: khối đã có viền thì bỏ qua).
 export function addOutlines(root) {
   if (!TOON) return;
   const todo = [];
   root.traverse(node => {
     if (!node.isMesh || node.isInstancedMesh || node.userData.outline || node.userData.outlined || node.userData.noOutline) return;
+    if (isStructure(node)) { node.userData.noOutline = true; return; }
     const material = Array.isArray(node.material) ? node.material[0] : node.material;
     // Tấm dán trong suốt (mặt / mắt / ria mèo, ô trời cửa sổ...): không ghi vào pass ID (nếu ghi, cả tấm vuông kể cả phần
     // trong suốt bị coi là "thân mèo" nên viền chỗ đó bị xoá) và vẽ SAU viền để ria mép nằm đè lên trên nét viền.
@@ -378,6 +447,7 @@ export function addOutlines(root) {
   for (const [node, material] of todo) {
     node.userData.outlined = true;
     ensureOutlineNormals(node.geometry);
+    ensureOutlineThin(node.geometry);
     const hull = new THREE.Mesh(node.geometry, outlineMat(material.color, outlineStyleOf(node)));
     hull.userData.outline = true;
     hull.raycast = noRaycast;

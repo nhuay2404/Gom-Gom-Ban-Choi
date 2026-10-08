@@ -1,15 +1,15 @@
 // Phần vườn mở rộng (thắng màn 30; chung nền + hàng rào với vườn): đồi nhỏ, bộ đồ "động" cho Deco và đồ trang trí cố định (lối đá lên đồi, đá, hoa dại,
-// mây trôi). Đồ động đều chạy theo MỘT luồng gió chung windAt(t): cối xay quay nhanh / chậm, quần áo trên dây phơi bay
+//). Đồ động đều chạy theo MỘT luồng gió chung windAt(t): cối xay quay nhanh / chậm, quần áo trên dây phơi bay
 // phần phật, diều lượn, cờ phấp phới... nên cả khu chuyển động ăn khớp với nhau.
-// Lớp chỉ dùng cho bóng đổ: vật trên lớp này không hiện trên màn hình nhưng vẫn đổ bóng (mây: camera ở cao hơn mây nên
-// nếu thấy được thì mây che mất khu vườn; chỉ để bóng mây trôi trên cỏ). deco-room.mjs bật lớp này cho camera bóng nắng.
+// Lớp chỉ dùng cho bóng đổ: vật trên lớp này không hiện trên màn hình nhưng vẫn đổ bóng (deco-room.mjs bật lớp này cho camera bóng nắng).
+// Hiện chưa có vật nào dùng: mây trôi từng dùng lớp này nhưng bóng mây là mảng tối đa giác, nhảy hiện / mất khi mây quay vòng (đã bỏ).
 export const SHADOW_ONLY_LAYER = 5;
 // Mỗi món có chỗ đặt cố định [x, z, xoay?] (room-layout.mjs PLACES); +z của món hướng vào giữa khu.
 // Điểm neo cho mèo trong userData (toạ độ cục bộ của món): seat / steps / chute / spot... (room-cats.mjs dùng).
 // Quy tắc dựng model: CLAUDE.md (bo góc ≤ nửa cạnh mỏng, tấm phẳng cách mặt ≥ 5 mm, vỏ hở không viền, chạm sàn...).
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { HILL, hillProfile, groundHeight, GARDEN_EXT_X } from './room-layout.mjs';
+import { HILL, hillProfile, groundHeight, GARDEN_EXT_X, gardenGroundUV } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 import { pendulum, ropeBetween, rock } from './garden-scene.mjs';
 
@@ -49,24 +49,22 @@ export function buildHill(material) {
   const geo = new THREE.LatheGeometry(pts, 48);
   geo.scale(HILL.rx, 1, HILL.rz);
   geo.computeVertexNormals();
-  // Toon gần như không đổ sáng tối: tô màu đỉnh (nhân với texture cỏ) cho đồi nổi khối — chân đồi sẫm, đỉnh sáng,
-  // sườn khuất nắng (nắng từ +x +z, xem SUN_FROM) tối hơn sườn đón nắng.
-  const pos = geo.attributes.position, nor = geo.attributes.normal, colors = new Float32Array(pos.count * 3), c = new THREE.Color();
+  // Đồi liền với cỏ, không có viền ở chân (CLAUDE.md): màu đỉnh = 1 ở chân (đúng màu nền) rồi đổi dần lên sườn — đỉnh sáng hơn chút,
+  // sườn đón nắng (nắng từ +x +z, xem SUN_FROM) sáng / sườn khuất tối, tính so với mặt phẳng nên chân đồi (pháp tuyến ≈ thẳng đứng) = 1.
+  // Texture cỏ trải theo cùng toạ độ với nền vườn (gardenGroundUV) thay cho UV của lathe, nên vân cỏ chạy liền từ nền lên đồi.
+  const pos = geo.attributes.position, nor = geo.attributes.normal, uv = geo.attributes.uv, colors = new Float32Array(pos.count * 3);
   const sun = new THREE.Vector3(4, 9, 5).normalize(), n = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
-    const up = Math.max(0, pos.getY(i)) / HILL.h, lit = n.fromBufferAttribute(nor, i).dot(sun);
-    c.setRGB(1, 1, 1).multiplyScalar(.72 + .2 * up + .14 * lit);
-    c.toArray(colors, i * 3);
+    const up = Math.max(0, pos.getY(i)) / HILL.h, lit = n.fromBufferAttribute(nor, i).dot(sun) - sun.y;
+    colors.fill(1 + .1 * up + .25 * lit, i * 3, i * 3 + 3);
+    uv.setXY(i, ...gardenGroundUV(pos.getX(i) + HILL.x, pos.getZ(i) + HILL.z));
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   material.vertexColors = true;
   const hill = mesh(geo, material);
   hill.position.set(HILL.x, 0, HILL.z);
   hill.userData.closedByGround = true; // đáy hở nhưng nằm dưới mặt cỏ, không bao giờ nhìn thấy lòng
-  // Vệt cỏ sẫm quanh chân đồi (vành elip phẳng sát đất, cao hơn nền 8 mm): tách đồi khỏi mặt cỏ phẳng.
-  const ring = new THREE.Mesh(new THREE.RingGeometry(.96, 1.08, 64), new THREE.MeshBasicMaterial({ color: '#5f9a3a', transparent: true, opacity: .35, depthWrite: false }));
-  ring.rotation.x = -Math.PI / 2; ring.scale.set(HILL.rx, HILL.rz, 1); ring.position.set(HILL.x, .008, HILL.z);
-  return group(hill, ring);
+  return group(hill);
 }
 // Pháp tuyến mặt đồi tại (x, z) (toạ độ khu): để đặt đá / cỏ nghiêng theo sườn.
 function slopeNormal(x, z) {
@@ -574,7 +572,7 @@ function streamBase(withBridge) {
 }
 
 // ---------- Đồ trang trí cố định của phần vườn mở rộng (toạ độ vườn) ----------
-// Lối đá bậc từ chân đồi (phía cổng) lên đỉnh, vài tảng đá + cỏ trên sườn, hoa dại; mây trôi trên trời (có bóng đổ chạy
+// Lối đá bậc từ chân đồi (phía cổng) lên đỉnh, vài tảng đá + cỏ trên sườn, hoa dại
 // trên cỏ). Trả về group có userData.update(t) (deco-room.mjs gọi mỗi frame khi vườn đã mở rộng).
 export function garden2Decor() {
   const decor = group();
@@ -596,18 +594,5 @@ export function garden2Decor() {
   for (let i = 0; i < 36; i++) { const [x, z] = onHill(); p.set(x, groundHeight('garden', x, z) + .06, z); m.compose(p, q.identity(), sc.setScalar(rnd(.8, 1.2))); flowers.setMatrixAt(i, m); flowers.setColorAt(i, c.set(FL[i % FL.length])); }
   tufts.castShadow = flowers.castShadow = false;
   decor.add(tufts, flowers);
-  // Mây: 3 đám mây trôi chậm theo gió từ trái sang phải trên phần vườn mở rộng, ra khỏi vườn thì vòng lại. Chỉ thấy BÓNG mây trên cỏ.
-  const clouds = [[-1, 5.6, -1.5, 1], [2.5, 6.3, 1.8, .8], [6, 5.9, -.2, 1.15]].map(([x, y, z, s]) => { x += GARDEN_EXT_X; // quanh phần vườn mở rộng
-    const cl = group(...[[0, 0, 0, .7], [.65, -.1, .1, .5], [-.6, -.12, -.05, .52], [.2, .25, -.1, .5], [-.25, .18, .15, .45]].map(([a, b, d, r]) => at(ball(r, '#ffffff'), a, b, d)));
-    mergeStatic(cl); cl.scale.setScalar(s); cl.position.set(x, y, z);
-    cl.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = false; n.userData.noOutline = true; } n.layers.set(SHADOW_ONLY_LAYER); });
-    return cl;
-  });
-  decor.add(...clouds);
-  const tick = ticker();
-  decor.userData.update = t => {
-    const dt = tick(t), w = windAt(t);
-    clouds.forEach((cl, i) => { cl.position.x += dt * (.12 + .25 * w); if (cl.position.x > GARDEN_EXT_X + 7.5) cl.position.x = GARDEN_EXT_X - 7.5; cl.position.y += Math.sin(t * .3 + i) * .0008; });
-  };
   return decor;
 }

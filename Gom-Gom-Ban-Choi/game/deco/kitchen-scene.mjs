@@ -634,7 +634,7 @@ export function decorateKitchenWall(i, wall) {
     wall.add(at(rbox(1.1, .35, .06, .02, onWall('#c98a55')), -1.9, 2.15, -.14), sign,
       ...[-.4, .4].map(dx => at(box(.04, .12, .04, onWall('#9a6a45')), -1.9 + dx, 2.4, -.12)));
     const win = 1.3;
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(.7, .8), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true, userData: { nightDim: true } }));
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(.7, .8), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true, userData: { nightDim: true, wallKeep: true } }));
     glass.position.set(win, 1.85, -.175); glass.rotation.y = Math.PI;
     wall.add(at(box(.9, 1.0, .06, onWall('#fff4e0')), win, 1.85, -.13), glass,
       ...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.13)),
