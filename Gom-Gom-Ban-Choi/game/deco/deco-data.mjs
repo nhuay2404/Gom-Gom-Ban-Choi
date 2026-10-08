@@ -482,5 +482,5 @@ export function grantItem(deco, id) {
   if (!entry || isOwned(deco, entry)) return deco;
   const zone = zoneState(deco, entry.zone);
   const placed = entry.cat === 'furniture' ? [...withoutSlot(zone.placed, entry), entry.id] : zone.placed;
-  return { ...withZone(deco, entry.zone, { owned: [...zone.owned, entry.id], placed }), fresh: [...(deco.fresh || []), entry.id] };
+  return { ...withZone(deco, entry.zone, { owned: [...zone.owned, entry.id], placed }), fresh: [...new Set([...(deco.fresh || []), entry.id])] };
 }
