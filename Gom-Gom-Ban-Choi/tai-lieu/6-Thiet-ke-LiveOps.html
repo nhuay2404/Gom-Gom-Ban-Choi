@@ -211,6 +211,18 @@ flowchart TB
     <div class="h">Offer</div><div style="grid-column: span 5"></div><div class="bar b-sale" style="grid-column: span 2">Deco Sale (tuần 4)</div>
   </div></div>
   <p>Luôn có đúng 1 event chính + tối đa 1 event phụ cùng lúc, tránh nhồi icon lên Home. Lịch là dữ liệu (<code>liveops-data.mjs</code>), tính từ ngày theo chu kỳ cố định nên không cần server ở Phase 2.</p>
+
+  <h3>Chốt số liệu Phase 2 (08/10/2026)</h3>
+  <div class="scroll"><table>
+    <tr><th>Hạng mục</th><th>Quyết định</th></tr>
+    <tr><td>Mốc mở event</td><td>Cấu hình riêng từng event (<code>fromLevel</code> trong <code>LIVEOPS.EVENTS</code>), tạm để <b>màn 11</b>. Chỉ màn từ mốc trở lên mới tính tiến độ (kể cả chơi lại), chặn cày màn dễ đầu game.</td></tr>
+    <tr><td>Chu kỳ lịch</td><td>28 ngày, ngày 1 = thứ Hai 05/10/2026. Tuần 4 của chu kỳ đầu (26/10–01/11) nên Deco Sale rơi đúng Halloween. Cat Race: thứ Ba và thứ Bảy.</td></tr>
+    <tr><td>Yarn Climb</td><td>Bậc 2: 20 xu · bậc 4: 1 Hammer · bậc 6: 40 xu (mỗi lượt leo nhận một lần, thua rồi leo lại cùng bậc không nhận lại). Đỉnh: 200 xu + 15 gems + 1 booster +3 lượt. Lên đỉnh lần 2 trở đi trong cùng event: 100 xu + 5 gems. Bỏ ngang tính như thua.</td></tr>
+    <tr><td>Fish Festival</td><td>Cá tính cả ván thua. Mốc 40 / 90 / 150 / 220 / 300 / 380 / 460 / 540 / 620 / 700 cá; thưởng xen kẽ 30–80 xu và booster, mốc 5 và 9 cho 5 gems, mốc 10 là <b>cờ cá chép koi</b> (đồ Deco độc quyền, không bán, tự đặt vào chỗ đèn lồng trong vườn). Rewarded ad nhân đôi cá của màn vừa thắng, 3 lần/ngày.</td></tr>
+    <tr><td>Cat Race</td><td>Tự vào cuộc đua khi bắt đầu một màn được tính trong ngày đua; đua 24 giờ từ lúc vào. 4 đối thủ máy (ghi nhãn AI, không ghi là người thật), mỗi con thắng 2–14 màn rải ngẫu nhiên trong 24 giờ, cố định theo lượt đua. Thưởng: #1 30 gems + 300 xu · #2 15 gems + 150 xu · #3 5 gems + 80 xu · #4–5 30 xu.</td></tr>
+    <tr><td>Chống chỉnh giờ</td><td>Giờ máy lùi so với mốc lớn nhất từng thấy: event không tính tiến độ, không trả thưởng (dùng chung chốt của Phase 1).</td></tr>
+  </table></div>
+  <p class="note">Ước lượng nhịp Fish Festival: ~30 cá / lượt chơi (màn 11–20 trung bình 281 điểm, ~11 điểm / mèo). Người chơi tích cực ~6 lượt / ngày × 3 ngày ≈ 540 cá, cộng quảng cáo nhân đôi thì chạm mốc 700 — khớp mục tiêu 15–25% người tham gia về mốc cuối. Cần đo lại khi có data thật.</p>
 </section>
 
 <section>
@@ -295,6 +307,7 @@ flowchart TB
     <tr><td>Season Pass</td><td>% người chơi hoạt động trong season mua premium</td><td class="num">2–4%</td><td>Ước lượng (store); TikTok chưa có benchmark</td></tr>
     <tr><td>Rewarded</td><td>Impression / DAU</td><td class="num">3–5</td><td>Ước lượng</td></tr>
   </table></div>
+  <p class="note ok"><b>Phase 2 đã có trong code:</b> lịch <code>game/gameplay/liveops-data.mjs</code>, luật <code>game/gameplay/events.mjs</code> (+ test), số liệu <code>tuning.mjs → LIVEOPS.EVENTS</code>, giao diện trong <code>liveops-ui.js</code> (nút event ở cột trái Home, bảng event, nút ×2 cá ở bảng kết quả, nhãn Deco Sale), đồ độc quyền <code>EXCLUSIVES</code> trong <code>deco-data.mjs</code> (model <code>lantern-koi</code> ở <code>garden2-scene.mjs</code>).</p>
   <p class="note ok"><b>Phase 1 đã có trong code:</b> logic <code>game/gameplay/liveops.mjs</code> (+ test), số liệu <code>tuning.mjs → LIVEOPS</code>, giao diện <code>game/app/liveops-ui.js</code> + <code>game/ui/shared/liveops.css</code>. Quảng cáo và thanh toán đang giả lập, có ghi nhãn "test" trên giao diện.</p>
   <p>Event telemetry tối thiểu: <code>daily_claim</code>, <code>quest_complete</code>, <code>chest_open</code>, <code>lives_empty</code>, <code>continue_offer</code> / <code>continue_accept</code>, <code>streak_lost</code>, <code>event_progress</code>, <code>pass_tier</code>, <code>iap_purchase</code>, <code>ad_reward</code>. Mọi event mang <code>level</code>, <code>coins</code>, <code>gems</code>, <code>lives</code> để dựng funnel và sink/source.</p>
 </section>

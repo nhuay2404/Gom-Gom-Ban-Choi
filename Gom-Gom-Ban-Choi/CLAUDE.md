@@ -16,7 +16,7 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
 | `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
 | `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, quảng cáo giả lập. Luật ở `gameplay/liveops.mjs`, số ở `tuning.mjs` (LIVEOPS), CSS ở `ui/shared/liveops.css`, thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi luật / số thì `Gameplay:`) |
+| `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, quảng cáo giả lập, event hằng tuần (nút ở cột trái Home, bảng event, ×2 cá ở bảng kết quả, nhãn Deco Sale). Luật ở `gameplay/liveops.mjs` + `gameplay/events.mjs`, lịch event là dữ liệu ở `gameplay/liveops-data.mjs`, số ở `tuning.mjs` (LIVEOPS, LIVEOPS.EVENTS), CSS ở `ui/shared/liveops.css`, thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi luật / số / lịch thì `Gameplay:`) |
 | `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, state LiveOps, toast), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
@@ -53,6 +53,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Tấm phẳng không được cắt xuyên khối khác (rèm xuyên cột giường): đặt hẳn ra ngoài khối.
 - Vỏ mỏng hở (trụ `openEnded`, tấm cong hai mặt — võng, chao đèn, thùng gỗ): đặt `userData.noOutline = true` và tạo
   viền mép riêng (xuyến / ống mảnh). Viền toon kiểu inverted hull phủ một mảng tối vào lòng vỏ mỏng.
+  Lathe khép kín (điểm đầu và cuối của biên dạng nằm trên trục, quay đủ 360° — vd. thân cá gió của cờ cá chép) là khối đặc,
+  giữ viền toon bình thường; QC chỉ báo lathe hở.
 - Không dời / xoay khối theo hằng số "ước chừng" khi khối nghiêng hay quay: tính từ hình học thật
   (lỗi mèo nằm nghiêng lún đất vì nhấc cố định .2 m).
 
@@ -144,6 +146,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   `area` riêng, hiện trong cùng mục shop và chỉ hiện trong cảnh khi đã mở rộng. 'garden2' chỉ còn là ô đi lại nội bộ của
   mèo (ZONE_OFFSET + LINKS `open: true`: lối thông thoáng, không có cửa). Deco: camera lùi xa hơn (`WIDE`) cho thấy trọn.
 - Phần khoá ở màn game chưa có: xem bằng Dev: Unlock all (bật cờ `gomgom-dev-all-zones`).
+- Đồ độc quyền của event LiveOps: khai trong `EXCLUSIVES` (deco-data.mjs) như một phương án thay thế của chỗ có sẵn, có cờ `exclusive`
+  = id event; Shop ghi "Event reward" (xem thử được, không mua), nhận qua `grantItem` (vào kho + đặt luôn). Model vẫn qua đủ quy trình QC ở trên.
 
 **Camera / chọn khu ở Deco**
 - Deco chỉ đổi khu theo cảnh (`followDrag` trong deco-room.mjs) khi chính người chơi kéo cảnh và **không** có món đang chọn.
@@ -154,3 +158,5 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 ## Khác
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.
+- Kiểm luồng LiveOps nhanh (chỉ DEV_MODE): console `gomgomDev.win(sao)` / `gomgomDev.lose()` kết thúc ngay ván đang chơi (không báo
+  sự kiện gom mèo). Thử event theo ngày: ghi đè `Date.now` trong trang (lịch tính từ giờ máy); tua lùi giờ sẽ dính chốt chống lùi giờ.
