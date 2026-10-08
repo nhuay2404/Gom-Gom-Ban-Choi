@@ -132,7 +132,8 @@ function buildRoad(zNear) {
     plant: mat('#5fb548'), pot: mat('#e07a50'),
   };
   const lampMat = new THREE.MeshBasicMaterial({ color: LAMP_GLOW.day, fog: true });
-  const flat = node => { node.userData.noOutline = true; node.castShadow = false; return node; };
+  // Vạch sơn / khe gạch là lớp mỏng sát mặt đường: không nhận / đổ bóng (nhận bóng của chính tấm đường dưới nó thì thành vệt tối sọc "shadow acne").
+  const flat = node => { node.userData.noOutline = true; node.castShadow = node.receiveShadow = false; return node; };
   const slab = (x0, x1, z0, z1, y0, y1, color, noOutline = false) => {
     const node = mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), color);
     node.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
@@ -148,6 +149,9 @@ function buildRoad(zNear) {
     slab(X0, X1, zR1, zC2, base, base + .16, m.curb),
     slab(X0, X1, zC2, zS2, base, base + .1, m.paver),
   );
+  // Mặt đường / vỉa hè nằm sát nền: không đổ bóng lên vạch sơn phía trên; chỉ lề đường (cao hơn) và cây đèn đổ bóng.
+  // Cũng không viền: lớp viền toon của tấm mỏng bị kéo lên trước mặt đường (polygonOffset) và phủ đen các vạch sơn nằm trên nó.
+  for (const node of group_.children) if (node.geometry.parameters.height < .15) { node.castShadow = false; node.userData.noOutline = true; }
   // Khe gạch vỉa hè: vạch mảnh ngang mỗi 1.2 m cho đỡ trơn.
   const mid = (zC1 + zR1) / 2, topRoad = base + .03;
   for (let x = X0 + 1; x < X1; x += 1.2) for (const [a, b] of [[zS0, zS1], [zC2, zS2]]) group_.add(slab(x, x + .04, a, b, base + .1, base + .104, '#cdb487', true));
