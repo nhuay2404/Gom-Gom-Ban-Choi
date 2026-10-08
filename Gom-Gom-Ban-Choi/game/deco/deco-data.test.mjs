@@ -243,3 +243,35 @@ test('kinh tế: thưởng tăng dần; lô 10 màn đầu mua đủ món gốc 
     assert.ok(ratio >= .6 && ratio <= .8, `màn ${from}–${to}: ${ratio.toFixed(2)} giá món gốc ${zone}`);
   }
 });
+
+test('event exclusives: not for sale, granted as a reward and placed right away; every event deco reward exists', async () => {
+  const { LIVEOPS } = await import('../gameplay/tuning.mjs');
+  const { EXCLUSIVES, grantItem, shopStatus, buyToStock, zoneState, isOwned } = await import('./deco-data.mjs');
+  const rewards = LIVEOPS.EVENTS.fish.milestones.map(m => m.reward.deco).filter(Boolean);
+  assert.ok(rewards.length >= 1);
+  rewards.forEach(id => assert.ok(itemById(id)?.exclusive, `${id} is an exclusive catalog item`));
+  EXCLUSIVES.forEach(([slot, id]) => assert.equal(itemById(id).slot, slot));
+  let deco = loadDeco(99999);
+  const koi = itemById('lantern-koi');
+  assert.equal(shopStatus(deco, koi, 99), 'exclusive');
+  assert.ok(buyToStock(deco, koi, 99).error);
+  deco = grantItem(deco, 'lantern-koi');
+  assert.ok(isOwned(deco, koi));
+  assert.ok(zoneState(deco, 'garden').placed.includes('lantern-koi'));
+  assert.equal(deco.coins, 99999, 'reward costs nothing');
+  assert.equal(grantItem(deco, 'lantern-koi'), deco, 'granting twice does nothing');
+});
+
+test('deco sale discounts buying with coins, then returns to full price', async () => {
+  const { setDecoSale, costOf, buyToStock } = await import('./deco-data.mjs');
+  const alt = CATALOG.find(e => e.slot && !e.exclusive && e.price > 0 && !e.lock);
+  let deco = loadDeco(0);
+  deco = { ...deco, zones: { ...deco.zones, [alt.zone]: { ...deco.zones[alt.zone], owned: [...deco.zones[alt.zone].owned, alt.slot] } } };
+  setDecoSale(.3);
+  try {
+    assert.equal(costOf(alt), Math.round(alt.price * .7));
+    const bought = buyToStock({ ...deco, coins: costOf(alt) }, alt, 99);
+    assert.equal(bought.coins, 0);
+  } finally { setDecoSale(0); }
+  assert.equal(costOf(alt), alt.price);
+});

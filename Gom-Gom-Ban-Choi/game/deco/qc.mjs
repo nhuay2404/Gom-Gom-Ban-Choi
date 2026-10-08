@@ -98,9 +98,11 @@ function decalIssues(list) {
   return issues;
 }
 // Vỏ mỏng hở có viền toon: viền "inverted hull" phủ mảng tối vào lòng vật. (Vòm đồi đặt `closedByGround`: đáy nằm dưới đất.)
+// Lathe khép kín (điểm đầu và điểm cuối của biên dạng nằm trên trục, vd. thân cá gió) là khối đặc, không phải vỏ hở.
+const latheClosed = pr => pr.points?.length > 2 && pr.points[0].x === 0 && pr.points.at(-1).x === 0 && (pr.phiLength ?? Math.PI * 2) >= Math.PI * 2 - 1e-6;
 const shellIssues = list => [...new Set(list.map(x => x.mesh))].filter(mesh => {
   const g = mesh.geometry, pr = g.parameters || {};
-  const open = (g.type === 'CylinderGeometry' && pr.openEnded) || g.type === 'LatheGeometry' || (mesh.material.side === THREE.DoubleSide && !FLAT_TYPES.has(g.type) && g.type !== 'ExtrudeGeometry');
+  const open = (g.type === 'CylinderGeometry' && pr.openEnded) || (g.type === 'LatheGeometry' && !latheClosed(pr)) || (mesh.material.side === THREE.DoubleSide && !FLAT_TYPES.has(g.type) && g.type !== 'ExtrudeGeometry');
   return open && !mesh.userData.noOutline && !mesh.userData.closedByGround && mesh.material.isMeshToonMaterial && !mesh.material.transparent;
 }).map(mesh => `vỏ mỏng hở ${mesh.geometry.type} #${mesh.material.color?.getHexString()} có viền toon (đặt userData.noOutline + viền mép riêng)`);
 

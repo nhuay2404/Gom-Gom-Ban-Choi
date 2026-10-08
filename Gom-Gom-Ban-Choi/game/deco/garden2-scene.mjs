@@ -355,6 +355,65 @@ export const GARDEN2_BUILD = {
     node.userData.lookAt = [0, 3, -1.2]; // mèo ngước nhìn diều
     return node;
   },
+  // Cờ cá chép koi (thay đèn lồng ở vườn; thưởng mốc cuối event Fish Festival, không bán): cột tre, chong chóng đỉnh quay theo gió,
+  // 3 cá gió đen / đỏ / xanh bay theo gió chung windAt — gió lặng thì cá rủ xuống. Thân cá là khối kín (lathe) nên viền toon không
+  // phủ vào lòng; vây đuôi là tấm phẳng đặt ngay sau chóp đuôi (không cắt xuyên thân). Mèo ngước nhìn rồi vồ con cá thấp nhất (tug).
+  'lantern-koi'() {
+    const tick = ticker(), bamboo = '#c9a15e';
+    // Một con cá dài L, miệng bán kính R: trục thân là +x cục bộ, gốc toạ độ ở miệng (treo vào cột).
+    const koi = (L, R, body, band, fin) => {
+      const pts = [[0, 0], [R * .95, 0], [R, .012], [R * 1.12, L * .18], [R * 1.05, L * .4], [R * .8, L * .65], [R * .45, L * .85], [R * .2, L * .97], [0, L]]
+        .map(([r, y]) => new THREE.Vector2(r, y));
+      const geo = new THREE.LatheGeometry(pts, 20);
+      geo.rotateZ(-Math.PI / 2); // trục lathe (+y) -> +x
+      const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3), c = new THREE.Color();
+      const MOUTH = new THREE.Color('#3a2a2a'), WHITE = new THREE.Color('#fffaf0'), BODY = new THREE.Color(body), BAND = new THREE.Color(band);
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        // mặt miệng tối, vành trắng quanh miệng, thân có sọc vảy cách đều
+        c.copy(x < .006 ? MOUTH : x < L * .1 ? WHITE : Math.floor((x - L * .1) / (L * .14)) % 2 ? BAND : BODY).toArray(colors, i * 3);
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      const material = mat('#ffffff'); material.vertexColors = true;
+      const tail = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(L - .004, 0), new THREE.Vector2(L + .2, R * 1.3),
+        new THREE.Vector2(L + .12, 0), new THREE.Vector2(L + .2, -R * 1.3)])), flatMat(fin));
+      tail.userData.noOutline = true;
+      // Mắt: lòng trắng + con ngươi đặt ngoài mặt thân (bán kính thân ở x = L*.1 ~ R*1.07).
+      const eyes = [-1, 1].flatMap(s => [at(ball(R * .3, '#fffaf0'), L * .1, R * .32, s * R * 1.02), at(ball(R * .16, '#2a2a2a'), L * .1 + R * .05, R * .34, s * (R * 1.02 + R * .2))]);
+      const fish = group(mesh(geo, material), tail, ...eyes);
+      fish.rotation.order = 'YZX';
+      return fish;
+    };
+    const kois = [[2.12, .9, .12, '#2f2f3a', '#4a4a5a', '#2f2f3a'], [1.78, .75, .1, '#e5483a', '#ff7a5c', '#c43d2a'], [1.46, .6, .085, '#3b8fe0', '#7fbff2', '#2a6fc0']]
+      .map(([y, L, R, body, band, fin]) => at(koi(L, R, body, band, fin), -.1, y, 0));
+    // Chong chóng đỉnh cột: trục + 6 nan, quay quanh trục cột theo gió.
+    const wheel = group(at(ball(.05, '#ffd66b'), 0, 0, 0), ...[...Array(6)].map((_, k) => {
+      const a = (k / 6) * TAU, spoke = at(box(.16, .012, .03, k % 2 ? '#e5483a' : '#fffaf0'), Math.cos(a) * .1, 0, Math.sin(a) * .1);
+      spoke.rotation.y = -a; return spoke;
+    }));
+    wheel.position.y = 2.38;
+    const pole = group(at(cyl(.2, .24, .12, '#9a8b7a', 16), 0, .06, 0), at(cyl(.035, .042, 2.3, bamboo, 12), 0, 1.24, 0),
+      ...[.6, 1.2, 1.9].map(y => at(cyl(.045, .045, .03, '#9a7a40', 12), 0, y, 0)), at(ball(.045, '#ffd66b'), 0, 2.46, 0),
+      // khoen + thanh treo cá: miệng cá cách cột .1 để cá lắc ngang không chạm cột
+      ...kois.flatMap(k => [at(cyl(.05, .05, .025, '#8a5a3a', 12), 0, k.position.y, 0), at(cyl(.012, .012, .08, '#8a5a3a', 6), -.05, k.position.y, 0).rotateZ(Math.PI / 2)]));
+    const node = group(pole, wheel, ...kois);
+    let tug = 0;
+    node.userData.tug = (k = 1) => { tug += k; };
+    node.userData.update = t => {
+      const dt = tick(t), w = windAt(t);
+      tug *= Math.exp(-3 * dt);
+      wheel.rotation.y += (1 + 6 * w) * dt;
+      kois.forEach((fish, i) => {
+        // bay về -x (nhìn nghiêng từ hướng thumbnail); gió yếu thì rủ xuống, cá thấp nhất bị mèo khều thì giật mạnh
+        const kick = i === kois.length - 1 ? tug : tug * .3;
+        fish.rotation.set(Math.sin(t * 3.1 + i) * .25 * w + Math.sin(t * 12 + i) * kick * .3,
+          Math.PI + Math.sin(t * 1.3 + i * 1.7) * .3 + Math.sin(t * 9 + i) * kick * .2,
+          -(.15 + (1 - w) * .85) + Math.sin(t * 2.3 + i * 2) * .08 + kick * .15);
+      });
+    };
+    node.userData.update(0);
+    return node;
+  },
   'kite-balloons'() {
     const tick = ticker(), COLORS = ['#e8617f', '#9fd0f0', '#ffd66b'];
     const weight = group(at(rbox(.18, .14, .18, .05, '#b79cf0'), 0, .07, 0), at(ball(.03, '#ffd66b'), 0, .16, 0));

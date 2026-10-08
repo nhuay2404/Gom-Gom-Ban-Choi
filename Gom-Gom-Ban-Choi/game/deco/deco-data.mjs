@@ -267,7 +267,22 @@ VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
   CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
 });
+// Đồ độc quyền của event LiveOps (không bán, chỉ nhận làm thưởng — LIVEOPS.EVENTS trong tuning.mjs): phương án thay thế của một chỗ,
+// `exclusive` = id event. Chèn sau các phương án thường của chỗ đó.
+export const EXCLUSIVES = [
+  ['lantern', 'lantern-koi', 'Koi streamer', '#e5483a', 'fish'],
+];
+EXCLUSIVES.forEach(([slot, id, name, color, event]) => {
+  const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
+  CATALOG.splice(at + 1, 0, { id, zone: base.zone, cat: base.cat, name, price: base.price, color, slot, exclusive: event });
+});
 export const itemById = id => CATALOG.find(entry => entry.id === id);
+
+// Deco Sale (event LiveOps, events.mjs decoSaleOff): giảm giá mọi đồ mua bằng xu. App đặt tỉ lệ giảm theo lịch; giá thật = costOf.
+let saleOff = 0;
+export const setDecoSale = off => { saleOff = off; };
+export const decoSale = () => saleOff;
+export const costOf = entry => Math.round(entry.price * (1 - saleOff));
 // Chỗ đặt của một món (món gốc: chính nó; phương án thay thế: món gốc).
 export const slotOf = entry => entry.slot || entry.id;
 const withoutSlot = (placed, entry) => placed.filter(id => slotOf(itemById(id)) !== slotOf(entry));
@@ -354,7 +369,7 @@ export function itemStatus(deco, entry, unlockedLevel) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
   const zone = zoneState(deco, entry.zone);
   // Món giá 0 (kể cả phương án thay thế của món miễn phí) luôn coi như đã có, không cần "mua".
-  const owned = zone.owned.includes(entry.id) || entry.price === 0, affordable = deco.coins >= entry.price ? 'buy' : 'poor';
+  const owned = zone.owned.includes(entry.id) || entry.price === 0, affordable = deco.coins >= costOf(entry) ? 'buy' : 'poor';
   if (entry.cat === 'walls') return zone.wall === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (entry.cat === 'floors') return zone.floor === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (!owned) return affordable;
@@ -391,7 +406,7 @@ export function applyAction(deco, entry, unlockedLevel) {
   }
   const zone = zoneState(deco, entry.zone);
   let next = deco;
-  if (status === 'buy') next = withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] });
+  if (status === 'buy') next = withZone({ ...deco, coins: deco.coins - costOf(entry) }, entry.zone, { owned: [...zone.owned, entry.id] });
   if (entry.cat === 'walls') return withZone(next, entry.zone, { wall: entry.id });
   if (entry.cat === 'floors') return withZone(next, entry.zone, { floor: entry.id });
   // Đặt vào thì thay món khác đang ở cùng chỗ.
@@ -428,21 +443,23 @@ export function previewDeco(deco, entry) {
 export const isBase = entry => entry.cat === 'furniture' && !entry.slot;
 // Món bán ở Shop: phương án thay thế của đồ + tường / sàn không miễn phí.
 export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && entry.price > 0)));
-// Trạng thái ở Shop: locked (chưa tới màn) / needBase (chưa xây chỗ ở Deco) / owned / buy / poor.
+// Trạng thái ở Shop: locked (chưa tới màn) / exclusive (đồ thưởng event, chưa có) / needBase (chưa xây chỗ ở Deco) / owned / buy / poor.
 export function shopStatus(deco, entry, unlockedLevel) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
   if (isOwned(deco, entry)) return 'owned';
+  if (entry.exclusive) return 'exclusive';
   if (entry.slot && !isOwned(deco, itemById(entry.slot))) return 'needBase';
-  return deco.coins >= entry.price ? 'buy' : 'poor';
+  return deco.coins >= costOf(entry) ? 'buy' : 'poor';
 }
 export function buyToStock(deco, entry, unlockedLevel) {
   const status = shopStatus(deco, entry, unlockedLevel);
   if (status === 'locked') return { error: `Unlocks at level ${entry.lock}` };
   if (status === 'needBase') return { error: `Build the ${itemById(entry.slot).name.toLowerCase()} in Deco first` };
   if (status === 'owned') return { error: 'Already owned' };
+  if (status === 'exclusive') return { error: 'Event reward only' };
   if (status === 'poor') return { error: 'Not enough coins' };
   const zone = zoneState(deco, entry.zone);
-  return { ...withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+  return { ...withZone({ ...deco, coins: deco.coins - costOf(entry) }, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
 export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))
@@ -458,3 +475,12 @@ export function useItem(deco, entry) {
 // Món mới mua ở Shop mà chưa xem: đánh dấu theo chỗ (đồ) hoặc 'walls' / 'floors' của từng khu.
 export const freshKeys = (deco, zone) => new Set((deco.fresh || []).map(itemById).filter(entry => entry?.zone === zone).map(entry => entry.cat === 'furniture' ? slotOf(entry) : entry.cat));
 export const clearFresh = (deco, zone, key) => ({ ...deco, fresh: (deco.fresh || []).filter(id => { const entry = itemById(id); return !(entry && entry.zone === zone && (entry.cat === 'furniture' ? slotOf(entry) : entry.cat) === key); }) });
+
+// Nhận một món làm thưởng (đồ độc quyền event): vào kho và đặt luôn vào chỗ của nó (thay món đang ở đó), đánh dấu món mới.
+export function grantItem(deco, id) {
+  const entry = itemById(id);
+  if (!entry || isOwned(deco, entry)) return deco;
+  const zone = zoneState(deco, entry.zone);
+  const placed = entry.cat === 'furniture' ? [...withoutSlot(zone.placed, entry), entry.id] : zone.placed;
+  return { ...withZone(deco, entry.zone, { owned: [...zone.owned, entry.id], placed }), fresh: [...(deco.fresh || []), entry.id] };
+}

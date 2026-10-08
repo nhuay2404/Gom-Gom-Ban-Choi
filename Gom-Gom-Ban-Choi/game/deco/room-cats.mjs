@@ -1430,6 +1430,15 @@ class Cat {
       for (let t = 0, n = rand(2.5, 4); t < n; t += .5) { this.wriggle = 1; yield* this.wait(.5); }
       this.wriggle = 0; this.setPose('stand');
       yield* this.zoomies();
+    } else if (id === 'lantern' && kind === 'lantern-koi') {
+      // Cờ cá chép: ngồi ngước nhìn đàn cá gió bay, rình rồi bật nhảy vồ con cá thấp nhất — cá giật mạnh một cái.
+      yield* this.turnTo(this.facing(center.x, center.z));
+      this.setPose('sit'); this.face('focus'); this.tailSpeed = 5;
+      for (let t = 0, n = rand(2, 3.5); t < n; t += this.world.dt) { this.lookGoal = .6 + Math.sin(this.world.time * 1.3) * .2; yield; }
+      this.setPose('crouch'); this.wriggle = 1; yield* this.wait(.6); this.wriggle = 0;
+      yield* this.jumpTo(this.x, .3, this.z); this.goal.paw = 1; node.userData.tug?.(1.6);
+      yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0; this.lookGoal = 0;
+      this.setPose('sit'); this.face('happy', 'open'); this.tailSpeed = 1.6; yield* this.wait(1.4);
     } else if (id === 'lantern') {
       yield* this.turnTo(this.heading + Math.PI);
       this.setPose('loaf'); this.face('half');
