@@ -68,7 +68,24 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 **Vật trên cao**
 - Camera nhìn từ trên cao (~12 m): vật lơ lửng cao giữa camera và mặt đất (mây...) che mất cảnh. Chỉ muốn bóng thì đặt
-  lên `SHADOW_ONLY_LAYER` (garden2-scene.mjs): không hiện, vẫn đổ bóng.
+  lên `SHADOW_ONLY_LAYER` (garden2-scene.mjs): không hiện, vẫn đổ bóng. Nhưng KHÔNG dùng cho vật trôi / lặp vòng (lỗi cũ: bóng mây
+  là mảng tối đa giác trên cỏ, nhảy hiện / mất mỗi lần mây quay vòng — đã bỏ mây).
+- Không có bóng mây ở Deco: đã thử hai cách (mây đổ bóng qua shadow map nắng: mảng đa giác, nhảy hiện / mất; rồi tấm alpha tròn mềm trôi ngang vườn) và người chơi bỏ cả hai. Đừng thêm lại.
+- **Viền không được giật khi kéo / xoay / pinch camera** (toon.mjs; mỗi quy tắc từ một lỗi thật, test `outline-rules` trong `code-rules.test.mjs` canh):
+  1. Nét tự mảnh theo bề ngang thật của CHÍNH bộ phận trên màn hình: thuộc tính đỉnh `outlineThin` (tính theo từng mảnh liền nhau của lưới,
+     mỗi bên ≤ 28%, tối thiểu 1 px). Không tính theo hộp bao cả mesh: `mergeStatic` gộp cả hàng rào thành vài mesh nên hộp bao dài cả mét,
+     nan rào vẫn bị nét đè kín và chớp (lỗi cũ: bản đầu tính theo cả lưới nên hàng rào vẫn giật).
+  2. Quyết định "nét trong" từ texture ID phải MƯỢT: lấy mẫu 3 × 3 pixel ID, alpha = mix(1, innerAlpha, tỉ lệ pixel là khối của mình). Texture ID
+     không khử răng cưa còn màn hình thì có MSAA; quyết định cứng theo một pixel (hay "cả 5 pixel đều là mình" rồi discard) vẫn cho mép nét
+     hình bậc thang, bò / nhấp nháy khi kéo, xoay, pinch (lỗi cũ: mép đất vườn, chân hàng rào).
+  3. Không đưa vào viền thứ gì phụ thuộc pixel màn hình theo cách không liên tục (noise theo toạ độ pixel, ngưỡng cứng theo khoảng cách,
+     bật / tắt nét đột ngột). Nét đổi bề dày thì đổi liên tục theo khoảng cách (zoom, `outlineThin`), không nhảy.
+  0. Kết cấu căn phòng / khu vườn KHÔNG có viền: sàn, tường (kèm cửa sổ, tranh treo gắn trong tường), nền cỏ, hàng rào, đồi, góc vườn. Chỉ vật thể
+     (đồ mua được, mèo, đồ trang trí) có viền. Cơ chế: `addOutlines` bỏ qua mọi mesh có tổ tiên mang `userData.pickSurface` hoặc `userData.structure = true`
+     (toon.mjs `isStructure`). Thêm phần kết cấu mới (mảng tường / sàn / rào mới): gán một trong hai cờ đó cho nhóm gốc; đừng tự `noOutline` lẻ từng mesh.
+  4. Thêm vật mỏng mới (nan, thanh, dây, tay vịn): không cần làm gì thêm nếu đi qua `addOutlines`; vật tự vẽ viền riêng thì phải theo 3 điều trên.
+- Bản đồ bóng nắng chỉ vẽ lại tối đa ~30 lần / giây (`SHADOW_STEP_MS` trong deco-room.mjs, `autoUpdate` tắt): đừng bật lại autoUpdate;
+  muốn bóng cập nhật ngay thì đặt `sun.shadow.needsUpdate = true`.
 
 **Đặt trên sàn**
 - Đáy món đồ chạm sàn: không lún quá 1 cm, không lơ lửng quá 5 cm. Phần chôn có chủ đích (đá viền ao, đai thùng gỗ)
@@ -106,6 +123,19 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   muốn phóng to model thì scale ở một lớp group ở giữa.
 - Đặt chi tiết mặt (mắt, mũi) **ngoài** bề mặt khối đầu — kiểm bằng thumbnail.
 
+**Đồ gắn trên tường hoà màu tường, đồ cố định trên sàn hoà màu sàn** (`game/deco/wall-theme.mjs`, test `wall-theme.test.mjs`)
+- Rèm, tranh, kệ, đồng hồ, cờ, khung cửa / cửa gắn trong tường KHÔNG giữ màu mặc định khi đổi tường: `fitToWall(màu gốc, màu tường)` xoay sắc theo tường
+  (đường ngắn nhất, 70%), dời độ sáng theo tường và luôn đủ tương phản (không chìm vào tường tối), tường xám thì giữ sắc gốc. Tường mặc định -> đúng màu gốc.
+- Màu trong `decorate*Wall` / `wallFrame` / `curtainPanel` cứ viết như cho tường kem mặc định (`#fff1d2`): `themeWallDecor` (deco-room.mjs) nhớ màu gốc ở
+  `material.userData.wallBase` rồi tính lại từ màu gốc mỗi lần đổi tường (đổi qua lại không trôi màu). Đừng tự tô màu theo tường ở từng món.
+- Không tô lại: kính / trời cửa sổ (`userData.wallKeep = true`), chất liệu có texture (biển hiệu), vật phát sáng (emissive: đèn dây, neon, đèn lồng).
+  Vật liệu mới của đồ treo tường mà KHÔNG muốn đổi màu (kính, gương) phải đánh `wallKeep`.
+- Chất liệu `nightDim` (tranh, cờ): `themeWallDecor` cập nhật `dayColor` để chế độ đêm / chiều vẫn nhân đúng tông.
+- Đồ cố định trên sàn (tủ thấp, gối, thảm chùi chân, dép, thùng rác, thảm chạy bếp: nhóm `decor` của `livingDecor` / `bedroomDecor` / `kitchenDecor`) làm y hệt với
+  `fitToFloor` (màu gốc vẽ cho sàn sồi `#e4b574`, `themeFloorDecor`, khoá `userData.floorBase`). Đồ MUA được không bị tô lại (mỗi món có thiết kế màu riêng).
+  Khu vườn chưa áp dụng (cây, bụi, đá, hoa là màu thiên nhiên cố định).
+- Thêm kiểu tường / sàn mới (màu mới ở deco-data.mjs): test `wall-theme.test.mjs` tự kiểm đồ treo / đồ trên sàn không chìm vào bề mặt đó.
+
 **Mèo**
 - Món mèo nhảy lên phải có điểm neo trong `userData` (seat / top / steps); nhảy xuống dùng `getDown()` (tự tìm chỗ
   đáp trống, tự thôi "đi nhờ" món đồ đung đưa).
@@ -115,6 +145,15 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Test mèo trong trình duyệt: giữ thức bằng `window.dispatchEvent(new PointerEvent('pointerup'))` mỗi 1.5 s (AFK 5 s
   thì mèo đi ngủ); PointerEvent tự tạo không nổi bọt nên phải phát ở `window`.
 - Món có phần đung đưa / xoay mà mèo ngồi lên: `userData.ride` + lò xo kéo về góc nghỉ 0.
+- Hành vi nhiều bước không giữ món đồ (đi tới bạn, bắt chước, mai phục…): gọi `this.occupy('tên')` đầu hành vi, không thì con khác
+  rủ chơi (cụng mũi…) cắt ngang giữa đường (lỗi cũ). Não bắt đầu bằng `interrupt()` (không nằm trong `life()`: phản ứng đồ rơi,
+  tò mò món mới, bị nhường chỗ…) phải tự `release()` trước khi `yield* this.life()`, và bọc `useFurniture` trong try/finally nhả chỗ.
+- `interrupt()` chỉ chạy não mới từ frame sau: chọn nhiều con trong cùng một lần (đánh thức + con tò mò, nhiều món mới) thì tự loại
+  trừ con đã giao việc, đừng dựa vào `interruptible()`.
+- Hành vi đi tới chỗ bạn: tới nơi mới làm (kiểm khoảng cách sau `walkTo`, có thể hết giờ / kẹt), bạn đã thôi thì bỏ — không "ngắm chung"
+  từ phòng bên. Bạn đang ngắm thì nán lại chờ (`stayUntil`).
+- Tương tác nhiều mèo (stareDown / squeezeIn / joinCampfire / watchTogether / ambush / tag / copycat) và tình huống (commotion: đồ rơi,
+  spreadZoomies, furnitureChanged(fresh): món mới) nằm trong room-cats.mjs; mỗi kiểu nhiều-mèo-một-món chỉ một con làm cùng lúc.
 
 **Biểu cảm mèo 3D** (bảng nguồn duy nhất: `game/deco/cat-face.mjs`; test: `cat-face.test.mjs`)
 - Mặt đổi theo **nguyên nhân**, không ngẫu nhiên. `face(eyes)` chỉ nhận 8 giá trị, mỗi giá trị = đúng một mặt Figma:
@@ -128,9 +167,30 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - `annoyed` chỉ ở hành vi giận / giật mình (danh sách trong test); bực nhẹ phải là `grumble` (lỗi cũ: lá đắng, hụt mồi, ướt chân đều ra mặt giận).
 - Không có cú đổi mặt ngẫu nhiên (đã bỏ "cute" ngẫu nhiên lúc rảnh). Chỉ `open` mới tự chớp; `focus` nhìn chằm chằm không chớp.
 - Chống nhấp nháy: mặt vừa hiện giữ ≥ `HOLD` (.45 s) rồi mới đổi (`settleExpression`); mặt phản ứng người chơi (cưng, bế, giật mình) đổi ngay.
-  Đừng viết vòng lặp đổi mặt nhanh hơn thế.
+  Đừng viết vòng lặp đổi mặt nhanh hơn thế. Chớp mắt tự nhiên chỉ đè lên mặt calm đang hiện.
+- Lò xo cử động mèo chỉ dùng `spring()` của `game/deco/spring.mjs` (tự chia bước nhỏ theo độ cứng, test `spring.test.mjs`).
+  Không tự viết lại `v += a·dt; x += v·dt` với lò xo cứng: ở 30 fps / frame khựng 50 ms nó nổ tung (lỗi cũ: mí mắt k = 900 nổ tới
+  1e164, mặt mèo nháy calm ↔ blink mỗi frame — "mắt giật lag"). Thêm lò xo mới thì thêm (k, zeta) vào danh sách trong test.
 - Mọi cảnh dùng chung: mèo khoe ở bản đồ / màn thưởng gọi `setCatFace(rig, breed, eyes)` với cùng bảng này.
 - Thêm hành vi mới: chọn mặt theo bảng trên, không tạo giá trị mới trừ khi có ảnh Figma mới; có ảnh mới thì thêm vào `FACE` + test.
+
+**Ambient (day / dusk / night) — tông "chill"**
+- Bảng màu: `LIGHTING` (deco-room.mjs: trời, nắng, đèn, cửa kính, `grass` = màu nhân lên texture nền vườn) + `MEADOW_LOOKS` (meadow-scene.mjs: bãi cỏ, cây, sương).
+  Hướng: ngày dịu ấm (không xanh neon), chiều là giờ vàng đào hồng (không nâu olive), đêm xanh lam trăng (không tím đặc) + đèn vàng ấm.
+- Đổi ambient phải chuyển dần (`fadeTo` / `stepFade`, `AMBIENT_FADE` 1.6 s), không đặt màu thẳng. Màu mới phụ thuộc ambient: thêm cặp
+  [màu, đích] vào `fadeTo` trong `setAmbient` (cảnh phụ thì trả về cặp như `meadow.ambientTargets`). Lần đặt đầu lúc mở game áp ngay.
+- Nền vườn phải nhân màu theo ambient (`grassTint`): texture cỏ rất tươi, lỗi cũ: ban đêm cỏ vườn vẫn xanh neon.
+- Vệt / quầng trang trí sát đất: không dùng màu cố định trên vật liệu không nhận sáng (MeshBasic) — không đổi theo ambient nên lộ
+  thành dải màu lạ (lỗi cũ: vành xanh chân đồi).
+- Đồi phải liền với cỏ, không có viền ở chân: chân đồi cùng màu nhân với nền (màu đỉnh của đồi = 1 ở chân, chỉ đổi dần lên sườn) và
+  texture cỏ trải theo cùng toạ độ với nền vườn (`gardenGroundUV`, room-layout.mjs). Không thêm vành / quầng quanh chân đồi (người chơi
+  thấy "viền rõ quá": đã thử vành xanh, rồi quầng tối mềm — đều bỏ).
+- Địa hình (nền vườn, đồi) dùng `toonMat({ smooth: true })`: sáng tối liên tục thay cho 6 nấc cứng (mặt phẳng vẫn ra đúng độ sáng nấc cũ).
+  Nấc cứng trên mặt cong biến ánh đèn điểm (lửa trại, đèn) thành các vòng cung sáng tối gãy khúc trên sườn đồi (lỗi cũ). Nền và đồi phải
+  cùng kiểu (cùng smooth) để chân đồi liền với cỏ. Thêm địa hình cong mới (gò, dốc) cũng dùng smooth.
+- Không có hạt lơ lửng (phấn hoa / bụi nắng / đom đóm) ở bất kỳ ambient nào: đã thử và người chơi bỏ. Đừng thêm lại.
+- Đèn đường (meadow-scene.mjs `buildRoad`): vệt sáng hình nón + quầng sáng trên vỉa hè / mặt đường là lớp phủ cộng sáng (additive,
+  DECAL_LAYER, gộp một mesh cho tất cả đèn), màu chạy theo ambient (đen = tắt ban ngày). Không dùng SpotLight thật cho từng đèn (hàng chục đèn).
 
 **Ánh sáng ban đêm (chế độ đêm của Deco)**
 - Chỉ nguồn sáng thật mới được sáng rực ban đêm: món có PointLight bên trong (đèn, lửa trại, đèn lồng) hoặc khai `node.userData.lightSource = true`

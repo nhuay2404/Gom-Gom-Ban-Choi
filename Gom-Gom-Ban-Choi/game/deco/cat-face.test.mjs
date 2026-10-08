@@ -52,7 +52,7 @@ test('mọi face() trong room-cats.mjs dùng đúng giá trị mắt / miệng c
 
 // Giận (angry) là mặt mạnh nhất: chỉ khi bị nhấc / giật mình / bị đau / khè quơ vuốt. Bực nhẹ (chê, tiếc, ướt chân, hờn) dùng grumble.
 test("'annoyed' (angry) chỉ xuất hiện ở hành vi giận / giật mình", () => {
-  const allowed = new Set(['useFurniture', 'flee', 'tailTeased', 'beCarried', 'pet', 'grumpy', 'update']);
+  const allowed = new Set(['useFurniture', 'flee', 'tailTeased', 'beAmbushed', 'wakeStartled', 'beCarried', 'pet', 'grumpy', 'update']);
   const calls = faceCalls().filter(c => c.arg === "'annoyed'" && !allowed.has(c.fn));
   assert.deepEqual(calls.map(c => `dòng ${c.line} (${c.fn})`), [], 'hành vi bực nhẹ phải dùng face(\'grumble\')');
 });

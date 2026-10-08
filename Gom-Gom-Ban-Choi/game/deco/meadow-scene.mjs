@@ -3,7 +3,8 @@
 // Cảnh dựng một lần, cố định (gộp khối bằng mergeStatic); các vật rải ngoài khung khu nhà để không chạm đồ chơi / mèo.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic } from './mesh-detail.mjs';
-import { TOON, toonMat } from './toon.mjs';
+import { TOON, toonMat, DECAL_LAYER } from './toon.mjs';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU = Math.PI * 2;
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
@@ -20,10 +21,12 @@ const cone = (r, h, color, seg = 8) => mesh(new THREE.ConeGeometry(r, h, seg), c
 const ball = (r, color) => mesh(new THREE.SphereGeometry(r, sphereSegments(r), Math.max(5, sphereSegments(r) - 3)), color);
 
 // Màu theo ambient: cỏ, sương / nền (xanh trời như Home), tán lá, thân cây, đá. Shader toon tăng bão hoà nên mã màu ở đây hơi nhạt.
+// Tông "chill": ngày xanh lá dịu + trời pastel (không xanh neon); chiều là giờ vàng — cỏ xanh ánh vàng, trời đào hồng (không nâu olive);
+// đêm xanh lam trăng sâu (không tím đặc), cỏ / lá ngả xanh ngọc tối để đèn vàng nổi bật.
 export const MEADOW_LOOKS = {
-  day: { ground: '#8fd070', fog: '#a8dcfa', leaf: '#6cc154', leafDark: '#4aa84a', pine: '#3e8f4a', bush: '#78c85c', wood: '#a8764a', rock: '#c0b8aa' },
-  dusk: { ground: '#b8b07c', fog: '#f0b88c', leaf: '#8aa84c', leafDark: '#6e9444', pine: '#58804a', bush: '#8eac54', wood: '#8a5c3c', rock: '#a89a88' },
-  night: { ground: '#34503e', fog: '#1c2540', leaf: '#2c5a3e', leafDark: '#244c38', pine: '#1f4a3a', bush: '#2e5a40', wood: '#3a3038', rock: '#40485a' },
+  day: { ground: '#a6c68c', fog: '#bfe2f2', leaf: '#74bf5c', leafDark: '#57a656', pine: '#4a9257', bush: '#80c565', wood: '#a8784e', rock: '#c4bcae' },
+  dusk: { ground: '#aab886', fog: '#f7c6a8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
+  night: { ground: '#2e4a48', fog: '#1b2846', leaf: '#29544c', leafDark: '#214840', pine: '#1c4440', bush: '#2b5648', wood: '#3a3440', rock: '#3e4a5e' },
 };
 
 // Cỏ lặp liền mép: mảng sáng tối + nét cỏ + hoa trắng / hồng li ti (cùng kiểu texture cỏ của Home). Tông trắng để màu nhân theo ambient.
@@ -162,9 +165,10 @@ function buildRoad(zNear) {
   const crossX = -1.6;
   for (let k = -3; k <= 3; k++) group_.add(slab(crossX + k * .5 - .17, crossX + k * .5 + .17, zC1 + .4, zR1 - .4, topRoad, topRoad + .008, m.paint, true));
   // Cây đèn đường: cột + tay đỡ hướng ra đường + chao đèn sáng. Đặt trên vỉa hè gần vườn, cách vạch qua đường.
-  const lampZ = (zS0 + zS1) / 2 + .1;
+  const lampZ = (zS0 + zS1) / 2 + .1, lampHeads = [];
   for (let x = X0 + 4; x < X1; x += ROAD.lampEvery) {
     if (Math.abs(x - crossX) < 2.5) continue;
+    lampHeads.push(x); // chao đèn ở (x, 2.93 + base, lampZ + .72): tay đỡ .72 m xoay -π/2 quanh trục đứng thành +z
     const lamp = group();
     lamp.add(at(cyl(.08, .11, .22, m.pole, 8), 0, .1 + base + .0, 0), at(cyl(.045, .06, 2.9, m.pole, 8), 0, 1.55 + base, 0));
     const arm = at(slab(0, .7, -.035, .035, 0, .07, m.pole), .35, 2.98 + base, 0);
@@ -187,7 +191,40 @@ function buildRoad(zNear) {
     planter.position.set(x + ROAD.lampEvery, base + .1, lampZ + .15); group_.add(planter);
   }
   mergeStatic(group_);
-  return { group: group_, lampMat, zFrom: zNear + ROAD.gap * .4, zTo: zS2 + .8 };
+  const glow = lampGlow(lampHeads, lampZ + .72, base + 2.81, base + .166);
+  group_.add(glow.pools, glow.beams);
+  return { group: group_, lampMat, glow, zFrom: zNear + ROAD.gap * .4, zTo: zS2 + .8 };
+}
+
+// Ánh đèn đường (dusk / night): vệt sáng hình nón từ chao đèn xuống + quầng sáng tròn trên vỉa hè / mặt đường. Không phải SpotLight thật
+// (hàng chục đèn): lớp phủ cộng sáng (additive) — màu vật liệu chạy theo ambient, đen = tắt (ban ngày). Mỗi loại gộp một mesh cho mọi đèn.
+// Nằm trên DECAL_LAYER (pass ID viền toon bỏ qua), không viền, không bóng, không chặn chạm. Quầng nằm ngay trên mặt lề đường (cao nhất).
+const LAMP_POOL = { day: '#000000', dusk: '#301c0a', night: '#6a4618' };
+const LAMP_BEAM = { day: '#000000', dusk: '#160e06', night: '#30220e' };
+function lampGlow(xs, z, yTop, yGround) {
+  const shaded = (geo, brightness) => { // nhân sáng từng đỉnh (vertex color): mờ dần ra mép
+    const p = geo.attributes.position, c = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) c.fill(brightness(p.getX(i), p.getY(i), p.getZ(i)), i * 3, i * 3 + 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+    return geo;
+  };
+  const R = 1.5, H = yTop - yGround;
+  const pool = shaded(new THREE.CircleGeometry(R, 40, 0, TAU).rotateX(-Math.PI / 2), (x, y, z) => (1 - Math.min(1, Math.hypot(x, z) / R)) ** 1.6);
+  // Nón hở hai đầu, sáng ở chao rồi nhạt dần xuống đất; hai mặt cùng cộng sáng nên số nhỏ.
+  const beam = shaded(new THREE.CylinderGeometry(.14, R * .8, H, 32, 6, true), (x, y) => .25 + .75 * (y / H + .5));
+  const merged = (geo, y) => mergeGeometries(xs.map(x => geo.clone().translate(x, y, z)));
+  const make = (geo, color) => {
+    const node = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide,
+    }));
+    node.layers.set(DECAL_LAYER);
+    node.userData.noOutline = true;
+    node.castShadow = node.receiveShadow = false;
+    node.raycast = () => {};
+    node.renderOrder = 2;
+    return node;
+  };
+  return { pools: make(merged(pool, yGround), LAMP_POOL.day), beams: make(merged(beam, yGround + H / 2), LAMP_BEAM.day) };
 }
 
 // bounds: khung khu nhà { x0, x1, z0, z1 } (toạ độ cảnh, đã cộng lề) — vật rải ngoài khung này.
@@ -232,12 +269,14 @@ export function buildMeadow(bounds) {
 
   const fog = new THREE.Fog(look.fog, 55, 190), background = new THREE.Color(look.fog);
   // Đổi màu theo ambient: các vật liệu dùng chung nên chỉ đổi màu cỏ, cây, đá + sương / nền (hoa / nấm giữ nguyên).
-  function setAmbient(mode) {
+  // Trả về các cặp [màu đang dùng, màu đích] để deco-room.mjs chuyển dần (cùng nhịp với ánh sáng), không đổi phụt.
+  function ambientTargets(mode) {
     const l = MEADOW_LOOKS[mode] || MEADOW_LOOKS.day;
-    groundMat.color.set(l.ground);
-    for (const key of ['wood', 'leaf', 'leafDark', 'pine', 'bush', 'rock']) mats[key].color.set(l[key]);
-    fog.color.set(l.fog); background.set(l.fog);
-    road.lampMat.color.set(LAMP_GLOW[mode] || LAMP_GLOW.day);
+    return [
+      [groundMat.color, l.ground], [fog.color, l.fog], [background, l.fog], [road.lampMat.color, LAMP_GLOW[mode] || LAMP_GLOW.day],
+      [road.glow.pools.material.color, LAMP_POOL[mode] || LAMP_POOL.day], [road.glow.beams.material.color, LAMP_BEAM[mode] || LAMP_BEAM.day],
+      ...['wood', 'leaf', 'leafDark', 'pine', 'bush', 'rock'].map(key => [mats[key].color, l[key]]),
+    ];
   }
-  return { root, fog, background, setAmbient };
+  return { root, fog, background, ambientTargets };
 }
