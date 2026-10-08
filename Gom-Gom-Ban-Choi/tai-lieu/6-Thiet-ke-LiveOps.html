@@ -69,15 +69,16 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
 <div class="wrap">
 
 <header style="display:grid;gap:12px">
-  <span class="eyebrow">Gom Gom Rotate · Thiết kế LiveOps · v0.3</span>
+  <span class="eyebrow">Gom Gom Rotate · Thiết kế Economy &amp; LiveOps · v0.4</span>
   <h1>Gom Gom LiveOps</h1>
-  <p class="lede">Hệ thống vận hành sau ra mắt cho bản phát hành song song TikTok Mini Game và app store, mô hình hybrid (quảng cáo có thưởng + mua trong game). Gồm 4 tầng: kinh tế mới, giữ chân hằng ngày, event hằng tuần, season pass hằng tháng. Từ v0.2, LiveOps được tách thành <b>LiveOps Kit</b>: một module dùng chung cho nhiều game, Gom Gom là game đầu tiên tích hợp.</p>
-  <div class="meta"><span>08/10/2026</span><span>Owner: Lead GD</span><span>Trạng thái: Phase 1–2 đã dev · kit 0.1 xong · Phase 2.5 (Gom Gom chuyển sang kit) kế tiếp</span><span>Nhánh: <code>Liveops</code></span></div>
+  <p class="lede">Hệ thống vận hành sau ra mắt cho bản phát hành song song TikTok Mini Game và app store, mô hình hybrid (quảng cáo có thưởng + mua trong game). Tài liệu chia hai phần: <b>Phần A · Economy &amp; Monetization</b> (hệ thống kiếm tiền, luôn bật) và <b>Phần B · LiveOps</b> (theo lịch: hằng ngày, hằng tuần, hằng tháng). Booster, xu và Deco là hệ thống core / meta của game do team <code>main</code> làm; hai phần này chỉ dùng chúng làm phần thưởng hoặc nơi tiêu. Từ v0.2, LiveOps được tách thành <b>LiveOps Kit</b>: một module dùng chung cho nhiều game, Gom Gom là game đầu tiên tích hợp.</p>
+  <div class="meta"><span>09/10/2026</span><span>Owner: Lead GD</span><span>Trạng thái: Phase 1–2 đã dev · kit 0.1 xong · Phase 2.5 (Gom Gom chuyển sang kit) kế tiếp</span><span>Nhánh: <code>Liveops</code></span></div>
 </header>
 
 <section>
   <h2>Tóm tắt quyết định</h2>
   <div class="decisions">
+    <div class="decision"><b>Tách 4 lớp</b><span>Core / Meta (booster, xu, Deco: team main) · Economy &amp; Monetization (luôn bật) · LiveOps (theo lịch) · Content cho LiveOps (đặt hàng team main). KPI đo riêng từng lớp.</span></div>
     <div class="decision"><b>3 loại tiền</b><span>Coins (xu, kiếm từ màn, nuôi Deco) · Gems (kim cương, tiền cứng, chủ yếu từ IAP) · Lives (mạng, 5 cái, hồi 30 phút). Thay 2 pill "Coming soon" đang có trên Home.</span></div>
     <div class="decision"><b>Không đổi 20 màn đầu</b><span>Lives, chuỗi thắng, interstitial chỉ bật từ màn 21. 20 màn đầu dành cho RR1 ≥ 35% và playtime ≥ 8 phút.</span></div>
     <div class="decision"><b>Event chơi được bằng màn cũ</b><span>Content chỉ có 50 màn. Mọi event và nhiệm vụ đều tính cả màn chơi lại, để người đã hết màn vẫn có việc làm.</span></div>
@@ -101,23 +102,58 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
   </table></div>
 </section>
 
+
 <section>
-  <h2>Kiến trúc 4 tầng</h2>
-  <p>Mỗi tầng có nhịp riêng và đưa người chơi quay về core loop (vòng chơi cốt lõi: đặt thẻ, gom mèo). Phần thưởng chảy về Deco, nơi người chơi tiêu xu.</p>
+  <h2>Phân lớp hệ thống</h2>
+  <p><b>LiveOps</b> là lớp vận hành có lịch và thay đổi theo thời gian sau ra mắt. Booster, xu và Deco tồn tại vĩnh viễn, chạy cả khi tắt LiveOps, nên chúng là hệ thống core / meta chứ không phải LiveOps. Tài liệu và <code>liveops-kit</code> tách theo 4 lớp dưới đây; KPI cũng đo riêng từng lớp.</p>
+  <div class="scroll"><table>
+    <tr><th>Lớp</th><th>Định nghĩa</th><th>Thành phần</th><th>Ai làm</th></tr>
+    <tr><td><b>Core / Meta</b></td><td>Luật chơi và tiến trình vĩnh viễn</td><td>Màn chơi, booster, kinh tế xu, Deco (mua, đặt đồ, mở khu), mèo 3D</td><td>Team <code>main</code> (GD + AI)</td></tr>
+    <tr><td><b>Economy &amp; Monetization</b></td><td>Hệ thống kiếm tiền, luôn bật, không theo lịch</td><td>Gems, mạng, continue, chuỗi thắng, gói gems, Starter pack, Hũ cá, rewarded ad cố định, interstitial</td><td>Nhánh <code>Liveops</code> + <code>liveops-kit</code> (module economy)</td></tr>
+    <tr><td><b>LiveOps</b></td><td>Có lịch, thay đổi theo thời gian, do đội vận hành chỉnh sau ra mắt</td><td>Điểm danh 7 ngày, nhiệm vụ ngày + rương, Yarn Climb, Fish Festival, Cat Race, Deco Sale, Season Pass, ưu đãi có hạn</td><td>Nhánh <code>Liveops</code> + <code>liveops-kit</code> (module liveops)</td></tr>
+    <tr><td><b>Content cho LiveOps</b></td><td>Asset LiveOps dùng làm phần thưởng</td><td>Bộ đồ Deco theo mùa, đồ độc quyền của event (cờ cá koi), trang phục mèo</td><td>Team <code>main</code> sản xuất theo đơn đặt hàng của LiveOps</td></tr>
+  </table></div>
 <pre class="mermaid">
-flowchart TB
-  CORE["Core loop: chơi màn, gom mèo"]
-  D["Hằng ngày: điểm danh 7 ngày, 3 nhiệm vụ, chuỗi thắng"]
-  W["Hằng tuần: Yarn Climb, Fish Festival, Cat Race, Deco Sale"]
-  S["Hằng tháng: Season Pass 28 ngày, bộ đồ Deco theo mùa"]
-  E["Kinh tế: Coins, Gems, Lives, IAP, rewarded ads"]
-  DECO["Deco: mua và đặt đồ, mèo 3D chơi đồ mới"]
-  CORE -->|"thắng: xu, sao, token"| D & W & S
-  D & W & S -->|"xu, booster, gems, đồ độc quyền"| E
-  E -->|"booster, lives, continue"| CORE
-  E -->|"xu, đồ Deco"| DECO
-  DECO -->|"muốn đồ tiếp"| CORE
+flowchart LR
+  CORE["Core / Meta<br/>màn chơi · booster · xu · Deco"]
+  ECO["Economy &amp; Monetization<br/>gems · mạng · continue · chuỗi thắng · IAP · ads"]
+  LO["LiveOps<br/>daily · event tuần · season"]
+  CT["Content cho LiveOps<br/>đồ Deco mùa · đồ event"]
+  LO -->|"thưởng: xu, booster, gems, đồ độc quyền"| CORE
+  LO -->|"thưởng: gems, mạng vô hạn"| ECO
+  ECO -->|"continue, buff, mạng"| CORE
+  CT -->|"giao món theo đơn"| LO
+  CORE -->|"chơi màn, gom mèo: tín hiệu"| LO
 </pre>
+
+  <h3>Checklist theo lớp và nhịp</h3>
+  <div class="scroll"><table>
+    <tr><th>Lớp</th><th>Nhịp</th><th>Tính năng</th><th>Trạng thái</th></tr>
+    <tr><td rowspan="9">Economy &amp; Monetization</td><td rowspan="4">Mỗi phiên chơi</td><td>Mạng: tối đa 5, hồi 30 phút / mạng, từ màn 21</td><td>✅ Đã dev</td></tr>
+    <tr><td>Continue khi thua: 60 → 100 → 150 gems, ad +3 lượt, từ màn 11</td><td>✅ Đã dev</td></tr>
+    <tr><td>Chuỗi thắng 3 / 5 / 8: thêm lượt + booster miễn phí</td><td>✅ Đã dev</td></tr>
+    <tr><td>Interstitial: tối đa 1 lần / 3 màn, chỉ sau khi thắng</td><td>⬜</td></tr>
+    <tr><td rowspan="2">Theo ngày (giới hạn lượt)</td><td>Rewarded ad +1 mạng (3 lần / ngày)</td><td>✅ Đã dev</td></tr>
+    <tr><td>Rewarded ad booster miễn phí trong Shop (2 lần / ngày)</td><td>⬜</td></tr>
+    <tr><td rowspan="3">Luôn bán</td><td>Gói gems $0.99 – $19.99 (giả lập)</td><td>✅ Đã dev</td></tr>
+    <tr><td>Starter pack $1.99</td><td>⬜</td></tr>
+    <tr><td>Hũ cá (Piggy bank) $2.99</td><td>⬜</td></tr>
+    <tr><td rowspan="9">LiveOps</td><td rowspan="3">Hằng ngày</td><td>Điểm danh 7 ngày (bỏ lỡ thì dừng, không reset)</td><td>✅ Đã dev</td></tr>
+    <tr><td>3 nhiệm vụ ngày + rương 100 điểm, ad ×2 rương</td><td>✅ Đã dev</td></tr>
+    <tr><td>Ad ×2 cá Fish Festival (3 lần / ngày)</td><td>✅ Đã dev</td></tr>
+    <tr><td rowspan="3">Hằng tuần</td><td>Yarn Climb (T2–T5)</td><td>✅ Đã dev</td></tr>
+    <tr><td>Fish Festival (T6–CN)</td><td>✅ Đã dev</td></tr>
+    <tr><td>Cat Race (T3, T7), đối thủ AI</td><td>✅ Đã dev</td></tr>
+    <tr><td rowspan="3">Hằng tháng (season 28 ngày)</td><td>Deco Sale 30%, cuối tuần tuần 4</td><td>✅ Đã dev</td></tr>
+    <tr><td>Season Pass 30 tầng, free + premium $4.99</td><td>⬜</td></tr>
+    <tr><td>Đổi chủ đề event + phần thưởng độc quyền theo mùa</td><td>⬜</td></tr>
+    <tr><td rowspan="2">Content cho LiveOps</td><td rowspan="2">Theo season</td><td>Cờ cá chép koi (mốc cuối Fish Festival)</td><td>✅ Đã có</td></tr>
+    <tr><td>Bộ đồ Deco S1 Spooky Garden + trang phục mèo</td><td>⬜ Chưa đặt hàng team <code>main</code></td></tr>
+    <tr><td rowspan="3">Nền tảng</td><td rowspan="3">—</td><td>Giờ server, remote config, race với người thật</td><td>⬜ Chờ duyệt</td></tr>
+    <tr><td>TikTok SDK (login, ads, pay) / mediation + IAP bản store</td><td>⬜ Chờ duyệt</td></tr>
+    <tr><td>Telemetry Economy + LiveOps</td><td>⬜</td></tr>
+  </table></div>
+  <p>Phần ✅ đang được chuyển sang <code>liveops-kit</code> ở Phase 2.5 (hành vi không đổi).</p>
 </section>
 
 <section>
@@ -231,11 +267,12 @@ flowchart LR
 </section>
 
 <section>
-  <h2>Kinh tế mới <span class="tag t-eco">Economy</span></h2>
+  <h2>Phần A · Economy &amp; Monetization <span class="tag t-eco">Luôn bật</span></h2>
+  <p>Hệ thống kiếm tiền và tiền tệ, chạy quanh năm, không theo lịch. Không phải LiveOps, nhưng LiveOps dùng chúng làm phần thưởng và chỗ tiêu. Trong <code>liveops-kit</code> đây là nhóm module economy (<code>wallet</code>, <code>lives</code>, <code>continue</code>, <code>streak</code>, <code>shop</code>), tắt riêng được bằng config.</p>
   <h3>Ba loại tiền</h3>
   <div class="scroll"><table>
     <tr><th>Tiền</th><th>Nguồn (source)</th><th>Chỗ tiêu (sink)</th><th>Ghi chú</th></tr>
-    <tr><td><b>Coins</b> (giữ nguyên)</td><td>Thắng màn lần đầu, điểm danh, rương nhiệm vụ, event, pass</td><td>Đồ Deco, booster</td><td>Không bán coins trực tiếp bằng tiền thật ở Phase 1 để giữ nhịp Deco. Đổi được từ gems.</td></tr>
+    <tr><td><b>Coins</b> (core, team main giữ)</td><td>Thắng màn lần đầu, điểm danh, rương nhiệm vụ, event, pass</td><td>Đồ Deco, booster</td><td>Không bán coins trực tiếp bằng tiền thật ở Phase 1 để giữ nhịp Deco. Đổi được từ gems.</td></tr>
     <tr><td><b>Gems</b> (mới)</td><td>IAP; nhỏ giọt từ ngày 7 điểm danh, event, pass (~10–25 gems/tuần cho người chơi free)</td><td>Continue sau thua, hồi đầy mạng, mua tầng pass, đồ Deco độc quyền, đổi xu</td><td>Tỉ giá neo: <b>1 gem ≈ 10 xu</b> (hammer 60 xu ≈ 6 gems)</td></tr>
     <tr><td><b>Lives</b> (mới)</td><td>Tối đa 5, hồi 1 mạng / 30 phút; rewarded ad +1; gems hồi đầy; "mạng vô hạn" theo phút từ phần thưởng</td><td>Mất 1 mạng khi <b>thua hoặc bỏ ngang</b>; thắng không tốn mạng</td><td>Bật từ màn 21. Chuẩn match-3 (5 mạng / 30 phút). A/B test mốc màn 11 và màn 21.</td></tr>
   </table></div>
@@ -249,9 +286,14 @@ flowchart LR
   </table></div>
   <p>Popup continue hiện rõ thứ sắp mất: số mạng, chuỗi thắng, tiến độ event. Đây là loss aversion (sợ mất) chính đáng, không bịa thêm áp lực.</p>
 
+  <h3>Chuỗi thắng (Cat Streak)</h3>
+  <p class="note ok">Xếp vào Economy vì luôn bật, không theo lịch; tác dụng là giữ người chơi trong phiên và tăng giá trị của continue (sợ mất chuỗi).</p>
+  <p>Thắng liên tiếp thì vào màn kế tiếp với quà sẵn. Thua (kể cả bỏ ngang) thì mất chuỗi. Bật từ màn 21.</p>
+
   <h3>IAP: SKU đề xuất</h3>
   <div class="scroll"><table>
     <tr><th>SKU</th><th class="num">Giá (US)</th><th>Nội dung</th><th class="num">Gems/$</th><th>Ghi chú</th></tr>
+    <tr><td colspan="5"><i>Luôn bán (Economy). Season Pass là sản phẩm của Phần B, ghi ở đây để đủ bảng giá.</i></td></tr>
     <tr><td>Gems S</td><td class="num">$0.99</td><td>60 gems</td><td class="num">61</td><td>= 1 continue</td></tr>
     <tr><td>Gems M</td><td class="num">$4.99</td><td>330 gems</td><td class="num">66</td><td>+10%</td></tr>
     <tr><td>Gems L</td><td class="num">$9.99</td><td>700 gems</td><td class="num">70</td><td>+17%, gắn nhãn "Phổ biến"</td></tr>
@@ -263,18 +305,19 @@ flowchart LR
 
   <h3>Vị trí rewarded ad (quảng cáo có thưởng)</h3>
   <div class="scroll"><table>
-    <tr><th>Placement</th><th>Thưởng</th><th class="num">Trần / ngày</th><th>Mở từ</th></tr>
-    <tr><td>Continue sau thua</td><td>+3 lượt</td><td class="num">1 / màn</td><td>Màn 11</td></tr>
-    <tr><td>Hết mạng</td><td>+1 mạng</td><td class="num">3</td><td>Màn 21</td></tr>
-    <tr><td>Rương nhiệm vụ ngày</td><td>Nhân đôi rương</td><td class="num">1</td><td>Khi mở nhiệm vụ</td></tr>
-    <tr><td>Booster miễn phí trong Shop</td><td>1 booster ngẫu nhiên</td><td class="num">2</td><td>Màn 3</td></tr>
-    <tr><td>Token event</td><td>Nhân đôi token của màn vừa thắng</td><td class="num">3</td><td>Khi có event</td></tr>
+    <tr><th>Placement</th><th>Thưởng</th><th class="num">Trần / ngày</th><th>Mở từ</th><th>Lớp</th></tr>
+    <tr><td>Continue sau thua</td><td>+3 lượt</td><td class="num">1 / màn</td><td>Màn 11</td><td>Economy</td></tr>
+    <tr><td>Hết mạng</td><td>+1 mạng</td><td class="num">3</td><td>Màn 21</td><td>Economy</td></tr>
+    <tr><td>Rương nhiệm vụ ngày</td><td>Nhân đôi rương</td><td class="num">1</td><td>Khi mở nhiệm vụ</td><td>LiveOps hằng ngày</td></tr>
+    <tr><td>Booster miễn phí trong Shop</td><td>1 booster ngẫu nhiên</td><td class="num">2</td><td>Màn 3</td><td>Economy</td></tr>
+    <tr><td>Token event</td><td>Nhân đôi token của màn vừa thắng</td><td class="num">3</td><td>Khi có event</td><td>LiveOps hằng tuần</td></tr>
   </table></div>
   <p><b>Interstitial (quảng cáo xen giữa)</b>: không có ở màn 1–20. Từ màn 21, tối đa 1 lần mỗi 3 màn, chỉ sau khi <b>thắng</b>, không bao giờ trong 3 phút đầu phiên. Người đã trả tiền (payer) không thấy interstitial.</p>
 </section>
 
 <section>
-  <h2>Giữ chân hằng ngày <span class="tag t-day">Daily</span></h2>
+  <h2>Phần B · LiveOps hằng ngày <span class="tag t-day">Daily</span></h2>
+  <p>Phần B là LiveOps đúng nghĩa: nội dung theo lịch, thay đổi theo thời gian, do đội vận hành chỉnh sau ra mắt. Reset lúc 00:00 giờ người chơi.</p>
   <h3>Điểm danh 7 ngày</h3>
   <p>Vòng 7 ngày, <b>bỏ lỡ một ngày thì chỉ dừng, không mất tiến độ</b>. Popup tự hiện ở lần mở game đầu tiên trong ngày, sau khi đã qua màn 5 (không chen vào onboarding).</p>
   <div class="scroll"><table>
@@ -292,8 +335,6 @@ flowchart LR
     <tr><td>Khó</td><td class="num">50</td><td>Thắng 1 màn 3 sao · Gom 1 cụm ≥ 6 mèo · Thắng 5 màn</td></tr>
   </table></div>
 
-  <h3>Chuỗi thắng (Cat Streak)</h3>
-  <p>Thắng liên tiếp thì vào màn kế tiếp với quà sẵn. Thua (kể cả bỏ ngang) thì mất chuỗi. Bật từ màn 21.</p>
   <div class="scroll"><table>
     <tr><th>Bậc</th><th class="num">Thắng liên tiếp</th><th>Quà đầu màn</th></tr>
     <tr><td>1</td><td class="num">3</td><td>+2 lượt</td></tr>
@@ -304,13 +345,13 @@ flowchart LR
 </section>
 
 <section>
-  <h2>Event hằng tuần <span class="tag t-week">Weekly</span></h2>
+  <h2>Phần B · LiveOps hằng tuần <span class="tag t-week">Weekly</span></h2>
   <div class="scroll"><table>
     <tr><th>Event</th><th>Kiểu</th><th>Thời lượng</th><th>Luật</th><th>Thưởng chính</th></tr>
     <tr><td><b>Yarn Climb</b></td><td>Thang chuỗi thắng</td><td>4 ngày (T2–T5)</td><td>7 bậc; mỗi lần thắng lên 1 bậc, thua lùi 1 bậc. Lên đỉnh nhận thưởng, thang reset.</td><td>Đỉnh: 200 xu + 15 gems + booster</td></tr>
     <tr><td><b>Fish Festival</b></td><td>Thu thập</td><td>3 ngày (T6–CN)</td><td>Mỗi cụm gom ra cá = số mèo trong cụm. 10 mốc tiến độ.</td><td>Mốc cuối: đồ Deco độc quyền của event</td></tr>
     <tr><td><b>Cat Race</b></td><td>Đua 5 người</td><td>24 giờ</td><td>Ai thắng đủ 10 màn trước. Phase 2 đối thủ do máy điều khiển, Phase 4 người thật.</td><td>Hạng 1: 30 gems + 300 xu</td></tr>
-    <tr><td><b>Deco Sale</b></td><td>Offer</td><td>Cuối tuần cuối season</td><td>Giảm 30% đồ Deco bằng xu</td><td>Sink xu tồn</td></tr>
+    <tr><td><b>Deco Sale</b></td><td>Offer có hạn (nhịp tháng)</td><td>Cuối tuần cuối season</td><td>Giảm 30% đồ Deco bằng xu</td><td>Sink xu tồn</td></tr>
   </table></div>
 
   <h3>Lịch mẫu 1 tuần</h3>
@@ -337,7 +378,7 @@ flowchart LR
 </section>
 
 <section>
-  <h2>Season Pass <span class="tag t-season">Season</span></h2>
+  <h2>Phần B · LiveOps hằng tháng: Season Pass <span class="tag t-season">Monthly</span></h2>
   <div class="scroll"><table>
     <tr><th>Thông số</th><th>Giá trị</th></tr>
     <tr><td>Độ dài</td><td>28 ngày, 30 tầng, 80 điểm/tầng (tổng 2.400)</td></tr>
@@ -372,7 +413,15 @@ flowchart LR
   <div class="legend"><span><i style="background:var(--plum)"></i>Tích cực: 5 ngày/tuần, 4 thắng/ngày, xong rương ngày (≈115 điểm/ngày chơi) → tầng 28</span><span><i style="background:var(--sky)"></i>Thường: 3 ngày/tuần, 2 thắng/ngày (≈72 điểm/ngày chơi) → tầng 10</span></div>
   </div>
   <p>Người chơi tích cực thiếu ~2 tầng ở ngày 28, tạo nhu cầu mua tầng (2 tầng × 40 gems = 80 gems). Người chơi thường nhận đồ tầng 10 nếu mua premium, đủ để thấy giá trị pass.</p>
-  <p class="note"><b>Chi phí sản xuất:</b> mỗi season cần 4–5 model 3D mới + 1 trang phục mèo, mỗi model phải qua QC "all clear" và kiểm bằng mắt (quy trình trong CLAUDE.md). Effort M mỗi season; cần làm trước ít nhất 1 season.</p>
+  <h3>Content cho LiveOps: đơn đặt hàng gửi team <code>main</code></h3>
+  <p>LiveOps không tự dựng model. Mỗi season, LiveOps gửi đơn đặt hàng; team <code>main</code> sản xuất theo pipeline 3D + QC của game (quy trình trong CLAUDE.md), sau đó LiveOps gắn món vào tầng pass / mốc event bằng id.</p>
+  <div class="scroll"><table>
+    <tr><th>Season</th><th>Món</th><th>Dùng ở</th><th>Hạn giao</th><th>Trạng thái</th></tr>
+    <tr><td>Phase 2 (Fish Festival)</td><td>Cờ cá chép koi <code>lantern-koi</code></td><td>Mốc 10 Fish Festival</td><td>—</td><td>✅ Đã có</td></tr>
+    <tr><td>S1 Spooky Garden</td><td>4 đồ Deco mùa + 1 trang phục mèo</td><td>Pass tầng 10 / 20 / 25 / 30</td><td>Trước ngày 1 của season (ước lượng 1 season = 28 ngày làm trước)</td><td>⬜ Chưa đặt</td></tr>
+    <tr><td>S2 Cozy Winter</td><td>4 đồ Deco mùa + 1 trang phục mèo</td><td>Pass</td><td>Trước ngày 1 của S2</td><td>⬜</td></tr>
+  </table></div>
+  <p class="note"><b>Chi phí:</b> effort M mỗi season phía team <code>main</code>. Đây là chỗ hai luồng phụ thuộc nhau duy nhất; đặt hàng sớm ít nhất một season.</p>
 </section>
 
 <section>
@@ -409,16 +458,17 @@ flowchart LR
 <section>
   <h2>KPI và cách đo</h2>
   <div class="scroll"><table>
-    <tr><th>Tính năng</th><th>Metric</th><th class="num">Mục tiêu</th><th>Nguồn số</th></tr>
-    <tr><td>Toàn game</td><td>RR1 / playtime</td><td class="num">≥ 35% / ≥ 8′</td><td>Ngưỡng greenlight</td></tr>
-    <tr><td>Toàn game</td><td>RR7 / RR30</td><td class="num">≥ 12% / ≥ 4%</td><td>Ước lượng cho puzzle hybrid-casual top-quartile, cần đối chiếu benchmark</td></tr>
-    <tr><td>Điểm danh</td><td>% DAU nhận quà</td><td class="num">≥ 70%</td><td>Ước lượng</td></tr>
-    <tr><td>Nhiệm vụ ngày</td><td>% DAU mở rương ngày</td><td class="num">35–50%</td><td>Ước lượng</td></tr>
-    <tr><td>Lives</td><td>% phiên kết thúc vì hết mạng</td><td class="num">≤ 15%</td><td>Cao hơn là quá gắt, hại RR</td></tr>
-    <tr><td>Continue</td><td>% lần thua có continue (ad + gems)</td><td class="num">10–20%</td><td>Ước lượng</td></tr>
-    <tr><td>Event</td><td>% DAU đủ điều kiện tham gia / % về mốc cuối</td><td class="num">≥ 50% / 15–25%</td><td>Ước lượng</td></tr>
-    <tr><td>Season Pass</td><td>% người chơi hoạt động trong season mua premium</td><td class="num">2–4%</td><td>Ước lượng (store); TikTok chưa có benchmark</td></tr>
-    <tr><td>Rewarded</td><td>Impression / DAU</td><td class="num">3–5</td><td>Ước lượng</td></tr>
+    <tr><th>Lớp</th><th>Tính năng</th><th>Metric</th><th class="num">Mục tiêu</th><th>Nguồn số</th></tr>
+    <tr><td>Core</td><td>Toàn game</td><td>RR1 / playtime</td><td class="num">≥ 35% / ≥ 8′</td><td>Ngưỡng greenlight; đo với cờ LiveOps TẮT</td></tr>
+    <tr><td>Toàn game</td><td>Toàn game</td><td>RR7 / RR30</td><td class="num">≥ 12% / ≥ 4%</td><td>Ước lượng cho puzzle hybrid-casual top-quartile, cần đối chiếu benchmark</td></tr>
+    <tr><td>LiveOps</td><td>Điểm danh</td><td>% DAU nhận quà</td><td class="num">≥ 70%</td><td>Ước lượng</td></tr>
+    <tr><td>LiveOps</td><td>Nhiệm vụ ngày</td><td>% DAU mở rương ngày</td><td class="num">35–50%</td><td>Ước lượng</td></tr>
+    <tr><td>Economy</td><td>Lives</td><td>% phiên kết thúc vì hết mạng</td><td class="num">≤ 15%</td><td>Cao hơn là quá gắt, hại RR</td></tr>
+    <tr><td>Economy</td><td>Continue</td><td>% lần thua có continue (ad + gems)</td><td class="num">10–20%</td><td>Ước lượng</td></tr>
+    <tr><td>LiveOps</td><td>Event</td><td>% DAU đủ điều kiện tham gia / % về mốc cuối</td><td class="num">≥ 50% / 15–25%</td><td>Ước lượng</td></tr>
+    <tr><td>LiveOps</td><td>Season Pass</td><td>% người chơi hoạt động trong season mua premium</td><td class="num">2–4%</td><td>Ước lượng (store); TikTok chưa có benchmark</td></tr>
+    <tr><td>Economy</td><td>Monetization</td><td>ARPDAU / % payer</td><td class="num">Chưa chốt</td><td>Cần economy sim + benchmark trước soft launch</td></tr>
+    <tr><td>Economy</td><td>Rewarded</td><td>Impression / DAU</td><td class="num">3–5</td><td>Ước lượng</td></tr>
   </table></div>
   <p class="note ok"><b>Phase 2 đã có trong code:</b> lịch <code>game/gameplay/liveops-data.mjs</code>, luật <code>game/gameplay/events.mjs</code> (+ test), số liệu <code>tuning.mjs → LIVEOPS.EVENTS</code>, giao diện trong <code>liveops-ui.js</code> (nút event ở cột trái Home, bảng event, nút ×2 cá ở bảng kết quả, nhãn Deco Sale), đồ độc quyền <code>EXCLUSIVES</code> trong <code>deco-data.mjs</code> (model <code>lantern-koi</code> ở <code>garden2-scene.mjs</code>).</p>
   <p class="note ok"><b>Phase 1 đã có trong code:</b> logic <code>game/gameplay/liveops.mjs</code> (+ test), số liệu <code>tuning.mjs → LIVEOPS</code>, giao diện <code>game/app/liveops-ui.js</code> + <code>game/ui/shared/liveops.css</code>. Quảng cáo và thanh toán đang giả lập, có ghi nhãn "test" trên giao diện.</p>
@@ -429,10 +479,10 @@ flowchart LR
   <h2>Lộ trình</h2>
   <div class="scroll"><table>
     <tr><th>Phase</th><th>Nội dung</th><th>Effort</th><th>Trạng thái</th><th>Đo thành công</th></tr>
-    <tr><td><b>1 · Retention + kinh tế</b></td><td>Gems, Lives, continue, điểm danh 7 ngày, nhiệm vụ ngày, chuỗi thắng, đồng hồ LiveOps có chốt chống lùi giờ, IAP giả lập</td><td>L</td><td>✅ Đã dev</td><td>RR2 tăng so với bản không LiveOps; % phiên hết mạng ≤ 15%</td></tr>
-    <tr><td><b>2 · Event</b></td><td>Khung event theo lịch, Yarn Climb, Fish Festival, Cat Race (máy), Deco Sale</td><td>L</td><td>✅ Đã dev</td><td>Tham gia ≥ 50% DAU; RR7</td></tr>
+    <tr><td><b>1 · Economy + LiveOps hằng ngày</b></td><td><i>Economy:</i> gems, mạng, continue, chuỗi thắng, gói gems giả lập. <i>LiveOps:</i> điểm danh 7 ngày, nhiệm vụ ngày + rương, chốt chống lùi giờ</td><td>L</td><td>✅ Đã dev</td><td>RR2 tăng so với bản không LiveOps; % phiên hết mạng ≤ 15%</td></tr>
+    <tr><td><b>2 · LiveOps hằng tuần</b></td><td>Khung event theo lịch, Yarn Climb, Fish Festival, Cat Race (máy), Deco Sale</td><td>L</td><td>✅ Đã dev</td><td>Tham gia ≥ 50% DAU; RR7</td></tr>
     <tr><td><b>2.5 · Module hoá</b></td><td>Kit 0.1 đã tách thành project <code>liveops-kit</code> (core + ports + contract test). Còn: Gom Gom chuyển sang kit (adapter + config + migrate save), cờ bật / tắt LiveOps, PR về <code>main</code></td><td>M</td><td>🟡 Kit xong, tích hợp kế tiếp</td><td>Đủ 5 tiêu chí hoàn thành ở mục Kiến trúc module</td></tr>
-    <tr><td><b>3 · Season</b></td><td>Season Pass 30 tầng, bộ đồ S1 Spooky Garden (4 model + trang phục mèo), Hũ cá, Starter pack — xây thẳng trong Kit</td><td>L</td><td>⬜</td><td>Premium 2–4%; ARPDAU</td></tr>
+    <tr><td><b>3 · LiveOps hằng tháng + offer</b></td><td><i>LiveOps:</i> Season Pass 30 tầng (trong kit). <i>Economy:</i> Hũ cá, Starter pack, booster miễn phí bằng ad, interstitial. <i>Content (team main):</i> bộ đồ S1 Spooky Garden theo đơn đặt hàng</td><td>L</td><td>⬜</td><td>Premium 2–4%; ARPDAU</td></tr>
     <tr><td><b>4 · Nền tảng</b></td><td>Backend (giờ, config, race thật), TikTok SDK (login, ads, pay), mediation store, push store — chỉ thay <code>ports/</code></td><td>XL</td><td>⬜ Chờ duyệt</td><td>Doanh thu thật; tỉ lệ lỗi giao dịch</td></tr>
     <tr><td><b>Song song · Content</b></td><td>Pipeline sinh + kiểm màn bằng bot, 150 màn trước soft launch</td><td>L</td><td>⬜</td><td>Tỉ lệ người chơi hết màn &lt; 5% DAU</td></tr>
   </table></div>
