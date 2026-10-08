@@ -2,7 +2,7 @@
 import { loadProgress, earnedCoins } from '../gameplay/progression.mjs';
 import { BOOSTERS } from '../gameplay/tuning.mjs';
 import { loadBoosters, saveBoosters, buyBooster } from '../gameplay/boosters.mjs';
-import { loadDeco, saveDeco } from '../deco/deco-data.mjs';
+import { loadDeco, saveDeco, grantItem } from '../deco/deco-data.mjs';
 import { loadLiveOps, saveLiveOps, syncClock, applyReward } from '../gameplay/liveops.mjs';
 import { playSound } from '../ui/sound.mjs';
 
@@ -42,9 +42,11 @@ export function setLiveOps(next) {
   saveLiveOps(next);
   liveopsListeners.forEach(fn => fn(next));
 }
-// Cộng một phần thưởng LiveOps: xu vào ví Deco, booster vào kho, gems + mạng vô hạn vào state LiveOps.
+// Cộng một phần thưởng LiveOps: xu vào ví Deco, đồ Deco độc quyền (event) vào kho + đặt luôn, booster vào kho,
+// gems + mạng vô hạn vào state LiveOps.
 export function grantReward(reward) {
   if (reward.coins) setDeco({ ...deco, coins: deco.coins + reward.coins });
+  if (reward.deco) setDeco(grantItem(deco, reward.deco));
   if (reward.boosters) storeBoosters(Object.fromEntries(Object.entries(boosterStock).map(([id, n]) => [id, n + (reward.boosters[id] ?? 0)])));
   setLiveOps(applyReward(liveops, reward, Date.now()));
   refreshWallet();

@@ -118,3 +118,76 @@
 
 /* ---------- Booster miễn phí từ chuỗi thắng: số đếm màu xanh ---------- */
 #booster-bar [data-boost].has-free .boost-count{background:var(--green)!important;color:#fff!important}
+
+/* ---------- Event hằng tuần (liveops-ui.js): nút ở cột trái Home dưới Feedback, cùng kiểu ô kem viền nâu ---------- */
+.fh-event{left:calc(21 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(316 * var(--u));width:calc(53 * var(--u));height:calc(55 * var(--u));box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;
+  background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.8 * var(--u)) solid var(--lo-ink)!important;border-radius:calc(12 * var(--u));
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff,0 calc(2.5 * var(--u)) 0 #6b332955}
+.fh-event.side{top:calc(386 * var(--u))}
+.fe-icon{font-size:calc(22 * var(--u));line-height:1}
+.fe-name{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1.1;color:var(--lo-ink)}
+.fe-time{position:absolute;left:50%;bottom:calc(-11 * var(--u));translate:-50% 0;padding:calc(1 * var(--u)) calc(5 * var(--u));white-space:nowrap;
+  border-radius:99px;background:var(--lo-ink);color:#fff;font-family:var(--display);font-size:calc(9.5 * var(--u));font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+.fh-event .fh-alert{right:calc(-6 * var(--u));top:calc(-6 * var(--u))}
+@media(prefers-reduced-motion:no-preference){.fh-event:has(.fh-alert){animation:lo-nudge 1.6s ease-in-out infinite}}
+
+/* ---------- Bảng event ---------- */
+.event-timer{margin-top:2px!important;color:#a0705a!important;font-size:13px!important}
+.event-rule{font-size:13px!important}
+.event-body{margin-top:8px}
+.lo-deco{font-weight:900}
+/* Yarn Climb: thang dọc, đỉnh ở trên; mèo đứng ở bậc hiện tại */
+.ev-yarn{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ev-yarn li{position:relative;display:grid;grid-template-columns:48px 1fr 28px;align-items:center;gap:8px;min-height:34px;padding:3px 8px;
+  border:2px solid #e2bd72;border-radius:12px;background:#fff8e4;text-align:left}
+.ev-yarn li.top{background:#fff0c2;border-color:var(--gold)}
+.ev-yarn li.passed{background:#e5f4d8;border-color:#8fc46a}
+.ev-yarn li.here{border-color:var(--lo-pink);box-shadow:0 0 0 2px #ffd0dc}
+.ev-yarn li.paid .ey-reward{opacity:.45}
+.ey-step{font-family:var(--display);font-size:14px;font-weight:800}
+.ey-reward{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:12px;font-weight:900}
+.ey-reward span{display:inline-flex;align-items:center;gap:2px}
+.ey-reward .ico-booster{width:20px;height:20px}
+.ey-cat{font-size:20px;line-height:1}
+/* Fish Festival: số cá, thanh tới mốc kế, lưới 10 mốc (mốc cuối rộng gấp đôi) */
+.ef-count{display:flex;align-items:baseline;justify-content:center;gap:8px;font-size:22px}
+.ef-count b{font-family:var(--display);font-size:32px;font-weight:800}
+.ef-count small{font-size:12px;font-weight:800;color:#a0705a}
+.ef-bar{height:10px;margin:4px 0 10px}
+.ef-miles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.ef-miles li{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 3px;border:2px solid #e2bd72;border-radius:10px;background:#fff8e4}
+.ef-miles li.big{grid-column:span 3;background:#fff0c2;border-color:var(--gold)}
+.ef-miles li.done{opacity:.5;background:#e5f4d8;border-color:#8fc46a}
+.ef-need{font-family:var(--display);font-size:12px;font-weight:800}
+.ef-reward{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 6px;font-size:12px;font-weight:900}
+.ef-reward span{display:inline-flex;align-items:center;gap:2px}
+.ef-reward .ico-booster{width:20px;height:20px}
+/* Cat Race: bảng xếp hạng 5 dòng + giải từng hạng */
+.er-list{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.er-list li{display:grid;grid-template-columns:22px 92px 1fr 40px;align-items:center;gap:6px;padding:6px 8px;border:2px solid #e2bd72;border-radius:12px;background:#fff8e4;text-align:left}
+.er-list li.you{border-color:var(--lo-pink);background:#ffeef3}
+.er-list li.finished .dq-bar i{background:var(--gold)}
+.er-rank{font-family:var(--display);font-size:16px;font-weight:800}
+.er-name{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.er-name small{padding:0 4px;border-radius:6px;background:#ecd9b8;font-size:10px;font-weight:800;color:#8a5a3a}
+.er-list .dq-bar{grid-area:auto}
+.er-wins{font-size:12px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.er-prizes{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:12px;font-weight:900}
+.er-prizes li{display:inline-flex;align-items:center;gap:4px}
+.er-prizes li span{display:inline-flex;align-items:center;gap:2px}
+.er-note{font-size:11px!important;color:#a0705a!important}
+
+/* ---------- Bảng kết quả: nhân đôi cá bằng quảng cáo ---------- */
+/* Bảng kết quả xếp mảnh tuyệt đối theo Figma (result.css): nút nằm dưới dòng ghi chú trắng bên dưới khung */
+.result-fish{display:flex;flex-direction:column;align-items:center;padding:6px 16px;line-height:1.1}
+.result-dialog .result-fish{left:50%;top:calc(436 * var(--u));translate:-50% 0;z-index:5;white-space:nowrap}
+.result-fish.ad{background:#7a5bd1;border-color:#5a3fa8;color:#fff}
+.result-fish small{font-size:11px;opacity:.85}
+.result-fish[hidden]{display:none}
+
+/* ---------- Deco Sale: nhãn trên tab Deco / Shop, giá cũ gạch ngang ---------- */
+#tabbar .tab[data-sale]{position:relative}
+#tabbar .tab[data-sale]::after{content:attr(data-sale);position:absolute;top:-6px;right:-2px;padding:1px 5px;border-radius:99px;
+  background:var(--lo-pink);color:#fff;font-size:10px;font-weight:900;line-height:1.3}
+.sale-was{margin-right:3px;opacity:.6;font-size:.85em}

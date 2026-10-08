@@ -249,6 +249,9 @@
       <button id="home-daily" class="fh-btn fh-daily" aria-label="Daily rewards and quests"></button>
       <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
       <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
+      <!-- Event hằng tuần (liveops-ui.js, events.mjs): một nút event chính + tối đa một nút event phụ, ẩn khi không có event -->
+      <button id="home-event-main" class="fh-btn fh-event" hidden></button>
+      <button id="home-event-side" class="fh-btn fh-event side" hidden></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
       <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>
@@ -294,6 +297,8 @@
       <p id="result-coins" class="result-coins"></p>
     </div>
     <p id="result-note" class="result-note" hidden></p>
+    <!-- Fish Festival: xem quảng cáo nhân đôi cá của màn vừa thắng (liveops-ui.js) -->
+    <button id="result-fish" class="pill-button ad result-fish" hidden></button>
     <!-- Onboarding (onboarding.js): thắng màn mở khoá một phần của game thì hiện "Unlocked:" + nút Continue thay cho Home / chơi lại / Next -->
     <div id="result-unlock" class="result-unlock" hidden></div>
     <div class="result-actions">
@@ -317,6 +322,12 @@
       <div id="daily-chest-reward" class="dc-reward"></div>
       <div class="lo-actions"><button id="daily-chest-open" class="pill-button">Open</button><button id="daily-chest-ad" class="pill-button ad">Open ×2 · Ad</button></div>
     </div>
+  </dialog>
+  <dialog id="event-dialog" class="lo-dialog event-dialog" aria-labelledby="event-title">
+    <div class="lo-head"><h2 id="event-title">Event</h2><button id="event-close" class="settings-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p id="event-timer" class="lo-status event-timer"></p>
+    <p id="event-rule" class="event-rule"></p>
+    <div id="event-body" class="event-body"></div>
   </dialog>
   <dialog id="lives-dialog" class="lo-dialog lives-dialog" aria-labelledby="lives-title">
     <div class="lo-head"><h2 id="lives-title">Lives</h2><button id="lives-close" class="settings-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
