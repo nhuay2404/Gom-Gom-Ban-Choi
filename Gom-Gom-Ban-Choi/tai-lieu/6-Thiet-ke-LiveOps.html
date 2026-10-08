@@ -1,0 +1,314 @@
+<title>Gom Gom LiveOps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (~880px) with full-bleed tables; sections tagged by LiveOps layer colour (daily / weekly / season / economy). */
+:root {
+  --bg: #f6f8fb; --surface: #ffffff; --ink: #1f2633; --muted: #5d6879; --line: #dde3ec;
+  --sky: #2f7fd6; --paw: #e2557a; --grass: #3f9a4f; --sun: #c98a12; --plum: #7a5bd1;
+  --sky-soft: #e4effb; --paw-soft: #fde8ee; --grass-soft: #e5f4e7; --sun-soft: #fbf1dc; --plum-soft: #eee8fb;
+  --f-display: "Baloo 2", "Be Vietnam Pro", system-ui, sans-serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1a2029; --ink: #e8edf4; --muted: #9aa6b8; --line: #2c3542;
+  --sky: #6aaef2; --paw: #f27d9c; --grass: #6cc47b; --sun: #e6b04a; --plum: #a68cf0;
+  --sky-soft: #1b2b40; --paw-soft: #3a1f29; --grass-soft: #1c3322; --sun-soft: #3a2e15; --plum-soft: #2a2242;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --ink: #e8edf4; --muted: #9aa6b8; --line: #2c3542;
+  --sky: #6aaef2; --paw: #f27d9c; --grass: #6cc47b; --sun: #e6b04a; --plum: #a68cf0;
+  --sky-soft: #1b2b40; --paw-soft: #3a1f29; --grass-soft: #1c3322; --sun-soft: #3a2e15; --plum-soft: #2a2242;
+  color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.65 var(--f-body); }
+.wrap { max-width: 920px; margin: 0 auto; padding: 32px 18px 80px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(34px, 6vw, 52px); font-weight: 800; }
+h2 { font-size: 28px; font-weight: 800; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+h3 { font-size: 19px; font-weight: 700; margin-top: 8px; }
+p { margin: 0; max-width: 70ch; }
+section { display: grid; gap: 14px; min-width: 0; }
+.eyebrow { font: 600 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 17px; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font: 13px var(--f-mono); color: var(--muted); }
+.tag { font: 600 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.t-day { background: var(--sky-soft); color: var(--sky); }
+.t-week { background: var(--grass-soft); color: var(--grass); }
+.t-season { background: var(--plum-soft); color: var(--plum); }
+.t-eco { background: var(--sun-soft); color: var(--sun); }
+.t-risk { background: var(--paw-soft); color: var(--paw); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px/1.3 var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); font-size: 13px; }
+code { font: 13px var(--f-mono); background: var(--bg); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; }
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.decision { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.decision b { font-family: var(--f-display); font-size: 17px; }
+.decision span { color: var(--muted); font-size: 14px; }
+.note { border-left: 3px solid var(--paw); background: var(--paw-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 14px; max-width: none; }
+.note.ok { border-color: var(--grass); background: var(--grass-soft); }
+.cal { display: grid; grid-template-columns: 70px repeat(7, minmax(92px, 1fr)); gap: 4px; min-width: 760px; padding: 12px; font-size: 12.5px; }
+.cal .h { font: 600 11px var(--f-mono); color: var(--muted); text-transform: uppercase; padding: 4px 6px; }
+.cal .bar { border-radius: 6px; padding: 6px 8px; font-weight: 600; line-height: 1.25; }
+.b-yarn { background: var(--sky-soft); color: var(--sky); }
+.b-fish { background: var(--grass-soft); color: var(--grass); }
+.b-race { background: var(--sun-soft); color: var(--sun); }
+.b-sale { background: var(--paw-soft); color: var(--paw); }
+.b-pass { background: var(--plum-soft); color: var(--plum); }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 72ch; }
+svg text { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+</style>
+
+<div class="wrap">
+
+<header style="display:grid;gap:12px">
+  <span class="eyebrow">Gom Gom Rotate · Thiết kế LiveOps · v0.1</span>
+  <h1>Gom Gom LiveOps</h1>
+  <p class="lede">Hệ thống vận hành sau ra mắt cho bản phát hành song song TikTok Mini Game và app store, mô hình hybrid (quảng cáo có thưởng + mua trong game). Gồm 4 tầng: kinh tế mới, giữ chân hằng ngày, event hằng tuần, season pass hằng tháng.</p>
+  <div class="meta"><span>08/10/2026</span><span>Owner: Lead GD</span><span>Trạng thái: draft để review</span><span>Code: Phase 1 trong repo</span></div>
+</header>
+
+<section>
+  <h2>Tóm tắt quyết định</h2>
+  <div class="decisions">
+    <div class="decision"><b>3 loại tiền</b><span>Coins (xu, kiếm từ màn, nuôi Deco) · Gems (kim cương, tiền cứng, chủ yếu từ IAP) · Lives (mạng, 5 cái, hồi 30 phút). Thay 2 pill "Coming soon" đang có trên Home.</span></div>
+    <div class="decision"><b>Không đổi 20 màn đầu</b><span>Lives, chuỗi thắng, interstitial chỉ bật từ màn 21. 20 màn đầu dành cho RR1 ≥ 35% và playtime ≥ 8 phút.</span></div>
+    <div class="decision"><b>Event chơi được bằng màn cũ</b><span>Content chỉ có 50 màn. Mọi event và nhiệm vụ đều tính cả màn chơi lại, để người đã hết màn vẫn có việc làm.</span></div>
+    <div class="decision"><b>Season gắn Deco</b><span>Phần thưởng đắt giá nhất của pass là bộ đồ 3D theo mùa và trang phục cho mèo. Tận dụng pipeline 3D + QC sẵn có.</span></div>
+    <div class="decision"><b>Client-first</b><span>Phase 1–3 chạy không cần server (giờ máy + chốt chống lùi giờ). Backend (giờ server, remote config, race thật) ở Phase 4.</span></div>
+    <div class="decision"><b>Blocker số 1: content</b><span>50 màn chỉ đủ vài ngày cho người chơi tích cực. Cần pipeline sinh màn trước soft launch, nếu không LiveOps chỉ là lớp vỏ.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Hiện trạng và khoảng trống</h2>
+  <div class="scroll"><table>
+    <tr><th>Hạng mục</th><th>Hiện có trong code</th><th>Khoảng trống</th></tr>
+    <tr><td>Home hub</td><td>Nút Daily, pill Gems, pill Energy (đều "Coming soon"), nút Starter pack mở Shop</td><td>Chưa có hệ thống nào phía sau</td></tr>
+    <tr><td>Kinh tế xu</td><td>Màn 1–20 trả đủ 100% giá đồ khu mở; màn 21–40 chỉ 61–80%; từ màn 41 trả 80 xu/màn</td><td>Khoảng thiếu cố ý ~620 xu (phòng khách), ~260 (phòng ngủ), ~360 (bếp) đang chờ LiveOps lấp</td></tr>
+    <tr><td>Booster</td><td>Hammer 60 · New card 40 · +3 moves 80 xu, tặng 3 cái mỗi loại</td><td>Chưa có nguồn booster ngoài mua bằng xu</td></tr>
+    <tr><td>Thua màn</td><td>Thua là chơi lại, không có chi phí</td><td>Không có continue, không có sink tại khoảnh khắc thua (điểm monetize mạnh nhất của puzzle)</td></tr>
+    <tr><td>Thời gian / server</td><td>Toàn bộ save ở localStorage (<code>save.mjs</code>)</td><td>Không có giờ server, remote config, leaderboard</td></tr>
+    <tr><td>Content</td><td>50 màn, DDA (dynamic difficulty adjustment, tự chỉnh độ khó) theo profile</td><td>Không có màn mới định kỳ</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Kiến trúc 4 tầng</h2>
+  <p>Mỗi tầng có nhịp riêng và đưa người chơi quay về core loop (vòng chơi cốt lõi: đặt thẻ, gom mèo). Phần thưởng chảy về Deco, nơi người chơi tiêu xu.</p>
+<pre class="mermaid">
+flowchart TB
+  CORE["Core loop: chơi màn, gom mèo"]
+  D["Hằng ngày: điểm danh 7 ngày, 3 nhiệm vụ, chuỗi thắng"]
+  W["Hằng tuần: Yarn Climb, Fish Festival, Cat Race, Deco Sale"]
+  S["Hằng tháng: Season Pass 28 ngày, bộ đồ Deco theo mùa"]
+  E["Kinh tế: Coins, Gems, Lives, IAP, rewarded ads"]
+  DECO["Deco: mua và đặt đồ, mèo 3D chơi đồ mới"]
+  CORE -->|"thắng: xu, sao, token"| D & W & S
+  D & W & S -->|"xu, booster, gems, đồ độc quyền"| E
+  E -->|"booster, lives, continue"| CORE
+  E -->|"xu, đồ Deco"| DECO
+  DECO -->|"muốn đồ tiếp"| CORE
+</pre>
+</section>
+
+<section>
+  <h2>Kinh tế mới <span class="tag t-eco">Economy</span></h2>
+  <h3>Ba loại tiền</h3>
+  <div class="scroll"><table>
+    <tr><th>Tiền</th><th>Nguồn (source)</th><th>Chỗ tiêu (sink)</th><th>Ghi chú</th></tr>
+    <tr><td><b>Coins</b> (giữ nguyên)</td><td>Thắng màn lần đầu, điểm danh, rương nhiệm vụ, event, pass</td><td>Đồ Deco, booster</td><td>Không bán coins trực tiếp bằng tiền thật ở Phase 1 để giữ nhịp Deco. Đổi được từ gems.</td></tr>
+    <tr><td><b>Gems</b> (mới)</td><td>IAP; nhỏ giọt từ ngày 7 điểm danh, event, pass (~10–25 gems/tuần cho người chơi free)</td><td>Continue sau thua, hồi đầy mạng, mua tầng pass, đồ Deco độc quyền, đổi xu</td><td>Tỉ giá neo: <b>1 gem ≈ 10 xu</b> (hammer 60 xu ≈ 6 gems)</td></tr>
+    <tr><td><b>Lives</b> (mới)</td><td>Tối đa 5, hồi 1 mạng / 30 phút; rewarded ad +1; gems hồi đầy; "mạng vô hạn" theo phút từ phần thưởng</td><td>Mất 1 mạng khi <b>thua hoặc bỏ ngang</b>; thắng không tốn mạng</td><td>Bật từ màn 21. Chuẩn match-3 (5 mạng / 30 phút). A/B test mốc màn 11 và màn 21.</td></tr>
+  </table></div>
+
+  <h3>Sink tại khoảnh khắc thua (continue)</h3>
+  <div class="scroll"><table>
+    <tr><th>Lần continue trong cùng lượt chơi</th><th class="num">Giá</th><th>Nhận</th><th>Rewarded ad thay thế</th></tr>
+    <tr><td>Lần 1</td><td class="num">60 gems</td><td>+5 lượt (hết chỗ: dọn 3 ô ngẫu nhiên)</td><td>Có, +3 lượt, 1 lần/màn</td></tr>
+    <tr><td>Lần 2</td><td class="num">100 gems</td><td>+5 lượt</td><td>Không</td></tr>
+    <tr><td>Lần 3 trở đi</td><td class="num">150 gems</td><td>+5 lượt</td><td>Không</td></tr>
+  </table></div>
+  <p>Popup continue hiện rõ thứ sắp mất: số mạng, chuỗi thắng, tiến độ event. Đây là loss aversion (sợ mất) chính đáng, không bịa thêm áp lực.</p>
+
+  <h3>IAP: SKU đề xuất</h3>
+  <div class="scroll"><table>
+    <tr><th>SKU</th><th class="num">Giá (US)</th><th>Nội dung</th><th class="num">Gems/$</th><th>Ghi chú</th></tr>
+    <tr><td>Gems S</td><td class="num">$0.99</td><td>60 gems</td><td class="num">61</td><td>= 1 continue</td></tr>
+    <tr><td>Gems M</td><td class="num">$4.99</td><td>330 gems</td><td class="num">66</td><td>+10%</td></tr>
+    <tr><td>Gems L</td><td class="num">$9.99</td><td>700 gems</td><td class="num">70</td><td>+17%, gắn nhãn "Phổ biến"</td></tr>
+    <tr><td>Gems XL</td><td class="num">$19.99</td><td>1.500 gems</td><td class="num">75</td><td>+25%</td></tr>
+    <tr><td>Starter pack</td><td class="num">$1.99</td><td>1.000 xu + 5 booster + thảm "Cozy rug" độc quyền + 1 giờ mạng vô hạn</td><td class="num">—</td><td>Mua 1 lần. Nút đã có trên Home + Shop. Hiện sau lần thắng màn 5.</td></tr>
+    <tr><td>Hũ cá (Piggy bank)</td><td class="num">$2.99</td><td>Mỗi lần thắng bỏ 20 gems vào hũ, đầy ở 500, mở được từ 200</td><td class="num">≤ 167</td><td>Offer giá trị cao nhất, kéo người chưa trả tiền thành payer lần đầu</td></tr>
+    <tr><td>Season Pass</td><td class="num">$4.99</td><td>Track premium 30 tầng (xem phần Season)</td><td class="num">—</td><td>TikTok: giá theo bảng của nền tảng [CHƯA KIỂM CHỨNG]</td></tr>
+  </table></div>
+
+  <h3>Vị trí rewarded ad (quảng cáo có thưởng)</h3>
+  <div class="scroll"><table>
+    <tr><th>Placement</th><th>Thưởng</th><th class="num">Trần / ngày</th><th>Mở từ</th></tr>
+    <tr><td>Continue sau thua</td><td>+3 lượt</td><td class="num">1 / màn</td><td>Màn 11</td></tr>
+    <tr><td>Hết mạng</td><td>+1 mạng</td><td class="num">3</td><td>Màn 21</td></tr>
+    <tr><td>Rương nhiệm vụ ngày</td><td>Nhân đôi rương</td><td class="num">1</td><td>Khi mở nhiệm vụ</td></tr>
+    <tr><td>Booster miễn phí trong Shop</td><td>1 booster ngẫu nhiên</td><td class="num">2</td><td>Màn 3</td></tr>
+    <tr><td>Token event</td><td>Nhân đôi token của màn vừa thắng</td><td class="num">3</td><td>Khi có event</td></tr>
+  </table></div>
+  <p><b>Interstitial (quảng cáo xen giữa)</b>: không có ở màn 1–20. Từ màn 21, tối đa 1 lần mỗi 3 màn, chỉ sau khi <b>thắng</b>, không bao giờ trong 3 phút đầu phiên. Người đã trả tiền (payer) không thấy interstitial.</p>
+</section>
+
+<section>
+  <h2>Giữ chân hằng ngày <span class="tag t-day">Daily</span></h2>
+  <h3>Điểm danh 7 ngày</h3>
+  <p>Vòng 7 ngày, <b>bỏ lỡ một ngày thì chỉ dừng, không mất tiến độ</b>. Popup tự hiện ở lần mở game đầu tiên trong ngày, sau khi đã qua màn 5 (không chen vào onboarding).</p>
+  <div class="scroll"><table>
+    <tr><th>Ngày</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+    <tr><td>Thưởng</td><td>50 xu</td><td>1 Hammer</td><td>80 xu</td><td>1 New card + 30′ mạng vô hạn</td><td>120 xu</td><td>1 +3 moves</td><td><b>Hộp quà</b>: 150 xu + 10 gems + 1 giờ mạng vô hạn</td></tr>
+  </table></div>
+  <p>Tổng mỗi vòng: <b>400 xu + 3 booster (~180 xu) + 10 gems</b>. Tương đương ~4 màn thắng ở chương 3.</p>
+
+  <h3>3 nhiệm vụ ngày</h3>
+  <p>Mỗi ngày bốc 3 nhiệm vụ (dễ / vừa / khó) từ pool; lọc theo cơ chế người chơi đã mở. Đủ 100 điểm thì mở <b>rương ngày</b>: 60 xu + 1 booster ngẫu nhiên (+30 điểm pass khi có season).</p>
+  <div class="scroll"><table>
+    <tr><th>Độ khó</th><th class="num">Điểm</th><th>Pool nhiệm vụ</th></tr>
+    <tr><td>Dễ</td><td class="num">20</td><td>Thắng 2 màn · Gom 30 mèo · Vuốt mèo trong Deco 3 lần</td></tr>
+    <tr><td>Vừa</td><td class="num">30</td><td>Gom 5 cụm ≥ 4 mèo · Vỡ 8 thùng gỗ (từ màn 5) · Dùng 2 booster · Thắng 3 màn</td></tr>
+    <tr><td>Khó</td><td class="num">50</td><td>Thắng 1 màn 3 sao · Gom 1 cụm ≥ 6 mèo · Thắng 5 màn</td></tr>
+  </table></div>
+
+  <h3>Chuỗi thắng (Cat Streak)</h3>
+  <p>Thắng liên tiếp thì vào màn kế tiếp với quà sẵn. Thua (kể cả bỏ ngang) thì mất chuỗi. Bật từ màn 21.</p>
+  <div class="scroll"><table>
+    <tr><th>Bậc</th><th class="num">Thắng liên tiếp</th><th>Quà đầu màn</th></tr>
+    <tr><td>1</td><td class="num">3</td><td>+2 lượt</td></tr>
+    <tr><td>2</td><td class="num">5</td><td>+2 lượt + 1 lần Hammer miễn phí</td></tr>
+    <tr><td>3</td><td class="num">8</td><td>+3 lượt + Hammer + New card miễn phí</td></tr>
+  </table></div>
+  <p class="note"><b>Tương tác với DDA:</b> lượt chơi có quà chuỗi thắng phải gắn cờ <code>assisted</code> trong <code>recordAttempt</code>, để hệ độ khó thích ứng không đọc nhầm thành người chơi giỏi lên rồi tăng khó.</p>
+</section>
+
+<section>
+  <h2>Event hằng tuần <span class="tag t-week">Weekly</span></h2>
+  <div class="scroll"><table>
+    <tr><th>Event</th><th>Kiểu</th><th>Thời lượng</th><th>Luật</th><th>Thưởng chính</th></tr>
+    <tr><td><b>Yarn Climb</b></td><td>Thang chuỗi thắng</td><td>4 ngày (T2–T5)</td><td>7 bậc; mỗi lần thắng lên 1 bậc, thua lùi 1 bậc. Lên đỉnh nhận thưởng, thang reset.</td><td>Đỉnh: 200 xu + 15 gems + booster</td></tr>
+    <tr><td><b>Fish Festival</b></td><td>Thu thập</td><td>3 ngày (T6–CN)</td><td>Mỗi cụm gom ra cá = số mèo trong cụm. 10 mốc tiến độ.</td><td>Mốc cuối: đồ Deco độc quyền của event</td></tr>
+    <tr><td><b>Cat Race</b></td><td>Đua 5 người</td><td>24 giờ</td><td>Ai thắng đủ 10 màn trước. Phase 2 đối thủ do máy điều khiển, Phase 4 người thật.</td><td>Hạng 1: 30 gems + 300 xu</td></tr>
+    <tr><td><b>Deco Sale</b></td><td>Offer</td><td>Cuối tuần cuối season</td><td>Giảm 30% đồ Deco bằng xu</td><td>Sink xu tồn</td></tr>
+  </table></div>
+
+  <h3>Lịch mẫu 1 tuần</h3>
+  <div class="scroll"><div class="cal">
+    <div></div><div class="h">T2</div><div class="h">T3</div><div class="h">T4</div><div class="h">T5</div><div class="h">T6</div><div class="h">T7</div><div class="h">CN</div>
+    <div class="h">Season</div><div class="bar b-pass" style="grid-column: span 7">Season Pass chạy liên tục 28 ngày</div>
+    <div class="h">Event A</div><div class="bar b-yarn" style="grid-column: span 4">Yarn Climb</div><div class="bar b-fish" style="grid-column: span 3">Fish Festival</div>
+    <div class="h">Event B</div><div></div><div class="bar b-race">Cat Race</div><div></div><div></div><div></div><div class="bar b-race">Cat Race</div><div></div>
+    <div class="h">Offer</div><div style="grid-column: span 5"></div><div class="bar b-sale" style="grid-column: span 2">Deco Sale (tuần 4)</div>
+  </div></div>
+  <p>Luôn có đúng 1 event chính + tối đa 1 event phụ cùng lúc, tránh nhồi icon lên Home. Lịch là dữ liệu (<code>liveops-data.mjs</code>), tính từ ngày theo chu kỳ cố định nên không cần server ở Phase 2.</p>
+</section>
+
+<section>
+  <h2>Season Pass <span class="tag t-season">Season</span></h2>
+  <div class="scroll"><table>
+    <tr><th>Thông số</th><th>Giá trị</th></tr>
+    <tr><td>Độ dài</td><td>28 ngày, 30 tầng, 80 điểm/tầng (tổng 2.400)</td></tr>
+    <tr><td>Kiếm điểm pass</td><td>Thắng màn: 10 + 5/sao (3 sao = 25) · Rương ngày: 30 · Mốc event: 20–50</td></tr>
+    <tr><td>Track miễn phí</td><td>~1.200 xu, 12 booster, 30 gems, 1 đồ Deco ở tầng 30</td></tr>
+    <tr><td>Track premium ($4.99)</td><td>150 gems, 20 booster, 6 giờ mạng vô hạn, <b>4 đồ Deco mùa</b> (tầng 10/20/25/30), <b>trang phục mèo</b> ở tầng 30</td></tr>
+    <tr><td>Mua tầng</td><td>40 gems / tầng</td></tr>
+    <tr><td>Chủ đề</td><td>S1 Spooky Garden (Halloween) · S2 Cozy Winter · S3 Lunar New Year · S4 Spring Picnic</td></tr>
+  </table></div>
+
+  <h3>Nhịp lên tầng theo loại người chơi (ước lượng)</h3>
+  <div class="scroll" style="padding:12px">
+  <svg viewBox="0 0 640 260" width="100%" style="min-width:520px;display:block" role="img" aria-label="Điểm pass tích luỹ theo ngày: người chơi tích cực đạt khoảng 2300 điểm (tầng 28) sau 28 ngày, người chơi thường khoảng 860 điểm (tầng 10)">
+    <g stroke="var(--line)" stroke-width="1">
+      <line x1="50" y1="220" x2="610" y2="220"/>
+      <line x1="50" y1="156.7" x2="610" y2="156.7" stroke-dasharray="3 4"/>
+      <line x1="50" y1="93.3" x2="610" y2="93.3" stroke-dasharray="3 4"/>
+      <line x1="50" y1="30" x2="610" y2="30" stroke-dasharray="3 4"/>
+    </g>
+    <text x="44" y="224" text-anchor="end">0</text>
+    <text x="44" y="160.7" text-anchor="end">800</text>
+    <text x="44" y="97.3" text-anchor="end">1600</text>
+    <text x="44" y="34" text-anchor="end">2400</text>
+    <text x="606" y="152" text-anchor="end">tầng 10</text>
+    <text x="606" y="89" text-anchor="end">tầng 20</text>
+    <text x="606" y="26" text-anchor="end">tầng 30</text>
+    <text x="50" y="240" text-anchor="middle">0</text><text x="190" y="240" text-anchor="middle">7</text><text x="330" y="240" text-anchor="middle">14</text><text x="470" y="240" text-anchor="middle">21</text><text x="610" y="240" text-anchor="middle">28 ngày</text>
+    <polyline fill="none" stroke="var(--plum)" stroke-width="2.5" points="50,220 190,174.5 330,129 470,83.5 610,37.9"/>
+    <polyline fill="none" stroke="var(--sky)" stroke-width="2.5" points="50,220 190,202.9 330,185.8 470,168.7 610,151.6"/>
+    <circle cx="610" cy="37.9" r="4" fill="var(--plum)"/><circle cx="610" cy="151.6" r="4" fill="var(--sky)"/>
+  </svg>
+  <div class="legend"><span><i style="background:var(--plum)"></i>Tích cực: 5 ngày/tuần, 4 thắng/ngày, xong rương ngày (≈115 điểm/ngày chơi) → tầng 28</span><span><i style="background:var(--sky)"></i>Thường: 3 ngày/tuần, 2 thắng/ngày (≈72 điểm/ngày chơi) → tầng 10</span></div>
+  </div>
+  <p>Người chơi tích cực thiếu ~2 tầng ở ngày 28, tạo nhu cầu mua tầng (2 tầng × 40 gems = 80 gems). Người chơi thường nhận đồ tầng 10 nếu mua premium, đủ để thấy giá trị pass.</p>
+  <p class="note"><b>Chi phí sản xuất:</b> mỗi season cần 4–5 model 3D mới + 1 trang phục mèo, mỗi model phải qua QC "all clear" và kiểm bằng mắt (quy trình trong CLAUDE.md). Effort M mỗi season; cần làm trước ít nhất 1 season.</p>
+</section>
+
+<section>
+  <h2>Khác biệt theo nền tảng</h2>
+  <div class="scroll"><table>
+    <tr><th>Hạng mục</th><th>TikTok Mini Game</th><th>App store (Cocos port)</th></tr>
+    <tr><td>Nguồn giờ</td><td>Giờ máy + chốt chống lùi giờ; Phase 4 giờ server qua <code>request()</code> (HTTPS)</td><td>Giống TikTok, cộng backend</td></tr>
+    <tr><td>Lưu trữ</td><td><code>setStorage</code> (đổi backend trong <code>save.mjs</code>), lưu ngay mỗi thay đổi + <code>onHide()</code></td><td><code>sys.localStorage</code> + cloud save sau</td></tr>
+    <tr><td>Rewarded / interstitial</td><td><code>createRewardedVideoAd</code> / <code>createInterstitialAd</code>; interstitial tiết chế hơn (vuốt là thoát)</td><td>Ad mediation (AppLovin MAX / LevelPlay)</td></tr>
+    <tr><td>IAP</td><td><code>pay()</code> qua hệ thanh toán TikTok; cần ký contract monetization; tỉ lệ ăn chia [CHƯA KIỂM CHỨNG]; VN cần giấy phép G1</td><td>StoreKit / Google Play Billing</td></tr>
+    <tr><td>Nhắc quay lại</td><td>SDK không có push tuỳ ý → dựa vào Recently Played; không thiết kế tính năng phụ thuộc push</td><td>Local notification: đầy mạng, quà ngày sẵn, event sắp hết</td></tr>
+    <tr><td>Content event</td><td>Art event trong subpackage ≤ 4 MB; lịch / số liệu qua remote config JSON (chỉ dữ liệu, không script)</td><td>Asset bundle + remote config</td></tr>
+    <tr><td>Social</td><td>Chia sẻ kết quả Cat Race và thách đấu màn qua <code>shareAppMessage</code> + launch options: kênh lôi kéo người chơi mới</td><td>Tuỳ chọn</td></tr>
+    <tr><td>Nhịp event</td><td>Ưu tiên event ngắn (24 giờ – 3 ngày)</td><td>Có thể thêm event 7 ngày</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Rủi ro <span class="tag t-risk">Risk</span></h2>
+  <div class="scroll"><table>
+    <tr><th>Rủi ro</th><th>Mức</th><th>Giảm thiểu</th></tr>
+    <tr><td>Thiếu content: 50 màn, người chơi tích cực hết trong vài ngày</td><td><b>Cao</b></td><td>Pipeline sinh màn (đã có <code>tools/generate-layouts.mjs</code> + bot sim) → ≥ 150 màn trước soft launch, +50 màn / 2 tuần (ước lượng); event tính màn chơi lại</td></tr>
+    <tr><td>Vách churn ở màn 21: mạng + chuỗi thắng + xu giảm cùng lúc</td><td>Cao</td><td>Theo dõi funnel màn 21–25; A/B lives ở màn 11 và 21; tặng 1 giờ mạng vô hạn khi mở mạng</td></tr>
+    <tr><td>Chỉnh giờ máy để nhận quà</td><td>Trung bình</td><td>Lưu mốc giờ lớn nhất từng thấy; giờ lùi thì khoá nhận quà đến khi vượt mốc; giờ server ở Phase 4</td></tr>
+    <tr><td>Quà chuỗi thắng / continue làm sai DDA</td><td>Trung bình</td><td>Gắn cờ <code>assisted</code>, DDA bỏ qua khi đo kỹ năng</td></tr>
+    <tr><td>Cat Race dùng đối thủ máy</td><td>Trung bình</td><td>Không ghi "người thật"; chuyển race thật ở Phase 4; kiểm chính sách store</td></tr>
+    <tr><td>Thanh toán TikTok chưa rõ (giá, ăn chia, G1)</td><td>Trung bình</td><td>Hỏi BD TikTok trước khi chốt giá; khởi động G1 sớm</td></tr>
+    <tr><td>Sản xuất 3D mỗi season</td><td>Trung bình</td><td>Làm trước 1 season; tái dùng khung model có sẵn</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>KPI và cách đo</h2>
+  <div class="scroll"><table>
+    <tr><th>Tính năng</th><th>Metric</th><th class="num">Mục tiêu</th><th>Nguồn số</th></tr>
+    <tr><td>Toàn game</td><td>RR1 / playtime</td><td class="num">≥ 35% / ≥ 8′</td><td>Ngưỡng greenlight</td></tr>
+    <tr><td>Toàn game</td><td>RR7 / RR30</td><td class="num">≥ 12% / ≥ 4%</td><td>Ước lượng cho puzzle hybrid-casual top-quartile, cần đối chiếu benchmark</td></tr>
+    <tr><td>Điểm danh</td><td>% DAU nhận quà</td><td class="num">≥ 70%</td><td>Ước lượng</td></tr>
+    <tr><td>Nhiệm vụ ngày</td><td>% DAU mở rương ngày</td><td class="num">35–50%</td><td>Ước lượng</td></tr>
+    <tr><td>Lives</td><td>% phiên kết thúc vì hết mạng</td><td class="num">≤ 15%</td><td>Cao hơn là quá gắt, hại RR</td></tr>
+    <tr><td>Continue</td><td>% lần thua có continue (ad + gems)</td><td class="num">10–20%</td><td>Ước lượng</td></tr>
+    <tr><td>Event</td><td>% DAU đủ điều kiện tham gia / % về mốc cuối</td><td class="num">≥ 50% / 15–25%</td><td>Ước lượng</td></tr>
+    <tr><td>Season Pass</td><td>% người chơi hoạt động trong season mua premium</td><td class="num">2–4%</td><td>Ước lượng (store); TikTok chưa có benchmark</td></tr>
+    <tr><td>Rewarded</td><td>Impression / DAU</td><td class="num">3–5</td><td>Ước lượng</td></tr>
+  </table></div>
+  <p class="note ok"><b>Phase 1 đã có trong code:</b> logic <code>game/gameplay/liveops.mjs</code> (+ test), số liệu <code>tuning.mjs → LIVEOPS</code>, giao diện <code>game/app/liveops-ui.js</code> + <code>game/ui/shared/liveops.css</code>. Quảng cáo và thanh toán đang giả lập, có ghi nhãn "test" trên giao diện.</p>
+  <p>Event telemetry tối thiểu: <code>daily_claim</code>, <code>quest_complete</code>, <code>chest_open</code>, <code>lives_empty</code>, <code>continue_offer</code> / <code>continue_accept</code>, <code>streak_lost</code>, <code>event_progress</code>, <code>pass_tier</code>, <code>iap_purchase</code>, <code>ad_reward</code>. Mọi event mang <code>level</code>, <code>coins</code>, <code>gems</code>, <code>lives</code> để dựng funnel và sink/source.</p>
+</section>
+
+<section>
+  <h2>Lộ trình</h2>
+  <div class="scroll"><table>
+    <tr><th>Phase</th><th>Nội dung</th><th>Effort</th><th>Đo thành công</th></tr>
+    <tr><td><b>1 · Retention + kinh tế</b> (đang làm)</td><td>Gems, Lives, continue, điểm danh 7 ngày, nhiệm vụ ngày, chuỗi thắng, đồng hồ LiveOps có chốt chống lùi giờ, IAP giả lập</td><td>L</td><td>RR2 tăng so với bản không LiveOps; % phiên hết mạng ≤ 15%</td></tr>
+    <tr><td><b>2 · Event</b></td><td>Khung event theo lịch, Yarn Climb, Fish Festival, Cat Race (máy), Deco Sale, remote config</td><td>L</td><td>Tham gia ≥ 50% DAU; RR7</td></tr>
+    <tr><td><b>3 · Season</b></td><td>Season Pass 30 tầng, bộ đồ S1 Spooky Garden (4 model + trang phục mèo), Hũ cá, Starter pack</td><td>L</td><td>Premium 2–4%; ARPDAU</td></tr>
+    <tr><td><b>4 · Nền tảng</b></td><td>Backend (giờ, config, race thật), TikTok SDK (login, ads, pay), mediation store, push store</td><td>XL</td><td>Doanh thu thật; tỉ lệ lỗi giao dịch</td></tr>
+    <tr><td><b>Song song · Content</b></td><td>Pipeline sinh + kiểm màn bằng bot, 150 màn trước soft launch</td><td>L</td><td>Tỉ lệ người chơi hết màn &lt; 5% DAU</td></tr>
+  </table></div>
+</section>
+
+</div>

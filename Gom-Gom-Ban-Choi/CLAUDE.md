@@ -16,7 +16,8 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
 | `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
 | `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/app/` | Điều khiển ứng dụng (xem 3 dòng trên) + `main.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
+| `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, quảng cáo giả lập. Luật ở `gameplay/liveops.mjs`, số ở `tuning.mjs` (LIVEOPS), CSS ở `ui/shared/liveops.css`, thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi luật / số thì `Gameplay:`) |
+| `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, state LiveOps, toast), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
 
@@ -138,11 +139,11 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Thêm khu mới: `loadDeco` phải tự thêm khu mặc định cho save cũ (test kiểm). Phòng trong nhà mặc định sàn Oak miễn phí.
 - Khu mới cần: ZONE_OFFSET + LINKS (cửa / cổng nối, mèo tự tìm đường qua nhiều khu), PLACES + OBSTACLE_RADIUS,
   ZONES (mốc mở), nút trong thanh chọn khu, đồ chơi của mèo (ZONE_TOYS) và hành vi cho từng món. QC tự lấy lối cửa từ LINKS.
-- **Mở rộng một khu** (vd. vườn mở rộng khi thắng màn 30, `GARDEN_EXPANSION`): KHÔNG tạo khu Deco mới. Vẫn một khu, chung
+- **Mở rộng một khu** (vd. vườn mở rộng khi thắng màn 10, `GARDEN_EXPANSION`): KHÔNG tạo khu Deco mới. Vẫn một khu, chung
   nền + chung rào (rào chữ nhật `buildFence(..., halfX)`, khung `gardenBounds(expanded)`); đồ mới thuộc khu đó với
   `area` riêng, hiện trong cùng mục shop và chỉ hiện trong cảnh khi đã mở rộng. 'garden2' chỉ còn là ô đi lại nội bộ của
   mèo (ZONE_OFFSET + LINKS `open: true`: lối thông thoáng, không có cửa). Deco: camera lùi xa hơn (`WIDE`) cho thấy trọn.
-- Phần khoá ở màn game chưa có (vườn mở rộng: màn 30): xem bằng Dev: Unlock all (bật cờ `gomgom-dev-all-zones`).
+- Phần khoá ở màn game chưa có: xem bằng Dev: Unlock all (bật cờ `gomgom-dev-all-zones`).
 
 **Camera / chọn khu ở Deco**
 - Deco chỉ đổi khu theo cảnh (`followDrag` trong deco-room.mjs) khi chính người chơi kéo cảnh và **không** có món đang chọn.
