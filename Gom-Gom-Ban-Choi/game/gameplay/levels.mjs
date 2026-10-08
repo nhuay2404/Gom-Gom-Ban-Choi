@@ -1,4 +1,4 @@
-// 40 màn của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
+// 50 màn của Gom Gom Rotate: dữ liệu màn + bộ chia thẻ. Thuần dữ liệu/logic, không đụng giao diện
 // (bộ mô phỏng tools/simulate-levels.mjs dùng chung file này để cân độ khó).
 //
 // Tiến trình (độ khó răng cưa: lên dần, thả ở màn nghỉ, lên cao hơn ở boss):
@@ -13,7 +13,8 @@
 //   19   Màn nghỉ                           20   BOSS chương 2
 //   21–30 Chương 3 (phòng khách, mở sau màn 20): lặp nhịp thường -> khó -> nghỉ (27) -> thắt nút (29) -> BOSS 30
 //   31–40 Chương 4 (phòng ngủ, mở sau màn 30): như chương 3, đông vật cản hơn; nghỉ 37, thắt nút 39, BOSS 40
-//   Màn 21–40 dựng bằng script một lần: đặt mèo theo cặp không tạo cụm gom sẵn, mục tiêu điểm cân bằng bot
+//   41–50 Chương 5 (bếp, mở sau màn 40): như chương 4, vật cản trộn khác nhau mỗi màn; nghỉ 47, thắt nút 49, BOSS 50
+//   Màn 21–50 dựng bằng script một lần: đặt mèo theo cặp không tạo cụm gom sẵn, mục tiêu điểm cân bằng bot
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
 // `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold' | 'cage'), bảng vào màn gắn nhãn NEW.
@@ -293,6 +294,68 @@ export const LEVELS = [
     name: "Bedroom Fortress", feature: "Boss: cross board", tier: 'boss',
     moves: 24, target: 500, cats: 'OGWTSK', assist: 0.4,
     board: ['##.MM.##', '##WMO.##', '..WT.TM.', 'M..t.TXs', 'O.MGMMOS', 'XXX...o.', '##X.KX##', '##TTk.##'],
+    deck: [],
+  },
+  // ===== Chương 5: bếp (mở sau màn 40) — xào lại cả bốn vật cản theo cặp: thùng -> chuồng -> kim loại + thùng -> ...;
+  // nghỉ 47, thắt nút 49 (bot thắng ~12%), BOSS 50 =====
+  {
+    name: "Kitchen Door", feature: "Crates by the door", tier: 'normal',
+    moves: 15, target: 360, cats: 'OGWTSK', assist: 0.4,
+    board: ['T.....S', 'TXT..X.', 'WW.X...', 'XO.TT.X', 'SO.X...', '.X..GX.', '.....KK'],
+    deck: [],
+  },
+  {
+    name: "Cookie Tray", feature: "Hexagon + cages", tier: 'normal',
+    moves: 16, target: 230, cats: 'OGWTSK', assist: 0.4,
+    board: ['##.KO.##', '#.T..o.#', '..T.SSWK', '.O....W.', '.o......', '#....T.#', '##...T##'],
+    deck: [],
+  },
+  {
+    name: "Spice Rack", feature: "Metal shelves + crates", tier: 'hard',
+    moves: 17, target: 430, cats: 'OGWTSK', assist: 0.4,
+    board: ['T..WW...', 'TMMM.MMM', '..WW..SS', 'XG.X..X.', 'TT.....S', 'MMM.MMM.', 'T...G...', '..X..XKK'],
+    deck: [],
+  },
+  {
+    name: "Fish Bowl", feature: "Diamond board + metal + cages", tier: 'normal',
+    moves: 16, target: 270, cats: 'OGWTSK', assist: 0.4,
+    board: ['##Tw.##', '#.T.WW#', '..GM.G.', 'o.MMM..', 'O.KMS..', '#.K...#', '##...##'],
+    deck: [],
+  },
+  {
+    name: "Pantry", feature: "Crates everywhere", tier: 'normal',
+    moves: 17, target: 500, cats: 'OGWTSK', assist: 0.4,
+    board: ['XT.GG..X', '.TX..X..', '.X.G..X.', '.TTXX...', 'OO...S..', 'TX.XX.X.', 'WWX..X..', 'X....KKX'],
+    deck: [],
+  },
+  {
+    name: "Oven Grill", feature: "Metal grill + crates + cages", tier: 'hard',
+    moves: 18, target: 420, cats: 'OGWTSK', assist: 0.4,
+    board: ['..M..M..', 'X.OO.GGX', '..MT.M..', '...TO.Ss', '..M.OM..', 'X..W..TX', '.WMw.MGK', '........'],
+    deck: [],
+  },
+  {
+    name: "Milk Break", feature: "Heart board, take a breather", tier: 'chill',
+    moves: 20, target: 360, cats: 'OGWT', assist: 0.4,
+    board: ['#W.##..#', '.WG...O.', '....TT.O', '...MM...', '#WW....#', '##....##', '###TT###'],
+    deck: [],
+  },
+  {
+    name: "Sink Divide", feature: "Metal wall + cages", tier: 'hard',
+    moves: 18, target: 440, cats: 'OGWTSK', assist: 0.4,
+    board: ['T.WM....', 'T..M....', 'GG.M..XO', 'Oo..Kk.O', '....M..s', '.X..MTT.', '....M...', '....M.KK'],
+    deck: [],
+  },
+  {
+    name: "Fridge Lock", feature: "Metal + crates + cages", tier: 'hard',
+    moves: 19, target: 490, cats: 'OGWTSK', assist: 0.3,
+    board: ['XT.MMw.X', '.T.....G', 'GMM..MMS', '.OOXX.KK', '.MMOOMM.', '...S..tT', 'X..MM..X', '......KK'],
+    deck: [],
+  },
+  {
+    name: "Kitchen Fortress", feature: "Boss: cross board", tier: 'boss',
+    moves: 24, target: 550, cats: 'OGWTSK', assist: 0.4,
+    board: ['##SS..##', '##.XXK##', 'SSMGGMOW', 'X..MMk.X', 'Xo.MM..X', '.OM..MSS', '##.XXG##', '##.TT.##'],
     deck: [],
   },
 ];
