@@ -78,6 +78,50 @@ export const BOOSTERS = {
   PRICE: { hammer: 60, swap: 40, moves: 80 },
 };
 
+// LiveOps Phase 1 (liveops.mjs, tai-lieu/6-Thiet-ke-LiveOps.html): gems, mạng, continue, điểm danh, nhiệm vụ ngày, chuỗi thắng.
+// Mốc màn tính theo số thứ tự màn (1 = màn đầu); 20 màn đầu không có mạng / chuỗi thắng để giữ RR1.
+export const LIVEOPS = {
+  START_GEMS: 0,
+  LIVES_MAX: 5,
+  LIFE_REGEN_MS: 30 * 60 * 1000,     // hồi 1 mạng mỗi 30 phút
+  LIVES_FROM_LEVEL: 21,              // mất mạng khi thua / bỏ ngang từ màn này
+  LIVES_INTRO_UNLIMITED_MIN: 60,     // lần đầu bật mạng: tặng 1 giờ mạng vô hạn
+  REFILL_GEMS: 60,                   // hồi đầy mạng bằng gems
+  CONTINUE_FROM_LEVEL: 11,
+  CONTINUE_GEMS: [60, 100, 150],     // lần 1 / 2 / 3+ trong cùng một lượt chơi
+  CONTINUE_MOVES: 5,
+  CONTINUE_AD_MOVES: 3,              // continue bằng rewarded ad: 1 lần / lượt chơi
+  CONTINUE_CLEAR_CELLS: 3,           // thua vì hết chỗ: continue dọn thêm bấy nhiêu ô
+  AD_LIVES_PER_DAY: 3,
+  DAILY_FROM_CLEARED: 5,             // điểm danh + nhiệm vụ hiện sau khi qua bấy nhiêu màn
+  CLOCK_TOLERANCE_MS: 10 * 60 * 1000, // giờ máy lùi quá mức này so với mốc lớn nhất từng thấy = khoá nhận quà
+  // Điểm danh 7 ngày: bỏ lỡ ngày thì dừng, không mất tiến độ. unlimitedMin = phút mạng vô hạn.
+  LOGIN_REWARDS: [
+    { coins: 50 },
+    { boosters: { hammer: 1 } },
+    { coins: 80 },
+    { boosters: { swap: 1 }, unlimitedMin: 30 },
+    { coins: 120 },
+    { boosters: { moves: 1 } },
+    { coins: 150, gems: 10, unlimitedMin: 60 },
+  ],
+  QUEST_SLOTS: { easy: 20, medium: 30, hard: 50 },  // mỗi ngày 1 nhiệm vụ mỗi độ khó, tổng 100 điểm = mở rương
+  CHEST: { coins: 60, randomBooster: 1 },
+  STREAK_FROM_LEVEL: 21,
+  // Chuỗi thắng: thắng liên tiếp tối thiểu `wins` thì màn kế được quà đầu màn.
+  STREAK_TIERS: [
+    { wins: 3, moves: 2 },
+    { wins: 5, moves: 2, hammer: 1 },
+    { wins: 8, moves: 3, hammer: 1, swap: 1 },
+  ],
+  GEM_PACKS: [
+    { id: 'gems-s', gems: 60, price: '$0.99' },
+    { id: 'gems-m', gems: 330, price: '$4.99' },
+    { id: 'gems-l', gems: 700, price: '$9.99', tag: 'Popular' },
+    { id: 'gems-xl', gems: 1500, price: '$19.99' },
+  ],
+};
+
 // Độ khó thích ứng theo profile người chơi (adaptive.mjs, tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md).
 export const ADAPTIVE = {
   TIGHT_PPM: 18,          // điểm cần mỗi lượt (target / moves) từ mức này trở lên thì element "moves" bật

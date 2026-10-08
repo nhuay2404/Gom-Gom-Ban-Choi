@@ -9,6 +9,7 @@
 //   night     'on' | 'off'                   khu mèo ban đêm / ban ngày
 //   boosters  { hammer, swap, moves }        số booster đang có (chưa có save = BOOSTERS.START_STOCK mỗi loại)
 //   profile   { attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }  lịch sử chơi cho độ khó thích ứng (adaptive.mjs)
+//   liveops   { gems, lives, regenFrom, unlimitedUntil, livesIntro, maxSeen, login, quests, streak, ads }  LiveOps (liveops.mjs)
 export const SAVE_KEYS = {
   progress: 'gomgom-rotate-progress-v1',
   deco: 'gomgom-rotate-deco-v1',
@@ -18,6 +19,7 @@ export const SAVE_KEYS = {
   profile: 'gomgom-rotate-profile-v1',
   decoTour: 'gomgom-rotate-deco-tour-v1',
   onboarding: 'gomgom-rotate-onboarding-v1',
+  liveops: 'gomgom-rotate-liveops-v1',
 };
 
 function defaultBackend() {
