@@ -3,11 +3,12 @@
 //
 // State nằm trong save LiveOps (liveops.mjs) ở trường `events`. Mỗi lượt event có `key` = id + ngày bắt đầu ('fish:2026-10-09'):
 // key đổi (sang lượt mới) thì tiến độ về 0. Mọi hàm nhận `now` (ms) để test được; `cleared` = số màn đã qua (mở event),
-// `levelIndex` = màn vừa chơi (chỉ màn từ fromLevel trở lên mới tính, kể cả chơi lại). Hàm trả phần thưởng dạng
+// `levelIndex` = màn vừa chơi (chỉ màn từ fromLevel trở lên mới tính, kể cả chơi lại). Giờ máy đang lùi so với mốc lớn nhất từng
+// thấy (chốt chống lùi giờ của liveops.mjs) thì event không tính tiến độ, không trả thưởng. Hàm trả phần thưởng dạng
 // { coins, gems, boosters, deco } trong `rewards: [{ id, label, reward }]`: gems ghi vào state ở đây, phần còn lại phía app cộng.
 import { LIVEOPS } from './tuning.mjs';
 import { EVENT_EPOCH, CYCLE_DAYS, EVENT_CALENDAR, RACE_BOTS } from './liveops-data.mjs';
-import { dayKey, seeded } from './liveops.mjs';
+import { dayKey, seeded, clockTampered } from './liveops.mjs';
 
 const EV = LIVEOPS.EVENTS;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -100,7 +101,7 @@ export function fishStatus(state, ms, cleared) {
 // Thêm cá; trả về { state, rewards } (mốc vừa qua). Không có event / màn chưa tính thì giữ nguyên.
 export function addFish(state, ms, cleared, levelIndex, count) {
   const event = running('fish', ms, cleared), rewards = [];
-  if (!event || !eventCounts('fish', levelIndex) || count <= 0) return { state, rewards, added: 0 };
+  if (!event || !eventCounts('fish', levelIndex) || count <= 0 || clockTampered(state, ms)) return { state, rewards, added: 0 };
   let f = fishOf(state, event);
   f = { ...f, fish: f.fish + count };
   while (f.reached < EV.fish.milestones.length && f.fish >= EV.fish.milestones[f.reached].fish) {
@@ -117,7 +118,7 @@ export function fishAdsLeft(state, ms) {
   return EV.fish.adDoublePerDay - (ads.day === dayKey(ms) ? ads.fish : 0);
 }
 export function doubleFish(state, ms, cleared, levelIndex, count) {
-  if (fishAdsLeft(state, ms) <= 0 || !running('fish', ms, cleared)) return null;
+  if (fishAdsLeft(state, ms) <= 0 || !running('fish', ms, cleared) || clockTampered(state, ms)) return null;
   const ads = eventsOf(state).ads, today = dayKey(ms);
   const used = withEvents(state, { ads: { day: today, fish: (ads.day === today ? ads.fish : 0) + 1 } });
   return addFish(used, ms, cleared, levelIndex, count);
@@ -162,6 +163,7 @@ export function raceStatus(state, ms, cleared) {
 // (trả thưởng trong `rewards`). Trả về { state, joined, rewards }.
 export function joinRace(state, ms, cleared, levelIndex) {
   const rewards = [];
+  if (clockTampered(state, ms)) return { state, joined: false, rewards };
   state = settleRace(state, ms, rewards);
   const today = running('race', ms, cleared), race = eventsOf(state).race;
   if (!today || !eventCounts('race', levelIndex) || race?.key === today.key || (race && !race.paid)) return { state, joined: false, rewards };
@@ -196,6 +198,7 @@ export const decoSaleEvent = ms => scheduledOne('decoSale', ms);
 // Kết thúc màn (thắng / thua / bỏ ngang). Trả về { state, rewards }.
 export function eventLevelEnd(state, ms, cleared, levelIndex, win) {
   const rewards = [];
+  if (clockTampered(state, ms)) return { state, rewards };
   let next = win ? yarnWin(state, ms, cleared, levelIndex, rewards) : yarnLose(state, ms, cleared, levelIndex);
   next = win ? raceWin(next, ms, levelIndex, rewards) : settleRace(next, ms, rewards);
   return { state: next, rewards };
@@ -203,6 +206,7 @@ export function eventLevelEnd(state, ms, cleared, levelIndex, win) {
 // Lúc mở game / về Home: chốt cuộc đua đã hết giờ (trả thưởng).
 export function syncEvents(state, ms) {
   const rewards = [];
+  if (clockTampered(state, ms)) return { state, rewards };
   return { state: settleRace(state, ms, rewards), rewards };
 }
 // Nút event ở Home: đúng 1 event chính + tối đa 1 event phụ. [{ id, kind, end }]

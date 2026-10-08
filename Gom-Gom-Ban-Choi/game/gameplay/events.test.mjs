@@ -153,3 +153,12 @@ test('home shows exactly one main event and at most one side event', () => {
   assert.deepEqual(ev.homeEvents(s, at(TUE), CLEARED).map(e => e.id), ['yarn', 'race']);
   assert.deepEqual(ev.homeEvents(s, at(TUE), EV.yarn.fromLevel - 2), [], 'locked before fromLevel');
 });
+
+test('clock set back: events stop counting and paying until the clock catches up', () => {
+  const s = { ...fresh(), maxSeen: at(SAT, 12) };
+  assert.equal(ev.addFish(s, at(FRI), CLEARED, LEVEL, 100).added, 0);
+  assert.equal(ev.joinRace(s, at(TUE + 7), CLEARED, LEVEL).joined, true, 'later clock is fine');
+  const back = { ...fresh(), maxSeen: at(TUE + 7, 12) };
+  assert.equal(ev.joinRace(back, at(SAT), CLEARED, LEVEL).joined, false);
+  assert.equal(ev.eventLevelEnd(back, at(MON + 7), CLEARED, LEVEL, true).state, back);
+});

@@ -58,6 +58,7 @@ export function syncClock(state, now) {
   return { state: { ...state, maxSeen: Math.max(state.maxSeen, now) }, tampered: false };
 }
 const tampered = (state, now) => now + L.CLOCK_TOLERANCE_MS < state.maxSeen;
+export const clockTampered = tampered;
 
 // ---------- Gems ----------
 export function spendGems(state, amount) {
