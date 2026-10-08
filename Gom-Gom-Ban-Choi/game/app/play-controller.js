@@ -17,7 +17,7 @@ import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwe
 import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, getLiveOps, setLiveOps } from './shared.js';
 import * as lo from '../gameplay/liveops.mjs';
-import { openLives, offerContinue, questEvent } from './liveops-ui.js';
+import { openLives, offerContinue, questEvent, eventLevelStart, eventMatch, eventLevelEnd, offerFishDouble } from './liveops-ui.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
@@ -616,6 +616,8 @@ function finishTurn(turn) {
   questEvent('big4', sizes.filter(n => n >= 4).length);
   questEvent('big6', sizes.filter(n => n >= 6).length);
   questEvent('crates', match.broken?.length ?? 0);
+  // Fish Festival: mỗi cụm gom ra cá = số mèo trong cụm (đếm cả ván thua); giữ tổng của ván để mời nhân đôi lúc thắng
+  if (!state.tutorial) state.fish += eventMatch(state.levelIndex, sizes.reduce((sum, n) => sum + n, 0));
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
@@ -970,6 +972,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   // LiveOps: lượt ban đầu (bỏ ngang = đã dùng ít nhất một lượt), booster miễn phí của ván, số lần continue trong lượt chơi.
   state.free = { hammer: 0, swap: 0 };
   state.continues = { gems: 0, ad: false };
+  state.fish = 0;
   const streak = !state.tutorial && lo.streakActive(levelIndex) && lo.streakBonus(getLiveOps().streak);
   if (streak) {
     state.moves += streak.moves;
@@ -1355,6 +1358,8 @@ export function startLevel(index) {
   const intro = lo.introLives(getLiveOps(), index, Date.now());
   if (intro.granted) { setLiveOps(intro.state); showToast(`Lives unlocked! ${LIVEOPS.LIVES_INTRO_UNLIMITED_MIN} min of unlimited lives`); }
   if (!lo.canStartLevel(getLiveOps(), index, Date.now())) return openLives({ onReady: () => startLevel(index) });
+  // Event: ngày đua thì vào màn = vào cuộc đua
+  eventLevelStart(index);
   menus.hideMenus();
   document.body.classList.remove('level-over');
   $('map').hidden = true;
@@ -1387,6 +1392,8 @@ function recordQuit() {
   if (!state || state.over || state.moves >= state.startMoves) return;
   recordTry(false, 'quit');
   setLiveOps(lo.recordStreak(lo.loseLife(getLiveOps(), state.levelIndex, Date.now()), state.levelIndex, false));
+  // bỏ ngang = thua với event (thang len lùi một bậc)
+  if (!state.tutorial) eventLevelEnd(state.levelIndex, false);
 }
 let resultShownAt = 0;
 function leaveResult() {
@@ -1445,6 +1452,9 @@ function finalizeLevel(win, reason = '') {
   const lifeLost = after.lives < before.lives;
   const streakNote = win && after.streak > before.streak ? `Win streak ×${after.streak}` : !win && before.streak >= LIVEOPS.STREAK_TIERS[0].wins && after.streak === 0 ? 'Win streak lost' : '';
   if (win) { questEvent('win'); if (state.outcome.stars >= 3) questEvent('threeStar'); }
+  // Event hằng tuần: thang len, cuộc đua, cá của ván (ghi chú ở bảng kết quả); thắng có cá thì mời nhân đôi bằng quảng cáo
+  const eventNotes = state.tutorial ? [] : eventLevelEnd(state.levelIndex, win, state.fish);
+  offerFishDouble(state.levelIndex, win && !state.tutorial ? state.fish : 0);
   // Thua sát nút mà chưa dùng booster: mời dùng +lượt ở lần sau (luật sát nút giữ nguyên độ khó).
   const tip = !win && boostersUnlocked(state.levelIndex) && boosterTip(profile);
   render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
@@ -1465,7 +1475,7 @@ function finalizeLevel(win, reason = '') {
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
-  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`, streakNote, lifeLost && '−1 life',
+  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`, streakNote, lifeLost && '−1 life', ...eventNotes,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');
