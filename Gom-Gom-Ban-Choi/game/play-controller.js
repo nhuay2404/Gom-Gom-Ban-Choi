@@ -615,7 +615,8 @@ function finishTurn(turn) {
   else playSound('place');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}` : '';
+  const goalText = !turn.win && state.score >= state.level.target && state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
@@ -965,7 +966,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
   document.querySelectorAll('.score-pop, .score-orb').forEach(node => node.remove());
   fill.style.transition = 'none';
-  render(`Reach ${level.target} points in ${level.moves} moves!`);
+  render(`Reach ${level.target} points in ${level.moves} moves!${state.board.some(object => object?.cage) ? " Free every caged cat too!" : ""}`);
   void fill.offsetWidth;
   fill.style.transition = '';
   renderTutorial();
@@ -1121,6 +1122,12 @@ function smashAt(cell) {
     ghost.animate([{ scale: 1, rotate: '0deg', opacity: 1 }, { scale: 1.15, rotate: '-12deg', opacity: 1, offset: .25 }, { scale: 0, rotate: '200deg', opacity: 0 }],
       { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
     spawnPuff(cell);
+  }
+  if (turn.win) {
+    const message = `You win with ${state.score} points! ✨`;
+    render(message);
+    setTimeout(() => playSound('complete'), 380);
+    return celebrateWin(message).then(() => endLevel(true));
   }
   render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${categories[turn.object.group].name} is free!` : `Bye, ${categories[turn.object.group].name}!`);
 }

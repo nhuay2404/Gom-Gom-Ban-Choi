@@ -1,5 +1,5 @@
 // Một ván chơi (thuần logic, không đụng giao diện): bóc thẻ, xoay, gửi tạm, đặt, gom, thắng/thua, tutorial.
-// Giao diện (gom-gom.js trên web, component Cocos sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
+// Giao diện (main.js trên web, component Cocos sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, turnPoints } from './scoring.mjs';
@@ -46,6 +46,9 @@ export function checkStuck(s) {
   finish(s, false, 'No room left!');
   return true;
 }
+// Qua màn = đủ điểm VÀ đã bẻ hết khóa chuồng (không còn mèo nào bị nhốt trên bàn).
+export const cagesLeft = s => s.board.filter(object => object?.cage).length;
+export const goalReached = s => s.score >= s.level.target && cagesLeft(s) === 0;
 function finish(s, win, reason = '') {
   s.over = true;
   s.outcome = { win, reason, stars: win ? starsFor(s.level, s.moves) : 0 };
@@ -117,12 +120,12 @@ export function place(s, anchor) {
   s.moves--;
   const tutorialAdvanced = advanceTutorial(s, 'place');
   const turn = { ok: true, result, match, gained, tutorialAdvanced, win: false, lose: false, stuck: false, fit: true };
-  if (s.score >= s.level.target) {
+  if (goalReached(s)) {
     finish(s, true);
     s.active = drawCard(s); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     return { ...turn, win: true };
   }
-  if (s.moves === 0) { finish(s, false, 'Out of moves!'); return { ...turn, lose: true }; }
+  if (s.moves === 0) { finish(s, false, s.score >= s.level.target ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
   s.active = drawCard(s);
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
@@ -141,6 +144,7 @@ export function smash(s, index) {
   if (object.cage) {
     const { cage, ...cat } = object;
     s.board[index] = cat;
+    if (goalReached(s)) { finish(s, true); return { ok: true, object, freed: true, win: true }; }
     return { ok: true, object, freed: true };
   }
   s.board[index] = null;

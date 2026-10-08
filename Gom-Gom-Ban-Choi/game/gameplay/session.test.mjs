@@ -224,3 +224,18 @@ test('chuồng mèo: không gom được, gom sát bên một lần là bẻ kh�
   assert.equal(s.board[20].group, 'white');
   assert.ok(!s.board[20].cage);
 });
+
+test('màn có chuồng: đủ điểm mà còn mèo bị nhốt thì chưa thắng; bẻ hết khóa mới qua màn', () => {
+  const s = game.createSession(2, { rng: seeded(9) });
+  s.board = parseBoard(['OO.o..', '......', '......', '......', '......', '......']);
+  s.board[20] = { group: 'white', locked: true, cage: 1 };
+  s.level = { ...s.level, target: 1 };
+  s.active = { offsets: [[0, 0]], items: [{ group: 'orange', name: 'Orange cat' }] };
+  const turn = game.place(s, 2); // gom cam: đủ điểm, chuồng cam vỡ nhưng chuồng trắng còn
+  assert.ok(s.score >= 1);
+  assert.equal(turn.win, false);
+  assert.equal(s.over, false);
+  const smashed = game.smash(s, 20); // búa mở nốt chuồng cuối: thắng ngay
+  assert.ok(smashed.win);
+  assert.equal(s.outcome.win, true);
+});

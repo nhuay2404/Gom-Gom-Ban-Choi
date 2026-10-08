@@ -64,7 +64,7 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
     score += pick.move.points;
     board = pick.move.match.board;
     moves--;
-    if (score >= level.target) return done({ win: true, stars: starsFor(level, moves) });
+    if (score >= level.target && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
     active = draw();
     // Thẻ mới không vừa bàn: còn đường thoát nếu cất được vào Gửi tạm (ô trống, hoặc thẻ đang gửi vừa bàn).
     const escape = useHold && (!hold || fits(board, hold, W, H));
