@@ -1486,7 +1486,7 @@ class Cat {
       this.setPose('crouch'); this.wriggle = 1; yield* this.wait(.6); this.wriggle = 0;
       yield* this.jumpTo(this.x, .3, this.z); this.goal.paw = 1; node.userData.tug?.(1.6);
       yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0; this.lookGoal = 0;
-      this.setPose('sit'); this.face('happy', 'open'); this.tailSpeed = 1.6; yield* this.wait(1.4);
+      this.setPose('sit'); this.face('happy'); this.tailSpeed = 1.6; yield* this.wait(1.4);
     } else if (id === 'lantern') {
       yield* this.turnTo(this.heading + Math.PI);
       this.setPose('loaf'); this.face('blink');
