@@ -231,6 +231,14 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   chọn võng sát rào sau vườn, camera lướt tới gần phòng khách nên Deco nhảy sang phòng khách và tắt võng.
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
+## LiveOps chạy song song với main
+- Core game + content làm trên `main`; LiveOps làm trên nhánh `Liveops`. Luật LiveOps dùng chung cho nhiều game nằm ở project riêng
+  `E:/Git/MiniGame/liveops-kit` (tài liệu tích hợp: `liveops-kit/docs/INTEGRATION.md`); thiết kế: `tai-lieu/6-Thiet-ke-LiveOps.html`.
+- Nhánh `Liveops`: đầu mỗi phiên merge `origin/main` vào rồi chạy `npm test`; test hỏng vì quy tắc mới của main thì sửa phía LiveOps.
+- File của LiveOps (`game/liveops/`, `app/liveops-ui.js`, `ui/shared/liveops.css`, thiết kế LiveOps): làm ở `main` thì không sửa.
+  File chung (`play-controller.js`, `menu-controller.js`, `shared.js`, `index.html`): LiveOps chỉ chèn lệnh gọi ngắn tới kit / adapter, không đổi logic của main.
+- LiveOps có cờ bật / tắt, mặc định TẮT trên main (playtest core đo riêng RR1 / playtime, sau đó A/B có LiveOps).
+
 ## Khác
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.
