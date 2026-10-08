@@ -8,7 +8,8 @@ import { BOOSTERS } from '../gameplay/tuning.mjs';
 import { playSound, soundOn, setSound } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed,
-  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
+  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, costOf, decoSale } from '../deco/deco-data.mjs';
+import { EVENT_INFO } from '../gameplay/liveops-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
 import { openDaily, maybeAutoDaily, questEvent, renderGemPacks } from './liveops-ui.js';
@@ -380,6 +381,8 @@ export const sceneReady = Promise.all([roomReady, map3dReady]);
 const decoVisible = entry => entry.area !== 'garden2' || isGardenExpanded();
 const decoShown = () => previewDeco(getDeco(), decoPick);
 const coin = amount => `<span class="amt"><i class="ico-coin"></i>${amount}</span>`; // xu + số không bị ngắt dòng
+// Giá đồ Deco: đang Deco Sale (event LiveOps) thì gạch giá cũ, hiện giá đã giảm (costOf).
+const decoPrice = entry => (decoSale() ? `<s class="sale-was">${entry.price}</s>${coin(costOf(entry))}` : coin(entry.price));
 const thumbOf = entry => entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>`
   : decoThumbnail ? `<img class="thumb thumb-3d" src="${decoThumbnail(entry)}" alt="">`
   : `<span class="thumb" style="--c:${entry.color}"></span>`;
@@ -423,8 +426,8 @@ function renderDeco() {
     const className = `deco-card ${status}${picked ? ' picked' : ''}`;
     if (card.className !== className) card.className = className;
     const art = thumbOf(base), foot = status === 'locked' ? `<em class="deco-card-price lock">Lv ${base.lock}</em>`
-      : picked && status === 'buy' ? `<em class="deco-card-price act" data-act="buy">Buy ${coin(base.price)}</em>`
-      : `<em class="deco-card-price">${coin(base.price)}</em>`;
+      : picked && status === 'buy' ? `<em class="deco-card-price act" data-act="buy">Buy ${decoPrice(base)}</em>`
+      : `<em class="deco-card-price">${decoPrice(base)}</em>`;
     if (card.artHtml !== art) { card.artHtml = art; card.innerHTML = `<span class="deco-card-art">${art}</span><span class="deco-card-name">${base.name}</span>${foot}`; }
     else if (card.footHtml !== foot) card.lastElementChild.outerHTML = foot;
     card.footHtml = foot;
@@ -448,7 +451,7 @@ $('deco-cards').addEventListener('click', event => {
   const status = itemStatus(getDeco(), base, decoUnlockedLevel());
   if (status === 'locked') return showToast(`Unlocks at level ${base.lock}`);
   pickDeco(decoPick === base ? null : base); // chạm lại thẻ đang xem = bỏ xem
-  if (decoPick && status === 'poor') showToast(`Need ${base.price - getDeco().coins} more coins`);
+  if (decoPick && status === 'poor') showToast(`Need ${costOf(base) - getDeco().coins} more coins`);
 });
 function pickDeco(entry) {
   decoPick = entry;
@@ -558,7 +561,8 @@ function renderDecoPop() {
     const tag = status === 'using' && !popPreview ? '<b class="deco-opt-tag">✓</b>' : '';
     // Đang xem thử: nút giá thành nút mua (chạm để mua + đặt luôn)
     const price = !shop ? '' : status === 'locked' ? `<em class="deco-opt-price lock">Lv ${entry.lock}</em>`
-      : previewing ? `<em class="deco-opt-price buy-now">Buy ${coin(entry.price)}</em>` : `<em class="deco-opt-price">${coin(entry.price)}</em>`;
+      : status === 'exclusive' ? '<em class="deco-opt-price lock">Event</em>'
+      : previewing ? `<em class="deco-opt-price buy-now">Buy ${decoPrice(entry)}</em>` : `<em class="deco-opt-price">${decoPrice(entry)}</em>`;
     node.innerHTML = `${thumbOf(entry)}${tag}${price}`;
     return node;
   }));
@@ -587,7 +591,7 @@ $('deco-pop-items').addEventListener('click', event => {
     const fxKey = entry.cat === 'furniture' ? slotOf(entry) : entry.cat;
     if (popPreview === entry && event.target.closest('.deco-opt-price')) {
       const bought = buyToStock(deco, entry, unlocked);
-      if (bought.error) return showToast(bought.error === 'Not enough coins' ? `Need ${entry.price - deco.coins} more coins` : bought.error);
+      if (bought.error) return showToast(bought.error === 'Not enough coins' ? `Need ${costOf(entry) - deco.coins} more coins` : bought.error);
       const placed = useItem(bought, entry);
       popPreview = null;
       setDeco(placed.error ? bought : placed);
@@ -607,7 +611,8 @@ $('deco-pop-items').addEventListener('click', event => {
     if (!room3d) buildFlatRooms();
     applyRoom(previewDeco(getDeco(), popPreview));
     if (popPreview) room3d?.fx(fxKey, 'preview'); // lấp lánh khi xem thử
-    if (popPreview && status === 'poor') showToast(`Need ${entry.price - deco.coins} more coins`);
+    if (popPreview && status === 'poor') showToast(`Need ${costOf(entry) - deco.coins} more coins`);
+    if (popPreview && status === 'exclusive') showToast(`${EVENT_INFO[entry.exclusive].name} reward`);
     return renderDecoPop();
   } else {
     const wasPreviewing = !!popPreview;
@@ -850,7 +855,7 @@ function renderShopDeco() {
     const node = document.createElement('button');
     node.className = `shop-deco-item ${status}`;
     node.dataset.id = entry.id;
-    const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `Lv ${entry.lock}` : status === 'needBase' ? 'Build first' : coin(entry.price);
+    const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `Lv ${entry.lock}` : status === 'needBase' ? 'Build first' : status === 'exclusive' ? 'Event reward' : decoPrice(entry);
     node.innerHTML = `${thumbOf(entry)}<span>${entry.name}</span><em>${price}</em>`;
     return node;
   };
@@ -883,13 +888,13 @@ $('shop-deco-grid').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.shop-deco-item')?.dataset.id);
   if (!entry) return;
   const status = shopStatus(getDeco(), entry, decoUnlockedLevel());
-  if (status !== 'buy' && status !== 'poor') return buyDeco(entry); // đã có / khoá / chưa xây: báo lý do như cũ
+  if (status !== 'buy' && status !== 'poor' && status !== 'exclusive') return buyDeco(entry); // đã có / khoá / chưa xây: báo lý do như cũ
   playSound('pick');
   openShopPreview(entry);
 });
 function buyDeco(entry) {
   const next = buyToStock(getDeco(), entry, decoUnlockedLevel());
-  if (next.error) { showToast(next.error === 'Not enough coins' ? `Need ${entry.price - getDeco().coins} more coins` : next.error); return false; }
+  if (next.error) { showToast(next.error === 'Not enough coins' ? `Need ${costOf(entry) - getDeco().coins} more coins` : next.error); return false; }
   setDeco(next);
   refreshWallet();
   playSound('reward');
@@ -905,8 +910,9 @@ let shopPreviewEntry = null;
 function openShopPreview(entry) {
   shopPreviewEntry = entry;
   $('shop-preview-name').textContent = entry.name;
-  $('shop-preview-buy').innerHTML = `Buy ${coin(entry.price)}`;
-  $('shop-preview-buy').classList.toggle('poor', getDeco().coins < entry.price);
+  // Đồ độc quyền event: xem được, không mua được (nút ghi nguồn nhận)
+  $('shop-preview-buy').innerHTML = entry.exclusive ? `${EVENT_INFO[entry.exclusive].name} reward` : `Buy ${decoPrice(entry)}`;
+  $('shop-preview-buy').classList.toggle('poor', !!entry.exclusive || getDeco().coins < costOf(entry));
   const stage = $('shop-preview-stage');
   stage.replaceChildren();
   $('shop-preview').showModal();
