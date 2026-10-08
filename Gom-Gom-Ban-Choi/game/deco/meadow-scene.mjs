@@ -172,7 +172,8 @@ function buildRoad(zNear) {
     const head = mesh(new THREE.SphereGeometry(.17, 10, 8), lampMat); head.castShadow = false;
     head.scale.set(1.2, .8, 1.2);
     lamp.add(at(head, .72, 2.93 + base, 0), at(cone(.24, .16, m.pole, 10), .72, 3.06 + base, 0));
-    lamp.position.set(x, 0, lampZ); lamp.rotation.y = Math.PI / 2; // tay đỡ chĩa ra phía đường (+z)
+    // Tay đỡ chĩa ra phía đường (+z): xoay quanh y một góc -π/2 thì +x cục bộ thành +z.
+    lamp.position.set(x, 0, lampZ); lamp.rotation.y = -Math.PI / 2;
     group_.add(lamp);
   }
   // Ghế dài và chậu cây xen giữa các cây đèn.

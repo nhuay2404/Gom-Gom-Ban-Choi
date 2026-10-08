@@ -21,7 +21,8 @@ export const TIMING = {
   LIFT_MS: 160,        // mèo bị nhấc bổng trước khi gom (ngắn: gom diễn ra ~.25s sau khi mèo đáp)
   MERGE_MS: 220,       // cả cụm trượt vào điểm tụ
   WIN_PAUSE_MS: 450,   // dừng một nhịp trước màn bay khi thắng
-  AFK_MS: 5000,        // không chạm màn hình bấy lâu thì mèo buồn ngủ
+  AFK_MS: 5000,        // không chạm màn hình bấy lâu thì mèo buồn ngủ (biểu cảm sleepy)
+  AFK_SLEEP_MS: 6000,  // buồn ngủ thêm bấy lâu nữa thì ngủ say (biểu cảm sleep + zzz)
   CARRY_HOLD_MS: 350,  // giữ mèo trong phòng bấy lâu thì nhấc lên
 };
 
@@ -55,7 +56,7 @@ export const ECONOMY = {
 };
 
 // Mèo 3D trong phòng
-export const CAT_BODY = { W: .6, H: .54, D: .62, LEG: .1 };
+export const CAT_BODY = { W: .6, H: .55, D: .62, LEG: .1 };
 export const CAT_MOTION = {
   ROOM_LIMIT: 3.5,                     // mèo đi trong khoảng ±ROOM_LIMIT (sàn ±ROOM_HALF = 4, room-layout.mjs)
   CARRY_H: .95,                        // độ cao lơ lửng khi bị nhấc

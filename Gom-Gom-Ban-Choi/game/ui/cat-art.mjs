@@ -6,7 +6,7 @@ export const categories = {
   white: { name: 'White cat', color: '#f4efe8', fur: '#fbf8f3', side: '#d7cfc4', belly: '#fbf8f3', paw: '#fffdf9', eye: '#3a3030', ears: 'tall', eyeStyle: 'oval', mood: 'sparkly' },
   tuxedo: { name: 'Tuxedo cat', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
   siamese: { name: 'Siamese cat', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
-  tabby: { name: 'Tabby cat', color: '#9a7550', fur: '#a27c55', side: '#6f5236', stripe: '#5a4128', belly: '#e9d6b8', paw: '#e9d6b8', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
+  tabby: { name: 'Calico cat', color: '#f2952f', fur: '#faf6ef', side: '#2f2b2d', stripe: '#f2952f', belly: '#faf6ef', paw: '#faf6ef', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
 };
 export const catGroups = Object.keys(categories);
 
@@ -143,25 +143,55 @@ function afkFaces(cat, group, ink) {
   };
 }
 
-// Mèo vẽ sẵn từ Figma (lưới 6 giống × 6 biểu cảm, file "UI" image 130–170): ui/shared/img/cats/<giống>-<biểu cảm>.png (ảnh 300 px).
-// Mỗi biểu cảm là một ảnh, gắn đúng tên nhóm mà CSS đang bật / tắt cho mặt SVG cũ (calm / joy / annoyed / afk-*), nên mọi
-// trạng thái (vui khi gom, khó chịu khi bị kéo / nhấc, buồn ngủ khi AFK, mếu khi sắp hết lượt...) dùng lại nguyên luật CSS cũ.
-//   calm     = mặt thường            focus   = mắt to, chú ý (thẻ đang cầm, xem gom-gom.css)
-//   joy      = cười ^^ (gom, vuốt)   annoyed = cau có (đang kéo / bị nhấc)
-//   sleepy   = lim dim (AFK)         worried = mếu (mọi mặt sắp hết lượt)
+// Mèo vẽ từ Figma (file "UI", trang Gom Gom Rotate): thân (White 1, Tabby 1...) và lớp biểu cảm tách riêng, ghép lúc vẽ.
+// ui/shared/img/cats/<giống>-body.png = khối thân không mặt; <giống>-<biểu cảm>.png = mắt + miệng trên nền trong (ảnh vuông 256 px).
+// Biểu cảm (đặt tên theo Figma) và lúc dùng:
+//   calm   = mặc định                       happy = được chạm / gom
+//   cute   = thỉnh thoảng đổi khi rảnh, thẻ đang cầm   sleepy = lim dim trước khi ngủ (AFK)
+//   sleep  = ngủ say (AFK lâu; nhóm vector trong Figma nên vẽ bằng SVG, xem SLEEP_FACE)
+//   angry  = bị nhấc / kéo, bị chạm (hoặc rê chuột) quá nhiều      chew = dạng khác của bực khi bị chạm quá nhiều; sắp hết lượt
 // Đường dẫn viết nguyên văn (không ghép chuỗi) để tools/build-single-html.mjs nhúng được ảnh vào bản HTML một file.
 const CAT_IMAGES = {
-  orange: { calm: 'ui/shared/img/cats/orange-calm.png', focus: 'ui/shared/img/cats/orange-focus.png', joy: 'ui/shared/img/cats/orange-joy.png', annoyed: 'ui/shared/img/cats/orange-annoyed.png', sleepy: 'ui/shared/img/cats/orange-sleepy.png', worried: 'ui/shared/img/cats/orange-worried.png' },
-  gray: { calm: 'ui/shared/img/cats/gray-calm.png', focus: 'ui/shared/img/cats/gray-focus.png', joy: 'ui/shared/img/cats/gray-joy.png', annoyed: 'ui/shared/img/cats/gray-annoyed.png', sleepy: 'ui/shared/img/cats/gray-sleepy.png', worried: 'ui/shared/img/cats/gray-worried.png' },
-  white: { calm: 'ui/shared/img/cats/white-calm.png', focus: 'ui/shared/img/cats/white-focus.png', joy: 'ui/shared/img/cats/white-joy.png', annoyed: 'ui/shared/img/cats/white-annoyed.png', sleepy: 'ui/shared/img/cats/white-sleepy.png', worried: 'ui/shared/img/cats/white-worried.png' },
-  tuxedo: { calm: 'ui/shared/img/cats/tuxedo-calm.png', focus: 'ui/shared/img/cats/tuxedo-focus.png', joy: 'ui/shared/img/cats/tuxedo-joy.png', annoyed: 'ui/shared/img/cats/tuxedo-annoyed.png', sleepy: 'ui/shared/img/cats/tuxedo-sleepy.png', worried: 'ui/shared/img/cats/tuxedo-worried.png' },
-  siamese: { calm: 'ui/shared/img/cats/siamese-calm.png', focus: 'ui/shared/img/cats/siamese-focus.png', joy: 'ui/shared/img/cats/siamese-joy.png', annoyed: 'ui/shared/img/cats/siamese-annoyed.png', sleepy: 'ui/shared/img/cats/siamese-sleepy.png', worried: 'ui/shared/img/cats/siamese-worried.png' },
-  tabby: { calm: 'ui/shared/img/cats/tabby-calm.png', focus: 'ui/shared/img/cats/tabby-focus.png', joy: 'ui/shared/img/cats/tabby-joy.png', annoyed: 'ui/shared/img/cats/tabby-annoyed.png', sleepy: 'ui/shared/img/cats/tabby-sleepy.png', worried: 'ui/shared/img/cats/tabby-worried.png' },
+  orange: { body: 'ui/shared/img/cats/orange-body.png', calm: 'ui/shared/img/cats/orange-calm.png', happy: 'ui/shared/img/cats/orange-happy.png', cute: 'ui/shared/img/cats/orange-cute.png', sleepy: 'ui/shared/img/cats/orange-sleepy.png', angry: 'ui/shared/img/cats/orange-angry.png', chew: 'ui/shared/img/cats/orange-chew.png' },
+  gray: { body: 'ui/shared/img/cats/gray-body.png', calm: 'ui/shared/img/cats/gray-calm.png', happy: 'ui/shared/img/cats/gray-happy.png', cute: 'ui/shared/img/cats/gray-cute.png', sleepy: 'ui/shared/img/cats/gray-sleepy.png', angry: 'ui/shared/img/cats/gray-angry.png', chew: 'ui/shared/img/cats/gray-chew.png' },
+  white: { body: 'ui/shared/img/cats/white-body.png', calm: 'ui/shared/img/cats/white-calm.png', happy: 'ui/shared/img/cats/white-happy.png', cute: 'ui/shared/img/cats/white-cute.png', sleepy: 'ui/shared/img/cats/white-sleepy.png', angry: 'ui/shared/img/cats/white-angry.png', chew: 'ui/shared/img/cats/white-chew.png' },
+  tuxedo: { body: 'ui/shared/img/cats/tuxedo-body.png', calm: 'ui/shared/img/cats/tuxedo-calm.png', happy: 'ui/shared/img/cats/tuxedo-happy.png', cute: 'ui/shared/img/cats/tuxedo-cute.png', sleepy: 'ui/shared/img/cats/tuxedo-sleepy.png', angry: 'ui/shared/img/cats/tuxedo-angry.png', chew: 'ui/shared/img/cats/tuxedo-chew.png' },
+  siamese: { body: 'ui/shared/img/cats/siamese-body.png', calm: 'ui/shared/img/cats/siamese-calm.png', happy: 'ui/shared/img/cats/siamese-happy.png', cute: 'ui/shared/img/cats/siamese-cute.png', sleepy: 'ui/shared/img/cats/siamese-sleepy.png', angry: 'ui/shared/img/cats/siamese-angry.png', chew: 'ui/shared/img/cats/siamese-chew.png' },
+  tabby: { body: 'ui/shared/img/cats/tabby-body.png', calm: 'ui/shared/img/cats/tabby-calm.png', happy: 'ui/shared/img/cats/tabby-happy.png', cute: 'ui/shared/img/cats/tabby-cute.png', sleepy: 'ui/shared/img/cats/tabby-sleepy.png', angry: 'ui/shared/img/cats/tabby-angry.png', chew: 'ui/shared/img/cats/tabby-chew.png' },
 };
+export const CAT_EXPRESSIONS = ['calm', 'happy', 'cute', 'sleepy', 'sleep', 'angry', 'chew'];
 const bitmap = (group, mood) => CAT_IMAGES[group][mood];
+// Ảnh biểu cảm (hoặc thân: mood = 'body') của một giống — mèo 3D ở Deco (room-cats.mjs) dán cùng bộ ảnh lên mặt.
+export const catExpressionSrc = (group, mood) => CAT_IMAGES[group]?.[mood];
 const HAS_BITMAP = new Set(Object.keys(CAT_IMAGES));
-// Khung ảnh trong hệ toạ độ 100 × 106 của art cũ: ảnh vuông, đáy (bàn chân) chạm ~y = 101 như chân mèo SVG cũ.
-const BITMAP_BOX = 'x="5" y="11" width="90" height="90"';
+// Khung trong hệ toạ độ 100 × 106 của art cũ (bàn chân chạm ~y 96–101 như mèo SVG cũ). Đo khớp với ảnh ghép mẫu trong Figma:
+// thân rộng 69.3 (ảnh thân cao ~1.17 lần rộng, đáy thẳng hàng), lớp biểu cảm vuông rộng .85 bề rộng thân, canh giữa, mép trên
+// cách đỉnh ảnh thân .155 bề rộng thân (đỉnh ảnh thân là chóp tai). room-cats.mjs dán đúng lớp này lên mặt mèo 3D (EXPR_RECT).
+export const CAT_BODY_BOX = { x: 15.2, y: 15.5, w: 69.3, h: 81.5 };
+export const CAT_EXPR_BOX = { x: 15.2 + 69.3 * .075, y: 15.5 + 69.3 * .155, size: 69.3 * .85 };
+const BODY_BOX = `x="${CAT_BODY_BOX.x}" y="${CAT_BODY_BOX.y}" width="${CAT_BODY_BOX.w}" height="${CAT_BODY_BOX.h}" preserveAspectRatio="xMidYMax meet"`;
+// Ảnh thân vẽ theo khổ khác bộ chung (tam thể: ảnh 256 × 256, khối thân chỉ rộng 234 px, cao 200 px — đặt chung khung thì thấp và
+// hẹp hơn các con khác): kéo riêng theo hai trục cho khối thân bằng khối thân chuẩn (ảnh cam: rộng 256, cao 241 px).
+// w, h: cỡ ảnh; sx, sy: hệ số kéo so với tỉ lệ chung (bề rộng thân chuẩn / bề rộng thân ảnh này...).
+export const CAT_BODY_STRETCH = { tabby: { w: 256, h: 256, sx: 256 / 234, sy: 241 / 200 } };
+// Vị trí ảnh thân trong khung 100 × 106: góc trên trái (x, y) + số đơn vị SVG cho mỗi px ảnh theo hai trục (kx, ky). Ảnh canh giữa, đáy
+// trùng đáy CAT_BODY_BOX. room-cats.mjs dùng để quy khung biểu cảm về mặt trước của mèo 3D.
+export function catBodyPlacement(group, w, h) {
+  const p = CAT_BODY_BOX.w / 256, s = CAT_BODY_STRETCH[group] || { sx: 1, sy: 1 }, kx = p * s.sx, ky = p * s.sy;
+  return { x: CAT_BODY_BOX.x + CAT_BODY_BOX.w / 2 - w * kx / 2, y: CAT_BODY_BOX.y + CAT_BODY_BOX.h - h * ky, kx, ky };
+}
+const bodyBox = group => {
+  const s = CAT_BODY_STRETCH[group];
+  if (!s) return BODY_BOX;
+  const b = catBodyPlacement(group, s.w, s.h);
+  return `x="${b.x.toFixed(2)}" y="${b.y.toFixed(2)}" width="${(s.w * b.kx).toFixed(2)}" height="${(s.h * b.ky).toFixed(2)}" preserveAspectRatio="none"`;
+};
+const EXPR_BOX = `x="${CAT_EXPR_BOX.x.toFixed(2)}" y="${CAT_EXPR_BOX.y.toFixed(2)}" width="${CAT_EXPR_BOX.size.toFixed(2)}" height="${CAT_EXPR_BOX.size.toFixed(2)}"`;
+// Mặt ngủ say (cột "sleep" trong Figma, vẽ bằng vector): hai mắt nhắm cong "‿" đen, dày ở giữa, miệng "^" nâu nhỏ.
+// Toạ độ trong khung biểu cảm 100 × 100 (cùng khung với ảnh biểu cảm).
+export const SLEEP_FACE = `<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 45 Q25 55 40 45.5 M60 45.5 Q75 55 90 45" stroke="#1d1517" stroke-width="5"/>
+    <path d="M45.5 60.5 L50 56.5 L54.5 60.5" stroke="#5a2a1c" stroke-width="2.6"/></g>`;
 // Thân dưới lúc bị nhấc / kéo, vẽ theo đúng ngôn ngữ ảnh Figma: KHỐI vuông màu phẳng, cạnh vát bằng dải màu tối hơn (không viền
 // nâu), bụng kem, chân là khối bát giác (góc vát) có 2 vạch ngón như chân trước trong ảnh. Màu lấy mẫu thẳng từ ảnh từng giống:
 //   fur = lông mặt trước   side = dải vát / mặt khuất   belly = mảng bụng   paw / pawSide = chân + mép vát chân   toe = vạch ngón
@@ -173,7 +203,7 @@ const HANG_COLORS = {
   white: { fur: '#f7f6f2', side: '#d6d0c7', belly: '#fdfcfa', paw: '#f7f5f2', pawSide: '#ddd6cc', toe: '#8d817d' },
   tuxedo: { fur: '#322d30', side: '#1f1a1d', belly: '#f9f4ea', paw: '#f8f0e5', pawSide: '#d8cdbf', toe: '#7e7165' },
   siamese: { fur: '#f7e5ce', side: '#7a4530', belly: '#e3c39f', paw: '#6a3521', pawSide: '#4c2416', toe: '#bf8069', tail: ['#4c2416', '#6a3521'] },
-  tabby: { fur: '#b6ad9a', side: '#514c48', belly: '#fbf5ed', paw: '#f3ede1', pawSide: '#d4ccbd', toe: '#5f5548', stripe: '#6b645c' },
+  tabby: { fur: '#faf6ef', side: '#2f2b2d', belly: '#fbf5ed', paw: '#f3ede1', pawSide: '#d4ccbd', toe: '#5f5548', stripe: '#f2952f' }, // mèo tam thể (calico): khung 'tabby' giữ nguyên id
 };
 // Đa giác bát giác (hình chữ nhật vát góc c)
 const oct = (x, y, w, h, c) => `M${x + c} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h - c}L${x + w - c} ${y + h}H${x + c}L${x} ${y + h - c}V${y + c}Z`;
@@ -194,18 +224,24 @@ function blockHang(group) {
     </g>`;
 }
 function bitmapCatSvg(group, hang) {
-  const img = (mood, extra = '') => `<image href="${bitmap(group, mood)}" ${BITMAP_BOX} ${extra}/>`;
-  const afk = (name, mood, extra = '') => `<g class="afk afk-${name}" visibility="hidden">${img(mood)}${extra}</g>`;
-  // Mặt ngủ (AFK): ba chữ z xanh viền trắng (to → nhỏ) bay lên ở góc trên phải đầu (CSS .afk-z path lo anim, lệch nhịp từng chữ)
+  const face = mood => mood === 'sleep'
+    ? `<g transform="translate(${CAT_EXPR_BOX.x.toFixed(2)} ${CAT_EXPR_BOX.y.toFixed(2)}) scale(${(CAT_EXPR_BOX.size / 100).toFixed(4)})">${SLEEP_FACE}</g>`
+    : `<image href="${bitmap(group, mood)}" ${EXPR_BOX}/>`;
+  const afk = (name, mood, extra = '') => `<g class="afk afk-${name}" visibility="hidden">${face(mood)}${extra}</g>`;
+  // Mặt ngủ say (AFK lâu): ba chữ z xanh viền trắng (to → nhỏ) bay lên ở góc trên phải đầu (CSS .afk-z path lo anim, lệch nhịp từng chữ)
   const zzz = `<g class="afk-z" fill="none" stroke-linecap="round" stroke-linejoin="round">${[[68, 30, 13], [79, 15, 10.5], [88, 3, 8.5]].map(([x, y, w], i) =>
     `<path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#fff" stroke-width="6.5"/><path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#5b6fc4" stroke-width="3.2"/>`).join('')}</g>`;
+  // Tên nhóm giữ như cũ để luật CSS cũ dùng lại được: calm-idle = calm, calm-focus = cute (thẻ đang cầm), annoyed = angry, joy = happy.
   return `<svg class="cat mood-${categories[group].mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
     ${hang}
-    <g class="calm calm-idle">${img('calm')}</g>
-    <g class="calm calm-focus">${img('focus')}</g>
-    <g class="annoyed">${img('annoyed')}</g>
-    ${afk('sleepy', 'sleepy', zzz)}${['sad', 'worried', 'crying', 'disappointed', 'sulky'].map(name => afk(name, 'worried')).join('')}
-    <g class="joy" visibility="hidden">${img('joy')}</g>
+    <image class="body" href="${bitmap(group, 'body')}" ${bodyBox(group)}/>
+    <g class="calm calm-idle">${face('calm')}</g>
+    <g class="calm calm-focus">${face('cute')}</g>
+    <g class="annoyed">${face('angry')}</g>
+    <g class="chew" visibility="hidden">${face('chew')}</g>
+    <g class="cute" visibility="hidden">${face('cute')}</g>
+    ${afk('sleepy', 'sleepy')}${afk('sleep', 'sleep', zzz)}${['sad', 'worried', 'crying', 'disappointed', 'sulky'].map(name => afk(name, 'chew')).join('')}
+    <g class="joy" visibility="hidden">${face('happy')}</g>
   </svg>`;
 }
 // Tải trước mọi biểu cảm (ảnh nhỏ ~15 KB): đổi mặt lần đầu không bị nháy trống.

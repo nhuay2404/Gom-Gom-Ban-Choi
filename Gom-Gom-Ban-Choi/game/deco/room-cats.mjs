@@ -4,7 +4,7 @@
 // (đi tới -> nhảy lên -> xoay vòng -> nằm ngủ ...) mà vẫn ngắt được bất cứ lúc nào (cưng mèo, AFK, dời đồ).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { categories } from '../ui/cat-art.mjs';
+import { categories, catExpressionSrc, catBodyPlacement, CAT_EXPR_BOX, SLEEP_FACE } from '../ui/cat-art.mjs';
 import { OBSTACLE_RADIUS, OBSTACLE_EXTRA, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from '../gameplay/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
@@ -82,12 +82,22 @@ function canvasTexture(key, draw, padX = 0) {
   texture.anisotropy = 4;
   return (textures[key] = texture);
 }
-// Lớp mặt rộng hơn thân hai bên: ria mép (toon) chìa ra ngoài thân, nằm đè lên nét viền như tranh Cats & Soup.
-const FACE_PAD = .12;
-// Mặt + mắt 3D vẽ theo ảnh mèo 2D trong Figma (ui/shared/img/cats/<giống>-calm.png): mắt tròn to có vòng màu + 2 đốm sáng,
-// vằn trán / vằn má, mõm sáng (tuxedo: mảng trắng chữ V ngược, Xiêm: mặt nạ nâu), má hồng, miệng "ω".
-// Toạ độ SVG: khung mặt 100 × 90 (đúng tỉ lệ tấm dán W × H*.94); lớp mặt rộng thêm FACE_PAD mỗi bên (ria / vằn má chìa ra).
+// Thân + tai + mặt 3D dựng theo ảnh mèo 2D trong Figma (ui/shared/img/cats/<giống>-body.png + <giống>-<biểu cảm>.png).
 // Màu lấy mẫu từ ảnh Figma (cùng bộ với HANG_COLORS trong cat-art.mjs); thân 3D cũng dùng các màu này (catLook).
+// Số đo ảnh thân từng giống (px, đo từ kênh alpha; mỗi ảnh một cao khác nhau): h = cao ảnh; mặt trước khối thân nằm trong x0..x1 ×
+// top..bottom (đáy gồm cả dải vát); apex = chóp tai trái; ear = [mép ngoài, mép trong] chân tai trái ở hàng top - 2.
+const IMG_W = 256;
+const BODY_PX = {
+  orange: { h: 301, x0: 0, x1: 256, top: 60, bottom: 300, apex: [27, 0], ear: [9, 92] },
+  gray: { h: 298, x0: 0, x1: 256, top: 59, bottom: 297, apex: [49, 0], ear: [6, 105] },
+  white: { h: 299, x0: 1, x1: 255, top: 65, bottom: 298, apex: [30, 0], ear: [8, 94] },
+  tuxedo: { h: 293, x0: 0, x1: 256, top: 57, bottom: 292, apex: [31, 0], ear: [10, 92] },
+  siamese: { h: 286, x0: 0, x1: 256, top: 53, bottom: 285, apex: [51, 0], ear: [9, 103] },
+  tabby: { h: 256, x0: 11, x1: 245, top: 52, bottom: 251, apex: [42, 0], ear: [19, 94] },
+};
+const frontPx = m => ({ w: m.x1 - m.x0, h: m.bottom - m.top + 1 });
+// Bàn chân vẽ trên ngực cao ~55 px ở đáy, cách mép thân ~28 px: bị xoá khỏi mặt trước (chân 3D thay vào).
+const PAW_PX = 60, PAW_INSET = 28;
 const FIGMA_LOOK = {
   orange: { fur: '#fba33b', side: '#f0600f', belly: '#fbf2dd', paw: '#fbf2dd', stripe: '#f07a1e', ring: '#e8620f', ink: '#3b1d10',
     stripes: 'orange', muzzle: 'wide' },
@@ -99,105 +109,167 @@ const FIGMA_LOOK = {
     muzzle: 'tuxedo' },
   siamese: { fur: '#f7e5ce', side: '#d9bf9c', belly: '#f7e5ce', paw: '#6a3521', mask: '#7a4530', ring: '#1f7fe0', ink: '#2a1610', lidInk: '#f3e7cf',
     muzzle: 'mask' },
-  tabby: { fur: '#b6ad9a', side: '#514c48', belly: '#fbf5ed', paw: '#f3ede1', stripe: '#5a544e', ring: '#f5b70f', ink: '#2a2420',
-    stripes: 'tabby', muzzle: 'chin', nose: '#5a4038' },
+  // Mèo tam thể (calico, Figma "Tabby 1"; id giống vẫn là 'tabby'): nền trắng, mảng cam + đen, tai đen, đuôi đen khoanh cam
+  tabby: { fur: '#faf6ef', side: '#d9d2c6', belly: '#faf6ef', paw: '#f3ede1', stripe: '#f2952f', patch: '#2f2b2d', ear: '#2f2b2d', ring: '#f5b70f', ink: '#2a2420',
+    stripes: 'calico', muzzle: 'none' },
 };
 // Bộ màu dùng cho thân 3D: giữ cấu trúc categories (tai, kiểu đuôi...), đè màu bằng màu Figma.
 const catLook = breed => ({ ...categories[breed], ...FIGMA_LOOK[breed] });
 
-const EYE_X = [30, 70], EYE_Y = 41, EYE_R = 14;
-function svgTexture(key, viewBox, width, markup) {
+// Ảnh thân của một giống (dùng cho hai tai) làm texture.
+const bodyImage = breed => new Promise(resolve => { const image = new Image(); image.onload = () => resolve(image); image.src = catExpressionSrc(breed, 'body'); });
+function bodyTexture(breed) {
+  const key = `body:${breed}`;
   if (textures[key]) return textures[key];
   const canvas = document.createElement('canvas');
-  canvas.width = width; canvas.height = 460;
+  canvas.width = IMG_W * 2; canvas.height = BODY_PX[breed].h * 2;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   textures[key] = texture;
-  const image = new Image();
-  image.onload = () => { canvas.getContext('2d').drawImage(image, 0, 0, width, 460); texture.needsUpdate = true; };
-  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="460" preserveAspectRatio="none">${markup}</svg>`)}`;
+  bodyImage(breed).then(image => { canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height); texture.needsUpdate = true; });
   return texture;
 }
 
-// Vằn lông từng giống (theo ảnh Figma): sọc trán + sọc má chìa từ mép thân vào.
-function stripeMarkup(look) {
-  const c = look.stripe, bar = (x, y, w, h, r = 2) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}"/>`;
-  const cheeks = (ys, len, h) => ys.map(y => bar(-3, y, len + 3, h) + bar(100 - len, y, len + 3, h)).join('');
-  switch (look.stripes) {
-    case 'orange': return bar(40, 0, 4.5, 15) + bar(47.8, 0, 4.5, 19) + bar(55.5, 0, 4.5, 15) + cheeks([36, 44], 11, 4);
-    case 'gray': return bar(40.5, 2, 5, 12) + bar(47.5, 2, 5, 13) + bar(54.5, 2, 5, 12) + cheeks([38, 47], 12, 4.2);
-    case 'white': return `<g opacity=".85">${bar(37, 0, 6, 13, 2.5) + bar(47, 0, 6, 16, 2.5) + bar(57, 0, 6, 13, 2.5)}</g>`;
-    case 'tabby': return `<g fill="${c}">
-        <path d="M50 0 L53 0 L51.5 20 Z M43 0 L46.5 0 L47 17 Z M57 0 L53.5 0 L53 17 Z M35 0 L39.5 0 L43 13 Z M65 0 L60.5 0 L57 13 Z"/>
-        <path d="M-2 30 L12 33 L12 36.5 L-2 35 Z M-2 41 L13 42.5 L13 46 L-2 46 Z M-2 52 L12 51 L11 54.5 L-2 57 Z"/>
-        <path d="M102 30 L88 33 L88 36.5 L102 35 Z M102 41 L87 42.5 L87 46 L102 46 Z M102 52 L88 51 L89 54.5 L102 57 Z"/></g>`;
-    default: return '';
+// Màu lông chủ đạo của ảnh thân (màu hay gặp nhất ở nửa trên mặt trước): để tô các mặt còn lại của thân cho khớp mặt trước.
+function dominantColor(g, x, y, w, h) {
+  const data = g.getImageData(x, y, w, h).data, hist = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 200) continue;
+    const key = (data[i] >> 4) << 8 | (data[i + 1] >> 4) << 4 | data[i + 2] >> 4;
+    const e = hist.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+    e.n++; e.r += data[i]; e.g += data[i + 1]; e.b += data[i + 2];
+    hist.set(key, e);
+  }
+  let best = null;
+  for (const e of hist.values()) if (!best || e.n > best.n) best = e;
+  return best ? `rgb(${Math.round(best.r / best.n)},${Math.round(best.g / best.n)},${Math.round(best.b / best.n)})` : '#ffffff';
+}
+// Atlas thân 3 × 2 ô (mỗi ô ATLAS_CW × ATLAS_CH): [trước | trái | phải] / [trên | sau | đáy].
+// Mặt trước = vùng mặt trước của ảnh thân, xoá hai bàn chân trên ngực (kéo dãn hàng ngay phía trên chúng xuống đáy).
+// Các mặt khác tự sinh: nền màu lông chủ đạo + vằn / mảng ở mép mặt trước chạy tiếp ra sườn và nóc thành vạch thuôn (vằn má chạy
+// ra sườn, vằn trán chạy dọc nóc đầu).
+const ATLAS_CW = 512, ATLAS_CH = 470, STREAK = .3;
+function bodyAtlas(breed) {
+  const key = `atlas:${breed}`;
+  if (textures[key]) return textures[key];
+  const canvas = document.createElement('canvas');
+  canvas.width = ATLAS_CW * 3; canvas.height = ATLAS_CH * 2;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  textures[key] = texture;
+  const m = BODY_PX[breed], front = frontPx(m);
+  bodyImage(breed).then(image => {
+    const g = canvas.getContext('2d');
+    const probe = document.createElement('canvas'); probe.width = image.width; probe.height = image.height;
+    probe.getContext('2d').drawImage(image, 0, 0);
+    const fur = dominantColor(probe.getContext('2d'), m.x0 + 20, m.top + 6, front.w - 40, 70);
+    g.fillStyle = fur; g.fillRect(0, 0, canvas.width, canvas.height);
+    // Mặt trước (xoá bàn chân).
+    g.drawImage(image, m.x0, m.top, front.w, front.h, 0, 0, ATLAS_CW, ATLAS_CH);
+    const k = ATLAS_CW / front.w, ky = ATLAS_CH / front.h;
+    const pawY = m.bottom - PAW_PX - m.top;
+    g.drawImage(image, m.x0 + PAW_INSET, m.top + pawY, front.w - 2 * PAW_INSET, 1, PAW_INSET * k, (pawY + 2) * ky, (front.w - 2 * PAW_INSET) * k, ATLAS_CH - (pawY + 2) * ky);
+    // Vằn / mảng ở mép mặt trước chạy tiếp ra sườn và nóc thành vạch màu ĐẶC, thuôn dần và bo tròn ở chóp (không kéo dãn điểm ảnh:
+    // kéo dãn làm loang vệt mờ bẩn). Dò mép mặt trước thành các đoạn liền cùng màu khác màu lông; bỏ đoạn quá ngắn và hai góc vát.
+    const pix = probe.getContext('2d').getImageData(0, 0, image.width, image.height).data;
+    const furRgb = fur.match(/d+/g).map(Number);
+    const at = (x, y) => { const o = (y * image.width + x) * 4; return [pix[o], pix[o + 1], pix[o + 2], pix[o + 3]]; };
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    const runs = points => {
+      const out = [], n = points.length, edge = Math.round(n * .08);
+      let run = null;
+      points.forEach(([x, y], k) => {
+        const c = at(x, y), mark = k >= edge && k < n - edge && c[3] > 200 && dist(c, furRgb) > 60;
+        if (mark && run && dist(c, run.c) < 50) { run.b = k; return; }
+        if (run && run.b - run.a >= 5) out.push(run);
+        run = mark ? { a: k, b: k, c } : null;
+      });
+      if (run && run.b - run.a >= 5) out.push(run);
+      return out.map(r => ({ a: r.a / n, b: (r.b + 1) / n, color: `rgb(${r.c[0]},${r.c[1]},${r.c[2]})` }));
+    };
+    // Vạch từ mép (along = 0 ở mép mặt trước) dài len, bề ngang [a, b] thu lại còn 45% ở chóp.
+    const bar = (ox, oy, alongX, len, across, a, b, color) => {
+      const w = b - a, mid = (a + b) / 2, tip = w * .45 / 2;
+      const P = (t, c) => alongX ? [ox + t, oy + c] : [ox + c, oy + t];
+      g.fillStyle = color; g.beginPath();
+      g.moveTo(...P(0, a * across)); g.lineTo(...P(len * .8, (mid - tip) * across));
+      g.quadraticCurveTo(...P(len, mid * across), ...P(len * .8, (mid + tip) * across));
+      g.lineTo(...P(0, b * across)); g.closePath(); g.fill();
+    };
+    const column = x => Array.from({ length: front.h }, (_, k) => [x, m.top + k]);
+    const len = ATLAS_CW * STREAK;
+    // trái: mặt trước ở mép phải ô -> vạch chạy sang trái (len âm)
+    for (const r of runs(column(m.x0 + 2))) bar(ATLAS_CW * 2, 0, true, -len, ATLAS_CH, r.a, r.b, r.color);
+    for (const r of runs(column(m.x1 - 3))) bar(ATLAS_CW * 2, 0, true, len, ATLAS_CH, r.a, r.b, r.color);
+    // nóc: mặt trước ở mép trên ô
+    const row = Array.from({ length: front.w }, (_, k) => [m.x0 + k, m.top + 3]);
+    for (const r of runs(row)) bar(0, ATLAS_CH, false, ATLAS_CH * STREAK, ATLAS_CW, r.a, r.b, r.color);
+    texture.needsUpdate = true;
+  });
+  return texture;
+}
+// UV atlas cho thân bo góc (RoundedBoxGeometry: mỗi mặt một dải đỉnh liền nhau theo thứ tự phải, trái, trên, đáy, trước, sau).
+// Mỗi mặt chiếu phẳng theo toạ độ gốc của đỉnh vào ô của nó trong atlas; đỉnh ở góc bo chiếu theo cùng công thức rồi kẹp vào ô.
+function atlasUvs(geometry) {
+  const pos = geometry.attributes.position, uv = geometry.attributes.uv, perSide = pos.count / 6;
+  const cells = [[2, 0], [1, 0], [0, 1], [2, 1], [0, 0], [1, 1]]; // phải, trái, trên, đáy, trước, sau
+  const clamp01 = v => Math.min(.985, Math.max(.015, v)); // chừa lề: mipmap không hút màu ô bên cạnh
+  for (let i = 0; i < pos.count; i++) {
+    const side = Math.floor(i / perSide), x = pos.getX(i) / W + .5, y = pos.getY(i) / H + .5, z = pos.getZ(i) / D + .5;
+    let u, v; // v: hàng ô tính từ trên xuống
+    switch (side) {
+      case 0: u = 1 - z; v = 1 - y; break;  // phải: nhìn từ +x, mặt trước (z = 1) ở bên trái ô
+      case 1: u = z; v = 1 - y; break;      // trái: mặt trước ở bên phải ô
+      case 2: u = x; v = 1 - z; break;      // trên: mặt trước ở mép trên ô
+      case 3: u = x; v = z; break;          // đáy
+      case 4: u = x; v = 1 - y; break;      // trước
+      default: u = 1 - x; v = 1 - y;        // sau
+    }
+    const [c, r] = cells[side];
+    uv.setXY(i, (c + clamp01(u)) / 3, 1 - (r + clamp01(v)) / 2);
   }
 }
-function muzzleMarkup(look) {
-  const b = look.belly;
-  switch (look.muzzle) {
-    case 'wide': return `<path d="M4 90 L4 66 Q18 58 34 58 Q42 50 50 51 Q58 50 66 58 Q82 58 96 66 L96 90 Z" fill="${b}"/>`;
-    case 'round': return `<path d="M18 90 L18 62 Q18 54 30 54 L70 54 Q82 54 82 62 L82 90 Z" fill="${b}"/>`;
-    case 'tuxedo': return `<path d="M50 20 Q44 34 34 50 Q20 58 4 64 L4 90 L96 90 L96 64 Q80 58 66 50 Q56 34 50 20 Z" fill="${b}"/>`;
-    case 'mask': return `<ellipse cx="50" cy="52" rx="36" ry="31" fill="${look.mask}"/>`;
-    case 'chin': return `<path d="M14 90 L14 66 L22 60 L30 63 L38 56 L46 60 L50 54 L54 60 L62 56 L70 63 L78 60 L86 66 L86 90 Z" fill="${b}"/>`;
-    default: return '';
-  }
+// ---------- Biểu cảm: ảnh Figma (thân + biểu cảm tách riêng, ui/cat-art.mjs) dán lên mặt trước ----------
+// calm mặc định · happy được cưng / vui · cute thỉnh thoảng khi rảnh · sleepy lim dim / ngáp trước khi ngủ · sleep ngủ say, chớp mắt
+// angry bị nhấc lơ lửng, bị chạm quá nhiều · chew dạng bực khác (chạm dồn dập, bế lâu)
+export const EXPRESSIONS = ['calm', 'happy', 'cute', 'sleepy', 'sleep', 'angry', 'chew'];
+// Khung ảnh biểu cảm trên tấm mắt, tính theo phần (0..1) của mặt trước: đúng chỗ đặt trên mèo 2D (cat-art.mjs CAT_EXPR_BOX so với
+// ảnh thân đặt bằng catBodyPlacement, kể cả ảnh bị kéo riêng như tam thể).
+function exprRect(breed) {
+  const m = BODY_PX[breed], f = frontPx(m), b = catBodyPlacement(breed, IMG_W, m.h);
+  const fx = b.x + m.x0 * b.kx, fy = b.y + m.top * b.ky, fw = f.w * b.kx, fh = f.h * b.ky;
+  return { x: (CAT_EXPR_BOX.x - fx) / fw, y: (CAT_EXPR_BOX.y - fy) / fh, w: CAT_EXPR_BOX.size / fw, h: CAT_EXPR_BOX.size / fh };
 }
-function faceTexture(breed, mouth) {
-  const look = catLook(breed), ink = look.ink, pad = FACE_PAD * 100;
-  const line = `fill="none" stroke="${ink}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
-  const mouths = {
-    calm: `<path d="M44 61.5 Q47 65 50 61.8 Q53 65 56 61.5" ${line}/>`,
-    open: `<path d="M43.5 60.5 Q50 72 56.5 60.5 Z" fill="#b8475a" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="50" cy="66" rx="3" ry="2" fill="#f28ba0"/>`,
-    chew: `<path d="M41 62 Q44 58.5 47 62 Q50 58.5 53 62 Q56 58.5 59 62" ${line}/><circle cx="38" cy="58" r="3.2" fill="#ffffff" opacity=".35"/><circle cx="62" cy="58" r="3.2" fill="#ffffff" opacity=".35"/>`,
-    yawn: `<ellipse cx="50" cy="66" rx="5.5" ry="7" fill="#b8475a" stroke="${ink}" stroke-width="1.6"/><ellipse cx="50" cy="70" rx="3.4" ry="2.2" fill="#f28ba0"/>`,
-    zig: `<path d="M43 63 L46.5 60.5 L50 63 L53.5 60.5 L57 63" ${line}/>`,
-  };
-  const nose = look.nose ? `<path d="M47.6 56.6 L52.4 56.6 L50 59.4 Z" fill="${look.nose}"/>` : '';
-  const markup = `${muzzleMarkup(look)}${look.stripe ? stripeMarkup(look) : ''}
-    <ellipse cx="20" cy="56" rx="6.5" ry="3.6" fill="#ff8fa3" opacity=".75"/><ellipse cx="80" cy="56" rx="6.5" ry="3.6" fill="#ff8fa3" opacity=".75"/>
-    ${nose}${mouths[mouth] || mouths.calm}`;
-  return svgTexture(`face:${breed}:${mouth}`, `${-pad} 0 ${100 + 2 * pad} 90`, Math.round(512 * (1 + 2 * FACE_PAD)), markup);
+function expressionTexture(breed, expr) {
+  const key = `expr:${breed}:${expr}`;
+  if (textures[key]) return textures[key];
+  const canvas = document.createElement('canvas');
+  const m = BODY_PX[breed], front = frontPx(m);
+  canvas.width = front.w * 2; canvas.height = front.h * 2;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  textures[key] = texture;
+  const { x, y, w, h } = exprRect(breed);
+  const image = new Image();
+  image.onload = () => { canvas.getContext('2d').drawImage(image, x * canvas.width, y * canvas.height, w * canvas.width, h * canvas.height); texture.needsUpdate = true; };
+  image.src = expr === 'sleep'
+    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">${SLEEP_FACE}</svg>`)}`
+    : catExpressionSrc(breed, expr);
+  return texture;
+}
+// Kiểu mắt / miệng mà "não" mèo đặt (face(eyes, mouth)) -> biểu cảm Figma.
+function expressionOf(eyes, mouth) {
+  if (eyes === 'sleep') return mouth === 'yawn' ? 'sleepy' : 'sleep'; // ngáp: mặt lim dim há miệng
+  if (eyes === 'blink') return 'sleep';                              // chớp / nhắm mắt khi nhai, nhồi bột...
+  if (eyes === 'half') return 'sleepy';
+  if (eyes === 'happy') return 'happy';
+  if (eyes === 'annoyed') return mouth === 'chew' ? 'chew' : 'angry';
+  return 'calm';
 }
 
-// Mắt Figma: vòng màu dày + đồng tử đen to + đốm sáng lớn (trên phải) và nhỏ (dưới trái).
-const EYE_KINDS = ['open', 'focus', 'blink', 'half', 'sleep', 'happy', 'annoyed'];
-function figmaEye(look, x, r = EYE_R) {
-  return `<circle cx="${x}" cy="${EYE_Y}" r="${r}" fill="${look.ring}"/><circle cx="${x}" cy="${EYE_Y}" r="${r * .8}" fill="#120c0e"/>
-    <circle cx="${x + r * .3}" cy="${EYE_Y - r * .3}" r="${r * .3}" fill="#fff"/><circle cx="${x - r * .32}" cy="${EYE_Y + r * .34}" r="${r * .13}" fill="#fff"/>`;
-}
-function eyesMarkup3d(breed, kind) {
-  const look = catLook(breed), lid = look.lidInk || look.ink;
-  const stroke = (d, w = 2.6) => `<path d="${d}" fill="none" stroke="${lid}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-  const both = f => EYE_X.map((x, i) => f(x, i ? 1 : -1)).join('');
-  // Mày mảnh màu xám của mèo trắng (như ảnh Figma), đặt trên mắt mở
-  const brows = look.brows ? both((x, s) => stroke(`M${x - 9} ${EYE_Y - 15 + (s < 0 ? 0 : 0)} Q${x} ${EYE_Y - 17.5} ${x + 9} ${EYE_Y - 15}`, 1.6).replace(lid, '#9a918c')) : '';
-  // Mí trên che nửa mắt, viền mí đậm; slant: nghiêng vào trong (cau có)
-  const lidded = (cover, slant = 0) => both((x, s) => {
-    const r = EYE_R + 1, yIn = EYE_Y - r + cover * 2 * r + slant, yOut = EYE_Y - r + cover * 2 * r - slant * .4;
-    const xin = x - s * r, xout = x + s * r;
-    // Cắt mắt theo đường mí (clipPath) chứ không phủ mảng màu lông: lông 3D có đổ sáng nên mảng tô phẳng lộ thành viền vuông.
-    const clip = `lid${Math.round(x)}`, bottom = EYE_Y + r + 2;
-    return `<clipPath id="${clip}"><path d="M${xin} ${yIn} L${xout} ${yOut} L${xout} ${bottom} L${xin} ${bottom} Z"/></clipPath>`
-      + `<g clip-path="url(#${clip})">${figmaEye(look, x)}</g>${stroke(`M${xin - s} ${yIn} L${xout + s} ${yOut}`, 2.4)}`;
-  });
-  switch (kind) {
-    case 'focus': return both(x => figmaEye(look, x, EYE_R * 1.15));
-    case 'blink': return both(x => stroke(`M${x - 11} ${EYE_Y} Q${x} ${EYE_Y + 5} ${x + 11} ${EYE_Y}`));
-    case 'half': return lidded(.5) + brows;
-    case 'sleep': return both(x => stroke(`M${x - 11} ${EYE_Y + 1} Q${x} ${EYE_Y + 7} ${x + 11} ${EYE_Y + 1}`, 2.8));
-    case 'happy': return both(x => stroke(`M${x - 10.5} ${EYE_Y + 4} Q${x} ${EYE_Y - 9} ${x + 10.5} ${EYE_Y + 4}`, 3));
-    case 'annoyed': return lidded(.32, 6);
-    default: return both(x => figmaEye(look, x)) + brows;
-  }
-}
-function eyesTexture(breed, eyes) {
-  return svgTexture(`eyes:${breed}:${eyes}`, '0 0 100 90', 512, eyesMarkup3d(breed, eyes));
-}
 function zTexture() {
   return canvasTexture('zzz', g => {
     g.strokeStyle = '#7a8fd6'; g.lineWidth = .1;
@@ -205,14 +277,11 @@ function zTexture() {
   });
 }
 
-// Độ sâu (z, hệ toạ độ thân) của mặt dán (mặt/mắt/ria) tại (x, y): phẳng ở giữa, cong theo góc bo của thân tới
-// WRAP_D rồi đi PHẲNG ra ngoài. Ria nằm ngoài mép thân nên chìa thẳng sang hai bên như ria thật / như mèo 2D;
-// nếu ôm tiếp theo góc bo, ria bị kéo vòng ra sau sườn, đè lên vằn má và nét viền nên chồng chéo, nhấp nháy.
-const BODY_R = .12, WRAP_D = BODY_R * .6;
+// Độ sâu (z, hệ toạ độ thân) của mặt dán (ảnh thân / mắt) tại (x, y): phẳng ở giữa, ôm theo góc bo của thân.
+// Góc bo nhỏ (BODY_R) cho khối vuông vức như mèo 2D; tấm dán phủ trọn mặt trước nên ôm hết góc bo, không chìa ra ngoài thân.
+const BODY_R = .06;
 function frontSurface(x, y) {
-  // Chỉ chiều NGANG mới dừng ôm ở WRAP_D (cho ria chìa ra); chiều dọc ôm hết góc bo, nếu không mảng bụng / cằm ở
-  // mép dưới sẽ chìa phẳng ra khỏi đáy thân thành một vạt màu lơ lửng.
-  const dx = Math.min(WRAP_D, Math.max(0, Math.abs(x) - (W / 2 - BODY_R))), dy = Math.max(0, Math.abs(y) - (H / 2 - BODY_R));
+  const dx = Math.max(0, Math.abs(x) - (W / 2 - BODY_R)), dy = Math.max(0, Math.abs(y) - (H / 2 - BODY_R));
   return D / 2 - BODY_R + Math.sqrt(Math.max(0, BODY_R * BODY_R - dx * dx - dy * dy));
 }
 
@@ -289,18 +358,28 @@ function dentByRopes(p, ropes) {
 }
 
 
-// Tai: khối cầu vuốt thon lên đỉnh (tam giác bo tròn, dẹt trước-sau) thay cho chóp nhọn 4 cạnh.
-// Chóp nhọn có cạnh sắc + mũi kim: viền toon phình theo pháp tuyến bị tách ra ở cạnh và kéo thành gai nhọn ở mũi,
-// nhìn từ trên xuống thấy tai "lồi" gai như lỗi. Khối này mượt mọi chỗ nên viền đều, mũi tai tròn dễ thương.
-const EAR_GEO = (() => {
-  const geo = new THREE.SphereGeometry(1, 20, 14), pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i), t = (y + 1) / 2, taper = 1 - .8 * Math.pow(t, 1.15); // gốc rộng -> đỉnh thon, đỉnh vẫn tròn
-    pos.setXYZ(i, pos.getX(i) * .1 * taper, y * .1, pos.getZ(i) * .055 * taper);
+// Tai: lăng trụ phẳng theo đúng hình tai trong ảnh thân (tam giác nhô ra ngoài, EAR_PX là toạ độ px của tai trái trong ảnh,
+// tai phải lật theo trục dọc giữa ảnh). Mặt trước dán lại chính vùng ảnh đó (vành tai, lòng tai hồng, vằn), thân tai là khối đùn mỏng.
+const EAR_DEPTH = .06, EAR_BASE = 6; // EAR_BASE: số px chân tai thụt xuống dưới mép trên mặt trước
+function earGeometries(breed, side) {
+  const m = BODY_PX[breed], fw = m.x1 - m.x0, scale = W / fw, base = m.top + EAR_BASE;
+  const left = [[m.ear[0], base], m.apex, [m.ear[1], m.top - 2], [m.ear[1], base]];
+  const px = left.map(([x, y]) => [side < 0 ? x : IMG_W - x, y]);
+  const cx = (Math.min(...px.map(p => p[0])) + Math.max(...px.map(p => p[0]))) / 2;
+  const shape = new THREE.Shape(px.map(([x, y]) => new THREE.Vector2(x, m.h - y)));
+  const front = new THREE.ShapeGeometry(shape), solid = new THREE.ExtrudeGeometry(shape, { depth: EAR_DEPTH / scale, bevelEnabled: false });
+  const uv = front.attributes.uv, pos = front.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / IMG_W, pos.getY(i) / m.h);
+  // Gốc toạ độ tai = giữa đáy tai (xoay / giật quanh gốc); đổi px -> mét; mặt trước của khối đùn ở z = 0, thân lùi về sau.
+  for (const geo of [front, solid]) {
+    geo.translate(-cx, -(m.h - base), 0);
+    geo.scale(scale, scale, scale);
   }
-  geo.computeVertexNormals();
-  return geo;
-})();
+  solid.translate(0, 0, -EAR_DEPTH);
+  front.translate(0, 0, .002);
+  solid.computeVertexNormals();
+  return { front, solid, x: (cx - (m.x0 + m.x1) / 2) * scale, y: EAR_BASE * scale };
+}
 
 // Đệm mèo dưới lòng bàn chân: 1 đệm lớn hình tim tròn + 4 hạt đậu ngón ở phía trước, dán theo mặt dưới của bàn chân
 // (khối cầu bán kính FOOT_R trong hệ toạ độ bàn chân, trước khi bàn chân bị nén dẹt). Chỉ thấy khi nhấc chân lên:
@@ -340,19 +419,17 @@ function tailStyle(breed) {
 
 // ---------- Bộ khung một con mèo ----------
 function buildRig(breed) {
-  EYE_KINDS.forEach(kind => eyesTexture(breed, kind)); // nạp sẵn mọi kiểu mắt: lần chớp đầu không bị trống
+  EXPRESSIONS.forEach(expr => expressionTexture(breed, expr)); // nạp sẵn mọi biểu cảm: lần đổi mặt đầu không bị trống
   const cat = catLook(breed);
   // Lông: nhám hoàn toàn, phản xạ thấp, thêm "sheen" (ánh mềm ở mép như lông/nhung thật) thay cho đốm bóng kiểu nhựa.
   const furMat = color => TOON ? toonMat({ color }) : new THREE.MeshPhysicalMaterial({ color, roughness: 1, metalness: 0, specularIntensity: .08,
     sheen: .25, sheenRoughness: .9, sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), .2) }); // dịu, không loá mép
   const fur = furMat(cat.fur);
-  const accent = furMat(cat.mask || cat.fur);
+  const accent = furMat(cat.ear || cat.mask || cat.fur); // tai / đuôi (calico: đen)
   const paw = furMat(cat.paw);
-  const earInnerColor = cat.mask ? '#b88a78' : '#f6a8b4';
   // Đệm thịt lòng bàn chân: hồng với bàn chân sáng màu, hồng nâu với bàn chân sẫm (Xiêm).
   const beanColor = new THREE.Color(cat.paw).getHSL({}).l < .5 ? '#c27d8a' : '#f59ab0';
   const beanMat = TOON ? toonMat({ color: beanColor }) : new THREE.MeshPhysicalMaterial({ color: beanColor, roughness: .7, specularIntensity: .4 });
-  const earInner = TOON ? toonMat({ color: earInnerColor }) : new THREE.MeshPhysicalMaterial({ color: earInnerColor, roughness: .95, specularIntensity: .3 });
   // Mèo không nhận bóng đổ (kể cả bóng của chính tai/đuôi hay đồ đạc): thân luôn sạch màu kiểu tranh vẽ; vẫn đổ bóng xuống sàn.
   const mesh = (geometry, material, shadow = true) => { const m = new THREE.Mesh(geometry, material); m.castShadow = shadow; m.receiveShadow = false; return m; };
 
@@ -363,37 +440,40 @@ function buildRig(breed) {
   const pivot = new THREE.Group();         // chúi / ngửa quanh mép sau-dưới thân
   root.add(hopper); hopper.add(roller); roller.add(pivot);
   pivot.position.set(0, LEG, -D / 2);
-  const body = mesh(new RoundedBoxGeometry(W, H, D, 10, BODY_R), fur); // lưới dày: đủ điểm để dây ấn thành rãnh mảnh
+  const bodyGeo = new RoundedBoxGeometry(W, H, D, 10, BODY_R); // lưới dày: đủ điểm để dây ấn thành rãnh mảnh
+  atlasUvs(bodyGeo);
+  const body = mesh(bodyGeo, TOON ? toonMat({ color: '#ffffff', map: bodyAtlas(breed) }) : new THREE.MeshPhysicalMaterial({ map: bodyAtlas(breed), roughness: 1, specularIntensity: .08 }));
   body.position.set(0, H / 2, D / 2);
   pivot.add(body);
 
   // Mặt / mắt chỉ nổi vài mm trên thân: zoom xa thì sai số depth (~3.5 mm ở khoảng cách ~77) lớn hơn khoảng nổi, thân che
   // mất mặt. polygonOffset kéo tấm dán về phía camera theo độ dốc + một lượng cố định -> luôn nằm trên thân, mọi góc / khoảng cách.
   const DECAL_OFFSET = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 };
-  const faceMat = new THREE.MeshBasicMaterial({ map: faceTexture(breed, 'calm'), transparent: true, alphaTest: .02, depthWrite: false, ...DECAL_OFFSET });
-  const eyesMat = new THREE.MeshBasicMaterial({ map: eyesTexture(breed, 'open'), transparent: true, alphaTest: .02, depthWrite: false, ...DECAL_OFFSET });
-  // Mặt / mắt là tấm lưới mịn dán ÔM lên mặt trước bo tròn của thân (không phải tấm phẳng lơ lửng), và mỗi frame
-  // uốn theo đúng phép biến dạng của thân (jelly), nên nhìn nghiêng hay thân đang lắc thì mặt vẫn dính vào thân.
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(W * .94 * (1 + 2 * FACE_PAD), H * .94, 24, 16), faceMat);
-  const eyes = new THREE.Mesh(new THREE.PlaneGeometry(W * .94, H * .94, 20, 16), eyesMat);
-  [[face, .003], [eyes, .006]].forEach(([decal, lift]) => {
+  const bodyTex = bodyTexture(breed);
+  const eyesMat = new THREE.MeshBasicMaterial({ map: expressionTexture(breed, 'calm'), transparent: true, alphaTest: .02, depthWrite: false, ...DECAL_OFFSET });
+  // Mắt là tấm lưới mịn dán ÔM lên mặt trước bo tròn của thân (không phải tấm phẳng lơ lửng), và mỗi frame
+  // uốn theo đúng phép biến dạng của thân (jelly), nên nhìn nghiêng hay thân đang lắc thì mắt vẫn dính vào thân.
+  // Phần còn lại của mặt (mõm, vằn, bụng) đã nằm trong texture thân (bodyAtlas).
+  const eyes = new THREE.Mesh(new THREE.PlaneGeometry(W, H, 20, 16), eyesMat);
+  [[eyes, .006]].forEach(([decal, lift]) => {
     decal.position.copy(body.position); // toạ độ đỉnh tính trong hệ toạ độ thân
     decal.userData.flat = Float32Array.from(decal.geometry.attributes.position.array);
     decal.userData.lift = lift;
     decal.frustumCulled = false;
   });
-  pivot.add(face, eyes);
+  pivot.add(eyes);
 
+  const earArtMat = TOON ? toonMat({ color: '#ffffff', map: bodyTex, transparent: true, alphaTest: .02 }) : new THREE.MeshBasicMaterial({ map: bodyTex, transparent: true, alphaTest: .02 });
+  earArtMat.polygonOffset = true; earArtMat.polygonOffsetFactor = -2; earArtMat.polygonOffsetUnits = -8;
   const ears = [-1, 1].map(side => {
-    const ear = new THREE.Group();
-    const outer = mesh(EAR_GEO, accent);
+    const ear = new THREE.Group(), geo = earGeometries(breed, side);
+    const outer = mesh(geo.solid, accent);
     outer.userData.outlineStyle = 'catEar'; // viền tai (toon.mjs OUTLINE_STYLES)
-    const inner = mesh(EAR_GEO, earInner, false);
-    inner.userData.noOutline = true; // lòng tai: chỉ là mảng màu, không viền
-    inner.scale.set(.58, .62, .45); inner.position.set(0, -.03, .03); // nằm trên mặt trước, phần sau chìm trong vành tai
-    ear.add(outer, inner);
-    ear.position.set(side * W * .3, H + .075, D * .72);
-    ear.rotation.z = -side * .18;
+    const art = new THREE.Mesh(geo.front, earArtMat);
+    art.userData.noOutline = true; // ảnh vành tai / lòng tai: chỉ là mảng màu, không viền
+    ear.add(outer, art);
+    // Mặt trước tai thụt vào .015 so với mặt trước thân; gốc tai ở mép đỉnh thân.
+    ear.position.set(geo.x, H - geo.y, D - .015);
     pivot.add(ear);
     return ear;
   });
@@ -452,7 +532,7 @@ function buildRig(breed) {
   // Thân mềm: giữ toạ độ gốc của từng đỉnh thân + vị trí gốc của mặt/tai để mỗi frame uốn lại theo độ lắc (Cat.jelly).
   const bodyBase = Float32Array.from(body.geometry.attributes.position.array);
   const rest = ears.map(node => [node, node.position.clone()]);
-  return { bodyBase, rest, root, hopper, roller, pivot, body, face, eyes, faceMat, eyesMat, ears, tail, tailParts, tailStyle: style, legs, z };
+  return { bodyBase, rest, root, hopper, roller, pivot, body, eyes, eyesMat, ears, tail, tailParts, tailStyle: style, legs, z };
 }
 
 // Lò xo thân mềm theo từng trục: [độ cứng, tỉ lệ tắt, độ nhạy với gia tốc (1 = khối thật: lệch ≈ gia tốc ÷ độ cứng), độ lệch tối đa (m)].
@@ -1843,9 +1923,10 @@ class Cat {
       const near = this.world.nearToy(this.carryX, this.carryZ);
       if (near !== hoverToy) {
         hoverToy = near;
-        if (near) { this.face('open', 'open'); this.world.say(this, '♪', 1); } else this.face('annoyed');
+        if (near) { this.face('happy', 'open'); this.world.say(this, '♪', 1); } else this.face('annoyed');
       }
-      if (!hoverToy && this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('half'); // bế lâu thì lim dim chịu trận
+      // Bị nhấc lơ lửng: angry; bế lâu thì đổi sang chew (lầm bầm chịu trận)
+      if (!hoverToy && this.world.time - lifted > 1.4 && this.eyes === 'annoyed' && this.mouth !== 'chew') this.face('annoyed', 'chew');
       yield;
     }
     this.tailWag = .25; this.tailSpeed = 1.6;
@@ -1977,7 +2058,7 @@ class Cat {
     if (!skipBody) { out.needsUpdate = true; body.geometry.boundingSphere = null; } // tính lại khối bao để raycast (bấm vào mèo) đúng hình mới
     // Mặt / mắt: dán lên mặt trước bo tròn rồi uốn cùng công thức với đỉnh thân -> luôn khít với thân.
     // Mắt liếc (this.look) = trượt dọc bề mặt, không phải dời cả tấm ra khỏi thân.
-    for (const decal of [rig.face, rig.eyes]) {
+    for (const decal of [rig.eyes]) {
       const flat = decal.userData.flat, lift = decal.userData.lift, attr = decal.geometry.attributes.position, a = attr.array;
       const shift = decal === rig.eyes ? this.look * .03 : 0;
       if (!skipDecals) for (let i = 0; i < a.length; i += 3) {
@@ -1987,7 +2068,7 @@ class Cat {
         a[i] = v.x; a[i + 1] = v.y; a[i + 2] = v.z;
       }
       if (!skipDecals) attr.needsUpdate = true;
-      if (decal === rig.eyes) decal.scale.y *= body.scale.y; else decal.scale.y = body.scale.y; // thân co khi nằm thì mặt co theo (mắt: nhân thêm vào độ khép mi đặt trong update)
+      decal.scale.y *= body.scale.y; // thân co khi nằm thì mắt co theo (nhân vào scale.y = 1 đặt lại trong update)
     }
     // Tai: gốc tai bám theo điểm đỉnh thân ngay bên dưới (cùng phép biến dạng).
     const top = H / 2 + (H / 2) * body.scale.y; // đỉnh thân thật (thân co khi nằm)
@@ -2132,7 +2213,8 @@ class Cat {
     let eyes = this.eyes, mouth = this.mouth;
     if (petting) {
       const warn = this.petMood === 'warning';
-      eyes = this.sleeping ? 'sleep' : warn ? 'half' : 'happy'; mouth = this.sleeping ? 'calm' : warn ? 'zig' : 'open';
+      // Được cưng: happy; bị chọc dồn dập (sắp nổi giận): chew
+      eyes = this.sleeping ? 'sleep' : warn ? 'annoyed' : 'happy'; mouth = this.sleeping ? 'calm' : warn ? 'chew' : 'open';
       if (warn) { this.tailSpeed = 6; this.tailWag = .8; } // quẫy đuôi = sắp hết kiên nhẫn
     } else if (this.petMood === 'warning') { this.petMood = 'happy'; this.tailSpeed = 1.6; this.tailWag = .25; }
     this.nextBlink -= dt;
@@ -2141,11 +2223,18 @@ class Cat {
     if (this.nextBlink < -.16) this.nextBlink = chance(.2) ? rand(.15, .3) : rand(2.5, 6); // thỉnh thoảng chớp đôi
     spring(this, 'lid', blinking ? 0 : 1, 900, 1, dt);
     if (canBlink && this.lid < .45) eyes = 'blink';
-    const faceTex = faceTexture(this.breed, mouth), eyesTex = eyesTexture(this.breed, eyes);
-    if (rig.faceMat.map !== faceTex) { rig.faceMat.map = faceTex; rig.faceMat.needsUpdate = true; }
+    let expr = expressionOf(eyes, mouth);
+    // Rảnh (mặt calm, không bị cưng / bế / ngủ): thỉnh thoảng đổi sang cute trong chốc lát
+    this.nextCute = (this.nextCute ?? rand(4, 10)) - dt;
+    if (this.nextCute < 0) { this.cuteFor = rand(1.4, 2.4); this.nextCute = rand(7, 16); }
+    this.cuteFor = Math.max(0, (this.cuteFor || 0) - dt);
+    if (expr === 'calm' && this.cuteFor > 0 && !petting && !this.carried && !this.sleeping) expr = 'cute';
+    this.expression = expr;
+    const eyesTex = expressionTexture(this.breed, expr);
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
+    // jelly() nhân scale.y của lớp biểu cảm theo thân đang co: đặt lại 1 mỗi frame, không thì mặt bị bóp dần tới mất
+    rig.eyes.scale.y = 1;
     // mắt liếc ngang (this.look): cộng trong jelly() cùng với độ lắc của thân
-    rig.eyes.scale.y = eyes === 'blink' || !canBlink ? 1 : clamp(this.lid, .2, 1);
 
     // ---- Tai: giật bằng xung lò xo, cụp khi tiếp đất, dỏng khi tập trung, cụp khi bực ----
     this.nextEar -= dt;
@@ -2154,7 +2243,7 @@ class Cat {
     const annoyed = this.eyes === 'annoyed', focus = this.eyes === 'focus';
     rig.ears.forEach((ear, i) => {
       const side = i ? 1 : -1;
-      ear.rotation.z = -side * .18 + (i === this.earSide ? this.earTwitch * .045 * side : 0) + (annoyed ? side * .5 : 0);
+      ear.rotation.z = (i === this.earSide ? this.earTwitch * .045 * side : 0) + (annoyed ? side * .5 : 0);
       ear.rotation.x = -this.earFlop * .05 + (focus || att ? .18 : 0) - (this.sleeping ? .15 : 0);
       ear.rotation.y = att ? clamp(this.look * .6, -.5, .5) : 0; // xoay vành tai về phía tiếng động
     });
@@ -2652,9 +2741,10 @@ export function createCatLife(ctx) {
 }
 
 // Đổi mắt / miệng của một con mèo dựng bằng catModel (eyes: open | focus | blink | half | sleep | happy | annoyed; mouth: calm | open | chew | yawn | zig).
+// eyes / mouth: như face() của mèo trong phòng ('focus' -> cute cho mèo khoe ở màn thưởng), hoặc tên biểu cảm EXPRESSIONS.
 export function setCatFace(rig, breed, eyes, mouth = 'calm') {
-  const faceTex = faceTexture(breed, mouth), eyesTex = eyesTexture(breed, eyes);
-  if (rig.faceMat.map !== faceTex) { rig.faceMat.map = faceTex; rig.faceMat.needsUpdate = true; }
+  const expr = EXPRESSIONS.includes(eyes) ? eyes : eyes === 'focus' ? 'cute' : expressionOf(eyes, mouth);
+  const eyesTex = expressionTexture(breed, expr);
   if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
 }
 
@@ -2662,7 +2752,7 @@ export function setCatFace(rig, breed, eyes, mouth = 'calm') {
 // Mặt / mắt dán ôm lên mặt trước bo tròn một lần (trong phòng việc này làm mỗi frame theo thân đang biến dạng).
 export function catModel(breed) {
   const rig = buildRig(breed);
-  for (const decal of [rig.face, rig.eyes]) {
+  for (const decal of [rig.eyes]) {
     const flat = decal.userData.flat, attr = decal.geometry.attributes.position, a = attr.array;
     for (let i = 0; i < a.length; i += 3) a[i + 2] = frontSurface(flat[i], flat[i + 1]) + decal.userData.lift;
     attr.needsUpdate = true;

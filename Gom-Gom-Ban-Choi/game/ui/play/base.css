@@ -436,18 +436,24 @@ body.hammer-armed .board .cell.caged{cursor:crosshair}
    độ mờ của ảnh bên trong. Mặt mới hiện dần ngay (.16s); mặt cũ giữ nguyên rồi mới mờ đi (trễ .14s) để giữa chừng không bị
    thủng thấy nền. Luật bật / tắt cũ (display / visibility ở trên) bị ghi đè trong khung chơi + bóng thẻ đang kéo. */
 :is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed){display:inline!important}
-:is(.shell,.drag-ghost) .cat.bitmap .joy{visibility:visible!important}
-:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy)>image{opacity:0;transition:opacity .12s ease .14s}
-/* Mặt đang dùng (thứ tự ưu tiên: vui > khó chịu > chú ý > thường) */
+:is(.shell,.drag-ghost) .cat.bitmap :is(.joy,.chew,.cute){visibility:visible!important}
+:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy,.chew,.cute)>image{opacity:0;transition:opacity .12s ease .14s}
+/* Mặt đang dùng (biểu cảm Figma, cat-art.mjs): happy (chạm / gom) > angry (bị nhấc, kéo, chạm quá nhiều: .grumpy) >
+   chew (dạng khác khi chạm quá nhiều: .grumpy-chew) > cute (thẻ đang cầm; thỉnh thoảng khi rảnh: .idle-cute) > calm */
 .shell .cat.bitmap .calm-idle>image,
 #active-card:not(.dragging) .cat.bitmap .calm-focus>image,
-:is(.drag-ghost,.piece-card.dragging,.cell.lifted) .cat.bitmap .annoyed>image,
-:is(.cell.merge-ghost,.cell.petted,.cell.idle-joy) .cat.bitmap .joy>image{opacity:1;transition:opacity .16s ease}
-:is(#active-card,.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.merge-ghost,.cell.petted,.cell.idle-joy) .cat.bitmap .calm-idle>image,
-:is(.cell.merge-ghost,.cell.petted) .cat.bitmap .annoyed>image{opacity:0;transition:opacity .12s ease .14s}
+:is(.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.grumpy) .cat.bitmap .annoyed>image,
+.cell.grumpy-chew .cat.bitmap .chew>image,
+.cell.idle-cute .cat.bitmap .cute>image,
+:is(.cell.merge-ghost,.cell.petted) .cat.bitmap .joy>image{opacity:1;transition:opacity .16s ease}
+:is(#active-card,.drag-ghost,.piece-card.dragging,.cell.lifted,.cell.merge-ghost,.cell.petted,.cell.idle-cute,.cell.grumpy,.cell.grumpy-chew) .cat.bitmap .calm-idle>image,
+:is(.cell.merge-ghost,.cell.petted) .cat.bitmap :is(.annoyed,.chew)>image{opacity:0;transition:opacity .12s ease .14s}
+/* AFK: lim dim (sleepy) trước, AFK lâu hơn thì ngủ say (sleep + zzz, body.afk-deep) */
+body.afk.afk-deep .cat .afk-sleepy{opacity:0;transition-delay:0s}
+body.afk.afk-deep .cat .afk-sleep{opacity:1;translate:0 0;transition-delay:.12s}
 /* Bóng thẻ vừa tạo lúc bắt đầu kéo: mở đầu bằng mặt chú ý của thẻ đang cầm rồi chuyển dần sang mặt khó chịu */
 @starting-style{.drag-ghost .cat.bitmap .calm-focus>image{opacity:1}}
-@media(prefers-reduced-motion:reduce){:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy)>image{transition:none}}
+@media(prefers-reduced-motion:reduce){:is(.shell,.drag-ghost) .cat.bitmap :is(.calm,.annoyed,.joy,.chew,.cute)>image{transition:none}}
 /* Mèo căn giữa ô trong thẻ đang cầm / thẻ tiếp theo / ô gửi tạm: bỏ phần đệm trên còn lại từ kiểu khối nổi 3D cũ (khối giờ phẳng,
    không còn nhấc lên), và ảnh mèo nằm thấp trong khung 100×106 (y 11–101) nên kéo lên ~5% ô cho tâm ảnh trùng tâm ô (dùng top, không dùng translate vì anim thở / rung của mèo ghi đè translate). */
 :is(.piece-card,.next-slot,.hold-slot) .piece-grid{padding-top:0}

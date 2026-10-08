@@ -130,7 +130,7 @@ export const CATALOG = [
   { id: 'cat-orange', cat: 'cats', name: 'Orange cat', price: 0, breed: 'orange' },
   { id: 'cat-gray', cat: 'cats', name: 'Gray cat', price: 0, breed: 'gray' },
   { id: 'cat-white', cat: 'cats', name: 'White cat', price: 0, breed: 'white' },
-  { id: 'cat-tabby', cat: 'cats', name: 'Tabby cat', price: 0, breed: 'tabby', lock: 6 },
+  { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', price: 0, breed: 'tabby', lock: 6 },
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', price: 0, breed: 'siamese', lock: 9 },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', price: 0, breed: 'tuxedo', lock: 10 },
 ];

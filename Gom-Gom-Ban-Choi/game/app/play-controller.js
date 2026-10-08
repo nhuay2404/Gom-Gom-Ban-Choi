@@ -1019,8 +1019,29 @@ $('board').addEventListener('pointerdown', event => {
   if (!cell || cell.classList.contains('merge-ghost') || state.animating) return;
   petCat(cell);
 });
+// Chạm (hoặc rê chuột vào) dồn dập trong PET_ANNOY.WINDOW: từ CHEW lần thì mèo bực (biểu cảm chew), từ ANGRY lần thì nổi giận (angry)
+// một lúc, trong lúc giận chạm vào không vui lên. Cùng nhịp với mèo 3D ở Deco (room-cats.mjs PET_ANNOY).
+const PET_ANNOY = { WINDOW: 3000, CHEW: 4, ANGRY: 6, MOOD_MS: 2200 };
+function annoyCat(cell) {
+  const t = performance.now();
+  cell.pokes = (cell.pokes || []).filter(at => t - at < PET_ANNOY.WINDOW);
+  cell.pokes.push(t);
+  const level = cell.pokes.length >= PET_ANNOY.ANGRY ? 'grumpy' : cell.pokes.length >= PET_ANNOY.CHEW ? 'grumpy-chew' : '';
+  if (!level) return cell.classList.contains('grumpy');
+  cell.classList.remove('petted', 'idle-cute', level === 'grumpy' ? 'grumpy-chew' : 'grumpy');
+  cell.classList.add(level);
+  clearTimeout(cell.grumpyTimer);
+  cell.grumpyTimer = setTimeout(() => { cell.classList.remove('grumpy', 'grumpy-chew'); cell.pokes = []; }, PET_ANNOY.MOOD_MS);
+  return true;
+}
+$('board').addEventListener('pointerover', event => {
+  if (event.pointerType !== 'mouse' || state.animating) return;
+  const cell = event.target.closest('.cell.locked');
+  if (cell && !cell.contains(event.relatedTarget)) annoyCat(cell);
+});
 function petCat(cell) {
-  cell.classList.remove('petted');
+  if (annoyCat(cell)) { playSound('grumpy'); return; }
+  cell.classList.remove('petted', 'idle-cute');
   void cell.offsetWidth; // chạm liên tiếp thì chạy lại anim
   cell.classList.add('petted');
   clearTimeout(cell.petTimer);
@@ -1134,12 +1155,15 @@ function smashAt(cell) {
 
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
 // Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.
-const { AFK_MS } = TIMING;
-let afkTimer = 0;
+const { AFK_MS, AFK_SLEEP_MS } = TIMING;
+let afkTimer = 0, deepTimer = 0;
 function goAfk() {
   if (state.over || state.animating || cardDrag) return armAfk();
   if (document.body.classList.contains('low-moves')) return armAfk(); // sắp hết lượt: mèo lo lắng, không ngủ
   document.body.classList.add('afk');
+  // Lim dim (sleepy) một lúc rồi ngủ say (sleep + zzz)
+  clearTimeout(deepTimer);
+  deepTimer = setTimeout(() => { if (document.body.classList.contains('afk')) document.body.classList.add('afk-deep'); }, AFK_SLEEP_MS);
   // Metric idle: tính cả khoảng chờ trước khi mèo ngủ (đã AFK_MS không chạm), chỉ khi đang trong ván.
   if (track && !track.done && !menus.menuOpen() && $('map').hidden) track.idleSince = now() - AFK_MS;
 }
@@ -1159,7 +1183,7 @@ function renderLowMoves() {
   // Vừa chuyển sang "sắp hết lượt": mèo kêu lo lắng một tiếng (không kêu lại mỗi lượt)
   if (low && !document.body.classList.contains('low-moves')) playSound('worried');
   document.body.classList.toggle('low-moves', low);
-  if (low) document.body.classList.remove('afk');
+  if (low) document.body.classList.remove('afk', 'afk-deep');
   if (!low) return;
   const cats = [...document.querySelectorAll('#board > .cell.locked .cat, #active-card .cat, #hold .cat, #next-cards .cat')];
   // Xáo vòng các kiểu để các con cạnh nhau hiếm khi trùng biểu cảm.
@@ -1168,7 +1192,8 @@ function renderLowMoves() {
 }
 
 function armAfk() {
-  document.body.classList.remove('afk');
+  document.body.classList.remove('afk', 'afk-deep');
+  clearTimeout(deepTimer);
   if (track?.idleSince) { track.idleMs += now() - track.idleSince; track.idleSince = 0; }
   clearTimeout(afkTimer);
   afkTimer = setTimeout(goAfk, AFK_MS);
@@ -1176,19 +1201,19 @@ function armAfk() {
 addEventListener('pointerdown', armAfk, { passive: true });
 addEventListener('pointerup', armAfk, { passive: true });
 
-// Mèo đứng yên trên bàn thỉnh thoảng đổi sang mặt vui / nháy mắt (ảnh joy) trong chốc lát, mỗi lần một con ngẫu nhiên.
+// Mèo đứng yên trên bàn thỉnh thoảng đổi sang mặt cute (mắt long lanh) trong chốc lát, mỗi lần một con ngẫu nhiên.
 // Không chạy khi AFK (đang ngủ), sắp hết lượt (mặt lo), hết ván, đang có anim hay đang kéo thẻ.
-const IDLE_FACE = { EVERY: [1400, 3200], HOLD: 900 };
+const IDLE_FACE = { EVERY: [1400, 3200], HOLD: 1500 };
 function idleFace() {
   setTimeout(idleFace, IDLE_FACE.EVERY[0] + Math.random() * (IDLE_FACE.EVERY[1] - IDLE_FACE.EVERY[0]));
   const body = document.body.classList;
   if (!state || state.over || state.animating || cardDrag || body.contains('afk') || body.contains('low-moves') || !$('map').hidden) return;
   const cells = [...document.querySelectorAll('#board > .cell .cat.bitmap')].map(cat => cat.closest('.cell'))
-    .filter(cell => !cell.classList.contains('petted') && !cell.classList.contains('lifted') && !cell.classList.contains('idle-joy'));
+    .filter(cell => !['petted', 'lifted', 'idle-cute', 'grumpy', 'grumpy-chew'].some(name => cell.classList.contains(name)));
   const cell = cells[Math.floor(Math.random() * cells.length)];
   if (!cell) return;
-  cell.classList.add('idle-joy');
-  setTimeout(() => cell.classList.remove('idle-joy'), IDLE_FACE.HOLD);
+  cell.classList.add('idle-cute');
+  setTimeout(() => cell.classList.remove('idle-cute'), IDLE_FACE.HOLD);
 }
 setTimeout(idleFace, 2000);
 addEventListener('pointermove', event => { if (event.buttons || event.pointerType === 'touch') armAfk(); }, { passive: true });

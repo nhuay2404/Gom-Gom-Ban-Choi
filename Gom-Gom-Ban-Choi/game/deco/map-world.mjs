@@ -1325,7 +1325,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   }
 
   // ---------- Cuộn / chạm ----------
-  const minScroll = () => -.15 * WORLD.STEP, maxScroll = () => (levelCount - .4) * WORLD.STEP;
+  const minScroll = () => -.15 * WORLD.STEP, maxScroll = () => (Math.min(levelCount, (curStage + 1) * STAGE_SIZE) - .4) * WORLD.STEP;
   const clamp = v => Math.min(maxScroll(), Math.max(minScroll(), v));
   // Số px kéo tay để lăn qua một màn (resize() tính theo chiều cao khung, tỉ lệ với WORLD.STEP).
   let pxPerLevel = 200;
