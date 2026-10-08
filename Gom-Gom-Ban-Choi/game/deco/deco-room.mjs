@@ -14,7 +14,7 @@ import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WIN
 import { TIMING, DRAG } from '../gameplay/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scene.mjs';
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './kitchen-scene.mjs';
-import { buildWasteland } from './wasteland-scene.mjs';
+import { buildMeadow } from './meadow-scene.mjs';
 import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
 import { runModelQC } from './qc.mjs';
 import { createDecoFx } from './deco-fx.mjs';
@@ -1106,12 +1106,12 @@ export function createRoom() {
   const garden = new THREE.Group();
   site.add(garden);
   scene.add(site);
-  // Môi trường: bỏ trời / mây, quanh khu nhà là vùng đất hoang trống trải (wasteland-scene.mjs); sương + nền cùng màu đất xa.
+  // Môi trường: bỏ trời / mây, quanh khu nhà là bãi cỏ có hoa, cây, bụi cùng phong cách Home (meadow-scene.mjs); sương + nền cùng màu trời xanh của Home.
   const zoneXs = Object.values(ZONE_OFFSET).map(o => o[0]), zoneZs = Object.values(ZONE_OFFSET).map(o => o[1]);
-  const wasteland = buildWasteland({ x0: Math.min(...zoneXs) - HALF, x1: Math.max(...zoneXs) + HALF, z0: Math.min(...zoneZs) - HALF, z1: Math.max(...zoneZs) + HALF });
-  scene.add(wasteland.root);
-  scene.fog = wasteland.fog; scene.background = wasteland.background;
-  // Không còn bệ diorama (đế kem) dưới các khu: khu nhà nằm thẳng trên vùng đất hoang (wasteland-scene.mjs, mặt đất ở y -.31 = đáy khối nền).
+  const meadow = buildMeadow({ x0: Math.min(...zoneXs) - HALF, x1: Math.max(...zoneXs) + HALF, z0: Math.min(...zoneZs) - HALF, z1: Math.max(...zoneZs) + HALF });
+  scene.add(meadow.root);
+  scene.fog = meadow.fog; scene.background = meadow.background;
+  // Không còn bệ diorama (đế kem) dưới các khu: khu nhà nằm thẳng trên bãi cỏ (meadow-scene.mjs, mặt đất ở y -.31 = đáy khối nền).
 
   const groundMat = Object.assign(mat('#9fd46a', { roughness: .95 }), FLOOR_OFFSET), soil = mat('#8a6a45');
   const ground = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), soil), 0, -.15, 0);
@@ -1432,7 +1432,7 @@ export function createRoom() {
     night = ambient === 'night';
     const look = LIGHTING[ambient];
     SUN_FROM.set(...(look.sunFrom || [4, 9, 5])); aimSun();
-    wasteland.setAmbient(ambient);
+    meadow.setAmbient(ambient);
     hemi.color.set(look.sky); hemi.groundColor.set(look.ground); hemi.intensity = look.hemi * (TOON ? TOON_LIGHT.hemi : 1);
     sun.color.set(look.sun); sun.intensity = look.sunI * (TOON ? TOON_LIGHT.sun : 1);
     scene.environmentIntensity = look.env;

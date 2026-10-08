@@ -57,7 +57,7 @@
 .deco-item.using .badge.act{color:var(--cream-ink);background:#fff;border-color:var(--cream-edge);box-shadow:0 2px 0 #d9c39a}
 /* Deco theo Figma: nền trời giống Home hub (cảnh 3D trong suốt, không viền kem); mục + danh sách đồ nằm trong khung kem viền nâu
    có dấu chân (frame 4 của Figma "Deco", 9-slice giữ góc khi danh sách dài). */
-/* Deco không còn nền trời: chỉ màu sương cùng màu đất xa (wasteland-scene.mjs WASTE_LOOKS.fog), đổi theo ambient */
+/* Deco không còn nền trời: chỉ màu sương cùng màu trời xanh như Home (meadow-scene.mjs MEADOW_LOOKS.fog), đổi theo ambient */
 .screen.deco{background:#a9b499}
 /* Deco ban đêm (nút mặt trăng): nền trời đêm từ Figma (mây xanh tím, trăng, sao) thay trời xanh; ảnh đã có sao nên bỏ dải sao chữ */
 .screen.deco.night{background:#141b22}
