@@ -11,6 +11,7 @@ import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slot
   isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
+import { openDaily, maybeAutoDaily, questEvent, renderGemPacks } from './liveops-ui.js';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): main.js nối vào lúc khởi động.
@@ -183,6 +184,8 @@ export function showMap() {
   $('tutorial').hidden = true;
   if (map3dFailed) showMap2d();
   else showMap3d();
+  // LiveOps: lần đầu về Home trong ngày có quà điểm danh thì tự mở bảng Daily (không chen vào onboarding)
+  if (!ob.active()) setTimeout(() => { if (!$('map').hidden) maybeAutoDaily(); }, 900);
 }
 function showMap2d() {
   $('map').classList.remove('is-3d');
@@ -222,7 +225,7 @@ export function showTab(tab) {
   refreshWallet();
   if (tab !== 'deco') { decoPick = null; closeDecoPop(false); }
   if (tab === 'deco') renderDeco();
-  if (tab === 'shop') { renderShopBoosters(); renderShopDeco(); }
+  if (tab === 'shop') { renderShopBoosters(); renderShopDeco(); renderGemPacks($('shop-gems')); }
   renderZoneSwitch();
   mountRoom(tab);
   $(tab).scrollTop = 0;
@@ -247,6 +250,15 @@ const DECO_VIEW = {
 };
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
 $('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
+$('home-daily').onclick = () => { playSound('pick'); openDaily(); };
+// Pill gems ở mọi hàng ví: mở Shop tới mục gói gems
+document.addEventListener('click', event => {
+  if (!event.target.closest('[data-open="gems"]')) return;
+  playSound('pick');
+  setShopPage('store');
+  switchTab('shop');
+  setTimeout(() => $('shop-gems').scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center' }), 250);
+});
 $('home-starter').onclick = () => { playSound('pick'); setShopPage('store'); switchTab('shop'); }; // gói khởi đầu nằm đầu tab Shop
 $('tabbar').addEventListener('click', event => {
   const tab = event.target.closest('.tab');
@@ -305,6 +317,7 @@ function petRoomCat(cat) {
   clearTimeout(cat.petTimer);
   cat.petTimer = setTimeout(() => cat.classList.remove('petted'), 1100);
   playSound('pet');
+  questEvent('pet');
   if (reduceMotion.matches) return;
   const room = cat.closest('.room'), box = room.getBoundingClientRect(), rect = cat.getBoundingClientRect();
   for (let i = 0; i < 4; i++) {
@@ -335,6 +348,7 @@ const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thumbnail 
   room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
   room3d.onPick(onScenePick);
+  room3d.onCatEvent(event => { if (event === 'pet') questEvent('pet'); });
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
   room3d.onFrame(() => { if (!$('deco').hidden) { placeDecoPop(); placeDecoPins(); } });
   // Deco: kéo cảnh sang phòng khác thì hàng thẻ, nút cột trái và hàng chọn khu đổi theo phòng đang ở giữa (camera không lướt lại).

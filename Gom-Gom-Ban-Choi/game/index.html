@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./ui/play/skin.css">
   <link rel="stylesheet" href="./ui/result/result.css">
   <link rel="stylesheet" href="./ui/shared/tutorial.css">
+  <link rel="stylesheet" href="./ui/shared/liveops.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./app/main.js"></script>
 </head>
@@ -165,8 +166,8 @@
     <div id="deco-room" class="room deco-view"></div>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
-      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+      <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+      <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
     <div class="deco-side">
@@ -203,8 +204,8 @@
   <section id="shop" class="screen shop" data-page="store" hidden>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
-      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+      <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+      <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
     </div>
     <div id="shop-pages" class="shop-pages" role="tablist" aria-label="Shop">
       <button role="tab" data-page="store" aria-selected="true">Shop</button>
@@ -216,12 +217,9 @@
       <button class="booster" data-buy="swap"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
       <button class="booster" data-buy="moves"><img src="./ui/play/img/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
     </div>
-    <div class="coin-list">
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
-    </div>
-    <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
+    <h3 class="shop-section">Gems</h3>
+    <div id="shop-gems" class="gem-list"></div>
+    <p class="soon-note">Test build: gem purchases are simulated, no real payment.</p>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
     <section id="shop-deco" class="shop-deco" aria-labelledby="shop-deco-title">
       <h3 id="shop-deco-title" class="shop-deco-title">Decoration</h3>
@@ -239,16 +237,16 @@
   <div id="toast" class="toast" role="status" hidden></div>
 
   <!-- Home hub = bản đồ hành trình kiểu saga (màn 1 ở đáy, đường uốn lượn đi lên). Lớp trên: hàng ví (xu thật; kim cương +
-       năng lượng chưa có hệ thống, chạm báo "Coming soon") cùng hàng với nút cài đặt chung (#hub-settings), cột liveops bên trái. -->
+       mạng: LiveOps, liveops-ui.js) cùng hàng với nút cài đặt chung (#hub-settings), cột liveops bên trái. -->
   <section id="map" class="map" hidden>
     <div class="fh-layer hub-layer">
       <div class="wallet-hud">
         <span class="fh-pill fh-coins" aria-label="Coins"><b id="map-coins">0</b></span>
-        <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-        <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
+        <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+        <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
       </div>
-      <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
-      <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
+      <!-- Cột trái: Daily (điểm danh + nhiệm vụ ngày, liveops-ui.js), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
+      <button id="home-daily" class="fh-btn fh-daily" aria-label="Daily rewards and quests"></button>
       <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
       <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
@@ -306,10 +304,53 @@
       <button id="result-retry" class="result-wide retry" aria-label="Retry"><svg viewBox="0 0 24 24"><path d="M12 3.5v7M7.5 6.5a7.5 7.5 0 1 0 9 0"/></svg></button>
     </div>
   </dialog>
+  <!-- LiveOps (liveops-ui.js): bảng Daily, hộp mạng, continue sau khi thua, quảng cáo giả lập -->
+  <dialog id="daily-dialog" class="lo-dialog daily-dialog" aria-labelledby="daily-title">
+    <div class="lo-head"><h2 id="daily-title">Daily</h2><button id="daily-close" class="settings-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <h3 class="lo-sub">Login rewards</h3>
+    <ol id="daily-login" class="daily-login"></ol>
+    <button id="daily-claim" class="pill-button lo-wide">Claim</button>
+    <h3 class="lo-sub">Today's quests <small id="daily-reset"></small></h3>
+    <ul id="daily-quests" class="daily-quests"></ul>
+    <div id="daily-chest" class="daily-chest">
+      <div class="dc-row"><span class="dc-icon" aria-hidden="true"></span><div class="dc-main"><span class="dq-bar"><i id="daily-chest-fill"></i></span><small id="daily-chest-points"></small></div></div>
+      <div id="daily-chest-reward" class="dc-reward"></div>
+      <div class="lo-actions"><button id="daily-chest-open" class="pill-button">Open</button><button id="daily-chest-ad" class="pill-button ad">Open ×2 · Ad</button></div>
+    </div>
+  </dialog>
+  <dialog id="lives-dialog" class="lo-dialog lives-dialog" aria-labelledby="lives-title">
+    <div class="lo-head"><h2 id="lives-title">Lives</h2><button id="lives-close" class="settings-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div id="lives-hearts" class="lives-hearts"></div>
+    <p id="lives-status" class="lo-status"></p>
+    <div class="lo-actions">
+      <button id="lives-ad" class="lo-offer ad"></button>
+      <button id="lives-refill" class="lo-offer"></button>
+    </div>
+    <div id="lives-packs" class="gem-list compact" hidden></div>
+    <button id="lives-play" class="pill-button lo-wide" hidden>Play</button>
+  </dialog>
+  <dialog id="continue-dialog" class="lo-dialog continue-dialog" aria-labelledby="continue-title">
+    <h2 id="continue-title">Out of moves!</h2>
+    <p id="continue-gain" class="lo-gain"></p>
+    <p id="continue-losing" class="lo-losing"></p>
+    <div class="lo-actions">
+      <button id="continue-gems" class="lo-offer"></button>
+      <button id="continue-ad" class="lo-offer ad"></button>
+    </div>
+    <p id="continue-wallet" class="lo-status"></p>
+    <div id="continue-packs" class="gem-list compact" hidden></div>
+    <button id="continue-giveup" class="pill-button ghost lo-wide">Give up</button>
+  </dialog>
+  <dialog id="ad-dialog" class="lo-dialog ad-dialog" aria-labelledby="ad-title">
+    <h2 id="ad-title">Ad (test)</h2>
+    <p class="lo-status">Reward: <b id="ad-label"></b></p>
+    <span id="ad-count" class="ad-count">3</span>
+    <div class="lo-actions"><button id="ad-close" class="pill-button ghost">Close</button><button id="ad-claim" class="pill-button" hidden>Get reward</button></div>
+  </dialog>
   <!-- Rời / chơi lại ván đang dở: hỏi lại trước -->
   <dialog id="quit-dialog" class="level-dialog">
     <h2 id="quit-title">Leave this level?</h2>
-    <p class="level-feature">Moves used and boosters spent won't come back.</p>
+    <p id="quit-note" class="level-feature">Moves used and boosters spent won't come back.</p>
     <div class="level-actions">
       <button id="quit-cancel" class="pill-button ghost">Keep playing</button>
       <button id="quit-ok" class="pill-button">Leave</button>

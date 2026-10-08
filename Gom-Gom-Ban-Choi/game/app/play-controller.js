@@ -8,14 +8,16 @@ import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from '../u
 import { LEVELS } from '../gameplay/levels.mjs';
 import * as game from '../gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
-import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from '../gameplay/tuning.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS, LIVEOPS } from '../gameplay/tuning.mjs';
 import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
 import { CRATE_SVG, METAL_SVG, cageSvg } from '../ui/board-art.mjs';
 import * as ob from './onboarding.js';
 import { playSound } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
-import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES } from './shared.js';
+import { $, reduceMotion, showToast, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, getLiveOps, setLiveOps } from './shared.js';
+import * as lo from '../gameplay/liveops.mjs';
+import { openLives, offerContinue, questEvent } from './liveops-ui.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
@@ -608,6 +610,12 @@ function renderScore() {
 
 function finishTurn(turn) {
   const { result, match, gained } = turn;
+  // Nhiệm vụ ngày: số mèo gom, cụm to, thùng vỡ
+  const sizes = match.clusters.map(cluster => cluster.length);
+  questEvent('cats', sizes.reduce((sum, n) => sum + n, 0));
+  questEvent('big4', sizes.filter(n => n >= 4).length);
+  questEvent('big6', sizes.filter(n => n >= 6).length);
+  questEvent('crates', match.broken?.length ?? 0);
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
@@ -959,6 +967,17 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   ({ W, H } = state);
   hammerArmed = false;
   startTracking();
+  // LiveOps: lượt ban đầu (bỏ ngang = đã dùng ít nhất một lượt), booster miễn phí của ván, số lần continue trong lượt chơi.
+  state.free = { hammer: 0, swap: 0 };
+  state.continues = { gems: 0, ad: false };
+  const streak = !state.tutorial && lo.streakActive(levelIndex) && lo.streakBonus(getLiveOps().streak);
+  if (streak) {
+    state.moves += streak.moves;
+    state.free = { hammer: streak.hammer ?? 0, swap: streak.swap ?? 0 };
+    // quà chuỗi thắng = có trợ giúp: tính như đã dùng booster để độ khó thích ứng không đọc thành người chơi giỏi lên
+    track.boosters++;
+  }
+  state.startMoves = state.moves;
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('suggest', plan.suggestBooster && boostersUnlocked(levelIndex));
   // Ván mới: thanh điểm về 0 ngay, không tụt dần từ ván trước.
@@ -966,7 +985,8 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
   document.querySelectorAll('.score-pop, .score-orb').forEach(node => node.remove());
   fill.style.transition = 'none';
-  render(`Reach ${level.target} points in ${level.moves} moves!${state.board.some(object => object?.cage) ? " Free every caged cat too!" : ""}`);
+  const streakText = streak ? ` Win streak ×${getLiveOps().streak}: +${streak.moves} moves${streak.hammer ? ' & free boosters' : ''}!` : '';
+  render(`Reach ${level.target} points in ${state.moves} moves!${state.board.some(object => object?.cage) ? " Free every caged cat too!" : ""}${streakText}`);
   void fill.offsetWidth;
   fill.style.transition = '';
   renderTutorial();
@@ -1075,8 +1095,9 @@ function renderBoosters() {
   bar.hidden = !boostersUnlocked(state.levelIndex);
   const busy = state.over || !!tutorialStep();
   bar.querySelectorAll('[data-boost]').forEach(button => {
-    const id = button.dataset.boost, count = getBoosters()[id];
+    const id = button.dataset.boost, free = state.free?.[id] ?? 0, count = getBoosters()[id] + free;
     button.disabled = busy;
+    button.classList.toggle('has-free', free > 0);
     button.classList.toggle('armed', id === 'hammer' && hammerArmed);
     button.classList.toggle('empty', !count);
     button.querySelector('.boost-count').innerHTML = count || priceTag(id);
@@ -1085,14 +1106,17 @@ function renderBoosters() {
 }
 // Booster mua ngay trong ván (hết hàng, trả bằng xu) được ghi riêng để thống kê.
 const haveBooster = id => {
-  if (getBoosters()[id] > 0) return true;
+  if (state.free?.[id] > 0 || getBoosters()[id] > 0) return true;
   if (!buyOne(id)) return false;
   track.bought++;
   return true;
 };
 const useBooster = id => {
   track.boosters++; track.boostUse[id]++;
-  storeBoosters(spendBooster(getBoosters(), id));
+  // booster miễn phí của chuỗi thắng dùng trước, không trừ kho
+  if (state.free?.[id] > 0) state.free[id]--;
+  else storeBoosters(spendBooster(getBoosters(), id));
+  questEvent('booster');
   $('booster-bar').querySelector('.suggest')?.classList.remove('suggest');
 };
 
@@ -1327,6 +1351,10 @@ const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 
 // Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
 export function startLevel(index) {
+  // LiveOps: lần đầu tới màn có mạng thì tặng mạng vô hạn; hết mạng thì mở hộp mạng (vào màn khi có lại mạng).
+  const intro = lo.introLives(getLiveOps(), index, Date.now());
+  if (intro.granted) { setLiveOps(intro.state); showToast(`Lives unlocked! ${LIVEOPS.LIVES_INTRO_UNLIMITED_MIN} min of unlimited lives`); }
+  if (!lo.canStartLevel(getLiveOps(), index, Date.now())) return openLives({ onReady: () => startLevel(index) });
   menus.hideMenus();
   document.body.classList.remove('level-over');
   $('map').hidden = true;
@@ -1356,7 +1384,9 @@ function recordTry(win, reason) {
 }
 // Rời ván giữa chừng (chơi lại / về Home) khi đã đặt ít nhất một thẻ = bỏ ngang.
 function recordQuit() {
-  if (state && !state.over && state.moves < state.level.moves) recordTry(false, 'quit');
+  if (!state || state.over || state.moves >= state.startMoves) return;
+  recordTry(false, 'quit');
+  setLiveOps(lo.recordStreak(lo.loseLife(getLiveOps(), state.levelIndex, Date.now()), state.levelIndex, false));
 }
 let resultShownAt = 0;
 function leaveResult() {
@@ -1365,7 +1395,41 @@ function leaveResult() {
   $('result-dialog').close();
 }
 
+// Thua: mời continue trước (từ màn CONTINUE_FROM_LEVEL, không ở màn tutorial); bỏ cuộc mới thật sự kết thúc ván.
 function endLevel(win, reason = '') {
+  if (win || state.tutorial || !lo.continueUnlocked(state.levelIndex)) return finalizeLevel(win, reason);
+  state.over = true;
+  const run = state, stuck = state.moves > 0, t = Date.now(), live = getLiveOps();
+  const losing = [lo.livesActive(state.levelIndex) && !lo.hasUnlimited(live, t) && '1 life', lo.streakActive(state.levelIndex) && live.streak > 0 && `Win streak ×${live.streak}`].filter(Boolean);
+  setTimeout(() => {
+    // người chơi đã rời ván trong lúc chờ: không mời nữa
+    if (state !== run) return;
+    offerContinue({
+      price: lo.continuePrice(state.continues.gems), adAvailable: !state.continues.ad, stuck, losing,
+      onGems: () => { state.continues.gems++; resumeLevel(LIVEOPS.CONTINUE_MOVES, stuck); },
+      onAd: () => { state.continues.ad = true; resumeLevel(LIVEOPS.CONTINUE_AD_MOVES, stuck); },
+      onGiveUp: () => finalizeLevel(false, reason),
+    });
+  }, 600);
+}
+// Chơi tiếp sau continue: cộng lượt; thua vì hết chỗ thì dọn thêm vài ô (mèo / thùng, không đụng kim loại và chuồng).
+function resumeLevel(moves, stuck) {
+  state.over = false;
+  state.outcome = null;
+  state.moves += moves;
+  track.boosters++;
+  if (stuck) {
+    const cells = state.board.map((object, index) => (object && !object.metal && !object.cage ? index : -1)).filter(index => index >= 0);
+    state.board = state.board.slice();
+    for (let i = 0; i < LIVEOPS.CONTINUE_CLEAR_CELLS && cells.length; i++) state.board[cells.splice(Math.floor(Math.random() * cells.length), 1)[0]] = null;
+  }
+  document.body.classList.remove('level-over');
+  playSound('reward');
+  render(`+${moves} moves! Keep going!`);
+  if (game.checkStuck(state)) endLevel(false, state.outcome.reason);
+}
+
+function finalizeLevel(win, reason = '') {
   state.over = true;
   state.outcome ??= { win, reason, stars: 0 };
   // Hết ván (thắng: đã ẩn từ lúc thanh điểm đầy, celebrateWin; thua: hết lượt / kẹt): ẩn mọi UI chơi (level / move / thanh
@@ -1374,6 +1438,13 @@ function endLevel(win, reason = '') {
   if (!win) playSound('lose');
   const gift = recordTry(win, win ? 'win' : state.moves > 0 ? 'stuck' : 'moves');
   if (gift) storeBoosters({ ...getBoosters(), moves: getBoosters().moves + 1 });
+  // LiveOps: thua mất mạng, chuỗi thắng tăng / về 0, nhiệm vụ thắng màn
+  const before = lo.regenLives(getLiveOps(), Date.now());
+  const after = lo.recordStreak(win ? before : lo.loseLife(before, state.levelIndex, Date.now()), state.levelIndex, win);
+  setLiveOps(after);
+  const lifeLost = after.lives < before.lives;
+  const streakNote = win && after.streak > before.streak ? `Win streak ×${after.streak}` : !win && before.streak >= LIVEOPS.STREAK_TIERS[0].wins && after.streak === 0 ? 'Win streak lost' : '';
+  if (win) { questEvent('win'); if (state.outcome.stars >= 3) questEvent('threeStar'); }
   // Thua sát nút mà chưa dùng booster: mời dùng +lượt ở lần sau (luật sát nút giữ nguyên độ khó).
   const tip = !win && boostersUnlocked(state.levelIndex) && boosterTip(profile);
   render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
@@ -1394,7 +1465,7 @@ function endLevel(win, reason = '') {
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
-  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`, streakNote, lifeLost && '−1 life',
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');
@@ -1434,8 +1505,11 @@ $('tutorial-avatar').innerHTML = catMarkup.orange;
 let quitAction = null;
 function confirmQuit(title, action) {
   if (state.animating) return;
-  if (state.over || state.moves >= state.level.moves) return action();
+  if (state.over || state.moves >= state.startMoves) return action();
   quitAction = action;
+  const t = Date.now(), live = getLiveOps();
+  const losing = [lo.livesActive(state.levelIndex) && !lo.hasUnlimited(live, t) && '1 life', lo.streakActive(state.levelIndex) && live.streak > 0 && `win streak ×${live.streak}`].filter(Boolean);
+  $('quit-note').textContent = losing.length ? `You'll lose ${losing.join(' and ')}.` : "Moves used and boosters spent won't come back.";
   $('quit-title').textContent = title;
   $('quit-dialog').showModal();
 }

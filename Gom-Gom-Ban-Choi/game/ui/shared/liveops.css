@@ -1,0 +1,120 @@
+/* ===== LiveOps (liveops-ui.js): pill mạng, icon gems / tim, bảng Daily, hộp mạng, continue, quảng cáo giả lập, gói gems =====
+   Cùng ngôn ngữ với nút Feedback ở Home: ô kem viền nâu #6b3329, chữ Baloo nâu đậm. Nạp sau cùng (đè lên kiểu dialog chung). */
+:root{--lo-ink:#6b3329;--lo-cream:#fffaf0;--lo-cream-2:#fbe9cf;--lo-pink:#ff5d8a;--lo-pink-deep:#c43d62;--lo-gem:#ff6f9c}
+
+/* ---------- Icon ---------- */
+.ico-gem{display:inline-block;flex:none;width:1.05em;height:1.05em;vertical-align:-.15em;
+  background:linear-gradient(160deg,#ffc2d6 0 30%,var(--lo-gem) 31% 70%,#d9467a 71%);clip-path:polygon(22% 8%,78% 8%,100% 38%,50% 96%,0 38%)}
+.ico-heart{display:inline-block;flex:none;width:1.1em;height:1em;vertical-align:-.15em;background:var(--lo-pink);
+  clip-path:polygon(50% 100%,6% 52%,0 32%,6% 12%,24% 2%,40% 6%,50% 18%,60% 6%,76% 2%,94% 12%,100% 32%,94% 52%)}
+.ico-heart.empty{background:#e3cdb6}
+.ico-booster{width:1.6em;height:1.6em;object-fit:contain;vertical-align:middle}
+
+/* ---------- Pill mạng (thay ảnh pill năng lượng có số in sẵn): tim + số mạng + giờ hồi ---------- */
+.fh-lives{box-sizing:border-box;display:block;height:calc(40 * var(--u))!important;width:calc(120 * var(--u))!important;
+  background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.8 * var(--u)) solid var(--lo-ink)!important;border-radius:999px;
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff;cursor:pointer}
+.map .fh-lives{left:calc(266 * var(--u));top:calc(62 * var(--u))}
+.wallet-hud>.fh-lives{left:calc(266 * var(--u));top:calc(6 * var(--u))}
+.fh-lives .ico-heart{position:absolute;left:calc(-8 * var(--u));top:50%;translate:0 -50%;width:calc(40 * var(--u));height:calc(36 * var(--u))}
+.fh-lives .lives-count{position:absolute;left:calc(6 * var(--u));top:50%;translate:0 -54%;width:calc(26 * var(--u));text-align:center;
+  font-family:var(--display);font-weight:800;font-size:calc(16 * var(--u));line-height:1;color:#fff}
+.fh-lives .lives-timer{position:absolute;left:calc(36 * var(--u));right:calc(8 * var(--u));top:50%;translate:0 -50%;text-align:center;
+  font-family:var(--display);font-weight:800;font-size:calc(15 * var(--u));line-height:1;color:var(--lo-ink);font-variant-numeric:tabular-nums}
+.fh-gems{cursor:pointer}
+
+/* ---------- Nút Daily ở Home: chưa mở thì xám; có quà / rương thì nảy nhẹ ---------- */
+.fh-daily.locked{filter:grayscale(.85) opacity(.75)}
+@media(prefers-reduced-motion:no-preference){.fh-daily.ready{animation:lo-nudge 1.6s ease-in-out infinite}}
+@keyframes lo-nudge{0%,70%,100%{rotate:0deg}78%{rotate:-8deg}86%{rotate:7deg}93%{rotate:-3deg}}
+
+/* ---------- Hộp LiveOps chung ---------- */
+.lo-dialog{width:min(380px,calc(100% - 24px));max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box;padding:18px 18px 20px;
+  border:3px solid var(--lo-ink);border-radius:22px;background:linear-gradient(var(--lo-cream),var(--lo-cream-2));color:var(--lo-ink);
+  box-shadow:inset 0 0 0 2px #fff;text-align:center}
+.lo-dialog h2{margin:0;font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:0;color:var(--lo-ink)}
+.lo-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lo-head h2{flex:1;text-align:left}
+.lo-sub{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:14px 0 8px;font-family:var(--display);font-size:17px;font-weight:800;text-align:left}
+.lo-sub small{font-family:var(--ui-font);font-size:12px;font-weight:800;color:#a0705a;font-variant-numeric:tabular-nums}
+.lo-dialog p{margin:6px 0;font-size:14px;line-height:1.4;color:var(--lo-ink)}
+.lo-status{font-weight:800;font-variant-numeric:tabular-nums}
+.lo-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.lo-actions>*{flex:1 1 130px}
+.lo-wide{width:100%;margin-top:12px}
+.lo-dialog .pill-button.ad,.lo-offer.ad{background:#7a5bd1;border-color:#5a3fa8;color:#fff}
+.lo-dialog .pill-button:disabled{opacity:.55;cursor:default}
+
+/* Nút offer: chữ trên, giá dưới */
+.lo-offer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:8px 10px;
+  border:3px solid var(--lo-ink);border-radius:16px;background:var(--green);color:#fff;font-family:var(--display);cursor:pointer;box-shadow:0 3px 0 #6b332955}
+.lo-offer span{font-size:14px;font-weight:800;line-height:1}
+.lo-offer b{display:inline-flex;align-items:center;gap:4px;font-size:21px;font-weight:800;line-height:1.1}
+.lo-offer small{font-family:var(--ui-font);font-size:11px;font-weight:800;opacity:.85}
+.lo-offer.poor{background:#c9b7a3}
+.lo-offer:active{translate:0 2px}
+
+/* ---------- Điểm danh 7 ngày: lưới 4 cột, ngày 7 rộng gấp đôi ---------- */
+.daily-login{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.daily-login li{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:74px;padding:6px 4px;box-sizing:border-box;
+  border:2px solid #e2bd72;border-radius:12px;background:#fff8e4}
+.daily-login li.big{grid-column:span 2;background:#fff0c2}
+.daily-login li.today{border-color:var(--lo-pink);box-shadow:0 0 0 2px #ffd0dc}
+.daily-login li.claimed{opacity:.5;background:#efe3cf}
+.daily-login li.claimed .dl-day::after{content:' ✓'}
+.dl-day{font-family:var(--display);font-size:12px;font-weight:800;line-height:1}
+.dl-reward{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px 6px;font-size:12px;font-weight:900}
+.dl-reward span{display:inline-flex;align-items:center;gap:2px}
+.dl-reward .ico-booster{width:22px;height:22px}
+
+/* ---------- Nhiệm vụ ngày ---------- */
+.daily-quests{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.daily-quests li{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:'text count points' 'bar bar points';align-items:center;gap:4px 8px;
+  padding:8px 10px;border:2px solid #e2bd72;border-radius:12px;background:#fff8e4;text-align:left}
+.daily-quests li.done{background:#e5f4d8;border-color:#8fc46a}
+.dq-text{grid-area:text;font-size:13px;font-weight:900}
+.dq-count{grid-area:count;font-size:12px;font-weight:800;color:#a0705a;font-variant-numeric:tabular-nums}
+.dq-points{grid-area:points;min-width:38px;padding:4px 6px;border-radius:999px;background:var(--gold);color:#fff;font-family:var(--display);font-weight:800;font-size:14px;text-align:center}
+.daily-quests li.done .dq-points{background:var(--green)}
+.dq-bar{grid-area:bar;display:block;height:8px;border-radius:99px;background:#ecd9b8;overflow:hidden}
+.dq-bar i{display:block;height:100%;border-radius:inherit;background:var(--green);transition:width .3s}
+
+/* ---------- Rương ngày ---------- */
+.daily-chest{margin-top:10px;padding:10px;border:2px dashed #e2bd72;border-radius:14px}
+.daily-chest.opened{opacity:.6}
+.dc-row{display:flex;align-items:center;gap:10px}
+.dc-icon{flex:none;width:40px;height:34px;border:3px solid var(--lo-ink);border-radius:8px 8px 6px 6px;
+  background:linear-gradient(#d9934a 0 40%,var(--lo-ink) 40% 48%,#c47a35 48%);position:relative}
+.dc-icon::after{content:'';position:absolute;left:50%;top:30%;width:8px;height:10px;translate:-50% 0;border-radius:2px;background:var(--gold);border:2px solid var(--lo-ink)}
+.dc-main{flex:1;display:grid;gap:3px;text-align:left}
+.dc-main .dq-bar{grid-area:auto;height:10px}
+.dc-main small{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.dc-reward{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:13px;font-weight:900}
+.dc-reward span{display:inline-flex;align-items:center;gap:3px}
+
+/* ---------- Hộp mạng ---------- */
+.lives-hearts{display:flex;justify-content:center;gap:6px;margin:12px 0 4px;font-size:30px}
+
+/* ---------- Continue ---------- */
+.continue-dialog h2{margin-top:4px}
+.lo-gain{font-family:var(--display);font-size:20px!important;font-weight:800}
+.lo-losing{padding:6px 10px;border-radius:10px;background:#ffe3ea;color:var(--lo-pink-deep)!important;font-size:13px!important}
+
+/* ---------- Quảng cáo giả lập ---------- */
+.ad-count{display:grid;place-items:center;width:64px;height:64px;margin:10px auto 0;border-radius:50%;border:3px solid var(--lo-ink);
+  font-family:var(--display);font-size:30px;font-weight:800;background:#fff}
+
+/* ---------- Gói gems (Shop + trong hộp continue / mạng khi thiếu gems) ---------- */
+.shop-section{margin:6px 0 0;font-family:var(--display);font-size:20px;font-weight:800;color:#fffaf0;text-shadow:0 2px 0 #4f8a34}
+.gem-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gem-list.compact{margin-top:10px}
+.gem-pack{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px 10px;border:3px solid var(--lo-ink);border-radius:16px;
+  background:linear-gradient(#fffaf0,#fbe9cf);color:var(--lo-ink);font-family:var(--display);cursor:pointer;box-shadow:inset 0 0 0 2px #fff}
+.gem-pack .ico-gem{width:30px;height:30px}
+.gem-pack b{font-size:20px;font-weight:800;line-height:1}
+.gem-pack em{font-style:normal;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;background:var(--green);color:#fff}
+.gem-tag{position:absolute;top:-10px;right:-4px;padding:2px 8px;border-radius:99px;background:var(--lo-pink);color:#fff;font-size:11px;font-weight:800}
+.gem-pack:active{translate:0 2px}
+
+/* ---------- Booster miễn phí từ chuỗi thắng: số đếm màu xanh ---------- */
+#booster-bar [data-boost].has-free .boost-count{background:var(--green)!important;color:#fff!important}
