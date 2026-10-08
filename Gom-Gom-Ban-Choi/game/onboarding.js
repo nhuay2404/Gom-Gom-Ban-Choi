@@ -1,23 +1,23 @@
 // ===== Onboarding người chơi mới: một dãy bước, mỗi bước mở khoá một phần của game =====
 //   L1     chơi màn 1                                  -> thắng: mở Garden (Deco)
 //   basics hướng dẫn Deco: kéo, chụm zoom, xoay        -> xong vào thẳng màn 2
-//   L2     chơi màn 2                                  -> thắng: mở 2 mèo (cam + xám)
-//   cats   nhận mèo, hướng dẫn chạm / giữ kéo mèo      -> xong vào thẳng màn 3
+//   L2     chơi màn 2                                  -> thắng: vào thẳng màn 3 (không còn bước mèo)
 //   free   chơi màn 3, 4 bình thường, màn 5            -> thắng màn 5: mở Decoration (mua đồ, đổi kiểu, Shop)
+//          Mèo đầu tiên nhận ở Map bằng nút Claim sau khi thắng màn 3 (menu-controller.js mapLevels), có chấm đỏ ở tab Home.
 //   decor  hướng dẫn mua đồ / đổi kiểu / Shop          -> xong là hết onboarding
 //   done   người chơi cũ (đã có sao) hoặc đã xong onboarding
 // Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (gom-gom.js).
 import { SAVE_KEYS, readText, writeText } from './gameplay/save.mjs';
 import { loadProgress } from './gameplay/progression.mjs';
 
-const STAGES = ['L1', 'basics', 'L2', 'cats', 'free', 'decor', 'done'];
-const UNLOCK_AT = { L1: { level: 0, kind: 'garden', next: 'basics' }, L2: { level: 1, kind: 'cats', next: 'cats' }, free: { level: 4, kind: 'decor', next: 'decor' } };
+const STAGES = ['L1', 'basics', 'L2', 'free', 'decor', 'done'];
+const UNLOCK_AT = { L1: { level: 0, kind: 'garden', next: 'basics' }, L2: { level: 1, kind: null, next: 'free' }, free: { level: 4, kind: 'decor', next: 'decor' } };
 const at = name => STAGES.indexOf(name);
 let current = null;
 
 export function stage() {
   if (current) return current;
-  const saved = readText(SAVE_KEYS.onboarding);
+  const saved = readText(SAVE_KEYS.onboarding) === 'cats' ? 'free' : readText(SAVE_KEYS.onboarding); // save cũ đang ở bước mèo (đã bỏ)
   current = STAGES.includes(saved) ? saved : loadProgress().stars.some(Boolean) ? 'done' : 'L1';
   return current;
 }
@@ -31,7 +31,7 @@ export const active = () => stage() !== 'done';
 // Tab nào đã mở: Deco sau màn 1, Shop khi tới phần hướng dẫn Decoration.
 export const tabOpen = tab => tab === 'home' || (tab === 'deco' && at(stage()) >= at('basics')) || (tab === 'shop' && at(stage()) >= at('decor'));
 // Chờ làm tiếp ngay khi vào game (đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn).
-export const pending = () => ['basics', 'cats', 'decor'].includes(stage());
+export const pending = () => ['basics', 'decor'].includes(stage());
 
 // Thắng màn `levelIndex`: trả về thứ vừa mở ('garden' | 'cats' | 'decor') và chuyển sang bước hướng dẫn tương ứng, không thì null.
 export function unlockOnWin(levelIndex) {
@@ -44,7 +44,7 @@ export function unlockOnWin(levelIndex) {
 }
 setStage(stage());
 
-// Theo dõi cử chỉ trên khung cảnh 3D: kéo một ngón, chụm / lăn chuột (zoom), vặn hai ngón (xoay).
+// Theo dõi cử chỉ trên khung cảnh 3D: kéo một ngón, chụm / lăn chuột (zoom), vặn hai ngón / kéo chuột phải (xoay).
 export function watchGestures(element) {
   const done = { drag: false, zoom: false, twist: false }, pointers = new Map();
   let startGap = 0, startAngle = 0, origin = null;
@@ -57,12 +57,16 @@ export function watchGestures(element) {
   const move = event => {
     if (!pointers.has(event.pointerId)) return;
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pointers.size === 1 && origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 40) done.drag = true;
+    if (pointers.size === 1 && origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 40) {
+      // Chuột: kéo chuột phải = xoay khu nhà (deco-room.mjs mouseButtons.RIGHT); kéo chuột trái / một ngón = di chuyển.
+      if (event.pointerType === 'mouse' && event.buttons & 2) done.twist = true;
+      else done.drag = true;
+    }
     if (pointers.size === 2) {
       const { gap, angle } = pair();
       if (Math.abs(gap - startGap) > 36) done.zoom = true;
       const turn = Math.abs(((angle - startAngle) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
-      if (turn > .25) done.twist = true;
+      if (turn > .15) done.twist = true;
     }
   };
   const up = event => { pointers.delete(event.pointerId); origin = null; };

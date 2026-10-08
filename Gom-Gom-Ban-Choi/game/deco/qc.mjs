@@ -7,6 +7,11 @@
 //   bounds  : lấn qua tường phòng / hàng rào vườn (đồ phần vườn mở rộng: theo rào lúc đã mở rộng; đồ vườn gốc: rào vuông)
 //   overlap : chạm cánh cửa (mở lẫn đóng), đồ treo tường, đồ trang trí cố định, món khác cùng khu, bụi góc vườn
 //   lane    : vật cản của mèo chắn lối 1 m trước cửa / cổng (tính từ LINKS; lối thông thoáng `open` không tính)
+//   zfight  : hai khối hộp của vỏ khu nhà (sàn, nền vườn, tường) có hai mặt cùng phẳng, cùng hướng và chồng lên nhau > 1 cm mỗi chiều
+//             (hai đỉnh tường của hai phòng giáp nhau, mặt nền chồng nền...) -> hai màu giành nhau từng điểm ảnh, chớp thành sọc
+//   glow    : model phát sáng ban đêm (vật liệu emissive hoặc MeshBasicMaterial không nhận sáng) mà không phải nguồn sáng
+//             (không có đèn PointLight bên trong và không khai userData.lightSource = true). Chỉ đèn / lửa / màn hình / dải LED
+//             mới được sáng; tranh, cờ, nước, bầu trời... dùng userData: { nightDim: true } để ban đêm tối lại cùng cảnh
 //   preview : popup xem trước ở Shop còn bị che sau khi đã ẩn vật chắn (chạy trong cảnh thật: deco-room.mjs qcPreview,
 //             menu-controller.js runQC gọi cho từng món, mọi khu mở)
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
@@ -99,6 +104,63 @@ const shellIssues = list => [...new Set(list.map(x => x.mesh))].filter(mesh => {
   return open && !mesh.userData.noOutline && !mesh.userData.closedByGround && mesh.material.isMeshToonMaterial && !mesh.material.transparent;
 }).map(mesh => `vỏ mỏng hở ${mesh.geometry.type} #${mesh.material.color?.getHexString()} có viền toon (đặt userData.noOutline + viền mép riêng)`);
 
+// Model có phần phát sáng nhưng không phải nguồn sáng: ban đêm cảnh tối đi còn phần đó vẫn sáng rực (emissive, hoặc
+// MeshBasicMaterial vốn không nhận sáng). Nguồn sáng thật = có PointLight bên trong hoặc userData.lightSource (màn hình, dải LED).
+export function glowIssues(node) {
+  let source = !!node.userData.lightSource;
+  node.traverse(n => { if (n.isLight || n.userData.lightSource) source = true; });
+  if (source) return [];
+  const seen = new Set(), out = [];
+  node.traverse(n => {
+    if (!n.isMesh || n.userData.outline || n.userData.lightSource) return;
+    for (const m of [].concat(n.material)) {
+      if (!m || seen.has(m) || m.colorWrite === false) continue;
+      const emits = m.emissive && m.emissive.getHex() !== 0 && (m.emissiveIntensity ?? 1) > .05;
+      const unlit = m.isMeshBasicMaterial && !m.userData?.nightDim && !n.userData.nightDim;
+      if (!emits && !unlit) continue;
+      seen.add(m);
+      out.push(`phát sáng ban đêm nhưng không phải nguồn sáng: ${emits ? 'emissive' : 'MeshBasicMaterial'} #${m.color?.getHexString?.() ?? ''} (thêm đèn / userData.lightSource, hoặc đổi vật liệu / userData.nightDim)`);
+    }
+  });
+  return out;
+}
+
+// Z-fighting của vỏ khu nhà: `shells` là danh sách NHÓM (mỗi nhóm = một khu: nền vườn, hoặc phòng), duyệt mọi khối hộp (BoxGeometry)
+// rồi so từng cặp mặt cùng hướng GIỮA HAI NHÓM KHÁC NHAU (chồng nhau trong một nhóm là cấu tạo của chính nhóm: trụ cửa, ốp chân tường...).
+// Mặt đáy (y-) không tính: camera luôn nhìn từ trên xuống. Tính theo khung bao thế giới (khối hộp không xoay nghiêng nên khung bao =
+// chính khối). Hai khối chỉ chạm mép (diện tích 0) không tính.
+export function zFightIssues(shells) {
+  const boxes = [];
+  shells.forEach((roots, group) => {
+    for (const root of [].concat(roots)) {
+      root.updateMatrixWorld(true);
+      root.traverse(n => {
+        if (!n.isMesh || n.userData.outline || n.geometry?.type !== 'BoxGeometry') return;
+        boxes.push({ mesh: n, group, b: new THREE.Box3().setFromObject(n) });
+      });
+    }
+  });
+  const out = [], axes = ['x', 'y', 'z'], MIN = .01, SAME = .003;
+  const dim = bx => `[x ${bx.min.x.toFixed(2)}..${bx.max.x.toFixed(2)} y ${bx.min.y.toFixed(2)}..${bx.max.y.toFixed(2)} z ${bx.min.z.toFixed(2)}..${bx.max.z.toFixed(2)}]`;
+  const color = m => [].concat(m.material)[0]?.color?.getHexString?.() ?? '';
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    if (boxes[i].group === boxes[j].group) continue;
+    const a = boxes[i].b, b = boxes[j].b;
+    if (a.max.x < b.min.x || b.max.x < a.min.x || a.max.y < b.min.y || b.max.y < a.min.y || a.max.z < b.min.z || b.max.z < a.min.z) continue;
+    for (const axis of axes) {
+      const others = axes.filter(k => k !== axis);
+      const overlaps = others.every(k => Math.min(a.max[k], b.max[k]) - Math.max(a.min[k], b.min[k]) > MIN);
+      if (!overlaps) continue;
+      for (const face of ['max', 'min']) {
+        if (axis === 'y' && face === 'min') continue;
+        if (Math.abs(a[face][axis] - b[face][axis]) >= SAME) continue;
+        out.push(`mặt ${axis}${face === 'max' ? '+' : '-'} của hai khối (#${color(boxes[i].mesh)} / #${color(boxes[j].mesh)}) trùng nhau tại ${axis} = ${a[face][axis].toFixed(2)} [x ${Math.max(a.min.x, b.min.x).toFixed(1)}, z ${Math.max(a.min.z, b.min.z).toFixed(1)}] -> z-fighting; khối A ${dim(a)} khối B ${dim(b)}`);
+      }
+    }
+  }
+  return out;
+}
+
 // Kiểm tra MỘT model (dùng khi vừa tạo / sửa model): build() trả về node đã đặt đúng vị trí + xoay (+ độ cao mặt đất).
 // zone: khu đặt món (đo lún / lơ lửng theo mặt đất thật của khu, vd. sườn đồi ở phần vườn mở rộng).
 // Trả về { node, list (từng khối), box, issues: [chuỗi lỗi] } — bo góc sai, tấm phẳng sát mặt, vỏ hở có viền, lún / lơ lửng.
@@ -106,7 +168,7 @@ export function checkModel(build, zone = 'garden') {
   geometryNotes.length = 0;
   const node = withoutMerging(build);
   node.userData.update?.(0); // bộ phận cử động (cá, chim, bóng treo) về đúng tư thế khung hình đầu
-  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list)];
+  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list), ...glowIssues(node)];
   const sink = node.userData.sink || 0, low = Math.min(...list.map(p => p.low)); // sink: phần chôn xuống đất có chủ đích
   if (low < -.01 - sink) issues.push(`lún xuống mặt đất ${fmt(-low * 100)} cm (cho phép ${fmt(sink * 100)} cm qua userData.sink)`);
   if (low > .05 && !node.userData.wallMounted) issues.push(`lơ lửng ${fmt(low * 100)} cm trên mặt đất (đồ treo tường: userData.wallMounted)`);
@@ -181,6 +243,7 @@ export function runModelQC(ctx) {
       shellIssues(list).forEach(m => add('error', zone, `đồ trang trí: ${m}`));
     }
   });
+  if (ctx.shells) zFightIssues(ctx.shells).forEach(m => add('error', 'site', `vỏ khu nhà: ${m}`));
   // Đồ trang trí cố định chạm cánh cửa (lỗi tủ thấp + cửa phòng ngủ).
   for (const f of fixed.filter(f => !f.door)) for (const d of fixed.filter(d => d.door && d.zone === f.zone)) {
     if (real(overlapSize(f.b, d.b))) add('error', f.zone, `${f.name} chạm ${d.name}`);

@@ -9,7 +9,8 @@
 // Đây là mô hình giả định để so hai chế độ với cùng người chơi, không phải dự báo số liệu thật.
 import { LEVELS } from '../game/gameplay/levels.mjs';
 import { planLevel, recordAttempt, noteDwell, startVisit, elementCount, difficultyOf } from '../game/gameplay/adaptive.mjs';
-import { ADAPTIVE, BOOSTERS, ECONOMY, holdUnlocked } from '../game/gameplay/tuning.mjs';
+import { ADAPTIVE, BOOSTERS, holdUnlocked } from '../game/gameplay/tuning.mjs';
+import { levelReward } from '../game/gameplay/progression.mjs';
 import { boostersUnlocked } from '../game/gameplay/boosters.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
@@ -58,7 +59,7 @@ function runPlayer(type, playerIndex, mode) {
       { noise: type.noise, hold: type.hold && holdUnlocked(level), boost: canBoost ? { at: type.boostAt, want } : null });
     const used = result.boostUse.moves + result.boostUse.swap, boughtNow = bought - boughtBefore;
     out.boostUsed += used; out.bought += boughtNow;
-    if (result.win) { const stars = result.stars || 1; coins += Math.max(0, stars - (best[level] || 0)) * ECONOMY.COINS_PER_STAR; best[level] = Math.max(best[level] || 0, stars); }
+    if (result.win) { const stars = result.stars || 1; coins += best[level] ? 0 : levelReward(level); best[level] = Math.max(best[level] || 0, stars); }
     if (result.win && used) out.carried++;
     tries++; triesHere++;
     out.tiers[difficultyOf(elementCount(plan.level))]++;

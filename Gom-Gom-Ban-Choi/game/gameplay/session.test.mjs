@@ -6,7 +6,7 @@ import * as game from './session.mjs';
 import { LEVELS, parseBoard, parseCard, boardSize } from './levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE, POINTS_PER_CRATE } from './scoring.mjs';
-import { recordWin, unlockedCount, levelTier, levelMechanics } from './progression.mjs';
+import { recordWin, unlockedCount, levelReward, earnedCoins, levelTier, levelMechanics } from './progression.mjs';
 import { ECONOMY, HOLD } from './tuning.mjs';
 
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -65,24 +65,25 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
 });
 
 test('tutorial màn 11 (mở Hold) chạy hết bằng session', () => {
-  const { s } = playTutorial(10);
+  const { s } = playTutorial(10); // chỉ cất thẻ rồi lấy lại, sau đó người chơi tự chơi
   assert.equal(game.tutorialStep(s), null);
-  assert.equal(s.score, 60);
   assert.ok(!s.over);
 });
 
-test('tutorial màn 1 và 2 chạy hết bằng session và thắng màn', () => {
-  for (const index of [0, 1]) {
+test('tutorial màn 1 (một lần kéo) và 2 (chỉ xoay) chạy hết bằng session, phần còn lại tự chơi vẫn thắng màn', () => {
+  // Các ô gom còn lại sau tutorial (trước đây là các bước tutorial cuối).
+  for (const [index, anchors] of [[0, [27]], [1, [6, 27, 5]]]) {
     const { s } = playTutorial(index);
     assert.equal(game.tutorialStep(s), null, `màn ${index + 1} kẹt ở bước tutorial`);
-    assert.ok(s.over && s.outcome.win, `màn ${index + 1} phải thắng khi làm theo tutorial`);
+    assert.ok(!s.over, `màn ${index + 1}: tutorial xong chưa thắng`);
+    anchors.forEach(anchor => assert.ok(game.place(s, anchor).ok, `màn ${index + 1}: tự chơi ô ${anchor}`));
+    assert.ok(s.over && s.outcome.win, `màn ${index + 1} phải thắng`);
     assert.equal(s.score, s.level.target);
   }
 });
 
 test('bước giới thiệu thùng gỗ (màn 5): gom sát thùng thì thùng vỡ, thùng vỡ cũng ra điểm', () => {
   const s = game.createSession(4, { rng: seeded(5) });
-  game.continueTutorial(s); // bong bóng info
   const turn = game.place(s, 8);
   assert.ok(turn.ok);
   assert.equal(turn.gained, 30 + POINTS_PER_CRATE); // cụm 3 + một thùng
@@ -94,7 +95,7 @@ test('tutorial chặn hành động sai bước: chưa tới bước xoay thì k
   assert.equal(game.place(s, 0).error, 'tutorial');
   assert.ok(game.rotate(s).ok);
   const hold = game.createSession(10, { rng: seeded(2) });
-  assert.equal(game.hold(hold).error, 'tutorial');
+  assert.equal(game.place(hold, 12).error, 'tutorial'); // bước đầu của màn 11 là gửi tạm, chưa cho đặt
 });
 
 test('ô Hold chỉ mở từ màn HOLD.UNLOCK_LEVEL; trước đó thẻ không vừa bàn là kẹt luôn', () => {
@@ -155,17 +156,18 @@ test('đặt vào ô đã có mèo thì báo lỗi, không mất lượt', () =>
   assert.equal(s.moves, moves);
 });
 
-test('tiến độ: giữ sao tốt nhất, chỉ sao mới ra xu, mở khoá màn kế', () => {
+test('tiến độ: giữ sao tốt nhất, xu chỉ ra ở lần thắng đầu, mở khoá màn kế', () => {
   let progress = { stars: [] };
   let record = recordWin(progress, 0, 2);
-  assert.equal(record.coins, 2 * ECONOMY.COINS_PER_STAR);
+  assert.equal(record.coins, levelReward(0));
   progress = record.progress;
   record = recordWin(progress, 0, 1); // chơi lại được ít sao hơn
   assert.equal(record.coins, 0);
   assert.equal(record.progress.stars[0], 2);
-  record = recordWin(record.progress, 0, 3);
-  assert.equal(record.coins, ECONOMY.COINS_PER_STAR);
+  record = recordWin(record.progress, 0, 3); // thêm sao cũng không ra thêm xu
+  assert.equal(record.coins, 0);
   assert.equal(unlockedCount(record.progress), 2);
+  assert.equal(earnedCoins(record.progress), levelReward(0));
 });
 
 test('booster: búa đập mèo/thùng, không đập kim loại/ô trống; đổi thẻ giữ thẻ sắp tới; thêm lượt', () => {

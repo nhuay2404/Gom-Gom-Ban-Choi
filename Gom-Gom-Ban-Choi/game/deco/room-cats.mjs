@@ -1829,6 +1829,7 @@ class Cat {
     this.release(); this.surface = null; this.sleeping = false; this.speed = 0; this.social = null; this.partner = null;
     this.face('annoyed'); this.setPose('stand', { tailUp: 0 }); this.tailWag = .6; this.tailSpeed = 4; this.puffUntil = this.world.time + 1;
     const lifted = this.world.time;
+    let hoverToy = null;
     while (this.carried) {
       const dt = this.world.dt;
       spring(this, 'x', this.carryX, 140, .8, dt);
@@ -1838,10 +1839,17 @@ class Cat {
       const cam = this.world.cameraPos?.();
       if (cam) this.turnToward(this.facing(cam.x, cam.z), 9);
       this.lookGoal = 0;
-      if (this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('half'); // bế lâu thì lim dim chịu trận
+      // Bế tới gần một món đồ chơi được: mèo tò mò (mắt mở, ♪), thả ra là chạy tới chơi.
+      const near = this.world.nearToy(this.carryX, this.carryZ);
+      if (near !== hoverToy) {
+        hoverToy = near;
+        if (near) { this.face('open', 'open'); this.world.say(this, '♪', 1); } else this.face('annoyed');
+      }
+      if (!hoverToy && this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('half'); // bế lâu thì lim dim chịu trận
       yield;
     }
     this.tailWag = .25; this.tailSpeed = 1.6;
+    const toy = this.world.nearToy(this.carryX, this.carryZ);
     const land = this.world.landingSpot(this), x0 = this.x, z0 = this.z, y0 = Math.max(this.y, .01);
     let vy = 0;
     while (this.y > 0) {
@@ -1853,6 +1861,13 @@ class Cat {
     }
     this.xV = this.zV = this.yV = 0;
     this.squash = .9; this.squashV = 0; this.earFlopV = (this.earFlopV || 0) + 16;
+    if (toy) { // thả gần một món: không hờn, chạy tới dùng món đó luôn
+      this.face('open', 'open'); this.setPose('stand');
+      yield* this.wait(.25);
+      try { yield* this.useFurniture(toy); } finally { this.release(); this.setPose('stand'); this.face('open'); this.lookGoal = 0; this.contact = {}; }
+      yield* this.life();
+      return;
+    }
     this.face('annoyed');
     yield* this.wait(.35);
     this.wriggle = 1; yield* this.wait(.45); this.wriggle = 0; // vẩy người
@@ -2351,6 +2366,18 @@ export function createCatLife(ctx) {
         if (d < reach) ({ x, z } = world.bound(ob.x + dx / d * reach, ob.z + dz / d * reach));
       }
       return { x, z };
+    },
+    // Món mèo có thể tương tác gần điểm (x, z) nhất (trong tầm `reach` tính từ mép món), chưa có con nào đang dùng; không có thì null.
+    // Người chơi thả mèo gần món nào thì mèo làm đúng hành vi của món đó (useFurniture).
+    nearToy(x, z, reach = 1.1) {
+      let best = null, bestGap = reach;
+      for (const id of Object.keys({ ...GARDEN_TOYS, ...LIVING_TOYS, ...BEDROOM_TOYS, ...KITCHEN_TOYS, ...GARDEN2_TOYS })) {
+        const node = furniture[id];
+        if (!node?.visible || world.claims.has(id)) continue;
+        const c = world.center(id), gap = Math.hypot(x - c.x, z - c.z) - Math.min(c.r, 1.2); // món to (cối xay + đồi) không được lấn món nhỏ ở cạnh
+        if (gap < bestGap) { bestGap = gap; best = id; }
+      }
+      return best;
     },
     center(id) { const node = furniture[id]; return { x: node.position.x, z: node.position.z, r: FURNITURE[id]?.r || .5 }; },
     // Chỗ trống ngẫu nhiên trong một khu (mặc định khu mèo đang đứng). Bỏ chỗ khuất sau đồi (nhìn từ tâm khu bị đồi che):

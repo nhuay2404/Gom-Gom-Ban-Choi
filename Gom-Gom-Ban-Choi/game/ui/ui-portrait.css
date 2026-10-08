@@ -185,7 +185,6 @@ body.low-moves .board{outline:0}
   font-weight:900;font-size:14px;color:var(--cream-ink)}
 .settings-row:hover{background:#0000000a}
 .settings-row .round-button{background:var(--cream-2)}
-#night-toggle[aria-pressed="true"]{background:#2f3a66}
 @keyframes settings-pop{from{opacity:0;scale:.85}}
 @media(prefers-reduced-motion:reduce){.settings-menu{animation:none}.settings-toggle svg{transition:none}}
 
@@ -304,7 +303,6 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .room.deco-view.is-3d.night::before{top:14px}
 @media(prefers-reduced-motion:no-preference){.room.is-3d.night::before{animation:night-twinkle 2.6s ease-in-out infinite alternate}}
 @keyframes night-twinkle{to{opacity:.45}}
-#night-toggle[aria-pressed="true"]{background:#2f3a66;color:#fff6c8}
 
 /* Màn thấp (iPhone SE, Android 360×740, điện thoại có thanh trình duyệt): gọn thanh trên, HUD, dock, booster để nhường chỗ cho bàn cờ */
 @media(max-height:760px){
@@ -390,10 +388,14 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 
 /* Deco theo Figma: nền trời giống Home hub (cảnh 3D trong suốt, không viền kem); mục + danh sách đồ nằm trong khung kem viền nâu
    có dấu chân (frame 4 của Figma "Deco", 9-slice giữ góc khi danh sách dài). */
-.screen.deco{background:#bfe6fb url('./skins/figma-home/sky-bg.jpg') 50% 0/cover no-repeat}
+/* Deco không còn nền trời: chỉ màu sương cùng màu đất xa (wasteland-scene.mjs WASTE_LOOKS.fog), đổi theo ambient */
+.screen.deco{background:#a9b499}
 /* Deco ban đêm (nút mặt trăng): nền trời đêm từ Figma (mây xanh tím, trăng, sao) thay trời xanh; ảnh đã có sao nên bỏ dải sao chữ */
-.screen.deco.night{background:#0a1a3c url('./skins/figma-home/night-sky-bg.jpg') 50% 0/cover no-repeat}
+.screen.deco.night{background:#141b22}
 .screen.deco.night .room.deco-view.is-3d.night::before{display:none}
+/* Deco buổi chiều (nút hoàng hôn): trời tím xanh ở đỉnh chuyển hồng cam rồi vàng nhạt sát chân trời */
+.screen.deco.dusk{background:#a39b7e}
+.room.is-3d.dusk,.room.is-3d.dusk[data-zone="garden"]{background:#f0a37a}
 .room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
 .screen.deco{overflow-x:hidden}
 .deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('./skins/figma-game/deco-panel.png') 90 fill / 28px stretch}
@@ -539,14 +541,16 @@ body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacit
 .switch[aria-pressed="false"] b{inset:0 0 0 38px}
 .switch[aria-pressed="false"]::after{right:calc(100% - 31px)}
 /* Day / Night: hai nửa, nửa đang chọn sáng lên */
-.daynight{flex:none;display:grid;grid-template-columns:1fr 1fr;width:128px;height:40px;padding:2px;border-radius:999px;cursor:pointer;background:#fffaf0;border:2.5px solid #c9a46d}
-.daynight i{display:grid;place-items:center;border-radius:999px}
-.daynight svg{width:22px;height:22px;fill:none;stroke:#b5a99a;stroke-width:2.4;stroke-linecap:round}
-.daynight i:last-child svg{fill:#b5a99a;stroke:none}
-.daynight[aria-pressed="false"] i:first-child,.daynight[aria-pressed="true"] i:last-child{background:#ffe44d;box-shadow:inset 0 0 0 2px #e0b100}
-.daynight[aria-pressed="false"] i:first-child svg{stroke:#8a4a16}
-.daynight[aria-pressed="true"] i:last-child{background:#6d7bd9;box-shadow:inset 0 0 0 2px #4a55a8}
-.daynight[aria-pressed="true"] i:last-child svg{fill:#fff6c8}
+.daynight{flex:none;display:grid;grid-template-columns:1fr 1fr 1fr;width:150px;height:40px;padding:2px;border-radius:999px;cursor:pointer;background:#fffaf0;border:2.5px solid #c9a46d}
+.daynight button{display:grid;place-items:center;border:0;padding:0;border-radius:999px;background:none;cursor:pointer}
+.daynight svg{width:22px;height:22px;fill:none;stroke:#b5a99a;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.daynight [data-ambient="night"] svg{fill:#b5a99a;stroke:none}
+.daynight [data-ambient="day"][aria-pressed="true"]{background:#ffe44d;box-shadow:inset 0 0 0 2px #e0b100}
+.daynight [data-ambient="day"][aria-pressed="true"] svg{stroke:#8a4a16}
+.daynight [data-ambient="dusk"][aria-pressed="true"]{background:#ffa56b;box-shadow:inset 0 0 0 2px #e0743a}
+.daynight [data-ambient="dusk"][aria-pressed="true"] svg{stroke:#7a2e10}
+.daynight [data-ambient="night"][aria-pressed="true"]{background:#6d7bd9;box-shadow:inset 0 0 0 2px #4a55a8}
+.daynight [data-ambient="night"][aria-pressed="true"] svg{fill:#fff6c8}
 /* Language / Support + nút dev */
 .settings-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding-top:12px;border-top:2px solid #ecd6b3}
 .settings-link{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 10px 0 12px;border-radius:16px;cursor:pointer;background:#fffaf2;border:2px solid #e7cfa8;
@@ -859,3 +863,7 @@ body.deco-locked .hub-settings{opacity:.5}
 /* Tên mục kèm ghi chú nhỏ bên dưới (vd. Day / Night: chỉ áp dụng cho Deco) */
 .settings-name.with-note{display:flex;flex-direction:column;line-height:1.1}
 .settings-name.with-note small{font-family:var(--ui-font);font-size:12px;font-weight:800;color:#a07a62}
+
+/* Chấm đỏ báo còn mèo chưa nhận ở tab Home (menu-controller.js refreshClaimDot) */
+.tab{position:relative}
+.tab.has-dot::after{content:'';position:absolute;top:5px;left:calc(50% + 6px);width:11px;height:11px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #fffaf0}

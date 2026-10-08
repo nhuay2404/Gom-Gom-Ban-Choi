@@ -14,12 +14,17 @@ export const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.
 export const levelsCleared = progress => progress.stars.filter(Boolean).length;
 export const totalStars = progress => progress.stars.reduce((sum, n) => sum + (n || 0), 0);
 
-// Ghi nhận một lần thắng: giữ số sao tốt nhất; chỉ sao MỚI (vượt kỷ lục cũ của màn) mới ra xu.
+// Xu thưởng của một màn (lần thắng đầu), tăng dần theo màn — bảng ở tuning.mjs.
+export const levelReward = levelIndex => ECONOMY.LEVEL_REWARD[levelIndex] ?? ECONOMY.REWARD_BEYOND;
+// Tổng xu đã kiếm được từ các màn đã qua (khởi tạo ví cho save chưa có Deco).
+export const earnedCoins = progress => progress.stars.reduce((sum, n, index) => sum + (n ? levelReward(index) : 0), 0);
+
+// Ghi nhận một lần thắng: giữ số sao tốt nhất; xu chỉ ra ở lần thắng ĐẦU của màn (số sao không đổi số xu).
 export function recordWin(progress, levelIndex, stars) {
   const before = progress.stars[levelIndex] || 0;
   const next = { ...progress, stars: progress.stars.slice() };
   next.stars[levelIndex] = Math.max(before, stars);
-  return { progress: next, before, coins: Math.max(0, stars - before) * ECONOMY.COINS_PER_STAR };
+  return { progress: next, before, coins: before === 0 && stars > 0 ? levelReward(levelIndex) : 0 };
 }
 
 // Cấp độ khó (levels.mjs: tier) và vật cản có trên bàn — bảng vào màn và bản đồ dựa vào đây.

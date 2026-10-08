@@ -2,7 +2,8 @@
 // Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu-controller.js khai báo.
 // Một bước: { target: () => Element | {left, top, width, height} | mảng các thứ đó | null, text: chuỗi | () => chuỗi,
 //   next?: nhãn nút (mặc định "Next"), before?: async () => void (chạy trước khi hiện bước), after?: () => void (khi qua bước),
-//   until?: () => boolean, bubble?: 'above' | 'below' }.
+//   until?: () => boolean, bubble?: 'above' | 'below', gesture?: 'drag' | 'pinch' | 'twist' }.
+// Không có text = không hiện bong bóng, chỉ bàn tay minh hoạ cử chỉ (`gesture`) giữa chỗ sáng + nút Skip nhỏ.
 // Có `until` = bước thao tác: chỉ chỗ sáng chạm được (ngoài chỗ sáng bị chắn), không có nút Next, tự qua bước khi until() đúng.
 // Không có `until` = bước đọc: cả màn hình bị chắn, bấm Next để qua.
 import { catMarkup } from './ui/cat-art.mjs';
@@ -22,6 +23,8 @@ function build() {
     <div class="deco-tour-blockers"></div>
     <div class="deco-tour-rings"></div>
     <div class="tutorial-hand deco-tour-hand" aria-hidden="true">👆</div>
+    <div class="deco-tour-gesture" aria-hidden="true" hidden><img alt=""></div>
+    <button class="deco-tour-skip deco-tour-skip-float" type="button" hidden>Skip</button>
     <div class="tutorial-bubble deco-tour-bubble" role="status">
       <span class="tutorial-avatar" aria-hidden="true">${catMarkup.orange}</span>
       <p></p>
@@ -33,7 +36,7 @@ function build() {
     </div>`;
   document.body.append(layer);
   layer.querySelector('.deco-tour-next').onclick = () => { playSound('pick'); running?.advance(); };
-  layer.querySelector('.deco-tour-skip').onclick = () => { playSound('pick'); running?.finish(); };
+  layer.querySelectorAll('.deco-tour-skip').forEach(button => { button.onclick = () => { playSound('pick'); running?.finish(); }; });
   addEventListener('resize', () => running?.render());
 }
 
@@ -59,13 +62,34 @@ export function startDecoTour(steps, onDone) {
   const holes = layer.querySelector('.deco-tour-holes'), rings = layer.querySelector('.deco-tour-rings'), blockers = layer.querySelector('.deco-tour-blockers');
   const bubble = layer.querySelector('.deco-tour-bubble'), text = bubble.querySelector('p'), hand = layer.querySelector('.deco-tour-hand');
   const next = layer.querySelector('.deco-tour-next'), dots = layer.querySelector('.deco-tour-dots');
+  const gesture = layer.querySelector('.deco-tour-gesture'), skipFloat = layer.querySelector('.deco-tour-skip-float');
+  const GESTURES = { drag: 'hand-drag', pinch: 'gesture-pinch', twist: 'gesture-rotate', tap: 'hand-tap' };
+  // Bàn tay minh hoạ cử chỉ lặp lại giữa chỗ sáng: kéo = lướt ngang, chụm = co / giãn, xoay = đứng yên.
+  const drawGesture = (kind, rect) => {
+    gesture.hidden = !kind || !rect;
+    if (gesture.hidden) return;
+    const img = gesture.querySelector('img');
+    img.src = `./ui/skins/tutorial/${GESTURES[kind]}.png`;
+    gesture.classList.toggle('tap', kind === 'tap'); // chạm: đầu ngón tay đặt đúng tâm chỗ sáng
+    gesture.style.cssText = `left:${rect.x + rect.width / 2}px;top:${rect.y + rect.height / 2}px`;
+    img.getAnimations().forEach(animation => animation.cancel());
+    const keys = {
+      drag: [{ transform: 'translateX(-70px)' }, { transform: 'translateX(70px)' }],
+      pinch: [{ transform: 'scale(1.12)' }, { transform: 'scale(.86)' }],
+      tap: [{ transform: 'scale(1)' }, { transform: 'scale(.82)' }],
+    }[kind];
+    if (!keys) return; // xoay: ảnh đứng yên (mũi tên vòng đã tự nói lên cử chỉ)
+    img.animate(keys, { duration: 900, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
+  };
   const div = (cls, css) => Object.assign(document.createElement('div'), { className: cls, style: css });
 
   // Vẽ lại theo vị trí hiện tại của chỗ sáng (cảnh 3D / bảng còn trượt): chỉ dựng lại phần tử khi vị trí đổi, để vòng sáng không giật.
   const render = () => {
     const step = steps[index], box = rectOf(step.target()), tap = !!step.until;
-    const label = typeof step.text === 'function' ? step.text() : step.text;
+    const label = (typeof step.text === 'function' ? step.text() : step.text) || '';
     if (text.textContent !== label) text.textContent = label;
+    bubble.hidden = !label; // bước chỉ có hình: không bong bóng
+    skipFloat.hidden = !!label;
     next.hidden = tap && !!box && !step.skippable; // bước thao tác mà không đo được chỗ sáng: cho bấm Next để khỏi kẹt (bước cử chỉ: luôn cho qua)
     next.textContent = step.next || (index === steps.length - 1 ? 'Got it!' : 'Next');
     dots.textContent = steps.map((_, i) => (i === index ? '●' : '○')).join(' ');
@@ -85,7 +109,8 @@ export function startDecoTour(steps, onDone) {
         ? [`left:0;top:0;right:0;height:${Math.max(0, r.y)}px`, `left:0;top:${bottom}px;right:0;bottom:0`,
           `left:0;top:${r.y}px;width:${Math.max(0, r.x)}px;height:${r.height}px`, `left:${right}px;top:${r.y}px;right:0;height:${r.height}px`]
         : ['inset:0']).map(css => div('deco-tour-blocker', css)));
-      hand.hidden = !(tap && r);
+      drawGesture(step.gesture, r);
+      hand.hidden = !(tap && r) || !!step.gesture;
       if (!hand.hidden) {
         const x = r.x + r.width / 2, y = r.y + r.height / 2, at = scale => `translate(${x}px, ${y}px) scale(${scale})`;
         hand.getAnimations().forEach(animation => animation.cancel());
@@ -93,6 +118,7 @@ export function startDecoTour(steps, onDone) {
       }
     }
     // Bong bóng nằm phía đối diện chỗ được sáng (sáng ở nửa trên -> bóng xuống dưới, ngược lại), không có chỗ sáng thì giữa màn hình.
+    if (bubble.hidden) return;
     const height = bubble.offsetHeight, view = innerHeight;
     let top = (view - height) / 2;
     if (rect) {

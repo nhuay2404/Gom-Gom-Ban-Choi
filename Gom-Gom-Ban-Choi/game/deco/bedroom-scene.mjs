@@ -267,7 +267,7 @@ export const BEDROOM_BUILD = {
   'closet-dresser'() {
     const body = '#ffc9d5', face = '#ffe0e8';
     const mirror = group(squash(at(cyl(.36, .36, .05, '#fff4e0', 32), 0, 0, 0).rotateX(Math.PI / 2), 1, 1.3, 1),
-      squash(at(new THREE.Mesh(new THREE.CircleGeometry(.3, 32), new THREE.MeshBasicMaterial({ color: '#dff3ff' })), 0, 0, .028), 1, 1.3, 1));
+      squash(at(new THREE.Mesh(new THREE.CircleGeometry(.3, 32), new THREE.MeshBasicMaterial({ color: '#dff3ff', userData: { nightDim: true } })), 0, 0, .028), 1, 1.3, 1));
     mirror.position.set(0, 1.4, -.18);
     const dresser = group(...legs4(.5, .2, .08, '#c98a55', .03),
       at(rbox(1.2, .74, .5, .05, body), 0, .45, 0), at(rbox(1.26, .04, .54, .02, '#fff4e0'), 0, .84, 0),

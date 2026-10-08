@@ -270,7 +270,7 @@ export const GARDEN_BUILD = {
     ridge.rotation.x = Math.PI / 2;
     // Cửa vòm: lỗ tối + khung kem bo mép bao quanh.
     const arch = (w, h) => { const s = new THREE.Shape(); s.moveTo(-w / 2, 0); s.lineTo(-w / 2, h); s.absarc(0, h, w / 2, Math.PI, 0, true); s.lineTo(w / 2, 0); s.lineTo(-w / 2, 0); return s; };
-    const door = new THREE.Mesh(new THREE.ShapeGeometry(arch(.44, .26), 24), new THREE.MeshBasicMaterial({ color: '#4a2e20' }));
+    const door = new THREE.Mesh(new THREE.ShapeGeometry(arch(.44, .26), 24), new THREE.MeshBasicMaterial({ color: '#4a2e20', userData: { nightDim: true } }));
     door.position.set(0, BASE + .02, D / 2 + .004);
     const frameShape = arch(.56, .26); frameShape.holes.push(arch(.44, .26));
     const frame = at(mesh(extrude(frameShape, .03, .018), TRIM), 0, BASE + .02, D / 2 - .01);
@@ -519,7 +519,7 @@ export const GARDEN_BUILD = {
     drops.frustumCulled = false;
     // Gợn tròn nơi nước rơi: vòng trắng nở ra rồi mờ dần, lệch pha từng vòi; cao hơn mặt nước 1 cm (không z-fighting).
     const ripples = [...Array(ARCS)].map((_, i) => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(.035, .05, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false }));
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.035, .05, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, userData: { nightDim: true } }));
       ring.rotation.x = -Math.PI / 2;
       arcAt(i / ARCS * TAU, R_LAND, ring.position).y = Y_LAND;
       return ring;
@@ -695,7 +695,7 @@ export const GARDEN_BUILD = {
       return spot;
     });
     const archShape = new THREE.Shape(); archShape.moveTo(-.17, 0); archShape.lineTo(-.17, .22); archShape.absarc(0, .22, .17, Math.PI, 0, true); archShape.lineTo(.17, 0); archShape.lineTo(-.17, 0);
-    const door = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 20), new THREE.MeshBasicMaterial({ color: '#4a2e20' }));
+    const door = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 20), new THREE.MeshBasicMaterial({ color: '#4a2e20', userData: { nightDim: true } }));
     door.position.set(0, .04, .505);
     const porch = at(rbox(.46, .5, .1, .03, '#fff0dc'), 0, .25, .45), sign = at(rbox(.22, .1, .03, .012, '#fffaf0'), 0, .62, .45);
     return group(at(cyl(.56, .62, .06, '#8fc45a', 28), 0, .03, 0), stalk, cap, ...spots, porch, door, sign);
@@ -733,7 +733,7 @@ export const GARDEN_BUILD = {
     const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(.018, 8, 6), TOON ? toonMat({ color: '#e6f7ff' }) : mat('#e6f7ff'), DROPS);
     drops.castShadow = false; drops.frustumCulled = false;
     const ripples = [...Array(4)].map(() => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(.05, .065, 28), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false }));
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.05, .065, 28), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, userData: { nightDim: true } }));
       ring.rotation.x = -Math.PI / 2; ring.position.set(LAND.x, .33, LAND.z);
       return ring;
     });
@@ -801,6 +801,39 @@ export const GARDEN_BUILD = {
   },
 };
 
+// Lối đá: lát đá phiến nhiều cạnh (Voronoi lặp liền mạch 8×8 viên), khe vữa xanh rêu mảnh, mỗi viên một sắc đá nhạt
+// và hơi vát sáng ở giữa -> đọc như sân lát đá thay cho các chấm tròn rời rạc trên nền cỏ.
+function paintFlagstones(g, rnd) {
+  const SIZE = 512, N = 8, cell = SIZE / N, GROUT = 3.4;
+  const pts = [];
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) pts.push([(i + .18 + rnd() * .64) * cell, (j + .18 + rnd() * .64) * cell, rnd()]);
+  const palette = [[229, 222, 207], [218, 210, 192], [236, 229, 214], [208, 200, 184], [224, 216, 198]];
+  const img = g.createImageData(SIZE, SIZE), data = img.data;
+  for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+    const ci = Math.floor(x / cell), cj = Math.floor(y / cell);
+    let d1 = 1e9, d2 = 1e9, best = null;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const wi = (ci + di + N) % N, wj = (cj + dj + N) % N, p = pts[wj * N + wi];
+      const px = p[0] + Math.floor((ci + di) / N) * SIZE, py = p[1] + Math.floor((cj + dj) / N) * SIZE;
+      const d = Math.hypot(x - px, y - py);
+      if (d < d1) { d2 = d1; d1 = d; best = p; } else if (d < d2) d2 = d;
+    }
+    const edge = d2 - d1, k = (y * SIZE + x) * 4;
+    let rgb;
+    if (edge < GROUT) rgb = [112, 150, 92]; // khe vữa rêu
+    else {
+      const base = palette[Math.floor(best[2] * palette.length)];
+      const bevel = Math.min(1, (edge - GROUT) / 10); // mép viên hơi tối, giữa viên sáng
+      const shade = .86 + .14 * bevel;
+      rgb = base.map(c => Math.min(255, c * shade));
+    }
+    data[k] = rgb[0]; data[k + 1] = rgb[1]; data[k + 2] = rgb[2]; data[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  // Vài nhúm cỏ chen trong khe + vết sờn nhẹ.
+  for (let i = 0; i < 90; i++) { g.fillStyle = '#6fae4a99'; g.beginPath(); g.arc(rnd() * SIZE, rnd() * SIZE, 2 + rnd() * 2, 0, TAU); g.fill(); }
+}
+
 // Nền cỏ vẽ bằng canvas: cỏ thường / cỏ ba lá / đồng hoa / lối đá.
 export function groundTexture(entry) {
   const kind = entry.style || entry.id; // style: món dùng lại kiểu nền của món khác
@@ -811,10 +844,7 @@ export function groundTexture(entry) {
   for (let i = 0; i < 900; i++) { g.fillStyle = rnd() > .5 ? '#ffffff1c' : '#2a5a1a1c'; g.fillRect(rnd() * 512, rnd() * 512, 3, 7); }
   if (kind === 'ground-clover') for (let i = 0; i < 160; i++) { g.fillStyle = '#5fa83e88'; const x = rnd() * 512, y = rnd() * 512; [0, 2.1, 4.2].forEach(a => { g.beginPath(); g.arc(x + Math.cos(a) * 5, y + Math.sin(a) * 5, 5, 0, TAU); g.fill(); }); }
   if (kind === 'ground-meadow') for (let i = 0; i < 220; i++) { g.fillStyle = FLOWER_COLORS[i % FLOWER_COLORS.length]; g.beginPath(); g.arc(rnd() * 512, rnd() * 512, 4, 0, TAU); g.fill(); }
-  if (kind === 'ground-path') {
-    g.fillStyle = '#9fd46a'; g.fillRect(0, 0, 512, 512);
-    for (let y = 0; y < 512; y += 64) for (let x = (y / 64) % 2 * 32; x < 512; x += 64) { g.fillStyle = rnd() > .5 ? '#e0d9cc' : '#cfc7b8'; g.beginPath(); g.ellipse(x + 30, y + 30, 26, 22, rnd(), 0, TAU); g.fill(); }
-  }
+  if (kind === 'ground-path') paintFlagstones(g, rnd);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping; // nền vườn mở rộng lặp texture theo chiều dài (không kéo giãn)

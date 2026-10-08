@@ -2,14 +2,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../gameplay/save.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, COINS_PER_STAR, slotGroups, previewAllNew, claimCat, MAX_ROOM_CATS } from './deco-data.mjs';
+import { levelReward } from '../gameplay/progression.mjs';
+import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, MAX_ROOM_CATS } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
-test('save mới: xu = tổng sao × COINS_PER_STAR, bắt đầu ở vườn với đồ miễn phí', () => {
+test('save mới: xu khởi tạo = số truyền vào, bắt đầu ở vườn với đồ miễn phí', () => {
   setStorageBackend(memoryStore());
-  const deco = loadDeco(10);
-  assert.equal(deco.coins, 10 * COINS_PER_STAR);
+  const deco = loadDeco(500);
+  assert.equal(deco.coins, 500);
   assert.equal(deco.zone, 'garden');
   // cối xay + hướng dương (phần vườn mở rộng) đặt sẵn nhưng chỉ hiện khi vườn đã mở rộng
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers']);
@@ -72,7 +73,7 @@ test('save có trước phòng ngủ: thêm khu phòng ngủ mặc định, gi�
   assert.equal(zoneOpen('bedroom', 30), true);
 });
 
-test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; mỗi chỗ có đúng 3 lựa chọn (món gốc + 2 phương án)', () => {
+test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; mỗi chỗ có đúng 4 lựa chọn (món gốc + 2 phương án + 1 phương án châu Á)', () => {
   setStorageBackend(memoryStore());
   const old = loadDeco(5);
   const { kitchen, ...zones } = old.zones;
@@ -85,8 +86,8 @@ test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; m�
   assert.equal(zoneOpen('kitchen', 40), true);
   const bases = CATALOG.filter(e => e.zone === 'kitchen' && e.cat === 'furniture' && !e.slot);
   assert.equal(bases.length, 9);
-  bases.forEach(base => assert.equal(CATALOG.filter(e => e.slot === base.id).length, 2, `${base.id}: 3 lựa chọn`));
-  assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 3), true);
+  bases.forEach(base => assert.equal(CATALOG.filter(e => e.slot === base.id).length, 3, `${base.id}: 4 lựa chọn`));
+  assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 4), true);
 });
 
 test('mọi món nội thất có chỗ đặt + bán kính vật cản; các khu nối liền qua cửa', async () => {
@@ -111,7 +112,7 @@ test('phần vườn mở rộng: khe giữa các vật cản (cả đồi) đ�
 
 test('mua -> đặt -> gỡ; thiếu xu và khoá level báo lỗi', () => {
   setStorageBackend(memoryStore());
-  let deco = loadDeco(4); // 200 xu
+  let deco = loadDeco(200);
   const stump = itemById('stump');
   assert.equal(itemStatus(deco, stump, 1), 'buy');
   deco = applyAction(deco, stump, 1);
@@ -176,7 +177,7 @@ test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tư�
 
 test('previewAllNew: mỗi chỗ hiện một món chưa mua, không trừ xu, không đổi save', () => {
   setStorageBackend(memoryStore());
-  let deco = loadDeco(100);
+  let deco = loadDeco(5000);
   deco = applyAction(deco, itemById('stump'), 1); // đã mua gốc cây → chỗ đó hiện phương án chưa mua (đống rơm)
   const { deco: shown, items } = previewAllNew(deco, 'garden');
   const ids = items.map(e => e.id);
@@ -228,4 +229,17 @@ test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua v�
   deco = clearFresh(buyToStock(deco, itemById('fence-wood'), 99), 'garden', 'walls');
   assert.equal(freshKeys(deco, 'garden').size, 0);
   assert.equal(useItem(deco, itemById('fence-wood')).zones.garden.wall, 'fence-wood');
+});
+
+test('kinh tế: thưởng tăng dần; lô 10 màn đầu mua đủ món gốc Vườn 1, lô thứ 2 đủ Vườn 2, từ màn 21 chỉ 60–80% món gốc khu mới', () => {
+  const sum = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => levelReward(from - 1 + i)).reduce((a, b) => a + b, 0);
+  const base = (zone, area) => CATALOG.filter(e => e.zone === zone && e.cat === 'furniture' && !e.slot && e.area === area).reduce((a, e) => a + e.price, 0);
+  for (const [from, to] of [[1, 10], [11, 20], [21, 30], [31, 40]]) for (let n = from; n < to; n++) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
+  assert.ok(sum(1, 10) >= base('garden', undefined), 'lô 1 đủ Vườn 1');
+  assert.ok(sum(11, 20) >= base('garden', 'garden2'), 'lô 2 đủ Vườn 2');
+  assert.ok(sum(1, 10) < base('garden', undefined) * 1.05 && sum(11, 20) < base('garden', 'garden2') * 1.05, 'không thừa quá 5%');
+  for (const [from, to, zone] of [[21, 30, 'living'], [31, 40, 'bedroom']]) {
+    const ratio = sum(from, to) / base(zone, undefined);
+    assert.ok(ratio >= .6 && ratio <= .8, `màn ${from}–${to}: ${ratio.toFixed(2)} giá món gốc ${zone}`);
+  }
 });

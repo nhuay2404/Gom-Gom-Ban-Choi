@@ -31,7 +31,8 @@ const cone = (r, h, color, seg = 12) => mesh(new THREE.ConeGeometry(r, h, seg), 
 const group = (...children) => { const g = new THREE.Group(); if (children.length) g.add(...children); return g; };
 const glow = (color, emissive, intensity = 1) => mat(color, { emissive, emissiveIntensity: intensity });
 const squash = (node, sx, sy, sz) => { node.scale.set(sx, sy, sz); return node; };
-const flatMat = (color, extra = {}) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, ...extra });
+// Vật liệu phẳng không nhận sáng: userData.nightDim để ban đêm tối lại cùng cảnh (qc.mjs glow).
+const flatMat = (color, extra = {}) => new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, userData: { nightDim: true }, ...extra });
 // Thời gian giữa hai lần update của một món (update(t) chỉ nhận t).
 const ticker = () => { let last = 0; return t => { const dt = Math.min(.05, Math.max(0, t - (last || t))); last = t; return dt; }; };
 
@@ -283,8 +284,13 @@ export const GARDEN2_BUILD = {
     const side = s => { const p = at(rbox(.04, slope, D, .02, canvas), s * W / 2, H / 2, 0); p.rotation.z = s * Math.atan2(W, H); return p; };
     const back = new THREE.Shape([new THREE.Vector2(-W, 0), new THREE.Vector2(W, 0), new THREE.Vector2(0, H)]);
     const backWall = at(mesh(new THREE.ExtrudeGeometry(back, { depth: .03, bevelEnabled: false }), '#ffb36b'), 0, 0, -D / 2);
-    const flap = group(at(rbox(.04, slope * .95, .5, .02, '#ffb36b'), 0, 0, .25));
-    flap.position.set(.28, H / 2, D / 2); flap.rotation.set(0, -.5, Math.atan2(W, H)); // vạt cửa vén sang một bên
+    // Cánh cửa lều: nửa phải của ô cửa tam giác (đỉnh (0, H), đáy (0..W, 0)) làm bằng vải, bản lề chạy dọc mép mái bên phải,
+    // vén ra ngoài một góc ~65° như cánh cửa mở hé (trước đây là tấm ván phẳng xoay lệch, chìa ra như một tấm bảng lạ).
+    const doorTri = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(-W, 0), new THREE.Vector2(-W, H)]); // gốc toạ độ = góc (W, 0) của ô cửa
+    const flap = group(at(mesh(new THREE.ExtrudeGeometry(doorTri, { depth: .03, bevelEnabled: false }), '#ffb36b'), 0, 0, 0));
+    flap.position.set(W, 0, D / 2);
+    const hinge = new THREE.Vector3(-W, H, 0).normalize(), REST_OPEN = 1.15;
+    flap.quaternion.setFromAxisAngle(hinge, REST_OPEN);
     const lantern = group(at(cyl(.06, .07, .03, '#8a5a3a', 12), 0, .015, 0), at(rbox(.11, .14, .11, .03, glow('#fff0b8', '#ffcf5a', .9)), 0, .1, 0), at(cone(.08, .06, '#8a5a3a', 4), 0, .2, 0).rotateY(Math.PI / 4));
     lantern.position.set(-.45, 0, D / 2 + .25);
     const light = new THREE.PointLight('#ffcf7a', 2.5, 3, 1.6); light.position.set(-.45, .3, D / 2 + .25);
@@ -296,7 +302,7 @@ export const GARDEN2_BUILD = {
     tent.userData.update = t => {
       const dt = tick(t), w = windAt(t), v = flap.userData.v || 0;
       flap.userData.v = v * Math.exp(-2.5 * dt);
-      flap.rotation.y = -.5 + Math.sin(t * 2.2) * .12 * w + Math.sin(t * 9) * flap.userData.v * .15;
+      flap.quaternion.setFromAxisAngle(hinge, REST_OPEN + Math.sin(t * 2.2) * .07 * w + Math.sin(t * 9) * flap.userData.v * .1); // cánh cửa đung đưa theo gió
     };
     tent.userData.inside = [0, 0, .1]; // chỗ mèo chui vào nằm
     return tent;
@@ -474,7 +480,7 @@ function streamBase(withBridge) {
     const tex = new THREE.CanvasTexture(canvas); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.repeat.set(1.2, 1.2);
     return tex;
   })();
-  const flatShape = (color, y, extra = {}) => { const m = new THREE.Mesh(new THREE.ShapeGeometry(outline, 24), new THREE.MeshBasicMaterial({ color, ...extra })); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true; return m; };
+  const flatShape = (color, y, extra = {}) => { const m = new THREE.Mesh(new THREE.ShapeGeometry(outline, 24), new THREE.MeshBasicMaterial({ color, userData: { nightDim: true }, ...extra })); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true; return m; };
   const bed = flatShape('#3f8f9e', .012), water = flatShape('#ffffff', .028, { map: flow, transparent: true, opacity: .9 });
   // Đá viền hai bờ + lau.
   let seed = 3; const rnd = (a, b) => { seed = (seed * 16807) % 2147483647; return a + seed / 2147483647 * (b - a); };

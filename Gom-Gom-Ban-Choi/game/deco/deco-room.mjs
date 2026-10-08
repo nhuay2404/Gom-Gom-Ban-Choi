@@ -14,6 +14,7 @@ import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WIN
 import { TIMING, DRAG } from '../gameplay/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scene.mjs';
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './kitchen-scene.mjs';
+import { buildWasteland } from './wasteland-scene.mjs';
 import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
 import { runModelQC } from './qc.mjs';
 import { createDecoFx } from './deco-fx.mjs';
@@ -744,6 +745,12 @@ const BUILD = {
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
 Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, KITCHEN_BUILD, GARDEN2_BUILD);
+// Món tự phát sáng (đèn bàn, màn hình, dải LED, lửa, nến) không có PointLight riêng: khai là nguồn sáng để QC (qc.mjs glow) và
+// chế độ đêm giữ phần sáng. Món KHÁC mà có vật liệu emissive / MeshBasicMaterial không nhận sáng là lỗi (ban đêm sáng rực như đèn).
+for (const id of ['bedside', 'bedside-noir', 'desk', 'desk-study', 'desk-setup', 'fridge-steel', 'stove-wood', 'dining-square']) {
+  const make = BUILD[id];
+  BUILD[id] = (...args) => { const node = make(...args); node.userData.lightSource = true; return node; };
+}
 
 // Dựng một món trong danh mục. Phương án thay thế có model riêng (BUILD[id]) nhưng giữ khuôn khổ và các móc
 // cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem room-cats.mjs useFurniture.
@@ -760,7 +767,8 @@ const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox'
   'closet-noir', 'plushie-shark', 'catsteps-floating',
   // bếp: món không có bộ phận cử động riêng (bàn ăn / xe đẩy giữ cốc cho mèo đẩy rơi nên không gộp)
   'fridge', 'fridge-retro', 'fridge-steel', 'stove', 'stove-wood', 'stove-red', 'sink', 'sink-farm', 'sink-steel', 'pantry', 'pantry-rack', 'pantry-hutch',
-  'kchair', 'kchair-stool', 'kchair-bench', 'catfood', 'catfood-feeder', 'catfood-stand']);
+  'kchair', 'kchair-stool', 'kchair-bench', 'catfood', 'catfood-feeder', 'catfood-stand',
+  'fridge-asian', 'stove-asian', 'sink-asian', 'pantry-asian', 'kchair-asian', 'catfood-asian']);
 function buildItem(entry) {
   const node = BUILD[entry.id]();
   if (STATIC_ITEMS.has(entry.id)) mergeStatic(node);
@@ -781,6 +789,20 @@ function floorTexture(entry) {
     for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if ((x + y) % 2) g.fillRect(x * 64, y * 64, 64, 64);
     g.strokeStyle = '#ffffff99'; g.lineWidth = 3;
     for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); }
+  } else if (entry.id.endsWith('-tatami')) {
+    // Chiếu tatami: các tấm 2:1 xếp so le, viền vải tối hai mép dài, vân đan mảnh.
+    for (let i = 0; i < 5000; i++) { g.fillStyle = Math.random() > .5 ? '#ffffff16' : '#3a4a1a16'; g.fillRect(Math.random() * 512, Math.random() * 512, 1, 6); }
+    g.strokeStyle = '#4a3a1a'; g.lineWidth = 5;
+    const mats = [[0, 0, 256, 128], [256, 0, 256, 128], [0, 128, 128, 256], [128, 128, 128, 256], [256, 128, 256, 128], [256, 256, 256, 128], [0, 384, 256, 128], [256, 384, 256, 128]];
+    mats.forEach(([x, y, w, h]) => g.strokeRect(x + 2, y + 2, w - 4, h - 4));
+    g.fillStyle = '#2f3a24';
+    mats.forEach(([x, y, w, h]) => { if (w > h) { g.fillRect(x + 2, y + 2, w - 4, 7); g.fillRect(x + 2, y + h - 9, w - 4, 7); } else { g.fillRect(x + 2, y + 2, 7, h - 4); g.fillRect(x + w - 9, y + 2, 7, h - 4); } });
+  } else if (entry.id.endsWith('-bamboo')) {
+    // Sàn tre: thanh dọc mảnh, mắt tre nằm rải rác.
+    g.strokeStyle = '#8a6a2a55'; g.lineWidth = 2;
+    for (let x = 0; x <= 512; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 512); g.stroke(); }
+    g.fillStyle = '#8a6a2a66';
+    for (let i = 0; i < 40; i++) g.fillRect(Math.floor(Math.random() * 16) * 32 + 4, Math.random() * 512, 24, 3);
   } else if (entry.id.endsWith('-concrete')) {
     // Bê tông mài: hạt li ti sáng / tối + mạch chia tấm lớn.
     for (let i = 0; i < 3500; i++) { g.fillStyle = Math.random() > .5 ? '#ffffff14' : '#0000001a'; g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2); }
@@ -878,54 +900,6 @@ export function thumbnail(entry) {
   return thumbCache[entry.id];
 }
 
-// Bệ diorama liền một khối theo hình hợp của các khu đang mở (các hình chữ nhật trục x / z): trước đây mỗi khu một khối bo góc
-// đặt chồng mép nhau -> mặt trước trùng nhau nhấp nháy, góc bo của khối này lộ thành vạch trên mặt khối kia (chỗ nối vườn +
-// phần mở rộng). Đường bao lấy từ lưới ô (ô nằm trong hình nào đó), cạnh nào giáp ô trống là mép; góc bo bằng đường cong bậc hai,
-// cạnh trên / dưới bo bằng bevel của ExtrudeGeometry. rects: [x0, x1, z0, z1] (đã tính cả mép chìa ra), top: độ cao mặt trên.
-function islandBaseGeometry(rects, top, height = .5, round = .18) {
-  const xs = [...new Set(rects.flatMap(r => [r[0], r[1]]))].sort((a, b) => a - b);
-  const zs = [...new Set(rects.flatMap(r => [r[2], r[3]]))].sort((a, b) => a - b);
-  const inside = (i, j) => i >= 0 && j >= 0 && i < xs.length - 1 && j < zs.length - 1
-    && rects.some(r => (xs[i] + xs[i + 1]) / 2 > r[0] && (xs[i] + xs[i + 1]) / 2 < r[1] && (zs[j] + zs[j + 1]) / 2 > r[2] && (zs[j] + zs[j + 1]) / 2 < r[3]);
-  // Cạnh mép có hướng (ô trong nằm bên trái khi đi theo cạnh), nối đuôi nhau thành một vòng.
-  const next = new Map(), key = (i, j) => `${i},${j}`;
-  for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
-    if (!inside(i, j)) continue;
-    if (!inside(i, j - 1)) next.set(key(i + 1, j), [i, j]);
-    if (!inside(i, j + 1)) next.set(key(i, j + 1), [i + 1, j + 1]);
-    if (!inside(i - 1, j)) next.set(key(i, j), [i, j + 1]);
-    if (!inside(i + 1, j)) next.set(key(i + 1, j + 1), [i + 1, j]);
-  }
-  const start = next.keys().next().value, loop = [];
-  for (let k = start; ;) { const [i, j] = k.split(',').map(Number); loop.push([xs[i], zs[j]]); k = key(...next.get(k)); if (k === start) break; }
-  // Bỏ đỉnh nằm giữa đường thẳng (hai cạnh cùng hướng).
-  const pts = loop.filter((p, n) => { const a = loop[(n + loop.length - 1) % loop.length], b = loop[(n + 1) % loop.length]; return (p[0] - a[0]) * (b[1] - p[1]) !== (p[1] - a[1]) * (b[0] - p[0]); });
-  // Hình phẳng (x, -z) co vào `round` vì bevel nở ra đúng chừng ấy; góc bo bậc hai.
-  const inRects = (x, z) => rects.some(q => x > q[0] && x < q[1] && z > q[2] && z < q[3]);
-  const dir = (a, b) => [Math.sign(b[0] - a[0]), Math.sign(b[1] - a[1])];
-  // Pháp tuyến vào trong của cạnh: phía trái hay phải hướng đi (thử một điểm sát giữa cạnh đầu tiên).
-  const d0 = dir(pts[0], pts[1]), mid = [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2];
-  const side = inRects(mid[0] - d0[1] * .01, mid[1] + d0[0] * .01) ? 1 : -1;
-  const inward = d => [-d[1] * side, d[0] * side];
-  const inset = pts.map((p, n) => {
-    const a = pts[(n + pts.length - 1) % pts.length], b = pts[(n + 1) % pts.length], u = inward(dir(a, p)), v = inward(dir(p, b));
-    return [p[0] + (u[0] + v[0]) * round, p[1] + (u[1] + v[1]) * round];
-  });
-  const shape = new THREE.Shape(), r = round;
-  inset.forEach((p, n) => {
-    const a = inset[(n + inset.length - 1) % inset.length], b = inset[(n + 1) % inset.length];
-    const toward = (q, d) => { const len = Math.hypot(q[0] - p[0], q[1] - p[1]), t = Math.min(.45, d / len); return [p[0] + (q[0] - p[0]) * t, -(p[1] + (q[1] - p[1]) * t)]; };
-    const from = toward(a, r), to = toward(b, r);
-    if (!n) shape.moveTo(...from); else shape.lineTo(...from);
-    shape.quadraticCurveTo(p[0], -p[1], ...to);
-  });
-  shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: height - round * 2, bevelEnabled: true, bevelThickness: round, bevelSize: round, bevelSegments: ROUND, curveSegments: 6 });
-  geo.rotateX(-Math.PI / 2);
-  geo.translate(0, top - (height - round), 0);
-  geo.computeVertexNormals();
-  return geo;
-}
 export function createRoom() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   // Pixel ratio tối đa 1.5 + PCFShadowMap (giống bản đồ màn): GPU điện thoại yếu về fill-rate, dpr 2 + PCFSoft làm cảnh Deco
@@ -954,6 +928,9 @@ export function createRoom() {
   controls.minDistance = 9 * reach; controls.maxDistance = 18 * reach;
   controls.minPolarAngle = .45; controls.maxPolarAngle = 1.22;
   controls.autoRotateSpeed = .7;
+  // Độ nhạy cử chỉ (1 = mặc định của OrbitControls): kéo trượt, zoom (chụm / lăn chuột), xoay (kéo chuột phải / vặn 2 ngón).
+  const SENS = { pan: 1.6, zoom: 1.7, rotate: 1.7, twist: 1.6 };
+  controls.zoomSpeed = SENS.zoom; controls.rotateSpeed = SENS.rotate;
   controls.screenSpacePanning = false; // kéo = trượt trên mặt sàn, không bay lên xuống
   controls.update();
   // Hai kiểu điều khiển:
@@ -1129,27 +1106,12 @@ export function createRoom() {
   const garden = new THREE.Group();
   site.add(garden);
   scene.add(site);
-  // Bệ diorama: MỘT khối liền theo hình hợp các khu đang mở (vườn, phần vườn mở rộng, phòng khách, phòng ngủ), dựng lại khi
-  // mở thêm khu (islandBaseGeometry). Mép bệ chìa ra ngoài khu .35 (phòng ngủ chìa thêm .3 về bên trái).
-  const LZ = ZONE_OFFSET.living[1], EDGE = HALF + .35, BX = ZONE_OFFSET.bedroom[0] + .3, KX = ZONE_OFFSET.kitchen[0] - .3;
-  const BASE_RECTS = {
-    garden: [-EDGE, EDGE, -EDGE, EDGE], living: [-EDGE, EDGE, LZ - EDGE, EDGE], garden2: [HALF, GARDEN_EXT_X + EDGE, -EDGE, EDGE],
-    bedroom: [BX - EDGE - .3, BX + EDGE + .3, LZ - EDGE, LZ + EDGE],
-    kitchen: [KX - EDGE - .3, KX + EDGE + .3, LZ - EDGE, LZ + EDGE],
-  };
-  const islandBase = mesh(new THREE.BufferGeometry(), '#fff4da');
-  let islandKey = '';
-  function rebuildIslandBase(zones) {
-    const key = zones.join('|');
-    if (key === islandKey) return;
-    islandKey = key;
-    islandBase.geometry.dispose();
-    islandBase.geometry = islandBaseGeometry(zones.map(zone => BASE_RECTS[zone]), -.27);
-  }
-  site.add(islandBase);
-  // Nền cỏ / sàn lùi theo độ dốc (FLOOR_OFFSET). Lùi camera ra xa thì mặt cỏ nhìn xiên bị đẩy lùi hơn 27 cm, khối đế kem nằm
-  // bên dưới đè lên cỏ thành mảng kem cắt chéo. Đế lùi cùng mức nên luôn nằm sau mặt cỏ / sàn.
-  Object.assign(islandBase.material, FLOOR_OFFSET);
+  // Môi trường: bỏ trời / mây, quanh khu nhà là vùng đất hoang trống trải (wasteland-scene.mjs); sương + nền cùng màu đất xa.
+  const zoneXs = Object.values(ZONE_OFFSET).map(o => o[0]), zoneZs = Object.values(ZONE_OFFSET).map(o => o[1]);
+  const wasteland = buildWasteland({ x0: Math.min(...zoneXs) - HALF, x1: Math.max(...zoneXs) + HALF, z0: Math.min(...zoneZs) - HALF, z1: Math.max(...zoneZs) + HALF });
+  scene.add(wasteland.root);
+  scene.fog = wasteland.fog; scene.background = wasteland.background;
+  // Không còn bệ diorama (đế kem) dưới các khu: khu nhà nằm thẳng trên vùng đất hoang (wasteland-scene.mjs, mặt đất ở y -.31 = đáy khối nền).
 
   const groundMat = Object.assign(mat('#9fd46a', { roughness: .95 }), FLOOR_OFFSET), soil = mat('#8a6a45');
   const ground = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), soil), 0, -.15, 0);
@@ -1229,10 +1191,13 @@ export function createRoom() {
         const a = door.u - DOOR.w / 2, b = door.u + DOOR.w / 2, E = WALL_W / 2;
         const piece = (x0, x1, y0, y1, m, depth = .2, z = 0) => at(mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, depth), m), (x0 + x1) / 2, (y0 + y1) / 2, z);
         const frame = mat('#f6d88f', { transparent: true }), wood = mat('#c98a55', { transparent: true });
+        // Cửa phòng này đối diện đúng cửa phòng bên cạnh (cùng u, tường giáp nhau): khung cửa hai bên chồng lên nhau, mọi mặt trùng phẳng -> chớp sọc.
+        // Phòng không có bậc cửa (bên kia) làm khung nhỏ hơn 6 mm mỗi phía để mặt khung nằm gọn trong khung phòng chính.
+        const k = door.threshold ? 0 : .006;
         wall = group(piece(-E, a, 0, WALL_H, wallMat), piece(b, E, 0, WALL_H, wallMat), piece(a, b, DOOR.h, WALL_H, wallMat),
           piece(-E, a, 0, .2, trim, .08, .13), piece(b, E, 0, .2, trim, .08, .13),
           // Khung nhô .02 vào lòng cửa: mặt trong khung nằm trước mép tường, không trùng mặt phẳng (trùng thì hai màu chớp giật).
-          piece(a - .1, a + .02, 0, DOOR.h + .1, frame, .28), piece(b - .02, b + .1, 0, DOOR.h + .1, frame, .28), piece(a - .1, b + .1, DOOR.h - .02, DOOR.h + .1, frame, .28));
+          piece(a - .1 + k, a + .02 - k, 0, DOOR.h + .1 - k, frame, .28 - 2 * k), piece(b - .02 + k, b + .1 - k, 0, DOOR.h + .1 - k, frame, .28 - 2 * k), piece(a - .1 + k, b + .1 - k, DOOR.h - .02 + k, DOOR.h + .1 - k, frame, .28 - 2 * k));
         if (door.leaf) {
           const leaf = group(at(mesh(roundedBox(DOOR.w - .08, DOOR.h - .06, .07, ROUND, .02), wood), -DOOR.w / 2, DOOR.h / 2, 0),
             at(mesh(new THREE.SphereGeometry(.045, 12, 8), mat('#ffd66b', { transparent: true })), -DOOR.w + .14, 1, .05));
@@ -1243,7 +1208,7 @@ export function createRoom() {
         }
         const stubMat = mat('#fff1d2');
         stubs.push(stubMat);
-        const stub = group(piece(-E, a, 0, .32, stubMat), piece(b, E, 0, .32, stubMat), piece(a - .1, a + .02, 0, .36, mat('#f6d88f'), .28), piece(b - .02, b + .1, 0, .36, mat('#f6d88f'), .28));
+        const stub = group(piece(-E, a, 0, .32, stubMat), piece(b, E, 0, .32, stubMat), piece(a - .1 + k, a + .02 - k, 0, .36 - k, mat('#f6d88f'), .28 - 2 * k), piece(b - .02 + k, b + .1 - k, 0, .36 - k, mat('#f6d88f'), .28 - 2 * k));
         stub.position.set(pos[0], 0, pos[1]);
         stub.rotation.y = rot;
         stub.visible = false;
@@ -1374,14 +1339,18 @@ export function createRoom() {
     });
   }
 
-  // Ngày / đêm: đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc, đèn đứng, máy sưởi) rực hơn,
-  // bướm đi ngủ, mèo hay ngủ hơn (room-cats.mjs đọc ctx.night).
-  let night = false;
+  // Ánh sáng môi trường (ambient): day / dusk (buổi chiều) / night. Đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc,
+  // đèn đứng, máy sưởi) rực hơn, bướm đi ngủ, mèo hay ngủ hơn (room-cats.mjs đọc ctx.night). Chiều: nắng cam thấp, bóng dài, tranh / cờ ngả ấm.
+  let night = false, ambient = 'day';
   // Tông viền toon theo ngày / đêm (toon.mjs setOutlineTint): đêm viền tối + ngả xanh theo ánh trăng, không sáng hơn khối nó bao.
   const DAY_INK = new THREE.Color(1, 1, 1), NIGHT_INK = new THREE.Color().setRGB(.42, .46, .66);
-  const NIGHT_ART = new THREE.Color().setRGB(.38, .42, .62); // tranh treo ban đêm
+  // Tranh / cờ / nước... ban đêm: nhân màu (setRGB nhận giá trị TUYẾN TÍNH, .13 tuyến tính ≈ .4 sRGB) cho tối bằng bề mặt có nhận sáng ở cạnh
+  // (tường kem ban đêm ra khoảng sRGB .37 / .39 / .49). Số cũ .38 / .42 / .62 tuyến tính = sRGB .65+ nên tranh sáng hơn tường hẳn.
+  const NIGHT_ART = new THREE.Color().setRGB(.13, .14, .23);
+  const DUSK_ART = new THREE.Color().setRGB(.72, .5, .42), DUSK_INK = new THREE.Color().setRGB(.86, .7, .62); // chiều: ngả cam ấm, viền hơi sẫm
   const LIGHTING = {
     day: { sky: '#fff8e8', ground: '#e0b98a', hemi: 1.15, sun: '#fff1d6', sunI: 1.7, glass: '#cfeaff', lamps: 1, env: .4 },
+    dusk: { sky: '#ffc08a', ground: '#a8654a', hemi: .85, sun: '#ff9a4a', sunI: 1.25, glass: '#ffb98a', lamps: 1.35, env: .25, sunFrom: [7, 3.6, 3] },
     night: { sky: '#7f8fd0', ground: '#3a3550', hemi: .4, sun: '#a9bcff', sunI: .6, glass: '#1e2747', lamps: 1.8, env: .1 },
   };
   // Bóng của đèn đồ đạc: three.js lọc vật đổ bóng theo layer của camera CHÍNH (không theo camera bóng), nên không tách được
@@ -1418,8 +1387,28 @@ export function createRoom() {
     m.userData.dayColor ??= m.color.clone();
     m.color.copy(m.userData.dayColor);
     if (night) m.color.multiply(NIGHT_ART);
+    else if (ambient === 'dusk') m.color.multiply(DUSK_ART);
+  }
+  // Chốt chặn cho chế độ đêm: món không phải nguồn sáng mà lỡ có phần phát sáng (emissive / MeshBasicMaterial) thì ban đêm
+  // tắt phát sáng / tối lại như tranh treo. QC (qc.mjs glow) vẫn báo lỗi để sửa model cho đúng.
+  function dimNonSource(node) {
+    let source = !!node.userData.lightSource;
+    node.traverse(n => { if (n.isLight || n.userData.lightSource) source = true; });
+    if (source) return;
+    node.traverse(child => {
+      if (!child.isMesh || child.userData.outline) return;
+      for (const m of [].concat(child.material)) {
+        if (!m || m.colorWrite === false) continue;
+        if (m.isMeshBasicMaterial) (m.userData ||= {}).nightDim = true;
+        else if (m.emissive && m.emissive.getHex() !== 0) {
+          m.userData.dayEmissive ??= m.emissiveIntensity;
+          m.emissiveIntensity = night ? 0 : m.userData.dayEmissive;
+        }
+      }
+    });
   }
   function lightUp(node) { // đèn của đồ đạc sáng hơn ban đêm; tranh treo tối lại
+    dimNonSource(node);
     node.traverse(child => {
       nightArt(child);
       if (!child.isPointLight) return;
@@ -1435,12 +1424,15 @@ export function createRoom() {
       }
       child.shadow.needsUpdate = true;
       child.userData.baseIntensity ??= child.intensity;
-      child.intensity = child.userData.baseIntensity * LIGHTING[night ? 'night' : 'day'].lamps;
+      child.intensity = child.userData.baseIntensity * LIGHTING[ambient].lamps;
     });
   }
-  function setNight(on) {
-    night = !!on;
-    const look = LIGHTING[night ? 'night' : 'day'];
+  function setAmbient(mode) {
+    ambient = LIGHTING[mode] ? mode : 'day';
+    night = ambient === 'night';
+    const look = LIGHTING[ambient];
+    SUN_FROM.set(...(look.sunFrom || [4, 9, 5])); aimSun();
+    wasteland.setAmbient(ambient);
     hemi.color.set(look.sky); hemi.groundColor.set(look.ground); hemi.intensity = look.hemi * (TOON ? TOON_LIGHT.hemi : 1);
     sun.color.set(look.sun); sun.intensity = look.sunI * (TOON ? TOON_LIGHT.sun : 1);
     scene.environmentIntensity = look.env;
@@ -1449,6 +1441,7 @@ export function createRoom() {
     Object.values(furniture).forEach(lightUp);
     scene.traverse(nightArt);
   }
+  const setNight = on => setAmbient(on ? 'night' : 'day');
 
   // Mèo: đàn mèo khối 3D có "não" riêng (room-cats.mjs). Tim bay lên khi mèo cụng mũi / liếm lông nhau.
   let container = null;
@@ -1509,7 +1502,6 @@ export function createRoom() {
     for (const id of ROOM_ZONES) interiors[id].room.visible = opened[id];
     gardenExt.visible = groundLong.visible = cornersLong.visible = expanded;
     ground.visible = cornersSquare.visible = !expanded;
-    rebuildIslandBase(['garden', ...(expanded ? ['garden2'] : []), ...(opened.living ? ['living'] : []), ...(opened.bedroom ? ['bedroom'] : []), ...(opened.kitchen ? ['kitchen'] : [])]);
     doormat.visible = opened.living;
     setLeaf(interiors.living.leaves[2], opened.bedroom); // cửa phòng khách -> phòng ngủ: đóng khi phòng ngủ còn khoá
     setLeaf(interiors.living.leaves[3], opened.kitchen); // cửa phòng khách -> bếp: đóng khi bếp còn khoá
@@ -1647,7 +1639,7 @@ export function createRoom() {
       occluderRay.far = far - .02;
       for (const hitInfo of occluderRay.intersectObject(site, true)) {
         const mesh = hitInfo.object;
-        if (!mesh.isMesh || mesh.isInstancedMesh || mesh.userData.outline || mesh === islandBase || !shown(mesh)) continue;
+        if (!mesh.isMesh || mesh.isInstancedMesh || mesh.userData.outline || !shown(mesh)) continue;
         let owner = null, skip = false;
         for (let n = mesh; n && n !== site; n = n.parent) {
           if (n === node || n.userData.catRoot || n.userData.pickSurface?.key === 'floors') { skip = true; break; }
@@ -1900,7 +1892,7 @@ export function createRoom() {
   }
   // Home: vặn 2 ngón = xoay khu nhà quanh trục đứng qua tâm nhìn (OrbitControls chỉ lo chụm zoom + trượt 2 ngón).
   // Góc vặn phải vượt ngưỡng mới bắt đầu xoay, để lúc chụm zoom khu nhà không lắc theo vài độ run tay.
-  const TWIST_START = .12; // rad (~7°)
+  const TWIST_START = .07; // rad (~4°)
   const touches = new Map(), upAxis = new THREE.Vector3(0, 1, 0), twistOffset = new THREE.Vector3();
   let twistAngle = 0, twistSum = 0, twisting = false;
   const touchAngle = () => { const [a, b] = [...touches.values()]; return Math.atan2(b.y - a.y, b.x - a.x); };
@@ -1916,7 +1908,7 @@ export function createRoom() {
     if (!hub || carrying || viewLocked) return;
     if (!twisting) { twistSum += delta; if (Math.abs(twistSum) < TWIST_START) return; twisting = true; }
     // Vặn theo chiều kim đồng hồ trên màn hình thì khu nhà quay theo: camera quay ngược lại quanh tâm nhìn.
-    twistOffset.subVectors(camera.position, controls.target).applyAxisAngle(upAxis, delta);
+    twistOffset.subVectors(camera.position, controls.target).applyAxisAngle(upAxis, delta * SENS.twist);
     camera.position.copy(controls.target).add(twistOffset);
   }
   ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(type => renderer.domElement.addEventListener(type, trackTouch));
@@ -2068,7 +2060,7 @@ export function createRoom() {
   const PAN_BOOST = 1.8, COAST_BOOST = .55;
   function frame(now) {
     const zoomIn = hub ? THREE.MathUtils.clamp((controls.maxDistance - camera.position.distanceTo(controls.target)) / Math.max(1e-3, controls.maxDistance - controls.minDistance), 0, 1) : 0;
-    controls.panSpeed = 1 + (PAN_BOOST - 1) * zoomIn;
+    controls.panSpeed = SENS.pan * (1 + (PAN_BOOST - 1) * zoomIn);
     const damping = DAMPING * (1 - (1 - COAST_BOOST) * zoomIn);
     controls.dampingFactor = 1 - (1 - damping) ** (Math.min(.1, (now - (lastFrame || now)) / 1000 || 1 / 60) * 60);
     const t = now / 1000;
@@ -2157,7 +2149,7 @@ export function createRoom() {
         fixedOutlineHidden = decoMode;
         fixedDecor.forEach(root => root.traverse(node => { if (node.userData.outline) node.visible = !fixedOutlineHidden; }));
       }
-      syncOutlineResolution(renderer); setOutlineTint(night ? NIGHT_INK : DAY_INK); renderOutlineIds(renderer, scene, camera);
+      syncOutlineResolution(renderer); setOutlineTint(night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : DAY_INK); renderOutlineIds(renderer, scene, camera);
     }
     renderer.render(scene, camera);
     restoreShadows?.();
@@ -2249,8 +2241,8 @@ export function createRoom() {
     prewarm,
     // Deco: hiệu ứng hạt tại một chỗ — kind = 'preview' | 'swap' | 'buy'.
     fx: playFx,
-    setNight,
+    setNight, setAmbient,
     // Dev: QC model (qc.mjs) — trả về danh sách lỗi { level, zone, what }.
-    qc: () => runModelQC({ BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
+    qc: () => runModelQC({ shells: [[ground, groundLong], ...Object.values(interiors).map(inside => inside.room)], BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
   };
 }

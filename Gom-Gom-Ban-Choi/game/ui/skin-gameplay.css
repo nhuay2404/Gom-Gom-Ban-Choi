@@ -50,7 +50,7 @@ body.low-moves .fg-score{outline:0}
    Mọi số đo của bàn (lề, khe, bo góc, độ dày mép) tính theo --c = bước một ô (bề ngang bàn / số cột), KHÔNG theo --u:
    bàn co lại (màn thấp, bàn 8 cột) thì khe + bo góc co theo, ô vẫn vuông bo nhẹ chứ không thành hình tròn.
    --bw lặp lại đúng công thức bề ngang bàn (.board-wrap>.board trong ui-portrait.css); cqw/cqh lấy theo .board-wrap. */
-.board{--bw:min(100cqw,100cqh,440px);--c:calc(var(--bw) / var(--cols, 6));--pad:calc(var(--c) * .26);--gap:calc(var(--c) * .14);--rad:calc(var(--c) * .2);
+.board{--bw:min(100cqw,100cqh,440px);--c:calc(var(--bw) / var(--cols, 6));--pad:calc(var(--c) * .26);--gap:calc(var(--c) * .05);--rad:calc(var(--c) * .2);
   --edge:calc(var(--c) * .22);
   padding:var(--pad);border-radius:calc(var(--rad) * 1.6);gap:var(--gap)}
 .board{
@@ -85,6 +85,9 @@ body.low-moves .fg-score{outline:0}
 .dock .next-cards{order:1}
 .dock .hold-slot,.dock .next-slot{width:calc(54 * var(--u));height:calc(52 * var(--u));--card-w:calc(54 * var(--u));--card-h:calc(52 * var(--u));
   background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./skins/figma-game/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
+/* Mèo trong ô NEXT: to hết cỡ ô (một mèo ~40u; thẻ 2-3 mèo tự co lại cho vừa chiều rộng / cao ô) */
+.dock .next-slot .piece-grid{--cell:min(40 * var(--u),calc((50 * var(--u) - 2 * var(--u) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((48 * var(--u) - 2 * var(--u) * (var(--piece-rows) - 1)) / var(--piece-rows)));
+  grid-template-columns:repeat(var(--piece-cols),var(--cell));grid-template-rows:repeat(var(--piece-rows),var(--cell));gap:calc(2 * var(--u))}
 /* Ô HOLD trống: ô có dấu cộng của Figma; có thẻ thì dùng ô trơn như NEXT / thẻ đang bóc */
 .dock .hold-slot:not(:has(.piece-grid)){border-image:none;background:url('./skins/figma-game/slot.png') center/100% 100% no-repeat}
 .dock .hold-slot:not(:has(.piece-grid))>span{visibility:hidden}
@@ -295,19 +298,19 @@ body.card-holding,body.card-holding *{touch-action:none}
 .fg-score.gain .progress-track{animation:score-gain .5s ease-out}
 @keyframes score-gain{0%{filter:brightness(1)}30%{filter:brightness(1.45) drop-shadow(0 0 calc(6 * var(--u)) #ffe27a)}100%{filter:brightness(1)}}
 /* Số điểm cộng: to, chữ tròn vàng viền nâu dày, bóng đổ; nảy bằng Web Animations (play-controller.js showMergeScore) */
-.score-pop{position:fixed;z-index:60;pointer-events:none;font-family:var(--display);font-size:34px;font-weight:800;line-height:1;letter-spacing:0;
-  color:#ffe46b;-webkit-text-stroke:6px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 3px 0 #7a3a1288) drop-shadow(0 0 10px #fff3b0);white-space:nowrap}
+.score-pop{position:fixed;z-index:60;pointer-events:none;font-family:var(--display);font-size:52px;font-weight:800;line-height:1;letter-spacing:0;
+  color:#ffe46b;-webkit-text-stroke:9px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 3px 0 #7a3a1288) drop-shadow(0 0 10px #fff3b0);white-space:nowrap}
 /* Đốm sao vàng bay vào thanh điểm */
 .score-orb{position:fixed;z-index:60;width:16px;height:16px;pointer-events:none;border-radius:50%;
   background:radial-gradient(circle at 38% 35%,#fffbe0 0 22%,#ffd84a 45%,#f5a623 75%);box-shadow:0 0 10px 3px #ffe27acc}
 /* Màu theo loại điểm (play-controller.js SCORE_TIERS): thùng = gỗ nâu nhạt · gom 3 = vàng · 4 = xanh lá · 5 = xanh dương ·
    6 = hồng tím · 7+ = cầu vồng (chữ to nhất, rung nhẹ, toả vòng sáng). Đốm bay cùng màu với chữ. */
-.score-pop.t-crate{font-size:26px;color:#f3c98b;-webkit-text-stroke-color:#5a3216;filter:drop-shadow(0 3px 0 #5a321688)}
-.score-pop.t-m3{font-size:32px}
-.score-pop.t-m4{font-size:36px;color:#9df07a;-webkit-text-stroke-color:#1f6a2a;filter:drop-shadow(0 3px 0 #1f6a2a88) drop-shadow(0 0 12px #d4ffb8)}
-.score-pop.t-m5{font-size:40px;color:#7fd8ff;-webkit-text-stroke-color:#174f8a;filter:drop-shadow(0 3px 0 #174f8a88) drop-shadow(0 0 14px #c8efff)}
-.score-pop.t-m6{font-size:44px;color:#ff8fd8;-webkit-text-stroke-color:#7a1a5c;filter:drop-shadow(0 3px 0 #7a1a5c88) drop-shadow(0 0 16px #ffd0f0)}
-.score-pop.t-m7{font-size:50px;color:transparent;-webkit-text-stroke:0;
+.score-pop.t-crate{font-size:40px;color:#f3c98b;-webkit-text-stroke-color:#5a3216;filter:drop-shadow(0 3px 0 #5a321688)}
+.score-pop.t-m3{font-size:50px}
+.score-pop.t-m4{font-size:56px;color:#9df07a;-webkit-text-stroke-color:#1f6a2a;filter:drop-shadow(0 3px 0 #1f6a2a88) drop-shadow(0 0 12px #d4ffb8)}
+.score-pop.t-m5{font-size:62px;color:#7fd8ff;-webkit-text-stroke-color:#174f8a;filter:drop-shadow(0 3px 0 #174f8a88) drop-shadow(0 0 14px #c8efff)}
+.score-pop.t-m6{font-size:68px;color:#ff8fd8;-webkit-text-stroke-color:#7a1a5c;filter:drop-shadow(0 3px 0 #7a1a5c88) drop-shadow(0 0 16px #ffd0f0)}
+.score-pop.t-m7{font-size:76px;color:transparent;-webkit-text-stroke:0;
   background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bff8a,#5ad1ff,#c77dff,#ff6b6b) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(0 0 2px #4a1f6b) drop-shadow(0 0 2px #4a1f6b) drop-shadow(0 3px 0 #4a1f6b) drop-shadow(0 0 18px #fff3b0)}
 @media(prefers-reduced-motion:no-preference){.score-pop.t-m7{animation:score-rainbow .8s linear infinite}
@@ -404,7 +407,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .tutorial-avatar .cat .afk{display:none!important}
 .tutorial-avatar .cat .calm-idle{opacity:1!important;visibility:visible!important}
 /* Hướng dẫn chỉ dùng vòng highlight, bỏ bàn tay chỉ (emoji) */
-.tutorial-hand,.deco-tour-hand{display:none!important}
+.deco-tour-hand{display:none!important}
 /* Hết ván (body.level-over, play-controller.js: thanh điểm vừa đầy / thua): UI chơi mờ đi, giữ chỗ (không xô lệch bàn); nút cài đặt vẫn còn */
 .shell :is(.fg-panel,.booster-bar,.dock,.message-row){transition:opacity .3s ease,visibility 0s}
 body.level-over .shell :is(.fg-panel,.booster-bar,.dock,.message-row){opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s .3s}
@@ -460,3 +463,6 @@ body.onboarding #deco .deco-help{display:none}
 .cell.block .crate{filter:drop-shadow(0 calc(var(--c) * .06) 0 #73392a55)}
 .cell.preview{background:#c9f2d4!important;box-shadow:inset 0 0 0 var(--line) #3f9a52}
 .cell.preview-invalid{background:#f6c6b8!important;box-shadow:inset 0 0 0 var(--line) #c2493a}
+
+/* Mèo to ra trong ô bàn (ảnh mèo có viền trong suốt quanh thân) để các chú mèo nhìn sát nhau hơn; thẻ xoay / thẻ kéo giữ cỡ gốc để còn căn giữa */
+.cell.locked .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.3)}

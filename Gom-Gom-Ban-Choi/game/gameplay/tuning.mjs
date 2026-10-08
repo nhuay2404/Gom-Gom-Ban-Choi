@@ -17,9 +17,9 @@ export const CAGE = { LOCKS: 1 };
 // Nhịp animation màn chơi (gom mèo, xoay thẻ, thắng)
 export const TIMING = {
   ROTATE_MS: 340,      // xoay thẻ đang bóc
-  DROP_MS: 340,        // mèo vừa đặt rơi xuống ô
-  LIFT_MS: 260,        // mèo bị nhấc bổng trước khi gom (ngắn: gom diễn ra ~.25s sau khi mèo đáp)
-  MERGE_MS: 340,       // cả cụm trượt vào điểm tụ
+  DROP_MS: 220,        // mèo vừa đặt rơi xuống ô
+  LIFT_MS: 160,        // mèo bị nhấc bổng trước khi gom (ngắn: gom diễn ra ~.25s sau khi mèo đáp)
+  MERGE_MS: 220,       // cả cụm trượt vào điểm tụ
   WIN_PAUSE_MS: 450,   // dừng một nhịp trước màn bay khi thắng
   AFK_MS: 5000,        // không chạm màn hình bấy lâu thì mèo buồn ngủ
   CARRY_HOLD_MS: 350,  // giữ mèo trong phòng bấy lâu thì nhấc lên
@@ -36,8 +36,23 @@ export const DRAG = {
 // Cảnh báo sắp hết lượt
 export const LOW_MOVES = { MSG_AT: 3, CATS_AT: 2, WARN_RATIO: .3 };
 
-// Kinh tế Deco
-export const ECONOMY = { COINS_PER_STAR: 50, MAX_ROOM_CATS: 6 };
+// Kinh tế Deco: mỗi màn trả một số xu cố định ở LẦN THẮNG ĐẦU (không phụ thuộc số sao; chơi lại không ra xu), tăng dần theo màn.
+// Cân theo từng lô 10 màn (giá món gốc ở deco-data.mjs, chưa tính phương án thay thế):
+//   màn 1–10  = 1395 xu ≥ 1380 = mọi món gốc Vườn 1 (flowers..bench)
+//   màn 11–20 = 1634 xu ≥ 1620 = mọi món gốc Vườn 2 (windmill..slide)
+//   màn 21+   : chỉ ~60–80% giá món gốc của khu vừa mở, chừa khoảng trống cho liveops / giữ chân:
+//   màn 21–30 =  976 xu ≈ 61% của Phòng khách (1600);  màn 31–40 = 1014 xu ≈ 80% của Phòng ngủ (1270)
+// Ngoài bảng (màn 41+, Bếp 1160 xu): REWARD_BEYOND xu mỗi màn ≈ 69% mỗi lô 10 màn. Đổi giá đồ thì chạy `npm test` (có test kiểm các mốc trên).
+export const ECONOMY = {
+  LEVEL_REWARD: [
+    120, 125, 130, 135, 140, 143, 146, 150, 152, 154,
+    155, 157, 159, 161, 162, 164, 166, 168, 170, 172,
+    90, 92, 94, 96, 97, 98, 100, 101, 103, 105,
+    96, 98, 99, 100, 101, 102, 103, 104, 105, 106,
+  ],
+  REWARD_BEYOND: 80,
+  MAX_ROOM_CATS: 6,
+};
 
 // Mèo 3D trong phòng
 export const CAT_BODY = { W: .6, H: .54, D: .62, LEG: .1 };

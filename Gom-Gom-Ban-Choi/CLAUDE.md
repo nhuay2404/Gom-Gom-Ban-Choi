@@ -115,6 +115,15 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   thì mèo đi ngủ); PointerEvent tự tạo không nổi bọt nên phải phát ở `window`.
 - Món có phần đung đưa / xoay mà mèo ngồi lên: `userData.ride` + lò xo kéo về góc nghỉ 0.
 
+**Ánh sáng ban đêm (chế độ đêm của Deco)**
+- Chỉ nguồn sáng thật mới được sáng rực ban đêm: món có PointLight bên trong (đèn, lửa trại, đèn lồng) hoặc khai `node.userData.lightSource = true`
+  (màn hình, dải LED, đèn bàn, nến — khai ở danh sách trong deco-room.mjs, ngay sau `Object.assign(BUILD, ...)`). Món KHÁC mà có vật liệu
+  `emissive` hoặc `MeshBasicMaterial` (không nhận sáng) thì ban đêm tối lại thành khối sáng rực như đèn — lỗi suối / diều / cờ phơi / gương / gợn nước.
+- Vật liệu phẳng không nhận sáng (nước, cờ, gương, cửa vòm, gợn nước, tranh) phải có `userData: { nightDim: true }` để ban đêm tối đi cùng cảnh.
+  Muốn món sáng thật thì thêm đèn hoặc khai lightSource, đừng dựa vào emissive để "trông sáng".
+- QC `glow` (qc.mjs glowIssues, chạy trong checkModel) bắt lỗi này cho mọi món nội thất; deco-room.mjs dimNonSource là chốt chặn thứ hai
+  lúc chạy (tắt emissive / làm tối món không phải nguồn sáng) nhưng KHÔNG thay cho việc sửa model cho đúng.
+
 **Hiệu năng**
 - Cầu / trụ dùng helper `ball()` / `cyl()` (số cạnh theo kích thước); nhiều khối nhỏ giống nhau dùng InstancedMesh;
   cụm trang trí tĩnh gộp bằng `mergeStatic()`.

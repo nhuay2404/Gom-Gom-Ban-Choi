@@ -163,7 +163,7 @@ function fitInsideHints(enabled, _vertical, card, arrowHeight) {
   grid.style.removeProperty('--cell');
   if (!enabled) return;
   // Thẻ thấp (màn thấp / cửa sổ máy tính): dải mũi tên không được ăn quá 22% mỗi cạnh, không thì mèo co về 0 và biến mất.
-  const band = Math.min(arrowHeight * .78 + 4, Math.min(card.width, card.height) * .22), pad = 10, gap = 4;
+  const band = Math.min(arrowHeight * .78 + 4, Math.min(card.width, card.height) * .22), pad = 10, gap = 1;
   // Tai mèo nhô lên trên ô: chừa thêm chiều cao để thẻ dọc không tràn khay.
   const ears = 16;
   const fit = (rows, cols, arrowsOnSides) => {
@@ -258,10 +258,11 @@ function placeAt(anchor) {
   // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
   // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
+  pendingFlights += merges.length + (match.broken?.length || 0); // điểm giữ lại tới khi đốm bay vào thanh
   const ghosts = spawnMergeGhosts(merges, result);
   const done = animateMerges(ghosts, merges);
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
-  match.broken?.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, DROP_MS + LIFT_MS + MERGE_MS * .7 + 120, 'crate'); });
+  match.broken?.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, DROP_MS + LIFT_MS + MERGE_MS * .7 + 120, 'crate'); else releaseScoreSlot(); });
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
@@ -409,7 +410,7 @@ async function animateMerges(ghosts, merges) {
   const animations = [];
   merges.forEach(({ cluster, target }) => {
     const targetGhost = ghosts.get(target);
-    if (!targetGhost) return;
+    if (!targetGhost) return releaseScoreSlot();
     cluster.forEach(index => {
       const ghost = ghosts.get(index);
       if (!ghost) return;
@@ -512,7 +513,9 @@ function spawnFusion(x, y) {
 // Điểm cộng: số "+N" bật to ở chỗ gom (nảy quá cỡ rồi về), rồi vỡ thành các đốm sao vàng bay vòng cung vào đầu thanh điểm.
 // Thanh điểm / số điểm chỉ tăng khi đốm cuối cùng tới nơi (shownScore), đốm đầu tới thì thanh nảy + loé sáng.
 // Giảm chuyển động: không có pop / bay, thanh cập nhật ngay.
-let shownScore = 0, scoreFlights = 0, flightGen = 0;
+// pendingFlights = điểm đã được tính vào state nhưng đốm chưa bật ra (cụm còn đang chụm lại): giữ thanh điểm đứng yên cho tới khi đốm bay tới.
+let shownScore = 0, scoreFlights = 0, pendingFlights = 0, flightGen = 0;
+const releaseScoreSlot = () => { pendingFlights = Math.max(0, pendingFlights - 1); };
 // Mỗi loại điểm một màu + một cỡ hiệu ứng (màu / cỡ chữ / đốm ở CSS .score-pop.t-* / .score-orb.t-*):
 //   crate (thùng vỡ, +10) · m3 · m4 · m5 · m6 · m7 (cụm 7 trở lên). Cụm càng to: chữ càng to, nảy càng mạnh, càng nhiều đốm bay.
 const SCORE_TIERS = {
@@ -526,9 +529,10 @@ const SCORE_TIERS = {
 const scoreTier = size => `m${Math.min(7, Math.max(3, size))}`;
 function showMergeScore(cell, points, delay = 300, tier = 'm3') {
   const { orbs, punch } = SCORE_TIERS[tier];
-  if (reduceMotion.matches) return;
+  if (reduceMotion.matches) return releaseScoreSlot();
   const rect = cell.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2, gen = flightGen;
   scoreFlights++;
+  releaseScoreSlot();
   const pop = document.createElement('span');
   pop.className = `score-pop t-${tier}`;
   pop.textContent = `+${points}`;
@@ -543,11 +547,9 @@ function showMergeScore(cell, points, delay = 300, tier = 'm3') {
     { transform: at(-32, 1.05), offset: .46 },
     { transform: at(-34, 1), offset: .82 },
     { transform: at(-34, .4), opacity: .2 },
-  ], { duration: 620, delay, easing: 'ease-out', fill: 'both' }).finished.catch(() => {}).then(() => {
-    pop.remove();
-    if (gen !== flightGen) return;
-    flyToBar(x, y - 34, points, gen, tier, orbs);
-  });
+  ], { duration: 420, delay, easing: 'ease-out', fill: 'both' }).finished.catch(() => {}).then(() => pop.remove());
+  // Hạt bay vào thanh gần như cùng lúc số điểm bật ra (không đợi số điểm tan).
+  setTimeout(() => { if (gen === flightGen) flyToBar(x, y - 34, points, gen, tier, orbs); }, delay + 110);
 }
 function flyToBar(x, y, points, gen, tier, count) {
   const track = $('score-fill').parentElement, bar = track.getBoundingClientRect();
@@ -570,14 +572,14 @@ function flyToBar(x, y, points, gen, tier, count) {
       { transform: at(sx, sy, 1.2), opacity: 1, offset: .2 },
       { transform: at(sx + (dx - sx) * .5 + bend, sy + (dy - sy) * .45, .95), offset: .6 },
       { transform: at(dx, dy, .45), opacity: 1 },
-    ], { duration: 300 + i * 18, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards' }).finished.catch(() => {}).then(() => {
+    ], { duration: 240 + i * 12, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards' }).finished.catch(() => {}).then(() => {
       orb.remove();
       if (gen !== flightGen) return;
       playSound('fill', count > 1 ? (i / (count - 1)) * 10 : 5);
       if (++landed === 1) bumpScoreBar();
       if (landed < count) return;
       shownScore = Math.min(state.score, shownScore + points);
-      if (--scoreFlights <= 0) { scoreFlights = 0; shownScore = state.score; }
+      if (--scoreFlights <= 0) { scoreFlights = Math.max(0, scoreFlights); if (!pendingFlights) shownScore = state.score; }
       renderScore();
     });
   }
@@ -587,7 +589,7 @@ const SCORE_FILL_MS = 450, FULL_HOLD_MS = 350;
 async function scoreSettled() {
   if (reduceMotion.matches) return;
   const gen = flightGen;
-  while (scoreFlights > 0 && gen === flightGen) await wait(50);
+  while ((scoreFlights > 0 || pendingFlights > 0) && gen === flightGen) await wait(50);
   await wait(SCORE_FILL_MS + FULL_HOLD_MS);
 }
 function bumpScoreBar() {
@@ -597,7 +599,7 @@ function bumpScoreBar() {
 }
 // Số điểm + thanh: đang có điểm bay thì giữ số đã hiện (shownScore), bay xong mới tăng.
 function renderScore() {
-  if (!scoreFlights) shownScore = state.score;
+  if (!scoreFlights && !pendingFlights) shownScore = state.score;
   $('score').textContent = shownScore;
   const progress = Math.min(1, shownScore / state.level.target);
   $('score-fill').style.width = `${progress * 100}%`;
@@ -960,7 +962,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('suggest', plan.suggestBooster && boostersUnlocked(levelIndex));
   // Ván mới: thanh điểm về 0 ngay, không tụt dần từ ván trước.
   const fill = $('score-fill');
-  flightGen++; scoreFlights = 0; // điểm còn bay từ ván trước: bỏ
+  flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
   document.querySelectorAll('.score-pop, .score-orb').forEach(node => node.remove());
   fill.style.transition = 'none';
   render(`Reach ${level.target} points in ${level.moves} moves!`);
@@ -1238,11 +1240,13 @@ function renderTutorial() {
     }));
     // Bong bóng: bước info nằm giữa màn hình, các bước khác nằm ngay dưới bàn chơi.
     const bubble = $('tutorial-bubble');
-    $('tutorial-text').textContent = step.text.replace('{target}', state.level.target).replace('{moves}', state.level.moves);
+    // Không có text (hầu hết bước) thì không hiện bong bóng: chỉ có bàn tay + viền sáng.
+    bubble.hidden = !step.text;
+    $('tutorial-text').textContent = (step.text || '').replace('{target}', state.level.target).replace('{moves}', state.level.moves);
     $('tutorial-next').hidden = step.type !== 'info';
     bubble.classList.toggle('center', step.type === 'info');
     bubble.style.top = step.type === 'info' ? '' : `${$('board').getBoundingClientRect().bottom + 8}px`;
-    bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+    if (step.text) bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
     animateHand(step, holes);
   });
 }
@@ -1252,6 +1256,8 @@ function animateHand(step, holes) {
   const hand = $('tutorial-hand');
   hand.hidden = step.type === 'info';
   if (hand.hidden) return;
+  // Kéo dùng ảnh tay "giữ" (có tia), chạm dùng ảnh tay "nhấn" (có sóng).
+  $('tutorial-hand-img').src = `./ui/skins/tutorial/hand-${step.type === 'drag' || step.type === 'hold' ? 'drag' : 'tap'}.png`;
   const center = b => [b.left + b.width / 2, b.top + b.height / 2];
   const [x0, y0] = center(holes[0]);
   const at = (x, y, scale) => `translate(${x}px, ${y}px) scale(${scale})`;

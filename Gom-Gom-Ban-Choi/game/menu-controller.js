@@ -85,11 +85,13 @@ function renderMap() {
 // Thanh tab chung hiện ở Home (bản đồ) / Deco / Shop, đánh dấu mục đang mở.
 // Home và Deco có nút cài đặt chung (cùng hàng ví); Shop không có (banner gói khởi đầu nằm đúng chỗ đó).
 const SETTINGS_TABS = ['home', 'deco', 'shop'];
+const CLAIM_FROM_LEVEL = 2; // chỉ số màn 3: mèo các màn đầu chỉ nhận được từ khi thắng màn này
 function markTab(tab) {
   // Onboarding: tab chưa mở thì ẩn; chỉ còn mỗi Home thì ẩn cả thanh tab.
   $('tabbar').querySelectorAll('.tab').forEach(button => { button.hidden = !ob.tabOpen(button.dataset.tab); });
   $('tabbar').hidden = ['deco', 'shop'].every(name => !ob.tabOpen(name));
   $('hub-settings').hidden = !SETTINGS_TABS.includes(tab);
+  refreshClaimDot();
   $('tabbar').querySelectorAll('.tab').forEach(button => {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
@@ -106,6 +108,7 @@ const map3dReady = import('./deco/map-world.mjs').then(({ createMapWorld, catSho
       setDeco(claimCat(getDeco(), breed));
       map3d.render(mapLevels());
       map3d.focus(index, false);
+      refreshClaimDot();
     }),
   });
 }).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
@@ -115,8 +118,15 @@ function mapLevels() {
     // Giống mèo lần đầu xuất hiện ở màn này: bản đồ dựng mèo 3D giống đó cạnh màn (mèo đã nhận thì về nhà, không hiện nữa).
     // Thắng màn rồi mà chưa nhận: nhãn NEW! thành nút Claim.
     const newCats = [...level.cats].filter(ch => !seen.has(ch)).map(ch => (seen.add(ch), LETTERS[ch])).filter(breed => !isCatClaimed(deco, breed));
-    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats, claimable: !!progress.stars[index] };
+    // Mèo của các màn đầu chỉ nhận được sau khi thắng màn 3 (CLAIM_FROM_LEVEL), không tự động nhận lúc thắng màn 2.
+    const claimable = !!progress.stars[index] && !!progress.stars[Math.min(index, CLAIM_FROM_LEVEL)];
+    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats, claimable };
   });
+}
+// Chấm đỏ ở tab Home khi còn mèo đã mở khoá mà chưa nhận (nút CLAIM trên Map).
+const hasUnclaimedCat = () => mapLevels().some(level => level.claimable && level.newCats.length > 0);
+function refreshClaimDot() {
+  $('tabbar').querySelector('[data-tab="home"]')?.classList.toggle('has-dot', hasUnclaimedCat());
 }
 // Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
 // Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
@@ -322,7 +332,7 @@ buildFlatRooms();
 const roomReady = import('./deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
   room3d = createRoom();
   if (DEV_MODE && new URLSearchParams(location.search).has('qc')) setTimeout(runQC, 500);
-  room3d.setNight(night);
+  room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
   room3d.onPick(onScenePick);
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
@@ -763,48 +773,26 @@ function runBasicsTour() {
   const watch = ob.watchGestures($('deco-room')), fresh = key => () => { watch.done[key] = false; };
   setDecoLock(false);
   closeDecoPop(false);
-  const gesture = (key, text) => ({ target: roomArea, text, before: fresh(key), until: () => watch.done[key], skippable: true });
+  // Chỉ hình, không chữ: bàn tay kéo / chụm / xoay lặp lại giữa cảnh; làm được cử chỉ nào thì tự sang cử chỉ kế, xong cả ba thì tắt hướng dẫn (không ép vào màn 2).
+  const gesture = (key, kind) => ({ target: roomArea, gesture: kind, before: fresh(key), until: () => watch.done[key], skippable: true });
+  // Mở đầu: từ Home hub chỉ vào nút Deco (bàn tay chạm), vào Deco rồi một đoạn giải thích Deco là gì, sau đó mới tới ba cử chỉ.
   startDecoTour([
-    { target: () => null, text: 'Welcome to your garden! First, let’s learn how to look around.', next: 'Show me' },
-    gesture('drag', 'Drag with one finger to look around the garden.'),
-    gesture('zoom', 'Pinch with two fingers to zoom in and out. (On a computer, scroll the wheel.)'),
-    gesture('twist', 'Twist two fingers to rotate your garden.'),
-    { target: () => null, text: 'Nice! The garden is empty, so let’s go find some cats. Play level 2!', next: 'Play level 2' },
-  ], () => { watch.stop(); ob.setStage('L2'); play.startLevel(1); });
+    { target: () => $('tabbar').querySelector('[data-tab="deco"]'), gesture: 'tap', bubble: 'above', until: () => !$('deco').hidden,
+      text: 'Your garden is unlocked! Tap Deco to go visit it.' },
+    { target: () => null, text: 'Welcome to your garden! Deco is where you decorate your home with furniture and cats live. Play levels to earn coins and buy new things!', next: 'Show me',
+      before: async () => { await waitFor(() => !$('deco').hidden); await new Promise(resolve => setTimeout(resolve, 500)); } },
+    gesture('drag', 'drag'),
+    gesture('zoom', 'pinch'),
+    gesture('twist', 'twist'),
+  ], () => { watch.stop(); ob.setStage('L2'); }); // xong là tắt hướng dẫn, người chơi tự về Home hub chọn màn 2
 }
-function runCatTour() {
-  let petted = false, carried = false;
-  room3d?.onCatEvent(kind => { if (kind === 'pet') petted = true; else if (kind === 'carry') carried = true; });
-  setDecoLock(false);
-  closeDecoPop(false);
-  const cat = () => {
-    const r = room3d?.screenRectOfCat(0);
-    return r && { left: r.left - 24, top: r.top - 24, width: r.right - r.left + 48, height: r.bottom - r.top + 48 };
-  };
-  startDecoTour([
-    { target: () => null, text: 'Meet your new cats! They live in your garden now.', next: 'Aww!' },
-    { target: cat, text: 'Tap a cat to pet it.', before: () => { petted = false; }, until: () => petted, skippable: true },
-    { target: cat, text: 'Now press and hold a cat, then drag to carry it somewhere new.', before: () => { carried = false; }, until: () => carried, skippable: true },
-    { target: () => null, before: () => new Promise(resolve => setTimeout(resolve, 1400)), text: 'Great! More cats join as you play. Let’s keep going!', next: 'Play level 3' },
-  ], () => { room3d?.onCatEvent(null); ob.setStage('free'); play.startLevel(2); });
-}
-// Nhận một con mèo bằng màn "You got" rồi cho vào nhà; đợi người chơi chạm xong.
-const claimWithReward = (breed, options = {}) => new Promise(resolve => showCatReward(breed, () => {
-  setDeco(claimCat(getDeco(), breed));
-  setTimeout(resolve, reduceMotion.matches ? 0 : options.keep ? 250 : 500);
-}, options));
 // Chạy bước hướng dẫn đang chờ (gọi từ bảng kết quả bấm Continue, hoặc lúc mở game nếu đang dở).
 export async function runOnboarding() {
   const stage = ob.stage();
-  if (stage === 'cats') {
-    const todo = ['orange', 'gray'].filter(breed => !isCatClaimed(getDeco(), breed));
-    for (const [i, breed] of todo.entries()) await claimWithReward(breed, { keep: i < todo.length - 1, chained: i > 0 });
-  }
   if (!ob.pending()) return;
-  await switchTab('deco');
+  await switchTab(stage === 'basics' ? 'home' : 'deco'); // hướng dẫn Deco đầu tiên bắt đầu từ Home hub: chỉ vào nút Deco
   await new Promise(resolve => setTimeout(resolve, 600));
   if (stage === 'basics') runBasicsTour();
-  else if (stage === 'cats') runCatTour();
   else if (stage === 'decor') runDecoTour();
 }
 
@@ -1043,19 +1031,27 @@ function renderSoundButtons() {
 document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = () => { setSound(!soundOn()); renderSoundButtons(); }; });
 renderSoundButtons();
 
-// Ngày / đêm cho khu mèo (cảnh 3D ở Deco). Lưu lại cho lần sau.
-let night = readText(SAVE_KEYS.night) === 'on';
-function applyNight() {
-  const button = $('night-toggle');
-  button.setAttribute('aria-pressed', night);
-  button.setAttribute('aria-label', night ? 'Night, tap for day' : 'Day, tap for night');
-  button.title = night ? 'Night' : 'Day';
-  $('deco-room').classList.toggle('night', night);
-  $('deco').classList.toggle('night', night); // nền trời đêm của màn Deco (ui-portrait.css)
-  room3d?.setNight(night);
+// Ánh sáng môi trường cho khu mèo (cảnh 3D ở Deco): Day / Afternoon (dusk) / Night. Lưu lại cho lần sau ('off' = ngày, 'dusk', 'on' = đêm).
+const AMBIENTS = { off: 'day', dusk: 'dusk', on: 'night' };
+let ambient = AMBIENTS[readText(SAVE_KEYS.night)] || 'day';
+function applyAmbient() {
+  document.querySelectorAll('#ambient-toggle [data-ambient]').forEach(button => button.setAttribute('aria-pressed', button.dataset.ambient === ambient));
+  $('ambient-toggle').title = ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  $('deco-room').classList.toggle('night', ambient === 'night');
+  $('deco-room').classList.toggle('dusk', ambient === 'dusk');
+  $('deco').classList.toggle('night', ambient === 'night'); // nền trời đêm của màn Deco (ui-portrait.css)
+  $('deco').classList.toggle('dusk', ambient === 'dusk'); // nền trời chiều
+  room3d?.setAmbient(ambient);
 }
-$('night-toggle').onclick = () => { night = !night; writeText(SAVE_KEYS.night, night ? 'on' : 'off'); playSound('pick'); applyNight(); };
-applyNight();
+$('ambient-toggle').addEventListener('click', event => {
+  const button = event.target.closest('[data-ambient]');
+  if (!button || button.dataset.ambient === ambient) return;
+  ambient = button.dataset.ambient;
+  writeText(SAVE_KEYS.night, ambient === 'night' ? 'on' : ambient === 'dusk' ? 'dusk' : 'off');
+  playSound('pick');
+  applyAmbient();
+});
+applyAmbient();
 
 // Music / Haptic / Notifications: lựa chọn của người chơi (mặc định bật), nhớ qua localStorage. Game chưa có nhạc nền /
 // thông báo nên hiện chỉ lưu lại; Haptic rung nhẹ khi bật (máy có hỗ trợ). Đọc ở nơi khác qua prefOn(name).

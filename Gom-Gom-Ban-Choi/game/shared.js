@@ -1,5 +1,5 @@
 // Phần dùng chung của hai luồng điều khiển (play-controller.js, menu-controller.js): DOM helper, toast, ví xu, kho booster.
-import { loadProgress, totalStars } from './gameplay/progression.mjs';
+import { loadProgress, earnedCoins } from './gameplay/progression.mjs';
 import { BOOSTERS } from './gameplay/tuning.mjs';
 import { loadBoosters, saveBoosters, buyBooster } from './gameplay/boosters.mjs';
 import { loadDeco, saveDeco } from './deco/deco-data.mjs';
@@ -22,7 +22,7 @@ export function showToast(text) {
 }
 
 // ===== Ví: đồ deco + xu nằm chung một bản lưu (deco-data.mjs). Màn chơi cộng xu khi thắng, Deco / booster tiêu xu. =====
-let deco = loadDeco(totalStars(loadProgress()));
+let deco = loadDeco(earnedCoins(loadProgress()));
 export const getDeco = () => deco;
 export function setDeco(next) { deco = next; saveDeco(deco); }
 export function refreshWallet() {

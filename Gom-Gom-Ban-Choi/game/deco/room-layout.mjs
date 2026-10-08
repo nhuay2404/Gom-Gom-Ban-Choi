@@ -7,8 +7,9 @@ export const WALL_H = 3;
 
 // Các khu nối liền nhau thành một "khu nhà": vườn ở giữa, phòng khách mọc ra phía sau vườn (-z), phòng ngủ nằm bên
 // trái phòng khách (-x), bếp nằm bên phải phòng khách (+x). Toạ độ trong từng khu vẫn tính từ tâm khu đó (PLACES bên dưới), ZONE_OFFSET là tâm khu trong
-// hệ toạ độ của vườn. Hai khu cạnh nhau cách tâm 2 × nửa khu + tường (.3).
-const ZONE_STEP = ROOM_HALF * 2 + .3;
+// hệ toạ độ của vườn. Hai khu cạnh nhau cách tâm 2 × nửa khu + .4: mỗi tường dày .2 chìa ra ngoài sàn, hai tường quay lưng vào nhau vừa khít
+// (khe .3 cũ làm hai đỉnh tường chồng nhau .1 -> hai màu tường chớp z-fighting ở đỉnh tường chỗ hai phòng giáp nhau).
+const ZONE_STEP = ROOM_HALF * 2 + .4;
 // Vườn mở rộng (thắng màn 30): vườn nới dài thêm một ô 8 × 8 về bên phải (+x), liền một mảnh nền + một hàng rào bao quanh
 // (x từ -ROOM_HALF tới GARDEN_EXT_X + ROOM_HALF). Đồ của phần mở rộng vẫn là đồ của vườn (PLACES theo toạ độ vườn).
 // 'garden2' chỉ còn là ô đi lại nội bộ cho mèo (room-cats.mjs) + tâm phần mở rộng, KHÔNG phải một khu Deco riêng.

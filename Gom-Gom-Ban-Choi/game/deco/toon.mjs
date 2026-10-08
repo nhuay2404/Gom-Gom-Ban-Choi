@@ -8,27 +8,28 @@ export const TOON = (() => {
   try { return new URLSearchParams(location.search).get('toon') !== '0'; } catch { return true; }
 })();
 
-// Kiểu Cats & Soup: gần như không có chiếu sáng theo hướng. Đèn trời phẳng (mọi mặt sáng như nhau, xem RE_IndirectDiffuse_Toon),
-// nắng gần như đều mọi mặt (TONES) và chủ yếu chỉ để tạo bóng đổ mềm dưới mèo / đồ vật. Hình khối do viền đảm nhận.
-export const TOON_LIGHT = { hemi: 1.55, sun: .9, shadow: .5 };
+// Toon chia nấc cứng theo ảnh tham chiếu (quả cầu 6 nấc): nắng đổ lên khối thành các dải sáng rõ ranh giới (BANDS), dải sáng nhất ngả
+// vàng ấm, dải khuất ngả xanh lạnh và tối; bóng đổ xuống đất sẫm hẳn. Đèn trời vẫn PHẲNG (mọi mặt nhận như nhau, xem RE_IndirectDiffuse_Toon)
+// nhưng nhỏ hơn nắng đủ để các dải nhìn thấy được. Độ sáng thật = cường độ ÷ π (BRDF_Lambert): ban ngày mặt sáng nhất ≈ 1.1 (đúng độ
+// sáng bản cũ), mặt khuất ≈ .8 — các nấc chỉ làm tối vừa phải, không kéo cả cảnh tối đi. Chỉnh hemi lên = sáng đều hơn, sun lên = nấc rõ hơn.
+export const TOON_LIGHT = { hemi: 2.2, sun: .7, shadow: .8 };
 // Góc nhìn hẹp (gần ortho) cho cảm giác tranh 2D: FOV nhỏ, lùi camera xa tương ứng để khung hình giữ nguyên.
 export const TOON_FOV = 18;
 
-// Dải sáng theo N·L (trục ngang 0..1 = mặt quay lưng .. quay thẳng vào nắng), LinearFilter trên dải 64 px.
-const TONES = [[0, .9], [.45, 1]], EDGE = .08; // mặt khuất chỉ tối hơn 10%, đủ tách mặt khối mà không ra cảm giác đổ sáng 3D
+// Dải sáng theo N·L (trục ngang 0..1 = mặt quay lưng .. quay thẳng vào nắng): BẬC THANG cứng, 6 nấc như ảnh ref —
+// khuất hẳn · tối · nâu tối · nâu · cam · vùng sáng nhất. Mỗi cặp [ngưỡng x, mức sáng]: từ ngưỡng đó trở lên dùng mức sáng đó.
+// x = .5 + .5·N·L, nên ngưỡng .54 ≈ N·L .08, .96 ≈ N·L .92 (vùng sáng nhất nhỏ như đốm vàng trên quả cầu ref).
+const BANDS = [[0, .08], [.54, .3], [.64, .52], [.75, .74], [.86, .9], [.96, 1]];
 const gradientMap = (() => {
-  const W = 64, data = new Uint8Array(W);
+  const W = 128, data = new Uint8Array(W);
   for (let i = 0; i < W; i++) {
     const x = (i + .5) / W;
-    let v = TONES[0][1];
-    for (let k = 1; k < TONES.length; k++) {
-      const t = Math.min(1, Math.max(0, (x - TONES[k][0] + EDGE) / (2 * EDGE)));
-      v += (TONES[k][1] - TONES[k - 1][1]) * t * t * (3 - 2 * t);
-    }
+    let v = BANDS[0][1];
+    for (const [edge, level] of BANDS) if (x >= edge) v = level;
     data[i] = Math.round(v * 255);
   }
   const tex = new THREE.DataTexture(data, W, 1, THREE.RedFormat);
-  tex.minFilter = tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = tex.magFilter = THREE.NearestFilter; // ranh giới nấc sắc nét, không nội suy
   tex.generateMipmaps = false;
   tex.needsUpdate = true;
   return tex;
@@ -43,7 +44,9 @@ struct ToonMaterial { vec3 diffuseColor; };
 uniform float toonRim;
 uniform float toonSpec;
 void RE_Direct_Toon( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {
-  vec3 irradiance = getGradientIrradiance( geometryNormal, directLight.direction ) * directLight.color;
+  vec3 band = getGradientIrradiance( geometryNormal, directLight.direction );
+  // Nấc càng sáng càng ngả vàng ấm (nắng), nấc tối giữ nguyên màu; mặt khuất được ánh trời lạnh lo (RE_IndirectDiffuse_Toon).
+  vec3 irradiance = band * mix( vec3( 1.0 ), vec3( 1.14, 1.0, 0.78 ), smoothstep( 0.4, 1.0, band.r ) ) * directLight.color;
   reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );
   float NdotL = dot( geometryNormal, directLight.direction );
   // Rim (Roystan): mép khối nhìn xiên, phía quay về nắng.
@@ -63,7 +66,8 @@ void RE_IndirectDiffuse_Toon( const in vec3 irradiance, const in vec3 geometryPo
     flatIrradiance = getAmbientLightIrradiance( ambientLightColor )
       + mix( hemisphereLights[ 0 ].groundColor, hemisphereLights[ 0 ].skyColor, 0.85 );
   #endif
-  reflectedLight.indirectDiffuse += flatIrradiance * BRDF_Lambert( material.diffuseColor );
+  // Vùng khuất ngả xanh lạnh (như mặt tối xanh navy của quả cầu ref), không xám đục.
+  reflectedLight.indirectDiffuse += flatIrradiance * vec3( 0.86, 0.92, 1.12 ) * BRDF_Lambert( material.diffuseColor );
 }
 #define RE_Direct RE_Direct_Toon
 #define RE_IndirectDiffuse RE_IndirectDiffuse_Toon`;

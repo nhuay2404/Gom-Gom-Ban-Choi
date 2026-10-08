@@ -91,7 +91,7 @@ dialog p{color:#72816c;line-height:1.7;font-size:12px}
 @keyframes nudge-l{50%{transform:rotate(-25deg)}}
 @keyframes nudge-r{50%{transform:rotate(25deg)}}/* Bóng kéo: chỉ hiện các block, không có khung slot */
 .piece-card.drag-ghost,.piece-card.drag-ghost:disabled{background:none;border:0;box-shadow:none;opacity:1;filter:drop-shadow(0 10px 10px #1d36124d)}/* Block trong thẻ đang bóc tự co cho vừa khung */
-.piece-card{--card-w:174px;--card-h:136px;--pad:30px;--gap:4px}
+.piece-card{--card-w:174px;--card-h:136px;--pad:30px;--gap:1px}
 .piece-card .piece-grid{--cell:min(44px,calc((var(--card-w) - var(--pad) - var(--gap) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((var(--card-h) - var(--pad) - var(--gap) * (var(--piece-rows) - 1)) / var(--piece-rows)));grid-template-columns:repeat(var(--piece-cols),var(--cell));grid-template-rows:repeat(var(--piece-rows),var(--cell));gap:var(--gap)}
 .piece-card .piece-object{border-radius:9px}
 @media(max-width:390px){.piece-card{--card-w:158px}}/* Chế độ chỉ màu: mặt block dùng thẳng màu chủ đề */
@@ -239,7 +239,7 @@ dialog p{color:#8a6440}
 @media(prefers-reduced-motion:reduce){.land-puff{display:none}}
 /* Bỏ nhãn khu vực; thẻ đang bóc to hơn */
 .draw-area .section-label,.next-area .section-label{display:none}
-#active-card{width:224px;height:176px;--card-w:224px;--card-h:176px;--pad:24px;--gap:5px}
+#active-card{width:224px;height:176px;--card-w:224px;--card-h:176px;--pad:24px;--gap:1px}
 #active-card .piece-grid{--cell:min(68px,calc((var(--card-w) - var(--pad) - var(--gap) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((var(--card-h) - var(--pad) - var(--gap) * (var(--piece-rows) - 1)) / var(--piece-rows)))}
 @media(max-width:390px){#active-card{width:200px;height:164px;--card-w:200px;--card-h:164px}}
 /* Hover thẻ đang bóc: mèo phồng to hơn */
@@ -370,7 +370,10 @@ body.afk .cat .afk-sleepy{opacity:1;translate:0 0;transition-delay:.12s}
 .tutorial.blocking{pointer-events:auto}
 .tutorial-dim{position:absolute;inset:0;width:100%;height:100%;fill:#2b1a10a6;animation:tut-fade .3s ease both}
 .tutorial-ring{position:absolute;border-radius:16px;box-shadow:0 0 0 3px #fff6c8;animation:tut-ring 1s ease-in-out infinite alternate}
-.tutorial-hand{position:absolute;left:0;top:0;margin:-6px 0 0 -12px;font-size:44px;line-height:1;filter:drop-shadow(0 4px 4px #0006);transform-origin:30% 10%}
+/* Bàn tay ảnh (ui/skins/tutorial/): đầu ngón trỏ nằm ở (left,top) của lớp -> margin âm đúng bằng vị trí đầu ngón trong ảnh (33% rộng, 86% cao) */
+.tutorial-hand{position:absolute;left:0;top:0;width:84px;margin:-90px 0 0 -28px;line-height:0;filter:drop-shadow(0 4px 4px #0006);transform-origin:33% 86%}
+.tutorial-hand img{display:block;width:100%;height:auto}
+.tutorial-bubble[hidden]{display:none}
 body.card-dragging .tutorial-hand{visibility:hidden}
 .tutorial-bubble{position:absolute;left:50%;translate:-50% 0;display:flex;align-items:center;gap:10px;width:min(360px,calc(100% - 32px));
   padding:10px 14px 10px 10px;border-radius:20px;background:#fffaf0;color:var(--cream-ink);box-shadow:none}
@@ -462,3 +465,10 @@ body.hammer-armed .board .cell.caged{cursor:crosshair}
    người chơi. Thả ra (huỷ / gửi Hold) thì hiện lại nhẹ nhàng. Chỉ chạm để xoay (chưa kéo) thì không ẩn. */
 #active-card .piece-grid{transition:scale .18s cubic-bezier(.3,1.6,.5,1),opacity .15s ease}
 body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
+
+/* Hướng dẫn Deco chỉ có hình: bàn tay minh hoạ cử chỉ (ui/skins/tutorial/) giữa chỗ sáng + nút Skip nhỏ phía dưới */
+.deco-tour-gesture{position:absolute;width:120px;translate:-50% -50%;pointer-events:none;filter:drop-shadow(0 4px 5px #0006)}
+.deco-tour-gesture[hidden],.deco-tour-skip-float[hidden]{display:none}
+.deco-tour-gesture img{display:block;width:100%;height:auto}
+.deco-tour-skip-float{position:absolute;left:50%;bottom:150px;translate:-50% 0;padding:8px 18px;border-radius:999px;background:#fffaf0cc;pointer-events:auto}
+.deco-tour-gesture.tap{width:84px;translate:-33% -86%}

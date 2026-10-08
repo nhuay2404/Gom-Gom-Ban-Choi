@@ -37,13 +37,8 @@ export const LEVELS = [
     moves: 4, target: 60, cats: 'OG',
     board: ['......', '......', '..OO..', '......', '.GG...', '......'],
     deck: ['O', 'G', 'O', 'G'],
-    // Mở đầu: giới thiệu mục tiêu điểm và số lượt ({target}/{moves} lấy từ màn), rồi mới dạy kéo thả.
-    tutorial: [
-      { type: 'info', focus: 'score', text: 'Fill this bar to win! Reach {target} points to clear the level.' },
-      { type: 'info', focus: 'moves', text: 'You have {moves} moves. Placing a card uses 1 move, so make every move count!' },
-      { type: 'drag', anchor: 16, text: 'Drag the orange cat onto the glowing cell to make 3!' },
-      { type: 'drag', anchor: 27, text: 'Great! Now match 3 gray cats.' },
-    ],
+    // Tutorial bằng hình, chỉ MỘT lần kéo (không chữ); các lượt sau người chơi tự chơi (ô 27 gom 3 mèo xám).
+    tutorial: [{ type: 'drag', anchor: 16 }],
   },
   {
     // Tutorial cuối phần mở đầu: xoay thẻ -> mẹo gom to. Chưa có ô Hold (mở ở màn 11).
@@ -52,11 +47,8 @@ export const LEVELS = [
     board: ['...GG.', '.W....', '.G....', 'OW....', '....WW', '......'],
     deck: ['OO', 'W', 'G'],
     tutorial: [
-      { type: 'rotate', offsets: SHAPES.dominoV, text: 'This card is sideways and won\'t fit the gap. Tap the card to rotate it!' },
-      { type: 'drag', anchor: 6, text: 'A perfect fit! Drag it into the gap to match 3 orange cats.' },
-      { type: 'drag', anchor: 27, text: 'Now match 3 white cats!' },
-      { type: 'info', text: 'Tip: bigger matches score more! 3 = 30 · 4 = 50 · 5 = 80 · 6+ = 120 points.' },
-      { type: 'drag', anchor: 5, text: 'Match 3 gray cats to finish!' },
+      // Chỉ dạy xoay; còn lại tự chơi (ô 6 gom cam, 27 gom trắng, 5 gom xám).
+      { type: 'rotate', offsets: SHAPES.dominoV },
     ],
   },
   {
@@ -76,10 +68,7 @@ export const LEVELS = [
     moves: 12, target: 180, cats: 'OGW', assist: 0.45,
     board: ['......', '.X....', '..G.X.', 'X.G...', '...X.O', 'W.X..O'],
     deck: ['G'],
-    tutorial: [
-      { type: 'info', text: 'Crates block cells, so cats can\'t sit on them. Match cats next to a crate to break it!' },
-      { type: 'drag', anchor: 8, free: true, text: 'Match 3 gray cats next to the crate to break it!' },
-    ],
+    tutorial: [{ type: 'drag', anchor: 8, free: true }],
   },
   {
     name: 'Crate Garden', feature: 'Crates + tabby cat', tier: 'normal',
@@ -98,7 +87,7 @@ export const LEVELS = [
     moves: 18, target: 240, cats: 'OGWT', assist: 0.5,
     board: ['#..##..#', '...MM...', '.M.OO.M.', '.M.WW.M.', '#..MM..#', '##....##', '###..###'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'New: metal blocks! Like crates they take up a cell, but they never break. Plan around them.' }],
+    tutorial: [{ type: 'info', text: 'Metal blocks never break!' }],
   },
   {
     name: 'Iron & Oak', feature: 'Metal + crates', tier: 'hard',
@@ -120,11 +109,9 @@ export const LEVELS = [
     board: ['O....G', 'O.T...', '.W..S.', '..SW..', '...T..', 'GG...O'],
     deck: ['G', 'O'],
     tutorial: [
-      { type: 'info', focus: 'hold', text: 'New: the Hold slot! Stash a card there and take it back whenever you like. Boards get bigger from here, so it comes in handy.' },
-      { type: 'hold', text: 'Drag this gray cat into the Hold slot to save it for later.' },
-      { type: 'drag', anchor: 12, text: 'Now match 3 orange cats!' },
-      { type: 'tapHold', text: 'Tap the Hold slot to bring the gray cat back.' },
-      { type: 'drag', anchor: 32, text: 'Match 3 gray cats! You can use Hold as often as you like.' },
+      // Cất thẻ rồi lấy lại, mỗi thao tác một lần; sau đó tự chơi (ô 12 gom cam, 32 gom xám).
+      { type: 'hold' },
+      { type: 'tapHold' },
     ],
   },
   {
@@ -151,7 +138,7 @@ export const LEVELS = [
     moves: 16, target: 285, cats: 'OGWTSK', assist: 0.4,
     board: ['K..O...S', '...O.Tk.', '.WW.o.T.', 'G..##...', 'G..##.K.', '.tS...O.', '.T...S..', 'O..wK..W'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'New: cat cages! Caged cats can\'t be matched. Make a match next to a cage to break its lock and free the cat.' }],
+    tutorial: [{ type: 'info', text: 'Match next to a cage to free the cat!' }],
   },
   {
     name: 'Crate Maze', feature: 'Heart board + crates', tier: 'hard',

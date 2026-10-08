@@ -43,7 +43,7 @@ save('cards.json', {
 save('scoring.json', {
   minMatch: MATCH_SIZE, pointsByClusterSize: Object.fromEntries([3, 4, 5, 6, 7, 8].map(n => [n, clusterPoints(n)])),
   stars: '3★ if movesLeft >= ceil(moves × 0.3), 2★ if >= ceil(moves × 0.12), else 1★',
-  coinsPerNewStar: tuning.ECONOMY.COINS_PER_STAR,
+  levelReward: tuning.ECONOMY.LEVEL_REWARD, levelRewardBeyond: tuning.ECONOMY.REWARD_BEYOND,
 });
 save('cats.json', categories);
 save('deco.json', { zones: ZONES, catalog: CATALOG });
