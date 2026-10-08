@@ -69,10 +69,10 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
 <div class="wrap">
 
 <header style="display:grid;gap:12px">
-  <span class="eyebrow">Gom Gom Rotate · Thiết kế LiveOps · v0.1</span>
+  <span class="eyebrow">Gom Gom Rotate · Thiết kế LiveOps · v0.2</span>
   <h1>Gom Gom LiveOps</h1>
-  <p class="lede">Hệ thống vận hành sau ra mắt cho bản phát hành song song TikTok Mini Game và app store, mô hình hybrid (quảng cáo có thưởng + mua trong game). Gồm 4 tầng: kinh tế mới, giữ chân hằng ngày, event hằng tuần, season pass hằng tháng.</p>
-  <div class="meta"><span>08/10/2026</span><span>Owner: Lead GD</span><span>Trạng thái: draft để review</span><span>Code: Phase 1 trong repo</span></div>
+  <p class="lede">Hệ thống vận hành sau ra mắt cho bản phát hành song song TikTok Mini Game và app store, mô hình hybrid (quảng cáo có thưởng + mua trong game). Gồm 4 tầng: kinh tế mới, giữ chân hằng ngày, event hằng tuần, season pass hằng tháng. Từ v0.2, LiveOps được tách thành <b>LiveOps Kit</b>: một module dùng chung cho nhiều game, Gom Gom là game đầu tiên tích hợp.</p>
+  <div class="meta"><span>08/10/2026</span><span>Owner: Lead GD</span><span>Trạng thái: Phase 1–2 đã dev · Phase 2.5 (module hoá) kế tiếp</span><span>Nhánh: <code>Liveops</code></span></div>
 </header>
 
 <section>
@@ -83,6 +83,7 @@ pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-
     <div class="decision"><b>Event chơi được bằng màn cũ</b><span>Content chỉ có 50 màn. Mọi event và nhiệm vụ đều tính cả màn chơi lại, để người đã hết màn vẫn có việc làm.</span></div>
     <div class="decision"><b>Season gắn Deco</b><span>Phần thưởng đắt giá nhất của pass là bộ đồ 3D theo mùa và trang phục cho mèo. Tận dụng pipeline 3D + QC sẵn có.</span></div>
     <div class="decision"><b>Client-first</b><span>Phase 1–3 chạy không cần server (giờ máy + chốt chống lùi giờ). Backend (giờ server, remote config, race thật) ở Phase 4.</span></div>
+    <div class="decision"><b>Module dùng chung</b><span>LiveOps Kit không biết gì về mèo, booster hay Deco. Game nối vào qua adapter + 1 file config. Game mới chỉ cần viết adapter, không sửa core.</span></div>
     <div class="decision"><b>Blocker số 1: content</b><span>50 màn chỉ đủ vài ngày cho người chơi tích cực. Cần pipeline sinh màn trước soft launch, nếu không LiveOps chỉ là lớp vỏ.</span></div>
   </div>
 </section>
@@ -117,6 +118,78 @@ flowchart TB
   E -->|"xu, đồ Deco"| DECO
   DECO -->|"muốn đồ tiếp"| CORE
 </pre>
+</section>
+
+<section>
+  <h2>Kiến trúc module: LiveOps Kit <span class="tag t-season">Phase 2.5</span></h2>
+  <p>LiveOps được tách thành module độc lập để gắn vào nhiều game (Gom Gom trước, các game sau như Treadfire). Module chỉ quản lý những thứ chung cho mọi game; mọi thứ mang "chất" riêng của game nằm trong adapter của game đó.</p>
+<pre class="mermaid">
+flowchart TB
+  subgraph KIT["LiveOps Kit — dùng chung mọi game"]
+    CORE["Core: logic thuần, không biết game là gì<br/>wallet · lives · login · quests · streak · events · pass · offers"]
+    CFG["Config theo game<br/>tiền tệ, phần thưởng, nhiệm vụ, lịch event, pass"]
+    PORTS["Ports: clock · storage · ads · iap · analytics · remote config"]
+    UI["UI kit HTML, đổi skin bằng theme token"]
+  end
+  subgraph GAME["Gom Gom (mỗi game tự viết)"]
+    ADP["Adapter: phát tín hiệu chuẩn, nhận phần thưởng riêng"]
+  end
+  ADP -->|"level_start · level_end · collect · action"| CORE
+  CORE -->|"grant · applyBuff · resume"| ADP
+  CFG --> CORE
+  PORTS --> CORE
+  CORE --> UI
+</pre>
+
+  <h3>Cấu trúc thư mục</h3>
+  <div class="scroll"><table>
+    <tr><th>Đường dẫn</th><th>Thuộc về</th><th>Nội dung</th></tr>
+    <tr><td><code>liveops/core/</code></td><td>Kit</td><td>wallet, lives, login, quests, streak, events, pass, offers (+ test). Cấm import từ <code>game/</code></td></tr>
+    <tr><td><code>liveops/ports/</code></td><td>Kit</td><td>Interface + bản giả lập: clock, storage (nhận prefix key theo game), ads, iap, analytics</td></tr>
+    <tr><td><code>liveops/ui/</code></td><td>Kit</td><td>Popup Daily / Lives / Continue / Event / Pass, CSS dùng theme token</td></tr>
+    <tr><td><code>liveops/index.mjs</code></td><td>Kit</td><td><code>createLiveOps()</code>, <code>mountLiveOpsUI()</code></td></tr>
+    <tr><td><code>game/liveops/gomgom.config.mjs</code></td><td>Gom Gom</td><td>Số liệu hiện ở <code>tuning.mjs → LIVEOPS</code> và lịch ở <code>liveops-data.mjs</code></td></tr>
+    <tr><td><code>game/liveops/adapter.js</code></td><td>Gom Gom</td><td>Map tín hiệu ↔ booster, đồ Deco, +lượt, continue</td></tr>
+    <tr><td><code>game/liveops/theme.css</code></td><td>Gom Gom</td><td>Màu kem / nâu, font Baloo</td></tr>
+  </table></div>
+
+  <h3>Hợp đồng giữa Kit và game</h3>
+  <div class="scroll"><table>
+    <tr><th>Hướng</th><th>API</th><th>Gom Gom</th><th>Ví dụ game khác (shmup)</th></tr>
+    <tr><td>Game → Kit</td><td><code>await requestStart(levelId)</code></td><td>Chặn khi hết mạng, mở hộp mạng</td><td>Như nhau</td></tr>
+    <tr><td>Game → Kit</td><td><code>signal('level_end', { win, stars, quit })</code></td><td>Thắng / thua / bỏ ngang màn</td><td>Qua / chết ở wave</td></tr>
+    <tr><td>Game → Kit</td><td><code>signal('collect', { kind, amount })</code></td><td>Gom 5 mèo → 5 cá (Fish Festival)</td><td>Hạ 10 tank → 10 huy hiệu</td></tr>
+    <tr><td>Game → Kit</td><td><code>signal('action', { id })</code></td><td><code>pet</code>, <code>booster</code></td><td><code>skill_used</code></td></tr>
+    <tr><td>Kit → Game</td><td><code>grant({ type, id, n })</code></td><td>Booster, đồ Deco, xu (xu vẫn do ví Deco giữ)</td><td>Skin tank</td></tr>
+    <tr><td>Kit → Game</td><td><code>applyBuff({ id, value })</code></td><td>+2 lượt, booster miễn phí (chuỗi thắng)</td><td>+1 khiên</td></tr>
+    <tr><td>Kit → Game</td><td><code>resume({ kind, value })</code></td><td>Continue: +5 lượt, dọn ô</td><td>Hồi sinh</td></tr>
+  </table></div>
+  <p>Kit tự giữ: gems, mạng, token event, điểm pass, trạng thái daily / quest / streak / event. Game giữ: tiền mềm riêng (xu), vật phẩm (booster, đồ Deco), luật chơi.</p>
+
+  <h3>Hiện trạng code cần tách (đo trên nhánh <code>Liveops</code>)</h3>
+  <div class="scroll"><table>
+    <tr><th>File</th><th>Đã dùng chung được</th><th>Đang dính Gom Gom</th></tr>
+    <tr><td><code>liveops.mjs</code></td><td>Đồng hồ, chống lùi giờ, mạng, điểm danh, rương, chuỗi thắng</td><td>Mã booster viết cứng; nhiệm vụ <code>cats / crates / big4 / pet</code> (23 chỗ)</td></tr>
+    <tr><td><code>events.mjs</code></td><td>Lịch, thang, đua, sale</td><td>Cá sinh từ cụm mèo (43 chỗ)</td></tr>
+    <tr><td><code>liveops-ui.js</code></td><td>Popup, HUD</td><td>Import thẳng <code>deco-data</code>, <code>progression</code>, <code>shared.js</code></td></tr>
+    <tr><td><code>play-controller.js</code></td><td>—</td><td>~18 chỗ gọi thẳng logic LiveOps → còn 4–5 lệnh <code>requestStart</code> / <code>signal</code></td></tr>
+  </table></div>
+
+  <h3>Nơi đặt module</h3>
+  <div class="scroll"><table>
+    <tr><th>Giai đoạn</th><th>Cách đặt</th><th>Lý do</th></tr>
+    <tr><td>Bây giờ</td><td>Thư mục <code>liveops/</code> trong repo Gom Gom</td><td>Không đổi quy trình, không cần build, giữ quy tắc "không cài thư viện"</td></tr>
+    <tr><td>Khi có game thứ hai</td><td>Repo riêng <code>liveops-kit</code>, kéo vào bằng git subtree</td><td>Version rõ ràng; có thể nằm chung Core Kit dùng cho Treadfire</td></tr>
+  </table></div>
+
+  <h3>Tiêu chí hoàn thành Phase 2.5</h3>
+  <ul>
+    <li>Toàn bộ test cũ vẫn qua; hành vi Gom Gom trên trình duyệt giống hệt trước khi tách (Daily, mạng, continue, 3 event, Deco Sale).</li>
+    <li>Test ranh giới: không file nào trong <code>liveops/</code> import từ <code>game/</code>.</li>
+    <li>Contract test: một "game giả" tối giản gắn Kit và chạy được daily, quest, event, continue.</li>
+    <li>Save cũ giữ nguyên key <code>gomgom-rotate-liveops-v1</code>, người chơi cũ không mất dữ liệu.</li>
+    <li>Gắn Kit vào game mới chỉ cần adapter + config, không sửa <code>liveops/core</code>.</li>
+  </ul>
 </section>
 
 <section>
@@ -290,6 +363,8 @@ flowchart TB
     <tr><td>Cat Race dùng đối thủ máy</td><td>Trung bình</td><td>Không ghi "người thật"; chuyển race thật ở Phase 4; kiểm chính sách store</td></tr>
     <tr><td>Thanh toán TikTok chưa rõ (giá, ăn chia, G1)</td><td>Trung bình</td><td>Hỏi BD TikTok trước khi chốt giá; khởi động G1 sớm</td></tr>
     <tr><td>Sản xuất 3D mỗi season</td><td>Trung bình</td><td>Làm trước 1 season; tái dùng khung model có sẵn</td></tr>
+    <tr><td>Refactor module làm lỗi lại Phase 1–2 đã chạy</td><td>Trung bình</td><td>Giữ nguyên test cũ, thêm contract test, kiểm lại trên trình duyệt trước khi sang Phase 3</td></tr>
+    <tr><td>Core bị dính lại logic riêng của game theo thời gian</td><td>Trung bình</td><td>Test chặn import <code>liveops/</code> → <code>game/</code>; review mọi thay đổi trong <code>liveops/core</code></td></tr>
   </table></div>
 </section>
 
@@ -315,12 +390,13 @@ flowchart TB
 <section>
   <h2>Lộ trình</h2>
   <div class="scroll"><table>
-    <tr><th>Phase</th><th>Nội dung</th><th>Effort</th><th>Đo thành công</th></tr>
-    <tr><td><b>1 · Retention + kinh tế</b> (đang làm)</td><td>Gems, Lives, continue, điểm danh 7 ngày, nhiệm vụ ngày, chuỗi thắng, đồng hồ LiveOps có chốt chống lùi giờ, IAP giả lập</td><td>L</td><td>RR2 tăng so với bản không LiveOps; % phiên hết mạng ≤ 15%</td></tr>
-    <tr><td><b>2 · Event</b></td><td>Khung event theo lịch, Yarn Climb, Fish Festival, Cat Race (máy), Deco Sale, remote config</td><td>L</td><td>Tham gia ≥ 50% DAU; RR7</td></tr>
-    <tr><td><b>3 · Season</b></td><td>Season Pass 30 tầng, bộ đồ S1 Spooky Garden (4 model + trang phục mèo), Hũ cá, Starter pack</td><td>L</td><td>Premium 2–4%; ARPDAU</td></tr>
-    <tr><td><b>4 · Nền tảng</b></td><td>Backend (giờ, config, race thật), TikTok SDK (login, ads, pay), mediation store, push store</td><td>XL</td><td>Doanh thu thật; tỉ lệ lỗi giao dịch</td></tr>
-    <tr><td><b>Song song · Content</b></td><td>Pipeline sinh + kiểm màn bằng bot, 150 màn trước soft launch</td><td>L</td><td>Tỉ lệ người chơi hết màn &lt; 5% DAU</td></tr>
+    <tr><th>Phase</th><th>Nội dung</th><th>Effort</th><th>Trạng thái</th><th>Đo thành công</th></tr>
+    <tr><td><b>1 · Retention + kinh tế</b></td><td>Gems, Lives, continue, điểm danh 7 ngày, nhiệm vụ ngày, chuỗi thắng, đồng hồ LiveOps có chốt chống lùi giờ, IAP giả lập</td><td>L</td><td>✅ Đã dev</td><td>RR2 tăng so với bản không LiveOps; % phiên hết mạng ≤ 15%</td></tr>
+    <tr><td><b>2 · Event</b></td><td>Khung event theo lịch, Yarn Climb, Fish Festival, Cat Race (máy), Deco Sale</td><td>L</td><td>✅ Đã dev</td><td>Tham gia ≥ 50% DAU; RR7</td></tr>
+    <tr><td><b>2.5 · Module hoá</b></td><td>Tách LiveOps Kit (core / ports / ui), adapter + config Gom Gom, test ranh giới, contract test với game giả</td><td>L</td><td>⬜ Kế tiếp</td><td>Đủ 5 tiêu chí hoàn thành ở mục Kiến trúc module</td></tr>
+    <tr><td><b>3 · Season</b></td><td>Season Pass 30 tầng, bộ đồ S1 Spooky Garden (4 model + trang phục mèo), Hũ cá, Starter pack — xây thẳng trong Kit</td><td>L</td><td>⬜</td><td>Premium 2–4%; ARPDAU</td></tr>
+    <tr><td><b>4 · Nền tảng</b></td><td>Backend (giờ, config, race thật), TikTok SDK (login, ads, pay), mediation store, push store — chỉ thay <code>ports/</code></td><td>XL</td><td>⬜ Chờ duyệt</td><td>Doanh thu thật; tỉ lệ lỗi giao dịch</td></tr>
+    <tr><td><b>Song song · Content</b></td><td>Pipeline sinh + kiểm màn bằng bot, 150 màn trước soft launch</td><td>L</td><td>⬜</td><td>Tỉ lệ người chơi hết màn &lt; 5% DAU</td></tr>
   </table></div>
 </section>
 
