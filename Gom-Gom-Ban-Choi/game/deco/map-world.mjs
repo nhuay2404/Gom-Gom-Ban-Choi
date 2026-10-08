@@ -1414,6 +1414,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   let gloomTextStage = -1;
   // Độ tối 0..1 theo vị trí lướt: cửa sổ nhìn thấy ~t+1.5; vào stage sau thì tối dần trong ~3 màn.
   function gloomAt(t) {
+    // Hết stage (đang ở stage cuối) thì không còn gì để che.
+    if ((curStage + 1) * STAGE_SIZE >= levelCount) return 0;
     const edge = (curStage + 1) * STAGE_SIZE - .5;
     return smooth((t + 1.5 - (edge - 1.5)) / 3);
   }
