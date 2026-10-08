@@ -117,6 +117,74 @@ function tuft(m, rnd) { // cụm cỏ xanh: vài mũi nhọn ngả nghiêng
   return t;
 }
 
+// ---------- Con đường phía trước vườn ----------
+// Con đường dài chạy ngang (trục x) song song hàng rào vườn, đối diện vườn: vệ cỏ, vỉa hè gạch, lề đường (bó vỉa), mặt đường nhựa với vạch
+// kẻ đứt + vạch mép, vạch qua đường trước cổng vườn, cây đèn đường, ghế, chậu cây ven vỉa hè. Toàn bộ tĩnh (mergeStatic).
+// Bề rộng từ gần vườn ra xa (m): vệ cỏ GAP, vỉa hè SIDEWALK, lề CURB, đường ROAD, lề, vỉa hè.
+const ROAD = { gap: 1.1, sidewalk: 1.5, curb: .24, road: 3.8, length: 240, lampEvery: 9 };
+export const ROAD_BAND = ROAD.gap + ROAD.sidewalk * 2 + ROAD.curb * 2 + ROAD.road;
+const LAMP_GLOW = { day: '#ffe9b0', dusk: '#ffd08a', night: '#fff2b8' };
+// zNear: mặt ngoài hàng rào vườn phía trước (z lớn nhất của khung khu nhà). Trả về { group, lampMat }.
+function buildRoad(zNear) {
+  const group_ = group();
+  const m = {
+    asphalt: mat('#7d8494'), curb: mat('#f4ecd8'), paver: mat('#e8cfa6'), paint: mat('#fff7e0'), pole: mat('#4a5a5c'), bench: mat('#c8925a'),
+    plant: mat('#5fb548'), pot: mat('#e07a50'),
+  };
+  const lampMat = new THREE.MeshBasicMaterial({ color: LAMP_GLOW.day, fog: true });
+  const flat = node => { node.userData.noOutline = true; node.castShadow = false; return node; };
+  const slab = (x0, x1, z0, z1, y0, y1, color, noOutline = false) => {
+    const node = mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), color);
+    node.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    return noOutline ? flat(node) : node;
+  };
+  const X0 = -ROAD.length / 2, X1 = ROAD.length / 2, base = -.31;
+  // Mốc z: vỉa hè gần, lề gần, đường, lề xa, vỉa hè xa.
+  const zS0 = zNear + ROAD.gap, zS1 = zS0 + ROAD.sidewalk, zC1 = zS1 + ROAD.curb, zR1 = zC1 + ROAD.road, zC2 = zR1 + ROAD.curb, zS2 = zC2 + ROAD.sidewalk;
+  group_.add(
+    slab(X0, X1, zS0, zS1, base, base + .1, m.paver),
+    slab(X0, X1, zS1, zC1, base, base + .16, m.curb),
+    slab(X0, X1, zC1, zR1, base, base + .03, m.asphalt),
+    slab(X0, X1, zR1, zC2, base, base + .16, m.curb),
+    slab(X0, X1, zC2, zS2, base, base + .1, m.paver),
+  );
+  // Khe gạch vỉa hè: vạch mảnh ngang mỗi 1.2 m cho đỡ trơn.
+  const mid = (zC1 + zR1) / 2, topRoad = base + .03;
+  for (let x = X0 + 1; x < X1; x += 1.2) for (const [a, b] of [[zS0, zS1], [zC2, zS2]]) group_.add(slab(x, x + .04, a, b, base + .1, base + .104, '#cdb487', true));
+  // Vạch giữa đường (đứt), vạch mép đường liền hai bên.
+  for (let x = X0; x < X1; x += 2.4) group_.add(slab(x, x + 1.2, mid - .07, mid + .07, topRoad, topRoad + .006, m.paint, true));
+  for (const z of [zC1 + .22, zR1 - .22]) group_.add(slab(X0, X1, z - .04, z + .04, topRoad, topRoad + .006, m.paint, true));
+  // Vạch qua đường (ngựa vằn) thẳng cổng vườn.
+  const crossX = -1.6;
+  for (let k = -3; k <= 3; k++) group_.add(slab(crossX + k * .5 - .17, crossX + k * .5 + .17, zC1 + .4, zR1 - .4, topRoad, topRoad + .008, m.paint, true));
+  // Cây đèn đường: cột + tay đỡ hướng ra đường + chao đèn sáng. Đặt trên vỉa hè gần vườn, cách vạch qua đường.
+  const lampZ = (zS0 + zS1) / 2 + .1;
+  for (let x = X0 + 4; x < X1; x += ROAD.lampEvery) {
+    if (Math.abs(x - crossX) < 2.5) continue;
+    const lamp = group();
+    lamp.add(at(cyl(.08, .11, .22, m.pole, 8), 0, .1 + base + .0, 0), at(cyl(.045, .06, 2.9, m.pole, 8), 0, 1.55 + base, 0));
+    const arm = at(slab(0, .7, -.035, .035, 0, .07, m.pole), .35, 2.98 + base, 0);
+    lamp.add(arm);
+    const head = mesh(new THREE.SphereGeometry(.17, 10, 8), lampMat); head.castShadow = false;
+    head.scale.set(1.2, .8, 1.2);
+    lamp.add(at(head, .72, 2.93 + base, 0), at(cone(.24, .16, m.pole, 10), .72, 3.06 + base, 0));
+    lamp.position.set(x, 0, lampZ); lamp.rotation.y = Math.PI / 2; // tay đỡ chĩa ra phía đường (+z)
+    group_.add(lamp);
+  }
+  // Ghế dài và chậu cây xen giữa các cây đèn.
+  for (let x = X0 + 8.5; x < X1; x += ROAD.lampEvery * 2) {
+    if (Math.abs(x - crossX) < 3) continue;
+    const bench = group();
+    bench.add(slab(-.55, .55, -.2, .2, .22, .28, m.bench), slab(-.55, .55, -.22, -.17, .28, .62, m.bench), slab(-.5, -.42, -.18, .18, 0, .22, m.pole), slab(.42, .5, -.18, .18, 0, .22, m.pole));
+    bench.position.set(x, base + .1, lampZ + .15); group_.add(bench);
+    const planter = group();
+    planter.add(at(cyl(.2, .16, .32, m.pot, 10), 0, .16, 0), at(ball(.3, m.plant), 0, .6, 0));
+    planter.position.set(x + ROAD.lampEvery, base + .1, lampZ + .15); group_.add(planter);
+  }
+  mergeStatic(group_);
+  return { group: group_, lampMat, zFrom: zNear + ROAD.gap * .4, zTo: zS2 + .8 };
+}
+
 // bounds: khung khu nhà { x0, x1, z0, z1 } (toạ độ cảnh, đã cộng lề) — vật rải ngoài khung này.
 export function buildMeadow(bounds) {
   const root = new THREE.Group();
@@ -133,8 +201,12 @@ export function buildMeadow(bounds) {
     grass: mat('#5fb548'), petal: mat('#ffffff'), petalPink: mat('#ff9ec0'), heart: mat('#ffd23f'),
     cap: mat('#f2605a'), capPink: mat('#ff9ec0'), stem: mat('#fff1dc'),
   };
+  const road = buildRoad(bounds.z1 + .3);
+  root.add(road.group);
   const props = group();
-  const free = (x, z, margin) => x < bounds.x0 - margin || x > bounds.x1 + margin || z < bounds.z0 - margin || z > bounds.z1 + margin;
+  // Vật rải ngoài khung khu nhà và ngoài dải đường (cây không mọc giữa đường).
+  const free = (x, z, margin) => (x < bounds.x0 - margin || x > bounds.x1 + margin || z < bounds.z0 - margin || z > bounds.z1 + margin)
+    && !(z > road.zFrom - margin && z < road.zTo + margin);
   const cx = (bounds.x0 + bounds.x1) / 2, cz = (bounds.z0 + bounds.z1) / 2;
   const scatter = (count, minR, maxR, margin, make) => {
     for (let placed = 0, tries = 0; placed < count && tries < count * 40; tries++) {
@@ -160,6 +232,7 @@ export function buildMeadow(bounds) {
     groundMat.color.set(l.ground);
     for (const key of ['wood', 'leaf', 'leafDark', 'pine', 'bush', 'rock']) mats[key].color.set(l[key]);
     fog.color.set(l.fog); background.set(l.fog);
+    road.lampMat.color.set(LAMP_GLOW[mode] || LAMP_GLOW.day);
   }
   return { root, fog, background, setAmbient };
 }
