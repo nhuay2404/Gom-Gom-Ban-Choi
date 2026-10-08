@@ -84,7 +84,7 @@ function canvasTexture(key, draw, padX = 0) {
 }
 // Lớp mặt rộng hơn thân hai bên: ria mép (toon) chìa ra ngoài thân, nằm đè lên nét viền như tranh Cats & Soup.
 const FACE_PAD = .12;
-// Mặt + mắt 3D vẽ theo ảnh mèo 2D trong Figma (ui/skins/cats/<giống>-calm.png): mắt tròn to có vòng màu + 2 đốm sáng,
+// Mặt + mắt 3D vẽ theo ảnh mèo 2D trong Figma (ui/shared/img/cats/<giống>-calm.png): mắt tròn to có vòng màu + 2 đốm sáng,
 // vằn trán / vằn má, mõm sáng (tuxedo: mảng trắng chữ V ngược, Xiêm: mặt nạ nâu), má hồng, miệng "ω".
 // Toạ độ SVG: khung mặt 100 × 90 (đúng tỉ lệ tấm dán W × H*.94); lớp mặt rộng thêm FACE_PAD mỗi bên (ria / vằn má chìa ra).
 // Màu lấy mẫu từ ảnh Figma (cùng bộ với HANG_COLORS trong cat-art.mjs); thân 3D cũng dùng các màu này (catLook).

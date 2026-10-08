@@ -14,7 +14,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:0 0;border:0;-webkit
 button:not(:disabled):active{filter:brightness(.96)}
 button:focus-visible{outline:3px solid #075f60;outline-offset:3px}
 button:disabled{opacity:.43;cursor:default}
-.shell{width:var(--frame-w);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#a8d77a url('./skins/farm-pop/background-pink.png') 50%/100% 100% no-repeat}
+.shell{width:var(--frame-w);min-height:100dvh;margin:auto;padding:max(9px,env(safe-area-inset-top)) 25px max(13px,env(safe-area-inset-bottom));background:#a8d77a url('../shared/img/farm-pop/background-pink.png') 50%/100% 100% no-repeat}
 @media(width>=600px){.shell{box-shadow:none}}
 .topbar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:12px;height:63px;margin-bottom:6px}
 .topbar h1{margin:0;text-align:center;color:#fffdee;font-size:31px;font-weight:900;letter-spacing:-1.6px;line-height:.9;text-shadow:0 2px #46783348;transform:rotate(-5deg)}
@@ -32,7 +32,7 @@ button:disabled{opacity:.43;cursor:default}
 .cell.locked{cursor:default;border-color:var(--card-edge);background:var(--card-fill);box-shadow:0 2px #45632d35,inset 0 1px #fffdf6}
 .cell.locked{background:color-mix(in srgb,var(--group-color) 42%,var(--card-fill));border-color:color-mix(in srgb,var(--group-color) 55%,var(--card-edge))}
 .tile-art{display:block;width:92%;aspect-ratio:1;pointer-events:none}
-.farm-sprite{background:url('./skins/farm-pop/decor-sprites.png') var(--sprite-x) var(--sprite-y)/800% 600% no-repeat;-webkit-mask-image:url('./skins/farm-pop/decor-sprites-mask.png');mask-image:url('./skins/farm-pop/decor-sprites-mask.png');-webkit-mask-size:800% 600%;mask-size:800% 600%;-webkit-mask-source-type:luminance;mask-mode:luminance;-webkit-mask-position:var(--sprite-x) var(--sprite-y);mask-position:var(--sprite-x) var(--sprite-y);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.farm-sprite{background:url('../shared/img/farm-pop/decor-sprites.png') var(--sprite-x) var(--sprite-y)/800% 600% no-repeat;-webkit-mask-image:url('../shared/img/farm-pop/decor-sprites-mask.png');mask-image:url('../shared/img/farm-pop/decor-sprites-mask.png');-webkit-mask-size:800% 600%;mask-size:800% 600%;-webkit-mask-source-type:luminance;mask-mode:luminance;-webkit-mask-position:var(--sprite-x) var(--sprite-y);mask-position:var(--sprite-x) var(--sprite-y);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .message{min-height:34px;margin:8px 0 4px;text-align:center;font-size:11px;font-weight:800;line-height:1.35;color:#29421c}
 .message.error{color:#a52a1a}
 .draw-area{display:grid;grid-template-columns:1fr 112px;align-items:end;gap:24px;margin-top:6px;padding:0 12px}
@@ -202,7 +202,7 @@ dialog p{color:#8a6440}
 .hold-slot.drop-target{transform:scale(1.12);box-shadow:inset 0 5px 8px #b7874266,0 0 0 3px #3fbf8f,0 0 18px #9ff0d4;opacity:1}
 .hold-slot.drop-blocked{transform:scale(1.04);box-shadow:inset 0 5px 8px #b7874266,0 0 0 3px #d9534f}/* Gợi ý xoay: 2 mũi tên PNG cong nằm trong khung thẻ đang bóc (trên chỉ phải, dưới xoay 180°) */
 .card-rotator{position:relative}
-.rotate-hint{top:auto;bottom:auto;left:50%;right:auto;width:64%;height:auto;aspect-ratio:2/1;margin:0;border-radius:0;background:url('./skins/farm-pop/rotate-arrow.png') center/contain no-repeat;box-shadow:none;z-index:2;opacity:0;transition:opacity .2s}
+.rotate-hint{top:auto;bottom:auto;left:50%;right:auto;width:64%;height:auto;aspect-ratio:2/1;margin:0;border-radius:0;background:url('../shared/img/farm-pop/rotate-arrow.png') center/contain no-repeat;box-shadow:none;z-index:2;opacity:0;transition:opacity .2s}
 .rotate-hint.left{top:3px;left:50%;right:auto;transform:translateX(-50%)}
 .rotate-hint.right{bottom:3px;left:50%;right:auto;transform:translateX(-50%) rotate(180deg)}
 .can-rotate .rotate-hint{opacity:.55}
@@ -370,7 +370,7 @@ body.afk .cat .afk-sleepy{opacity:1;translate:0 0;transition-delay:.12s}
 .tutorial.blocking{pointer-events:auto}
 .tutorial-dim{position:absolute;inset:0;width:100%;height:100%;fill:#2b1a10a6;animation:tut-fade .3s ease both}
 .tutorial-ring{position:absolute;border-radius:16px;box-shadow:0 0 0 3px #fff6c8;animation:tut-ring 1s ease-in-out infinite alternate}
-/* Bàn tay ảnh (ui/skins/tutorial/): đầu ngón trỏ nằm ở (left,top) của lớp -> margin âm đúng bằng vị trí đầu ngón trong ảnh (33% rộng, 86% cao) */
+/* Bàn tay ảnh (ui/shared/img/tutorial/): đầu ngón trỏ nằm ở (left,top) của lớp -> margin âm đúng bằng vị trí đầu ngón trong ảnh (33% rộng, 86% cao) */
 .tutorial-hand{position:absolute;left:0;top:0;width:84px;margin:-90px 0 0 -28px;line-height:0;filter:drop-shadow(0 4px 4px #0006);transform-origin:33% 86%}
 .tutorial-hand img{display:block;width:100%;height:auto}
 .tutorial-bubble[hidden]{display:none}
@@ -466,7 +466,7 @@ body.hammer-armed .board .cell.caged{cursor:crosshair}
 #active-card .piece-grid{transition:scale .18s cubic-bezier(.3,1.6,.5,1),opacity .15s ease}
 body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 
-/* Hướng dẫn Deco chỉ có hình: bàn tay minh hoạ cử chỉ (ui/skins/tutorial/) giữa chỗ sáng + nút Skip nhỏ phía dưới */
+/* Hướng dẫn Deco chỉ có hình: bàn tay minh hoạ cử chỉ (ui/shared/img/tutorial/) giữa chỗ sáng + nút Skip nhỏ phía dưới */
 .deco-tour-gesture{position:absolute;width:120px;translate:-50% -50%;pointer-events:none;filter:drop-shadow(0 4px 5px #0006)}
 .deco-tour-gesture[hidden],.deco-tour-skip-float[hidden]{display:none}
 .deco-tour-gesture img{display:block;width:100%;height:auto}

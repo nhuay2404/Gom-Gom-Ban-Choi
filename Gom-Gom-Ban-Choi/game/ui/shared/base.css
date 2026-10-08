@@ -1,0 +1,38 @@
+/* ===== UI dọc (hướng A · Sân vườn xuân, bố cục L2 · Dock ngón cái, điều hướng N2 · thanh nổi) =====
+   File này nạp sau gom-gom.css và đè lên bố cục cũ; animation mèo/bàn giữ nguyên. */
+:root{--leaf:#5f9b3a;--leaf-deep:#3f7326;--petal:#f4a3b6;--wood:#e4b574;--wood-deep:#b9854a;--danger:#d9442f;
+  --ui-font:Nunito,"Avenir Next",ui-rounded,system-ui,-apple-system,sans-serif;--display:"Baloo 2",Nunito,ui-rounded,system-ui,sans-serif}
+/* Bảng màu phẳng: nút màu trơn (không gradient), bão hoà vừa; *-deep = viền đáy (bóng cứng) của nút */
+:root{--panel:#fff3d1;--sky:#cdeaff;--map-bg:#bfe4a0;
+  --green:#4fb34a;--green-deep:#2f7d2c;--pink:#ec5b8c;--pink-deep:#b3386a;--blue:#3b8fe0;--blue-deep:#2461a8;
+  --orange:#f07b3c;--orange-deep:#b4521f;--teal:#27a695;--teal-deep:#19756a;--purple:#8c4fd0;--purple-deep:#5a2c8e;
+  --gold:#f5b93c;--red:#e5483a;--red-deep:#9e2a20;--grey:#b3aa99}
+body{font-family:var(--ui-font)}
+/* ---------- Màn menu (Home / Deco / Shop) ---------- */
+.screen{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:max(14px,env(safe-area-inset-top)) 18px calc(108px + env(safe-area-inset-bottom));
+  background:#a8d77a url('./img/farm-pop/background-pink.png') 50% 0/cover no-repeat}
+.screen>*{width:min(420px,100%);flex:none}
+.screen-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.screen-title{margin:0;font-family:var(--display);font-size:30px;font-weight:800;color:#fffaf0;text-shadow:0 2px 0 #6fa84a}
+.wallet{display:flex;gap:8px}
+.pill-stat{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 8px;border-radius:999px;font-weight:900;font-size:15px;color:var(--cream-ink);
+  background:var(--panel);box-shadow:none;font-variant-numeric:tabular-nums}
+.ico-coin{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none;background:var(--gold);box-shadow:inset 0 0 0 2px #e9a93a}
+.toast{position:fixed;z-index:60;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));translate:-50% 0;padding:9px 18px;border-radius:999px;
+  font-weight:900;font-size:14px;color:#fff;background:#5b3a26e6;box-shadow:none;pointer-events:none;white-space:nowrap}
+/* Dev: hộp kết quả QC model 3D (qc.mjs) */
+.qc-dialog{width:min(560px,calc(100% - 24px));max-height:80vh;overflow:auto}
+.qc-dialog h2{font-size:18px;margin:4px 0 10px}
+.qc-dialog ul{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
+.qc-dialog li.error{color:#c0392b}
+.qc-dialog li.warn{color:#9a6a1a}
+.screen-title{color:#fffaf0;text-shadow:0 2px 0 #4f8a34,0 0 6px #3f6e2a99;-webkit-text-stroke:1px #4f8a34;paint-order:stroke fill}
+/* Thanh tab chung nằm cao hơn thanh cũ (cách đáy 70/393 bề ngang + cao 64): nới đệm đáy màn Deco / Shop / Map để nội dung
+   cuộn không bị che; nút "Home" cũ ở đáy Map thừa vì thanh tab đã có Home. */
+.screen:not(.home){padding-bottom:calc(var(--u) * 146 + env(safe-area-inset-bottom))}
+/* Chừa dưới theo vị trí mới của thanh điều hướng (cao 64u, cách đáy 16u) */
+.screen,.screen:not(.home){padding-bottom:calc(var(--u) * 92 + env(safe-area-inset-bottom))}
+/* Chấm đỏ báo còn mèo chưa nhận ở tab Home (menu-controller.js refreshClaimDot) */
+.tab{position:relative}
+.tab.has-dot::after{content:'';position:absolute;top:5px;left:calc(50% + 6px);width:11px;height:11px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #fffaf0}

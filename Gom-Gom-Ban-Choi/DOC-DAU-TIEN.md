@@ -58,13 +58,16 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
 | `favicon.svg` | Icon tab trình duyệt |
 | **`ui/`** | **Thiết kế giao diện 2D** |
-| `ui/gom-gom.css` | Giao diện và hiệu ứng: theme vàng kem, thẻ, mũi tên xoay, anim |
-| `ui/board-grid.css` | Lưới bàn chơi (số cột/hàng theo màn, nền theo hình bàn) |
-| `ui/ui-portrait.css` | Bố cục màn hình dọc (Home, Map, Shop, thanh tab) |
+| `ui/shared/` | Dùng chung các hub: `base.css` (biến màu, khung màn hình, toast), `nav.css` (thanh tab), `wallet.css` (hàng ví), `settings.css`, `loading.css`, `tutorial.css`; ảnh `img/` (mèo `cats/`, tay hướng dẫn `tutorial/`, `farm-pop/`: nền hồng, mũi tên xoay, sprite trang trí) |
+| `ui/home/` | Hub Home: lớp nút trên bản đồ (ví, Daily, Starter, Play), phòng mèo, cảnh đêm; ảnh `img/` |
+| `ui/map/` | Hub Map: đường, nút màn, bản đồ 3D, màn nhận mèo; ảnh `img/` |
+| `ui/shop/` | Hub Shop: gói xu, booster, Shop → Decoration, popup xem thử; ảnh `img/` |
+| `ui/deco/` | Hub Deco: thanh chọn khu, thẻ đồ, bảng đổi món, ghim NEW |
+| `ui/play/` | Màn chơi: `base.css` (theme, thẻ, anim mèo), `board-grid.css` (lưới bàn), `layout.css` (bố cục dọc, booster, dock), `skin.css` (skin Figma: HUD, bàn, dock); ảnh `img/` |
+| `ui/result/` | Bảng kết quả thắng / thua; ảnh `img/` |
 | `ui/cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
 | `ui/board-art.mjs` | Hình SVG thùng gỗ / tấm kim loại trên bàn |
 | `ui/sound.mjs` | Âm thanh |
-| `ui/skins/farm-pop/` | Ảnh skin: `background-pink.png` (nền), `rotate-arrow.png` (mũi tên xoay), `decor-sprites.png` + `decor-sprites-mask.png` (sprite trang trí) |
 | **`gameplay/`** | **Luật và dữ liệu chơi (thuần logic, có test)** |
 | `gameplay/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
 | `gameplay/board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |

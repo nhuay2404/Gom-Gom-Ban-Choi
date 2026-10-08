@@ -9,10 +9,21 @@
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@700;800;900&display=swap">
-  <link rel="stylesheet" href="./ui/gom-gom.css">
-  <link rel="stylesheet" href="./ui/board-grid.css">
-  <link rel="stylesheet" href="./ui/ui-portrait.css">
-  <link rel="stylesheet" href="./ui/skin-gameplay.css">
+  <link rel="stylesheet" href="./ui/play/base.css">
+  <link rel="stylesheet" href="./ui/play/board-grid.css">
+  <link rel="stylesheet" href="./ui/shared/base.css">
+  <link rel="stylesheet" href="./ui/shared/nav.css">
+  <link rel="stylesheet" href="./ui/shared/settings.css">
+  <link rel="stylesheet" href="./ui/shared/loading.css">
+  <link rel="stylesheet" href="./ui/home/home.css">
+  <link rel="stylesheet" href="./ui/map/map.css">
+  <link rel="stylesheet" href="./ui/shop/shop.css">
+  <link rel="stylesheet" href="./ui/shared/wallet.css">
+  <link rel="stylesheet" href="./ui/deco/deco.css">
+  <link rel="stylesheet" href="./ui/play/layout.css">
+  <link rel="stylesheet" href="./ui/play/skin.css">
+  <link rel="stylesheet" href="./ui/result/result.css">
+  <link rel="stylesheet" href="./ui/shared/tutorial.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./app/main.js"></script>
 </head>
@@ -52,7 +63,7 @@
   <!-- ===== Màn chơi (bố cục L2: HUD gọn, bàn lớn, dock ngón cái) ===== -->
   <main class="shell">
     <!-- HUD theo Figma (frame Gameplay 23:442): thanh điểm trái, đầu mèo Moves giữa, nút cài đặt phải (menu: Home / chơi lại /
-         âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (ui/skins/figma-game/), số do game viết. -->
+         âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (ui/play/img/), số do game viết. -->
     <section class="hud fg-hud" aria-label="Game info">
       <!-- Bảng HUD theo Figma (image 107, đã bỏ ô Goal + 3 sao): badge Level, ô Move rộng, thanh điểm (điểm / mục tiêu) -->
       <div class="fg-panel">
@@ -201,14 +212,14 @@
     </div>
     <button class="shop-starter soon" aria-label="Starter pack: coins, a cozy rug and 5 boosters, $1.99 (coming soon)"></button>
     <div id="shop-boosters" class="booster-row">
-      <button class="booster" data-buy="hammer"><img src="./ui/skins/figma-game/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
-      <button class="booster" data-buy="swap"><img src="./ui/skins/figma-game/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
-      <button class="booster" data-buy="moves"><img src="./ui/skins/figma-game/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
+      <button class="booster" data-buy="hammer"><img src="./ui/play/img/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
+      <button class="booster" data-buy="swap"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
+      <button class="booster" data-buy="moves"><img src="./ui/play/img/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
     </div>
     <div class="coin-list">
-      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/skins/figma-shop/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
     </div>
     <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
@@ -256,7 +267,7 @@
       <rect width="100%" height="100%" mask="url(#tutorial-mask)"/>
     </svg>
     <div id="tutorial-rings"></div>
-    <div id="tutorial-hand" class="tutorial-hand" aria-hidden="true"><img id="tutorial-hand-img" src="./ui/skins/tutorial/hand-tap.png" alt=""></div>
+    <div id="tutorial-hand" class="tutorial-hand" aria-hidden="true"><img id="tutorial-hand-img" src="./ui/shared/img/tutorial/hand-tap.png" alt=""></div>
     <div id="tutorial-bubble" class="tutorial-bubble" role="status">
       <span id="tutorial-avatar" class="tutorial-avatar" aria-hidden="true"></span>
       <p id="tutorial-text"></p>

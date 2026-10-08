@@ -1,0 +1,95 @@
+/* Phòng mèo: tường kem, cửa sổ vòm, sàn gỗ, thảm hồng; mèo ngồi trên thảm */
+.room{position:relative;aspect-ratio:1/.86;border-radius:30px;overflow:hidden;flex:none;
+  background:#fff4da;box-shadow:inset 0 0 0 6px #fff8e4}
+.room.small{aspect-ratio:1/.62}
+.room::after{content:"";position:absolute;inset:60% 0 0;background:var(--wood);pointer-events:none;z-index:0}
+.room-rug,.room-cats{z-index:1}
+.room-window{position:absolute;left:50%;top:9%;width:30%;aspect-ratio:1/1.1;translate:-50% 0;border-radius:999px 999px 12px 12px;
+  background:var(--sky);border:6px solid #f6d88f;box-shadow:none}
+.room-window::before{content:"";position:absolute;inset:0 calc(50% - 2px);background:#f6d88f}
+.room-frame{position:absolute;left:10%;top:16%;width:17%;aspect-ratio:1/1.2;border-radius:8px;background:#f4a3b6;border:5px solid #e0b36a;rotate:-4deg}
+.room-plant{position:absolute;right:9%;top:36%;width:15%;aspect-ratio:1/1.5}
+.room-plant::before{content:"";position:absolute;left:10%;right:10%;bottom:0;height:38%;border-radius:4px 4px 12px 12px;background:#d9774a}
+.room-plant::after{content:"";position:absolute;left:0;right:0;top:0;height:66%;border-radius:50% 50% 45% 45%;background:var(--green)}
+.room-rug{position:absolute;left:12%;right:12%;bottom:8%;height:22%;border-radius:50%;background:#f7b3c4;box-shadow:none}
+.room-cats{position:absolute;left:14%;right:14%;bottom:14%;display:flex;justify-content:center;align-items:flex-end;gap:2%}
+.room-cat{position:relative;width:30%;aspect-ratio:1;border:0;padding:0;background:none;cursor:pointer}
+.room-cat .cat{width:100%;height:100%}
+.room.small .room-cat{width:24%}
+.room-cat.petted .cat .calm,.room-cat.petted .cat .blush,.room-cat.petted .cat .afk{display:none}
+.room-cat.petted .cat .joy{visibility:visible}
+@media(prefers-reduced-motion:no-preference){.room-cat.petted .cat{animation:pet-hop .5s cubic-bezier(.3,1.5,.5,1) 2}}
+.room .pet-heart{z-index:3}
+
+.level-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 18px 12px;border-radius:26px;
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
+.level-card-label{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:20px;font-weight:800;color:var(--cream-ink)}
+.pill-button.big{width:100%;font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:1px;padding:12px 0;text-transform:uppercase}
+@media(prefers-reduced-motion:no-preference){.pill-button.big{animation:play-breathe 1.8s ease-in-out infinite}}
+@keyframes play-breathe{50%{scale:1.03}}
+.text-button{font-weight:900;font-size:14px;color:var(--leaf-deep);text-decoration:underline;text-underline-offset:3px;padding:4px 10px}
+/* ===== Phòng 3D (Home + Deco) ===== */
+.room.is-3d{background:#ffe9c4;touch-action:none}
+.room.is-3d::after{display:none}
+.room-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.room-canvas:active{cursor:grabbing}
+.room.deco-view{aspect-ratio:1/.66}
+.room-hint{position:absolute;left:50%;bottom:10px;translate:-50% 0;z-index:2;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:900;
+  color:var(--cream-ink);background:#fff8e4d9;box-shadow:none;pointer-events:none;white-space:nowrap}
+.room:not(.is-3d) .room-hint{display:none}
+/* ===== Home hub = bản đồ màn: lớp nút theo Figma (file UI, frame "Home" 10:5, khung 393 × 852) đè lên cảnh bản đồ =====
+   Mọi toạ độ lấy đúng từ khung thiết kế, nhân với --u (= bề ngang khung / 393); hàng ví + cột liveops neo theo mép trên. */
+.round-button.small{width:40px;height:40px;font-size:18px}
+.map>.fh-layer{position:absolute;z-index:3;top:0;bottom:0;left:50%;translate:-50% 0;
+  width:var(--frame-w);max-width:none;pointer-events:none}
+.map>.fh-layer>.wallet-hud{left:0;top:calc(18 * var(--u) + env(safe-area-inset-top));width:calc(393 * var(--u));height:calc(50 * var(--u));background:none}
+.fh-layer>*{position:absolute;pointer-events:auto;padding:0;border:0;background:center/100% 100% no-repeat}
+.fh-layer button:active{translate:0 calc(2 * var(--u))}
+/* Hàng ví (pill có số in sẵn đã xoá; game tự viết số lên đúng chỗ) */
+.fh-pill b{position:absolute;top:0;bottom:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;
+  font-size:calc(17.5 * var(--u));line-height:1;color:#6b3329;white-space:nowrap}
+.fh-coins{left:calc(6 * var(--u));top:calc(56 * var(--u));width:calc(144 * var(--u));height:calc(48 * var(--u));background-image:url('./img/pill-coins.png')}
+.fh-coins b{left:calc(56 * var(--u));width:calc(56 * var(--u))}
+.fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./img/pill-gems.png')}
+.fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
+.fh-energy{left:calc(243 * var(--u));top:calc(58 * var(--u));width:calc(145 * var(--u));height:calc(48 * var(--u));background-image:url('./img/pill-energy.png')}
+/* Cột trái: Daily, Starter Pack */
+.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
+.fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-starter.png')}
+/* Feedback: dưới Starter Pack, vẽ bằng CSS theo kiểu hai nút ảnh Figma (ô kem bo góc viền nâu, icon + chữ nâu đậm); mở form góp ý.
+   Cỡ = phần ô nhìn thấy trong ảnh Daily / Starter (ảnh 60u có lề trong suốt + chỗ cho chấm "!": ô thật ~53 × 55u, lùi vào ~4u),
+   cách Starter đúng bằng khoảng Daily → Starter (~8.5u). */
+.fh-feedback{left:calc(21 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(253.5 * var(--u));width:calc(53 * var(--u));height:calc(55 * var(--u));box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));text-decoration:none;
+  background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.8 * var(--u)) solid #6b3329!important;border-radius:calc(12 * var(--u));
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff,0 calc(2.5 * var(--u)) 0 #6b332955}
+.fh-feedback svg{width:calc(25 * var(--u));height:calc(25 * var(--u));fill:#ff8fb0;stroke:#6b3329;stroke-width:1.8;stroke-linejoin:round;color:#fff}
+.fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
+.fh-feedback:active{translate:0 calc(2 * var(--u))}
+/* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
+.fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
+.fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}
+.fh-round::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;width:calc(49.68 * var(--u));height:calc(49.68 * var(--u));border-radius:50%;background:#6a3229}
+.fh-round::after{content:'';position:absolute;inset:0;background:center/100% 100% no-repeat}
+.fh-gear::after{background-image:url('./img/btn-settings.png')}
+.fh-settings .settings-menu{top:calc(100% + 6px)}
+.fh-alert{position:absolute;top:calc(-2 * var(--u));right:calc(6 * var(--u));width:calc(17 * var(--u));height:calc(17 * var(--u));display:grid;place-items:center;border-radius:50%;
+  font-style:normal;font-size:calc(12 * var(--u));font-weight:900;color:#fff;background:#f03a4f;border:calc(1.5 * var(--u)) solid #fff}
+.room-canvas.carrying{cursor:grabbing}
+/* ---------- Khu mèo ban đêm (nút mặt trời / mặt trăng ở Home): trời tối màu trơn + vài ngôi sao lấp lánh ---------- */
+.room.is-3d.night,.room.is-3d.night[data-zone="garden"]{background:#1e2747}
+.room.is-3d.night::before{content:"✦      ·     ✧        ·      ✦     ·       ✧     ·    ✦";
+  position:absolute;left:8%;right:8%;top:calc(max(14px,env(safe-area-inset-top)) + 150px);z-index:0;white-space:pre;text-align:center;
+  font-size:14px;line-height:1;color:#fff6c8;opacity:.8;pointer-events:none}
+.room.deco-view.is-3d.night::before{top:14px}
+@media(prefers-reduced-motion:no-preference){.room.is-3d.night::before{animation:night-twinkle 2.6s ease-in-out infinite alternate}}
+@keyframes night-twinkle{to{opacity:.45}}
+/* Ký hiệu nổi trên đầu mèo: ♪ (kêu meo), … (bị làm phiền), 💢 (cáu vì bị chạm quá nhiều) */
+.pet-heart.symbol{color:#6b4523;font-weight:900}
+.pet-heart.angry{font-size:30px!important}
+/* Home: cột nút liveops nhích lên sát hàng ví (bản Figma chừa trống phía trên nhiều) */
+.fh-layer>.fh-btn{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
+/* PLAY ở Home hub (ảnh nút Figma 244 × 67): giữa khung, ngay trên thanh tab */
+.fh-layer>.fh-play{left:calc(76 * var(--u));bottom:calc(96 * var(--u) + env(safe-area-inset-bottom));width:calc(244 * var(--u));height:calc(67 * var(--u));
+  background-image:url('./img/play-button.png')}
+@media(prefers-reduced-motion:no-preference){.fh-layer>.fh-play{animation:play-breathe 1.8s ease-in-out infinite}}

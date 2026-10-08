@@ -10,7 +10,7 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 
 | Thư mục | Nội dung | Tiền tố commit |
 |---|---|---|
-| `game/ui/` | Thiết kế UI 2D: CSS (`gom-gom.css`, `board-grid.css`, `ui-portrait.css`), ảnh skin (`skins/`), art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`), âm thanh (`sound.mjs`) | `UI:` |
+| `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS + ảnh `img/` riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial, mèo `img/cats`), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
 | `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |

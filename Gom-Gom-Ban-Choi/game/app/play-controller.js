@@ -1264,7 +1264,7 @@ function animateHand(step, holes) {
   hand.hidden = step.type === 'info';
   if (hand.hidden) return;
   // Kéo dùng ảnh tay "giữ" (có tia), chạm dùng ảnh tay "nhấn" (có sóng).
-  $('tutorial-hand-img').src = `./ui/skins/tutorial/hand-${step.type === 'drag' || step.type === 'hold' ? 'drag' : 'tap'}.png`;
+  $('tutorial-hand-img').src = `./ui/shared/img/tutorial/hand-${step.type === 'drag' || step.type === 'hold' ? 'drag' : 'tap'}.png`;
   const center = b => [b.left + b.width / 2, b.top + b.height / 2];
   const [x0, y0] = center(holes[0]);
   const at = (x, y, scale) => `translate(${x}px, ${y}px) scale(${scale})`;
@@ -1425,7 +1425,7 @@ $('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showT
   const keep = [];
   const load = () => names.forEach(name => {
     const img = new Image();
-    img.src = `./ui/skins/figma-result/${name}.png`;
+    img.src = `./ui/result/img/${name}.png`;
     img.decode?.().catch(() => {});
     keep.push(img); // giữ tham chiếu để ảnh đã giải mã không bị dọn
   });

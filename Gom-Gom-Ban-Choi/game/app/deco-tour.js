@@ -69,7 +69,7 @@ export function startDecoTour(steps, onDone) {
     gesture.hidden = !kind || !rect;
     if (gesture.hidden) return;
     const img = gesture.querySelector('img');
-    img.src = `./ui/skins/tutorial/${GESTURES[kind]}.png`;
+    img.src = `./ui/shared/img/tutorial/${GESTURES[kind]}.png`;
     gesture.classList.toggle('tap', kind === 'tap'); // chạm: đầu ngón tay đặt đúng tâm chỗ sáng
     gesture.style.cssText = `left:${rect.x + rect.width / 2}px;top:${rect.y + rect.height / 2}px`;
     img.getAnimations().forEach(animation => animation.cancel());

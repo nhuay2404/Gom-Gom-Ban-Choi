@@ -1,0 +1,26 @@
+/* Thanh điều hướng nổi bo tròn (N2) */
+.tabbar{position:fixed;z-index:50;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));translate:-50% 0;width:min(360px,calc(100% - 32px));
+  display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--panel);border:1px solid var(--cream-edge);
+  box-shadow:none}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:999px;color:var(--cream-ink);font-weight:900;font-size:11px;letter-spacing:.4px;text-transform:uppercase}
+.tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.tab[aria-current="page"]{background:var(--green);color:#fff;box-shadow:none}
+@media(prefers-reduced-motion:no-preference){.tab[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
+@keyframes tab-pop{from{scale:.7}}
+/* Thanh tab chung (dựng bằng CSS theo Figma, giữ nguyên ở Home / Map / Deco / Shop): nền kem viền nâu, ô đang chọn là viên
+   xanh lá bóng, chấm "!" đỏ ở Shop. Cách đáy 70 như khung Figma 393 × 852. */
+#tabbar.fh-tabbar{position:fixed;z-index:50;left:50%;translate:-50% 0;bottom:calc(70 * var(--u));width:calc(337 * var(--u));height:calc(64 * var(--u));
+  display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:0;
+  padding:calc(5 * var(--u));border-radius:999px;background:#fbf2d6;border:calc(3 * var(--u)) solid #9b6338;box-shadow:inset 0 calc(2 * var(--u)) 0 #fffaea,0 calc(3 * var(--u)) 0 #c08a58}
+.fh-tabbar button{min-height:0;padding:0;letter-spacing:0;text-transform:none;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));border-radius:999px;
+  font-family:var(--display);font-size:calc(12.5 * var(--u));font-weight:800;line-height:1;color:#7a4026}
+.fh-tabbar svg{width:calc(28 * var(--u));height:calc(28 * var(--u));fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.fh-tabbar button[aria-current="page"]{color:#fff;background:linear-gradient(#6cb85a,#4e9a43);border:calc(2 * var(--u)) solid #3f7d34;
+  box-shadow:inset 0 calc(3 * var(--u)) 0 #8ed27a,0 calc(2 * var(--u)) 0 #2f6427;text-shadow:0 1px 0 #2f6427}
+@media(prefers-reduced-motion:no-preference){.fh-tabbar button[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
+.fh-tabbar button[aria-current="page"] svg{fill:#fbf2d6;stroke:#2f6427;stroke-width:1.6}
+/* Thanh điều hướng: chạm dễ hơn bằng ngón cái */
+.tabbar{width:min(320px,calc(100% - 48px));padding:4px;bottom:calc(10px + env(safe-area-inset-bottom))}
+.tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}
+/* Thanh điều hướng hub (Home / Deco / Shop): hẹp lại và xuống gần đáy màn hình */
+#tabbar.fh-tabbar{bottom:calc(16 * var(--u) + env(safe-area-inset-bottom));width:calc(240 * var(--u));grid-template-columns:repeat(3,1fr)}

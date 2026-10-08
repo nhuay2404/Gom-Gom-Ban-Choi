@@ -37,13 +37,13 @@ const js = execSync(
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
   // Ảnh JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs): nhúng thẳng thành data URI.
-  .replace(/(["'])(ui\/skins\/[^"']+\.(?:png|jpe?g|webp))\1/g, (_, q, file) => q + dataUri(file) + q);
+  .replace(/(["'])(ui\/[a-z]+\/img\/[^"']+\.(?:png|jpe?g|webp))\1/g, (_, q, file) => q + dataUri(file) + q);
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
 const images = new Map();
 const css = [...read('index.html').matchAll(/<link rel="stylesheet" href="\.\/([^"]+)">/g)]
-  .map(([, sheet]) => read(sheet).replace(/url\('\.\/([^']+)'\)/g, (_, file) => {
+  .map(([, sheet]) => read(sheet).replace(/url\('(\.{1,2}\/[^']+)'\)/g, (_, file) => {
     const path = posix.join(posix.dirname(sheet), file);
     if (!images.has(path)) images.set(path, `--img-${images.size}`);
     return `var(${images.get(path)})`;
@@ -56,8 +56,8 @@ const html = read('index.html')
   .replace(/\s*<script type="importmap">[\s\S]*?<\/script>/, '')
   .replace(/\s*<link rel="stylesheet" href="\.\/[^"]+">/g, '')
   .replace('href="./favicon.svg"', `href="${dataUri('favicon.svg')}"`)
-  .replace(/src="\.\/(?!gom-gom\.js)([^"]+)"/g, (_, file) => `src="${dataUri(file)}"`)
-  .replace(/<script type="module" src="\.\/gom-gom\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : ''}<script type="module">\n${js}\n</script>`);
+  .replace(/src="\.\/(?!app\/main\.js)([^"]+)"/g, (_, file) => `src="${dataUri(file)}"`)
+  .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : ''}<script type="module">\n${js}\n</script>`);
 if (/(?:src|href)="\.\//.test(html)) throw new Error('Còn đường dẫn ./ chưa nhúng trong HTML');
 
 mkdirSync(join(root, 'dist'), { recursive: true });

@@ -143,7 +143,7 @@ function afkFaces(cat, group, ink) {
   };
 }
 
-// Mèo vẽ sẵn từ Figma (lưới 6 giống × 6 biểu cảm, file "UI" image 130–170): ui/skins/cats/<giống>-<biểu cảm>.png (ảnh 300 px).
+// Mèo vẽ sẵn từ Figma (lưới 6 giống × 6 biểu cảm, file "UI" image 130–170): ui/shared/img/cats/<giống>-<biểu cảm>.png (ảnh 300 px).
 // Mỗi biểu cảm là một ảnh, gắn đúng tên nhóm mà CSS đang bật / tắt cho mặt SVG cũ (calm / joy / annoyed / afk-*), nên mọi
 // trạng thái (vui khi gom, khó chịu khi bị kéo / nhấc, buồn ngủ khi AFK, mếu khi sắp hết lượt...) dùng lại nguyên luật CSS cũ.
 //   calm     = mặt thường            focus   = mắt to, chú ý (thẻ đang cầm, xem gom-gom.css)
@@ -151,12 +151,12 @@ function afkFaces(cat, group, ink) {
 //   sleepy   = lim dim (AFK)         worried = mếu (mọi mặt sắp hết lượt)
 // Đường dẫn viết nguyên văn (không ghép chuỗi) để tools/build-single-html.mjs nhúng được ảnh vào bản HTML một file.
 const CAT_IMAGES = {
-  orange: { calm: 'ui/skins/cats/orange-calm.png', focus: 'ui/skins/cats/orange-focus.png', joy: 'ui/skins/cats/orange-joy.png', annoyed: 'ui/skins/cats/orange-annoyed.png', sleepy: 'ui/skins/cats/orange-sleepy.png', worried: 'ui/skins/cats/orange-worried.png' },
-  gray: { calm: 'ui/skins/cats/gray-calm.png', focus: 'ui/skins/cats/gray-focus.png', joy: 'ui/skins/cats/gray-joy.png', annoyed: 'ui/skins/cats/gray-annoyed.png', sleepy: 'ui/skins/cats/gray-sleepy.png', worried: 'ui/skins/cats/gray-worried.png' },
-  white: { calm: 'ui/skins/cats/white-calm.png', focus: 'ui/skins/cats/white-focus.png', joy: 'ui/skins/cats/white-joy.png', annoyed: 'ui/skins/cats/white-annoyed.png', sleepy: 'ui/skins/cats/white-sleepy.png', worried: 'ui/skins/cats/white-worried.png' },
-  tuxedo: { calm: 'ui/skins/cats/tuxedo-calm.png', focus: 'ui/skins/cats/tuxedo-focus.png', joy: 'ui/skins/cats/tuxedo-joy.png', annoyed: 'ui/skins/cats/tuxedo-annoyed.png', sleepy: 'ui/skins/cats/tuxedo-sleepy.png', worried: 'ui/skins/cats/tuxedo-worried.png' },
-  siamese: { calm: 'ui/skins/cats/siamese-calm.png', focus: 'ui/skins/cats/siamese-focus.png', joy: 'ui/skins/cats/siamese-joy.png', annoyed: 'ui/skins/cats/siamese-annoyed.png', sleepy: 'ui/skins/cats/siamese-sleepy.png', worried: 'ui/skins/cats/siamese-worried.png' },
-  tabby: { calm: 'ui/skins/cats/tabby-calm.png', focus: 'ui/skins/cats/tabby-focus.png', joy: 'ui/skins/cats/tabby-joy.png', annoyed: 'ui/skins/cats/tabby-annoyed.png', sleepy: 'ui/skins/cats/tabby-sleepy.png', worried: 'ui/skins/cats/tabby-worried.png' },
+  orange: { calm: 'ui/shared/img/cats/orange-calm.png', focus: 'ui/shared/img/cats/orange-focus.png', joy: 'ui/shared/img/cats/orange-joy.png', annoyed: 'ui/shared/img/cats/orange-annoyed.png', sleepy: 'ui/shared/img/cats/orange-sleepy.png', worried: 'ui/shared/img/cats/orange-worried.png' },
+  gray: { calm: 'ui/shared/img/cats/gray-calm.png', focus: 'ui/shared/img/cats/gray-focus.png', joy: 'ui/shared/img/cats/gray-joy.png', annoyed: 'ui/shared/img/cats/gray-annoyed.png', sleepy: 'ui/shared/img/cats/gray-sleepy.png', worried: 'ui/shared/img/cats/gray-worried.png' },
+  white: { calm: 'ui/shared/img/cats/white-calm.png', focus: 'ui/shared/img/cats/white-focus.png', joy: 'ui/shared/img/cats/white-joy.png', annoyed: 'ui/shared/img/cats/white-annoyed.png', sleepy: 'ui/shared/img/cats/white-sleepy.png', worried: 'ui/shared/img/cats/white-worried.png' },
+  tuxedo: { calm: 'ui/shared/img/cats/tuxedo-calm.png', focus: 'ui/shared/img/cats/tuxedo-focus.png', joy: 'ui/shared/img/cats/tuxedo-joy.png', annoyed: 'ui/shared/img/cats/tuxedo-annoyed.png', sleepy: 'ui/shared/img/cats/tuxedo-sleepy.png', worried: 'ui/shared/img/cats/tuxedo-worried.png' },
+  siamese: { calm: 'ui/shared/img/cats/siamese-calm.png', focus: 'ui/shared/img/cats/siamese-focus.png', joy: 'ui/shared/img/cats/siamese-joy.png', annoyed: 'ui/shared/img/cats/siamese-annoyed.png', sleepy: 'ui/shared/img/cats/siamese-sleepy.png', worried: 'ui/shared/img/cats/siamese-worried.png' },
+  tabby: { calm: 'ui/shared/img/cats/tabby-calm.png', focus: 'ui/shared/img/cats/tabby-focus.png', joy: 'ui/shared/img/cats/tabby-joy.png', annoyed: 'ui/shared/img/cats/tabby-annoyed.png', sleepy: 'ui/shared/img/cats/tabby-sleepy.png', worried: 'ui/shared/img/cats/tabby-worried.png' },
 };
 const bitmap = (group, mood) => CAT_IMAGES[group][mood];
 const HAS_BITMAP = new Set(Object.keys(CAT_IMAGES));

@@ -1,0 +1,108 @@
+/* ---------- Màn chơi: cột dọc, dock dính đáy ---------- */
+.shell{display:flex;flex-direction:column;padding:max(10px,env(safe-area-inset-top)) 18px max(12px,env(safe-area-inset-bottom))}
+.topbar{height:52px;margin-bottom:8px;grid-template-columns:44px 1fr 44px}
+.topbar h1{transform:none;font-family:var(--display);font-size:17px;font-weight:800;letter-spacing:.2px;line-height:1;color:var(--cream-ink);text-shadow:none;
+  justify-self:center;padding:8px 18px;border-radius:999px;background:var(--panel);box-shadow:none}
+.round-button.icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+
+/* HUD: thanh tiến độ điểm + ô Moves */
+.hud{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.progress{position:relative;flex:1;min-width:0;height:42px;border-radius:999px;padding:5px;
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none}
+.progress-track{height:100%;border-radius:999px;background:#ecd39a;box-shadow:none;overflow:hidden}
+.progress-fill{height:100%;width:0;border-radius:999px;background:var(--green);box-shadow:none;transition:width .45s cubic-bezier(.3,1.2,.5,1)}
+.progress.full .progress-fill{background:var(--gold)}
+.progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:900;font-size:14px;color:var(--cream-ink);
+  text-shadow:0 1px 0 #fff;font-variant-numeric:tabular-nums;pointer-events:none}
+.progress-text strong{font-family:var(--display);font-size:20px;line-height:1;color:#c9601c}
+.moves-box{flex:none;width:76px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;
+  background:var(--panel);border:1px solid var(--cream-edge);box-shadow:none;color:var(--cream-ink)}
+.moves-box span{font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase}
+.moves-box strong{font-family:var(--display);font-size:26px;font-weight:800;line-height:1;color:#e0792a;font-variant-numeric:tabular-nums}
+.moves-box.warn strong{color:#e8781e}
+.moves-box.danger{border-color:var(--danger);background:#ffd9cf;box-shadow:none}
+.moves-box.danger strong{color:#d9301c}
+@media(prefers-reduced-motion:no-preference){.moves-box.danger strong{animation:moves-pulse .9s ease-in-out infinite}}
+body.low-moves .board{outline:0}
+
+/* Bàn: to nhất có thể nhưng màn chơi luôn vừa đúng một màn hình điện thoại (kể cả khi có hàng booster).
+   Màn chơi cao đúng 100dvh; bàn chiếm phần còn lại giữa HUD và dock, luôn vuông: cạnh = min(bề ngang, chiều cao còn lại). */
+.shell{height:100dvh;min-height:0;overflow:hidden}
+.board-wrap{flex:1 1 auto;min-height:0;width:100%;display:flex;justify-content:center;align-items:flex-start;container-type:size}
+.board-wrap>.board{width:min(100cqw,100cqh,440px);height:auto;flex:none}
+
+/* Thông báo: một hàng cố định, chữ nằm trong viên kẹo, không đẩy bố cục */
+.message-row{height:34px;margin:4px 0 6px;display:flex;align-items:center;justify-content:center}
+.message-row .message{min-height:0;margin:0;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:900;max-width:100%;text-align:center;
+  background:#fff8e4e8;box-shadow:none;color:var(--cream-ink)}
+.message-row .message:empty{display:none}
+.message-row .message.error{background:#ffe6df;color:#b8321c;box-shadow:none}
+
+/* Dock ngón cái: Hold | thẻ đang bóc | Next */
+.dock.draw-area{margin-top:auto;display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:8px;padding:10px 10px 12px;border-radius:28px;
+  background:#fff3d1f2;border:1px solid var(--cream-edge);box-shadow:none}
+.dock .hold-column{grid-column:1;justify-self:center;align-self:center;gap:4px}
+.dock .card-column{grid-column:2;justify-self:center}
+.dock .next-column{grid-column:3;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:0}
+.dock-label{font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;color:var(--cream-ink);opacity:.8}
+.dock .next-cards{display:block;flex:none}
+.dock .next-slot{width:64px;height:64px;border-radius:14px}
+.dock .next-slot .piece-grid{grid-template-columns:repeat(var(--piece-cols),18px);grid-template-rows:repeat(var(--piece-rows),18px)}
+.dock .hold-slot{width:64px;height:64px;--card-w:64px;--card-h:64px}
+#active-card{width:196px;height:160px;--card-w:196px;--card-h:160px}
+@media(max-width:400px){
+  .shell{padding-inline:12px}
+  .dock.draw-area{grid-template-columns:62px 1fr 62px;gap:4px;padding-inline:6px}
+  .dock .hold-slot,.dock .next-slot{width:56px;height:56px;--card-w:56px;--card-h:56px}
+  .dock .next-slot .piece-grid{grid-template-columns:repeat(var(--piece-cols),15px);grid-template-rows:repeat(var(--piece-rows),15px)}
+  #active-card{width:172px;height:146px;--card-w:172px;--card-h:146px}}
+@media(max-height:720px){#active-card{height:132px;--card-h:132px}.message-row{height:28px;margin:2px 0}}
+/* Nút âm thanh cạnh "?" (Home) và cạnh "↻" (màn chơi) */
+.top-actions{display:flex;gap:8px;justify-self:end}
+.topbar{grid-template-columns:96px 1fr 96px}
+.topbar>#open-map{justify-self:start}
+.round-button.small.icon svg{width:20px;height:20px}
+.sound-toggle[aria-pressed="false"]{opacity:.7}
+/* ---------- Booster trong màn: hàng nút tròn ngay trên dock, số lượng ở góc (hết thì hiện giá xu) ---------- */
+.booster-bar{display:flex;justify-content:center;gap:18px;margin:0 0 10px}
+.boost{position:relative;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;cursor:pointer;color:#fff;
+  background:var(--pink);
+  border:3px solid #fff;box-shadow:none}
+.boost svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+.boost[data-boost="swap"]{background:var(--blue);box-shadow:none}
+.boost[data-boost="moves"]{background:var(--green);box-shadow:none}
+@media(prefers-reduced-motion:no-preference){.boost.suggest{animation:boost-suggest 1.1s ease-in-out infinite}}
+.boost.suggest{outline:3px solid #ffcf5a;outline-offset:2px}
+@keyframes boost-suggest{50%{transform:scale(1.12)}}
+.boost-plus{font-family:var(--display);font-size:22px;font-weight:800;line-height:1;text-shadow:0 2px 0 #0003}
+.boost-count{position:absolute;right:-8px;top:-6px;min-width:24px;height:24px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--display);font-size:14px;font-weight:800;color:var(--cream-ink);background:#fff;box-shadow:none}
+.boost.empty .boost-count{right:50%;top:auto;bottom:-10px;translate:50% 0;font-size:12px;background:#ffe9a8}
+.boost-count .ico-coin{width:12px;height:12px}
+.boost:not(:disabled):active{translate:0 3px;box-shadow:none}
+.boost.armed{outline:3px solid #ffd23f;outline-offset:3px}
+@media(prefers-reduced-motion:no-preference){.boost.armed{animation:boost-armed .6s ease-in-out infinite alternate}}
+@keyframes boost-armed{to{rotate:-14deg}}
+/* Đang cầm búa: ô đập được rung nhẹ, ô kim loại/trống thì mờ đi */
+body.hammer-armed .board .cell.locked,body.hammer-armed .board .cell.block:not(.metal){cursor:crosshair;box-shadow:inset 0 0 0 3px #ffd23f}
+body.hammer-armed .board .cell.metal,body.hammer-armed .board .cell.empty{opacity:.55}
+.smash-ghost{position:absolute;pointer-events:none;z-index:3}
+@media(max-height:720px){.booster-bar{margin-bottom:6px;gap:14px}.boost{width:46px;height:46px}.boost svg{width:22px;height:22px}}
+/* Màn thấp (iPhone SE, Android 360×740, điện thoại có thanh trình duyệt): gọn thanh trên, HUD, dock, booster để nhường chỗ cho bàn cờ */
+@media(max-height:760px){
+  .topbar{height:44px;margin-bottom:4px}
+  .hud{margin-bottom:6px}
+  .progress{height:36px}
+  .moves-box{height:44px;width:68px}
+  .moves-box strong{font-size:22px}
+  .dock.draw-area{padding:6px 8px 8px}
+  #active-card{height:112px;--card-h:112px}
+  .dock .hold-slot,.dock .next-slot{width:52px;height:52px;--card-w:52px;--card-h:52px}
+  .booster-bar{margin-bottom:4px;gap:14px}
+  .boost{width:42px;height:42px}
+  .boost svg{width:20px;height:20px}
+  .boost-plus{font-size:18px}
+  .message-row{height:26px;margin:0 0 2px}
+}
+/* Review fixes: chữ điểm đọc được trên phần thanh xanh, tiêu đề màn tương phản hơn, biển cuối bản đồ */
+.progress-text,.progress-text strong{text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff,0 1px 0 #fff}
