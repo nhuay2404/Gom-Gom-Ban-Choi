@@ -383,11 +383,12 @@ const ZONES = [
   { id: 'garden', from: -Infinity },
   { id: 'living', from: 18.5, label: 'Living Room', fog: 0xf7dfc0, wall: 'repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 22px,transparent 22px 44px),linear-gradient(#fde9cc,#f3cfa3)' },
   { id: 'bedroom', from: 28.5, label: 'Bedroom', fog: 0xe6d6f6, wall: 'radial-gradient(circle at 12px 12px,rgba(255,255,255,.5) 0 4px,transparent 5px) 0 0/32px 32px,linear-gradient(#efe4fd,#d8c4f1)' },
+  { id: 'kitchen', from: 38.5, label: 'Kitchen', fog: 0xdff1ea, wall: 'linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(#e8f7f0,#c9e8dc)' },
 ];
 const zoneAt = t => ZONES.reduce((z, next) => (t >= next.from ? next : z), ZONES[0]).id;
 function floorTexture(kind) {
   return canvasTexture(512, 512, (g, w, h) => {
-    let seed = kind === 'living' ? 31 : 57;
+    let seed = kind === 'living' ? 31 : kind === 'kitchen' ? 73 : 57;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     if (kind === 'living') {
       // Sàn gỗ: 8 hàng ván, mỗi ván lệch nhịp, vân gỗ mảnh.
@@ -404,6 +405,15 @@ function floorTexture(kind) {
         }
         g.fillStyle = '#a8713f'; g.fillRect(0, r * rh, w, 3);
       }
+    } else if (kind === 'kitchen') {
+      // Sàn bếp: gạch caro kem / bạc hà, ron trắng, vài viên lốm đốm.
+      const n = 8, s = w / n;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+        g.fillStyle = (r + c) % 2 ? '#fff4e2' : '#a9dcc8'; g.fillRect(c * s, r * s, s, s);
+        if (rnd() < .2) { g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(c * s + 8, r * s + 8, s * .3, s * .12); }
+      }
+      g.strokeStyle = '#f7fbf8'; g.lineWidth = 4;
+      for (let k = 0; k <= n; k++) { g.beginPath(); g.moveTo(k * s, 0); g.lineTo(k * s, h); g.moveTo(0, k * s); g.lineTo(w, k * s); g.stroke(); }
     } else {
       // Thảm phòng ngủ: tím nhạt, sọc mờ + tim / sao nhỏ.
       g.fillStyle = '#d9c7f2'; g.fillRect(0, 0, w, h);
@@ -469,6 +479,15 @@ function floorLamp() {
   foot.position.y = .025; g.add(withInk(foot, .08));
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(.14, .24, .26, 14), furnMats.shade);
   shade.position.y = .98; g.add(withInk(shade, .07));
+  return g;
+}
+// Tủ lạnh nhỏ (bản đồ khu bếp): thân trắng hai ngăn, tay nắm, nam châm màu.
+function fridge(rnd) {
+  const g = new THREE.Group();
+  g.add(box(.6, 1.15, .5, furnMats.white, 0, .575, 0, .04));
+  g.add(box(.56, .02, .02, furnMats.woodDark, 0, .8, .26, 0));
+  for (const y of [.55, .98]) g.add(box(.04, .2, .04, furnMats.woodDark, .22, y, .27, 0));
+  for (let k = 0; k < 2; k++) g.add(box(.07, .07, .02, choose(rnd, furnMats.books), -.16 + k * .12, .9 + rnd() * .15, .26, 0));
   return g;
 }
 function bookshelf(rnd) {
@@ -577,6 +596,14 @@ const SCATTER = {
     { kind: 'catBed', make: () => catBed, r: .45, w: 1.5, cap: 1, shadow: false },
     { kind: 'teddy', make: () => teddy, r: .25, w: 1, cap: 1, small: true },
     { kind: 'cushion', make: () => floorCushion, r: .32, w: 1, cap: 1, small: true },
+    { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
+  ] },
+  kitchen: { tries: 22, max: 5, spread: 2.8, kinds: [
+    { kind: 'fridge', make: () => fridge, r: .45, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'shelf', make: () => bookshelf, r: .65, w: 1.5, cap: 1, minDist: 2.3, big: true },
+    { kind: 'table', make: () => coffeeTable, r: .5, w: 2, cap: 1 },
+    { kind: 'plant', make: (rnd, dist) => g => pottedPlant(g, dist > 2.3), r: .35, w: 1.5, cap: 1 },
+    { kind: 'catBed', make: () => catBed, r: .45, w: 1, cap: 1, shadow: false },
     { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
   ] },
 };
@@ -735,9 +762,12 @@ function coarsen(mesh) {
   }
   if (key) mesh.geometry = cached(`coarse|${key}`, make);
 }
-function newCatModel(breed, { coarse = false } = {}) {
+// Mèo của màn chưa mở (phía trước tiến độ): bóng đen tuyền, chưa lộ giống (nhãn "?" thay cho NEW!).
+const SILHOUETTE_MAT = new THREE.MeshBasicMaterial({ color: 0x000000 });
+function newCatModel(breed, { coarse = false, silhouette = false } = {}) {
   const cat = catModel(breed), solids = [];
   if (coarse) cat.traverse(node => { if (node.isMesh) coarsen(node); });
+  if (silhouette) cat.traverse(node => { if (node.isMesh) node.material = SILHOUETTE_MAT; });
   cat.traverse(node => { if (node.isMesh && node.material?.isMeshToonMaterial && !node.material.transparent && !node.userData.noOutline) solids.push(node); });
   solids.forEach(mesh => withInk(mesh, .07));
   cat.traverse(node => { if (node.isMesh) node.castShadow = true; });
@@ -754,12 +784,13 @@ function claimBadgeTexture() {
     g.fillStyle = '#fff'; g.fillText('CLAIM', w / 2, h / 2 - 2);
   });
 }
-function newBadgeTexture() {
+// text: 'NEW!' (màn đã mở) hoặc '?' (mèo bí ẩn của màn chưa mở — cùng ô, chỉ đổi chữ).
+function newBadgeTexture(text = 'NEW!') {
   return canvasTexture(160, 64, (g, w, h) => {
     g.fillStyle = '#ff5f8a'; g.strokeStyle = '#5b2e1c'; g.lineWidth = 6;
     g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 26); g.fill(); g.stroke();
     g.font = '900 34px "Baloo 2", Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineWidth = 7; g.lineJoin = 'round'; g.strokeText('NEW!', w / 2, h / 2 + 2); g.fillStyle = '#fff'; g.fillText('NEW!', w / 2, h / 2 + 2);
+    g.lineWidth = 7; g.lineJoin = 'round'; g.strokeText(text, w / 2, h / 2 + 2); g.fillStyle = '#fff'; g.fillText(text, w / 2, h / 2 + 2);
   });
 }
 
@@ -822,7 +853,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   drum.add(content);
   // Sàn trong nhà: dải trống phủ ngay trên cỏ từng đoạn một màn (θ của CylinderGeometry = π/2 + góc trống).
   const floorMats = {};
-  for (const id of ['living', 'bedroom']) {
+  for (const id of ['living', 'bedroom', 'kitchen']) {
     const tex = floorTexture(id);
     tex.repeat.set(LEVEL_GAP / 2.2, 40 / 2.2);
     floorMats[id] = toonMat({ color: 0xffffff, map: tex });
@@ -1005,7 +1036,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     const cats = [], catTilt = new THREE.Group(), spots = catSpots(index, newCats.length, current ? 1.3 : 1.12);
     g.add(catTilt);
     newCats.forEach((breed, k) => {
-      const cat = newCatModel(breed, { coarse: true }), [dx, dz, turn] = spots[k];
+      const cat = newCatModel(breed, { coarse: true, silhouette: locked }), [dx, dz, turn] = spots[k];
       cat.scale.setScalar(1.35);
       cat.position.set(dx, 0, dz);
       cat.rotation.y = turn;
@@ -1013,7 +1044,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       cats.push(cat);
     });
     if (newCats.length) {
-      const badge = new THREE.Sprite(claimable ? cached('badge|claim', () => new THREE.SpriteMaterial({ map: claimBadgeTexture() })) : cached('badge|new', () => new THREE.SpriteMaterial({ map: newBadgeTexture() })));
+      const badge = new THREE.Sprite(claimable ? cached('badge|claim', () => new THREE.SpriteMaterial({ map: claimBadgeTexture() }))
+        : locked ? cached('badge|mystery', () => new THREE.SpriteMaterial({ map: newBadgeTexture('?') }))
+          : cached('badge|new', () => new THREE.SpriteMaterial({ map: newBadgeTexture() })));
       // Nút Claim to hơn, nổi cao hơn đầu mèo cho dễ bấm.
       badge.scale.set(...(claimable ? [1.25, .45, 1] : [.78, .31, 1]));
       badge.userData.baseY = claimable ? 1.75 : 1.25;
