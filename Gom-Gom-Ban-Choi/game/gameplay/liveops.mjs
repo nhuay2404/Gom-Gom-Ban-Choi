@@ -23,7 +23,7 @@ export function msToNextDay(ms) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - ms;
 }
 // Số ngẫu nhiên cố định theo chuỗi (cùng ngày = cùng bộ nhiệm vụ, tải lại không đổi).
-function seeded(text) {
+export function seeded(text) {
   let h = 2166136261;
   for (const ch of text) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
   return () => {

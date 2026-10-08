@@ -120,6 +120,43 @@ export const LIVEOPS = {
     { id: 'gems-l', gems: 700, price: '$9.99', tag: 'Popular' },
     { id: 'gems-xl', gems: 1500, price: '$19.99' },
   ],
+  // Event hằng tuần (events.mjs; lịch ở liveops-data.mjs). fromLevel = event hiện khi người chơi tới màn này, và chỉ thắng / gom
+  // ở màn từ fromLevel trở lên mới tính (kể cả chơi lại màn đã qua; chặn cày màn dễ đầu game). Đổi mốc từng event ở đây.
+  EVENTS: {
+    yarn: {
+      fromLevel: 11,
+      steps: 7,                                       // thắng lên 1 bậc, thua / bỏ ngang lùi 1 bậc; lên đỉnh thì nhận thưởng và leo lại từ 0
+      stepRewards: { 2: { coins: 20 }, 4: { boosters: { hammer: 1 } }, 6: { coins: 40 } }, // mỗi lượt leo nhận một lần
+      top: { coins: 200, gems: 15, boosters: { moves: 1 } },
+      repeatTop: { coins: 100, gems: 5 },             // lần lên đỉnh thứ 2 trở đi trong cùng event
+    },
+    fish: {
+      fromLevel: 11,
+      // mỗi cụm gom ra cá = số mèo trong cụm (cả ván thua); mốc tích luỹ và thưởng. deco = id món Deco độc quyền (deco-data.mjs)
+      milestones: [
+        { fish: 40, reward: { coins: 30 } },
+        { fish: 90, reward: { boosters: { hammer: 1 } } },
+        { fish: 150, reward: { coins: 50 } },
+        { fish: 220, reward: { boosters: { swap: 1 } } },
+        { fish: 300, reward: { gems: 5 } },
+        { fish: 380, reward: { coins: 60 } },
+        { fish: 460, reward: { boosters: { moves: 1 } } },
+        { fish: 540, reward: { coins: 80 } },
+        { fish: 620, reward: { gems: 5 } },
+        { fish: 700, reward: { deco: 'lantern-koi' } },
+      ],
+      adDoublePerDay: 3,                              // rewarded ad nhân đôi cá của màn vừa thắng
+    },
+    race: {
+      fromLevel: 11,
+      goal: 10,                                       // ai thắng đủ bấy nhiêu màn trước thì về nhất
+      hours: 24,                                      // tính từ lúc tham gia (vào màn đầu tiên trong ngày đua)
+      // đối thủ do máy điều khiển: số màn thắng trong 24 giờ [ít nhất, nhiều nhất], rải ngẫu nhiên theo giờ
+      bots: [[11, 14], [8, 11], [5, 8], [2, 5]],
+      rewards: [{ gems: 30, coins: 300 }, { gems: 15, coins: 150 }, { gems: 5, coins: 80 }, { coins: 30 }, { coins: 30 }],
+    },
+    decoSale: { off: 0.3 },                           // giảm giá đồ Deco bằng xu
+  },
 };
 
 // Độ khó thích ứng theo profile người chơi (adaptive.mjs, tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md).
