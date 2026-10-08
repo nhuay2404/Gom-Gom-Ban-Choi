@@ -8,6 +8,7 @@ import { categories, catExpressionSrc, catBodyPlacement, CAT_EXPR_BOX, SLEEP_FAC
 import { OBSTACLE_RADIUS, OBSTACLE_EXTRA, WINDOW, ZONE_OFFSET, LINKS } from './room-layout.mjs';
 import { CAT_BODY, CAT_MOTION } from '../gameplay/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from './toon.mjs';
+import { expressionOf, settleExpression } from './cat-face.mjs';
 
 const { W, H, D, LEG } = CAT_BODY, ROOM = CAT_MOTION.ROOM_LIMIT, TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -266,15 +267,7 @@ function closeEyes(image, ink) {
   }
   return c;
 }
-// Kiểu mắt / miệng mà "não" mèo đặt (face(eyes, mouth)) -> biểu cảm Figma.
-function expressionOf(eyes, mouth) {
-  if (eyes === 'sleep') return mouth === 'yawn' ? 'sleepy' : 'sleep'; // ngáp: mặt lim dim há miệng
-  if (eyes === 'blink') return 'blink';                              // chớp / nhắm mắt khi nhai, nhồi bột... (giữ miệng)
-  if (eyes === 'half') return 'sleepy';
-  if (eyes === 'happy') return 'happy';
-  if (eyes === 'annoyed') return mouth === 'chew' ? 'chew' : 'angry';
-  return 'calm';
-}
+// Kiểu mắt mà "não" mèo đặt (face(eyes)) -> biểu cảm Figma: bảng nguyên tắc ở cat-face.mjs (expressionOf).
 
 function zTexture() {
   return canvasTexture('zzz', g => {
@@ -608,6 +601,7 @@ class Cat {
     const tailUp = this.goal.tailUp;
     this.goal = { sit: 0, lie: 0, curl: 0, stretch: 0, roll: 0, lean: 0, paw: 0, groom: 0, knead: 0, tailUp, ...presets[name], ...extra };
   }
+  // eyes: một trong EYES của cat-face.mjs (mỗi giá trị đúng một mặt Figma); mouth chỉ có 'yawn' (đi với 'sleep' = ngáp)
   face(eyes, mouth = 'calm') { this.eyes = eyes; this.mouth = mouth; }
   interruptible() { return !this.busyWith && !this.sleeping && !this.napping && this.y < .01 && !this.social && !this.carried; } // napping: đang trở mình giữa hai giấc AFK thì đừng rủ chơi
   interrupt(brain) { const old = this.brain; this.brain = brain; old?.return(); this.speed = 0; this.running = false; this.contact = {}; }
@@ -842,7 +836,7 @@ class Cat {
       return;
     }
     yield* this.turnTo(this.facing(end.x, end.z) + Math.PI / 2, 4); // nằm ngang dốc rồi lăn
-    this.setPose('roll'); this.face('happy', 'open');
+    this.setPose('roll'); this.face('happy');
     const x0 = this.x, z0 = this.z, T = 1.6, h0 = this.heading;
     for (let t = 0; t < T; t += this.world.dt) {
       const k = t / T, e = k * k * (3 - 2 * k);
@@ -854,7 +848,7 @@ class Cat {
     this.wriggle = 0; this.y = this.world.groundAt(this.x, this.z);
     this.setPose('stand'); this.squash = .6; this.squashV = 0;
     yield* this.wait(.4);
-    this.face('happy', 'open'); this.setPose('sit');
+    this.face('happy'); this.setPose('sit');
     yield* this.groom();
   }
   // Leo đồi ngắm cảnh rồi lăn / nhảy xuống.
@@ -893,7 +887,7 @@ class Cat {
   *yawnStretch() {
     this.setPose('stretch'); this.face('sleep', 'yawn');
     yield* this.wait(1.3);
-    this.setPose('stand'); this.face('blink', 'calm');
+    this.setPose('stand'); this.face('blink');
     yield* this.wait(.25);
     this.face('open');
   }
@@ -922,13 +916,13 @@ class Cat {
     this.setPose('sit');
     yield* this.wait(.4);
     for (let i = 0, n = Math.floor(rand(3, 6)); i < n; i++) {
-      this.goal.groom = 1; this.face('blink', 'chew');
+      this.goal.groom = 1; this.face('blink');
       yield* this.wait(rand(.5, .9));
-      this.goal.groom = .6; this.face('blink', 'calm');
+      this.goal.groom = .6; this.face('blink');
       yield* this.wait(.25);
     }
     // liếm lưng: vặn người sang bên
-    this.goal.groom = 0; this.goal.lean = .4; this.heading += .8; this.face('blink', 'chew');
+    this.goal.groom = 0; this.goal.lean = .4; this.heading += .8; this.face('blink');
     yield* this.wait(1.2);
     this.heading -= .8; this.goal.lean = 0; this.face('open');
     yield* this.wait(.4);
@@ -940,7 +934,7 @@ class Cat {
       yield* this.walkTo(p.x, p.z, { run: true, near: .25, maxTime: 3 });
     }
     this.tailSpeed = 1.6;
-    this.setPose('sit'); this.face('open', 'chew'); // thở hổn hển, rồi giả vờ như chưa có gì xảy ra
+    this.setPose('sit'); this.face('open'); // thở hổn hển, rồi giả vờ như chưa có gì xảy ra
     yield* this.wait(1);
     yield* this.groom();
   }
@@ -948,7 +942,7 @@ class Cat {
   *tailChase() {
     this.face('focus'); this.goal.tailUp = .9; this.tailSpeed = 7;
     for (let i = 0, n = Math.floor(rand(3, 5)); i < n; i++) yield* this.turnTo(this.heading + Math.PI * .9, 10);
-    this.tailSpeed = 1.6; this.setPose('sit'); this.face('half', 'zig'); this.wriggle = 1; // choáng
+    this.tailSpeed = 1.6; this.setPose('sit'); this.face('half'); this.wriggle = 1; // choáng
     yield* this.wait(.5); this.wriggle = 0;
     yield* this.wait(.8); this.face('open');
   }
@@ -962,13 +956,13 @@ class Cat {
     this.wriggle = 1; yield* this.wait(rand(.6, 1.1)); this.wriggle = 0; // lắc mông
     yield* this.jumpTo(target.x, 0, target.z);
     this.goal.paw = 1; this.goal.lean = .7; yield* this.wait(.35); this.goal.paw = 0; this.goal.lean = 0;
-    this.tailSpeed = 1.6; this.setPose('sit'); this.face(chance(.5) ? 'happy' : 'open', 'chew'); // bắt được... hay hụt?
+    this.tailSpeed = 1.6; this.setPose('sit'); this.face(chance(.5) ? 'happy' : 'open'); // bắt được... hay hụt?
     yield* this.lookAround(rand(1, 2));
   }
   // Nằm ngửa, lăn qua lăn lại khoe bụng.
   *bellyRoll() {
     this.setPose('loaf'); yield* this.wait(.4);
-    this.setPose('roll'); this.face('happy', 'open');
+    this.setPose('roll'); this.face('happy');
     for (let i = 0, n = Math.floor(rand(2, 4)); i < n; i++) { this.wriggle = 1; yield* this.wait(.5); this.wriggle = 0; yield* this.wait(.3); }
     this.face('blink'); yield* this.wait(rand(1.2, 2));
     this.setPose('loaf'); this.face('open'); yield* this.wait(.4);
@@ -980,7 +974,7 @@ class Cat {
     if (cam) yield* this.turnTo(this.facing(cam.x, cam.z));
     this.setPose('sit'); this.goal.tailUp = 1;
     for (let i = 0, n = chance(.5) ? 1 : 2; i < n; i++) {
-      this.face('open', 'open'); this.squash = -.15; this.world.say(this, '♪', 1); this.quiverUntil = this.world.time + 1;
+      this.face('open'); this.squash = -.15; this.world.say(this, '♪', 1); this.quiverUntil = this.world.time + 1;
       this.world.notice(this.x, this.z, { except: this });
       yield* this.wait(.45); this.face('open'); yield* this.wait(.5);
     }
@@ -1013,7 +1007,7 @@ class Cat {
     this.setPose('sit'); this.goal.tailUp = .2; this.tailSpeed = 2.4;
     for (let t = 0, n = rand(5, 9); t < n; t += 1.2) {
       this.lookGoal = rand(-1, 1);
-      if (chance(.3)) { this.face('focus', 'chew'); yield* this.wait(.5); this.face('focus'); } // "chí chí" với chim ngoài cửa
+      if (chance(.3)) { this.face('focus'); yield* this.wait(.5); this.face('focus'); } // "chí chí" với chim ngoài cửa
       yield* this.wait(1.2);
     }
     this.tailSpeed = 1.6;
@@ -1023,7 +1017,7 @@ class Cat {
     const rug = this.world.center('rug');
     yield* this.walkTo(rug.x + rand(-.3, .3), rug.z + rand(-.2, .3));
     this.setPose('loaf'); yield* this.wait(.4);
-    this.setPose('roll'); this.face('happy', 'open');
+    this.setPose('roll'); this.face('happy');
     for (let t = 0, n = rand(2, 3.5); t < n; t += .5) { this.wriggle = 1; yield* this.wait(.5); }
     this.wriggle = 0;
     this.setPose('loaf'); this.face('open'); yield* this.wait(.5);
@@ -1064,7 +1058,7 @@ class Cat {
       this.setPose('knead'); this.face('blink'); this.purr = 1; // nhồi bột + rừ rừ
       this.contact = { spread: .25, sag: .25 }; // nệm ghế lún dưới chân
       yield* this.wait(rand(2.5, 4));
-      this.purr = 0; this.setPose('loaf'); this.face('half');
+      this.purr = 0; this.setPose('loaf'); this.face('blink');
       this.contact = { spread: .6, sag: .35 }; // nằm bẹp trên nệm
       yield* this.sleep(rand(4, 8));
       node.userData.bump?.(1); // sắp đạp nhảy xuống: ghế bập bênh đung đưa một lúc
@@ -1104,7 +1098,7 @@ class Cat {
         this.world.knockOff(node, mug, this); // ...rồi đẩy rơi
         this.goal.paw = 0; this.goal.lean = .7; this.face('focus');
         yield* this.wait(1.1);
-        this.goal.lean = 0; this.face('happy', 'open');
+        this.goal.lean = 0; this.face('happy');
         yield* this.wait(1);
       } else {
         this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(3, 5));
@@ -1134,7 +1128,7 @@ class Cat {
       // xương rồng: rướn tới ngửi... mặt chạm gai thì lõm vào, giật bắn lùi lại, xù đuôi
       this.goal.lean = .9; this.face('focus');
       yield* this.wait(1);
-      this.contact = { front: 1 }; this.face('annoyed', 'open'); this.jigV.z -= 1.4;
+      this.contact = { front: 1 }; this.face('annoyed'); this.jigV.z -= 1.4;
       yield* this.wait(.14);
       this.contact = {}; this.world.say(this, '!', 1); this.puffUntil = this.world.time + 2; this.earFlopV = (this.earFlopV || 0) + 18;
       this.goal.lean = 0; this.squash = -.4; this.squashV = 0;
@@ -1142,14 +1136,14 @@ class Cat {
       const x0 = this.x, z0 = this.z;
       for (let t = 0; t < .3; t += this.world.dt) { const k = t / .3; this.x = x0 + (back.x - x0) * k; this.z = z0 + (back.z - z0) * k; this.y = .18 * 4 * k * (1 - k); yield; }
       this.y = 0; this.squash = .6; this.squashV = 0;
-      this.setPose('sit'); this.face('annoyed', 'zig'); this.goal.paw = 1; yield* this.wait(.2); this.goal.paw = 0; // xoa mũi
+      this.setPose('sit'); this.face('grumble'); this.goal.paw = 1; yield* this.wait(.2); this.goal.paw = 0; // xoa mũi
       yield* this.wait(1);
       yield* this.groom();
     } else if (id === 'plant' || id === 'kplant') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1); // ngửi
-      for (let i = 0; i < 3; i++) { this.face('blink', 'chew'); this.world.wiggle(node.userData.leaves); yield* this.wait(.45); this.face('open'); yield* this.wait(.3); }
-      this.goal.lean = 0; this.face('annoyed', 'zig'); // lá đắng
+      for (let i = 0; i < 3; i++) { this.face('blink'); this.world.wiggle(node.userData.leaves); yield* this.wait(.45); this.face('open'); yield* this.wait(.3); }
+      this.goal.lean = 0; this.face('grumble'); // lá đắng
       yield* this.wait(.8);
     } else if (id === 'tank') {
       this.setPose('sit'); this.face('focus'); this.goal.tailUp = .1; this.tailSpeed = 4;
@@ -1174,7 +1168,7 @@ class Cat {
       this.goal.paw = 0; this.goal.lean = 0; this.tailSpeed = 1.6; this.contact = {};
     } else if (id === 'lamp') {
       yield* this.turnTo(this.heading + Math.PI);
-      this.setPose('loaf'); this.face('half');
+      this.setPose('loaf'); this.face('blink');
       yield* this.wait(1);
       this.contact = { spread: kind === 'lamp-heater' ? 1 : .7 }; // ấm quá nên "tan chảy" ra sàn (lò sưởi tan nhiều nhất)
       yield* this.sleep(rand(5, 8)); // sưởi ấm dưới đèn
@@ -1228,7 +1222,7 @@ class Cat {
         this.world.knockOff(node, clock, this);
         this.goal.paw = 0; this.goal.lean = .7; this.face('focus');
         yield* this.wait(1.1);
-        this.goal.lean = 0; this.face('happy', 'open');
+        this.goal.lean = 0; this.face('happy');
         yield* this.wait(1);
       } else {
         this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(3, 5));
@@ -1282,7 +1276,7 @@ class Cat {
       this.setPose('sit'); this.face('focus'); this.tailSpeed = 4;
       for (let t = 0, n = rand(3, 5); t < n; t += this.world.dt) { this.lookGoal = Math.sin(this.world.time * 2.2); yield; } // mắt đảo theo cánh
       this.lookGoal = 0; this.tailSpeed = 1.6;
-      if (chance(.5)) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('happy', 'open'); yield* this.wait(.6); }
+      if (chance(.5)) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('happy'); yield* this.wait(.6); }
       yield* this.leaveHill();
     } else if (id === 'sunflowers' && kind === 'sunflowers-scarecrow') {
       // Bù nhìn: rình con quạ đậu trên tay bù nhìn rồi vồ — quạ bay mất.
@@ -1292,13 +1286,13 @@ class Cat {
       this.wriggle = 0;
       if (bird && !bird.userData.away) this.world.scareBird(node);
       yield* this.jumpTo(this.x + Math.sin(this.heading) * .3, 0, this.z + Math.cos(this.heading) * .3);
-      this.setPose('sit'); this.face('annoyed', 'zig'); yield* this.wait(1.2); this.tailSpeed = 1.6;
+      this.setPose('sit'); this.face('grumble'); yield* this.wait(1.2); this.tailSpeed = 1.6;
     } else if (id === 'sunflowers') {
       // Hướng dương: cả khóm quay mặt nhìn mèo; mèo đứng lên khều bông hoa, hoa lắc lư, hắt xì phấn hoa.
       this.setPose('sit'); this.face('open'); yield* this.wait(1);
       this.setPose('stretch'); this.goal.paw = 1; node.userData.bump?.(1); yield* this.wait(.35); this.goal.paw = 0;
       yield* this.wait(.4); this.goal.paw = 1; node.userData.bump?.(.8); yield* this.wait(.3); this.goal.paw = 0;
-      this.setPose('sit'); this.face('blink', 'open'); this.jigV.z -= .8; yield* this.wait(.5); // hắt xì
+      this.setPose('sit'); this.face('blink'); this.jigV.z -= .8; yield* this.wait(.5); // hắt xì
       this.face('happy'); yield* this.wait(1);
     } else if (id === 'clothesline' && kind === 'clothesline-flags') {
       // Dây cờ: nhảy chồm khều lá cờ thấp, cả dây cờ rung phần phật.
@@ -1307,7 +1301,7 @@ class Cat {
         yield* this.jumpTo(this.x, .35, this.z); this.goal.paw = 1; node.userData.bump?.(1.2);
         yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
       }
-      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1);
+      this.setPose('sit'); this.face('happy'); yield* this.wait(1);
     } else if (id === 'clothesline') {
       // Dây phơi: nhảy khều chiếc tất đang bay phần phật — tất rơi xuống, mèo vồ lấy tha đi một đoạn.
       const sock = node.userData.mug;
@@ -1319,8 +1313,8 @@ class Cat {
         yield* this.jumpTo(this.x, .4, this.z); this.goal.paw = 1;
         this.world.knockOff(node, sock, this);
         yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
-        this.face('happy', 'open'); yield* this.wait(.8);
-      } else { this.setPose('sit'); this.face('half'); yield* this.lookAround(rand(2, 3)); }
+        this.face('happy'); yield* this.wait(.8);
+      } else { this.setPose('sit'); this.face('open'); yield* this.lookAround(rand(2, 3)); }
     } else if (id === 'campfire' && kind === 'campfire-tent') {
       // Lều: chui vào nằm cạnh đèn, vạt lều đung đưa.
       const inside = local(...node.userData.inside);
@@ -1336,7 +1330,7 @@ class Cat {
     } else if (id === 'campfire') {
       // Lửa trại: nằm sưởi, tan chảy vì ấm, ngủ gà ngủ gật nhìn lửa.
       yield* this.turnTo(this.facing(center.x, center.z));
-      this.setPose('loaf'); this.face('half'); this.purr = 1;
+      this.setPose('loaf'); this.face('blink'); this.purr = 1;
       yield* this.wait(1.5); this.purr = 0;
       this.contact = { spread: .6 };
       yield* this.sleep(rand(5, 9));
@@ -1345,7 +1339,7 @@ class Cat {
       this.setPose('sit'); this.face('focus'); this.lookGoal = .5; yield* this.wait(1.2); this.lookGoal = 0;
       yield* this.jumpTo(this.x, .3, this.z); this.goal.paw = 1; node.userData.bump?.(1.2);
       yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
-      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1.5);
+      this.setPose('sit'); this.face('happy'); yield* this.wait(1.5);
     } else if (id === 'kite') {
       // Diều: ngồi ngước nhìn diều lượn, vồ sợi dây — diều giật mạnh một cái.
       this.setPose('sit'); this.face('focus'); this.tailSpeed = 5;
@@ -1355,7 +1349,7 @@ class Cat {
       yield* this.jumpTo(this.x + Math.sin(this.heading) * .25, .25, this.z + Math.cos(this.heading) * .25);
       this.goal.paw = 1; node.userData.tug?.(1.5);
       yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
-      this.setPose('sit'); this.face('happy', 'open'); this.tailSpeed = 1.6; yield* this.wait(1.2);
+      this.setPose('sit'); this.face('happy'); this.tailSpeed = 1.6; yield* this.wait(1.2);
     } else if (id === 'stream' && kind === 'stream-bridge') {
       // Cầu suối: nhảy lên đỉnh cầu, ngồi nhìn lá trôi dưới chân.
       const top = local(...node.userData.top);
@@ -1377,7 +1371,7 @@ class Cat {
       this.lookGoal = 0;
       this.goal.paw = 1; this.goal.lean = .7; yield* this.wait(.3);
       this.world.splash(node, this);
-      this.goal.paw = 0; this.goal.lean = 0; this.face('annoyed', 'zig');
+      this.goal.paw = 0; this.goal.lean = 0; this.face('grumble');
       this.setPose('sit');
       for (let i = 0; i < 4; i++) { this.goal.paw = i % 2; yield* this.wait(.12); } // giũ chân
       this.goal.paw = 0; this.tailSpeed = 1.6;
@@ -1406,7 +1400,7 @@ class Cat {
       const end = plank.localToWorld(new THREE.Vector3(side * .95, .1, 0));
       yield* this.jumpTo(end.x, end.y, end.z); this.surface = id;
       node.userData.bump?.(1);
-      this.setPose('sit'); this.face('happy', 'open'); yield* this.wait(1.2);
+      this.setPose('sit'); this.face('happy'); yield* this.wait(1.2);
       this.setPose('loaf'); yield* this.wait(rand(2, 4));
       node.userData.bump?.(1); // nhảy xuống: bập bênh bật trở lại
     } else if (id === 'slide') {
@@ -1416,7 +1410,7 @@ class Cat {
       const chute = node.userData.chute.map(([x, y, z]) => local(x, y, z));
       yield* this.turnTo(this.facing(chute[2].x, chute[2].z), 5);
       this.setPose('sit'); this.face('focus'); this.wriggle = 1; yield* this.wait(.8); this.wriggle = 0;
-      this.setPose('loaf'); this.face('happy', 'open'); this.goal.lean = -.3;
+      this.setPose('loaf'); this.face('happy'); this.goal.lean = -.3;
       const T = 1.1;
       for (let t = 0; t < T; t += this.world.dt) { // trượt nhanh dần theo máng
         const k = (t / T) ** 1.6 * (chute.length - 1), i = Math.min(chute.length - 2, Math.floor(k)), f = k - i;
@@ -1427,13 +1421,13 @@ class Cat {
       this.goal.lean = 0; this.surface = null;
       const out = this.world.reachable(this.x + Math.sin(this.heading) * .6, this.z + Math.cos(this.heading) * .6);
       yield* this.jumpTo(out.x, 0, out.z);
-      this.face('happy', 'open'); yield* this.zoomies();
+      this.face('happy'); yield* this.zoomies();
     } else if (id === 'flowers') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1.2); // ngửi hoa...
       this.face('sleep', 'yawn'); this.goal.lean = .2; this.squash = .6; // ...hắt xì!
       yield* this.wait(.35);
-      this.face('annoyed'); this.goal.lean = 0;
+      this.face('grumble'); this.goal.lean = 0;
       yield* this.wait(.6);
       this.setPose('sit'); this.face('open');
       yield* this.lookAround(rand(2, 3));
@@ -1452,14 +1446,14 @@ class Cat {
     } else if (id === 'catnip') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1);
-      for (let i = 0; i < 3; i++) { this.face('blink', 'chew'); this.world.wiggle(node.userData.leaves); yield* this.wait(.4); }
-      this.setPose('roll'); this.face('happy', 'open'); // phê cỏ mèo: lăn lộn
+      for (let i = 0; i < 3; i++) { this.face('blink'); this.world.wiggle(node.userData.leaves); yield* this.wait(.4); }
+      this.setPose('roll'); this.face('happy'); // phê cỏ mèo: lăn lộn
       for (let t = 0, n = rand(2.5, 4); t < n; t += .5) { this.wriggle = 1; yield* this.wait(.5); }
       this.wriggle = 0; this.setPose('stand');
       yield* this.zoomies();
     } else if (id === 'lantern') {
       yield* this.turnTo(this.heading + Math.PI);
-      this.setPose('loaf'); this.face('half');
+      this.setPose('loaf'); this.face('blink');
       yield* this.wait(1);
       this.contact = { spread: .6 }; // sưởi ấm cạnh đèn: tan chảy nhẹ
       yield* this.sleep(rand(4, 7));
@@ -1481,7 +1475,7 @@ class Cat {
         yield* this.walkTo(inside.x, inside.z, { ignore: id, near: .05, pace: .7 });
         this.contact = { squeeze: .3, spread: .2 };
         yield* this.turnTo(this.facing(approach.x, approach.z));
-        this.setPose('loaf'); this.face('half');
+        this.setPose('loaf'); this.face('blink');
         this.contact = { squeeze: .35, spread: .35 }; // nằm chật trong nhà nhỏ
         yield* this.sleep(rand(6, 10));
         this.contact = { squeeze: .8 };
@@ -1503,7 +1497,7 @@ class Cat {
       }
       this.goal.paw = 1; this.goal.lean = .6; yield* this.wait(.3); // khều nước
       this.world.splash(node, this);
-      this.goal.paw = 0; this.goal.lean = 0; this.face('annoyed', 'zig');
+      this.goal.paw = 0; this.goal.lean = 0; this.face('grumble');
       this.setPose('sit');
       for (let i = 0; i < 4; i++) { this.goal.paw = i % 2; yield* this.wait(.12); } // vẩy chân cho khô
       this.goal.paw = 0; this.tailSpeed = 1.6;
@@ -1533,12 +1527,12 @@ class Cat {
         this.wriggle = 0;
         this.world.scareBird(node); // chim bay mất
         this.setPose('sit'); this.lookGoal = .6;
-        for (let i = 0; i < 3; i++) { this.face('focus', 'chew'); yield* this.wait(.25); this.face('focus'); yield* this.wait(.2); } // "chí chí" tiếc nuối
-        this.face('annoyed', 'zig'); yield* this.wait(1); this.tailSpeed = 1.6;
+        this.face('focus'); yield* this.wait(1.4); // nhìn theo chim bay mất
+        this.face('grumble'); yield* this.wait(1); this.tailSpeed = 1.6;
       } else {
         const bowl = local(0, .92, .05);
         yield* this.jumpTo(bowl.x, bowl.y, bowl.z); this.surface = id;
-        this.goal.lean = .8; this.face('blink', 'chew'); yield* this.wait(2); // uống nước
+        this.goal.lean = .8; this.face('blink'); yield* this.wait(2); // uống nước
         this.goal.lean = 0; this.face('open');
       }
     } else if (id === 'stove') {
@@ -1568,7 +1562,7 @@ class Cat {
         const spot = local(bx, 0, bz + .34), bowlAt = local(bx, by, bz);
         yield* this.walkTo(spot.x, spot.z, { ignore: id, near: .05, pace: .7 });
         yield* this.turnTo(this.facing(bowlAt.x, bowlAt.z));
-        this.setPose('crouch'); this.goal.lean = .7; this.face('blink', 'chew');
+        this.setPose('crouch'); this.goal.lean = .7; this.face('blink');
         yield* this.wait(rand(2.5, 4));
         this.goal.lean = 0; this.face('open');
         yield* this.wait(.4);
@@ -1580,7 +1574,7 @@ class Cat {
       const seat = local(0, .5, 0);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.heading + Math.PI, 3);
-      this.setPose('loaf'); this.face('half');
+      this.setPose('loaf'); this.face('blink');
       this.contact = { spread: kind === 'bench-log' ? .4 : .55, sag: kind === 'bench-log' ? .25 : 0 }; // nằm ôm khúc gỗ tròn: võng nhẹ hai bên
       yield* this.sleep(rand(5, 9));
     }
@@ -1601,7 +1595,7 @@ class Cat {
       yield* this.jumpTo(q.x, 0, q.z);
       this.goal.paw = 1; fly.scare(); yield* this.wait(.3); this.goal.paw = 0;
     }
-    this.tailSpeed = 1.6; this.setPose('sit'); this.face('happy', 'chew');
+    this.tailSpeed = 1.6; this.setPose('sit'); this.face('happy');
     yield* this.wait(1);
   }
 
@@ -1641,7 +1635,7 @@ class Cat {
     }
     other.done = true;
     this.speed = 0; this.running = false;
-    this.tailSpeed = 1.6; this.setPose('sit'); this.face('happy', 'chew');
+    this.tailSpeed = 1.6; this.setPose('sit'); this.face('happy');
     yield* this.wait(1.2);
     yield* this.groom();
   }
@@ -1661,7 +1655,7 @@ class Cat {
         yield* this.walkTo(tx, tz, { run: true, near: .3, maxTime: .7, glide: true, direct: true });
       }
       this.speed = 0; this.running = false;
-      this.tailSpeed = 1.6; this.setPose('sit'); this.face('annoyed', 'zig');
+      this.tailSpeed = 1.6; this.setPose('sit'); this.face('grumble');
       yield* this.wait(1);
     } finally { this.social = null; this.partner = null; this.done = false; }
     yield* this.groom();
@@ -1673,7 +1667,7 @@ class Cat {
     yield* this.walkTo(other.x + Math.sin(side) * .6, other.z + Math.cos(side) * .6, { near: .12, maxTime: 6 });
     yield* this.turnTo(this.facing(other.x, other.z));
     this.setPose('loaf', { lean: .6 });
-    for (let i = 0; i < 5; i++) { this.face('blink', 'chew'); yield* this.wait(.5); this.face('blink'); yield* this.wait(.3); }
+    for (let i = 0; i < 5; i++) { this.face('blink'); yield* this.wait(.5); this.face('blink'); yield* this.wait(.3); }
     this.world.hearts(this, other);
     other.done = true;
     yield* this.sleep(rand(3, 5));
@@ -1699,16 +1693,16 @@ class Cat {
     yield* this.jumpTo(mid.x, 0, mid.z);
     for (let i = 0; i < 5; i++) { // quơ vuốt qua lại
       this.goal.paw = i % 2; other.goal.paw = (i + 1) % 2; this.goal.lean = other.goal.lean = .5;
-      this.face('focus', 'open'); other.face('focus', 'open'); other.squash = .25;
+      this.face('focus'); other.face('focus'); other.squash = .25;
       yield* this.wait(.26);
     }
     this.goal.paw = other.goal.paw = 0; this.goal.lean = other.goal.lean = 0;
     this.setPose('roll'); other.setPose('roll'); this.wriggle = other.wriggle = 1; // lăn lộn
-    this.face('happy', 'open'); other.face('happy', 'open');
+    this.face('happy'); other.face('happy');
     yield* this.wait(rand(1.4, 2.2));
     this.wriggle = other.wriggle = 0;
     other.done = true;
-    this.tailSpeed = 1.6; this.setPose('sit'); this.face('open', 'chew');
+    this.tailSpeed = 1.6; this.setPose('sit'); this.face('open');
     yield* this.groom();
   }
   *bePlayed(from) {
@@ -1717,7 +1711,7 @@ class Cat {
       this.setPose('sit');
       for (let t = 0; !this.done && t < 12; t += this.world.dt) { if (this.goal.roll < .5) this.turnToward(this.facing(from.x, from.z), 4); yield; }
     } finally { this.social = null; this.partner = null; this.done = false; this.wriggle = 0; }
-    this.setPose('sit'); this.face('happy', 'chew'); yield* this.wait(.6);
+    this.setPose('sit'); this.face('happy'); yield* this.wait(.6);
     if (chance(.5)) yield* this.zoomies(); else yield* this.groom(); // còn hăng thì chạy loạn
     yield* this.life();
   }
@@ -1738,7 +1732,7 @@ class Cat {
   *beCuddled(from) {
     this.social = 'cuddle'; this.partner = from; this.done = false;
     try {
-      this.setPose('loaf'); this.face('half');
+      this.setPose('loaf'); this.face('blink');
       for (let t = 0; !this.done && t < 16; t += this.world.dt) {
         if (from.sleeping && this.eyes !== 'sleep') { this.setPose('curl'); this.face('sleep'); this.tailWag = .05; this.tailSpeed = .5; }
         yield;
@@ -1752,7 +1746,7 @@ class Cat {
     this.pair(other, 'sniff', other.beSniffed(this));
     yield* this.walkTo(other.x - Math.sin(other.heading) * .7, other.z - Math.cos(other.heading) * .7, { near: .12, maxTime: 6 });
     yield* this.turnTo(this.facing(other.x, other.z));
-    this.goal.lean = .8; this.face('focus', 'chew');
+    this.goal.lean = .8; this.face('focus');
     yield* this.wait(1.3);
     this.goal.lean = 0; this.face('blink');
     other.done = true;
@@ -1765,7 +1759,7 @@ class Cat {
       this.setPose('stand'); this.face('open');
       for (let t = 0; !this.done && t < 8; t += this.world.dt) { this.lookGoal = t > 1 ? 1 : 0; this.tailSpeed = 4; yield; }
     } finally { this.social = null; this.partner = null; this.done = false; this.lookGoal = 0; this.tailSpeed = 1.6; }
-    this.face('annoyed', 'zig'); this.world.say(this, '…', 1); this.puffUntil = this.world.time + .7;
+    this.face('grumble'); this.world.say(this, '…', 1); this.puffUntil = this.world.time + .7;
     yield* this.wait(.5);
     const p = this.world.freeSpot(this);
     yield* this.walkTo(p.x, p.z, { near: .2, maxTime: 4 });
@@ -1792,7 +1786,7 @@ class Cat {
     this.goal.paw = 1; this.goal.lean = .6; other.pounced = true;
     yield* this.wait(.3);
     this.goal.paw = 0; this.goal.lean = 0; this.lookGoal = 0; this.tailSpeed = 1.6;
-    this.setPose('sit'); this.face('happy', 'chew'); // mặt vô tội
+    this.setPose('sit'); this.face('happy'); // mặt vô tội
     yield* this.wait(1.4);
     yield* this.slowBlink();
   }
@@ -1805,7 +1799,7 @@ class Cat {
     if (this.pounced) {
       this.pounced = false;
       // giật bắn: nảy dựng tại chỗ, tai cụp, đuôi xù
-      this.face('annoyed', 'open'); this.setPose('stand', { tailUp: 1 }); this.puffUntil = this.world.time + 2.5;
+      this.face('annoyed'); this.setPose('stand', { tailUp: 1 }); this.puffUntil = this.world.time + 2.5;
       this.earFlopV = (this.earFlopV || 0) + 20; this.squash = -.5; this.squashV = 0;
       this.world.say(this, '!', 1);
       for (let t = 0; t < .34; t += this.world.dt) { const k = t / .34; this.y = .32 * 4 * k * (1 - k); yield; }
@@ -1813,7 +1807,7 @@ class Cat {
       yield* this.turnTo(this.facing(from.x, from.z), 10);
       if (chance(.55)) { this.face('focus'); yield* this.chase(from); } // trả đũa!
       else {
-        this.face('annoyed', 'zig'); this.world.say(this, '💢', 1);
+        this.face('annoyed'); this.world.say(this, '💢', 1);
         this.goal.paw = 1; yield* this.wait(.18); this.goal.paw = 0; yield* this.wait(.3);
         const p = this.world.freeSpot(this);
         yield* this.walkTo(p.x, p.z, { near: .2, maxTime: 4 });
@@ -1895,8 +1889,8 @@ class Cat {
       yield* this.walkTo(p.x, p.z, { near: .15, maxTime: 4, run: Math.hypot(p.x - this.x, p.z - this.z) > 1.5 });
       if (cam) yield* this.turnTo(this.facing(cam.x, cam.z), 7);
       this.setPose('sit'); this.quiverUntil = this.world.time + 2.4;
-      for (let i = 0; i < 2; i++) { this.face('open', 'open'); this.squash = -.18; this.world.say(this, '♪', 1); yield* this.wait(.5); this.face('open'); yield* this.wait(.35); }
-      this.lookGoal = clamp(angDiff(this.heading, this.facing(target.x, target.z)) * 2, -1, 1); this.face('half'); // liếc xéo
+      for (let i = 0; i < 2; i++) { this.face('open'); this.squash = -.18; this.world.say(this, '♪', 1); yield* this.wait(.5); this.face('open'); yield* this.wait(.35); }
+      this.lookGoal = clamp(angDiff(this.heading, this.facing(target.x, target.z)) * 2, -1, 1); this.face('grumble'); // liếc xéo
       yield* this.wait(1.1);
       this.lookGoal = 0; this.face('open');
       yield* this.wait(.8);
@@ -1910,7 +1904,7 @@ class Cat {
     try {
       while (this.world.afk) {
         this.release(); this.speed = 0;
-        if (chance(.5)) { this.face('half', 'yawn'); yield* this.wait(rand(.6, 1.2)); } // ngáp trước khi ngủ
+        if (chance(.5)) { this.face('half'); yield* this.wait(rand(.6, 1.2)); } // ngáp trước khi ngủ
         const onFloor = this.y < .01;
         this.setPose(!onFloor ? 'loaf' : chance(.15) ? 'roll' : chance(.55) ? 'curl' : 'loaf');
         if (!onFloor || this.goal.roll < .5) this.contact = { spread: rand(.2, .45) }; // ngủ say: thân bẹp ra
@@ -1950,10 +1944,10 @@ class Cat {
       const near = this.world.nearToy(this.carryX, this.carryZ);
       if (near !== hoverToy) {
         hoverToy = near;
-        if (near) { this.face('happy', 'open'); this.world.say(this, '♪', 1); } else this.face('annoyed');
+        if (near) { this.face('focus'); this.world.say(this, '♪', 1); } else this.face('annoyed');
       }
       // Bị nhấc lơ lửng: angry; bế lâu thì đổi sang chew (lầm bầm chịu trận)
-      if (!hoverToy && this.world.time - lifted > 1.4 && this.eyes === 'annoyed' && this.mouth !== 'chew') this.face('annoyed', 'chew');
+      if (!hoverToy && this.world.time - lifted > 1.4 && this.eyes === 'annoyed') this.face('grumble');
       yield;
     }
     this.tailWag = .25; this.tailSpeed = 1.6;
@@ -1970,7 +1964,7 @@ class Cat {
     this.xV = this.zV = this.yV = 0;
     this.squash = .9; this.squashV = 0; this.earFlopV = (this.earFlopV || 0) + 16;
     if (toy) { // thả gần một món: không hờn, chạy tới dùng món đó luôn
-      this.face('open', 'open'); this.setPose('stand');
+      this.face('open'); this.setPose('stand');
       yield* this.wait(.25);
       try { yield* this.useFurniture(toy); } finally { this.release(); this.setPose('stand'); this.face('open'); this.lookGoal = 0; this.contact = {}; }
       yield* this.life();
@@ -1989,7 +1983,7 @@ class Cat {
   //   'grumpy' (chạm quá nhiều: nổi giận, khè, quơ vuốt rồi bỏ đi hờn; trong lúc hờn chạm vào chỉ thêm 💢)
   pet() {
     const now = this.world.time;
-    if (now < (this.grumpyUntil || 0)) { this.face('annoyed', 'zig'); this.earFlopV = (this.earFlopV || 0) + 10; this.puffUntil = now + .8; return 'grumpy'; }
+    if (now < (this.grumpyUntil || 0)) { this.face('annoyed'); this.earFlopV = (this.earFlopV || 0) + 10; this.puffUntil = now + .8; return 'grumpy'; }
     this.petTimes = (this.petTimes || []).filter(t => now - t < PET_ANNOY.WINDOW);
     this.petTimes.push(now);
     if (this.petTimes.length >= PET_ANNOY.ANGRY && !this.carried) {
@@ -2011,7 +2005,7 @@ class Cat {
   *grumpy() {
     this.release(); this.surface = null; this.sleeping = false; this.social = null; this.partner = null;
     if (this.y > .01) yield* this.getDown();
-    this.setPose('crouch', { tailUp: 1 }); this.face('annoyed', 'zig'); this.tailSpeed = 8; this.tailWag = .9;
+    this.setPose('crouch', { tailUp: 1 }); this.face('annoyed'); this.tailSpeed = 8; this.tailWag = .9;
     this.squash = -.35; this.earFlopV = (this.earFlopV || 0) + 18; // xù lông, cụp tai
     this.puffUntil = this.world.time + 3.5; // đuôi xù to như chổi
     this.world.say(this, '💢', 1);
@@ -2020,8 +2014,8 @@ class Cat {
     const cam = this.world.cameraPos?.();
     if (cam) yield* this.turnTo(this.facing(cam.x, cam.z), 9);
     for (let i = 0; i < 2; i++) { // quơ vuốt về phía người chơi
-      this.goal.paw = 1; this.goal.lean = .6; this.face('annoyed', 'open'); yield* this.wait(.16);
-      this.goal.paw = 0; this.goal.lean = 0; this.face('annoyed', 'zig'); yield* this.wait(.22);
+      this.goal.paw = 1; this.goal.lean = .6; this.face('annoyed'); yield* this.wait(.16);
+      this.goal.paw = 0; this.goal.lean = 0; this.face('annoyed'); yield* this.wait(.22);
     }
     this.world.say(this, '💢', 1);
     const p = this.world.freeSpot(this); // bỏ đi chỗ khác, quay lưng lại hờn dỗi
@@ -2029,7 +2023,7 @@ class Cat {
     if (cam) yield* this.turnTo(this.facing(cam.x, cam.z) + Math.PI, 4);
     this.setPose('loaf'); this.tailSpeed = 3; this.tailWag = .5;
     yield* this.wait(rand(3, 5));
-    this.tailSpeed = 1.6; this.tailWag = .25; this.face('half');
+    this.tailSpeed = 1.6; this.tailWag = .25; this.face('open');
     yield* this.groom();
     yield* this.life();
   }
@@ -2241,22 +2235,21 @@ class Cat {
     let eyes = this.eyes, mouth = this.mouth;
     if (petting) {
       const warn = this.petMood === 'warning';
-      // Được cưng: happy; bị chọc dồn dập (sắp nổi giận): chew
-      eyes = this.sleeping ? 'sleep' : warn ? 'annoyed' : 'happy'; mouth = this.sleeping ? 'calm' : warn ? 'chew' : 'open';
+      // Được cưng: happy; bị chọc dồn dập (sắp nổi giận): grumble
+      eyes = this.sleeping ? 'sleep' : warn ? 'grumble' : 'happy'; mouth = 'calm';
       if (warn) { this.tailSpeed = 6; this.tailWag = .8; } // quẫy đuôi = sắp hết kiên nhẫn
     } else if (this.petMood === 'warning') { this.petMood = 'happy'; this.tailSpeed = 1.6; this.tailWag = .25; }
     this.nextBlink -= dt;
-    const canBlink = eyes === 'open' || eyes === 'focus';
+    // Chỉ mặt trung tính (open) mới tự chớp; mặt cute (focus) là đang nhìn chằm chằm nên không chớp
+    const canBlink = eyes === 'open';
     const blinking = canBlink && this.nextBlink < 0;
     if (this.nextBlink < -.16) this.nextBlink = chance(.2) ? rand(.15, .3) : rand(2.5, 6); // thỉnh thoảng chớp đôi
     spring(this, 'lid', blinking ? 0 : 1, 900, 1, dt);
-    if (canBlink && this.lid < .45) eyes = 'blink';
-    let expr = expressionOf(eyes, mouth);
-    // Rảnh (mặt calm, không bị cưng / bế / ngủ): thỉnh thoảng đổi sang cute trong chốc lát
-    this.nextCute = (this.nextCute ?? rand(4, 10)) - dt;
-    if (this.nextCute < 0) { this.cuteFor = rand(1.4, 2.4); this.nextCute = rand(7, 16); }
-    this.cuteFor = Math.max(0, (this.cuteFor || 0) - dt);
-    if (expr === 'calm' && this.cuteFor > 0 && !petting && !this.carried && !this.sleeping) expr = 'cute';
+    // Mặt đổi theo nguyên nhân (cat-face.mjs), giữ tối thiểu HOLD giây; chớp mắt là lớp phủ riêng, không tính vào lần đổi mặt
+    this.faceState = this.faceState || {};
+    const urgent = petting || this.carried || eyes === 'annoyed';
+    let expr = settleExpression(this.faceState, expressionOf(eyes, mouth), t, urgent);
+    if (canBlink && this.lid < .45) expr = 'blink';
     this.expression = expr;
     const eyesTex = expressionTexture(this.breed, expr);
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
@@ -2768,10 +2761,10 @@ export function createCatLife(ctx) {
   };
 }
 
-// Đổi mắt / miệng của một con mèo dựng bằng catModel (eyes: open | focus | blink | half | sleep | happy | annoyed; mouth: calm | open | chew | yawn | zig).
-// eyes / mouth: như face() của mèo trong phòng ('focus' -> cute cho mèo khoe ở màn thưởng), hoặc tên biểu cảm EXPRESSIONS.
+// Đổi mắt / miệng của một con mèo dựng bằng catModel (eyes: open | focus | blink | half | sleep | happy | grumble | annoyed; mouth: calm | yawn).
+// eyes / mouth: như face() của mèo trong phòng (cat-face.mjs), hoặc tên biểu cảm EXPRESSIONS.
 export function setCatFace(rig, breed, eyes, mouth = 'calm') {
-  const expr = EXPRESSIONS.includes(eyes) ? eyes : eyes === 'focus' ? 'cute' : expressionOf(eyes, mouth);
+  const expr = EXPRESSIONS.includes(eyes) ? eyes : expressionOf(eyes, mouth);
   const eyesTex = expressionTexture(breed, expr);
   if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
 }

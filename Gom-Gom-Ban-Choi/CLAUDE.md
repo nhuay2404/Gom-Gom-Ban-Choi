@@ -2,7 +2,7 @@
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
-`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs`;
+`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
@@ -115,6 +115,22 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Test mèo trong trình duyệt: giữ thức bằng `window.dispatchEvent(new PointerEvent('pointerup'))` mỗi 1.5 s (AFK 5 s
   thì mèo đi ngủ); PointerEvent tự tạo không nổi bọt nên phải phát ở `window`.
 - Món có phần đung đưa / xoay mà mèo ngồi lên: `userData.ride` + lò xo kéo về góc nghỉ 0.
+
+**Biểu cảm mèo 3D** (bảng nguồn duy nhất: `game/deco/cat-face.mjs`; test: `cat-face.test.mjs`)
+- Mặt đổi theo **nguyên nhân**, không ngẫu nhiên. `face(eyes)` chỉ nhận 8 giá trị, mỗi giá trị = đúng một mặt Figma:
+  `open` calm (trung tính) · `focus` cute (quan tâm / muốn: rình, vồ, đuổi, ngó chim) · `happy` (vui: được cưng, lăn bụng, bắt được, cọ đầu) ·
+  `blink` (dễ chịu nhắm mắt: liếm lông, nhồi bột, uống nước, nằm ấm) · `half` sleepy (buồn ngủ / ngáp / choáng) · `sleep` (ngủ say) ·
+  `grumble` chew (bực **nhẹ**: chê, tiếc, ướt chân, hờn, bị bế lâu) · `annoyed` angry (giận / giật mình **mạnh**: bị nhấc, xù đuôi, khè, gai đâm).
+- Miệng nằm sẵn trong ảnh mặt: không truyền miệng nào khác ngoài `face('sleep', 'yawn')` (ngáp). Truyền `'chew'` / `'zig'` / `'open'`
+  là vô nghĩa (test bắt).
+- Thang buồn ngủ: `open` → `half` → `sleep`. `half` chỉ là bước đệm trước khi ngủ / ngáp / choáng. Nằm thư giãn không ngủ dùng `blink`,
+  hết hờn / nhìn quanh dùng `open` (lỗi cũ: loaf + `half` làm mèo trông ngáp suốt).
+- `annoyed` chỉ ở hành vi giận / giật mình (danh sách trong test); bực nhẹ phải là `grumble` (lỗi cũ: lá đắng, hụt mồi, ướt chân đều ra mặt giận).
+- Không có cú đổi mặt ngẫu nhiên (đã bỏ "cute" ngẫu nhiên lúc rảnh). Chỉ `open` mới tự chớp; `focus` nhìn chằm chằm không chớp.
+- Chống nhấp nháy: mặt vừa hiện giữ ≥ `HOLD` (.45 s) rồi mới đổi (`settleExpression`); mặt phản ứng người chơi (cưng, bế, giật mình) đổi ngay.
+  Đừng viết vòng lặp đổi mặt nhanh hơn thế.
+- Mọi cảnh dùng chung: mèo khoe ở bản đồ / màn thưởng gọi `setCatFace(rig, breed, eyes)` với cùng bảng này.
+- Thêm hành vi mới: chọn mặt theo bảng trên, không tạo giá trị mới trừ khi có ảnh Figma mới; có ảnh mới thì thêm vào `FACE` + test.
 
 **Ánh sáng ban đêm (chế độ đêm của Deco)**
 - Chỉ nguồn sáng thật mới được sáng rực ban đêm: món có PointLight bên trong (đèn, lửa trại, đèn lồng) hoặc khai `node.userData.lightSource = true`
