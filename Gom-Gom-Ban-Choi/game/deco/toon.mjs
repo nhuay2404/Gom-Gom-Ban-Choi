@@ -148,6 +148,7 @@ export function syncOutlineResolution(renderer) {
   renderer.getDrawingBufferSize(sizeTmp);
   resolution.copy(sizeTmp);
   outlineShared.useIds.value = 0;
+  outlineShared.zoom.value = 1;
   outlineShared.inkTint.value.setRGB(1, 1, 1);
 }
 
@@ -172,8 +173,11 @@ function unitIdOf(object) {
 const encodeId = (id, out) => out.set(id & 255, (id >> 8) & 255, (id >> 16) & 255);
 // inkTint: nhân vào màu viền. Viền không nhận ánh sáng, nên ban đêm (cảnh tối) viền giữ màu ngày sẽ sáng rực như dây đèn LED;
 // phòng chính gán tông đêm qua setOutlineTint() mỗi lần vẽ, ảnh thumbnail luôn dùng màu gốc (syncOutlineResolution đặt lại).
-const outlineShared = { tIds: { value: null }, useIds: { value: 0 }, inkTint: { value: new THREE.Color(1, 1, 1) } };
+const outlineShared = { tIds: { value: null }, useIds: { value: 0 }, inkTint: { value: new THREE.Color(1, 1, 1) }, zoom: { value: 1 } };
+export function setOutlineZoom(k) { outlineShared.zoom.value = k; }
 export function setOutlineTint(color) { outlineShared.inkTint.value.copy(color); }
+// Hệ số nhân bề dày viền theo độ zoom (1 = gần, nhỏ hơn khi zoom xa): vật mỏng (nan rào, tay vịn) ở xa mà viền vẫn đủ px thì nét đè kín vật
+// và nhấp nháy khi xoay camera. syncOutlineResolution đặt lại 1 cho ảnh thumbnail.
 const idMat = new THREE.ShaderMaterial({
   uniforms: { unitId: { value: new THREE.Vector3() } },
   vertexShader: `
@@ -255,14 +259,14 @@ function outlineMat(baseColor, styleName = 'default') {
   const material = new THREE.ShaderMaterial({
     uniforms: { color: { value: ink }, width: { value: style.px }, wobble: { value: wobble }, toneAmount: { value: style.tone }, innerAlpha: { value: style.inner }, resolution: { value: resolution }, unitId: { value: new THREE.Vector3() }, ...outlineShared },
     vertexShader: `
-      uniform float width; uniform float wobble; uniform vec2 resolution;
+      uniform float width; uniform float wobble; uniform vec2 resolution; uniform float zoom;
       attribute vec3 outlineNormal;
       varying vec3 vObj;
       varying float vDown;
       ${NOISE_GLSL}
       void main() {
         vObj = position;
-        float w = width * (1.0 - wobble * 0.5 + wobble * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
+        float w = width * zoom * (1.0 - wobble * 0.5 + wobble * toonNoise(position * ${STROKE.wobbleScale.toFixed(2)}));
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         // Mép dưới của vật đặt trên sàn (bồn hoa, chân mèo, đáy hộp...): phần viền phình ra phía dưới rơi lên mặt sàn ĐỨNG
         // TRƯỚC đáy vật, nên bị sàn che (viền phía gần camera mất / chập chờn khi xoay). Kéo riêng các đỉnh có pháp tuyến

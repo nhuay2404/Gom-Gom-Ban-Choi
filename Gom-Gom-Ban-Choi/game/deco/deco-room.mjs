@@ -7,7 +7,7 @@ import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createCatLife } from './room-cats.mjs';
-import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
+import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, setOutlineZoom, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WINDOW_X, KITCHEN_DOOR, KITCHEN_WINDOW_X, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
@@ -2149,7 +2149,10 @@ export function createRoom() {
         fixedOutlineHidden = decoMode;
         fixedDecor.forEach(root => root.traverse(node => { if (node.userData.outline) node.visible = !fixedOutlineHidden; }));
       }
-      syncOutlineResolution(renderer); setOutlineTint(night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : DAY_INK); renderOutlineIds(renderer, scene, camera);
+      syncOutlineResolution(renderer); setOutlineTint(night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : DAY_INK);
+      // Zoom xa thì viền mảnh lại (tới -45% ở xa nhất): chống nét đè kín nan rào / vật mỏng và nhấp nháy khi xoay.
+      setOutlineZoom(1 - .45 * THREE.MathUtils.clamp((camera.position.distanceTo(controls.target) - controls.minDistance) / Math.max(1e-3, controls.maxDistance - controls.minDistance), 0, 1));
+      renderOutlineIds(renderer, scene, camera);
     }
     renderer.render(scene, camera);
     restoreShadows?.();
