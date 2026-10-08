@@ -1029,7 +1029,8 @@ document.addEventListener('pointerdown', event => {
   const keptMenus = new Set(settingsBoxes.filter(inside).map(menuOf));
   settingsBoxes.forEach(box => { if (!keptMenus.has(menuOf(box))) setSettingsOpen(box, false); });
 });
-document.querySelectorAll('.settings-close').forEach(button => { button.onclick = () => { playSound('pick'); closeAllSettings(); }; });
+// Hộp LiveOps (.lo-dialog: Daily, mạng...) mượn kiểu nút .settings-close nhưng tự đóng ở liveops-ui.js: không gán đè.
+document.querySelectorAll('.settings-close:not(.lo-dialog .settings-close)').forEach(button => { button.onclick = () => { playSound('pick'); closeAllSettings(); }; });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
 // Home / Restart trong popup: đóng popup trước, play-controller.js hỏi lại rồi rời / chơi lại màn
 ['open-map', 'restart'].forEach(id => $(id).addEventListener('click', () => closeAllSettings()));
