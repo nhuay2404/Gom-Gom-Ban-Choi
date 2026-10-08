@@ -21,7 +21,7 @@ const ball = (r, color) => mesh(new THREE.SphereGeometry(r, sphereSegments(r), M
 
 // Màu theo ambient: cỏ, sương / nền (xanh trời như Home), tán lá, thân cây, đá. Shader toon tăng bão hoà nên mã màu ở đây hơi nhạt.
 export const MEADOW_LOOKS = {
-  day: { ground: '#a2d97e', fog: '#a8dcfa', leaf: '#6cc154', leafDark: '#4aa84a', pine: '#3e8f4a', bush: '#78c85c', wood: '#a8764a', rock: '#c0b8aa' },
+  day: { ground: '#8fd070', fog: '#a8dcfa', leaf: '#6cc154', leafDark: '#4aa84a', pine: '#3e8f4a', bush: '#78c85c', wood: '#a8764a', rock: '#c0b8aa' },
   dusk: { ground: '#b8b07c', fog: '#f0b88c', leaf: '#8aa84c', leafDark: '#6e9444', pine: '#58804a', bush: '#8eac54', wood: '#8a5c3c', rock: '#a89a88' },
   night: { ground: '#34503e', fog: '#1c2540', leaf: '#2c5a3e', leafDark: '#244c38', pine: '#1f4a3a', bush: '#2e5a40', wood: '#3a3038', rock: '#40485a' },
 };
@@ -34,16 +34,16 @@ function groundTexture() {
   let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const wrap = (x, y, draw) => { for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) draw(x + dx, y + dy); };
   for (let i = 0; i < 70; i++) { // mảng sáng tối
-    const x = rnd() * S, y = rnd() * S, r = 18 + rnd() * 40;
-    g.fillStyle = rnd() < .5 ? '#ffffff' : '#9fc98a'; g.globalAlpha = .5;
+    const x = rnd() * S, y = rnd() * S, r = 14 + rnd() * 26;
+    g.fillStyle = rnd() < .5 ? '#ffffff' : '#c9e6b8'; g.globalAlpha = .35;
     wrap(x, y, (px, py) => { g.beginPath(); g.ellipse(px, py, r, r * .6, 0, 0, TAU); g.fill(); });
   }
   g.globalAlpha = 1;
-  g.strokeStyle = '#7fb866'; g.lineWidth = 2.2; g.lineCap = 'round';
-  for (let i = 0; i < 90; i++) { // nét cỏ
+  g.strokeStyle = '#a4d48a'; g.lineWidth = 2.2; g.lineCap = 'round';
+  for (let i = 0; i < 60; i++) { // nét cỏ
     wrap(rnd() * S, rnd() * S, (px, py) => { g.beginPath(); g.moveTo(px - 3, py + 4); g.lineTo(px - 4, py - 3); g.moveTo(px + 2, py + 4); g.lineTo(px + 4, py - 4); g.stroke(); });
   }
-  for (let i = 0; i < 30; i++) { // hoa li ti
+  for (let i = 0; i < 12; i++) { // hoa li ti
     const pink = rnd() < .4;
     wrap(rnd() * S, rnd() * S, (px, py) => {
       g.fillStyle = pink ? '#ff9ec0' : '#ffffff';
@@ -54,7 +54,7 @@ function groundTexture() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(26, 26);
+  texture.repeat.set(110, 110);
   texture.anisotropy = 4;
   return texture;
 }
