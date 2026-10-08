@@ -368,7 +368,7 @@ function dentByRopes(p, ropes) {
 // tai phải lật theo trục dọc giữa ảnh. Lòng tai là tam giác bo tròn nhỏ hơn, một màu phẳng.
 // Chân tai cắm sâu EAR_SINK vào trong thân: tai giật / cụp / nghiêng (xoay quanh gốc) hay thân bị nhấc lắc lư thì chân tai
 // vẫn nằm trong thân, không hở khe giữa tai và đầu.
-const EAR_DEPTH = .05, EAR_BEVEL = .014, EAR_SINK = .08, EAR_BACK = .045; // EAR_BACK: mặt trước tai lùi sau mặt trước thân
+const EAR_DEPTH = .05, EAR_BEVEL = .014, EAR_SINK = .08, EAR_BACK = .045, EAR_TIP_SINK = .015; // EAR_BACK: mặt trước tai lùi sau mặt trước thân
 function roundedPolygon(points, radius) {
   const shape = new THREE.Shape(), n = points.length;
   const corner = k => {
@@ -394,7 +394,9 @@ function earGeometries(breed, side) {
   outer.x = side * Math.min(Math.abs(outer.x), edge);
   const cx = (outer.x + inner.x) / 2;
   [outer, apex, inner].forEach(p => { p.x -= cx; });
-  const tri = [new THREE.Vector2(outer.x, -EAR_SINK), outer, apex, inner, new THREE.Vector2(inner.x, -EAR_SINK)];
+  // Khối tai màu tai chỉ cắm nông (EAR_TIP_SINK); phần chân cắm sâu là khối màu lông riêng (root). Thân lún / co khi nằm đệm,
+  // bị nhấc... thì chân tai lộ ra ở góc mặt trước: cùng màu lông thì không thấy (lỗi cũ: Xiêm lộ 2 mảng nâu ở góc trên).
+  const tri = [new THREE.Vector2(outer.x, -EAR_TIP_SINK), outer, apex, inner, new THREE.Vector2(inner.x, -EAR_TIP_SINK)];
   const solid = new THREE.ExtrudeGeometry(roundedPolygon(tri, .05), {
     depth: EAR_DEPTH - 2 * EAR_BEVEL, bevelEnabled: true, bevelThickness: EAR_BEVEL, bevelSize: EAR_BEVEL, bevelSegments: 4, curveSegments: 10,
   });
@@ -405,7 +407,9 @@ function earGeometries(breed, side) {
   const pink = [outer, apex, inner].map(p => p.clone().sub(g).multiplyScalar(.56).add(g).add(new THREE.Vector2(0, -.012)));
   const front = new THREE.ShapeGeometry(roundedPolygon(pink, .03), 8);
   front.translate(0, 0, .003);
-  return { front, solid, x: cx };
+  const root = new THREE.BoxGeometry(Math.abs(inner.x - outer.x) - .008, EAR_SINK, EAR_DEPTH - .008);
+  root.translate((outer.x + inner.x) / 2, -EAR_SINK / 2, -EAR_DEPTH / 2);
+  return { front, solid, root, x: cx };
 }
 
 // Đệm mèo dưới lòng bàn chân: 1 đệm lớn hình tim tròn + 4 hạt đậu ngón ở phía trước, dán theo mặt dưới của bàn chân
@@ -498,7 +502,9 @@ function buildRig(breed) {
     outer.userData.outlineStyle = 'catEar'; // viền tai (toon.mjs OUTLINE_STYLES)
     const art = new THREE.Mesh(geo.front, earArtMat);
     art.userData.noOutline = true; // ảnh vành tai / lòng tai: chỉ là mảng màu, không viền
-    ear.add(outer, art);
+    const root = mesh(geo.root, fur);
+    root.userData.noOutline = true; // nằm trong thân
+    ear.add(outer, root, art);
     // Mặt trước tai lùi EAR_BACK sau mặt trước thân (chỗ nóc đầu đã phẳng, qua góc bo); gốc tai ở đỉnh thân, chân cắm sâu vào thân.
     ear.position.set(geo.x, H, D - EAR_BACK);
     pivot.add(ear);
@@ -540,7 +546,8 @@ function buildRig(breed) {
     hip.position.set(sx * W * .3, LEG + .03, sz * D * .3);
     // Chân tròn mũm mĩm: ống trụ tròn (đầu trên chìm trong thân, đầu dưới bị bàn chân che) + bàn chân là "cục bông" dẹt.
     // Ống trụ kéo dài theo y vẫn tròn đều (không méo góc bo như hộp bo góc khi kéo).
-    const leg = mesh(new THREE.CylinderGeometry(.066, .07, LEG_SHAFT, 20, 1, true), cat.mask ? accent : fur);
+    // Ống chân màu lông (kể cả Xiêm): đầu ống cắm trong thân, thân lún / co thì lộ ra ở góc dưới mặt trước — màu nâu thành mảng lạ.
+    const leg = mesh(new THREE.CylinderGeometry(.066, .07, LEG_SHAFT, 20, 1, true), fur);
     leg.scale.y = (LEG + .03) / LEG_SHAFT; leg.position.y = .03 - (LEG + .03) / 2;
     const foot = mesh(new THREE.SphereGeometry(FOOT_R, 20, 12), paw);
     foot.scale.set(1, .42, 1.12); // bàn chân tròn dẹt, hơi dài về trước
