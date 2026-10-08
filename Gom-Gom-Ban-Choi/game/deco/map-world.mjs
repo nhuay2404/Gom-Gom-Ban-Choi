@@ -800,6 +800,12 @@ const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.value
   WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat(), ...Object.values(DECOR_LOW).flat()]);
 
 // ---------- Cảnh ----------
+// Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...). Chỉ stage người chơi đang ở được thấy sáng rõ; lướt tới stage phía trước
+// thì cảnh tối dần, phủ sương đen (gloom) và hiện thẻ khoá.
+export const STAGE_SIZE = 10;
+export const stageOf = index => Math.floor(index / STAGE_SIZE);
+const smooth = x => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
+
 export function createMapWorld(container, { onPick, onClaim } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   // Điện thoại DPR 3: vẽ ở 1.5 là đủ nét cho cảnh toon (ít điểm ảnh hơn ~1.8 lần so với 2).
@@ -815,6 +821,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     return [z.id, div];
   }));
   container.append(renderer.domElement);
+  // Lớp tối phủ lên canvas khi lướt tới stage chưa mở: vignette đen tím + thẻ khoá. Không bắt chuột.
+  const gloom = document.createElement('div');
+  gloom.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 70%,rgba(14,10,38,.55) 0%,rgba(8,6,26,.88) 70%,rgba(4,3,16,.96) 100%)';
+  const gloomTag = document.createElement('div');
+  gloomTag.style.cssText = 'position:absolute;left:50%;top:22%;transform:translateX(-50%);padding:8px 16px;border-radius:999px;background:#1c1638cc;color:#d9d0ff;font:900 15px "Baloo 2",Nunito,sans-serif;letter-spacing:.3px;white-space:nowrap;text-align:center';
+  gloom.append(gloomTag);
+  container.append(gloom);
   const canvas = renderer.domElement;
   canvas.style.position = 'relative';
   canvas.className = 'map-canvas';
@@ -828,7 +841,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   camera.position.set(0, WORLD.R + CAM.height, CAM.back);
   camera.lookAt(0, WORLD.R + CAM.aimUp, -CAM.aimAhead);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, TOON_LIGHT.hemi));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xcfe8b8, TOON_LIGHT.hemi);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, TOON_LIGHT.sun);
   sun.position.set(-6, WORLD.R + 14, 8);
   sun.target.position.set(0, WORLD.R, -2);
@@ -1259,6 +1273,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   // Tiến độ không đổi (mở lại bản đồ) thì giữ nguyên cảnh, không dựng lại.
   let builtKey = '';
   function render(levels) {
+    const cur = levels.findIndex(l => l.current);
+    curStage = stageOf(cur >= 0 ? cur : Math.max(0, levels.length - 1));
     const key = JSON.stringify(levels);
     if (key === builtKey) return;
     builtKey = key;
@@ -1391,6 +1407,16 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
 
   // Sương + tường đổi theo vùng của màn đang ở giữa khung (pha trộn mượt quanh ranh giới, ±.6 màn).
   const gardenFog = new THREE.Color(SKY_FOG), fogMix = new THREE.Color(), zoneFog = Object.fromEntries(ZONES.filter(z => z.fog).map(z => [z.id, new THREE.Color(z.fog)]));
+  // Stage người chơi đang ở = stage của màn đang mở (render() ghi lại); màn tối đa = chưa có màn nào mở thì stage 0.
+  let curStage = 0;
+  const gloomFog = new THREE.Color(0x0c0a22);
+  const FOG_NEAR = 17, FOG_FAR = 29;
+  let gloomTextStage = -1;
+  // Độ tối 0..1 theo vị trí lướt: cửa sổ nhìn thấy ~t+1.5; vào stage sau thì tối dần trong ~3 màn.
+  function gloomAt(t) {
+    const edge = (curStage + 1) * STAGE_SIZE - .5;
+    return smooth((t + 1.5 - (edge - 1.5)) / 3);
+  }
   function updateZone(t) {
     fogMix.copy(gardenFog);
     for (const z of ZONES) if (z.wall) {
@@ -1398,7 +1424,14 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       walls[z.id].style.opacity = String(k);
       fogMix.lerp(zoneFog[z.id], k);
     }
-    scene.fog.color.copy(fogMix);
+    const dark = gloomAt(t);
+    scene.fog.color.copy(fogMix.lerp(gloomFog, dark));
+    scene.fog.near = FOG_NEAR * (1 - dark * .5); scene.fog.far = FOG_FAR * (1 - dark * .35);
+    hemi.intensity = TOON_LIGHT.hemi * (1 - dark * .8); sun.intensity = TOON_LIGHT.sun * (1 - dark * .85);
+    gloom.style.opacity = String(dark);
+    // Stage đang nhìn tới (tính theo màn ở giữa khung), ghi trên thẻ khoá.
+    const seen = Math.max(curStage + 1, stageOf(Math.round(t + 1.5))) + 1;
+    if (dark > .05 && gloomTextStage !== seen) { gloomTextStage = seen; gloomTag.textContent = `🔒 Stage ${seen} · clear stage ${curStage + 1} to reveal`; }
   }
   function frame(now) {
     // Đứng yên (không kéo, trống đã lăn tới chỗ): chỉ còn anim nhún / bướm nên vẽ 30 hình/giây cho đỡ tốn pin.
