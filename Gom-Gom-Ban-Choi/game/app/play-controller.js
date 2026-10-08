@@ -15,7 +15,7 @@ import * as ob from './onboarding.js';
 import { playSound } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
-import { $, reduceMotion, showToast, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, getLiveOps, setLiveOps } from './shared.js';
+import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, getLiveOps, setLiveOps } from './shared.js';
 import * as lo from '../gameplay/liveops.mjs';
 import { openLives, offerContinue, questEvent } from './liveops-ui.js';
 
@@ -1500,6 +1500,25 @@ $('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); 
 $('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };
 
 $('tutorial-avatar').innerHTML = catMarkup.orange;
+// Dev (chỉ DEV_MODE): kết thúc ngay ván đang chơi để kiểm luồng LiveOps trên trình duyệt (chuỗi thắng, nhiệm vụ, rương, event).
+// Console: gomgomDev.win(3) / gomgomDev.lose(). Thắng giả không báo sự kiện gom mèo (cats / big4 / crates).
+if (DEV_MODE) globalThis.gomgomDev = {
+  win(stars = 3) {
+    if (!state || state.over) return;
+    state.score = Math.max(state.score, state.level.target);
+    state.over = true;
+    state.outcome = { win: true, reason: '', stars };
+    endLevel(true);
+  },
+  lose(reason = 'Out of moves!') {
+    if (!state || state.over) return;
+    state.moves = 0;
+    state.over = true;
+    state.outcome = { win: false, reason, stars: 0 };
+    endLevel(false, reason);
+  },
+};
+
 
 // Rời ván đang chơi dở (đã đặt ít nhất một thẻ): hỏi lại trước để không mất lượt vì bấm nhầm.
 let quitAction = null;
