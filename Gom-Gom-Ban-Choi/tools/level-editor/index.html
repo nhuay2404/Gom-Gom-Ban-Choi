@@ -76,6 +76,21 @@
   <button class="btn" id="btnRevert">Hoàn tác màn này</button>
   <button class="btn" id="btnExportAll">Tải JSON các màn đã sửa</button>
 </header>
+<section id="curveSection" style="margin:12px 12px 0">
+  <h2>Curve độ khó (EV) — profile cơ bản là curve chính</h2>
+  <div class="row">
+    <label>Ván / màn / profile <select id="curveRuns"><option>20</option><option selected>40</option><option>80</option></select></label>
+    <button class="btn primary" id="btnCurve">▶ Tính curve</button>
+    <span class="muted" id="curveStatus"></span>
+    <span style="flex:1"></span>
+    <span class="row" id="curveLegend"></span>
+  </div>
+  <div id="evChart" style="margin-top:8px"></div>
+  <div class="row" style="align-items:flex-start;gap:16px">
+    <table id="evBreakdown" style="max-width:720px"></table>
+    <div class="muted" style="max-width:420px">EV 0–100 = tổng có trọng số của: <b>thời gian</b> tới khi thắng (số lần thử kỳ vọng × lượt dùng × giây/lượt của profile) · <b>áp lực lượt</b> (lượt dùng / lượt có) · <b>mục tiêu</b> (số lần gom cần: điểm ÷ 30 hoặc ô cỏ ÷ 3, + chuồng) · <b>nhãn</b> (số element / 7) · <b>mèo</b> (mật độ mèo đặt sẵn). Bot chơi thay người; kết quả lưu đệm theo nội dung màn.</div>
+  </div>
+</section>
 <main>
   <section id="levelList"></section>
 
@@ -133,16 +148,20 @@
       <table id="botTable" style="margin-top:8px"></table>
       <div class="muted" id="botNote"></div>
     </section>
-    <section>
-      <h2>Đường cong độ khó (bot giỏi, % thắng)</h2>
-      <div id="curve"></div>
-      <div class="muted">Xám = baseline.json · Cam = kết quả vừa chạy cho màn đang sửa.</div>
-    </section>
+    
   </div>
 </main>
 <dialog id="help">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">Hướng dẫn sử dụng</h2>
     <button class="btn" onclick="document.getElementById('help').close()">Đóng ✕</button></div>
+
+  <h3>0. Curve độ khó (EV)</h3>
+  <ul>
+    <li>Bấm <b>▶ Tính curve</b>: bot chơi mọi màn theo 5 profile người chơi. Kết quả lưu đệm theo nội dung màn — sửa màn nào chỉ tính lại màn đó; đổi số ván / màn thì tính lại hết.</li>
+    <li><b>EV 0–100</b> của một màn = 35% thời gian tới khi thắng (số lần thử kỳ vọng × lượt dùng × giây/lượt) + 20% áp lực lượt (lượt dùng khi thắng / lượt có) + 20% mục tiêu (số lần gom cần: điểm ÷ 30 hoặc ô cỏ ÷ 3, + mỗi chuồng) + 15% nhãn (số element / 7) + 10% mật độ mèo đặt sẵn. Trọng số ở <code>EV_WEIGHTS</code> trong editor.mjs.</li>
+    <li><b>Đường cam đậm</b> = profile cơ bản (bot trung bình, 5 giây/lượt), chấm tô theo tier. <b>Nét đứt</b> = profile khác: cao thủ, suy nghĩ kỹ, người yếu, người mới (không dùng Hold). Bỏ tick để ẩn.</li>
+    <li>Bảng dưới chart: EV của màn đang chọn theo từng profile, số trong ngoặc là chênh lệch so với profile cơ bản, và từng thành phần. Bấm vào chart để chọn màn.</li>
+  </ul>
 
   <h3>1. Chọn màn</h3>
   <p>Bấm một màn ở cột trái, hoặc bấm vào cột trong biểu đồ <b>Đường cong độ khó</b>. Màn đã sửa có chấm cam.</p>

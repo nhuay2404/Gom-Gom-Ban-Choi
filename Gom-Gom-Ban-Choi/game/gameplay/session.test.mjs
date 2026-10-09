@@ -28,7 +28,7 @@ function playTutorial(index) {
 }
 
 test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
-  assert.equal(LEVELS.length, 50);
+  assert.equal(LEVELS.length, 100);
   LEVELS.forEach((level, i) => {
     const board = parseBoard(level.board), { W, H } = boardSize(level.board);
     assert.ok(level.board.every(row => row.length === W), `màn ${i + 1}: các hàng cùng độ dài`);
@@ -43,7 +43,7 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   assert.equal(levelTier(LEVELS[9]), 'boss');
   assert.equal(levelTier(LEVELS[19]), 'boss');
   assert.equal(levelTier(LEVELS[7]), 'chill');
-  for (const start of [10, 20, 30, 40]) {
+  for (let start = 10; start < LEVELS.length; start += 10) {
     const tiers = LEVELS.slice(start, start + 10).map(levelTier);
     assert.deepEqual(tiers, ['normal', 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'], `chương màn ${start + 1}–${start + 10}`);
   }

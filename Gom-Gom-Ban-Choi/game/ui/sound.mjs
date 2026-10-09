@@ -23,6 +23,7 @@
 //   catLift  nhấc mèo 3D ở Deco        bong bóng đi lên       mew  thả mèo ở Deco: "bộp" mềm
 //   worried  vừa sắp hết lượt          hai nốt chuông đi xuống, nhỏ
 //   (mèo buồn ngủ khi AFK: im lặng)
+//   Nhạc nền: ui/shared/sfx/bgm.mp3, lặp bỏ đoạn im lặng cuối file (BGM / startMusic ở cuối file). Độ to mọi file: bảng LEVEL.
 // Trình duyệt chỉ cho phát tiếng sau lần chạm đầu tiên; bật/tắt được và lưu lại trong máy.
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 let ctx = null, out = null, echo = null;
@@ -151,19 +152,31 @@ const CLIPS = {
   cat1: 'ui/shared/sfx/cat1.mp3', cat2: 'ui/shared/sfx/cat2.mp3', cat3: 'ui/shared/sfx/cat3.mp3', cat4: 'ui/shared/sfx/cat4.mp3',
   cat5: 'ui/shared/sfx/cat5.mp3', cat6: 'ui/shared/sfx/cat6.mp3', cat7: 'ui/shared/sfx/cat7.mp3', cat8: 'ui/shared/sfx/cat8.mp3',
 }, clipBuffers = {}, CLIP_FADE = .45;
+// Cân bằng âm lượng: mỗi file tự đo độ to (RMS phần có tiếng) lúc giải mã rồi phát ở đúng LEVEL (độ to đích, cùng thang với
+// chuông tổng hợp ~.04), nên file thu to / nhỏ khác nhau (thùng vỡ gốc nhỏ hơn tiếng mèo ~5 lần) vẫn ra đều tai.
+// Muốn tiếng nào to / nhỏ hơn thì chỉnh LEVEL, đừng chỉnh file.
+const LEVEL = { complete: .075, crateBreak: .06, call: .045, hover: .038, grumpy: .04, chorus: .032, bgm: .026 };
+const clipRms = {};
+function measure(buffer) {
+  const data = buffer.getChannelData(0), step = Math.round(buffer.sampleRate * .05), frames = [];
+  for (let s = 0; s + step <= data.length; s += step) { let e = 0; for (let k = s; k < s + step; k += 4) e += data[k] * data[k]; frames.push(e / (step / 4)); }
+  const peak = Math.max(...frames), loud = frames.filter(e => e > peak * .01);
+  return Math.sqrt(loud.reduce((sum, e) => sum + e, 0) / loud.length) || 1;
+}
 let clipsLoading = false;
 function loadClips() {
   if (clipsLoading) return;
   clipsLoading = true;
   Object.entries(CLIPS).forEach(([kind, url]) => fetch(url).then(r => r.arrayBuffer()).then(data => ctx.decodeAudioData(data))
-    .then(buffer => { clipBuffers[kind] = buffer; }).catch(() => {}));
+    .then(buffer => { clipRms[kind] = measure(buffer); clipBuffers[kind] = buffer; }).catch(() => {}));
 }
-function playClip(buffer, t, { fade = CLIP_FADE, vol = .9, rate = 1 } = {}) {
+// level: độ to đích (LEVEL) — tự quy ra hệ số khuếch đại theo độ to thật của file.
+function playClip(kind, t, { fade = CLIP_FADE, level = .05, rate = 1 } = {}) {
   const src = ctx.createBufferSource(), g = ctx.createGain();
-  src.buffer = buffer; src.playbackRate.value = rate;
+  src.buffer = clipBuffers[kind]; src.playbackRate.value = rate;
   // Fade in (không bật phụt lên).
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(vol, t + fade);
+  g.gain.linearRampToValueAtTime(Math.min(2, level / (clipRms[kind] || .2)), t + fade);
   src.connect(g); g.connect(ctx.destination);
   src.start(t);
 }
@@ -174,7 +187,8 @@ export function playSound(kind, size = 2) {
     audio();
     loadClips();
     // Tiếng thắng fade in chậm (CLIP_FADE); tiếng khác (thùng vỡ...) vào ngay.
-    if (clipBuffers[kind]) return playClip(clipBuffers[kind], ctx.currentTime + .005, { fade: kind === 'complete' ? CLIP_FADE : .005 });
+    if (kind === 'complete' || kind === 'lose') duckMusic(kind === 'complete' ? 4.2 : 2.5);
+    if (clipBuffers[kind]) return playClip(kind, ctx.currentTime + .005, { fade: kind === 'complete' ? CLIP_FADE : .005, level: LEVEL[kind] });
     (SOUNDS[kind] || SOUNDS.pick)(ctx.currentTime + .005, size);
   } catch {}
 }
@@ -193,13 +207,13 @@ export function playMeow(breed, mood = 'call') {
   try {
     audio();
     loadClips();
-    const clip = clipBuffers[mood === 'grumpy' ? 'cat3' : mood === 'hover' ? 'cat8' : VOICE[breed] || 'cat6'];
-    if (!clip) return playSound(mood === 'grumpy' ? 'grumpy' : mood === 'hover' ? 'catLift' : 'pet');
+    const clip = mood === 'grumpy' ? 'cat3' : mood === 'hover' ? 'cat8' : VOICE[breed] || 'cat6';
+    if (!clipBuffers[clip]) return playSound(mood === 'grumpy' ? 'grumpy' : mood === 'hover' ? 'catLift' : 'pet');
     const now = performance.now();
     if (now - lastMeow < MEOW_GAP) return;
     lastMeow = now;
     // Lệch cao độ chút ít mỗi lần cho đỡ lặp.
-    playClip(clip, ctx.currentTime + .005, { fade: .015, vol: .7, rate: .95 + Math.random() * .1 });
+    playClip(clip, ctx.currentTime + .005, { fade: .015, level: LEVEL[mood] ?? LEVEL.call, rate: .95 + Math.random() * .1 });
   } catch {}
 }
 
@@ -213,15 +227,89 @@ export function playMeowChorus(breeds) {
     loadClips();
     const voices = [...new Set(breeds)].sort(() => Math.random() - .5).slice(0, CHORUS_MAX);
     voices.forEach((breed, k) => {
-      const clip = clipBuffers[VOICE[breed] || 'cat6'];
-      if (clip) playClip(clip, ctx.currentTime + .05 + k * (.07 + Math.random() * .08), { fade: .02, vol: .32 / Math.sqrt(voices.length), rate: .97 + Math.random() * .12 });
+      const clip = VOICE[breed] || 'cat6';
+      if (clipBuffers[clip]) playClip(clip, ctx.currentTime + .05 + k * (.07 + Math.random() * .08), { fade: .02, level: LEVEL.chorus / Math.sqrt(voices.length), rate: .97 + Math.random() * .12 });
     });
   } catch {}
 }
+
+// ===== Nhạc nền (BGM) =====
+// "Bassa Island Game Loop" (Kevin MacLeod, file 32.8 s): nhạc dứt ở ~30.47 s, sau đó chỉ còn đuôi vang tắt dần + ~1.8 s im lặng.
+// Không cắt file: mỗi vòng phát từ BGM.start, vòng sau bắt đầu đúng sau BGM.loop giây (bỏ khoảng im lặng); đuôi vang của vòng trước
+// vẫn ngân chồng sang đầu vòng sau nên chỗ nối liền mạch. Bật / tắt riêng bằng công tắc Music (Settings), độc lập với Sound (tiếng hiệu ứng);
+// tự bật từ lần chạm đầu tiên (trình duyệt chặn tự phát).
+const MUSIC_KEY = 'gomgom-rotate-pref-music'; // cùng khoá với công tắc Music (menu-controller.js prefOn)
+let musicEnabled = readText(MUSIC_KEY) !== 'off';
+const BGM = { url: 'ui/shared/sfx/bgm.mp3', start: .01, loop: 30.46, fadeIn: 2.5 };
+let bgmBuffer = null, bgmGain = null, bgmTimer = 0, bgmNext = 0, bgmLoading = false, bgmSources = [];
+const bgmLevel = () => Math.min(1, LEVEL.bgm / (clipRms.bgm || .19));
+function startMusic() {
+  if (!musicEnabled || bgmTimer) return;
+  if (!bgmBuffer) {
+    if (bgmLoading) return;
+    bgmLoading = true;
+    fetch(BGM.url).then(r => r.arrayBuffer()).then(data => ctx.decodeAudioData(data))
+      .then(buffer => { clipRms.bgm = measure(buffer); bgmBuffer = buffer; startMusic(); }).catch(() => {});
+    return;
+  }
+  bgmGain ||= ctx.createGain();
+  bgmGain.connect(ctx.destination);
+  const t = ctx.currentTime;
+  bgmGain.gain.cancelScheduledValues(t);
+  bgmGain.gain.setValueAtTime(0.0001, t);
+  bgmGain.gain.linearRampToValueAtTime(bgmLevel(), t + BGM.fadeIn);
+  bgmNext = t + .05;
+  queueMusic();
+}
+// Lên lịch trước ~3 s các vòng sắp tới (đặt giờ chính xác theo đồng hồ âm thanh, không lệch nhịp như setInterval).
+function queueMusic() {
+  while (bgmNext < ctx.currentTime + 3) {
+    const src = ctx.createBufferSource();
+    src.buffer = bgmBuffer; src.connect(bgmGain); src.start(bgmNext, BGM.start);
+    bgmSources.push(src);
+    src.onended = () => { bgmSources = bgmSources.filter(other => other !== src); };
+    bgmNext += BGM.loop - BGM.start;
+  }
+  bgmTimer = setTimeout(queueMusic, 1000);
+}
+function stopMusic() {
+  clearTimeout(bgmTimer); bgmTimer = 0;
+  if (!bgmGain) return;
+  const t = ctx.currentTime;
+  bgmGain.gain.cancelScheduledValues(t);
+  bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+  bgmGain.gain.linearRampToValueAtTime(0.0001, t + .4);
+  bgmSources.forEach(src => { try { src.stop(t + .45); } catch {} });
+  bgmSources = [];
+}
+// Nhạc nhỏ đi khi phát tiếng thắng / thua rồi lên lại, để tiếng kết quả rõ.
+function duckMusic(seconds) {
+  if (!bgmGain || !bgmTimer) return;
+  const t = ctx.currentTime, full = bgmLevel();
+  bgmGain.gain.cancelScheduledValues(t);
+  bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+  bgmGain.gain.linearRampToValueAtTime(full * .25, t + .25);
+  bgmGain.gain.setValueAtTime(full * .25, t + seconds);
+  bgmGain.gain.linearRampToValueAtTime(full, t + seconds + 1.5);
+}
+// Lần chạm đầu tiên mở khoá âm thanh + bật nhạc; ẩn tab thì tạm dừng mọi tiếng.
+addEventListener('pointerdown', () => { if (enabled || musicEnabled) { try { audio(); startMusic(); } catch {} } }, { once: true, capture: true });
+document.addEventListener('visibilitychange', () => {
+  if (!ctx) return;
+  if (document.hidden) ctx.suspend();
+  else if (enabled || musicEnabled) ctx.resume();
+});
 
 export const soundOn = () => enabled;
 export function setSound(on) {
   enabled = on;
   writeText(SAVE_KEYS.sound, on ? 'on' : 'off');
   if (on) playSound('merge', 3); // bật lên thì kêu một tiếng để biết
+}
+// Nhạc nền: bật / tắt riêng, không ảnh hưởng tiếng hiệu ứng.
+export const musicOn = () => musicEnabled;
+export function setMusic(on) {
+  musicEnabled = on;
+  writeText(MUSIC_KEY, on ? 'on' : 'off');
+  try { if (on) { audio(); startMusic(); } else if (ctx) stopMusic(); } catch {}
 }

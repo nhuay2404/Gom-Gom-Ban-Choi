@@ -365,20 +365,130 @@ function renderBot() {
   $('botNote').innerHTML = notes.join('<br>') || 'Bot tham lam nhìn 1 nước: tỉ lệ thắng là cận dưới của người thật.';
 }
 
-// ---------- Đường cong ----------
-function renderCurve() {
-  const n = LEVELS.length, w = 560, h = 140, bw = w / n;
-  const mine = lastBot?.level === current ? lastBot.results[`${lastBot.list.findIndex(v => v.base)}:0`]?.winRate : undefined;
-  const bars = LEVELS.map((l, i) => {
-    const rate = baselineWin(i + 1) ?? 0, x = i * bw, y = h - 20 - rate * (h - 30);
-    const color = l.tier === 'boss' ? '#c8443a' : l.tier === 'hard' ? '#e09a6a' : l.tier === 'chill' ? '#7cc093' : '#bdb3a6';
-    const sel = i === current ? `<rect x="${x}" y="0" width="${bw}" height="${h - 20}" fill="#fde6d3"/>` : '';
-    const me = i === current && mine !== undefined ? `<circle cx="${x + bw / 2}" cy="${h - 20 - mine * (h - 30)}" r="4" fill="#e07a2e"/>` : '';
-    return `${sel}<rect x="${x + 1}" y="${y}" width="${bw - 2}" height="${h - 20 - y}" fill="${color}" data-i="${i}"><title>${i + 1}. ${l.name}: ${pct(rate)}</title></rect>${me}${(i + 1) % 5 === 0 ? `<text x="${x + bw / 2}" y="${h - 6}" text-anchor="middle">${i + 1}</text>` : ''}`;
-  }).join('');
-  $('curve').innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%">${bars}<line x1="0" x2="${w}" y1="${h - 20}" y2="${h - 20}" stroke="#ccc"/></svg>`;
+// ---------- Curve độ khó (EV) ----------
+// Profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi (giây mỗi lượt). "Cơ bản" là curve chính,
+// các profile khác vẽ chồng lên như biến thiên quanh curve cơ bản.
+const EV_PROFILES = [
+  { id: 'base', label: 'Cơ bản', noise: 30, hold: true, spm: 5, color: '#e07a2e', width: 3 },
+  { id: 'pro', label: 'Cao thủ', noise: 1, hold: true, spm: 3, color: '#3a7bd5', width: 1.5 },
+  { id: 'thinker', label: 'Suy nghĩ kỹ', noise: 10, hold: true, spm: 9, color: '#8e5bd1', width: 1.5 },
+  { id: 'weak', label: 'Người yếu', noise: 90, hold: true, spm: 7, color: '#c8443a', width: 1.5 },
+  { id: 'new', label: 'Người mới (không Hold)', noise: 60, hold: false, spm: 6, color: '#3a9a5b', width: 1.5 },
+];
+// Trọng số các thành phần EV (tổng = 1) và mốc chuẩn hoá (giá trị ứng với 100%).
+const EV_WEIGHTS = { time: 0.35, pressure: 0.2, goal: 0.2, label: 0.15, cats: 0.1 };
+const EV_SCALE = { timeMin: 8, goalMatches: 20 };
+const CURVE_STORE = 'gomgom-editor-curve';
+let curveCache = {};
+try { curveCache = JSON.parse(localStorage.getItem(CURVE_STORE)) ?? {}; } catch { curveCache = {}; }
+const shown = new Set(EV_PROFILES.map(p => p.id));
+const hashText = text => [...text].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7).toString(36);
+const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${runs}`;
+const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
+const grassOf = l => (l.grass ? [...l.grass.join('')].filter(ch => ch === '~').length : 0);
+const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).length;
+
+// EV của một màn với một profile (stats = kết quả bot). Trả về { ev, parts (0..1 mỗi thành phần), raw }.
+function difficultyEV(l, stats, p) {
+  const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
+  const timeMin = attempts * stats.movesUsed * p.spm / 60;
+  const goalMatches = (l.grass ? grassOf(l) / 3 : l.target / 30) + cagesOf(l);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const parts = {
+    time: clamp01(timeMin / EV_SCALE.timeMin),
+    pressure: clamp01(stats.movesUsedWin / l.moves),
+    goal: clamp01(goalMatches / EV_SCALE.goalMatches),
+    label: clamp01(elementCount(l) / MAX_ELEMENTS),
+    cats: clamp01(catsOf(l) / playableCells(l.board) / 0.4),
+  };
+  const ev = Math.round(100 * Object.entries(EV_WEIGHTS).reduce((sum, [k, w]) => sum + w * parts[k], 0));
+  return { ev, parts, raw: { attempts, timeMin, goalMatches, winRate: stats.winRate, movesUsed: stats.movesUsed } };
 }
-$('curve').addEventListener('click', event => { const i = event.target.dataset?.i; if (i !== undefined) { current = Number(i); lastBot = null; renderAll(); } });
+const evAt = (i, p, runs = Number($('curveRuns').value)) => {
+  const stats = curveCache[curveKey(i, p, runs)];
+  return stats ? difficultyEV(LEVELS[i], stats, p) : null;
+};
+
+let curveRun = 0;
+const curveWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+$('btnCurve').onclick = () => {
+  const runs = Number($('curveRuns').value), id = ++curveRun;
+  // Profile cơ bản trước (curve chính hiện ra sớm), rồi tới các profile khác; bỏ qua cặp (màn, profile) đã có trong bộ đệm.
+  const jobs = EV_PROFILES.flatMap(p => LEVELS.map((level, index) => ({ key: curveKey(index, p, runs), level, index, noise: p.noise, hold: p.hold && holdUnlocked(index), runs })))
+    .filter(job => !curveCache[job.key]);
+  if (!jobs.length) { $('curveStatus').textContent = 'Đã có đủ trong bộ đệm'; renderCurve(); return; }
+  let done = 0;
+  $('btnCurve').disabled = true;
+  $('curveStatus').textContent = `0/${jobs.length}`;
+  curveWorker.onmessage = ({ data }) => {
+    if (data.id !== id) return;
+    if (data.done) {
+      $('btnCurve').disabled = false;
+      $('curveStatus').textContent = 'Xong';
+      try { localStorage.setItem(CURVE_STORE, JSON.stringify(curveCache)); } catch { /* đầy bộ nhớ: chỉ giữ trong phiên */ }
+      renderCurve();
+      return;
+    }
+    curveCache[data.key] = data.stats;
+    if (++done % 10 === 0 || done === jobs.length) { $('curveStatus').textContent = `${done}/${jobs.length}`; renderCurve(); }
+  };
+  curveWorker.postMessage({ id, curve: jobs });
+};
+$('curveRuns').onchange = () => renderCurve();
+
+function renderCurve() {
+  const n = LEVELS.length, w = 1200, h = 260, padL = 34, padB = 22, padT = 10, col = (w - padL - 8) / n;
+  const x = i => padL + (i + 0.5) * col, y = ev => padT + (1 - ev / 100) * (h - padT - padB);
+  const tierColor = t => ({ boss: '#c8443a', hard: '#e09a6a', chill: '#7cc093' }[t] || '#bdb3a6');
+  const grid = [0, 25, 50, 75, 100].map(v => `<line x1="${padL}" x2="${w - 8}" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end">${v}</text>`).join('');
+  // Dải màu tier dưới trục, vạch chương, số màn; màn đang chọn tô cam nhạt.
+  const bands = LEVELS.map((l, i) => {
+    const left = x(i) - col / 2;
+    return `<rect x="${left}" y="${h - padB}" width="${col}" height="5" fill="${tierColor(l.tier || 'normal')}"/>`
+      + (i === current ? `<rect x="${left}" y="${padT}" width="${col}" height="${h - padT - padB}" fill="#fde6d3"/>` : '')
+      + (i % 10 === 0 && i ? `<line x1="${left}" x2="${left}" y1="${padT}" y2="${h - padB}" stroke="#ddd" stroke-dasharray="3 3"/>` : '')
+      + ((i + 1) % 10 === 0 || i === 0 ? `<text x="${x(i)}" y="${h - 4}" text-anchor="middle">${i + 1}</text>` : '');
+  }).join('');
+  // Các profile phụ vẽ trước (nét đứt), curve cơ bản vẽ sau cùng (nét đậm, có chấm theo màu tier).
+  const lines = [...EV_PROFILES].reverse().filter(p => shown.has(p.id)).map(p => {
+    const segs = [];
+    let seg = [];
+    LEVELS.forEach((_, i) => {
+      const e = evAt(i, p);
+      if (e) seg.push(`${x(i).toFixed(1)},${y(e.ev).toFixed(1)}`);
+      else if (seg.length) { segs.push(seg); seg = []; }
+    });
+    if (seg.length) segs.push(seg);
+    const path = segs.map(points => `<polyline points="${points.join(' ')}" fill="none" stroke="${p.color}" stroke-width="${p.width}" ${p.id === 'base' ? '' : 'stroke-dasharray="5 3" opacity=".75"'}/>`).join('');
+    const dots = p.id !== 'base' ? '' : LEVELS.map((l, i) => {
+      const e = evAt(i, p);
+      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1}. ${l.name} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
+    }).join('');
+    return path + dots;
+  }).join('');
+  // Vùng bấm theo cột để chọn màn.
+  const hits = LEVELS.map((_, i) => `<rect x="${x(i) - col / 2}" y="${padT}" width="${col}" height="${h - padT - padB}" fill="transparent" data-i="${i}"/>`).join('');
+  $('evChart').innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%">${bands}${grid}${hits}${lines}</svg>`;
+  $('curveLegend').innerHTML = EV_PROFILES.map(p => `<label class="row" style="display:flex;gap:4px;color:var(--ink)"><input type="checkbox" data-p="${p.id}" ${shown.has(p.id) ? 'checked' : ''}><span style="display:inline-block;width:18px;height:${p.width + 1}px;background:${p.color}"></span>${p.label}</label>`).join('');
+  renderBreakdown();
+}
+// Bảng chi tiết của màn đang chọn: EV từng profile, chênh lệch so với curve cơ bản, và từng thành phần (%).
+function renderBreakdown() {
+  const base = evAt(current, EV_PROFILES[0]);
+  const rows = EV_PROFILES.map(p => {
+    const e = evAt(current, p);
+    if (!e) return `<tr><td>${p.label}</td><td colspan="8" class="muted">chưa tính</td></tr>`;
+    const delta = base && p.id !== 'base' ? e.ev - base.ev : null;
+    const cell = k => `<td>${Math.round(e.parts[k] * 100)}</td>`;
+    return `<tr><td><span style="color:${p.color}">■</span> ${p.label}</td><td><b>${e.ev}</b>${delta === null ? '' : ` <span class="${delta > 0 ? 'warn' : 'ok'}">(${delta > 0 ? '+' : ''}${delta})</span>`}</td>
+      <td>${pct(e.raw.winRate)}</td><td>${e.raw.timeMin.toFixed(1)}′</td>${cell('time')}${cell('pressure')}${cell('goal')}${cell('label')}${cell('cats')}</tr>`;
+  }).join('');
+  // Bot không thắng ván nào: EV không đáng tin (số lần thử bị chặn ở 10) và màn có thể đang hỏng.
+  const broken = base && !base.raw.winRate ? `<tr><td colspan="9" class="warn">⚠ Profile cơ bản không thắng ván nào ở màn này — EV không đáng tin (số lần thử bị chặn ở 10). Kiểm tra lại màn (bàn, lượt, mục tiêu).</td></tr>` : '';
+  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}: ${level().name}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
+}
+$('evChart').addEventListener('click', event => { const i = event.target.dataset?.i; if (i !== undefined) { current = Number(i); lastBot = null; renderAll(); } });
+$('curveLegend').addEventListener('change', event => { const id = event.target.dataset.p; if (!id) return; if (event.target.checked) shown.add(id); else shown.delete(id); renderCurve(); });
 
 // ---------- Xuất ----------
 const q = s => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;

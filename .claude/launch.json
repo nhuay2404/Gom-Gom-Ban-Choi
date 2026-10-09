@@ -1,4 +1,37 @@
-{"version":"0.0.1","configurations":[
-{"name":"main","runtimeExecutable":"node","runtimeArgs":["E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/server.mjs"],"port":5177,"autoPort":true},
-{"name":"level-editor","runtimeExecutable":"node","runtimeArgs":["E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/tools/level-editor.mjs","4500"],"port":4500}
-]}
+{
+ "version": "0.0.1",
+ "configurations": [
+  {
+   "name": "main",
+   "runtimeExecutable": "node",
+   "runtimeArgs": [
+    "E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/server.mjs"
+   ],
+   "port": 5177,
+   "autoPort": true
+  },
+  {
+   "name": "level-editor",
+   "runtimeExecutable": "node",
+   "runtimeArgs": [
+    "E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/tools/level-editor.mjs",
+    "4500"
+   ],
+   "port": 4500
+  },
+  {
+   "name": "dist-html",
+   "runtimeExecutable": "npx",
+   "runtimeArgs": [
+    "-y",
+    "http-server",
+    "E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/dist",
+    "-p",
+    "5190",
+    "-c-1"
+   ],
+   "port": 5190,
+   "autoPort": true
+  }
+ ]
+}

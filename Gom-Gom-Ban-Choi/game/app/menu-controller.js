@@ -6,7 +6,7 @@ import { LEVELS } from '../gameplay/levels.mjs';
 import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../gameplay/progression.mjs';
 import { BOOSTERS } from '../gameplay/tuning.mjs';
 import { TUTORIAL_TOP_UP, COIN_PACKS, STARTER_PACK } from '../gameplay/economy.mjs';
-import { playSound, playMeow, soundOn, setSound } from '../ui/sound.mjs';
+import { playSound, playMeow, soundOn, setSound, setMusic } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
   isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
@@ -1123,8 +1123,8 @@ $('ambient-toggle').addEventListener('click', event => {
 });
 applyAmbient();
 
-// Music / Haptic / Notifications: lựa chọn của người chơi (mặc định bật), nhớ qua localStorage. Game chưa có nhạc nền /
-// thông báo nên hiện chỉ lưu lại; Haptic rung nhẹ khi bật (máy có hỗ trợ). Đọc ở nơi khác qua prefOn(name).
+// Music / Haptic / Notifications: lựa chọn của người chơi (mặc định bật), nhớ qua localStorage. Music bật / tắt nhạc nền (sound.mjs setMusic,
+// riêng với Sound = tiếng hiệu ứng); Notifications hiện chỉ lưu lại; Haptic rung nhẹ khi bật (máy có hỗ trợ). Đọc ở nơi khác qua prefOn(name).
 const PREF_KEY = name => `gomgom-rotate-pref-${name}`;
 export const prefOn = name => readText(PREF_KEY(name)) !== 'off';
 function renderPrefs() {
@@ -1141,6 +1141,7 @@ document.querySelectorAll('.pref-toggle').forEach(button => {
     writeText(PREF_KEY(name), on ? 'on' : 'off');
     playSound('pick');
     if (name === 'haptic' && on) navigator.vibrate?.(30);
+    if (name === 'music') setMusic(on);
     renderPrefs();
   };
 });

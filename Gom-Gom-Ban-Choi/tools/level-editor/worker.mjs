@@ -10,7 +10,24 @@ const winRate = (level, { runs, hold, seed }) => {
   return wins / runs;
 };
 
-self.onmessage = ({ data: { id, jobs, tune } }) => {
+// Curve độ khó: { id, curve: [{ key, level, index, noise, hold, runs }] } -> từng { id, key, stats: { winRate, movesUsed, movesUsedWin } }
+// (movesUsed = trung bình số lượt đã dùng mọi ván; movesUsedWin = chỉ các ván thắng).
+function curveStats(job) {
+  let wins = 0, used = 0, usedWin = 0;
+  for (let run = 0; run < job.runs; run++) {
+    const r = play(job.level, (job.index + 1) * 100000 + run, { noise: job.noise, hold: job.hold });
+    used += r.movesUsed;
+    if (r.win) { wins++; usedWin += r.movesUsed; }
+  }
+  return { winRate: wins / job.runs, movesUsed: used / job.runs, movesUsedWin: wins ? usedWin / wins : job.level.moves };
+}
+
+self.onmessage = ({ data: { id, jobs, tune, curve } }) => {
+  if (curve) {
+    for (const job of curve) self.postMessage({ id, key: job.key, stats: curveStats(job) });
+    self.postMessage({ id, done: true });
+    return;
+  }
   if (tune) {
     let lo = 1, hi = Math.max(20, tune.level.moves * 60 / 10), best = null;
     while (lo <= hi) {

@@ -30,8 +30,16 @@ export const LEVEL_REWARD = remote('LEVEL_REWARD', [
   /* stage 2: màn 11–20 */ 155, 157, 159, 161, 162, 164, 166, 168, 170, 172,
   /* stage 3: màn 21–30 */  90,  92,  94,  96,  97,  98, 100, 101, 103, 105,
   /* stage 4: màn 31–40 */  96,  98,  99, 100, 101, 102, 103, 104, 105, 106,
+  /* stage 5: màn 41–50 */  80,  80,  80,  80,  80,  80,  80,  80,  80,  80,
+  // Stage 6–10 (màn 51–100, sinh bằng tools/generate-levels.mjs): không mở khu Deco mới, xu dùng mua các kiểu khác / tường / sàn còn lại.
+  // Tăng dần ~4 xu mỗi stage; màn boss (x0) +10.
+  /* stage 6: màn 51–60 */ 100, 101, 102, 103, 104, 105, 106, 107, 108, 119,
+  /* stage 7: màn 61–70 */ 104, 105, 106, 107, 108, 109, 110, 111, 112, 123,
+  /* stage 8: màn 71–80 */ 108, 109, 110, 111, 112, 113, 114, 115, 116, 127,
+  /* stage 9: màn 81–90 */ 112, 113, 114, 115, 116, 117, 118, 119, 120, 131,
+  /* stage 10: màn 91–100 */ 116, 117, 118, 119, 120, 121, 122, 123, 124, 135,
 ]);
-export const REWARD_BEYOND = remote('REWARD_BEYOND', 80); // xu mỗi màn từ màn 41 trở đi
+export const REWARD_BEYOND = remote('REWARD_BEYOND', 80); // xu mỗi màn ngoài bảng trên (từ màn 101 trở đi)
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
