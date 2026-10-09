@@ -1,3 +1,4 @@
 {"version":"0.0.1","configurations":[
-{"name":"main","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/game","-p","5177","-c-1"],"port":5177,"autoPort":true}
+{"name":"main","runtimeExecutable":"npx","runtimeArgs":["-y","http-server","E:/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/game","-p","5177","-c-1"],"port":5177,"autoPort":true},
+{"name":"gomgom","runtimeExecutable":"node","runtimeArgs":["Gom-Gom-Ban-Choi/server.mjs"],"port":4400,"autoPort":true}
 ]}
