@@ -15,7 +15,7 @@ const THREE_VERSION = '0.170.0'; // khớp importmap trong game/index.html
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const game = join(root, 'game');
 const read = file => readFileSync(join(game, file), 'utf8');
-const MIME = { png: 'image/png', svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
+const MIME = { mp3: 'audio/mpeg', png: 'image/png', svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
 const dataUri = file => {
   const type = MIME[file.split('.').pop().toLowerCase()];
   if (!type) throw new Error(`Chưa hỗ trợ nhúng ảnh: ${file}`);
@@ -36,8 +36,8 @@ const js = execSync(
   'npx -y esbuild@0.24.0 game/app/main.js --bundle --format=esm --minify --log-level=warning',
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
-  // Ảnh JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs): nhúng thẳng thành data URI.
-  .replace(/(["'])(ui\/[a-z]+\/img\/[^"']+\.(?:png|jpe?g|webp))\1/g, (_, q, file) => q + dataUri(file) + q);
+  // Ảnh / tiếng JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs, tiếng thắng trong ui/sound.mjs): nhúng thẳng thành data URI.
+  .replace(/(["'])(ui\/[a-z]+\/(?:img|sfx)\/[^"']+\.(?:png|jpe?g|webp|mp3))\1/g, (_, q, file) => q + dataUri(file) + q);
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).

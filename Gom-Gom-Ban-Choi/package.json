@@ -6,6 +6,12 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test game/*.test.mjs game/*/*.test.mjs",
+    "economy": "node tools/economy-report.mjs",
+    "firebase:template": "node tools/firebase-template.mjs",
+    "firebase:deploy": "node tools/firebase-template.mjs && npx -y firebase-tools@13 deploy --only remoteconfig",
+    "firebase:pull": "npx -y firebase-tools@13 remoteconfig:get -o firebase/remoteconfig.from-firebase.json",
+    "editor": "node tools/level-editor.mjs",
+    "cat-layouts": "node tools/generate-cat-layouts.mjs",
     "simulate": "node tools/simulate-levels.mjs 400",
     "simulate:profiles": "node tools/simulate-profiles.mjs 100",
     "baseline": "node tools/simulate-levels.mjs 400 --baseline",

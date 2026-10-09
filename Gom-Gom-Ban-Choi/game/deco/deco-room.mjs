@@ -8,7 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createCatLife } from './room-cats.mjs';
 import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, setOutlineZoom, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
-import { playSound } from '../ui/sound.mjs';
+import { playSound, playMeow } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, BEDROOM_WINDOW_X, KITCHEN_DOOR, KITCHEN_WINDOW_X, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
 import { TIMING, DRAG } from '../gameplay/tuning.mjs';
@@ -1904,10 +1904,10 @@ export function createRoom() {
     glideTo(goal, 420);
     return true;
   }
-  // Khung (px màn hình) bao con mèo thứ `index` (không có thì null): cho hướng dẫn chỉ vào mèo.
+  // Khung (px màn hình) bao con mèo thứ `index` / giống mèo `index` (chuỗi) (không có thì null): cho hướng dẫn chỉ vào mèo.
   const catBox = new THREE.Box3();
   function screenRectOfCat(index = 0) {
-    const cat = cats.bodies()[index];
+    const cat = typeof index === 'string' ? cats.bodies().find(body => body.breed === index) : cats.bodies()[index];
     if (!cat || !container) return null;
     catBox.setFromObject(cat.rig.root);
     const rect = renderer.domElement.getBoundingClientRect(), out = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
@@ -1936,7 +1936,8 @@ export function createRoom() {
   const HOLD_MS = TIMING.CARRY_HOLD_MS, MOVE_TOLERANCE = DRAG.CARRY_TOLERANCE;
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), hit = new THREE.Vector3();
   const carryPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -cats.carryHeight);
-  let down = null, holdTimer = 0, carrying = null;
+  let down = null, holdTimer = 0, carrying = null, hovered = null;
+  const HOVER_MEOW_MS = 2500;
   const aim = event => {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
@@ -1950,7 +1951,9 @@ export function createRoom() {
     controls.enableRotate = false; controls.enableZoom = false; controls.enablePan = false; controls.autoRotate = false; stopGlide();
     const p = carryPoint(event);
     cats.pickUp(cat, p?.x ?? cat.x, p?.z ?? cat.z);
-    playSound('catLift');
+    // Vừa kêu lúc chuột rê vào thì nhấc lên không kêu thêm (tránh hai tiếng sát nhau).
+    if (performance.now() - (cat.hoverMeowAt || 0) > HOVER_MEOW_MS) playMeow(cat.breed, 'hover');
+    cat.hoverMeowAt = performance.now();
     onCatEvent?.('carry');
     navigator.vibrate?.(12);
     renderer.domElement.classList.add('carrying');
@@ -1958,7 +1961,8 @@ export function createRoom() {
   function endCarry() {
     if (!carrying) return;
     cats.drop(carrying.cat);
-    playSound('mew');
+    // Thả mèo: im lặng (đã kêu lúc nhấc); chuột còn nằm trên mèo thì không tính là rê chuột vào mới (không kêu lần nữa).
+    hovered = carrying.cat; carrying.cat.hoverMeowAt = performance.now();
     carrying = null;
     controls.enableRotate = true; controls.enableZoom = true; controls.enablePan = hub;
     renderer.domElement.classList.remove('carrying');
@@ -1999,6 +2003,13 @@ export function createRoom() {
       return;
     }
     if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > MOVE_TOLERANCE) clearTimeout(holdTimer); // đang xoay phòng
+    // Chuột rê qua mèo (không bấm): mèo kêu "mrrow?" (cat8), mỗi con nghỉ HOVER_MEOW_MS mới kêu lại.
+    if (!down && event.pointerType === 'mouse') {
+      aim(event);
+      const cat = cats.hit(raycaster), t = performance.now();
+      if (cat && cat !== hovered && t - (cat.hoverMeowAt || 0) > HOVER_MEOW_MS) { cat.hoverMeowAt = t; playMeow(cat.breed, 'hover'); }
+      hovered = cat;
+    }
   });
   const release = event => {
     clearTimeout(holdTimer);
@@ -2009,7 +2020,7 @@ export function createRoom() {
       if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
         onCatEvent?.('pet');
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
-        if (mood !== 'sleepy') playSound(mood === 'grumpy' ? 'grumpy' : 'pet');
+        if (mood !== 'sleepy') playMeow(cat.breed, mood === 'grumpy' ? 'grumpy' : 'call');
         if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
         else if (mood === 'warning') spawnHearts(x, y, '♥', 1);
         else spawnHearts(x, y);
@@ -2310,6 +2321,12 @@ export function createRoom() {
     screenOf,
     screenRectOf,
     screenRectOfCat,
+    // Hướng dẫn: giữ mèo giống `breed` ngồi yên nhìn camera (on = true) / thả ra (false). nearSlot: chỗ đặt (vườn) mà hướng dẫn
+    // sắp chỉ tới — mèo ngồi sẵn cạnh đó để camera lướt tới món thì mèo vẫn trong khung.
+    holdCat: (breed, on, nearSlot) => {
+      const place = nearSlot && PLACES[nearSlot], [ox, oz] = ZONE_OFFSET.garden;
+      cats.hold(breed, on, place ? { x: ox + place[0], z: oz + place[1] } : null);
+    },
     nudge,
     refit: () => resize(),
     // Deco: khoá / mở khoá điều khiển camera (bảng đổi kiểu món đang mở).

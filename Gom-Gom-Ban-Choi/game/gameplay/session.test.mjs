@@ -39,24 +39,28 @@ test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom 
   });
 });
 
-test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng giới thiệu cơ chế), boss ở 10 và 20, nghỉ ở 8 và 19', () => {
+test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng giới thiệu cơ chế); từ màn 11 mỗi chương: hard x5, nghỉ x6, boss x0', () => {
   assert.equal(levelTier(LEVELS[9]), 'boss');
   assert.equal(levelTier(LEVELS[19]), 'boss');
   assert.equal(levelTier(LEVELS[7]), 'chill');
-  assert.equal(levelTier(LEVELS[18]), 'chill');
-  [29, 39].forEach(i => assert.equal(levelTier(LEVELS[i]), 'boss', `màn ${i + 1} là boss`));
-  [26, 36].forEach(i => assert.equal(levelTier(LEVELS[i]), 'chill', `màn ${i + 1} là màn nghỉ`));
+  for (const start of [10, 20, 30, 40]) {
+    const tiers = LEVELS.slice(start, start + 10).map(levelTier);
+    assert.deepEqual(tiers, ['normal', 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'], `chương màn ${start + 1}–${start + 10}`);
+  }
   assert.equal(LEVELS[4].introduces, 'crate');
   assert.equal(LEVELS[7].introduces, 'metal');
   assert.deepEqual(levelMechanics(LEVELS[2]), []);            // màn 3 chưa có vật cản
   assert.deepEqual(levelMechanics(LEVELS[4]), ['crate']);     // màn 5 giới thiệu thùng
   assert.deepEqual(levelMechanics(LEVELS[8]), ['crate', 'metal']);
   const withTutorial = LEVELS.map((level, i) => (level.tutorial ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 15], 'màn 1–2 và 11 là tutorial; màn 5, 8, 15 chỉ có bong bóng giới thiệu cơ chế');
-  // Chuồng mèo giới thiệu ở màn 15, các màn sau (trừ màn nghỉ 19) đều có chuồng.
-  assert.equal(LEVELS[14].introduces, 'cage');
+  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 21], 'màn 1–2 và 11 là tutorial; màn 5, 8, 21 chỉ có bong bóng giới thiệu cơ chế');
+  // Cỏ giới thiệu ở màn 21 (đầu chương 3).
+  assert.equal(LEVELS[20].introduces, 'grass');
+  assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('grass')), 20);
+  // Chuồng mèo giới thiệu ở màn 11 (cùng màn mở Hold), bong bóng giải thích sau phần Hold.
+  assert.ok(LEVELS[10].tutorial.some(step => step.type === 'info' && /cage/i.test(step.text)));
   const caged = LEVELS.map((level, i) => (levelMechanics(level).includes('cage') ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(caged.filter(n => n <= 20), [15, 16, 17, 18, 20]);
+  assert.equal(caged[0], 11);
   assert.ok(caged.filter(n => n > 20).length >= 10, "chương 3–4: phần lớn màn có chuồng");
   assert.equal(LEVELS[HOLD.UNLOCK_LEVEL - 1].introduces, 'hold');
   // Màn đầu 6×6; chương 2 đa số bàn to / có hình.
@@ -140,7 +144,7 @@ test('đủ điểm thì thắng, số sao theo số lượt còn dư', () => {
 });
 
 test('hết lượt mà chưa đủ điểm thì thua', () => {
-  const s = staged(2);
+  const s = staged(11);
   s.moves = 1;
   const turn = game.place(s, 10); // đặt chỗ không gom được
   assert.ok(turn.lose);
@@ -238,4 +242,29 @@ test('màn có chuồng: đủ điểm mà còn mèo bị nhốt thì chưa th�
   const smashed = game.smash(s, 20); // búa mở nốt chuồng cuối: thắng ngay
   assert.ok(smashed.win);
   assert.equal(s.outcome.win, true);
+});
+
+test('cỏ: cùng cỡ bàn, chỉ nằm dưới mèo / ô trống; gom trên cỏ thì dọn cỏ; màn có cỏ thắng khi hết cỏ (không cần điểm)', () => {
+  LEVELS.forEach((level, i) => {
+    if (!level.grass) return;
+    const { W, H } = boardSize(level.board);
+    assert.ok(level.grass.length === H && level.grass.every(row => row.length === W && /^[.~]+$/.test(row)), `màn ${i + 1}: cỡ lớp cỏ`);
+    [...level.grass.join('')].forEach((ch, k) => { if (ch === '~') assert.ok(!'XM#'.includes(level.board.join('')[k]), `màn ${i + 1}: cỏ dưới vật cản ô ${k}`); });
+  });
+  const s = staged(20);
+  s.tutorial = null; // bỏ bong bóng giới thiệu của màn 21
+  s.grass = Array(s.W * s.H).fill(false);
+  s.grass[0] = s.grass[1] = s.grass[2] = s.grass[9] = true;
+  s.grassTotal = 4;
+  s.score = 0;
+  const turn = game.place(s, 2);
+  assert.deepEqual([...turn.cleaned].sort((a, b) => a - b), [0, 1, 2]);
+  assert.equal(game.grassLeft(s), 1);
+  assert.ok(!turn.win);
+  s.grass[9] = false;
+  assert.ok(game.goalReached(s), 'hết cỏ là thắng dù 0 điểm mục tiêu');
+  // Màn không có cỏ: vẫn theo điểm.
+  const plain = staged(3);
+  assert.equal(plain.grass, null);
+  assert.ok(!game.goalReached(plain));
 });

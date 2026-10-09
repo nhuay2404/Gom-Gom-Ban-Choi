@@ -30,4 +30,4 @@ export function recordWin(progress, levelIndex, stars) {
 // Cấp độ khó (levels.mjs: tier) và vật cản có trên bàn — bảng vào màn và bản đồ dựa vào đây.
 export const levelTier = level => level.tier || 'normal';
 const MECHANIC_TEST = { crate: cells => cells.includes('X'), metal: cells => cells.includes('M'), cage: cells => /[a-z]/.test(cells) };
-export const levelMechanics = level => Object.keys(MECHANIC_TEST).filter(kind => MECHANIC_TEST[kind](level.board.join('')));
+export const levelMechanics = level => [...Object.keys(MECHANIC_TEST).filter(kind => MECHANIC_TEST[kind](level.board.join(''))), ...(level.grass?.join('').includes('~') ? ['grass'] : [])];

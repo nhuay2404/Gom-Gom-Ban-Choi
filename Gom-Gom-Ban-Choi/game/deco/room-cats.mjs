@@ -870,6 +870,22 @@ class Cat {
     this.busyWith = null;
   }
 
+  // Hướng dẫn mở vườn: ngồi yên, mặt nhìn thẳng camera (bong bóng lời thoại hiện cạnh). Hết `held` thì về sống bình thường.
+  *holdStill() {
+    this.release(); this.occupy('tutorial'); // con khác không rủ chơi cắt ngang
+    try {
+      if (this.y > .01) yield* this.getDown();
+      this.setPose('sit'); this.face('happy');
+      while (this.held) {
+        const cam = this.world.cameraPos?.();
+        if (cam) this.turnToward(this.facing(cam.x, cam.z), 6);
+        this.lookGoal = 0;
+        yield;
+      }
+    } finally { this.release(); this.setPose('stand'); this.face('open'); }
+    yield* this.life();
+  }
+
   *lookAround(seconds) {
     for (let t = 0; t < seconds;) {
       const hold = rand(.6, 1.8);
@@ -3121,6 +3137,25 @@ export function createCatLife(ctx) {
     },
     carryTo(cat, x, z) { ({ x: cat.carryX, z: cat.carryZ } = world.bound(x, z)); }, // bế mèo sang khu kia cũng được
     drop(cat) { cat.carried = false; },
+    // Hướng dẫn: giữ con mèo giống `breed` ngồi yên nhìn camera (on) / thả cho đi lại (off).
+    // Lúc bắt đầu giữ, mèo được đặt sẵn ở chỗ mặc định của hướng dẫn: giữa vườn, lùi về phía xa camera (sau bồn hoa giữa vườn) để
+    // khi camera lướt / zoom tới món ở giữa vườn mèo vẫn nằm trong khung, không tụt xuống sau thanh UI dưới đáy.
+    // near {x, z}: món hướng dẫn sắp chỉ tới — mèo ngồi ngay bên cạnh (ngang theo màn hình, về phía giữa vườn) thay vì sau bồn hoa.
+    hold(breed, on, near = null) {
+      const cat = world.cats.find(c => c.breed === breed);
+      if (!cat || !!cat.held === on) return;
+      cat.held = on;
+      if (!on) return;
+      const h = zoneHome('garden'), cam = world.cameraPos?.();
+      const away = cam ? Math.atan2(h.x - cam.x, h.z - cam.z) : 0;
+      if (near) {
+        const side = Math.sin(away + Math.PI / 2) * (h.x - near.x) + Math.cos(away + Math.PI / 2) * (h.z - near.z) >= 0 ? 1 : -1;
+        const a = away + side * Math.PI / 2;
+        ({ x: cat.x, z: cat.z } = world.reachable(near.x + Math.sin(a) * 1.1, near.z + Math.cos(a) * 1.1));
+      } else ({ x: cat.x, z: cat.z } = world.reachable(h.x + Math.sin(away) * ROOM * .45, h.z + Math.cos(away) * ROOM * .45));
+      cat.y = world.groundAt(cat.x, cat.z); cat.surface = null;
+      cat.interrupt(cat.holdStill());
+    },
     setCats(breeds) {
       const keep = [];
       breeds.forEach(breed => {
@@ -3170,7 +3205,7 @@ export function createCatLife(ctx) {
       if (afk && !world.afk) world.cats.forEach((cat, i) => { cat.napAt = t + (i === 0 ? rand(1.5, 5) : rand(4, 26)); });
       if (!afk) world.cats.forEach(cat => { cat.napAt = null; });
       else world.cats.forEach(cat => {
-        if (cat.napAt && t >= cat.napAt && !cat.carried && !cat.napping) { cat.napAt = null; cat.interrupt(cat.nap()); }
+        if (cat.napAt && t >= cat.napAt && !cat.carried && !cat.napping && !cat.held) { cat.napAt = null; cat.interrupt(cat.nap()); }
       });
       world.afk = afk;
       for (let i = tweens.length - 1; i >= 0; i--) {

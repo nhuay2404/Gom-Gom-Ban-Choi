@@ -5,25 +5,33 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { handleSaveLevel } from './tools/level-save.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('./game', import.meta.url)));
 const START_PORT = Number(process.argv[2] ?? process.env.PORT ?? 4400);
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif',
+  '.png': 'image/png', '.mp3': 'audio/mpeg', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif',
   '.ico': 'image/x-icon', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8',
 };
 
 /** Giữ mọi đường dẫn bên trong thư mục game, không cho đi ngược ra ngoài. */
+// Level Editor (tools/level-editor/, mở từ nút dev) nằm ngoài game/: /tools/... phục vụ thư mục tools, và /game/... trỏ lại
+// game/ cho các import '../../game/gameplay/...' của editor và bot.
+const TOOLS = resolve(fileURLToPath(new URL('./tools', import.meta.url)));
 function safePath(urlPath) {
   const clean = normalize(decodeURIComponent(urlPath.split('?')[0])).replace(/^(\.\.[/\\])+/, '');
-  const full = resolve(join(ROOT, clean));
-  return full === ROOT || full.startsWith(ROOT + sep) ? full : null;
+  const [, head, rest = ''] = clean.replace(/\\/g, '/').match(/^\/?([^/]*)(\/.*)?$/) ?? [];
+  const base = head === 'tools' ? TOOLS : head === 'game' ? ROOT : ROOT;
+  const full = resolve(join(base, head === 'tools' || head === 'game' ? rest : clean));
+  return full === base || full.startsWith(base + sep) ? full : null;
 }
 
 const server = createServer(async (req, res) => {
   try {
+    // Level Editor (nút dev LEVELS) lưu màn vào game/gameplay/levels.mjs. Máy chủ chỉ nghe 127.0.0.1.
+    if (handleSaveLevel(req, res)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end('Method Not Allowed'); return; }
     let file = safePath(req.url === '/' ? '/index.html' : req.url);
     if (!file) { res.writeHead(403).end('Forbidden'); return; }

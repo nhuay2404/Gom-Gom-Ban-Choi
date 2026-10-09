@@ -31,10 +31,12 @@ const pathSlope = t => WORLD.SWING * WORLD.FREQ * Math.cos(t * WORLD.FREQ) / LEV
 // cả hai bên đường, mỗi con cách nhau ≥ CAT_SPREAD, cách tâm bệ ≥ `gap`, không đứng trên đường, không ra ngoài khung nhìn
 // (CAM.halfW). Hạt giống theo màn nên lần nào dựng lại cũng y hệt; decorate() dùng cùng các chỗ này để chừa trống.
 const CAT_SPREAD = 1.1;
+// Mèo chờ nhận (Claim) đi vòng bán kính CLAIM_WALK quanh chỗ đứng; decorate() chừa trống bán kính CLAIM_CLEAR quanh chỗ đó.
+const CLAIM_WALK = .45, CLAIM_CLEAR = 1.9;
 function catSpots(index, count, gap) {
   let seed = 4421 + index * 7919;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const spots = [], x0 = pathX(index), limit = CAM.halfW - .55;
+  const spots = [], x0 = pathX(index), limit = CAM.halfW - 1 - CLAIM_WALK;
   for (let tries = 0; spots.length < count && tries < 200; tries++) {
     const dx = (rnd() < .5 ? -1 : 1) * (gap + rnd() * 1.4), dz = -.5 + rnd() * 1.6, t = index - dz / LEVEL_GAP;
     if (Math.abs(x0 + dx) > limit || Math.hypot(dx, dz) < gap) continue;
@@ -566,6 +568,89 @@ function catBed(rnd) {
   pad.position.y = .05; g.add(pad);
   return g;
 }
+// ---------- Đồ khu bếp (màn 40–50): tông bạc hà / trắng hợp tường gạch men bạc hà và sàn gạch của vùng bếp ----------
+const kitchenMats = {
+  mint: toonMat({ color: 0x8fd0c4 }), mintDark: toonMat({ color: 0x5fae9f }), top: toonMat({ color: 0xfbfaf4 }), stove: toonMat({ color: 0x5a5f66 }),
+  copper: toonMat({ color: 0xe08a4a }), bowl: [toonMat({ color: 0xf28fa8 }), toonMat({ color: 0x6aa8f0 }), toonMat({ color: 0xffd36e })],
+  fruit: [toonMat({ color: 0xf2605a }), toonMat({ color: 0xffb347 }), toonMat({ color: 0x8fd16a })], basket: toonMat({ color: 0xc89058 }),
+  kibble: toonMat({ color: 0xa8673a }), stripe: [toonMat({ color: 0x8fd0c4 }), toonMat({ color: 0xf6c8a0 })],
+};
+const cylMesh = (rt, rb, h, mat, x, y, z, ink = .07, seg = 14) => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+  m.position.set(x, y, z);
+  return ink ? withInk(m, ink) : m;
+};
+// Tủ bếp có bếp nấu: thân bạc hà, mặt đá trắng, hai bếp tròn, một nồi đồng.
+function kitchenCounter(rnd) {
+  const g = new THREE.Group();
+  g.add(box(.95, .6, .5, kitchenMats.mint, 0, .3, 0, .04), box(1, .06, .55, kitchenMats.top, 0, .63, 0, .05));
+  g.add(box(.02, .5, .02, kitchenMats.mintDark, 0, .3, .26, 0));
+  for (const x of [-.06, .06]) g.add(box(.03, .1, .03, kitchenMats.top, x, .42, .27, 0));
+  for (const x of [-.24, .24]) g.add(cylMesh(.12, .12, .02, kitchenMats.stove, x, .67, 0, 0));
+  const side = rnd() < .5 ? -.24 : .24;
+  g.add(cylMesh(.13, .11, .16, kitchenMats.copper, side, .76, 0), cylMesh(.14, .14, .02, kitchenMats.copper, side, .85, 0, .1));
+  return g;
+}
+// Bàn ăn tròn nhỏ + hai ghế đối nhau.
+function diningTable(rnd) {
+  const g = new THREE.Group(), seat = rnd() < .5 ? kitchenMats.mint : furnMats.white;
+  g.add(cylMesh(.36, .36, .05, furnMats.wood, 0, .5, 0, .05, 24), cylMesh(.05, .06, .48, furnMats.woodDark, 0, .24, 0, .1));
+  g.add(cylMesh(.2, .22, .03, furnMats.woodDark, 0, .015, 0, 0));
+  for (const s of [-1, 1]) {
+    g.add(box(.32, .05, .3, seat, s * .58, .3, 0, .08), box(.05, .34, .3, seat, s * .74, .5, 0, .08));
+    for (const z of [-.11, .11]) g.add(box(.04, .28, .04, furnMats.woodDark, s * .58, .14, z, 0));
+  }
+  g.add(cylMesh(.09, .07, .05, furnMats.white, .08, .55, .05, .1));
+  return g;
+}
+function stool() {
+  const g = new THREE.Group();
+  g.add(cylMesh(.17, .17, .06, kitchenMats.mint, 0, .48, 0, .08));
+  for (let k = 0; k < 3; k++) {
+    const a = k / 3 * Math.PI * 2, leg = box(.04, .46, .04, furnMats.woodDark, Math.cos(a) * .1, .23, Math.sin(a) * .1, 0);
+    leg.rotation.set(Math.sin(a) * .12, 0, -Math.cos(a) * .12); g.add(leg);
+  }
+  return g;
+}
+// Hai bát ăn của mèo (một bát hạt, một bát nước).
+function foodBowls(rnd) {
+  const g = new THREE.Group();
+  for (const [x, fill] of [[-.13, kitchenMats.kibble], [.13, furnMats.shade]]) {
+    g.add(cylMesh(.11, .08, .07, choose(rnd, kitchenMats.bowl), x, .035, 0, .1));
+    g.add(cylMesh(.09, .09, .01, fill, x, .07, 0, 0));
+  }
+  return g;
+}
+function fruitBasket(rnd) {
+  const g = new THREE.Group();
+  g.add(cylMesh(.2, .15, .14, kitchenMats.basket, 0, .07, 0, .08));
+  for (let k = 0; k < 4; k++) {
+    const a = k / 4 * Math.PI * 2 + rnd(), fruit = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), choose(rnd, kitchenMats.fruit));
+    fruit.position.set(Math.cos(a) * .08, .16 + (k === 3 ? .07 : 0), Math.sin(a) * .08); g.add(withInk(fruit, .1));
+  }
+  return g;
+}
+// Ba chậu rau thơm nhỏ xếp hàng (thay chậu cây to ở trong bếp).
+function herbPots(rnd) {
+  const g = new THREE.Group();
+  for (let k = -1; k <= 1; k++) {
+    g.add(cylMesh(.09, .07, .14, kitchenMats.copper, k * .2, .07, 0, .1));
+    for (let j = 0; j < 3; j++) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(.06 + rnd() * .03, 8, 6), furnMats.leaf);
+      leaf.position.set(k * .2 + (j - 1) * .04, .2 + (j % 2) * .05, (rnd() - .5) * .06); leaf.scale.y = 1.4; g.add(withInk(leaf, .1));
+    }
+  }
+  return g;
+}
+// Thảm bếp dài kẻ sọc (thay thảm tròn phòng khách).
+function kitchenMat() {
+  const g = new THREE.Group();
+  for (let k = 0; k < 5; k++) {
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.5, .02, .2), kitchenMats.stripe[k % 2]);
+    stripe.position.set(0, .02, (k - 2) * .2); stripe.receiveShadow = true; g.add(stripe);
+  }
+  return g;
+}
 // Bảng rải đồ hai bên đường theo vùng (decorate()). Mỗi đoạn thử `tries` chỗ, đặt tối đa `max` món, cách đường tới ~`spread`
 // (trong nhà gom vào dải thấy được trên màn dọc để ít món mà vẫn đủ đầy). Mỗi loại: r = bán kính
 // chừa chỗ, w = trọng số chọn, cap = trần số lượng trong một đoạn, minDist = chỉ đặt cách đường từ chừng này (đồ cao không che
@@ -600,11 +685,12 @@ const SCATTER = {
   ] },
   kitchen: { tries: 22, max: 5, spread: 2.8, kinds: [
     { kind: 'fridge', make: () => fridge, r: .45, w: 2, cap: 1, minDist: 2.3, big: true },
-    { kind: 'shelf', make: () => bookshelf, r: .65, w: 1.5, cap: 1, minDist: 2.3, big: true },
-    { kind: 'table', make: () => coffeeTable, r: .5, w: 2, cap: 1 },
-    { kind: 'plant', make: (rnd, dist) => g => pottedPlant(g, dist > 2.3), r: .35, w: 1.5, cap: 1 },
-    { kind: 'catBed', make: () => catBed, r: .45, w: 1, cap: 1, shadow: false },
-    { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
+    { kind: 'counter', make: () => kitchenCounter, r: .65, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'dining', make: () => diningTable, r: .8, w: 2, cap: 1, minDist: 1.6, big: true },
+    { kind: 'stool', make: () => stool, r: .25, w: 1.5, cap: 1 },
+    { kind: 'herbs', make: () => herbPots, r: .35, w: 1.5, cap: 1 },
+    { kind: 'bowls', make: () => foodBowls, r: .3, w: 1, cap: 1, small: true },
+    { kind: 'fruit', make: () => fruitBasket, r: .25, w: 1, cap: 1, small: true },
   ] },
 };
 // Cổng chuyển vùng bắc ngang đường: hai cột + xà ngang + bảng tên phòng.
@@ -762,12 +848,59 @@ function coarsen(mesh) {
   }
   if (key) mesh.geometry = cached(`coarse|${key}`, make);
 }
-// Mèo của màn chưa mở (phía trước tiến độ): bóng đen tuyền, chưa lộ giống (nhãn "?" thay cho NEW!).
-const SILHOUETTE_MAT = new THREE.MeshBasicMaterial({ color: 0x000000 });
+// Mèo của màn chưa mở (phía trước tiến độ): phủ lớp sương đen từ dưới lên, chưa lộ giống (nhãn "?" thay cho NEW!).
+// Chân còn thấy mờ mờ ảo ảo, lên tới thân thì tối dần rồi che kín. Mỗi đỉnh mang thuộc tính `shroud` (0 = thấy, 1 = đen)
+// tính theo độ cao trong toạ độ con mèo; shader trộn màu thật với màu sương theo giá trị đó.
+const SHROUD_COLOR = new THREE.Color(0x0b0918);
+const shroudMats = new Map();
+function shroudMat(material) {
+  if (!shroudMats.has(material)) {
+    const mat = material.clone(), toon = material.onBeforeCompile;
+    // Giữ shader toon gốc (clone() không chép onBeforeCompile), rồi mới phủ sương.
+    mat.onBeforeCompile = function (shader, renderer) {
+      toon?.call(this, shader, renderer);
+      shader.uniforms.shroudColor = { value: SHROUD_COLOR };
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float shroud;\nvarying float vShroud;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvShroud = shroud;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 shroudColor;\nvarying float vShroud;')
+        .replace(/}\s*$/, '  gl_FragColor.rgb = mix(gl_FragColor.rgb, shroudColor, vShroud);\n}');
+    };
+    mat.customProgramCacheKey = () => `shroud|${material.type}`;
+    shroudMats.set(material, mat);
+  }
+  return shroudMats.get(material);
+}
+function shroudCat(cat) {
+  cat.updateMatrixWorld(true);
+  // Chiều cao con mèo chỉ tính theo phần đang hiện (rig có vài tấm ẩn treo cao, vd. chữ Z lúc ngủ, làm hộp bao cao vọt).
+  const toCat = cat.matrixWorld.clone().invert(), m = new THREE.Matrix4(), v = new THREE.Vector3(), shown = [];
+  cat.traverseVisible(node => { if (node.isMesh) shown.push(node); });
+  let base = Infinity, top = -Infinity;
+  for (const node of shown) {
+    const pos = node.geometry.attributes.position;
+    m.multiplyMatrices(toCat, node.matrixWorld);
+    for (let i = 0; i < pos.count; i++) { const y = v.fromBufferAttribute(pos, i).applyMatrix4(m).y; base = Math.min(base, y); top = Math.max(top, y); }
+  }
+  const span = Math.max(1e-3, top - base);
+  cat.traverse(node => {
+    if (!node.isMesh) return;
+    const geo = node.geometry = node.geometry.clone(), pos = geo.attributes.position, shroud = new Float32Array(pos.count);
+    m.multiplyMatrices(toCat, node.matrixWorld);
+    for (let i = 0; i < pos.count; i++) {
+      const k = Math.min(1, Math.max(0, (v.fromBufferAttribute(pos, i).applyMatrix4(m).y - base) / span));
+      // Bàn chân: sương .35 (thấy mờ mờ màu lông); từ chân lên tới ~3/4 thân tối dần, đầu che kín.
+      const s = Math.min(1, Math.max(0, (k - .1) / .6));
+      shroud[i] = .35 + .65 * s * s * (3 - 2 * s);
+    }
+    geo.setAttribute('shroud', new THREE.BufferAttribute(shroud, 1));
+    node.material = Array.isArray(node.material) ? node.material.map(shroudMat) : shroudMat(node.material);
+  });
+}
 function newCatModel(breed, { coarse = false, silhouette = false } = {}) {
   const cat = catModel(breed), solids = [];
+  setCatFace(cat.userData.rig, breed, 'open'); // mặt calm mặc định, giống mèo đi lại trong Deco
   if (coarse) cat.traverse(node => { if (node.isMesh) coarsen(node); });
-  if (silhouette) cat.traverse(node => { if (node.isMesh) node.material = SILHOUETTE_MAT; });
+  if (silhouette) shroudCat(cat);
   cat.traverse(node => { if (node.isMesh && node.material?.isMeshToonMaterial && !node.material.transparent && !node.userData.noOutline) solids.push(node); });
   solids.forEach(mesh => withInk(mesh, .07));
   cat.traverse(node => { if (node.isMesh) node.castShadow = true; });
@@ -800,11 +933,9 @@ const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.value
   WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat(), ...Object.values(DECOR_LOW).flat()]);
 
 // ---------- Cảnh ----------
-// Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...). Chỉ stage người chơi đang ở được thấy sáng rõ; lướt tới stage phía trước
-// thì cảnh tối dần, phủ sương đen (gloom) và hiện thẻ khoá.
+// Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...).
 export const STAGE_SIZE = 10;
 export const stageOf = index => Math.floor(index / STAGE_SIZE);
-const smooth = x => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
 
 export function createMapWorld(container, { onPick, onClaim } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -821,13 +952,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     return [z.id, div];
   }));
   container.append(renderer.domElement);
-  // Lớp tối phủ lên canvas khi lướt tới stage chưa mở: vignette đen tím + thẻ khoá. Không bắt chuột.
-  const gloom = document.createElement('div');
-  gloom.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 70%,rgba(14,10,38,.55) 0%,rgba(8,6,26,.88) 70%,rgba(4,3,16,.96) 100%)';
-  const gloomTag = document.createElement('div');
-  gloomTag.style.cssText = 'position:absolute;left:50%;top:22%;transform:translateX(-50%);padding:8px 16px;border-radius:999px;background:#1c1638cc;color:#d9d0ff;font:900 15px "Baloo 2",Nunito,sans-serif;letter-spacing:.3px;white-space:nowrap;text-align:center';
-  gloom.append(gloomTag);
-  container.append(gloom);
+  // Nút về màn đang chơi: hiện khi người chơi lướt xa khỏi màn hiện tại (mũi tên chỉ hướng của màn đó), chạm là lăn về.
+  const jump = document.createElement('button');
+  jump.type = 'button';
+  jump.className = 'map-jump';
+  jump.hidden = true;
+  jump.innerHTML = '<i aria-hidden="true"></i><span></span>';
+  container.append(jump);
   const canvas = renderer.domElement;
   canvas.style.position = 'relative';
   canvas.className = 'map-canvas';
@@ -1045,8 +1176,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     }
     grow.add(head);
     // Màn mở giống mèo mới: mèo 3D đứng rải rác quanh bệ (catSpots: ngẫu nhiên hai bên đường, tách nhau ra), nhãn NEW!
-    // trên đầu con đầu tiên. Mèo đứng trong một nhóm ngả về camera như khối đầu mèo (catTilt, chỉnh mỗi frame), không thì
-    // từ trên cao chỉ thấy đỉnh thân. Màn đang chơi có bệ to hơn: mèo mới đứng lùi ra một chút cho khỏi chạm bệ.
+    // trên đầu con đầu tiên. Mèo đứng thẳng trên cỏ đúng như mèo trong Deco (không ngả về camera như khối đầu mèo: ngả thì mèo
+    // trông dẹt như đang nằm, khác hẳn model ở Deco). Màn đang chơi có bệ to hơn: mèo mới đứng lùi ra một chút cho khỏi chạm bệ.
     const cats = [], catTilt = new THREE.Group(), spots = catSpots(index, newCats.length, current ? 1.3 : 1.12);
     g.add(catTilt);
     newCats.forEach((breed, k) => {
@@ -1054,6 +1185,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       cat.scale.setScalar(1.35);
       cat.position.set(dx, 0, dz);
       cat.rotation.y = turn;
+      cat.userData.spot = [dx, dz];
       catTilt.add(cat);
       cats.push(cat);
     });
@@ -1062,8 +1194,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
         : locked ? cached('badge|mystery', () => new THREE.SpriteMaterial({ map: newBadgeTexture('?') }))
           : cached('badge|new', () => new THREE.SpriteMaterial({ map: newBadgeTexture() })));
       // Nút Claim to hơn, nổi cao hơn đầu mèo cho dễ bấm.
-      badge.scale.set(...(claimable ? [1.25, .45, 1] : [.78, .31, 1]));
-      badge.userData.baseY = claimable ? 1.75 : 1.25;
+      badge.scale.set(...(claimable ? [1.75, .63, 1] : [.78, .31, 1]));
+      badge.userData.baseY = claimable ? 2 : 1.25;
       badge.renderOrder = 5;
       // Chạm nút Claim hoặc chạm mèo đều nhận (nhận lần lượt từng con nếu màn có nhiều giống mới).
       if (claimable) {
@@ -1157,7 +1289,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     // chỗ đứng của từng con (catSpots, cùng hạt giống với levelNode).
     const keepOut = i => levels[i].current ? 1.6 : 1.05;
     const catsAt = levels.map((level, i) => catSpots(i, level.newCats?.length || 0, level.current ? 1.3 : 1.12)
-      .map(([dx, dz]) => ({ x: pathX(i) + dx, t: i - dz / LEVEL_GAP })));
+      .map(([dx, dz]) => ({ x: pathX(i) + dx, t: i - dz / LEVEL_GAP, clear: level.claimable ? CLAIM_CLEAR : .7 })));
     // Chỗ trống cho món bán kính r tại (x, t): không lấn đường, không lấn bệ + mèo mới cạnh màn, không lấn biển cuối
     // đường, không chồng lên món đã đặt. dz: quãng trên mặt cỏ.
     const free = (x, t, r) => {
@@ -1165,8 +1297,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       if (fromRoad < WORLD.ROAD / 2 + WORLD.EDGE + r + .1) return false;
       const i = Math.round(t);
       if (i >= 0 && i <= end && Math.abs(t - i) * LEVEL_GAP < (levels[i].current ? 1.6 : 1.2) + r && Math.abs(x - pathX(i)) < keepOut(i) + r) return false;
-      for (let j = Math.max(0, i - 1); j <= Math.min(end, i + 1); j++) {
-        if (catsAt[j].some(c => Math.hypot(c.x - x, (c.t - t) * LEVEL_GAP) < .7 + r)) return false;
+      for (let j = Math.max(0, i - 2); j <= Math.min(end, i + 2); j++) {
+        if (catsAt[j].some(c => Math.hypot(c.x - x, (c.t - t) * LEVEL_GAP) < c.clear + r)) return false;
       }
       const signT = end + .95;
       if (Math.abs(t - signT) * LEVEL_GAP < .8 + r && Math.abs(x - pathX(signT)) < 1.6 + r) return false;
@@ -1187,11 +1319,11 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       };
       const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = zone !== 'garden';
       if (indoor) floorPiece(i, zone);
-      // Đèn giữa hai màn, đổi bên mỗi đoạn (trong nhà: đèn cây cách một đoạn); hàng rào / chậu cây phía bên kia mỗi 3 đoạn.
+      // Đèn giữa hai màn, đổi bên mỗi đoạn (trong nhà: đèn cây cách một đoạn, bếp: ghế đẩu); hàng rào / chậu cây (bếp: chậu rau thơm) phía bên kia mỗi 3 đoạn.
       const lampSide = i % 2 ? 1 : -1, edge = (WORLD.ROAD / 2 + WORLD.EDGE + .35) * Math.hypot(1, pathSlope(mid));
-      if (onRoad && (!indoor || i % 2 === 0) && free(pathX(mid) + lampSide * edge, mid, .2)) put(indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
+      if (onRoad && (!indoor || i % 2 === 0) && free(pathX(mid) + lampSide * edge, mid, .2)) put(zone === 'kitchen' ? stool : indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
       if (onRoad && i % 3 === 0 && free(pathX(mid) - lampSide * edge, mid, .5)) {
-        put(indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)), { kind: indoor ? 'plant' : '' });
+        put(zone === 'kitchen' ? herbPots : indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)), { kind: zone === 'kitchen' ? 'herbs' : indoor ? 'plant' : '' });
       }
       // Biển chỉ đường mỗi 5 đoạn, ao nhỏ / thảm mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
       if (onRoad && !indoor && i % 5 === 2) {
@@ -1200,7 +1332,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       }
       if (i % 4 === 1) {
         const t = mid + (rnd() - .5) * .3, wide = pathX(t) > 0 ? -1 : 1, x = pathX(t) + wide * (2.5 + rnd() * .8);
-        if (free(x, t, 1.15)) put(indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, { shadow: false });
+        if (free(x, t, 1.15)) put(zone === 'kitchen' ? kitchenMat : indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, { shadow: false });
       }
       // Rải theo bảng SCATTER của vùng: chọn ngẫu nhiên có trọng số, mỗi loại có trần số lượng trong đoạn; loại đã có ở
       // đoạn trước bị giảm trọng số (món to không lặp ở hai đoạn liền nhau) để hai bên đường đa dạng mà không rối.
@@ -1274,7 +1406,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   let builtKey = '';
   function render(levels) {
     const cur = levels.findIndex(l => l.current);
-    curStage = stageOf(cur >= 0 ? cur : Math.max(0, levels.length - 1));
+    curIndex = cur >= 0 ? cur : Math.max(0, levels.length - 1);
     const key = JSON.stringify(levels);
     if (key === builtKey) return;
     builtKey = key;
@@ -1325,7 +1457,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   }
 
   // ---------- Cuộn / chạm ----------
-  const minScroll = () => -.15 * WORLD.STEP, maxScroll = () => (Math.min(levelCount, (curStage + 1) * STAGE_SIZE) - .4) * WORLD.STEP;
+  const minScroll = () => -.15 * WORLD.STEP, maxScroll = () => (levelCount - .4) * WORLD.STEP;
   const clamp = v => Math.min(maxScroll(), Math.max(minScroll(), v));
   // Số px kéo tay để lăn qua một màn (resize() tính theo chiều cao khung, tỉ lệ với WORLD.STEP).
   let pxPerLevel = 200;
@@ -1407,18 +1539,10 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
 
   // Sương + tường đổi theo vùng của màn đang ở giữa khung (pha trộn mượt quanh ranh giới, ±.6 màn).
   const gardenFog = new THREE.Color(SKY_FOG), fogMix = new THREE.Color(), zoneFog = Object.fromEntries(ZONES.filter(z => z.fog).map(z => [z.id, new THREE.Color(z.fog)]));
-  // Stage người chơi đang ở = stage của màn đang mở (render() ghi lại); màn tối đa = chưa có màn nào mở thì stage 0.
-  let curStage = 0;
-  const gloomFog = new THREE.Color(0x0c0a22);
-  const FOG_NEAR = 17, FOG_FAR = 29;
-  let gloomTextStage = -1;
-  // Độ tối 0..1 theo vị trí lướt: cửa sổ nhìn thấy ~t+1.5; vào stage sau thì tối dần trong ~3 màn.
-  function gloomAt(t) {
-    // Hết stage (đang ở stage cuối) thì không còn gì để che.
-    if ((curStage + 1) * STAGE_SIZE >= levelCount) return 0;
-    const edge = (curStage + 1) * STAGE_SIZE - .5;
-    return smooth((t + 1.5 - (edge - 1.5)) / 3);
-  }
+  // Màn đang chơi (render() ghi lại): đích của nút về màn hiện tại.
+  let curIndex = 0;
+  const JUMP_AWAY = 2.5;
+  jump.onclick = () => { target = clamp(angleOf(curIndex)); velocity = 0; };
   function updateZone(t) {
     fogMix.copy(gardenFog);
     for (const z of ZONES) if (z.wall) {
@@ -1426,14 +1550,15 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       walls[z.id].style.opacity = String(k);
       fogMix.lerp(zoneFog[z.id], k);
     }
-    const dark = gloomAt(t);
-    scene.fog.color.copy(fogMix.lerp(gloomFog, dark));
-    scene.fog.near = FOG_NEAR * (1 - dark * .5); scene.fog.far = FOG_FAR * (1 - dark * .35);
-    hemi.intensity = TOON_LIGHT.hemi * (1 - dark * .8); sun.intensity = TOON_LIGHT.sun * (1 - dark * .85);
-    gloom.style.opacity = String(dark);
-    // Stage đang nhìn tới (tính theo màn ở giữa khung), ghi trên thẻ khoá.
-    const seen = Math.max(curStage + 1, stageOf(Math.round(t + 1.5))) + 1;
-    if (dark > .05 && gloomTextStage !== seen) { gloomTextStage = seen; gloomTag.textContent = `🔒 Stage ${seen} · clear stage ${curStage + 1} to reveal`; }
+    scene.fog.color.copy(fogMix);
+    // Lướt xa màn đang chơi hơn JUMP_AWAY màn: hiện nút về, mũi tên lên / xuống theo hướng màn đó trên màn hình.
+    const away = t - curIndex, show = Math.abs(away) > JUMP_AWAY;
+    if (jump.hidden === show) jump.hidden = !show;
+    if (show) {
+      jump.classList.toggle('up', away < 0);
+      const label = `Level ${curIndex + 1}`;
+      if (jump.lastChild.textContent !== label) jump.lastChild.textContent = label;
+    }
   }
   function frame(now) {
     // Đứng yên (không kéo, trống đã lăn tới chỗ): chỉ còn anim nhún / bướm nên vẽ 30 hình/giây cho đỡ tốn pin.
@@ -1465,7 +1590,6 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       // Ngả quanh tâm đáy thì mép đáy phía sau (dày HEAD_BACK) chúi xuống dưới mặt bục (tới ~.17 khi ngả hết cỡ): nâng khối đầu
       // lên đúng phần đó để đáy luôn đặt trên mặt bục, không cắm vào bục.
       node.tilt.position.y = HEAD_BACK * Math.sin(-node.tilt.rotation.x);
-      node.catTilt.rotation.x = node.tilt.rotation.x * .75;
       const bob = node.locked || reduceMotion ? 0 : Math.sin(time * 2.2 + node.phase) * .04;
       node.press = Math.max(0, (node.press || 0) - dt * 4);
       node.head.position.y = node.baseY + bob + (node.current && !reduceMotion ? Math.abs(Math.sin(time * 3)) * .12 : 0) - node.press * .1;
@@ -1482,6 +1606,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       }
       // Mèo mới nhún nhẹ lệch nhịp, nhãn NEW! bập bềnh.
       if (!reduceMotion) node.cats.forEach((c, k) => { if (c.isSprite) { c.position.y = c.userData.baseY + Math.sin(time * 2.6) * .06; if (node.claimable) c.material.rotation = Math.sin(time * 5) * .06; } else c.scale.y = 1.35 * (1 + Math.sin(time * 3 + k * 1.7) * .03); });
+      // Mèo chờ nhận: đi lon ton vòng tròn quanh chỗ đứng (vùng trống CLAIM_CLEAR, decorate()) cho người chơi chú ý; nút Claim bay theo con đầu.
+      if (node.claimable && !reduceMotion) node.cats.forEach((c, k) => {
+        if (c.isSprite) { const lead = node.cats[0]; c.position.x = lead.position.x; c.position.z = lead.position.z + .1; return; }
+        const [x, z] = c.userData.spot, a = time * 1.3 + k * 2.1;
+        c.position.set(x + Math.cos(a) * CLAIM_WALK, Math.abs(Math.sin(time * 9 + k)) * .05, z + Math.sin(a) * CLAIM_WALK);
+        c.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a));
+      });
     }
     for (const { fly, holder } of flyers) if (holder.visible) fly.visible = holder.userData.angle - scroll <= LOD_FAR;
     if (!reduceMotion) for (const { fly, holder, phase, radius } of flyers) {

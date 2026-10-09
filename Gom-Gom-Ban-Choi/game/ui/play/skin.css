@@ -81,6 +81,15 @@ body.low-moves .fg-score{outline:0}
 .dock .next-cards{order:1}
 .dock .hold-slot,.dock .next-slot{width:calc(54 * var(--u));height:calc(52 * var(--u));--card-w:calc(54 * var(--u));--card-h:calc(52 * var(--u));
   background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./img/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
+/* Ô NEXT phủ một lớp kính giả: ánh trắng mờ phía trên + vệt sáng chéo lướt qua theo chu kỳ (mèo bên dưới vẫn thấy rõ) */
+.dock .next-slot{position:relative}
+.dock .next-slot::after{content:'';position:absolute;z-index:3;inset:0;border-radius:calc(14 * var(--u));pointer-events:none;
+  background:linear-gradient(115deg,transparent 35%,#ffffff8c 45%,#ffffffd9 50%,#ffffff8c 55%,transparent 65%) 105% 0/250% 100% no-repeat,
+    linear-gradient(170deg,#ffffff70,#ffffff1a 45%,#ffffff00 55%,#ffffff22);
+  /* Viền đậm bọc kín cả ô (không chỉ 4 góc của ảnh nền ô): vành trắng kính + nét nâu ngoài */
+  border:calc(3 * var(--u)) solid #fffaf0e6;box-shadow:0 0 0 calc(2 * var(--u)) #b98a52,inset 0 0 0 calc(1 * var(--u)) #ffffff,inset 0 calc(-2 * var(--u)) calc(4 * var(--u)) #7fb8d633}
+@media(prefers-reduced-motion:no-preference){.dock .next-slot::after{animation:glass-shine 3.2s ease-in-out infinite}}
+@keyframes glass-shine{0%,55%{background-position:105% 0,0 0}100%{background-position:-5% 0,0 0}}
 /* Mèo trong ô NEXT: to hết cỡ ô (một mèo ~40u; thẻ 2-3 mèo tự co lại cho vừa chiều rộng / cao ô) */
 .dock .next-slot .piece-grid{--cell:min(40 * var(--u),calc((50 * var(--u) - 2 * var(--u) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((48 * var(--u) - 2 * var(--u) * (var(--piece-rows) - 1)) / var(--piece-rows)));
   grid-template-columns:repeat(var(--piece-cols),var(--cell));grid-template-rows:repeat(var(--piece-rows),var(--cell));gap:calc(2 * var(--u))}
@@ -137,18 +146,31 @@ body{overflow-x:clip}
   padding:0;border:0;border-radius:0;background:none;box-shadow:none}
 /* Ruy-băng "Move": đã xoá khỏi ảnh hud-panel.png, vẽ lại bằng CSS để chữ to + nằm sát bên trái ô. Viên xanh viền nâu cưỡi lên
    đường viền trên của ô (giữa ruy-băng = viền), hai lá hai đầu như bản Figma. */
-.fg-panel .fg-moves .fg-moves-label{position:absolute;inset:auto;left:calc(5 * var(--u));top:calc(-1.6 * var(--u));translate:0 -50%;z-index:1;
+.fg-panel .fg-goal .fg-moves-label,.fg-panel .fg-moves .fg-moves-label{position:absolute;inset:auto;left:calc(5 * var(--u));top:calc(-1.6 * var(--u));translate:0 -50%;z-index:1;
   padding:calc(3.5 * var(--u)) calc(13 * var(--u)) calc(3 * var(--u));border:calc(2 * var(--u)) solid #6b2416;border-radius:999px;background:#96c3f2;
   box-shadow:inset 0 calc(-2 * var(--u)) 0 #7aaee6,inset 0 calc(2 * var(--u)) 0 #c4defa;
   font-family:var(--display);font-size:calc(15 * var(--u));font-weight:800;line-height:1;letter-spacing:0;text-transform:none;white-space:nowrap;
   color:#fff;-webkit-text-stroke:calc(3 * var(--u)) #6b2416;paint-order:stroke fill}
-.fg-panel .fg-moves .fg-moves-label::before,.fg-panel .fg-moves .fg-moves-label::after{content:'';position:absolute;top:50%;width:calc(13 * var(--u));height:calc(13 * var(--u));
+.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::before,.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::after{content:'';position:absolute;top:50%;width:calc(13 * var(--u));height:calc(13 * var(--u));
   translate:0 -50%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M3 17C2 9 7 3 17 3c1 9-5 15-14 14Z' fill='%2378c640' stroke='%23175c25' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M5.5 14.5 12.5 7.5' stroke='%23b4e27c' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
-.fg-panel .fg-moves .fg-moves-label::before{left:calc(-6 * var(--u))}
-.fg-panel .fg-moves .fg-moves-label::after{right:calc(-6 * var(--u));scale:-1 1}
+.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::before{left:calc(-6 * var(--u))}
+.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::after{right:calc(-6 * var(--u));scale:-1 1}
 .fg-panel .fg-moves strong{position:static;inset:auto;margin-top:calc(5 * var(--u));font-family:var(--display);font-size:calc(34 * var(--u));font-weight:800;line-height:1;
   color:#f4868f;-webkit-text-stroke:calc(2.4 * var(--u)) #6b2416;paint-order:stroke fill;text-shadow:0 calc(2 * var(--u)) 0 #6b241640}
 .fg-panel .fg-moves.moves-box.danger strong{color:#ff3b4f}
+/* Màn có lồng (.has-goal): ô giữa tách đôi — Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải, vạch chia giữa */
+.fg-panel.has-goal .fg-moves.moves-box{left:50.6%}
+/* Hai ruy-băng nằm giữa mỗi nửa, nhỏ hơn bản một ô: không chen vào badge Level ở giữa, không đè lên nhau */
+.fg-panel.has-goal :is(.fg-goal,.fg-moves) .fg-moves-label{left:50%;translate:-50% -50%;padding:calc(2.5 * var(--u)) calc(10 * var(--u)) calc(2 * var(--u));font-size:calc(12.5 * var(--u))}
+.fg-panel.has-goal :is(.fg-goal,.fg-moves) .fg-moves-label::before,.fg-panel.has-goal :is(.fg-goal,.fg-moves) .fg-moves-label::after{width:calc(11 * var(--u));height:calc(11 * var(--u))}
+.fg-panel .fg-goal{position:absolute;left:19.9%;right:49.4%;top:31.4%;bottom:31.2%;display:flex;align-items:center;justify-content:center;gap:calc(4 * var(--u));
+  border-right:calc(2 * var(--u)) dashed #6b241640}
+.fg-panel .fg-goal .fg-moves-label{background:#f7c66b;box-shadow:inset 0 calc(-2 * var(--u)) 0 #e9ad45,inset 0 calc(2 * var(--u)) 0 #ffe2a6}
+.fg-panel .fg-goal-icon{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u));margin-top:calc(5 * var(--u))}
+.fg-panel .fg-goal-icon svg{width:100%;height:100%;display:block}
+.fg-panel .fg-goal strong,.fg-panel.has-goal .fg-moves strong{margin-top:calc(5 * var(--u));font-family:var(--display);font-size:calc(30 * var(--u));font-weight:800;line-height:1;
+  color:#f4868f;-webkit-text-stroke:calc(2.4 * var(--u)) #6b2416;paint-order:stroke fill;text-shadow:0 calc(2 * var(--u)) 0 #6b241640}
+.fg-panel .fg-goal strong{color:#ffd45c}
 .fg-hud .fg-panel .progress.fg-score{position:absolute;left:19.5%;top:76.5%;width:61%;height:8.4%;margin:0;padding:0;
   border:0;border-radius:999px;background:none;box-shadow:none}
 .fg-panel .fg-score .progress-track{position:absolute;inset:0;padding:0;border-radius:999px;overflow:hidden;background:none;box-shadow:none}
@@ -231,3 +253,17 @@ body.card-holding,body.card-holding *{touch-action:none}
 .cell.preview-invalid{background:#f6c6b8!important;box-shadow:inset 0 0 0 var(--line) #c2493a}
 /* Mèo to ra trong ô bàn (ảnh mèo có viền trong suốt quanh thân) để các chú mèo nhìn sát nhau hơn; thẻ xoay / thẻ kéo giữ cỡ gốc để còn căn giữa */
 .cell.locked .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.3)}
+/* Lời khen khi gom (play-controller.js celebrateMatch): chữ tròn to viền dày, luôn NGHIÊNG (góc ngẫu nhiên trái / phải, xoay bằng
+   Web Animations); bậc càng cao chữ càng to, màu càng rực: p1 vàng · p2 xanh lá · p3 xanh dương · p4 hồng · p5 cầu vồng */
+.praise-pop{position:fixed;z-index:61;pointer-events:none;font-family:var(--display);font-size:40px;font-weight:800;line-height:1;white-space:nowrap;
+  color:#ffe46b;-webkit-text-stroke:8px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 4px 0 #7a3a1299) drop-shadow(0 0 12px #fff3b0)}
+.praise-pop.p2{font-size:44px;color:#9df07a;-webkit-text-stroke-color:#1f6a2a;filter:drop-shadow(0 4px 0 #1f6a2a99) drop-shadow(0 0 12px #d4ffb8)}
+.praise-pop.p3{font-size:48px;color:#7fd8ff;-webkit-text-stroke-color:#174f8a;filter:drop-shadow(0 4px 0 #174f8a99) drop-shadow(0 0 14px #c8efff)}
+.praise-pop.p4{font-size:52px;color:#ff8fd8;-webkit-text-stroke-color:#7a1a5c;filter:drop-shadow(0 4px 0 #7a1a5c99) drop-shadow(0 0 16px #ffd0f0)}
+.praise-pop.p5{font-size:56px;color:transparent;-webkit-text-stroke:0;
+  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bff8a,#5ad1ff,#c77dff,#ff6b6b) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 2px #4a1f6b) drop-shadow(0 0 2px #4a1f6b) drop-shadow(0 4px 0 #4a1f6b) drop-shadow(0 0 18px #fff3b0);animation:score-rainbow .8s linear infinite}
+/* Pháo hoa: loé sáng + tia toả tròn (màu theo --fw) */
+.firework-flash{position:fixed;z-index:59;width:70px;height:70px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0 18%,var(--fw) 40%,transparent 70%)}
+.firework-spark{position:fixed;z-index:59;width:9px;height:9px;border-radius:50%;pointer-events:none;background:var(--fw);box-shadow:0 0 8px 2px var(--fw)}

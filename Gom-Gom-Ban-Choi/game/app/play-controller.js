@@ -9,13 +9,14 @@ import { LEVELS } from '../gameplay/levels.mjs';
 import * as game from '../gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from '../gameplay/tuning.mjs';
+import { COMEBACK_GIFT_MOVES } from '../gameplay/economy.mjs';
 import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
-import { CRATE_SVG, METAL_SVG, cageSvg } from '../ui/board-art.mjs';
+import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG, GRASS_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
 import * as ob from './onboarding.js';
-import { playSound } from '../ui/sound.mjs';
+import { playSound, playMeow, playMeowChorus } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
 import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
-import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES } from './shared.js';
+import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, showToast } from './shared.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
@@ -264,9 +265,20 @@ function placeAt(anchor) {
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
   match.broken?.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, DROP_MS + LIFT_MS + MERGE_MS * .7 + 120, 'crate'); else releaseScoreSlot(); });
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  flyGrass(turn.cleaned, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  celebrateMatch(merges, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
   finishTurn(turn);
+}
+
+// Cỏ vừa bị phá: vài đốm cỏ văng ra từ ô (ô đã được vẽ lại sạch).
+function flyGrass(cleaned, delay) {
+  if (reduceMotion.matches || !cleaned?.length) return;
+  setTimeout(() => {
+    const layer = fxLayer();
+    cleaned.forEach(index => { const cell = cellEl(index); if (cell) flyBits(layer, cell, 'grass-bit', 5); });
+  }, delay);
 }
 
 // Chuồng mèo khi có gom sát bên: chuồng còn khóa thì rung + một ổ khóa bật ra; chuồng vỡ thì song sắt văng ra, mèo được thả.
@@ -307,7 +319,9 @@ function flyBits(layer, cell, className, count) {
 
 // Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
 function breakCrates(indices, delay) {
-  if (!indices?.length || reduceMotion.matches) return;
+  if (!indices?.length) return;
+  setTimeout(() => playSound('crateBreak'), delay);
+  if (reduceMotion.matches) return;
   const layer = fxLayer();
   indices.forEach(index => {
     const cell = cellEl(index);
@@ -551,6 +565,99 @@ function showMergeScore(cell, points, delay = 300, tier = 'm3') {
   // Hạt bay vào thanh gần như cùng lúc số điểm bật ra (không đợi số điểm tan).
   setTimeout(() => { if (gen === flightGen) flyToBar(x, y - 34, points, gen, tier, orbs); }, delay + 110);
 }
+// ---------- Juice khi gom: lời khen chơi chữ về mèo (chữ nghiêng, nảy) + pháo hoa theo số mèo gom được ----------
+// Bậc theo tổng số mèo gom trong lượt (gom nhiều cụm cùng lúc = combo, lên thẳng bậc cao nhất).
+const PRAISE = [
+  { min: 3, tone: 'p1', words: ['Nice!', 'Meow!', 'Purrty!', 'Good kitty!'] },
+  { min: 4, tone: 'p2', words: ['Great!', 'Paw-some!', 'Fur-tastic!', 'Whisker-ific!'] },
+  { min: 5, tone: 'p3', words: ['Excellent!', 'Clawsome!', 'Meow-velous!', 'Purr-fect!'] },
+  { min: 6, tone: 'p4', words: ['Amazing!', 'Cat-tastic!', 'Hiss-toric!', 'Purr-fection!'] },
+  { min: 8, tone: 'p5', words: ['Pawless!', 'Meow-nificent!', 'Un-fur-gettable!', 'Cat-astrophic!'] },
+];
+const FIREWORK_COLORS = ['#ffd93d', '#ff6b8b', '#6bd8ff', '#9df07a', '#c77dff', '#ffa94d'];
+let lastPraise = '';
+function celebrateMatch(merges, delay) {
+  if (reduceMotion.matches || !merges.length) return;
+  const total = merges.reduce((sum, merge) => sum + merge.cluster.length, 0), combo = merges.length > 1;
+  const level = PRAISE.filter(p => total >= p.min).pop() || PRAISE[0], tier = combo ? PRAISE[Math.min(PRAISE.length - 1, PRAISE.indexOf(level) + 2)] : level;
+  setTimeout(() => {
+    cheerNeighbors(merges);
+    const board = $('board').getBoundingClientRect();
+    // Pháo hoa: mỗi cụm một chùm ngay chỗ gom, thêm chùm ngẫu nhiên quanh bàn theo số mèo (3 mèo: 1 chùm ... 8+ / combo: 4-6 chùm).
+    merges.forEach(({ target }) => {
+      const cell = cellEl(target)?.getBoundingClientRect();
+      if (cell) firework(cell.left + cell.width / 2, cell.top + cell.height / 2, 10 + total * 2);
+    });
+    const extra = Math.min(5, Math.max(0, total - 4) + (combo ? 2 : 0));
+    for (let i = 0; i < extra; i++) {
+      setTimeout(() => firework(board.left + board.width * (.15 + Math.random() * .7), board.top + board.height * (.1 + Math.random() * .6), 14 + Math.random() * 10), 140 + i * 130);
+    }
+    // Lời khen: mép trên bàn (không đè số điểm bật ra ở chỗ gom), nghiêng ngẫu nhiên trái / phải; không lặp lại câu vừa hiện.
+    const options = tier.words.filter(word => word !== lastPraise);
+    const word = combo && Math.random() < .5 ? `Combo x${merges.length}!` : options[Math.floor(Math.random() * options.length)];
+    lastPraise = word;
+    const pop = document.createElement('span'), tilt = (Math.random() < .5 ? -1 : 1) * (7 + Math.random() * 6);
+    pop.className = `praise-pop ${tier.tone}`;
+    pop.textContent = word;
+    pop.style.left = `${board.left + board.width / 2}px`;
+    pop.style.top = `${board.top + board.height * .12}px`;
+    document.querySelectorAll('.praise-pop').forEach(node => node.remove());
+    document.body.append(pop);
+    const at = (scale, rot, dy = 0) => `translate(-50%, -50%) translateY(${dy}px) rotate(${rot}deg) scale(${scale})`;
+    pop.animate([
+      { transform: at(.2, -tilt * 1.6), opacity: 0 },
+      { transform: at(1.25, tilt * 1.15), opacity: 1, offset: .18 },
+      { transform: at(.94, tilt * .9), offset: .3 },
+      { transform: at(1.03, tilt), offset: .4 },
+      { transform: at(1, tilt, -8), offset: .82 },
+      { transform: at(.7, tilt * 1.2, -26), opacity: 0 },
+    ], { duration: 1100, easing: 'ease-out', fill: 'both' }).finished.catch(() => {}).then(() => pop.remove());
+  }, delay);
+}
+// Gom xong: mọi mèo trên bàn (trừ mèo trong lồng) nảy lên với mặt vui (cùng anim + mặt như khi được cưng), lan dần từ cụm vừa gom ra.
+function cheerNeighbors(merges) {
+  const gone = new Set(merges.flatMap(merge => merge.cluster)), near = new Map();
+  for (let n = 0; n < W * H; n++) {
+    if (gone.has(n)) continue;
+    const x = n % W, y = Math.floor(n / W);
+    let dist = 99;
+    for (const index of gone) dist = Math.min(dist, Math.max(Math.abs(index % W - x), Math.abs(Math.floor(index / W) - y)));
+    near.set(n, dist);
+  }
+  near.forEach((dist, index) => {
+    const cell = cellEl(index);
+    if (!cell?.querySelector('.cat') || cell.classList.contains('caged')) return;
+    setTimeout(() => {
+      cell.classList.remove('petted', 'idle-cute');
+      void cell.offsetWidth;
+      cell.classList.add('petted');
+      clearTimeout(cell.petTimer);
+      cell.petTimer = setTimeout(() => cell.classList.remove('petted'), 1100);
+    }, (dist - 1) * 90 + Math.random() * 60);
+  });
+}
+// Một chùm pháo hoa: chấm tròn + tia toả tròn đều, rơi nhẹ theo trọng lực rồi tắt.
+function firework(x, y, count) {
+  const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+  const flash = document.createElement('span');
+  flash.className = 'firework-flash';
+  flash.style.cssText = `left:${x}px;top:${y}px;--fw:${color}`;
+  document.body.append(flash);
+  flash.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1.6)', opacity: 0 }], { duration: 380, easing: 'ease-out' })
+    .finished.catch(() => {}).then(() => flash.remove());
+  for (let i = 0; i < count; i++) {
+    const spark = document.createElement('span'), angle = (i / count) * Math.PI * 2 + Math.random() * .3, dist = 45 + Math.random() * 45;
+    spark.className = 'firework-spark';
+    spark.style.cssText = `left:${x}px;top:${y}px;--fw:${i % 3 ? color : '#fff6c8'}`;
+    document.body.append(spark);
+    const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
+    spark.animate([
+      { transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1)`, opacity: 1, offset: .55 },
+      { transform: `translate(calc(-50% + ${dx * 1.1}px), calc(-50% + ${dy * 1.1 + 22}px)) scale(.3)`, opacity: 0 },
+    ], { duration: 650 + Math.random() * 250, easing: 'cubic-bezier(.2,.8,.4,1)' }).finished.catch(() => {}).then(() => spark.remove());
+  }
+}
 function flyToBar(x, y, points, gen, tier, count) {
   const track = $('score-fill').parentElement, bar = track.getBoundingClientRect();
   const tip = Math.min(1, (shownScore + points) / state.level.target);
@@ -596,12 +703,24 @@ function bumpScoreBar() {
   const box = $('score-fill').closest('.progress');
   box.animate([{ scale: '1' }, { scale: '1.12 1.25' }, { scale: '.97' }, { scale: '1' }], { duration: 380, easing: 'ease-out' });
   box.classList.remove('gain'); void box.offsetWidth; box.classList.add('gain');
+  // Cả bảng HUD (số lượt + thanh điểm) giật nhẹ như vừa bị năng lượng đập vào.
+  const panel = box.closest('.fg-panel');
+  if (!panel || reduceMotion.matches) return;
+  panel.getAnimations().filter(animation => animation.id === 'hud-jolt').forEach(animation => animation.cancel());
+  const jolt = panel.animate([
+    { translate: '0 0', rotate: '0deg' }, { translate: '0 -3px', rotate: '-1.2deg', offset: .2 }, { translate: '0 2px', rotate: '1deg', offset: .45 },
+    { translate: '0 -1px', rotate: '-.5deg', offset: .7 }, { translate: '0 0', rotate: '0deg' },
+  ], { duration: 320, easing: 'ease-out', composite: 'add' });
+  jolt.id = 'hud-jolt';
 }
 // Số điểm + thanh: đang có điểm bay thì giữ số đã hiện (shownScore), bay xong mới tăng.
 function renderScore() {
   if (!scoreFlights && !pendingFlights) shownScore = state.score;
-  $('score').textContent = shownScore;
-  const progress = Math.min(1, shownScore / state.level.target);
+  // Màn có cỏ: thanh tiến độ = số ô cỏ đã phá / tổng (không có mục tiêu điểm).
+  const clearedGrass = state.grassTotal - game.grassLeft(state);
+  $('score').textContent = state.grassTotal ? clearedGrass : shownScore;
+  $('highscore').textContent = state.grassTotal ? state.grassTotal : state.level.target;
+  const progress = Math.min(1, state.grassTotal ? clearedGrass / state.grassTotal : shownScore / state.level.target);
   $('score-fill').style.width = `${progress * 100}%`;
   $('score-fill').parentElement.parentElement.classList.toggle('full', progress >= 1);
 }
@@ -611,21 +730,26 @@ function finishTurn(turn) {
   // Sau khi gom, mèo còn lại đã rơi xong rồi -> không chạy anim rơi lần nữa.
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
-  if (match.clusters.length) playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
+  if (match.clusters.length) {
+    playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
+    // Cả bàn mèo vui kêu chồng lên (giống vừa gom trước, thêm vài giống đang đứng trên bàn; mèo trong lồng không kêu).
+    playMeowChorus([...match.groups, ...match.board.filter(object => object?.group && !object.cage && !object.block).map(object => object.group)]);
+  }
   else playSound('place');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
-  const goalText = !turn.win && state.score >= state.level.target && state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}${goalText}` : goalText.trim();
+  const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
+  const goalText = !turn.win && (state.grassTotal ? !game.grassLeft(state) : state.score >= state.level.target) && state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
     const message = `You win with ${state.score} points! ✨`;
     render(message);
-    setTimeout(() => playSound('complete'), 380); // sau tiếng gom cuối
     return celebrateWin(message).then(() => endLevel(true));
   }
   if (turn.lose && !turn.stuck) return endLevel(false, state.outcome.reason);
+  // Màn bảo đảm thắng (session.mjs): hết lượt thì được tặng lượt thay vì thua.
   const noRoom = state.holdOn ? 'No room left — drag a card into Hold.' : 'No room left for this card!';
   render(`${turn.fit ? clearedText : `${clearedText} ${noRoom}`} ${lowMovesText()}`.trim(), !turn.fit);
   if (turn.stuck) endLevel(false, state.outcome.reason);
@@ -800,10 +924,15 @@ function finishCardDrag(event) {
 }
 
 function render(message = '', error = false) {
-  $('highscore').textContent = state.level.target;
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('level-title').dataset.digits = String(state.levelIndex + 1).length; // số 2 chữ số: chữ nhỏ lại cho lọt giữa hai lá trên badge
   $('moves').textContent = state.moves;
+  // Màn có cỏ: ô Goal = số ô cỏ còn lại; màn có lồng: số mèo còn bị nhốt. Hiện cạnh ô Move.
+  const cages = state.board.filter(object => object?.cage).length;
+  const hasGoal = !!(state.grassTotal || state.hasCages);
+  $('goal-box').hidden = !hasGoal;
+  $('goal-box').closest('.fg-panel').classList.toggle('has-goal', hasGoal);
+  $('goal-count').textContent = state.grassTotal ? game.grassLeft(state) : cages;
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
   $('message').textContent = message;
@@ -856,9 +985,10 @@ function renderBoard() {
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    const object = state.board[index] || null;
-    if (cell.renderedObject === object) return;
+    const object = state.board[index] || null, grass = !!state.grass?.[index];
+    if (cell.renderedObject === object && cell.renderedGrass === grass) return;
     cell.renderedObject = object;
+    cell.renderedGrass = grass;
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
@@ -875,9 +1005,10 @@ function renderBoard() {
       cell.innerHTML = object.metal ? METAL_SVG : CRATE_SVG;
       return;
     }
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}`;
-    cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty`
-      : object.cage ? `Caged ${categories[object.group].name}. Match next to it to break the lock` : `${object.name}, locked`);
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}${grass ? ' grass' : ''}`;
+    cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty${grass ? ', on grass' : ''}`
+      : object.cage ? `Caged ${categories[object.group].name}. Match next to it to break the lock` : `${object.name}${grass ? ', on grass' : ''}, locked`);
+    if (grass) cell.insertAdjacentHTML('afterbegin', GRASS_SVG);
     if (!object) return;
     cell.style.setProperty('--group-color', categories[object.group].color);
     addArt(cell, object);
@@ -957,6 +1088,9 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
   ({ W, H } = state);
+  state.hasCages = state.board.some(object => object?.cage);
+  $('goal-icon').innerHTML = state.grassTotal ? GRASS_ICON_SVG : CAGE_ICON_SVG;
+  $('goal-box').setAttribute('aria-label', state.grassTotal ? 'Grass tiles left' : 'Caged cats left');
   hammerArmed = false;
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -964,9 +1098,10 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   // Ván mới: thanh điểm về 0 ngay, không tụt dần từ ván trước.
   const fill = $('score-fill');
   flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
-  document.querySelectorAll('.score-pop, .score-orb').forEach(node => node.remove());
+  document.querySelectorAll('.score-pop, .score-orb, .praise-pop, .firework-spark, .firework-flash').forEach(node => node.remove());
   fill.style.transition = 'none';
-  render(`Reach ${level.target} points in ${level.moves} moves!${state.board.some(object => object?.cage) ? " Free every caged cat too!" : ""}`);
+  const goal = state.grassTotal ? `Clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
+  render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}`);
   void fill.offsetWidth;
   fill.style.transition = '';
   renderTutorial();
@@ -1009,13 +1144,14 @@ $('active-card').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); rotateActive(); }
 };
 // Gửi tạm bằng cách kéo thẻ thả vào ô; bàn phím vẫn dùng Enter/Space để không mất khả năng truy cập.
+$('goal-icon').innerHTML = CAGE_ICON_SVG;
 $('hold').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); holdActive(); }
 };
 // Chạm vào mèo trên bàn: mèo cười phấn khích, nhún nhẹ (không co giãn) và vài trái tim nhỏ bay lên.
 $('board').addEventListener('pointerdown', event => {
   if (hammerArmed) return smashAt(event.target.closest('.cell'));
-  const cell = event.target.closest('.cell.locked');
+  const cell = event.target.closest('.cell.locked:not(.caged)');
   if (!cell || cell.classList.contains('merge-ghost') || state.animating) return;
   petCat(cell);
 });
@@ -1036,17 +1172,18 @@ function annoyCat(cell) {
 }
 $('board').addEventListener('pointerover', event => {
   if (event.pointerType !== 'mouse' || state.animating) return;
-  const cell = event.target.closest('.cell.locked');
+  const cell = event.target.closest('.cell.locked:not(.caged)');
   if (cell && !cell.contains(event.relatedTarget)) annoyCat(cell);
 });
 function petCat(cell) {
-  if (annoyCat(cell)) { playSound('grumpy'); return; }
+  const breed = Object.keys(categories).find(name => cell.classList.contains(name));
+  if (annoyCat(cell)) { playMeow(breed, 'grumpy'); return; }
   cell.classList.remove('petted', 'idle-cute');
   void cell.offsetWidth; // chạm liên tiếp thì chạy lại anim
   cell.classList.add('petted');
   clearTimeout(cell.petTimer);
   cell.petTimer = setTimeout(() => cell.classList.remove('petted'), 1100);
-  playSound('pet');
+  playMeow(breed);
   if (reduceMotion.matches) return;
   const layer = fxLayer();
   for (let i = 0; i < 4; i++) {
@@ -1147,7 +1284,6 @@ function smashAt(cell) {
   if (turn.win) {
     const message = `You win with ${state.score} points! ✨`;
     render(message);
-    setTimeout(() => playSound('complete'), 380);
     return celebrateWin(message).then(() => endLevel(true));
   }
   render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${categories[turn.object.group].name} is free!` : `Bye, ${categories[turn.object.group].name}!`);
@@ -1209,7 +1345,7 @@ function idleFace() {
   const body = document.body.classList;
   if (!state || state.over || state.animating || cardDrag || body.contains('afk') || body.contains('low-moves') || !$('map').hidden) return;
   const cells = [...document.querySelectorAll('#board > .cell .cat.bitmap')].map(cat => cat.closest('.cell'))
-    .filter(cell => !['petted', 'lifted', 'idle-cute', 'grumpy', 'grumpy-chew'].some(name => cell.classList.contains(name)));
+    .filter(cell => !['caged', 'petted', 'lifted', 'idle-cute', 'grumpy', 'grumpy-chew'].some(name => cell.classList.contains(name)));
   const cell = cells[Math.floor(Math.random() * cells.length)];
   if (!cell) return;
   cell.classList.add('idle-cute');
@@ -1315,13 +1451,15 @@ $('tutorial-next').onclick = () => { game.continueTutorial(state); renderTutoria
 addEventListener('resize', () => { if (tutorialStep()) renderTutorial(); });
 
 // ===== Tiến độ (lưu trong máy), bản đồ màn, giới thiệu màn, kết quả =====
-// Nhãn độ khó trên bản đồ (kiểu màu nút màn): Easy / Medium / Hard theo số element của bản màn gốc (adaptive.mjs),
-// boss giữ nhãn Boss. `style` = kiểu màu có sẵn trong CSS (.tier-*); 'normal' là màu mặc định.
+// Nhãn độ khó trên bản đồ (kiểu màu nút màn): theo tier thiết kế của màn (levels.mjs) — boss / hard / chill giữ nhãn
+// Boss / Hard / Easy để người chơi thấy trước đỉnh khó (kiểu Candy Crush / Royal Match); màn normal là Easy / Medium theo
+// số element của bản màn gốc (adaptive.mjs), không bao giờ hiện Hard. `style` = kiểu màu có sẵn trong CSS (.tier-*); 'normal' là màu mặc định.
 const TIERS = {
   easy: { style: 'chill', label: 'Easy' }, medium: { style: 'normal', label: 'Medium' },
   hard: { style: 'hard', label: 'Hard' }, boss: { style: 'boss', label: 'Boss' },
 };
-export const mapTier = index => TIERS[levelTier(LEVELS[index]) === 'boss' ? 'boss' : difficultyOf(elementCount(LEVELS[index]))];
+const TIER_LABEL = { boss: 'boss', hard: 'hard', chill: 'easy' };
+export const mapTier = index => TIERS[TIER_LABEL[levelTier(LEVELS[index])] ?? (difficultyOf(elementCount(LEVELS[index])) === 'easy' ? 'easy' : 'medium')];
 // ?dda trên URL: ghi profile đang nhận diện ra console mỗi lần vào màn (để QA), người chơi thường không thấy.
 const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 
@@ -1346,7 +1484,7 @@ function recordTry(win, reason) {
   if (track.idleSince) track.idleMs += now() - track.idleSince;
   const { plan, level } = state;
   const result = recordAttempt(profile, {
-    level: state.levelIndex, win, reason, ratio: +(state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
+    level: state.levelIndex, win, reason, ratio: +(state.grassTotal ? 1 - game.grassLeft(state) / state.grassTotal : state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
     boosters: track.boosters, boostUse: track.boostUse, bought: track.bought, preBoostRatio: track.preBoostRatio, thinkMs: Math.round(median(track.thinks)), idleMs: Math.round(track.idleMs),
     durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, layout: plan.layout, count: plan.count,
   });
@@ -1373,7 +1511,7 @@ function endLevel(win, reason = '') {
   document.body.classList.add('level-over');
   if (!win) playSound('lose');
   const gift = recordTry(win, win ? 'win' : state.moves > 0 ? 'stuck' : 'moves');
-  if (gift) storeBoosters({ ...getBoosters(), moves: getBoosters().moves + 1 });
+  if (gift) storeBoosters({ ...getBoosters(), moves: getBoosters().moves + COMEBACK_GIFT_MOVES });
   // Thua sát nút mà chưa dùng booster: mời dùng +lượt ở lần sau (luật sát nút giữ nguyên độ khó).
   const tip = !win && boostersUnlocked(state.levelIndex) && boosterTip(profile);
   render(win ? '' : `${reason} You scored ${state.score}/${state.level.target} points.`, !win);
@@ -1415,7 +1553,8 @@ function endLevel(win, reason = '') {
   $('result-replay').hidden = !win || !!unlock;
   $('result-map').hidden = !!unlock;
   $('result-retry').hidden = win;
-  setTimeout(() => { dialog.showModal(); resultShownAt = now(); }, win ? 0 : 700);
+  // Tiếng thắng phát đúng lúc bảng Level Complete hiện (sound.mjs: fade in).
+  setTimeout(() => { dialog.showModal(); resultShownAt = now(); if (win) playSound('complete'); }, win ? 0 : 700);
 }
 // Thứ được mở khoá ở các màn onboarding (onboarding.js), hiện dưới "Unlocked:" ở bảng kết quả.
 const UNLOCK_ITEMS = {

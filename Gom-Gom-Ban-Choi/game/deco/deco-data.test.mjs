@@ -243,3 +243,10 @@ test('kinh tế: thưởng tăng dần; lô 10 màn đầu mua đủ món gốc 
     assert.ok(ratio >= .6 && ratio <= .8, `màn ${from}–${to}: ${ratio.toFixed(2)} giá món gốc ${zone}`);
   }
 });
+
+test('economy.mjs: mọi món gốc có đúng một dòng giá trong DECO, không có dòng thừa', async () => {
+  const { DECO } = await import('../gameplay/economy.mjs');
+  const ids = new Set(CATALOG.map(entry => entry.id));
+  for (const entry of CATALOG) if (!entry.slot) assert.ok(DECO[entry.id], `thiếu giá cho "${entry.id}" trong game/gameplay/economy.mjs DECO`);
+  for (const id of Object.keys(DECO)) assert.ok(ids.has(id), `DECO có "${id}" nhưng danh mục không có món này`);
+});

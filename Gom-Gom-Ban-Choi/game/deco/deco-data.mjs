@@ -1,6 +1,7 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (ECONOMY.LEVEL_REWARD). Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../gameplay/tuning.mjs';
+import { DECO } from '../gameplay/economy.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
@@ -18,121 +19,123 @@ export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
 export const GARDEN_EXPANSION = { unlockAfter: 10, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
 
-// `lock` = level phải mở tới (1-based) thì mới mua được. Giá 0 = có sẵn từ đầu.
+// Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
 export const CATALOG = [
   // --- Vườn ---
-  { id: 'flowers', zone: 'garden', cat: 'furniture', name: 'Flower bed', price: 0, color: '#ff9fb6' },
-  { id: 'stump', zone: 'garden', cat: 'furniture', name: 'Tree stump', price: 80, color: '#9a6a45' },
-  { id: 'catnip', zone: 'garden', cat: 'furniture', name: 'Catnip bush', price: 90, color: '#8fd46a' },
-  { id: 'lantern', zone: 'garden', cat: 'furniture', name: 'Lantern', price: 100, color: '#ffd66b' },
-  { id: 'sandbox', zone: 'garden', cat: 'furniture', name: 'Sandbox', price: 120, color: '#f3dfb0' },
-  { id: 'cathouse', zone: 'garden', cat: 'furniture', name: 'Cat house', price: 150, color: '#e8617f' },
-  { id: 'pond', zone: 'garden', cat: 'furniture', name: 'Koi pond', price: 200, color: '#6fc3e0', lock: 3 },
-  { id: 'hammock', zone: 'garden', cat: 'furniture', name: 'Hammock', price: 240, color: '#8fc9f2', lock: 4 },
-  { id: 'birdbath', zone: 'garden', cat: 'furniture', name: 'Bird bath', price: 180, color: '#cfd8e0', lock: 6 },
-  { id: 'bench', zone: 'garden', cat: 'furniture', name: 'Bench', price: 220, color: '#b9854a', lock: 8 },
-  { id: 'fence-white', zone: 'garden', cat: 'walls', name: 'White picket', price: 0, color: '#fffaf0' },
-  { id: 'fence-wood', zone: 'garden', cat: 'walls', name: 'Wood fence', price: 100, color: '#c9955e' },
-  { id: 'fence-hedge', zone: 'garden', cat: 'walls', name: 'Hedge', price: 100, color: '#6fbf4a' },
-  { id: 'fence-stone', zone: 'garden', cat: 'walls', name: 'Stone wall', price: 100, color: '#c8c2b8', lock: 7 },
-  { id: 'ground-grass', zone: 'garden', cat: 'floors', name: 'Grass', price: 0, color: '#9fd46a' },
-  { id: 'ground-clover', zone: 'garden', cat: 'floors', name: 'Clover', price: 100, color: '#7fc45a' },
-  { id: 'ground-meadow', zone: 'garden', cat: 'floors', name: 'Meadow', price: 100, color: '#b5dd7a' },
-  { id: 'ground-path', zone: 'garden', cat: 'floors', name: 'Stone path', price: 100, color: '#d9d2c4', lock: 5 },
+  { id: 'flowers', zone: 'garden', cat: 'furniture', name: 'Flower bed', color: '#ff9fb6' },
+  { id: 'stump', zone: 'garden', cat: 'furniture', name: 'Tree stump', color: '#9a6a45' },
+  { id: 'catnip', zone: 'garden', cat: 'furniture', name: 'Catnip bush', color: '#8fd46a' },
+  { id: 'lantern', zone: 'garden', cat: 'furniture', name: 'Lantern', color: '#ffd66b' },
+  { id: 'sandbox', zone: 'garden', cat: 'furniture', name: 'Sandbox', color: '#f3dfb0' },
+  { id: 'cathouse', zone: 'garden', cat: 'furniture', name: 'Cat house', color: '#e8617f' },
+  { id: 'pond', zone: 'garden', cat: 'furniture', name: 'Koi pond', color: '#6fc3e0' },
+  { id: 'hammock', zone: 'garden', cat: 'furniture', name: 'Hammock', color: '#8fc9f2' },
+  { id: 'birdbath', zone: 'garden', cat: 'furniture', name: 'Bird bath', color: '#cfd8e0' },
+  { id: 'bench', zone: 'garden', cat: 'furniture', name: 'Bench', color: '#b9854a' },
+  { id: 'fence-white', zone: 'garden', cat: 'walls', name: 'White picket', color: '#fffaf0' },
+  { id: 'fence-wood', zone: 'garden', cat: 'walls', name: 'Wood fence', color: '#c9955e' },
+  { id: 'fence-hedge', zone: 'garden', cat: 'walls', name: 'Hedge', color: '#6fbf4a' },
+  { id: 'fence-stone', zone: 'garden', cat: 'walls', name: 'Stone wall', color: '#c8c2b8' },
+  { id: 'ground-grass', zone: 'garden', cat: 'floors', name: 'Grass', color: '#9fd46a' },
+  { id: 'ground-clover', zone: 'garden', cat: 'floors', name: 'Clover', color: '#7fc45a' },
+  { id: 'ground-meadow', zone: 'garden', cat: 'floors', name: 'Meadow', color: '#b5dd7a' },
+  { id: 'ground-path', zone: 'garden', cat: 'floors', name: 'Stone path', color: '#d9d2c4' },
   // --- Phòng khách (mở cả khu khi thắng màn 10) ---
-  { id: 'rug', zone: 'living', cat: 'furniture', name: 'Pink rug', price: 0, color: '#f4a3b6' },
-  { id: 'armchair', zone: 'living', cat: 'furniture', name: 'Armchair', price: 120, color: '#e98b5a' },
-  { id: 'plant', zone: 'living', cat: 'furniture', name: 'Plant', price: 90, color: '#7fc45a' },
-  { id: 'yarn', zone: 'living', cat: 'furniture', name: 'Yarn basket', price: 80, color: '#ff8fa0' },
-  { id: 'catbed', zone: 'living', cat: 'furniture', name: 'Cat bed', price: 150, color: '#a9d3f5' },
-  { id: 'table', zone: 'living', cat: 'furniture', name: 'Side table', price: 180, color: '#d9a36a' },
-  { id: 'lamp', zone: 'living', cat: 'furniture', name: 'Floor lamp', price: 200, color: '#ffd66b' },
-  { id: 'cattree', zone: 'living', cat: 'furniture', name: 'Cat tree', price: 260, color: '#e6c79a' },
-  { id: 'shelf', zone: 'living', cat: 'furniture', name: 'Bookshelf', price: 220, color: '#b9854a' },
-  { id: 'tank', zone: 'living', cat: 'furniture', name: 'Fish tank', price: 300, color: '#6fc3e0' },
-  { id: 'wall-cream', zone: 'living', cat: 'walls', name: 'Cream', price: 0, color: '#fff1d2' },
-  { id: 'wall-mint', zone: 'living', cat: 'walls', name: 'Mint', price: 100, color: '#d4efd0' },
-  { id: 'wall-peach', zone: 'living', cat: 'walls', name: 'Peach', price: 100, color: '#ffd9c4' },
-  { id: 'wall-sky', zone: 'living', cat: 'walls', name: 'Sky', price: 100, color: '#d4e9ff' },
-  { id: 'wall-lilac', zone: 'living', cat: 'walls', name: 'Lilac', price: 100, color: '#e6dcff' },
+  { id: 'rug', zone: 'living', cat: 'furniture', name: 'Pink rug', color: '#f4a3b6' },
+  { id: 'armchair', zone: 'living', cat: 'furniture', name: 'Armchair', color: '#e98b5a' },
+  { id: 'plant', zone: 'living', cat: 'furniture', name: 'Plant', color: '#7fc45a' },
+  { id: 'yarn', zone: 'living', cat: 'furniture', name: 'Yarn basket', color: '#ff8fa0' },
+  { id: 'catbed', zone: 'living', cat: 'furniture', name: 'Cat bed', color: '#a9d3f5' },
+  { id: 'table', zone: 'living', cat: 'furniture', name: 'Side table', color: '#d9a36a' },
+  { id: 'lamp', zone: 'living', cat: 'furniture', name: 'Floor lamp', color: '#ffd66b' },
+  { id: 'cattree', zone: 'living', cat: 'furniture', name: 'Cat tree', color: '#e6c79a' },
+  { id: 'shelf', zone: 'living', cat: 'furniture', name: 'Bookshelf', color: '#b9854a' },
+  { id: 'tank', zone: 'living', cat: 'furniture', name: 'Fish tank', color: '#6fc3e0' },
+  { id: 'wall-cream', zone: 'living', cat: 'walls', name: 'Cream', color: '#fff1d2' },
+  { id: 'wall-mint', zone: 'living', cat: 'walls', name: 'Mint', color: '#d4efd0' },
+  { id: 'wall-peach', zone: 'living', cat: 'walls', name: 'Peach', color: '#ffd9c4' },
+  { id: 'wall-sky', zone: 'living', cat: 'walls', name: 'Sky', color: '#d4e9ff' },
+  { id: 'wall-lilac', zone: 'living', cat: 'walls', name: 'Lilac', color: '#e6dcff' },
   // tông hiện đại đen / xám
-  { id: 'wall-concrete', zone: 'living', cat: 'walls', name: 'Concrete', price: 100, color: '#8d9196' },
-  { id: 'wall-graphite', zone: 'living', cat: 'walls', name: 'Graphite', price: 100, color: '#3b3f46' },
-  { id: 'floor-oak', zone: 'living', cat: 'floors', name: 'Oak', price: 0, color: '#e4b574' },
-  { id: 'floor-walnut', zone: 'living', cat: 'floors', name: 'Walnut', price: 100, color: '#a8744a' },
-  { id: 'floor-carpet', zone: 'living', cat: 'floors', name: 'Pink carpet', price: 100, color: '#f3c2cc' },
-  { id: 'floor-tiles', zone: 'living', cat: 'floors', name: 'Mint tiles', price: 100, color: '#bfe3cf' },
-  { id: 'floor-concrete', zone: 'living', cat: 'floors', name: 'Polished concrete', price: 100, color: '#9a9da1' },
-  { id: 'floor-ebony', zone: 'living', cat: 'floors', name: 'Ebony wood', price: 100, color: '#3a3330' },
+  { id: 'wall-concrete', zone: 'living', cat: 'walls', name: 'Concrete', color: '#8d9196' },
+  { id: 'wall-graphite', zone: 'living', cat: 'walls', name: 'Graphite', color: '#3b3f46' },
+  { id: 'floor-oak', zone: 'living', cat: 'floors', name: 'Oak', color: '#e4b574' },
+  { id: 'floor-walnut', zone: 'living', cat: 'floors', name: 'Walnut', color: '#a8744a' },
+  { id: 'floor-carpet', zone: 'living', cat: 'floors', name: 'Pink carpet', color: '#f3c2cc' },
+  { id: 'floor-tiles', zone: 'living', cat: 'floors', name: 'Mint tiles', color: '#bfe3cf' },
+  { id: 'floor-concrete', zone: 'living', cat: 'floors', name: 'Polished concrete', color: '#9a9da1' },
+  { id: 'floor-ebony', zone: 'living', cat: 'floors', name: 'Ebony wood', color: '#3a3330' },
   // --- Phòng ngủ (mở cả khu khi thắng màn 15; đồ mở dần ở màn 16–19) ---
-  { id: 'bed', zone: 'bedroom', cat: 'furniture', name: 'Cozy bed', price: 0, color: '#8fc9f2' },
-  { id: 'bedrug', zone: 'bedroom', cat: 'furniture', name: 'Fluffy rug', price: 0, color: '#e6dcff' },
-  { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', price: 100, color: '#e9c58f', lock: 36 },
-  { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', price: 120, color: '#f3d5a8', lock: 36 },
-  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', price: 260, color: '#3a3f4a', lock: 36 },
-  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', price: 180, color: '#e8617f', lock: 37 },
-  { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', price: 220, color: '#fff4e0', lock: 37 },
-  { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', price: 150, color: '#d9a36a', lock: 38 },
-  { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', price: 240, color: '#c98a55', lock: 39 },
-  { id: 'bwall-lavender', zone: 'bedroom', cat: 'walls', name: 'Lavender', price: 0, color: '#ebe3f8' },
-  { id: 'bwall-blush', zone: 'bedroom', cat: 'walls', name: 'Blush', price: 100, color: '#ffe0e6' },
-  { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', price: 100, color: '#dcebd6' },
-  { id: 'bwall-butter', zone: 'bedroom', cat: 'walls', name: 'Butter', price: 100, color: '#fff0c2' },
-  { id: 'bwall-night', zone: 'bedroom', cat: 'walls', name: 'Night blue', price: 100, color: '#c9d3ee' },
+  { id: 'bed', zone: 'bedroom', cat: 'furniture', name: 'Cozy bed', color: '#8fc9f2' },
+  { id: 'bedrug', zone: 'bedroom', cat: 'furniture', name: 'Fluffy rug', color: '#e6dcff' },
+  { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', color: '#e9c58f' },
+  { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', color: '#f3d5a8' },
+  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', color: '#3a3f4a' },
+  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', color: '#e8617f' },
+  { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', color: '#fff4e0' },
+  { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', color: '#d9a36a' },
+  { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', color: '#c98a55' },
+  { id: 'bwall-lavender', zone: 'bedroom', cat: 'walls', name: 'Lavender', color: '#ebe3f8' },
+  { id: 'bwall-blush', zone: 'bedroom', cat: 'walls', name: 'Blush', color: '#ffe0e6' },
+  { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', color: '#dcebd6' },
+  { id: 'bwall-butter', zone: 'bedroom', cat: 'walls', name: 'Butter', color: '#fff0c2' },
+  { id: 'bwall-night', zone: 'bedroom', cat: 'walls', name: 'Night blue', color: '#c9d3ee' },
   // tông hiện đại đen / xám
-  { id: 'bwall-slate', zone: 'bedroom', cat: 'walls', name: 'Slate', price: 100, color: '#6b7280' },
-  { id: 'bwall-charcoal', zone: 'bedroom', cat: 'walls', name: 'Charcoal', price: 100, color: '#2f3238' },
+  { id: 'bwall-slate', zone: 'bedroom', cat: 'walls', name: 'Slate', color: '#6b7280' },
+  { id: 'bwall-charcoal', zone: 'bedroom', cat: 'walls', name: 'Charcoal', color: '#2f3238' },
   // Phòng trong nhà (phòng khách, phòng ngủ) đều mặc định sàn Oak miễn phí; vườn giữ nền cỏ.
-  { id: 'bfloor-oak', zone: 'bedroom', cat: 'floors', name: 'Oak', price: 0, color: '#e4b574' },
-  { id: 'bfloor-maple', zone: 'bedroom', cat: 'floors', name: 'Maple', price: 100, color: '#e9c493' },
-  { id: 'bfloor-ash', zone: 'bedroom', cat: 'floors', name: 'Ash wood', price: 100, color: '#cdb69a' },
-  { id: 'bfloor-carpet', zone: 'bedroom', cat: 'floors', name: 'Lilac carpet', price: 100, color: '#d9d4f2' },
-  { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', price: 100, color: '#f2d7c9' },
-  { id: 'bfloor-graphite-tiles', zone: 'bedroom', cat: 'floors', name: 'Graphite tiles', price: 100, color: '#4a4e55' },
-  { id: 'bfloor-smoke-carpet', zone: 'bedroom', cat: 'floors', name: 'Smoke carpet', price: 100, color: '#5c6068' },
+  { id: 'bfloor-oak', zone: 'bedroom', cat: 'floors', name: 'Oak', color: '#e4b574' },
+  { id: 'bfloor-maple', zone: 'bedroom', cat: 'floors', name: 'Maple', color: '#e9c493' },
+  { id: 'bfloor-ash', zone: 'bedroom', cat: 'floors', name: 'Ash wood', color: '#cdb69a' },
+  { id: 'bfloor-carpet', zone: 'bedroom', cat: 'floors', name: 'Lilac carpet', color: '#d9d4f2' },
+  { id: 'bfloor-tiles', zone: 'bedroom', cat: 'floors', name: 'Peach tiles', color: '#f2d7c9' },
+  { id: 'bfloor-graphite-tiles', zone: 'bedroom', cat: 'floors', name: 'Graphite tiles', color: '#4a4e55' },
+  { id: 'bfloor-smoke-carpet', zone: 'bedroom', cat: 'floors', name: 'Smoke carpet', color: '#5c6068' },
   // --- Bếp (mở cả khu khi thắng màn 40, nên đồ không cần khoá thêm theo màn) ---
-  { id: 'sink', zone: 'kitchen', cat: 'furniture', name: 'Sink counter', price: 0, color: '#fff4e0' },
-  { id: 'dining', zone: 'kitchen', cat: 'furniture', name: 'Dining table', price: 0, color: '#f3c2cc' },
-  { id: 'fridge', zone: 'kitchen', cat: 'furniture', name: 'Fridge', price: 220, color: '#bfe8d6' },
-  { id: 'stove', zone: 'kitchen', cat: 'furniture', name: 'Stove', price: 240, color: '#fff4e0' },
-  { id: 'pantry', zone: 'kitchen', cat: 'furniture', name: 'Pantry cupboard', price: 200, color: '#ffe9b0' },
-  { id: 'kchair', zone: 'kitchen', cat: 'furniture', name: 'Dining chairs (set of 4)', price: 120, color: '#d9a36a' },
-  { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Cat bowls', price: 90, color: '#f4a3b6' },
-  { id: 'cart', zone: 'kitchen', cat: 'furniture', name: 'Tea cart', price: 180, color: '#ffd66b' },
-  { id: 'kplant', zone: 'kitchen', cat: 'furniture', name: 'Monstera', price: 110, color: '#5fae46' },
-  { id: 'kwall-butter', zone: 'kitchen', cat: 'walls', name: 'Butter', price: 0, color: '#fff0c2' },
-  { id: 'kwall-mint', zone: 'kitchen', cat: 'walls', name: 'Mint', price: 100, color: '#d4efd0' },
-  { id: 'kwall-peach', zone: 'kitchen', cat: 'walls', name: 'Peach', price: 100, color: '#ffd9c4' },
-  { id: 'kwall-sky', zone: 'kitchen', cat: 'walls', name: 'Sky', price: 100, color: '#d4e9ff' },
-  { id: 'kwall-sage', zone: 'kitchen', cat: 'walls', name: 'Sage', price: 100, color: '#dcebd6' },
-  { id: 'kwall-brick', zone: 'kitchen', cat: 'walls', name: 'Brick', price: 100, color: '#e0a08a' },
-  { id: 'kwall-slate', zone: 'kitchen', cat: 'walls', name: 'Slate', price: 100, color: '#6b7280' },
-  { id: 'kwall-vermilion', zone: 'kitchen', cat: 'walls', name: 'Vermilion', price: 100, color: '#cf5b45' },
-  { id: 'kwall-washi', zone: 'kitchen', cat: 'walls', name: 'Washi paper', price: 100, color: '#efe3c4' },
-  { id: 'kfloor-oak', zone: 'kitchen', cat: 'floors', name: 'Oak', price: 0, color: '#e4b574' },
-  { id: 'kfloor-pine', zone: 'kitchen', cat: 'floors', name: 'Pine', price: 100, color: '#e9c493' },
-  { id: 'kfloor-terracotta-tiles', zone: 'kitchen', cat: 'floors', name: 'Terracotta tiles', price: 100, color: '#d9825b' },
-  { id: 'kfloor-mint-tiles', zone: 'kitchen', cat: 'floors', name: 'Mint tiles', price: 100, color: '#bfe3cf' },
-  { id: 'kfloor-checker', zone: 'kitchen', cat: 'floors', name: 'Checkerboard', price: 100, color: '#f4f1ea' },
-  { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', price: 100, color: '#5c6068' },
-  { id: 'kfloor-tatami', zone: 'kitchen', cat: 'floors', name: 'Tatami', price: 100, color: '#cfc994' },
-  { id: 'kfloor-bamboo', zone: 'kitchen', cat: 'floors', name: 'Bamboo', price: 100, color: '#d9c27a' },
+  { id: 'sink', zone: 'kitchen', cat: 'furniture', name: 'Sink counter', color: '#fff4e0' },
+  { id: 'dining', zone: 'kitchen', cat: 'furniture', name: 'Dining table', color: '#f3c2cc' },
+  { id: 'fridge', zone: 'kitchen', cat: 'furniture', name: 'Fridge', color: '#bfe8d6' },
+  { id: 'stove', zone: 'kitchen', cat: 'furniture', name: 'Stove', color: '#fff4e0' },
+  { id: 'pantry', zone: 'kitchen', cat: 'furniture', name: 'Pantry cupboard', color: '#ffe9b0' },
+  { id: 'kchair', zone: 'kitchen', cat: 'furniture', name: 'Dining chairs (set of 4)', color: '#d9a36a' },
+  { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Cat bowls', color: '#f4a3b6' },
+  { id: 'cart', zone: 'kitchen', cat: 'furniture', name: 'Tea cart', color: '#ffd66b' },
+  { id: 'kplant', zone: 'kitchen', cat: 'furniture', name: 'Monstera', color: '#5fae46' },
+  { id: 'kwall-butter', zone: 'kitchen', cat: 'walls', name: 'Butter', color: '#fff0c2' },
+  { id: 'kwall-mint', zone: 'kitchen', cat: 'walls', name: 'Mint', color: '#d4efd0' },
+  { id: 'kwall-peach', zone: 'kitchen', cat: 'walls', name: 'Peach', color: '#ffd9c4' },
+  { id: 'kwall-sky', zone: 'kitchen', cat: 'walls', name: 'Sky', color: '#d4e9ff' },
+  { id: 'kwall-sage', zone: 'kitchen', cat: 'walls', name: 'Sage', color: '#dcebd6' },
+  { id: 'kwall-brick', zone: 'kitchen', cat: 'walls', name: 'Brick', color: '#e0a08a' },
+  { id: 'kwall-slate', zone: 'kitchen', cat: 'walls', name: 'Slate', color: '#6b7280' },
+  { id: 'kwall-vermilion', zone: 'kitchen', cat: 'walls', name: 'Vermilion', color: '#cf5b45' },
+  { id: 'kwall-washi', zone: 'kitchen', cat: 'walls', name: 'Washi paper', color: '#efe3c4' },
+  { id: 'kfloor-oak', zone: 'kitchen', cat: 'floors', name: 'Oak', color: '#e4b574' },
+  { id: 'kfloor-pine', zone: 'kitchen', cat: 'floors', name: 'Pine', color: '#e9c493' },
+  { id: 'kfloor-terracotta-tiles', zone: 'kitchen', cat: 'floors', name: 'Terracotta tiles', color: '#d9825b' },
+  { id: 'kfloor-mint-tiles', zone: 'kitchen', cat: 'floors', name: 'Mint tiles', color: '#bfe3cf' },
+  { id: 'kfloor-checker', zone: 'kitchen', cat: 'floors', name: 'Checkerboard', color: '#f4f1ea' },
+  { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
+  { id: 'kfloor-tatami', zone: 'kitchen', cat: 'floors', name: 'Tatami', color: '#cfc994' },
+  { id: 'kfloor-bamboo', zone: 'kitchen', cat: 'floors', name: 'Bamboo', color: '#d9c27a' },
   // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
-  { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', price: 0, color: '#f3d5a8', lock: 11 },
-  { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', price: 0, color: '#ffd23f', lock: 11 },
-  { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', price: 200, color: '#8fc9f2', lock: 11 },
-  { id: 'campfire', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Campfire', price: 260, color: '#ff7a3d', lock: 12 },
-  { id: 'kite', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Kite', price: 220, color: '#e8617f', lock: 13 },
-  { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', price: 280, color: '#6fc3e0', lock: 14 },
-  { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', price: 320, color: '#6fbf4a', lock: 15 },
-  { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', price: 340, color: '#ffb347', lock: 17 },
+  { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', color: '#f3d5a8' },
+  { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', color: '#ffd23f' },
+  { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', color: '#8fc9f2' },
+  { id: 'campfire', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Campfire', color: '#ff7a3d' },
+  { id: 'kite', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Kite', color: '#e8617f' },
+  { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', color: '#6fc3e0' },
+  { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', color: '#6fbf4a' },
+  { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', color: '#ffb347' },
   // --- Mèo (dùng chung) ---
-  { id: 'cat-orange', cat: 'cats', name: 'Orange cat', price: 0, breed: 'orange' },
-  { id: 'cat-gray', cat: 'cats', name: 'Gray cat', price: 0, breed: 'gray' },
-  { id: 'cat-white', cat: 'cats', name: 'White cat', price: 0, breed: 'white' },
-  { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', price: 0, breed: 'tabby', lock: 6 },
-  { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', price: 0, breed: 'siamese', lock: 9 },
-  { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', price: 0, breed: 'tuxedo', lock: 10 },
+  // lock = màn thưởng mèo đó (thắng rồi nhận ở Map, xem catRewardsAt). Mèo cam mở sẵn từ đầu (mèo dẫn đường); stage 1 thưởng
+  // thêm xám (màn 7), trắng (màn 10); từ stage 2 mỗi stage 3 bé rải đều ở màn 4, 7, 10 của stage (màn cuối stage luôn có một bé).
+  { id: 'cat-orange', cat: 'cats', name: 'Orange cat', breed: 'orange' },
+  { id: 'cat-gray', cat: 'cats', name: 'Gray cat', breed: 'gray' },
+  { id: 'cat-white', cat: 'cats', name: 'White cat', breed: 'white' },
+  { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', breed: 'tabby' },
+  { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', breed: 'siamese' },
+  { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', breed: 'tuxedo' },
 ];
 // Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
 // Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
@@ -265,8 +268,14 @@ const VARIANTS = [
 // Chèn mỗi phương án sau món gốc + các phương án cùng chỗ đã chèn (giữ thứ tự khai báo); giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
 VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
-  CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, price: base.price, color, ...(base.lock && { lock: base.lock }), slot });
+  CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, color, slot });
 });
+// Giá + mốc mở khoá từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
+for (const entry of CATALOG) {
+  const row = DECO[entry.id] || DECO[entry.slot] || {};
+  entry.price = row.price ?? 0;
+  if (row.lock) entry.lock = row.lock;
+}
 export const itemById = id => CATALOG.find(entry => entry.id === id);
 // Chỗ đặt của một món (món gốc: chính nó; phương án thay thế: món gốc).
 export const slotOf = entry => entry.slot || entry.id;
@@ -361,6 +370,8 @@ export function itemStatus(deco, entry, unlockedLevel) {
   return zone.placed.includes(entry.id) ? 'using' : 'owned';
 }
 
+// Giống mèo thưởng ở màn levelIndex (chỉ số từ 0).
+export const catRewardsAt = levelIndex => CATALOG.filter(entry => entry.cat === 'cats' && entry.lock === levelIndex + 1).map(entry => entry.breed);
 export const isCatClaimed = (deco, breed) => (deco.claimedCats ?? STARTER_CATS).includes(breed);
 // Nhận mèo từ Map: ghi đã nhận, còn chỗ trong nhà thì thả vào nhà luôn.
 export function claimCat(deco, breed) {

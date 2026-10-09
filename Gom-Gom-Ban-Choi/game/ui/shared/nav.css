@@ -19,6 +19,8 @@
   box-shadow:inset 0 calc(3 * var(--u)) 0 #8ed27a,0 calc(2 * var(--u)) 0 #2f6427;text-shadow:0 1px 0 #2f6427}
 @media(prefers-reduced-motion:no-preference){.fh-tabbar button[aria-current="page"] svg{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
 .fh-tabbar button[aria-current="page"] svg{fill:#fbf2d6;stroke:#2f6427;stroke-width:1.6}
+/* Tab chưa mở trong onboarding (Shop trước hướng dẫn Decoration): hiện mờ, không nhấn được */
+.fh-tabbar button.locked{opacity:.45;filter:grayscale(1);pointer-events:none}
 /* Thanh điều hướng: chạm dễ hơn bằng ngón cái */
 .tabbar{width:min(320px,calc(100% - 48px));padding:4px;bottom:calc(10px + env(safe-area-inset-bottom))}
 .tab{min-height:44px;padding:4px 0;font-size:10px;justify-content:center}

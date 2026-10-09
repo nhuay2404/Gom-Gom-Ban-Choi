@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./ui/play/skin.css">
   <link rel="stylesheet" href="./ui/result/result.css">
   <link rel="stylesheet" href="./ui/shared/tutorial.css">
+  <link rel="stylesheet" href="./ui/shared/dev.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./app/main.js"></script>
 </head>
@@ -68,6 +69,8 @@
       <!-- Bảng HUD theo Figma (image 107, đã bỏ ô Goal + 3 sao): badge Level, ô Move rộng, thanh điểm (điểm / mục tiêu) -->
       <div class="fg-panel">
         <span id="level-title" class="fg-level">Level 1</span>
+        <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play-controller.js render) -->
+        <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong></div>
         <div class="moves-box fg-moves" aria-label="Moves left"><span class="fg-moves-label">Move</span><strong id="moves">20</strong></div>
         <div class="progress fg-score" role="img" aria-label="Score progress">
           <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
@@ -108,7 +111,7 @@
 
 <!-- Cài đặt (Figma: frame Home 73:590): popup giữa màn hình, nền tối mờ; nút bánh răng ở Home mở (aria-controls).
        Day / Night + Sound dùng logic cũ; Music / Haptic / Notifications là lựa chọn được nhớ (game chưa có hệ thống tương ứng,
-       Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev nằm cuối, cuộn xuống mới thấy. -->
+       Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev không nằm ở đây: cột nút vuông #dev-panel ở góc trái. -->
   <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu-controller.js markTab bật / tắt) -->
   <div id="hub-settings" class="settings hub-settings" hidden>
     <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
@@ -148,12 +151,6 @@
         <div class="settings-links">
           <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-globe"/></svg><span>Language</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
           <button class="settings-link soon"><svg viewBox="0 0 24 24"><use href="#i-support"/></svg><span>Support</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg></button>
-        </div>
-        <!-- Chỉ cho game dev: hiện khi chạy localhost hoặc URL có ?dev (main.js bật lên) -->
-        <div class="settings-dev dev-only" hidden>
-          <button id="dev-unlock" class="settings-link"><span>🔓 Dev: Unlock all</span></button>
-          <button id="dev-reset" class="settings-link"><span>↺ Dev: Reset progress</span></button>
-          <button id="dev-qc" class="settings-link"><span>🔍 Dev: QC models</span></button>
         </div>
       </div>
     </div>
@@ -347,5 +344,21 @@
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
     <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make 2 matches next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
+  <!-- Nút cho game dev / tester: cột nút vuông thô ở góc trái. Chỉ hiện khi chạy localhost, URL có ?dev, hoặc bản HTML dev
+       (menu-controller.js bỏ hidden). Không đặt trong Settings. -->
+  <div id="dev-panel" class="dev-panel dev-only" hidden>
+    <button id="dev-toggle" class="dev-btn dev-toggle" title="Ẩn / hiện nút dev">DEV</button>
+    <div class="dev-buttons">
+      <button id="dev-unlock" class="dev-btn" title="Mở hết màn (3 sao), mọi khu, +99999 xu">🔓<span>Unlock</span></button>
+      <button id="dev-reset" class="dev-btn" title="Xoá tiến độ về người chơi mới">↺<span>Reset</span></button>
+      <button id="dev-qc" class="dev-btn" title="QC model 3D">🔍<span>QC</span></button>
+      <button id="dev-editor" class="dev-btn" title="Level Editor (DDA + bot)">🧩<span>Levels</span></button>
+    </div>
+  </div>
+  <!-- Dev: Level Editor (tools/level-editor/) mở toàn màn hình trong iframe; cần máy chủ npm start (phục vụ /tools). -->
+  <div id="dev-editor-overlay" class="dev-editor-overlay" hidden>
+    <button id="dev-editor-close" class="dev-btn">✕<span>Close</span></button>
+    <iframe id="dev-editor-frame" title="Level Editor"></iframe>
+  </div>
 </body>
 </html>

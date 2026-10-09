@@ -43,23 +43,20 @@ const report = { runsPerLevel: RUNS, seed: 'level × 100000 + run', note: 'bot t
 if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
 if (BASELINE) { writeFileSync(new URL('./baseline.json', import.meta.url), `${JSON.stringify(report, null, 2)}\n`); log('\nĐã ghi tools/baseline.json'); }
 
-// --dda: tỉ lệ thắng của bot ở từng bản biến thể theo số element (adaptive.mjs). Bản ít element phải thắng
-// nhiều hơn; dòng nào đảo thứ tự thì gắn "!" để xem lại.
+// --dda: tỉ lệ thắng của bot ở từng mức DDA (adaptive.mjs variantFor: xếp lại mèo đặt sẵn + chỉnh hàng thẻ, giữ nguyên
+// thiết kế bàn và số lượt). Mức dễ hơn phải thắng nhiều hơn; dòng nào đảo thứ tự thì gắn "!" để xem lại.
 if (process.argv.includes('--dda')) {
-  const { buildVariant, elementCount, isAdaptive } = await import('../game/gameplay/adaptive.mjs');
-  console.log('\nĐộ khó thích ứng: tỉ lệ thắng theo số element (* = bản gốc)');
+  const { variantFor, isAdaptive, SHIFT_MIN, SHIFT_MAX } = await import('../game/gameplay/adaptive.mjs');
+  console.log('\nĐộ khó thích ứng: tỉ lệ thắng theo mức shift (âm = dễ hơn, 0 = thiết kế)');
   LEVELS.forEach((base, i) => {
     if (!isAdaptive(base)) return;
-    const seen = new Set(), row = [];
-    for (let target = 0; target <= 5; target++) {
-      const level = buildVariant(base, target), count = elementCount(level);
-      if (seen.has(count)) continue;
-      seen.add(count);
-      const wins = Array.from({ length: 200 }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i) })).filter(r => r.win).length / 200;
-      row.push({ count, wins, mark: count === elementCount(base) ? '*' : '' });
+    const row = [];
+    for (let shift = SHIFT_MIN; shift <= SHIFT_MAX; shift++) {
+      const level = variantFor(base, shift);
+      row.push({ shift, wins: Array.from({ length: 200 }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i) })).filter(r => r.win).length / 200 });
     }
     const ordered = row.every((cell, k) => !k || cell.wins <= row[k - 1].wins + 0.05);
-    console.log(`${String(i + 1).padStart(2)}. ${base.name.padEnd(16)} ${row.map(c => `${c.count}${c.mark}:${(c.wins * 100).toFixed(0).padStart(3)}%`).join('  ')}${ordered ? '' : '  !'}`);
+    console.log(`${String(i + 1).padStart(2)}. ${base.name.padEnd(20)} ${row.map(c => `${c.shift > 0 ? '+' : ''}${c.shift}:${(c.wins * 100).toFixed(0).padStart(3)}%`).join('  ')}${ordered ? '' : '  !'}`);
   });
 }
 

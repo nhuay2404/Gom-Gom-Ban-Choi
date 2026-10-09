@@ -1,7 +1,7 @@
-// Âm thanh Gom Gom: không dùng file, tổng hợp bằng Web Audio (bản HTML một file vẫn có tiếng, không tốn tải).
+// Âm thanh Gom Gom: tổng hợp bằng Web Audio (bản HTML một file vẫn có tiếng, không tốn tải).
 // Định hướng: trong trẻo + dễ thương cho người chơi casual — chuông nhỏ (sine + bội âm cao nhẹ), bong bóng "póp" (sine trượt cao độ),
 // thang ngũ cung C (C D E G A) nên nốt nào chồng lên nhau cũng thuận tai; không tiếng gắt (không square / không méo), âm lượng nhỏ.
-// Không có tiếng mèo (đã thử tổng hợp + ghi âm thật, người dùng không ưng): việc của mèo dùng chuông / bong bóng nhẹ.
+// Tiếng mèo: file thu sẵn người dùng chọn (ui/shared/sfx/cat1-8.mp3, playMeow); không tự tổng hợp tiếng mèo (đã thử, không ưng).
 //
 //   Giao diện / thao tác
 //   pick     chạm nút, chọn            bong bóng "póp" nhỏ đi lên
@@ -15,8 +15,8 @@
 //   Thưởng
 //   merge    gom mèo: chuỗi chuông ngũ cung dài dần theo cỡ cụm (size); cụm ≥ 5 thêm lấp lánh
 //   reward   nhận xu / mua đồ          "ting-ting" đồng xu
-//   complete thắng màn                 khúc fanfare nhỏ
-//   lose     thua màn                  nốt đi xuống chậm
+//   complete thắng màn                 file thu sẵn ui/result/sfx/victory.mp3 (CLIPS; fanfare tổng hợp khi chưa tải xong)
+//   lose     thua màn                  "uầy uầy" ba nốt trượt xuống, nốt cuối rung + chuông trầm
 //   Mèo (không phải tiếng mèo)
 //   pet      vuốt mèo                  hai nốt chuông ngọt đi lên
 //   grumpy   mèo cáu                   "bông" trầm ngắn
@@ -106,6 +106,8 @@ const SOUNDS = {
   place: t => { pop(300, 150, t, { vol: .26, dur: .11 }); noise(t, .05, { vol: .05, freq: 900, q: 2 }); bell(PENTA[0], t + .01, { vol: .06, decay: .25 }); },
   invalid: t => { pop(330, 250, t, { vol: .14, dur: .12, type: 'triangle' }); pop(290, 220, t + .13, { vol: .12, dur: .14, type: 'triangle' }); },
   draw: t => { noise(t, .16, { vol: .07, freq: 700, to: 3000, q: 1.5 }); bell(PENTA[4], t + .1, { vol: .08, decay: .3 }); },
+  // Thùng gỗ vỡ: dùng file ui/play/sfx/crate-break.mp3 (CLIPS); đây là tiếng dự phòng lúc chưa tải xong.
+  crateBreak: t => { noise(t, .09, { vol: .2, freq: 700, to: 350, q: 2.5, attack: .002 }); pop(240, 100, t, { vol: .22, dur: .12 }); },
   smash: t => { noise(t, .07, { vol: .22, freq: 600, to: 400, q: 3, attack: .002 }); pop(260, 110, t, { vol: .28, dur: .12 });
     arpeggio([PENTA[5], PENTA[7], PENTA[8]], t + .09, .05, { vol: .06, decay: .25 }); },
   merge: (t, size) => {
@@ -122,7 +124,17 @@ const SOUNDS = {
     arpeggio([PENTA[6], PENTA[7], PENTA[8]], t + .45, .07, { vol: .07, decay: .6 });
     bell(PENTA[5] / 2, t + .4, { vol: .1, decay: .9 });
   },
-  lose: t => arpeggio([783.99, 659.25, 587.33, 523.25], t, .17, { vol: .1, decay: .55 }),
+  // Thua: "uầy uầy" buồn mà vẫn dễ thương — ba nốt trượt xuống (triangle mềm), nốt cuối kéo dài rung nhẹ, chuông trầm khép lại.
+  lose: t => {
+    [[523.25, 493.88, 0, .26], [466.16, 440, .3, .26], [415.3, 349.23, .6, .7]].forEach(([from, to, at, dur]) => {
+      const g = ctx.createGain(), osc = voice('triangle', from, t + at, t + at + dur), lfo = voice('sine', 6, t + at, t + at + dur), wob = ctx.createGain();
+      osc.frequency.exponentialRampToValueAtTime(to, t + at + dur * .9);
+      wob.gain.value = at > .5 ? 7 : 0; lfo.connect(wob); wob.connect(osc.frequency);
+      envelope(g, t + at, .16, .02, dur);
+      osc.connect(g); g.connect(out); g.connect(echo);
+    });
+    bell(PENTA[0] / 2, t + 1.1, { vol: .07, decay: .8 });
+  },
   pet: t => { bell(PENTA[3], t, { vol: .08, decay: .3 }); bell(PENTA[5], t + .07, { vol: .08, decay: .4 }); },
   grumpy: t => pop(300, 220, t, { vol: .13, dur: .12, type: 'triangle' }),
   catLift: t => pop(420, 980, t, { vol: .16, dur: .1 }),
@@ -130,11 +142,80 @@ const SOUNDS = {
   worried: t => { bell(PENTA[4], t, { vol: .06, decay: .3 }); bell(PENTA[2], t + .12, { vol: .06, decay: .4 }); },
 };
 
+// Tiếng thu sẵn (file mp3, ghi đè tiếng tổng hợp cùng tên khi đã tải xong; chưa tải xong thì dùng tiếng tổng hợp).
+// Bản HTML một file: build-single-html.mjs nhúng đường dẫn ui/<hub>/sfx/*.mp3 thành data URI.
+const CLIPS = {
+  complete: 'ui/result/sfx/victory.mp3',
+  crateBreak: 'ui/play/sfx/crate-break.mp3',
+  // Tiếng mèo thu sẵn (gán ở VOICE / playMeow bên dưới)
+  cat1: 'ui/shared/sfx/cat1.mp3', cat2: 'ui/shared/sfx/cat2.mp3', cat3: 'ui/shared/sfx/cat3.mp3', cat4: 'ui/shared/sfx/cat4.mp3',
+  cat5: 'ui/shared/sfx/cat5.mp3', cat6: 'ui/shared/sfx/cat6.mp3', cat7: 'ui/shared/sfx/cat7.mp3', cat8: 'ui/shared/sfx/cat8.mp3',
+}, clipBuffers = {}, CLIP_FADE = .45;
+let clipsLoading = false;
+function loadClips() {
+  if (clipsLoading) return;
+  clipsLoading = true;
+  Object.entries(CLIPS).forEach(([kind, url]) => fetch(url).then(r => r.arrayBuffer()).then(data => ctx.decodeAudioData(data))
+    .then(buffer => { clipBuffers[kind] = buffer; }).catch(() => {}));
+}
+function playClip(buffer, t, { fade = CLIP_FADE, vol = .9, rate = 1 } = {}) {
+  const src = ctx.createBufferSource(), g = ctx.createGain();
+  src.buffer = buffer; src.playbackRate.value = rate;
+  // Fade in (không bật phụt lên).
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + fade);
+  src.connect(g); g.connect(ctx.destination);
+  src.start(t);
+}
+
 export function playSound(kind, size = 2) {
   if (!enabled) return;
   try {
     audio();
+    loadClips();
+    // Tiếng thắng fade in chậm (CLIP_FADE); tiếng khác (thùng vỡ...) vào ngay.
+    if (clipBuffers[kind]) return playClip(clipBuffers[kind], ctx.currentTime + .005, { fade: kind === 'complete' ? CLIP_FADE : .005 });
     (SOUNDS[kind] || SOUNDS.pick)(ctx.currentTime + .005, size);
+  } catch {}
+}
+
+// ===== Tiếng mèo =====
+// Phân tích 8 file (cao độ / độ dài): cat1 ~850-950 Hz ngọt, lên rồi xuống nhẹ (.76 s) · cat2 "mrrp!" ngắn, vút lên ~1100 Hz (.48 s) ·
+// cat3 ngắn, trượt xuống 620 -> 450 Hz (.36 s, nghe phụng phịu) · cat4 cao ~1000 Hz, ngắn (.56 s) · cat5 trầm ~550 Hz, đều (.82 s) ·
+// cat6 trung ~600 Hz, đều (.6 s) · cat7 dài "meeoow" lên rồi xuống ~700 Hz (.96 s) · cat8 cao độ đi lên như hỏi "mrrow?" (.7 s).
+// Mỗi giống một giọng gọi riêng hợp tính (VOICE); cáu: cat3 cho mọi giống; ở Deco bị rê chuột qua / nhấc lên lơ lửng: cat8.
+const VOICE = { orange: 'cat7', gray: 'cat6', white: 'cat1', tuxedo: 'cat5', siamese: 'cat2', tabby: 'cat4' };
+const MEOW_GAP = 350; // ms: chạm dồn dập không chồng tiếng kêu lên nhau
+let lastMeow = 0;
+// mood: 'call' (được cưng, nhận mèo) | 'grumpy' (cáu) | 'hover' (Deco: rê chuột / nhấc lên). Chưa tải xong file thì dùng chuông cũ.
+export function playMeow(breed, mood = 'call') {
+  if (!enabled) return;
+  try {
+    audio();
+    loadClips();
+    const clip = clipBuffers[mood === 'grumpy' ? 'cat3' : mood === 'hover' ? 'cat8' : VOICE[breed] || 'cat6'];
+    if (!clip) return playSound(mood === 'grumpy' ? 'grumpy' : mood === 'hover' ? 'catLift' : 'pet');
+    const now = performance.now();
+    if (now - lastMeow < MEOW_GAP) return;
+    lastMeow = now;
+    // Lệch cao độ chút ít mỗi lần cho đỡ lặp.
+    playClip(clip, ctx.currentTime + .005, { fade: .015, vol: .7, rate: .95 + Math.random() * .1 });
+  } catch {}
+}
+
+// Gom (match): cả bàn mèo vui kêu chồng lên nhau — mỗi giống trong `breeds` một tiếng (tối đa CHORUS_MAX), lệch nhịp,
+// nhỏ tiếng (không át tiếng chuông gom). Không tính vào MEOW_GAP của tiếng chạm mèo.
+const CHORUS_MAX = 4;
+export function playMeowChorus(breeds) {
+  if (!enabled || !breeds?.length) return;
+  try {
+    audio();
+    loadClips();
+    const voices = [...new Set(breeds)].sort(() => Math.random() - .5).slice(0, CHORUS_MAX);
+    voices.forEach((breed, k) => {
+      const clip = clipBuffers[VOICE[breed] || 'cat6'];
+      if (clip) playClip(clip, ctx.currentTime + .05 + k * (.07 + Math.random() * .08), { fade: .02, vol: .32 / Math.sqrt(voices.length), rate: .97 + Math.random() * .12 });
+    });
   } catch {}
 }
 

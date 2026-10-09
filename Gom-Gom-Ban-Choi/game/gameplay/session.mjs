@@ -4,7 +4,7 @@
 import { clearMatches, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, turnPoints } from './scoring.mjs';
 import { categories } from '../ui/cat-art.mjs';
-import { LEVELS, parseBoard, makeDealer, starsFor, boardSize } from './levels.mjs';
+import { LEVELS, parseBoard, makeDealer, starsFor, boardSize, parseGrass, grassCount } from './levels.mjs';
 import { BOARD, holdUnlocked } from './tuning.mjs';
 
 const { PREVIEW_COUNT } = BOARD;
@@ -12,16 +12,50 @@ const withNames = card => ({ offsets: card.offsets, items: card.items.map(({ gro
 
 // `level`: bản màn đã chỉnh độ khó (adaptive.mjs); không truyền thì dùng màn gốc.
 // s.W × s.H = kích thước bàn của màn; s.holdOn = màn đã mở ô Hold chưa (tuning.mjs: HOLD).
+// s.grass = ô nào còn cỏ (mảng true/false, null nếu màn không có cỏ) · s.grassTotal = số ô cỏ lúc đầu (> 0 = mục tiêu là dọn hết cỏ).
 export function createSession(levelIndex, { rng = Math.random, level = LEVELS[levelIndex] } = {}) {
   const { W, H } = boardSize(level.board);
   const s = {
-    level, levelIndex, W, H, holdOn: holdUnlocked(levelIndex),
+    level, levelIndex, W, H, holdOn: holdUnlocked(levelIndex), grass: parseGrass(level), grassTotal: grassCount(level),
     board: parseBoard(level.board), deal: makeDealer(level, rng), deck: [], active: null, hold: null,
     score: 0, moves: level.moves, over: false, outcome: null,
     tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
   };
   s.active = drawCard(s);
+  s.active = withNames(openingCard(s.board, s.W, s.H, s.active));
   return s;
+}
+
+// Gom được ngay khi đặt `card` ở đâu đó (mọi hướng xoay)?
+export function matchesSomewhere(board, W, H, card) {
+  let offsets = card.offsets;
+  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
+    for (let anchor = 0; anchor < board.length; anchor++) {
+      const indices = placementIndices(board, W, H, anchor, offsets);
+      if (!indices) continue;
+      const next = board.slice();
+      indices.forEach((index, i) => { next[index] = { group: card.items[i].group }; });
+      if (clearMatches(next, W, H, MATCH_SIZE).cleared.length) return true;
+    }
+  }
+  return false;
+}
+// Thẻ đầu tiên của mọi ván phải gom được ngay ở lượt 1. Thẻ bóc ra chưa gom được thì đổi nhẹ nhất có thể:
+// đổi màu một mèo của thẻ -> đổi màu cả thẻ (giữ hình) -> thẻ đôi cùng màu -> thẻ đơn. Màu chọn theo giống có nhiều
+// mèo (không bị nhốt) trên bàn nhất. Không có cách nào thì giữ thẻ cũ.
+export function openingCard(board, W, H, card) {
+  if (matchesSomewhere(board, W, H, card)) return card;
+  const counts = {};
+  board.forEach(cell => { if (cell?.group && !cell.cage) counts[cell.group] = (counts[cell.group] || 0) + 1; });
+  const groups = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  const recolor = (target, i, group) => ({ offsets: target.offsets, items: target.items.map((item, k) => (i === -1 || k === i ? { group } : { group: item.group })) });
+  const tries = [
+    ...card.items.flatMap((_, i) => groups.map(group => recolor(card, i, group))),
+    ...groups.map(group => recolor(card, -1, group)),
+    ...groups.map(group => ({ offsets: [[0, 0], [0, 1]], items: [{ group }, { group }] })),
+    ...groups.map(group => ({ offsets: [[0, 0]], items: [{ group }] })),
+  ];
+  return tries.find(next => matchesSomewhere(board, W, H, next)) ?? card;
 }
 
 // Bóc thẻ kế tiếp; luôn giữ đủ PREVIEW_COUNT thẻ "sắp tới" trong s.deck.
@@ -48,7 +82,9 @@ export function checkStuck(s) {
 }
 // Qua màn = đủ điểm VÀ đã bẻ hết khóa chuồng (không còn mèo nào bị nhốt trên bàn).
 export const cagesLeft = s => s.board.filter(object => object?.cage).length;
-export const goalReached = s => s.score >= s.level.target && cagesLeft(s) === 0;
+export const grassLeft = s => (s.grass ? s.grass.filter(Boolean).length : 0);
+// Màn có cỏ: dọn hết cỏ; màn thường: đủ điểm. Cả hai đều phải thả hết chuồng.
+export const goalReached = s => cagesLeft(s) === 0 && (s.grassTotal ? grassLeft(s) === 0 : s.score >= s.level.target);
 function finish(s, win, reason = '') {
   s.over = true;
   s.outcome = { win, reason, stars: win ? starsFor(s.level, s.moves) : 0 };
@@ -117,15 +153,18 @@ export function place(s, anchor) {
   const gained = turnPoints(match);
   s.board = match.board;
   s.score += gained;
+  // Cỏ dưới các mèo vừa gom bị phá.
+  const cleaned = s.grass ? match.cleared.filter(index => s.grass[index]) : [];
+  cleaned.forEach(index => { s.grass[index] = false; });
   s.moves--;
   const tutorialAdvanced = advanceTutorial(s, 'place');
-  const turn = { ok: true, result, match, gained, tutorialAdvanced, win: false, lose: false, stuck: false, fit: true };
+  const turn = { ok: true, result, match, gained, tutorialAdvanced, win: false, lose: false, stuck: false, fit: true, cleaned };
   if (goalReached(s)) {
     finish(s, true);
     s.active = drawCard(s); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     return { ...turn, win: true };
   }
-  if (s.moves === 0) { finish(s, false, s.score >= s.level.target ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
+  if (s.moves === 0) { finish(s, false, !s.grassTotal && s.score >= s.level.target ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
   s.active = drawCard(s);
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
