@@ -233,5 +233,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## Khác
+- UI Studio (`npm run studio`, mở `?studio`; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
+  hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
+  định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.

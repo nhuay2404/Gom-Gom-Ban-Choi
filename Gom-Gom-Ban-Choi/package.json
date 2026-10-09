@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
+    "studio": "node server.mjs --lan",
     "test": "node --test game/*.test.mjs game/*/*.test.mjs",
     "economy": "node tools/economy-report.mjs",
     "firebase:template": "node tools/firebase-template.mjs",

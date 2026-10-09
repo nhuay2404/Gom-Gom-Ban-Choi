@@ -6,9 +6,13 @@ import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleSaveLevel } from './tools/level-save.mjs';
+import { handleStudio, studioCss } from './tools/ui-studio.mjs';
+import { networkInterfaces } from 'node:os';
 
 const ROOT = resolve(fileURLToPath(new URL('./game', import.meta.url)));
-const START_PORT = Number(process.argv[2] ?? process.env.PORT ?? 4400);
+const START_PORT = Number(process.argv.slice(2).find(arg => /^d+$/.test(arg)) ?? process.env.PORT ?? 4400);
+// --lan (npm run studio): nghe cả mạng LAN để mở game trên điện thoại; lệnh ghi file của UI Studio vẫn chỉ nhận từ máy này.
+const LAN = process.argv.includes('--lan');
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml',
@@ -32,6 +36,8 @@ const server = createServer(async (req, res) => {
   try {
     // Level Editor (nút dev LEVELS) lưu màn vào game/gameplay/levels.mjs. Máy chủ chỉ nghe 127.0.0.1.
     if (handleSaveLevel(req, res)) return;
+    if (handleStudio(req, res)) return;
+    if (handleStudio(req, res)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end('Method Not Allowed'); return; }
     let file = safePath(req.url === '/' ? '/index.html' : req.url);
     if (!file) { res.writeHead(403).end('Forbidden'); return; }
@@ -40,10 +46,13 @@ const server = createServer(async (req, res) => {
     if (!info?.isFile()) { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Khong tim thay: ' + req.url); return; }
     res.writeHead(200, {
       'content-type': TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream',
-      'content-length': info.size,
+      ...(new URL(req.url, 'http://x').searchParams.has('studio') ? {} : { 'content-length': info.size }),
       'cache-control': 'no-cache',
     });
     if (req.method === 'HEAD') { res.end(); return; }
+    // UI Studio xin CSS kèm ?studio: gắn phiên bản vào url(ảnh) để thay ảnh là thấy ngay
+    const css = studioCss(file, new URL(req.url, 'http://x'));
+    if (css !== null) { res.end(css); return; }
     createReadStream(file).pipe(res);
   } catch (error) {
     res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' }).end('Loi may chu: ' + error.message);
@@ -73,6 +82,6 @@ function listen(port, tries = 0) {
     console.error('Khong mo duoc may chu:', error.message);
     process.exit(1);
   });
-  server.listen(port, '127.0.0.1');
+  server.listen(port, LAN ? '0.0.0.0' : '127.0.0.1');
 }
 listen(START_PORT);
