@@ -22,8 +22,8 @@ Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên kh�
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
 | `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
 | `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, quảng cáo giả lập, event hằng tuần (nút ở cột trái Home, bảng event, ×2 cá ở bảng kết quả, nhãn Deco Sale). Luật ở `gameplay/liveops.mjs` + `gameplay/events.mjs`, lịch event là dữ liệu ở `gameplay/liveops-data.mjs`, số ở `tuning.mjs` (LIVEOPS, LIVEOPS.EVENTS), CSS ở `ui/shared/liveops.css`, thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi luật / số / lịch thì `Gameplay:`) |
-| `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, state LiveOps, toast), `onboarding.js` | theo phần sửa |
+| `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, event hằng tuần (nút ở cột trái Home, bảng event, ×2 cá ở bảng kết quả, nhãn Deco Sale) + các hàm một dòng cho màn chơi / menu gọi (`levelStart`, `matched`, `levelEnd`, `offerContinue`...). Luật + state ở **hc-kit** (`game/hc-kit/`, bản chép, không sửa tay); instance kit + adapter + ports (quảng cáo / thanh toán giả lập) ở `app/liveops.js`; số + lịch + cờ bật / tắt ở `liveops/config.mjs`; CSS ở `ui/shared/liveops.css`; thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi số / lịch thì `Gameplay:`) |
+| `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `liveops.js` (hc-kit: adapter + ports), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
 
@@ -255,12 +255,16 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## LiveOps chạy song song với main
-- Core game + content làm trên `main`; LiveOps làm trên nhánh `Liveops`. Luật LiveOps dùng chung cho nhiều game nằm ở project riêng
-  `E:/Git/MiniGame/liveops-kit` (tài liệu tích hợp: `liveops-kit/docs/INTEGRATION.md`); thiết kế: `tai-lieu/6-Thiet-ke-LiveOps.html`.
+- Core game + content làm trên `main`; LiveOps làm trên nhánh `Liveops`. Luật Economy + LiveOps dùng chung cho nhiều game nằm ở repo riêng
+  **hc-kit** (thư mục `hc-kit` cạnh repo này; tài liệu tích hợp: `hc-kit/docs/INTEGRATION.md`, hợp đồng: `index.d.ts`); thiết kế: `tai-lieu/6-Thiet-ke-LiveOps.html`.
+- `game/hc-kit/` là bản chép `src/` của kit (để server + build:html thấy). Không sửa tay: sửa ở repo kit, `npm test` bên kit, rồi
+  `npm run sync:kit` (biến môi trường `HC_KIT` nếu kit không nằm cạnh repo) và commit kèm `VERSION.json`.
+- Cờ `LIVEOPS_ON` (`liveops/config.mjs`, Firebase cùng tên) mặc định TẮT; `?liveops=1` / `?liveops=0` trên URL ghi đè. Tắt: Home / Shop
+  hiện phần `.core-only` như main (pill "coming soon", gói xu), ẩn `.lo-only`; mọi hàm của liveops-ui.js tự bỏ qua.
 - Nhánh `Liveops`: đầu mỗi phiên merge `origin/main` vào rồi chạy `npm test`; test hỏng vì quy tắc mới của main thì sửa phía LiveOps.
-- File của LiveOps (`game/liveops/`, `app/liveops-ui.js`, `ui/shared/liveops.css`, thiết kế LiveOps): làm ở `main` thì không sửa.
+- File của LiveOps (`game/liveops/`, `game/hc-kit/`, `app/liveops.js`, `app/liveops-ui.js`, `ui/shared/liveops.css`, thiết kế LiveOps): làm ở `main` thì không sửa.
   File chung (`play-controller.js`, `menu-controller.js`, `shared.js`, `index.html`): LiveOps chỉ chèn lệnh gọi ngắn tới kit / adapter, không đổi logic của main.
-- LiveOps có cờ bật / tắt, mặc định TẮT trên main (playtest core đo riêng RR1 / playtime, sau đó A/B có LiveOps).
+- Mặc định TẮT để playtest core đo riêng RR1 / playtime, sau đó A/B có LiveOps.
 
 ## Khác
 - UI Studio (`npm run studio`, mở `?studio`; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
@@ -268,5 +272,6 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.
-- Kiểm luồng LiveOps nhanh (chỉ DEV_MODE): console `gomgomDev.win(sao)` / `gomgomDev.lose()` kết thúc ngay ván đang chơi (không báo
-  sự kiện gom mèo). Thử event theo ngày: ghi đè `Date.now` trong trang (lịch tính từ giờ máy); tua lùi giờ sẽ dính chốt chống lùi giờ.
+- Kiểm luồng LiveOps nhanh (chỉ DEV_MODE, mở với `?liveops=1`): console `gomgomDev.win(sao)` / `gomgomDev.lose()` kết thúc ngay ván đang chơi
+  (không báo sự kiện gom mèo; muốn có thì gọi `matched()` của liveops-ui.js). Thử event theo ngày: ghi đè `Date.now` trong trang (lịch tính
+  từ giờ máy); tua lùi giờ sẽ dính chốt chống lùi giờ. Thử luật / số không cần game: `npm run sandbox` trong repo kit.
