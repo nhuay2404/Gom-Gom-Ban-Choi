@@ -12,6 +12,10 @@
 //   glow    : model phát sáng ban đêm (vật liệu emissive hoặc MeshBasicMaterial không nhận sáng) mà không phải nguồn sáng
 //             (không có đèn PointLight bên trong và không khai userData.lightSource = true). Chỉ đèn / lửa / màn hình / dải LED
 //             mới được sáng; tranh, cờ, nước, bầu trời... dùng userData: { nightDim: true } để ban đêm tối lại cùng cảnh
+//   toon    : quét MỌI mesh của cảnh thật (Deco: nhà + vườn + đồng cỏ + mèo; bản đồ màn) — model phải ra kiểu toon, không lộ khối 3D thuần:
+//             chất liệu không phải toon (Standard / Physical / Lambert / Phong, MeshToon tạo thẳng không qua toonMat), màu đỉnh chuyển dần
+//             (gradient phủ mất các nấc sáng), mặt lồi lõm nhỏ (pháp tuyến gồ ghề -> nấc sáng vỡ thành đốm loang: lỗi bụi góc vườn),
+//             toon "mượt" (smooth) dùng ngoài địa hình. Ngoại lệ có chủ đích: userData.toonOk = 'lý do' trên mesh / tổ tiên
 //   preview : popup xem trước ở Shop còn bị che sau khi đã ẩn vật chắn (chạy trong cảnh thật: deco-room.mjs qcPreview,
 //             menu-controller.js runQC gọi cho từng món, mọi khu mở)
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
@@ -161,6 +165,83 @@ export function zFightIssues(shells) {
   return out;
 }
 
+// ---------- Toon ----------
+const ALLOWED = new Set(['MeshToonMaterial', 'MeshBasicMaterial', 'ShaderMaterial', 'RawShaderMaterial', 'SpriteMaterial', 'ShadowMaterial',
+  'MeshDepthMaterial', 'MeshDistanceMaterial', 'LineBasicMaterial', 'LineDashedMaterial', 'PointsMaterial']);
+const ancestorFlag = (node, test) => { for (let n = node; n; n = n.parent) if (test(n.userData)) return n.userData; return null; };
+// địa hình = nền (pickSurface 'floors') và đồi (userData.terrain): được toon mượt + màu đỉnh chuyển dần. Kết cấu khác (tường, rào, bụi góc) KHÔNG miễn.
+const isTerrain = node => !!ancestorFlag(node, u => u.terrain || u.pickSurface?.key === 'floors');
+// Màu đỉnh: số màu khác nhau (8 bit mỗi kênh). Tô theo khối (vài màu phẳng) thì ít; gradient thì hàng chục.
+function vertexColorCount(geometry) {
+  const c = geometry.attributes.color, seen = new Set();
+  if (!c) return 0;
+  for (let i = 0; i < c.count && seen.size < 64; i++) seen.add(((c.getX(i) * 255) | 0) << 16 | ((c.getY(i) * 255) | 0) << 8 | ((c.getZ(i) * 255) | 0));
+  return seen.size;
+}
+// Mặt gồ ghề: tỉ lệ cạnh LÕM (pháp tuyến hai đầu cạnh chụm vào nhau: (n_b - n_a)·(p_b - p_a) < 0) trên các cạnh cong đáng kể (> 4°).
+// Khối lồi (cầu, trụ, hộp bo góc, nón) = 0%; bụi góc vườn gồ ghề (lỗi cũ) 14%, nơ / hoa nhăn 36%. Bỏ qua lưới tiện / xuyến / ống (có phần lõm thật).
+const CONCAVE_OK = new Set(['LatheGeometry', 'TorusGeometry', 'TorusKnotGeometry', 'TubeGeometry', 'PlaneGeometry', 'CircleGeometry', 'RingGeometry', 'ShapeGeometry']);
+const bumpCache = new WeakMap();
+function bumpiness(geometry) {
+  if (bumpCache.has(geometry)) return bumpCache.get(geometry);
+  const pos = geometry.attributes.position, nor = geometry.attributes.normal, idx = geometry.index;
+  let curved = 0, concave = 0;
+  if (pos && nor && !CONCAVE_OK.has(geometry.type)) {
+    const tris = idx ? idx.count / 3 : pos.count / 3, step = Math.max(1, Math.floor(tris / 4000));
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), na = new THREE.Vector3(), nb = new THREE.Vector3();
+    const vert = k => (idx ? idx.getX(k) : k);
+    for (let t = 0; t < tris; t += step) for (let e = 0; e < 3; e++) {
+      const i = vert(t * 3 + e), j = vert(t * 3 + (e + 1) % 3);
+      na.fromBufferAttribute(nor, i); nb.fromBufferAttribute(nor, j);
+      if (na.dot(nb) > Math.cos(4 * Math.PI / 180)) continue;
+      a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, j);
+      curved++;
+      if (nb.sub(na).dot(b.sub(a)) < 0) concave++;
+    }
+  }
+  const out = curved >= 40 ? concave / curved : 0;
+  bumpCache.set(geometry, out);
+  return out;
+}
+export const TOON_LIMITS = { gradientColors: 6, bumpy: .08 };
+// Trả về danh sách lỗi toon của mọi mesh đang hiện dưới root. label: tên khu / cảnh để in kèm.
+export function toonIssues(root, label = '') {
+  const out = [], seen = new Set();
+  const say = (node, what) => {
+    const path = [];
+    for (let n = node; n && path.length < 6; n = n.parent) { const tag = n.name || n.userData.id || n.userData.item || n.userData.kind; if (tag) path.push(tag); }
+    const c = new THREE.Box3().setFromObject(node).getCenter(new THREE.Vector3());
+    const name = (path.join(' < ') || 'không tên') + ` [${node.geometry?.type}, ${node.geometry?.attributes.position.count} đỉnh, tại x ${c.x.toFixed(1)} y ${c.y.toFixed(1)} z ${c.z.toFixed(1)}]`;
+    out.push(`${label ? label + ': ' : ''}${what} — ${name} #${[].concat(node.material)[0]?.color?.getHexString?.() ?? ''}`);
+  };
+  root.updateMatrixWorld(true);
+  root.traverse(node => {
+    if (!(node.isMesh || node.isSprite) || node.userData.outline) return;
+    if (ancestorFlag(node, u => u.toonOk)) return;
+    for (const m of [].concat(node.material)) {
+      if (!m || m.colorWrite === false || m.visible === false) continue;
+      const key = m.uuid + '|' + node.geometry?.uuid;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (!ALLOWED.has(m.type)) { say(node, `chất liệu ${m.type} không phải toon (dùng toonMat)`); continue; }
+      if (!m.isMeshToonMaterial) continue;
+      if (m.userData.toonRim === undefined) say(node, 'MeshToonMaterial tạo thẳng, thiếu shader toon của toon.mjs (dùng toonMat)');
+      if (m.userData.toonSmooth && !isTerrain(node)) say(node, 'toon mượt (smooth) chỉ dành cho địa hình: khối thường phải chia nấc');
+      if (m.vertexColors && !m.userData.bakedColors && !isTerrain(node)) {
+        const n = vertexColorCount(node.geometry);
+        if (n > TOON_LIMITS.gradientColors) say(node, `màu đỉnh chuyển dần (${n >= 64 ? '64+' : n} màu): toon dùng mảng màu phẳng, không gradient`);
+      }
+      // tấm mỏng hai mặt (rèm gợn nếp, cờ, lá) cố ý cong lõm theo nếp vải: không tính
+      const concaveOk = (node.userData.mergedTypes || []).some(type => CONCAVE_OK.has(type));
+      if ((!node.isInstancedMesh || node.count) && m.side !== THREE.DoubleSide && !concaveOk) {
+        const b = bumpiness(node.geometry);
+        if (b > TOON_LIMITS.bumpy) say(node, `mặt lồi lõm (${Math.round(b * 100)}% cạnh lõm): nấc sáng toon vỡ thành đốm — giữ hình lồi trơn, tạo dáng bằng nhiều khối`);
+      }
+    }
+  });
+  return out;
+}
+
 // Kiểm tra MỘT model (dùng khi vừa tạo / sửa model): build() trả về node đã đặt đúng vị trí + xoay (+ độ cao mặt đất).
 // zone: khu đặt món (đo lún / lơ lửng theo mặt đất thật của khu, vd. sườn đồi ở phần vườn mở rộng).
 // Trả về { node, list (từng khối), box, issues: [chuỗi lỗi] } — bo góc sai, tấm phẳng sát mặt, vỏ hở có viền, lún / lơ lửng.
@@ -168,7 +249,7 @@ export function checkModel(build, zone = 'garden') {
   geometryNotes.length = 0;
   const node = withoutMerging(build);
   node.userData.update?.(0); // bộ phận cử động (cá, chim, bóng treo) về đúng tư thế khung hình đầu
-  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list), ...glowIssues(node)];
+  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list), ...glowIssues(node), ...toonIssues(node)];
   const sink = node.userData.sink || 0, low = Math.min(...list.map(p => p.low)); // sink: phần chôn xuống đất có chủ đích
   if (low < -.01 - sink) issues.push(`lún xuống mặt đất ${fmt(-low * 100)} cm (cho phép ${fmt(sink * 100)} cm qua userData.sink)`);
   if (low > .05 && !node.userData.wallMounted) issues.push(`lơ lửng ${fmt(low * 100)} cm trên mặt đất (đồ treo tường: userData.wallMounted)`);
@@ -243,6 +324,8 @@ export function runModelQC(ctx) {
       shellIssues(list).forEach(m => add('error', zone, `đồ trang trí: ${m}`));
     }
   });
+  // Toon: quét toàn bộ cảnh thật (mọi khu, đồ trang trí cố định, bụi góc, đồng cỏ, mèo...) và các cảnh phụ (bản đồ màn).
+  for (const [name, root] of Object.entries(ctx.toonScenes || {})) toonIssues(root, name).forEach(m => add('error', 'toon', m));
   if (ctx.shells) zFightIssues(ctx.shells).forEach(m => add('error', 'site', `vỏ khu nhà: ${m}`));
   // Đồ trang trí cố định chạm cánh cửa (lỗi tủ thấp + cửa phòng ngủ).
   for (const f of fixed.filter(f => !f.door)) for (const d of fixed.filter(d => d.door && d.zone === f.zone)) {

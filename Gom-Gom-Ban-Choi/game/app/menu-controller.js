@@ -1174,7 +1174,7 @@ $('dev-reset-ok').onclick = () => {
 // QC model 3D (qc.mjs): liệt kê lỗi model / chỗ đặt đồ. Mở game với ?qc thì tự chạy khi phòng 3D sẵn sàng.
 function runQC() {
   if (!room3d) return showToast('3D room not ready yet');
-  const report = room3d.qc();
+  const report = room3d.qc(map3d?.scene ? { map: map3d.scene } : {});
   // Popup xem trước ở Shop: dựng thử từng món (mọi khu mở), soi như popup — còn bị che / quay mặt sau là lỗi.
   for (const entry of CATALOG.filter(e => e.cat === 'furniture')) {
     room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, gardenExpand: true });

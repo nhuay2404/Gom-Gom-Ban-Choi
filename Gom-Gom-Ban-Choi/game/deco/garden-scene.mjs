@@ -180,7 +180,7 @@ export const GARDEN_BUILD = {
     // Cây catnip thật: nhiều nhánh mọc thẳng toả ra từ gốc, lá hình trứng mọc đối từng cặp (cặp sau xoay 90°),
     // đầu nhánh là bông hoa tím dạng bông đuôi. Không còn là cục lá tròn.
     const LEAF = ['#8fbf6a', '#a3cf7e', '#7fb35c'], BLOOM = ['#c9a6f5', '#b48ee8'];
-    const leafGeo = new THREE.SphereGeometry(1, 14, 10);
+    const leafGeo = new THREE.SphereGeometry(1, 8, 6); // lá nhỏ dẹt: 8×6 cạnh đủ tròn dưới viền (14×10 làm bụi ~21 nghìn tam giác)
     const leaf = (side, size, color) => { // lá dẹt, chĩa ra ngoài và hơi rủ xuống
       const node = mesh(leafGeo, color);
       node.scale.set(size, size * .22, size * .62);
@@ -922,19 +922,20 @@ export function buildFence(entry, half = HALF, gates = [], halfX = half) {
 // tán cho viền bụi lởm chởm, thêm hoa / quả mọng tuỳ góc, cỏ con + sỏi ở gốc. Ngẫu nhiên có seed: lần nào dựng cũng giống.
 function lumpyPuff(r, dark, light, rnd) {
   const geo = new THREE.SphereGeometry(r, 22, 16);
-  const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const pos = geo.attributes.position, nor = geo.attributes.normal;
   const k1 = rnd(0, TAU), k2 = rnd(0, TAU), k3 = rnd(0, TAU), v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i).divideScalar(r); // hướng từ tâm (theo vị trí -> đỉnh trùng ở đường nối vẫn khớp)
     const bump = .09 * Math.sin(5 * v.x + k1) * Math.sin(5 * v.y + k2) * Math.sin(5 * v.z + k3) + .05 * Math.sin(9 * v.x + 7 * v.z + k1);
     const flatBottom = v.y < -.3 ? .75 + (v.y + 1) / .7 * .25 : 1; // đáy bẹt xuống đất
     pos.setXYZ(i, v.x * r * (1 + bump), v.y * r * (1 + bump) * flatBottom, v.z * r * (1 + bump));
-    c.copy(dark).lerp(light, THREE.MathUtils.smoothstep(v.y, -.6, .9)).toArray(colors, i * 3);
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const material = mat('#ffffff'); material.vertexColors = true;
-  return mesh(geo, material);
+  // Toon (QC toon): viền ngoài lổn nhổn nhưng pháp tuyến GIỮ của mặt cầu trơn (không computeVertexNormals) -> nấc sáng tối
+  // chia gọn như khối tròn; một màu phẳng mỗi khối (khối to sáng hơn) thay cho màu đỉnh chuyển dần. Lỗi cũ: pháp tuyến gồ ghề +
+  // gradient làm nấc toon vỡ thành đốm loang, bụi trông như render 3D thường.
+  nor.needsUpdate = true;
+  const tone = dark.clone().lerp(light, THREE.MathUtils.clamp(.35 + (r - .19) * 2.2, .3, .7));
+  return mesh(geo, `#${tone.getHexString()}`);
 }
 // Rải `count` bản của `geometry` lên mặt các khối tán (InstancedMesh: một lần vẽ cho cả chùm lá / hoa).
 function scatterOn(puffs, geometry, color, count, rnd, { minUp = -.2, out = 1, scale = [1, 1] } = {}) {

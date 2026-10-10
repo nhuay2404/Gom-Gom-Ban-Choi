@@ -243,6 +243,7 @@ const BUILD = {
       const tone = new THREE.Color(color).offsetHSL(0, .05, -.13);
       const wraps = mesh(mergeGeometries(strands), `#${tone.getHexString()}`);
       wraps.userData.noOutline = true; // sợi mảnh: viền mực từng vòng sẽ thành mớ nét đen
+      wraps.userData.toonOk = 'sợi len: các vòng xuyến mảnh gộp lại, mặt lõm là lòng xuyến thật'; // QC toon
       return at(group(ball(r, color), wraps), x, y, z);
     };
     const toy = yarnBall('#ffd66b', .02, .2, .47);
@@ -2142,6 +2143,7 @@ export function createRoom() {
   // mỗi cú vuốt đi được càng ít — phải vuốt nhiều lần, cảm giác nặng. Tăng dần tốc độ trượt (tới ×PAN_BOOST khi zoom sát hết) và
   // cho trôi xa hơn khi thả tay (giảm damping tới COAST_BOOST); zoom ra hết thì giữ như cũ.
   const PAN_BOOST = 1.8, COAST_BOOST = .55;
+  let outlineScan = 0;
   function frame(now) {
     const zoomIn = hub ? THREE.MathUtils.clamp((controls.maxDistance - camera.position.distanceTo(controls.target)) / Math.max(1e-3, controls.maxDistance - controls.minDistance), 0, 1) : 0;
     controls.panSpeed = SENS.pan * (1 + (PAN_BOOST - 1) * zoomIn);
@@ -2228,7 +2230,9 @@ export function createRoom() {
     if (now - lastShadowAt >= SHADOW_STEP_MS) { sun.shadow.needsUpdate = true; lastShadowAt = now; }
     const restoreShadows = castLampShadows();
     if (TOON) {
-      addOutlines(scene);
+      // Tìm vật mới cần viền: duyệt cả cảnh (~900 node) tốn ~0.6 ms nếu chạy mỗi khung (đo được). Vật mới đều nảy từ nhỏ lên
+      // (pop) nên chạy mỗi 4 khung (~60 ms) không thấy thiếu viền.
+      if ((outlineScan = (outlineScan + 1) % 4) === 1) addOutlines(scene);
       // Viền tạo lúc vẽ khung đầu tiên (addOutlines): bật / tắt viền đồ cố định khi chuyển giữa Home và Deco.
       if (fixedOutlineHidden !== decoMode) {
         fixedOutlineHidden = decoMode;
@@ -2337,6 +2341,7 @@ export function createRoom() {
     fx: playFx,
     setNight, setAmbient,
     // Dev: QC model (qc.mjs) — trả về danh sách lỗi { level, zone, what }.
-    qc: () => runModelQC({ shells: [[ground, groundLong], ...Object.values(interiors).map(inside => inside.room)], BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
+    // extraScenes: cảnh phụ cho phép kiểm toon (bản đồ màn: { map: scene }).
+    qc: (extraScenes = {}) => runModelQC({ toonScenes: { deco: scene, ...extraScenes }, shells: [[ground, groundLong], ...Object.values(interiors).map(inside => inside.room)], BUILD, interiors, specs: INTERIOR_SPECS, wallDefs: WALL_DEFS, zoneOffset: ZONE_OFFSET, setLeaf, gardenCorners, outdoorDecor: { garden: garden2Decor } }),
   };
 }

@@ -14,7 +14,10 @@ export const geometryNotes = [];
 export function roundedBox(w, h, d, segments, r) {
   const max = Math.min(w, h, d) * ROUND_LIMIT;
   if (r > max + 1e-9) geometryNotes.push(`roundedBox ${[w, h, d].map(n => +n.toFixed(3)).join('×')} bo ${r} > ${+max.toFixed(4)}`);
-  return new RoundedBoxGeometry(w, h, d, segments, Math.min(r, max));
+  // Số nấc bo theo bán kính: góc bo ≤ 2.5 cm nhìn từ camera Deco chỉ vài px, 1 nấc (vát) là đủ; ≤ 5 cm dùng 2 nấc. Mỗi hộp
+  // 3 nấc = 588 tam giác, 1 nấc = 108: hàng rào trắng ~70 chấn song từ 40 nghìn còn ~8 nghìn tam giác (đo được), x2 vì pass viền.
+  const rr = Math.min(r, max), steps = rr <= .025 ? Math.min(segments, 1) : rr <= .05 ? Math.min(segments, 2) : segments;
+  return new RoundedBoxGeometry(w, h, d, steps, rr);
 }
 
 const clampRound = (value, min, max) => Math.max(min, Math.min(max, Math.round(value)));
@@ -33,38 +36,73 @@ const keyOf = (mesh, m) => [m.type, m.color?.getHexString(), m.emissive?.getHexS
 // Công cụ QC tắt gộp để soi từng khối riêng (gộp rồi thì khung bao của cả bucket màu trùm lên nhiều món).
 let mergeEnabled = true;
 export function withoutMerging(build) { mergeEnabled = false; try { return build(); } finally { mergeEnabled = true; } }
-export function mergeStatic(root) {
+
+// bakeColors (bản đồ màn, map-world.mjs): chất liệu toon trơn (không texture, không trong suốt, không phát sáng) chỉ khác nhau ở
+// MÀU thì gộp chung: màu chất liệu ghi vào màu đỉnh, cả cụm dùng một chất liệu trắng có vertexColors. Một đoạn trang trí
+// nhiều màu (cây, hoa, đá, rào...) từ ~20 lệnh vẽ còn 1–2 (x2 vì pass bóng đổ). Màu đỉnh nhân vào trước bước pastel của
+// toon.mjs (PASTEL_CHUNK thay <color_fragment>) nên màu ra y hệt chất liệu riêng.
+const bakeable = m => m.isMeshToonMaterial && !m.map && !m.transparent && !m.vertexColors && !m.emissiveMap && m.emissive.getHex() === 0
+  && m.userData.toonRim !== undefined && m.opacity === 1;
+const bakedMats = new Map();
+function bakedMaterial(m) {
+  const key = [m.userData.toonRim, m.userData.toonSpec, m.side, m.gradientMap?.uuid, m.onBeforeCompile === undefined].join('|');
+  if (!bakedMats.has(key)) {
+    const out = m.clone();
+    out.color.set(0xffffff);
+    out.vertexColors = true;
+    out.userData = { ...m.userData, bakedColors: true }; // QC: màu đỉnh ở đây là màu phẳng của từng khối, không phải gradient
+    bakedMats.set(key, out);
+  }
+  return bakedMats.get(key);
+}
+
+export function mergeStatic(root, { bakeColors = false } = {}) {
   if (!mergeEnabled) return root;
   root.updateMatrixWorld(true);
   const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
-  const buckets = new Map(), victims = [];
+  const buckets = new Map();
   root.traverse(node => {
     if (!node.isMesh || node.isInstancedMesh || Array.isArray(node.material) || node === root) return;
-    const key = keyOf(node, node.material);
+    const bake = bakeColors && bakeable(node.material);
+    const material = bake ? bakedMaterial(node.material) : node.material;
+    const key = (bake ? 'baked|' : '') + keyOf(node, material);
     const geo = node.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(toRoot, node.matrixWorld));
     // Đồng bộ thuộc tính để gộp được: luôn có position / normal / uv, có index; màu đỉnh chỉ khi chất liệu dùng.
-    for (const name of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv', ...(node.material.vertexColors ? ['color'] : [])].includes(name)) geo.deleteAttribute(name);
+    // Chất liệu không có texture thì bỏ uv (bản đồ màn: ~1/5 dung lượng lưới, đỡ thời gian đẩy lên GPU).
+    const needUv = !bakeColors || !!(material.map || material.alphaMap || material.normalMap || material.emissiveMap);
+    for (const name of Object.keys(geo.attributes)) if (!['position', 'normal', ...(needUv ? ['uv'] : []), ...(material.vertexColors && !bake ? ['color'] : [])].includes(name)) geo.deleteAttribute(name);
     if (!geo.attributes.normal) geo.computeVertexNormals();
-    if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+    if (needUv && !geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+    if (bake) {
+      // màu đỉnh 16-bit chuẩn hoá (6 byte / đỉnh thay cho 12): đủ mịn cho màu tuyến tính, không lệch màu tối như 8-bit
+      const q = v => Math.round(Math.min(1, Math.max(0, v)) * 65535);
+      const { r, g, b } = node.material.color, n = geo.attributes.position.count, color = new Uint16Array(n * 3), rgb = [q(r), q(g), q(b)];
+      for (let i = 0; i < n; i++) color.set(rgb, i * 3);
+      geo.setAttribute('color', new THREE.BufferAttribute(color, 3, true));
+    }
     if (!geo.index) geo.setIndex([...Array(geo.attributes.position.count).keys()]);
     geo.clearGroups();
-    (buckets.get(key) || buckets.set(key, { mesh: node, geos: [] }).get(key)).geos.push(geo);
-    victims.push(node);
+    (buckets.get(key) || buckets.set(key, { mesh: node, material, geos: [], nodes: [] }).get(key)).geos.push(geo);
+    buckets.get(key).nodes.push(node);
   });
-  let merged = 0;
-  for (const { mesh, geos } of buckets.values()) {
-    if (geos.length < 2) { geos.forEach(g => g.dispose()); continue; }
+  // Bucket chỉ có một khối thì để nguyên, trừ khi cần đổi sang chất liệu nướng màu (để cả cụm chung một chất liệu).
+  const merging = [...buckets.values()].filter(b => b.geos.length > 1 || b.material !== b.mesh.material);
+  const gone = new Set(merging.flatMap(b => b.nodes));
+  for (const { geos } of buckets.values()) if (!merging.some(b => b.geos === geos)) geos.forEach(g => g.dispose());
+  for (const { mesh, material, geos, nodes } of merging) {
     const geometry = mergeGeometries(geos);
     geos.forEach(g => g.dispose());
-    if (!geometry) continue;
-    const out = new THREE.Mesh(geometry, mesh.material);
+    if (!geometry) { nodes.forEach(node => gone.delete(node)); continue; }
+    const out = new THREE.Mesh(geometry, material);
     out.castShadow = mesh.castShadow; out.receiveShadow = mesh.receiveShadow;
     if (mesh.userData.noOutline) out.userData.noOutline = true;
+    out.userData.mergedTypes = [...new Set(nodes.map(node => node.geometry.type))]; // QC toon: loại lưới gốc (xuyến, lưới tiện... có mặt lõm thật)
     out.matrix.copy(IDENTITY); root.add(out);
-    // Gỡ các khối đã gộp (chỉ những khối thuộc bucket này).
-    const key = keyOf(mesh, mesh.material);
-    for (const node of victims) if (keyOf(node, node.material) === key && node.parent) { node.parent.remove(node); node.geometry.dispose(); }
-    merged++;
+  }
+  // Gỡ các khối đã gộp. Khối con KHÔNG được gộp (bucket một khối, InstancedMesh...) gắn lại vào root, giữ đúng vị trí.
+  for (const node of gone) {
+    for (const child of [...node.children]) if (!gone.has(child)) { child.applyMatrix4(node.matrixWorld); child.applyMatrix4(toRoot); root.add(child); }
+    if (node.parent) node.parent.remove(node);
   }
   // Nhóm con rỗng sau khi gộp: bỏ cho cây cảnh gọn.
   const empties = [];

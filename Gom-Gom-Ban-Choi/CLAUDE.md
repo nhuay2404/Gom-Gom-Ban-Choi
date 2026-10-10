@@ -61,6 +61,15 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Không dời / xoay khối theo hằng số "ước chừng" khi khối nghiêng hay quay: tính từ hình học thật
   (lỗi mèo nằm nghiêng lún đất vì nhấc cố định .2 m).
 
+**Toon: không model nào được lộ khối 3D thuần** (QC `toon`, qc.mjs `toonIssues`: quét MỌI mesh của cảnh Deco thật + bản đồ màn)
+- Chất liệu chỉ dùng `toonMat` (hoặc MeshBasic cho vật không nhận sáng / ShaderMaterial riêng). Không MeshStandard / Physical / Lambert / Phong,
+  không `new THREE.MeshToonMaterial` tạo thẳng (thiếu shader toon của toon.mjs).
+- Không tô màu chuyển dần bằng màu đỉnh (gradient) lên khối: toon = mảng màu phẳng, sáng tối do các nấc tự chia. Muốn chiều sâu thì mỗi khối một màu.
+- Không làm mặt lồi lõm nhỏ rồi `computeVertexNormals()`: pháp tuyến gồ ghề làm nấc sáng vỡ thành đốm loang (lỗi bụi góc vườn + tán cây xích đu:
+  "trông như 3D thuần"). Dáng lổn nhổn thì dời đỉnh nhưng GIỮ pháp tuyến của khối trơn (xem `lumpyPuff`), hoặc ghép nhiều khối lồi.
+- `toonMat({ smooth: true })` chỉ cho địa hình (nền: `pickSurface` floors, đồi: `userData.terrain`).
+- Ngoại lệ có chủ đích (vd. sợi len quấn = xuyến gộp): `userData.toonOk = 'lý do'`. Tấm mỏng hai mặt (rèm gợn nếp) và lưới gộp có xuyến / lưới tiện tự được miễn.
+
 **Địa hình (đồi ở phần vườn mở rộng)**
 - Độ cao mặt đất chỉ lấy từ `groundHeight(zone, x, z)` (room-layout.mjs); model đồi dựng đúng theo công thức đó.
   Món đặt trên đồi được nhấc lên theo nó (apply()), mèo đáp / đi trên đồi dùng `world.groundAt()` — không dùng y = 0.
@@ -210,8 +219,16 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 **Hiệu năng**
 - Cầu / trụ dùng helper `ball()` / `cyl()` (số cạnh theo kích thước); nhiều khối nhỏ giống nhau dùng InstancedMesh;
   cụm trang trí tĩnh gộp bằng `mergeStatic()`.
+- `roundedBox()` tự chọn số nấc bo theo bán kính (≤ 2.5 cm: 1 nấc, ≤ 5 cm: 2 nấc): đừng ép lại 3 nấc cho góc bo nhỏ (hàng rào trắng từng
+  40 nghìn tam giác). Cầu nhỏ lặp nhiều lần (lá, cánh hoa) dùng ≤ 8×6 cạnh.
+- Lớp phủ chỉ hiện theo giờ (quầng đèn đường ban ngày màu đen = tắt): phải thật sự ẩn khi tắt, không vẽ vật "vô hình" mỗi khung.
+- Deco đo bằng cách bọc requestAnimationFrame + đếm lệnh vẽ WebGL (cả 3 lượt: chính, bóng, ID viền); so trước / sau cùng một cách đo, đo ≥ 2 lần.
 - Bản đồ màn (map-world.mjs): trang trí hai bên đường khai báo trong bảng `SCATTER` (trần số lượng mỗi loại / đoạn, đồ to không
-  lặp hai đoạn liền nhau); mỗi đoạn có hai bản LOD (gần: đủ chi tiết + viền; xa: bỏ món `small`, bỏ viền, lưới ít cạnh).
+  lặp hai đoạn liền nhau); mỗi đoạn MỘT bản lưới gộp `mergeStatic(..., { bakeColors: true })` (màu chất liệu nướng vào màu đỉnh: cả đoạn ~1–2 lệnh vẽ, không uv thừa),
+  chia cụm món to / món `small`; ở xa chỉ ẩn cụm `small` (đã bỏ bản lưới xa riêng: tốn thêm ~36 MB + gấp đôi thời gian dựng, lỗi khựng khi lướt).
+  Khựng lần đầu lướt tới vùng mới = three dịch shader + đẩy lưới lên GPU lúc vật lần đầu hiện: `warmUp()` (map-world.mjs) dịch sẵn shader (compileAsync) rồi
+  lúc rảnh vẽ thử từng vật vào ảnh 1×1 ẩn (≤ 10 ms mỗi lần, dừng khi đang kéo). Thêm loại vật mới lên bản đồ: cứ đưa vào `content` + `culled` là được làm nóng.
+  Đo trước khi tối ưu: đếm `bufferData` / `compileShader` của WebGL theo frame và Long Animation Frame, không đoán.
   Viền không tắt phụt: mờ dần theo khoảng cách (`INK_FADE`), hết viền rồi mới đổi sang bản xa (`LOD_FAR`) — tắt đột ngột thì nhìn thấy rõ.
   Mèo trên bản đồ dùng `newCatModel(breed, { coarse: true })` (lưới thô), màn thưởng dùng bản đủ chi tiết.
 
