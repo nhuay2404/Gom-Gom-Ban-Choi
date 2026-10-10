@@ -72,7 +72,7 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `gameplay/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
 | `gameplay/board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |
 | `gameplay/session.mjs`, `scoring.mjs`, `board-shapes.mjs` | Một ván chơi, tính điểm theo cỡ cụm, hình bàn |
-| `gameplay/adaptive.mjs`, `level-layouts.mjs`, `layout-score.mjs` | Độ khó thích ứng theo profile người chơi |
+| `gameplay/adaptive.mjs`, `cat-layouts.mjs` (sinh bằng `npm run cat-layouts`) | Độ khó thích ứng theo profile người chơi: chỉ xếp lại mèo đặt sẵn + chỉnh hàng thẻ, không đổi thiết kế / số lượt |
 | `gameplay/progression.mjs`, `boosters.mjs`, `tuning.mjs`, `save.mjs` | Sao / mở màn, booster, hằng số cảm giác chơi, lưu trữ |
 | `gameplay/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
 | **`deco/`** | **Cảnh 3D Home / Deco** (phòng, vườn, mèo 3D, QC model, danh mục đồ) |

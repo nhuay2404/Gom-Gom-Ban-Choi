@@ -2,7 +2,9 @@
 // Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu-controller.js khai báo.
 // Một bước: { target: () => Element | {left, top, width, height} | mảng các thứ đó | null, text: chuỗi | () => chuỗi,
 //   next?: nhãn nút (mặc định "Next"), before?: async () => void (chạy trước khi hiện bước), after?: () => void (khi qua bước),
-//   until?: () => boolean, bubble?: 'above' | 'below', gesture?: 'drag' | 'pinch' | 'twist' }.
+//   until?: () => boolean, bubble?: 'above' | 'below' | 'speech', gesture?: 'drag' | 'pinch' | 'twist' }.
+// bubble 'speech': bong bóng lời thoại có đuôi, nằm sát cạnh chỗ sáng (vd. mèo đang nói), không có ảnh mèo trong bóng.
+// speaker?: () => rect — bong bóng lời thoại mọc từ người nói (mèo) thay vì theo chỗ sáng; đo không được (mèo khuất, đang ở Shop) thì về bóng thường.
 // Không có text = không hiện bong bóng, chỉ bàn tay minh hoạ cử chỉ (`gesture`) giữa chỗ sáng + nút Skip nhỏ.
 // Có `until` = bước thao tác: chỉ chỗ sáng chạm được (ngoài chỗ sáng bị chắn), không có nút Next, tự qua bước khi until() đúng.
 // Không có `until` = bước đọc: cả màn hình bị chắn, bấm Next để qua.
@@ -58,7 +60,7 @@ export const waitFor = (test, timeout = 4000) => new Promise(resolve => {
 export function startDecoTour(steps, onDone) {
   if (running || !steps.length) return;
   if (!layer) build();
-  let index = 0, token = 0, drawn = '', poll = 0;
+  let index = 0, token = 0, drawn = '', poll = 0, speakerBox = null;
   const holes = layer.querySelector('.deco-tour-holes'), rings = layer.querySelector('.deco-tour-rings'), blockers = layer.querySelector('.deco-tour-blockers');
   const bubble = layer.querySelector('.deco-tour-bubble'), text = bubble.querySelector('p'), hand = layer.querySelector('.deco-tour-hand');
   const next = layer.querySelector('.deco-tour-next'), dots = layer.querySelector('.deco-tour-dots');
@@ -94,10 +96,21 @@ export function startDecoTour(steps, onDone) {
     next.textContent = step.next || (index === steps.length - 1 ? 'Got it!' : 'Next');
     dots.textContent = steps.map((_, i) => (i === index ? '●' : '○')).join(' ');
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };
-    const key = `${index}|${rect ? Object.values(rect) : ''}`;
+    // Người nói (speaker, vd. mèo cam trong vườn): bong bóng lời thoại mọc từ nó, nó cũng được khoét sáng (không viền) để không chìm trong lớp mờ.
+    // Khung người nói giữ cố định: cỡ đo một lần khi vào bước, chỉ dời theo khi tâm mèo trôi xa > 10 px (camera lướt), không co giãn
+    // / rung theo dáng thở, quay đầu của mèo.
+    const said = step.speaker && rectOf(step.speaker());
+    let speaker = null;
+    if (said) {
+      const cx = said.left + said.width / 2, cy = said.top + said.height / 2;
+      if (!speakerBox || speakerBox.index !== index) speakerBox = { index, w: Math.round(said.width + 12), h: Math.round(said.height + 12), cx, cy };
+      else if (Math.hypot(cx - speakerBox.cx, cy - speakerBox.cy) > 10) Object.assign(speakerBox, { cx, cy });
+      speaker = { x: Math.round(speakerBox.cx - speakerBox.w / 2), y: Math.round(speakerBox.cy - speakerBox.h / 2), width: speakerBox.w, height: speakerBox.h };
+    }
+    const key = `${index}|${rect ? Object.values(rect) : ''}|${speaker ? Object.values(speaker) : ''}`;
     if (key !== drawn) {
       drawn = key;
-      holes.replaceChildren(...(rect ? [rect] : []).map(r => {
+      holes.replaceChildren(...[rect, speaker].filter(Boolean).map(r => {
         const hole = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         Object.entries({ ...r, rx: 16 }).forEach(([name, value]) => hole.setAttribute(name, value));
         return hole;
@@ -120,6 +133,29 @@ export function startDecoTour(steps, onDone) {
     // Bong bóng nằm phía đối diện chỗ được sáng (sáng ở nửa trên -> bóng xuống dưới, ngược lại), không có chỗ sáng thì giữa màn hình.
     if (bubble.hidden) return;
     const height = bubble.offsetHeight, view = innerHeight;
+    // bubble: 'speech' = lời thoại của chính chỗ sáng (mèo): bóng sát ngay trên (hết chỗ thì dưới), canh ngang theo nó, đuôi chỉ vào nó.
+    // Có speaker: bóng mọc từ speaker, chỗ sáng vẫn là nơi cần chạm.
+    // Bóng lời thoại không được che chỗ sáng (nơi cần chạm): thử phía trên rồi phía dưới người nói, cả hai đều che thì về bóng thường.
+    let speech = null;
+    const anchor = speaker || (step.bubble === 'speech' ? rect : null);
+    if (anchor) {
+      const width = bubble.offsetWidth, mid = anchor.x + anchor.width / 2, gap = 18;
+      const left = Math.max(8 + width / 2, Math.min(mid, innerWidth - 8 - width / 2));
+      const covers = top => anchor !== rect && rect && top < rect.y + rect.height && top + height > rect.y && left - width / 2 < rect.x + rect.width && left + width / 2 > rect.x;
+      const tops = [[anchor.y - height - gap, true], [anchor.y + anchor.height + gap, false]].filter(([top]) => top > 8 && top + height < view - 8);
+      const pick = tops.find(([top]) => !covers(top));
+      if (pick) speech = { top: pick[0], up: pick[1], left, tail: Math.round(mid - left + width / 2) };
+    }
+    bubble.classList.toggle('speech', !!speech);
+    layer.classList.toggle('speaking', step.bubble === 'speech' && !!speech); // lời thoại thuần: không làm mờ / khoét sáng, chỉ bong bóng hiện cạnh mèo
+    if (speech) {
+      bubble.classList.toggle('tail-up', !speech.up);
+      bubble.style.left = `${speech.left}px`;
+      bubble.style.setProperty('--tail-x', `${speech.tail}px`);
+      bubble.style.top = `${speech.top}px`;
+      return;
+    }
+    bubble.style.left = '';
     let top = (view - height) / 2;
     if (rect) {
       const below = rect.y + rect.height + 14, above = rect.y - height - 14, wantBelow = step.bubble ? step.bubble === 'below' : rect.y + rect.height / 2 < view / 2;
@@ -135,12 +171,16 @@ export function startDecoTour(steps, onDone) {
     drawn = '';
     await steps[index].before?.();
     if (mine !== token) return;
+    layer.classList.toggle('speaking', steps[index].bubble === 'speech'); // khỏi nháy lớp mờ trước khi render
     layer.hidden = false;
     // Cảnh mới đổi (tab, bảng) cần một khung hình để đo đúng chỗ.
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (mine !== token) return;
       render();
-      bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'ease-out' });
+      if (bubble.classList.contains('speech')) // lời thoại bật ra từ đuôi (chỗ mèo)
+        bubble.animate([{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1.05)', offset: .7 }, { opacity: 1, transform: 'none' }],
+          { duration: 320, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+      else bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'ease-out' });
       poll = setInterval(() => {
         if (mine !== token) return stopPoll();
         render();

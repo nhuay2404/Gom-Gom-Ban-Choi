@@ -28,6 +28,8 @@ export function setStage(next) {
   document.body.classList.toggle('ob-no-build', at(next) < at('decor'));
 }
 export const active = () => stage() !== 'done';
+// Mua / đổi đồ trang trí chỉ mở từ hướng dẫn Decoration (thắng màn 5); trước đó (kể cả sau hướng dẫn Garden) chỉ ngắm vườn.
+export const buildOpen = () => at(stage()) >= at('decor');
 // Tab nào đã mở: Deco sau màn 1, Shop khi tới phần hướng dẫn Decoration.
 export const tabOpen = tab => tab === 'home' || (tab === 'deco' && at(stage()) >= at('basics')) || (tab === 'shop' && at(stage()) >= at('decor'));
 // Chờ làm tiếp ngay khi vào game (đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn).

@@ -15,7 +15,7 @@ const THREE_VERSION = '0.170.0'; // khớp importmap trong game/index.html
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const game = join(root, 'game');
 const read = file => readFileSync(join(game, file), 'utf8');
-const MIME = { png: 'image/png', svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
+const MIME = { mp3: 'audio/mpeg', png: 'image/png', svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
 const dataUri = file => {
   const type = MIME[file.split('.').pop().toLowerCase()];
   if (!type) throw new Error(`Chưa hỗ trợ nhúng ảnh: ${file}`);
@@ -36,8 +36,11 @@ const js = execSync(
   'npx -y esbuild@0.24.0 game/app/main.js --bundle --format=esm --minify --log-level=warning',
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
-  // Ảnh JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs): nhúng thẳng thành data URI.
-  .replace(/(["'])(ui\/[a-z]+\/img\/[^"']+\.(?:png|jpe?g|webp))\1/g, (_, q, file) => q + dataUri(file) + q);
+  // Ảnh / tiếng JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs, tiếng thắng trong ui/sound.mjs): nhúng thẳng thành data URI.
+  .replace(/(["'])(ui\/[a-z]+\/(?:img|sfx)\/[^"']+\.(?:png|jpe?g|webp|mp3))\1/g, (_, q, file) => q + dataUri(file) + q)
+  // Ảnh trong chuỗi HTML dựng bằng JS (vd. <img src="./ui/shop/img/coin-stack.png">): cũng nhúng thành data URI.
+  // (đường dẫn ghép động như `${s}.png` thì bỏ qua: không biết trước file nào)
+  .replace(/\.\/(ui\/[a-z]+\/(?:img|sfx)\/[^"'`)\s]+\.(?:png|jpe?g|webp|mp3))/g, (all, file) => (file.includes('${') ? all : dataUri(file)));
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
@@ -58,7 +61,8 @@ const html = read('index.html')
   .replace('href="./favicon.svg"', `href="${dataUri('favicon.svg')}"`)
   .replace(/src="\.\/(?!app\/main\.js)([^"]+)"/g, (_, file) => `src="${dataUri(file)}"`)
   .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : ''}<script type="module">\n${js}\n</script>`);
-if (/(?:src|href)="\.\//.test(html)) throw new Error('Còn đường dẫn ./ chưa nhúng trong HTML');
+const leftover = /(?:src|href)="\.\/[^"]*"/.exec(html);
+if (leftover) throw new Error(`Còn đường dẫn ./ chưa nhúng trong HTML: ${leftover[0]}`);
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 const out = join(root, 'dist', 'gom-gom-rotate.html');

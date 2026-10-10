@@ -67,7 +67,7 @@ function runPlayer(type, playerIndex, mode) {
     if (plan.deal) out.deals++;
     const here = out.perLevel[level];
     here.tries++; here.tiers[difficultyOf(elementCount(plan.level))]++; here.shift += plan.shift || 0; if (plan.deal) here.deals++;
-    const ratio = result.score / plan.level.target;
+    const ratio = result.ratio;
     // Hành vi: đang thua liên tục thì nghĩ lâu hơn, AFK nhiều, đứng lâu ở bảng thua; cao thủ dễ chán thắng mãi thì lơ đãng dần.
     const tilt = type.tiltOnLoss && loseStreak >= 2;
     const drift = type.boredAfter && winStreak >= 2 ? 1 + 0.2 * winStreak : 1;

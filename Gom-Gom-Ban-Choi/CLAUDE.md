@@ -6,6 +6,12 @@ Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắn
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
+**Kinh tế** (xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
+`game/gameplay/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
+**Config từ xa (Firebase Remote Config)**: mọi hằng số trong `economy.mjs` / `tuning.mjs` khai bằng `remote('TÊN', mặc định)` và được
+ghi đè bởi tham số cùng tên trên Firebase (`docs/FIREBASE.md`). `app/main.js` tải config trước rồi mới nạp game (`app/start.js`).
+Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên không trùng.
+
 ## Cấu trúc thư mục `game/` và cách chia commit
 
 | Thư mục | Nội dung | Tiền tố commit |
@@ -17,13 +23,13 @@ Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu 
 | `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
 | `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
 | `game/app/liveops-ui.js` | Giao diện LiveOps dùng chung hai luồng: pill gems / mạng, bảng Daily, hộp mạng, continue, gói gems, quảng cáo giả lập, event hằng tuần (nút ở cột trái Home, bảng event, ×2 cá ở bảng kết quả, nhãn Deco Sale). Luật ở `gameplay/liveops.mjs` + `gameplay/events.mjs`, lịch event là dữ liệu ở `gameplay/liveops-data.mjs`, số ở `tuning.mjs` (LIVEOPS, LIVEOPS.EVENTS), CSS ở `ui/shared/liveops.css`, thiết kế ở `tai-lieu/6-Thiet-ke-LiveOps.html` | `UI:` (đổi luật / số / lịch thì `Gameplay:`) |
-| `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, state LiveOps, toast), `onboarding.js` | theo phần sửa |
+| `game/app/` | Điều khiển ứng dụng (xem 4 dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, state LiveOps, toast), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
 
 - Mỗi commit chỉ chạm một nhóm khi có thể: sửa giao diện → chỉ `game/ui/` (+ `index.html` nếu đổi khung);
   cân bằng / luật → `game/gameplay/` (+ `tools/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
-- Hai luồng không import nhau: `app/main.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
+- Hai luồng không import nhau: `app/start.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
   đổi màn hình thì gọi `menus.showTab / showMap / hideMenus / menuOpen`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
   Thêm hàm cho bên kia gọi: `export` ở file mình và ghi vào danh sách này. Trạng thái cả hai cùng đọc / ghi (xu, booster) đặt ở `shared.js`.
 - Module mới: logic thuần đặt ở `gameplay/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `gameplay/` không import từ `ui/` hay `deco/`
@@ -240,6 +246,9 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - LiveOps có cờ bật / tắt, mặc định TẮT trên main (playtest core đo riêng RR1 / playtime, sau đó A/B có LiveOps).
 
 ## Khác
+- UI Studio (`npm run studio`, mở `?studio`; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
+  hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
+  định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.
 - Kiểm luồng LiveOps nhanh (chỉ DEV_MODE): console `gomgomDev.win(sao)` / `gomgomDev.lose()` kết thúc ngay ván đang chơi (không báo

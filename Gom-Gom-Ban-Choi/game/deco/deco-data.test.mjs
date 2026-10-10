@@ -275,3 +275,10 @@ test('deco sale discounts buying with coins, then returns to full price', async 
   } finally { setDecoSale(0); }
   assert.equal(costOf(alt), alt.price);
 });
+
+test('economy.mjs: mọi món gốc có đúng một dòng giá trong DECO, không có dòng thừa', async () => {
+  const { DECO } = await import('../gameplay/economy.mjs');
+  const ids = new Set(CATALOG.map(entry => entry.id));
+  for (const entry of CATALOG) if (!entry.slot) assert.ok(DECO[entry.id], `thiếu giá cho "${entry.id}" trong game/gameplay/economy.mjs DECO`);
+  for (const id of Object.keys(DECO)) assert.ok(ids.has(id), `DECO có "${id}" nhưng danh mục không có món này`);
+});

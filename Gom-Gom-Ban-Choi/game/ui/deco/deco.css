@@ -142,6 +142,9 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-card-price.act{background:linear-gradient(#93df82,#5fbe57);border-color:#2f7d3a;color:#fff;box-shadow:0 2px 0 #2f7d3a}
 .deco-card.poor .deco-card-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
 .deco-card.locked{opacity:.7}
+/* Món vừa mở khoá + đủ xu (menu-controller.js noticeDeco): nhãn NEW ở góc trên thẻ */
+.deco-card.is-new::before{content:"NEW";position:absolute;z-index:1;top:4px;left:50%;translate:-50% 0;padding:1px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;font-size:10px;font-weight:900;line-height:1.3;box-shadow:0 2px 0 #0002}
+@media(prefers-reduced-motion:no-preference){.deco-card.is-new::before{animation:deco-pin-bob 1s ease-in-out infinite alternate}}
 .deco-card.locked .thumb{filter:grayscale(.8)}
 .deco-card.picked{transform:translateY(-6px);border-color:#f2a93c;box-shadow:0 0 0 3px #ffd97a,0 6px 0 #73392a33}
 /* Bảng đổi món: nổi cạnh món, đuôi chỉ vào món (--tail = toạ độ ngang của món trong bảng) */
@@ -220,6 +223,6 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-cards[hidden]{display:none}
 .zone-switch[hidden],.zone-switch button[hidden]{display:none}
 
-/* Onboarding: chưa mở Decoration thì chưa có thẻ xây, tường / sàn trong Deco (vẫn giữ chỗ để camera căn như cũ) */
-body.ob-no-build #deco .deco-dock,body.ob-no-build #deco .deco-side [data-key="walls"],body.ob-no-build #deco .deco-side [data-key="floors"]{visibility:hidden;pointer-events:none}
-body.onboarding #deco .deco-help{display:none}
+/* Onboarding trước phần Decoration (tutorial Garden): nút trang trí vẫn hiện nhưng mờ, xám, không bấm được */
+body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"],.deco-help){opacity:.45;filter:grayscale(.7);pointer-events:none}
+body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}

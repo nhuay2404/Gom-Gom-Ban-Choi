@@ -2,6 +2,18 @@
 
 Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/gameplay/adaptive.mjs` (luật), `game/app/play-controller.js` (thu metric, hiện nhãn), `game/gameplay/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
 
+> **Cập nhật 09/10/2026 — DDA bản 2 (thay cho phần bật/tắt element bên dưới).**
+> - DDA **không** đụng vào thiết kế màn: hình bàn, thùng, kim loại, ô ngoài bàn, chuồng, giống mèo, mục tiêu và **số lượt** giữ đúng `levels.mjs`.
+>   Không còn "+lượt" khi thua; không còn bật/tắt element. Nhãn Easy / Medium / Hard vẫn tính từ element của thiết kế, chỉ để hiển thị.
+> - DDA chỉ chỉnh hai thứ, theo mức `shift` -2 … +2 (âm = dễ hơn) do profile quyết định (mục 2–4 vẫn đúng):
+>   1. **Bố trí mèo đặt sẵn** lúc vào màn lần đầu: thiết kế xê dịch 1–3 con mèo. Các bố trí được bot "trung bình" đo trước
+>      (`npm run cat-layouts` -> `game/gameplay/cat-layouts.mjs`), mỗi mức chỉ lệch vài điểm % tỉ lệ thắng: -2 +6…+14 · -1 +2…+7 ·
+>      0 (người chơi chán: khác chỗ, độ khó như cũ) ±2 · +1 −2…−7 · +2 −6…−14. **Thua rồi chơi lại thì giữ nguyên bố trí** (lưu trong lần thử).
+>   2. **Hàng thẻ**: assist ±0.05 mỗi mức (tối đa ±0.15), thêm thẻ đôi khi dễ hơn / thẻ đơn ở mức +2; chơi lại sau khi thua vì
+>      hết chỗ / hết lượt thì thêm thẻ đôi / assist. Đây là phần duy nhất đổi giữa các lần chơi lại.
+> - Mọi màn: **thẻ đầu tiên luôn gom được ngay** (`session.mjs` `openingCard`): đổi màu một mèo của thẻ, rồi cả thẻ, rồi thẻ đôi / đơn.
+> - Sửa màn trong `levels.mjs` thì chạy lại `npm run cat-layouts` (bố trí cũ không còn đúng thiết kế sẽ tự bị bỏ qua).
+
 ## 1. Thang độ khó theo số element
 
 Độ khó của một màn tính bằng số **element đang "bật"** trong 4 element: lượt (moves), số màu mèo, thùng gỗ (crate, `X`), khối kim loại (wall, `M`).
