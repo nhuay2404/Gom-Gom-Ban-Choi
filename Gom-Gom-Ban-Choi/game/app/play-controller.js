@@ -1425,7 +1425,8 @@ function animateHand(step, holes) {
   hand.hidden = step.type === 'info';
   if (hand.hidden) return;
   // Kéo dùng ảnh tay "giữ" (có tia), chạm dùng ảnh tay "nhấn" (có sóng).
-  $('tutorial-hand-img').src = `./ui/shared/img/tutorial/hand-${step.type === 'drag' || step.type === 'hold' ? 'drag' : 'tap'}.png`;
+  // đường dẫn viết đủ (không ghép chuỗi) để build:html nhúng được ảnh
+  $('tutorial-hand-img').src = step.type === 'drag' || step.type === 'hold' ? './ui/shared/img/tutorial/hand-drag.png' : './ui/shared/img/tutorial/hand-tap.png';
   const center = b => [b.left + b.width / 2, b.top + b.height / 2];
   const [x0, y0] = center(holes[0]);
   const at = (x, y, scale) => `translate(${x}px, ${y}px) scale(${scale})`;
