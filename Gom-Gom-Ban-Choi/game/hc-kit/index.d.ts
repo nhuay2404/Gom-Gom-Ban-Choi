@@ -107,7 +107,7 @@ export interface KitConfig {
   migrate?: (oldSave: any) => KitState;
   clockToleranceMin?: number;
   currencies: Record<string, CurrencyDef>;
-  // Economy & Monetization module (null / omitted = off)
+  // Monetization module (null / omitted = off). The game's own economy (soft currency, prices) is not part of the kit.
   lives?: LivesConfig | null;
   continue?: ContinueConfig | null;
   streak?: StreakConfig | null;
@@ -180,7 +180,7 @@ export interface Kit {
   /** Only once the attempt is really over (after a declined continue). */
   levelEnd(result: { level: number; win: boolean; stars?: number; quit?: boolean }): LevelEndResult;
 
-  // Economy & Monetization
+  // Monetization
   continueOffer(level: number): ContinueOfferView | null;
   buyContinue(args: { level: number; stuck?: boolean }): boolean;
   adContinue(args: { level: number; stuck?: boolean }): Promise<boolean>;
