@@ -26,19 +26,15 @@ function build() {
     <div class="deco-tour-rings"></div>
     <div class="tutorial-hand deco-tour-hand" aria-hidden="true">👆</div>
     <div class="deco-tour-gesture" aria-hidden="true" hidden><img alt=""></div>
-    <button class="deco-tour-skip deco-tour-skip-float" type="button" hidden>Skip</button>
     <div class="tutorial-bubble deco-tour-bubble" role="status">
       <span class="tutorial-avatar" aria-hidden="true">${catMarkup.orange}</span>
       <p></p>
-      <footer class="deco-tour-foot">
-        <button class="deco-tour-skip" type="button">Skip</button>
-        <i class="deco-tour-dots"></i>
-        <button class="pill-button deco-tour-next" type="button">Next</button>
-      </footer>
     </div>`;
   document.body.append(layer);
-  layer.querySelector('.deco-tour-next').onclick = () => { playSound('pick'); running?.advance(); };
-  layer.querySelectorAll('.deco-tour-skip').forEach(button => { button.onclick = () => { playSound('pick'); running?.finish(); }; });
+  // Không có nút Skip / Next / chấm: chạm bất kỳ đâu (tấm chắn hoặc bong bóng) là qua bước — trừ bước thao tác đang chờ chạm đúng chỗ sáng.
+  const tapNext = () => { if (running?.tappable()) { playSound('pick'); running.advance(); } };
+  layer.querySelector('.deco-tour-blockers').addEventListener('click', tapNext);
+  layer.querySelector('.deco-tour-bubble').addEventListener('click', tapNext);
   addEventListener('resize', () => running?.render());
 }
 
@@ -63,15 +59,16 @@ export function startDecoTour(steps, onDone) {
   let index = 0, token = 0, drawn = '', poll = 0, speakerBox = null;
   const holes = layer.querySelector('.deco-tour-holes'), rings = layer.querySelector('.deco-tour-rings'), blockers = layer.querySelector('.deco-tour-blockers');
   const bubble = layer.querySelector('.deco-tour-bubble'), text = bubble.querySelector('p'), hand = layer.querySelector('.deco-tour-hand');
-  const next = layer.querySelector('.deco-tour-next'), dots = layer.querySelector('.deco-tour-dots');
-  const gesture = layer.querySelector('.deco-tour-gesture'), skipFloat = layer.querySelector('.deco-tour-skip-float');
-  const GESTURES = { drag: 'hand-drag', pinch: 'gesture-pinch', twist: 'gesture-rotate', tap: 'hand-tap' };
+  const gesture = layer.querySelector('.deco-tour-gesture');
+  let tappable = false;
+  // Đường dẫn ĐẦY ĐỦ (không ghép `${tên}.png`): build:html chỉ nhúng ảnh có đường dẫn viết sẵn, ghép động thì bản xuất ra mất ảnh.
+  const GESTURES = { drag: './ui/shared/img/tutorial/hand-drag.png', pinch: './ui/shared/img/tutorial/gesture-pinch.png', twist: './ui/shared/img/tutorial/gesture-rotate.png', tap: './ui/shared/img/tutorial/hand-tap.png' };
   // Bàn tay minh hoạ cử chỉ lặp lại giữa chỗ sáng: kéo = lướt ngang, chụm = co / giãn, xoay = đứng yên.
   const drawGesture = (kind, rect) => {
     gesture.hidden = !kind || !rect;
     if (gesture.hidden) return;
     const img = gesture.querySelector('img');
-    img.src = `./ui/shared/img/tutorial/${GESTURES[kind]}.png`;
+    img.src = GESTURES[kind];
     gesture.classList.toggle('tap', kind === 'tap'); // chạm: đầu ngón tay đặt đúng tâm chỗ sáng
     gesture.style.cssText = `left:${rect.x + rect.width / 2}px;top:${rect.y + rect.height / 2}px`;
     img.getAnimations().forEach(animation => animation.cancel());
@@ -91,10 +88,8 @@ export function startDecoTour(steps, onDone) {
     const label = (typeof step.text === 'function' ? step.text() : step.text) || '';
     if (text.textContent !== label) text.textContent = label;
     bubble.hidden = !label; // bước chỉ có hình: không bong bóng
-    skipFloat.hidden = !!label;
-    next.hidden = tap && !!box && !step.skippable; // bước thao tác mà không đo được chỗ sáng: cho bấm Next để khỏi kẹt (bước cử chỉ: luôn cho qua)
-    next.textContent = step.next || (index === steps.length - 1 ? 'Got it!' : 'Next');
-    dots.textContent = steps.map((_, i) => (i === index ? '●' : '○')).join(' ');
+    // bước thao tác mà không đo được chỗ sáng: chạm đâu cũng qua để khỏi kẹt (bước cử chỉ skippable: luôn cho qua)
+    tappable = !(tap && !!box && !step.skippable);
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };
     // Người nói (speaker, vd. mèo cam trong vườn): bong bóng lời thoại mọc từ nó, nó cũng được khoét sáng (không viền) để không chìm trong lớp mờ.
     // Khung người nói giữ cố định: cỡ đo một lần khi vào bước, chỉ dời theo khi tâm mèo trôi xa > 10 px (camera lướt), không co giãn
@@ -190,6 +185,6 @@ export function startDecoTour(steps, onDone) {
   };
   const finish = () => { token++; stopPoll(); running = null; layer.hidden = true; onDone?.(); };
   const advance = () => { stopPoll(); steps[index].after?.(); if (++index >= steps.length) finish(); else show(); };
-  running = { render: () => { if (!layer.hidden) render(); }, advance, finish };
+  running = { render: () => { if (!layer.hidden) render(); }, advance, finish, tappable: () => !layer.hidden && tappable };
   show();
 }

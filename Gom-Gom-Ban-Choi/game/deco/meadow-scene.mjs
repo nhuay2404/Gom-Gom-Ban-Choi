@@ -222,6 +222,9 @@ function lampGlow(xs, z, yTop, yGround) {
     node.castShadow = node.receiveShadow = false;
     node.raycast = () => {};
     node.renderOrder = 2;
+    // Ban ngày màu đen (= tắt) nhưng vẫn là ~10 nghìn tam giác trong suốt vẽ mỗi khung (đo được): màu đen thì coi như ẩn.
+    // Getter theo màu nên tự đúng cả lúc ambient chuyển dần (fadeTo đổi màu từng khung), không cần chỗ khác bật / tắt.
+    Object.defineProperty(node, 'visible', { get: () => node.material.color.r + node.material.color.g + node.material.color.b > 1e-4, set() {} });
     return node;
   };
   return { pools: make(merged(pool, yGround), LAMP_POOL.day), beams: make(merged(beam, yGround + H / 2), LAMP_BEAM.day) };

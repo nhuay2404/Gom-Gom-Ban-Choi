@@ -133,6 +133,7 @@ export function toonMat(params = {}) {
   const glossy = (params.roughness ?? 1) < .5 || (params.metalness ?? 0) > .3;
   material.userData.toonRim = params.rim ?? 0;
   material.userData.toonSpec = params.spec ?? (glossy ? .5 : 0);
+  material.userData.toonSmooth = !!params.smooth; // QC (qc.mjs toonIssues): toon mượt chỉ dành cho địa hình
   material.onBeforeCompile = toonShader;
   return material;
 }
