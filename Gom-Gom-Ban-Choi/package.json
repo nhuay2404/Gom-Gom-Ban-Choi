@@ -17,10 +17,13 @@
     "simulate:profiles": "node tools/simulate-profiles.mjs 100",
     "baseline": "node tools/simulate-levels.mjs 400 --baseline",
     "build:html": "node tools/build-single-html.mjs",
+    "sync:kit": "node tools/sync-hc-kit.mjs",
     "export:data": "node tools/export-data.mjs",
     "export:art": "node tools/export-art.mjs",
     "export:sounds": "node tools/export-sounds.mjs",
     "export": "node tools/export-data.mjs && node tools/export-art.mjs && node tools/export-sounds.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -1,5 +1,5 @@
 // Sinh template Firebase Remote Config từ số MẶC ĐỊNH trong code: `npm run firebase:template`.
-// Ghi firebase/remoteconfig.template.json — mỗi hằng số khai bằng remote('TÊN', ...) trong economy.mjs / tuning.mjs thành
+// Ghi firebase/remoteconfig.template.json — mỗi hằng số khai bằng remote('TÊN', ...) trong economy.mjs / tuning.mjs / liveops/config.mjs thành
 // một tham số cùng TÊN (kiểu JSON / NUMBER / BOOLEAN), chia nhóm "Economy" và "Gameplay tuning" cho dễ tìm trên console.
 // Đẩy lên Firebase: `npm run firebase:deploy` (xem docs/FIREBASE.md — lệnh này GHI ĐÈ toàn bộ config đang có trên Firebase).
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -9,10 +9,13 @@ await import('../game/gameplay/economy.mjs');
 const economyKeys = [...REMOTE_DEFAULTS.keys()];
 await import('../game/gameplay/tuning.mjs');
 const tuningKeys = [...REMOTE_DEFAULTS.keys()].filter(key => !economyKeys.includes(key));
+await import('../game/liveops/config.mjs');
+const liveopsKeys = [...REMOTE_DEFAULTS.keys()].filter(key => !economyKeys.includes(key) && !tuningKeys.includes(key));
 
 const GROUP_INFO = {
   Economy: 'Kinh tế: xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá đồ deco (game/gameplay/economy.mjs).',
   'Gameplay tuning': 'Cảm giác chơi: bàn, nhịp animation, kéo thả, độ khó thích ứng, chuyển động mèo 3D (game/gameplay/tuning.mjs).',
+  LiveOps: 'Cờ bật LiveOps + config hc-kit: mạng, continue, chuỗi thắng, daily, event, gói gems (game/liveops/config.mjs).',
 };
 const typeOf = value => (typeof value === 'number' ? 'NUMBER' : typeof value === 'boolean' ? 'BOOLEAN' : typeof value === 'string' ? 'STRING' : 'JSON');
 const param = key => {
@@ -20,9 +23,9 @@ const param = key => {
   return { defaultValue: { value: type === 'JSON' ? JSON.stringify(value) : String(value) }, valueType: type, ...(description && { description: description.slice(0, 250) }) };
 };
 const group = (keys, name) => ({ description: GROUP_INFO[name], parameters: Object.fromEntries(keys.map(key => [key, param(key)])) });
-const template = { parameterGroups: { Economy: group(economyKeys, 'Economy'), 'Gameplay tuning': group(tuningKeys, 'Gameplay tuning') } };
+const template = { parameterGroups: { Economy: group(economyKeys, 'Economy'), 'Gameplay tuning': group(tuningKeys, 'Gameplay tuning'), LiveOps: group(liveopsKeys, 'LiveOps') } };
 
 mkdirSync(new URL('../firebase/', import.meta.url), { recursive: true });
 writeFileSync(new URL('../firebase/remoteconfig.template.json', import.meta.url), `${JSON.stringify(template, null, 2)}\n`);
-console.log(`Đã ghi firebase/remoteconfig.template.json: ${economyKeys.length} tham số Economy + ${tuningKeys.length} tham số Gameplay tuning`);
-console.log(`  Economy: ${economyKeys.join(', ')}\n  Tuning:  ${tuningKeys.join(', ')}`);
+console.log(`Đã ghi firebase/remoteconfig.template.json: ${economyKeys.length} tham số Economy + ${tuningKeys.length} tham số Gameplay tuning + ${liveopsKeys.length} tham số LiveOps`);
+console.log(`  Economy: ${economyKeys.join(', ')}\n  Tuning:  ${tuningKeys.join(', ')}\n  LiveOps: ${liveopsKeys.join(', ')}`);
