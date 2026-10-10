@@ -245,9 +245,11 @@ test('kinh tế: thưởng tăng dần; lô 10 màn đầu mua đủ món gốc 
 });
 
 test('event exclusives: not for sale, granted as a reward and placed right away; every event deco reward exists', async () => {
-  const { LIVEOPS } = await import('../gameplay/tuning.mjs');
+  const { LIVEOPS_CONFIG } = await import('../liveops/config.mjs');
   const { EXCLUSIVES, grantItem, shopStatus, buyToStock, zoneState, isOwned } = await import('./deco-data.mjs');
-  const rewards = LIVEOPS.EVENTS.fish.milestones.map(m => m.reward.deco).filter(Boolean);
+  // Phần thưởng event là vật phẩm (items); vật phẩm không phải booster là đồ Deco độc quyền
+  const rewards = Object.values(LIVEOPS_CONFIG.events.defs).flatMap(def => def.milestones ?? [])
+    .flatMap(m => Object.keys(m.reward.items ?? {})).filter(id => !['hammer', 'swap', 'moves'].includes(id));
   assert.ok(rewards.length >= 1);
   rewards.forEach(id => assert.ok(itemById(id)?.exclusive, `${id} is an exclusive catalog item`));
   EXCLUSIVES.forEach(([slot, id]) => assert.equal(itemById(id).slot, slot));

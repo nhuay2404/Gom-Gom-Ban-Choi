@@ -270,7 +270,7 @@ VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
   CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, color, slot });
 });
-// Đồ độc quyền của event LiveOps (không bán, chỉ nhận làm thưởng — LIVEOPS.EVENTS trong tuning.mjs): phương án thay thế của một chỗ,
+// Đồ độc quyền của event LiveOps (không bán, chỉ nhận làm thưởng — events trong liveops/config.mjs): phương án thay thế của một chỗ,
 // `exclusive` = id event. Chèn sau các phương án thường của chỗ đó.
 export const EXCLUSIVES = [
   ['lantern', 'lantern-koi', 'Koi streamer', '#e5483a', 'fish'],
@@ -287,7 +287,7 @@ for (const entry of CATALOG) {
 }
 export const itemById = id => CATALOG.find(entry => entry.id === id);
 
-// Deco Sale (event LiveOps, events.mjs decoSaleOff): giảm giá mọi đồ mua bằng xu. App đặt tỉ lệ giảm theo lịch; giá thật = costOf.
+// Deco Sale (event LiveOps, hc-kit saleOff('decoSale')): giảm giá mọi đồ mua bằng xu. App đặt tỉ lệ giảm theo lịch; giá thật = costOf.
 let saleOff = 0;
 export const setDecoSale = off => { saleOff = off; };
 export const decoSale = () => saleOff;

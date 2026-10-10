@@ -163,8 +163,10 @@
     <div id="deco-room" class="room deco-view"></div>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
-      <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
-      <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+      <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+      <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+      <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
     <div class="deco-side">
@@ -201,8 +203,10 @@
   <section id="shop" class="screen shop" data-page="store" hidden>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
-      <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
-      <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+      <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+      <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+      <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
     </div>
     <div id="shop-pages" class="shop-pages" role="tablist" aria-label="Shop">
       <button role="tab" data-page="store" aria-selected="true">Shop</button>
@@ -214,9 +218,16 @@
       <button class="booster" data-buy="swap"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
       <button class="booster" data-buy="moves"><img src="./ui/play/img/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
     </div>
-    <h3 class="shop-section">Gems</h3>
-    <div id="shop-gems" class="gem-list"></div>
-    <p class="soon-note">Test build: gem purchases are simulated, no real payment.</p>
+    <!-- LiveOps bật: gói gems (thanh toán giả lập). Tắt: gói xu "coming soon" như bản core (main). -->
+    <h3 class="shop-section lo-only">Gems</h3>
+    <div id="shop-gems" class="gem-list lo-only"></div>
+    <p class="soon-note lo-only">Test build: gem purchases are simulated, no real payment.</p>
+    <div class="coin-list core-only">
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
+      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
+    </div>
+    <p class="soon-note core-only">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
     <section id="shop-deco" class="shop-deco" aria-labelledby="shop-deco-title">
       <h3 id="shop-deco-title" class="shop-deco-title">Decoration</h3>
@@ -234,19 +245,21 @@
   <div id="toast" class="toast" role="status" hidden></div>
 
   <!-- Home hub = bản đồ hành trình kiểu saga (màn 1 ở đáy, đường uốn lượn đi lên). Lớp trên: hàng ví (xu thật; kim cương +
-       mạng: LiveOps, liveops-ui.js) cùng hàng với nút cài đặt chung (#hub-settings), cột liveops bên trái. -->
+       mạng: LiveOps, liveops-ui.js; LiveOps tắt thì hiện pill "coming soon" như bản core) cùng hàng với nút cài đặt chung (#hub-settings), cột liveops bên trái. -->
   <section id="map" class="map" hidden>
     <div class="fh-layer hub-layer">
       <div class="wallet-hud">
         <span class="fh-pill fh-coins" aria-label="Coins"><b id="map-coins">0</b></span>
-        <button class="fh-pill fh-gems" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
-        <button class="fh-pill fh-lives" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+        <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
+        <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
+        <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
+        <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
       </div>
       <!-- Cột trái: Daily (điểm danh + nhiệm vụ ngày, liveops-ui.js), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
       <button id="home-daily" class="fh-btn fh-daily" aria-label="Daily rewards and quests"></button>
       <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
       <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
-      <!-- Event hằng tuần (liveops-ui.js, events.mjs): một nút event chính + tối đa một nút event phụ, ẩn khi không có event -->
+      <!-- Event hằng tuần (liveops-ui.js, hc-kit): một nút event chính + tối đa một nút event phụ, ẩn khi không có event -->
       <button id="home-event-main" class="fh-btn fh-event" hidden></button>
       <button id="home-event-side" class="fh-btn fh-event side" hidden></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->

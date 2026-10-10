@@ -10,10 +10,10 @@ import { playSound, playMeow, soundOn, setSound, setMusic } from '../ui/sound.mj
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, zoneOpen, gardenExpanded, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
   isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, costOf, decoSale } from '../deco/deco-data.mjs';
-import { EVENT_INFO } from '../gameplay/liveops-data.mjs';
+import { EVENT_INFO } from '../liveops/config.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
-import { openDaily, maybeAutoDaily, questEvent, renderGemPacks } from './liveops-ui.js';
+import { maybeAutoDaily, petted, renderGemPacks } from './liveops-ui.js';
 import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): main.js nối vào lúc khởi động.
@@ -273,7 +273,6 @@ const DECO_VIEW = {
 };
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
 $('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
-$('home-daily').onclick = () => { playSound('pick'); openDaily(); };
 // Pill gems ở mọi hàng ví: mở Shop tới mục gói gems
 document.addEventListener('click', event => {
   if (!event.target.closest('[data-open="gems"]')) return;
@@ -345,7 +344,7 @@ function petRoomCat(cat) {
   clearTimeout(cat.petTimer);
   cat.petTimer = setTimeout(() => cat.classList.remove('petted'), 1100);
   playMeow(cat.dataset.breed);
-  questEvent('pet');
+  petted();
   if (reduceMotion.matches) return;
   const room = cat.closest('.room'), box = room.getBoundingClientRect(), rect = cat.getBoundingClientRect();
   for (let i = 0; i < 4; i++) {
@@ -378,7 +377,7 @@ const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thumbnail 
   room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
   room3d.onPick(onScenePick);
-  room3d.onCatEvent(event => { if (event === 'pet') questEvent('pet'); });
+  room3d.onCatEvent(event => { if (event === 'pet') petted(); });
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
   room3d.onFrame(() => { if (!$('deco').hidden) { placeDecoPop(); placeDecoPins(); } });
   // Deco: kéo cảnh sang phòng khác thì hàng thẻ, nút cột trái và hàng chọn khu đổi theo phòng đang ở giữa (camera không lướt lại).
@@ -882,9 +881,7 @@ export async function runOnboarding() {
 
 // ---------- Shop: 2 tab — "Shop" (gói khởi đầu, booster, gói xu) và "Decoration" (chỉ đồ trang trí) ----------
 // Gói xu + gói khởi đầu: số xu / giá lấy từ gameplay/economy.mjs (COIN_PACKS, STARTER_PACK).
-// LiveOps thay khu gói xu bằng gói gems (#shop-gems): không còn .coin-list thì bỏ qua.
-const coinList = document.querySelector('.coin-list');
-if (coinList) coinList.innerHTML = COIN_PACKS.map(pack =>
+document.querySelector('.coin-list').innerHTML = COIN_PACKS.map(pack =>
   `<button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>${pack.coins.toLocaleString('en-US')}</b><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
 document.querySelector('.shop-starter').setAttribute('aria-label', `Starter pack: coins, a cozy rug and 5 boosters, $${STARTER_PACK.usd.toFixed(2)} (coming soon)`);
 function setShopPage(page) {

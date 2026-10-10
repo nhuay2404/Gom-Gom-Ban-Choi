@@ -1,5 +1,7 @@
 /* ===== LiveOps (liveops-ui.js): pill mạng, icon gems / tim, bảng Daily, hộp mạng, continue, quảng cáo giả lập, gói gems =====
    Cùng ngôn ngữ với nút Feedback ở Home: ô kem viền nâu #6b3329, chữ Baloo nâu đậm. Nạp sau cùng (đè lên kiểu dialog chung). */
+/* Cờ LiveOps (app/liveops.js đặt body.liveops-on): tắt thì ẩn phần LiveOps, hiện phần của bản core (như main) */
+body:not(.liveops-on) .lo-only,body.liveops-on .core-only{display:none!important}
 :root{--lo-ink:#6b3329;--lo-cream:#fffaf0;--lo-cream-2:#fbe9cf;--lo-pink:#ff5d8a;--lo-pink-deep:#c43d62;--lo-gem:#ff6f9c}
 
 /* ---------- Icon ---------- */
