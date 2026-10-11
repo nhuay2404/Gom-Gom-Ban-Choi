@@ -13,7 +13,9 @@
   {
    "name": "gomgom",
    "runtimeExecutable": "node",
-   "runtimeArgs": ["Gom-Gom-Ban-Choi/server.mjs"],
+   "runtimeArgs": [
+    "Gom-Gom-Ban-Choi/server.mjs"
+   ],
    "port": 4400,
    "autoPort": true
   },
@@ -39,6 +41,15 @@
    ],
    "port": 5190,
    "autoPort": true
+  },
+  {
+   "name": "hc-kit-sandbox",
+   "runtimeExecutable": "node",
+   "runtimeArgs": [
+    "../LiveOps-Kit/tools/serve.mjs",
+    "4431"
+   ],
+   "port": 4431
   }
  ]
 }
