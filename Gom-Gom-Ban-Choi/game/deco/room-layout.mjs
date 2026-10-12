@@ -14,7 +14,13 @@ const ZONE_STEP = ROOM_HALF * 2 + .4;
 // (x từ -ROOM_HALF tới GARDEN_EXT_X + ROOM_HALF). Đồ của phần mở rộng vẫn là đồ của vườn (PLACES theo toạ độ vườn).
 // 'garden2' chỉ còn là ô đi lại nội bộ cho mèo (room-cats.mjs) + tâm phần mở rộng, KHÔNG phải một khu Deco riêng.
 export const GARDEN_EXT_X = ROOM_HALF * 2;
-export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], bathroom: [-ZONE_STEP, -2 * ZONE_STEP], garden2: [GARDEN_EXT_X, 0] };
+export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], bathroom: [-ZONE_STEP, -2 * ZONE_STEP], garden2: [GARDEN_EXT_X, 0],
+  backyard: [0, -2 * ZONE_STEP], backyard2: [ZONE_STEP, -2 * ZONE_STEP] };
+// Sân sau (bể bơi + vườn rau): MỘT khu Deco hình chữ nhật phía sau phòng khách + bếp, bên phải phòng tắm (cửa trên tường phải phòng tắm).
+// Giống vườn mở rộng: 'backyard2' (sau bếp) chỉ là ô đi lại nội bộ của mèo; đồ đặt theo toạ độ khu 'backyard' (tâm sau phòng khách),
+// nửa trái là vườn rau, nửa phải (x ≈ BACKYARD_EXT_X) là bể bơi. Mặt trong hàng rào: backyardBounds().
+export const BACKYARD_EXT_X = ZONE_STEP;
+export const backyardBounds = () => ({ x0: -ROOM_HALF - .2, x1: BACKYARD_EXT_X + ROOM_HALF + .2, z0: -ROOM_HALF - .2, z1: ROOM_HALF + .2 });
 // Khung vườn (mặt trong hàng rào) khi chưa / đã mở rộng.
 // Toạ độ texture của nền vườn tại (x, z) (toạ độ vườn): khối nền (deco-room.mjs, mặt trên BoxGeometry) trải texture mỗi ô 2·ROOM_HALF m.
 // Đồi (garden2-scene.mjs buildHill) dùng đúng công thức này để vân cỏ trên đồi liền với nền, không lộ đường viền ở chân đồi.
@@ -33,6 +39,9 @@ export const KITCHEN_DOOR = { z: -.6, w: 1, h: 2.1 };
 // Cửa phòng ngủ <-> phòng tắm: trên tường sau (-z) phòng ngủ = tường trước (+z) phòng tắm, ở x (toạ độ phòng, hai phòng cùng x) =
 // BATHROOM_DOOR.x. Nằm giữa tủ đầu giường (x ≈ -.85) và bàn máy tính (x ≈ 2.45); hai bên cửa chừa lối trống x ≈ BATHROOM_DOOR.x ± 0.6.
 export const BATHROOM_DOOR = { x: .2, w: 1, h: 2.1 };
+// Cửa phòng tắm -> sân sau: trên tường phải (+x) phòng tắm, ở z (toạ độ phòng, phòng tắm và sân sau cùng z) = BACKYARD_DOOR.z,
+// giữa giá khăn (z -1.7) và máy giặt (z 2.5); cánh cửa mở hé về phía giá khăn.
+export const BACKYARD_DOOR = { z: 1, w: 1, h: 2.1 };
 // Các lối nối hai khu cho mèo (room-cats.mjs): at = toạ độ (khu nhà) của tâm lối theo trục dọc tường, w = bề rộng.
 // open: lối thông thoáng cả bề ngang (vườn <-> phần mở rộng, không có rào ngăn): mèo đi thẳng, không vòng qua cửa.
 export const LINKS = [
@@ -41,6 +50,8 @@ export const LINKS = [
   { a: 'living', b: 'kitchen', at: ZONE_OFFSET.living[1] + KITCHEN_DOOR.z, w: KITCHEN_DOOR.w },
   { a: 'bedroom', b: 'bathroom', at: ZONE_OFFSET.bedroom[0] + BATHROOM_DOOR.x, w: BATHROOM_DOOR.w },
   { a: 'garden', b: 'garden2', at: 0, w: ROOM_HALF * 2, open: true },
+  { a: 'bathroom', b: 'backyard', at: ZONE_OFFSET.bathroom[1] + BACKYARD_DOOR.z, w: BACKYARD_DOOR.w },
+  { a: 'backyard', b: 'backyard2', at: ZONE_OFFSET.backyard[1], w: ROOM_HALF * 2, open: true },
 ];
 
 // ---------- Đồi nhỏ ở phần vườn mở rộng ----------
@@ -75,11 +86,17 @@ export const PLACES = {
   closet: [-3.62, .7, Math.PI / 2], catsteps: [ROOM_HALF - .28, -.5, -Math.PI / 2], bedrug: [.2, .4, 0],
   plushie: [-3, 3], laundry: [.9, 3.1],
   // phòng tắm (cửa sang phòng ngủ ở tường trước x = .2, cửa sổ tường sau x = 2.4 ngay trên bồn tắm): buồng tắm đứng góc sau-trái,
-  // bồn tắm dọc tường sau bên phải, bồn cầu + bồn rửa mặt dọc tường trái, giá khăn + máy giặt dọc tường phải, khay cát của mèo góc
+  // bồn tắm dọc tường sau bên phải, bồn cầu + bồn rửa mặt dọc tường trái, giá khăn + máy giặt dọc tường phải (giữa là cửa ra sân sau, z = 1), khay cát của mèo góc
   // trước-trái, thảm trước bồn tắm, bồn sục lớn giữa phòng. Đồ cố định (rèm cửa sổ, gương nhỏ, kệ đồ tắm, thảm chùi chân, thùng rác): bathroomDecor().
   shower: [-3.3, -3.3, 0], bathtub: [2.35, -3.5, 0], toilet: [-3.55, -1.2, Math.PI / 2], vanity: [-3.62, .75, Math.PI / 2],
-  towel: [ROOM_HALF - .4, -.6, -Math.PI / 2], washer: [3.5, 2.5, -Math.PI / 2], litter: [-3, 3.1, 0], bathmat: [2.2, -2.2, 0],
+  towel: [ROOM_HALF - .4, -1.7, -Math.PI / 2], washer: [3.5, 2.5, -Math.PI / 2], litter: [-3, 3.1, 0], bathmat: [2.2, -2.2, 0],
   jacuzzi: [-.1, .3, 0],
+  // sân sau (toạ độ khu backyard: tâm sau phòng khách; x -4.2 .. 12.6, z -4.2 .. 4.2; mép +z là tường sau phòng khách + bếp, cửa phòng tắm ở
+  // mép trái z = 1). Nửa trái vườn rau: nhà kính góc sau-trái, luống cà chua, luống rau củ hai bên lối đá, bù nhìn, thùng nước mưa góc trước-trái
+  // (chừa lối 1 m trước cửa phòng tắm). Nửa phải bể bơi: bể giữa, ô dù + bàn trước-trái bể, ghế nằm bên phải, bếp nướng góc sau-phải,
+  // hòm đồ bơi góc sau-trái bể.
+  greenhouse: [-2.35, -2.6, 0], vegbed: [1.65, -3.25, 0], veggies: [.6, 1.2, 0], scarecrow: [3.4, .55], rainbarrel: [-3.35, 3.2, 0],
+  pool: [8.4, -1.2, 0], parasol: [6.0, 2.4], lounger: [11.3, 2.2, Math.PI], grill: [11.5, -3.2, 0], deckbox: [5.3, -3.3, 0],
   // bếp (cửa sang phòng khách ở tường trái z = -.6, cửa sổ tường sau x = .55 ngay trên bồn rửa): tủ lạnh góc sau-trái, bếp nấu cạnh
   // tủ lạnh, bồn rửa dưới cửa sổ, quầy chữ L (bồn rửa + dãy quầy dọc tường sau rồi tường phải),
   // tủ chén tường phải phía trước, bàn ăn giữa phòng, bốn ghế quanh bàn (gốc model = tâm bàn), chậu cây giữa tường trước, khay ăn của mèo góc trước-trái,
@@ -107,6 +124,7 @@ export const OBSTACLE_RADIUS = {
   catbed: .75, armchair: .8, cattree: .65, table: .62, shelf: .9, yarn: .5, plant: .45, tank: .8, lamp: .38, rug: 0,
   flowers: 0, stump: .45, catnip: .45, lantern: .28, sandbox: .62, cathouse: .75, pond: 1, hammock: .7, birdbath: .36, bench: .75,
   bed: 1.25, bedside: .35, desk: .8, chair: .42, closet: .75, catsteps: .32, bedrug: 0, plushie: .5, laundry: .38,
+  greenhouse: 1.15, vegbed: .55, veggies: .01, scarecrow: .45, rainbarrel: .55, pool: 1.35, parasol: .75, lounger: .45, grill: .45, deckbox: .5,
   shower: .75, bathtub: .45, toilet: .45, vanity: .55, towel: .3, washer: .5, litter: .5, bathmat: 0, jacuzzi: 1.25, // bồn sục: thân 1.02 + bậc phía trước
   fridge: .6, stove: .55, sink: .78, pantry: .6, dining: .95, kchair: .01, kplant: .42, catfood: .5, cart: .55,
   windmill: .65, swingtree: .55, clothesline: .3, campfire: .7, sunflowers: .55, kite: .2, stream: .75, slide: .6,
@@ -117,6 +135,8 @@ export const OBSTACLE_RADIUS = {
 export const OBSTACLE_EXTRA = {
   kchair: [[-1.35, 0, .3], [1.35, 0, .3], [0, -1.3, .3], [0, 1.3, .3]],
   bathtub: [[-.55, 0, .42], [.55, 0, .42]], // bồn tắm dài 1.6 dọc tường sau
+  greenhouse: [[-.8, 0, 1.15], [.8, 0, 1.15]], vegbed: [[-1.0, 0, .55], [1.0, 0, .55]], veggies: [-1.2, 1.35].flatMap(dz => [-.95, 0, .95].map(dx => [dx, dz, .65])), // hai luống hai bên lối đá, giữa là lối đi // nhà kính 3 × 2.2, luống 3 × 1
+  pool: [[-1.5, 0, 1.35], [1.5, 0, 1.35]], lounger: [[0, -.55, .45], [0, .55, .45]], // bể 4.6 × 2.6, ghế nằm dài 1.8
   sink: [[1.0, 0, .35], [1.7, 0, .35], [2.4, 0, .35], [3.1, .1, .4], [3.1, .8, .35], [3.1, 1.5, .35], [3.1, 2.2, .35], [3.1, 2.7, .35]],
 };
 

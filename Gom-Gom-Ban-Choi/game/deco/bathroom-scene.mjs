@@ -318,9 +318,9 @@ export function decorateBathroomWall(i, wall) {
       wallFrame(.44, .54, '#fffaf0', '#bfe8d6', 1.2, 1.85), wallFrame(.32, .32, '#c98a55', '#ffd9c4', 2.4, 1.7));
   }
   if (i === 3) {
-    // Tường phải (u = z): móc áo choàng giữa giá khăn (z -.6) và máy giặt (z 2.5), tranh nhỏ phía trên máy giặt.
-    wall.add(...[.85, 1.15].flatMap(u => [at(rbox(.05, .05, .1, .02, onWall('#c98a55')), u, 1.6, .18), at(ball(.03, onWall('#c98a55')), u, 1.62, .23)]),
-      at(rbox(.3, .7, .05, .02, onWall('#ffffff')), 1.0, 1.25, .22), wallFrame(.4, .4, '#fffaf0', '#c9e8b0', 2.5, 1.85));
+    // Tường phải (u = z): móc áo choàng giữa giá khăn (z -1.7) và cửa ra sân sau (z 1), tranh nhỏ phía trên máy giặt.
+    wall.add(...[-.75, -.45].flatMap(u => [at(rbox(.05, .05, .1, .02, onWall('#c98a55')), u, 1.6, .18), at(ball(.03, onWall('#c98a55')), u, 1.62, .23)]),
+      at(rbox(.3, .7, .05, .02, onWall('#ffffff')), -.6, 1.25, .22), wallFrame(.4, .4, '#fffaf0', '#c9e8b0', 2.5, 1.85));
   }
   if (i === 1) {
     // Tường trước, mặt trong (u = -x phòng; cửa phòng ngủ ở x .2 -> u -.2): tranh + đồng hồ nhỏ.

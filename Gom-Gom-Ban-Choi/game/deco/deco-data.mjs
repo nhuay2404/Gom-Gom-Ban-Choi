@@ -12,6 +12,7 @@ export const ZONES = {
   bedroom: { name: 'Bedroom', unlockAfter: AREA_UNLOCK.bedroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 // Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
@@ -21,23 +22,20 @@ export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
 export const GARDEN_EXPANSION = { unlockAfter: AREA_UNLOCK.garden2.level, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
 
-// ===== Mở khu kiểu Homescapes + Idle Theme Park: trang trí (tiêu xu vào decor) để mở khu kế tiếp. Mỗi khu đi qua các trạng thái =====
+// ===== Mở khu: đủ màn + đủ xu thì mua khu (trừ xu). Mỗi khu đi qua các trạng thái =====
 //   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
-//   spend : đủ màn, chưa tiêu đủ xu vào decor (tính từ lúc khu trước mở)    ready : đủ cả hai, chạm "khánh thành" là mở    open : đã mở
-// Không trả thêm xu để mở: xu tiêu cho đồ trang trí chính là tiến độ (deco.spent = tổng xu đã tiêu cho decor, deco.spentAt = mốc lúc mở khu gần nhất).
-export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom'];
-export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom' };
+//   coins : đủ màn, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard'];
+export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard' };
 export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
-// Xu đã tiêu cho decor kể từ khi khu trước mở (tiến độ bước "Spend").
-export const spentSinceOpen = deco => (deco.spent ?? 0) - (deco.spentAt ?? 0);
-const pay = (deco, price) => ({ ...deco, coins: deco.coins - price, spent: (deco.spent ?? 0) + price });
+const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
 // table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
 export function areaState(deco, area, cleared, table = AREA_UNLOCK) {
   if (areaOpen(deco, area)) return 'open';
   const before = AREA_ORDER[AREA_ORDER.indexOf(area) - 1];
   if (before && !areaOpen(deco, before)) return 'soon';
   if (cleared < table[area].level) return 'level';
-  return spentSinceOpen(deco) >= table[area].spend ? 'ready' : 'spend';
+  return deco.coins >= table[area].cost ? 'ready' : 'coins';
 }
 // Khu kế tiếp chưa mở (null = đã mở hết).
 export const nextArea = deco => AREA_ORDER.find(area => !areaOpen(deco, area)) ?? null;
@@ -46,9 +44,8 @@ export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
   if (state === 'open') return { error: 'Already open' };
   if (state === 'soon') return { error: `Open the ${AREA_NAMES[AREA_ORDER[AREA_ORDER.indexOf(area) - 1]].toLowerCase()} first` };
   if (state === 'level') return { error: `Beat level ${table[area].level} first` };
-  if (state === 'spend') return { error: `Spend ${table[area].spend - spentSinceOpen(deco)} more coins on decor` };
-  // Xu tiêu dư cho khu này không chuyển sang khu sau: mốc tính lại từ lúc mở.
-  return { ...deco, spentAt: deco.spent ?? 0, unlocked: [...(deco.unlocked ?? []), area] };
+  if (state === 'coins') return { error: `Need ${table[area].cost - deco.coins} more coins` };
+  return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
 }
 
 // Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
@@ -150,6 +147,23 @@ export const CATALOG = [
   { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
   { id: 'kfloor-tatami', zone: 'kitchen', cat: 'floors', name: 'Tatami', color: '#cfc994' },
   { id: 'kfloor-bamboo', zone: 'kitchen', cat: 'floors', name: 'Bamboo', color: '#d9c27a' },
+  // --- Sân sau: bể bơi + vườn rau (sau phòng khách + bếp, cửa từ phòng tắm; mở theo AREA_UNLOCK.backyard). Rào / nền dùng kiểu của vườn (style) ---
+  { id: 'pool', zone: 'backyard', cat: 'furniture', name: 'Swimming pool', color: '#5fc8e8' },
+  { id: 'lounger', zone: 'backyard', cat: 'furniture', name: 'Sun lounger', color: '#ff8fb8' },
+  { id: 'parasol', zone: 'backyard', cat: 'furniture', name: 'Parasol table', color: '#ffd66b' },
+  { id: 'grill', zone: 'backyard', cat: 'furniture', name: 'BBQ grill', color: '#e8483a' },
+  { id: 'deckbox', zone: 'backyard', cat: 'furniture', name: 'Pool toy box', color: '#8fc9f2' },
+  { id: 'greenhouse', zone: 'backyard', cat: 'furniture', name: 'Greenhouse', color: '#cfeaf6' },
+  { id: 'vegbed', zone: 'backyard', cat: 'furniture', name: 'Tomato bed', color: '#e8483a' },
+  { id: 'veggies', zone: 'backyard', cat: 'furniture', name: 'Veggie patch', color: '#ff9a3c' },
+  { id: 'scarecrow', zone: 'backyard', cat: 'furniture', name: 'Scarecrow', color: '#f2c14e' },
+  { id: 'rainbarrel', zone: 'backyard', cat: 'furniture', name: 'Rain barrel', color: '#9a6a45' },
+  { id: 'yfence-white', zone: 'backyard', cat: 'walls', name: 'White picket', color: '#fffaf0', style: 'fence-white' },
+  { id: 'yfence-wood', zone: 'backyard', cat: 'walls', name: 'Wood fence', color: '#c9955e', style: 'fence-wood' },
+  { id: 'yfence-hedge', zone: 'backyard', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  { id: 'yground-grass', zone: 'backyard', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
+  { id: 'yground-clover', zone: 'backyard', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
+  { id: 'yground-meadow', zone: 'backyard', cat: 'floors', name: 'Meadow', color: '#b5dd7a', style: 'ground-meadow' },
   // --- Phòng tắm (bên trái phòng ngủ, cửa trên tường trái phòng ngủ; mở theo AREA_UNLOCK.bathroom) ---
   { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Toilet', color: '#ffffff' },
   { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Sink vanity', color: '#bfe8d6' },

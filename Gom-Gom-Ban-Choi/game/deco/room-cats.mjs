@@ -2794,7 +2794,9 @@ const GARDEN2_TOYS = { windmill: 1.1, sunflowers: 1, clothesline: 1.1, campfire:
 const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.2, kchair: 1, catfood: 1.8, cart: 1.1, kplant: .8 };
 // Phòng tắm: chưa có tương tác mèo với đồ (mèo vẫn đi lại / ngủ trong phòng như mọi khu).
 const BATHROOM_TOYS = {};
-const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS };
+// Sân sau (bể bơi + vườn rau): chưa có tương tác mèo với đồ.
+const BACKYARD_TOYS = {};
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS, backyard: BACKYARD_TOYS, backyard2: BACKYARD_TOYS };
 // Tương tác nhiều mèo với một món (xem stareDown / squeezeIn / watchTogether / copycat):
 const RESTS = ['catbed', 'armchair', 'bed', 'chair', 'kchair', 'bench', 'hammock', 'stove', 'lamp', 'lantern']; // chỗ nằm ấm: tranh chỗ
 const SQUEEZE = ['catbed']; // ổ đủ rộng để chen hai con

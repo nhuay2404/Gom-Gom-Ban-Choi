@@ -17,7 +17,7 @@
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';
-import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds } from './room-layout.mjs';
+import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds, backyardBounds } from './room-layout.mjs';
 import { geometryNotes, withoutMerging } from './mesh-detail.mjs';
 
 const DECAL_GAP = .004;          // tấm phẳng phải cách mặt khối phía sau ít nhất 4 mm
@@ -26,6 +26,8 @@ const OUTDOOR = new Set(['garden']);
 // Khung đặt đồ (toạ độ khu): trong nhà là tường; vườn là mặt trong rào — đồ phần mở rộng theo khung đã mở rộng,
 // đồ vườn gốc theo khung vuông (rào bên phải vẫn ở x = ROOM_HALF khi chưa mở rộng).
 const innerBounds = (zone, expanded) => {
+  // Sân sau: cạnh trước / trái là tường nhà (mặt ngoài tường), cạnh sau / phải là rào.
+  if (zone === 'backyard') { const b = backyardBounds(); return { x0: b.x0, x1: b.x1 - FENCE_GAP, z0: b.z0 + FENCE_GAP, z1: b.z1 }; }
   if (!OUTDOOR.has(zone)) return { x0: -H, x1: H, z0: -H, z1: H };
   const b = gardenBounds(expanded);
   return { x0: b.x0 + FENCE_GAP, x1: b.x1 - FENCE_GAP, z0: b.z0 + FENCE_GAP, z1: b.z1 - FENCE_GAP };
