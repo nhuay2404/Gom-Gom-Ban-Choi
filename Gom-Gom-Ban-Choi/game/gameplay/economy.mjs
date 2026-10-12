@@ -24,22 +24,11 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Mỗi dòng = 1 stage (10 màn). Màn ngoài bảng nhận REWARD_BEYOND.
-export const LEVEL_REWARD = remote('LEVEL_REWARD', [
-  /* stage 1: màn  1–10 */ 120, 125, 130, 135, 140, 143, 146, 150, 152, 154,
-  /* stage 2: màn 11–20 */ 155, 157, 159, 161, 162, 164, 166, 168, 170, 172,
-  /* stage 3: màn 21–30 */  90,  92,  94,  96,  97,  98, 100, 101, 103, 105,
-  /* stage 4: màn 31–40 */  96,  98,  99, 100, 101, 102, 103, 104, 105, 106,
-  /* stage 5: màn 41–50 */  80,  80,  80,  80,  80,  80,  80,  80,  80,  80,
-  // Stage 6–10 (màn 51–100, sinh bằng tools/generate-levels.mjs): không mở khu Deco mới, xu dùng mua các kiểu khác / tường / sàn còn lại.
-  // Tăng dần ~4 xu mỗi stage; màn boss (x0) +10.
-  /* stage 6: màn 51–60 */ 100, 101, 102, 103, 104, 105, 106, 107, 108, 119,
-  /* stage 7: màn 61–70 */ 104, 105, 106, 107, 108, 109, 110, 111, 112, 123,
-  /* stage 8: màn 71–80 */ 108, 109, 110, 111, 112, 113, 114, 115, 116, 127,
-  /* stage 9: màn 81–90 */ 112, 113, 114, 115, 116, 117, 118, 119, 120, 131,
-  /* stage 10: màn 91–100 */ 116, 117, 118, 119, 120, 121, 122, 123, 124, 135,
-]);
-export const REWARD_BEYOND = remote('REWARD_BEYOND', 80); // xu mỗi màn ngoài bảng trên (từ màn 101 trở đi)
+// Tăng tiến: xu(màn n) = REWARD_BASE × REWARD_GROWTH^(n−1), làm tròn; màn boss (10, 20, 30…) nhân thêm REWARD_BOSS_MULT.
+// Mặc định: màn 1 = 120, màn 50 ≈ 193, màn 100 ≈ 482 (boss). Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
+export const REWARD_BASE = remote('REWARD_BASE', 120);
+export const REWARD_GROWTH = remote('REWARD_GROWTH', 1.01);
+export const REWARD_BOSS_MULT = remote('REWARD_BOSS_MULT', 1.5);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
@@ -47,6 +36,13 @@ export const TUTORIAL_TOP_UP = remote('TUTORIAL_TOP_UP', true);
 
 // Quà an ủi: người chơi sắp bỏ game (thua liên tục) thì lần thắng kế tiếp được tặng bấy nhiêu booster +lượt.
 export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
+
+// Xu tự sinh (idle): mèo trong nhà kiếm xu theo giờ, icon xu hiện trên đầu mèo ở Deco, chạm để nhận (gameplay/idle.mjs).
+//   xu / giờ = xu thưởng của màn đang chơi × IDLE_RATE · tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
+//   Giữ nhỏ (~5–15% xu mỗi ngày của người chơi trung bình) để không thay gói xu / không làm người chơi bớt chơi màn.
+export const IDLE_RATE = remote('IDLE_RATE', 0.04);
+export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
+export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 
 // Gói xu trong Shop (tiền thật — hiện mới là "coming soon", chưa bán). coins = xu nhận, usd = giá hiển thị.
 export const COIN_PACKS = remote('COIN_PACKS', [
@@ -76,6 +72,23 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
 //  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
 //  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
+// Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
+//   level : đã thắng tới màn này,
+//   spend : đã tiêu bấy nhiêu xu cho đồ trang trí KỂ TỪ LÚC KHU TRƯỚC MỞ (trang trí khu đang có để mở khu sau, kiểu Homescapes).
+//   Không trả thêm xu để mở: xu tiêu cho decor chính là tiến độ. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
+// Cân bằng: spend ≤ ~70% giá món gốc của (các) khu đang mở trước đó, để luôn có đồ để mua cho đủ mốc.
+export const AREA_UNLOCK = remote('AREA_UNLOCK', {
+  garden2: { level: 10, spend: 600 },
+  living:  { level: 20, spend: 900 },
+  bedroom: { level: 30, spend: 1100 },
+  kitchen: { level: 40, spend: 1200 },
+  bathroom: { level: 50, spend: 1300 },
+});
+
+// Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
+// tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1, garden2: 1, living: 1.15, bedroom: 1.3, kitchen: 1.5, bathroom: 1.7 });
+
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
   flowers:               { price: 0 },                // Flower bed
@@ -179,6 +192,32 @@ export const DECO = remote('DECO', {
   'kfloor-slate-tiles':  { price: 100 },              // Slate tiles
   'kfloor-tatami':       { price: 100 },              // Tatami
   'kfloor-bamboo':       { price: 100 },              // Bamboo
+  // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
+  toilet:                { price: 0 },                // Toilet
+  vanity:                { price: 0 },                // Sink vanity
+  bathtub:               { price: 300 },              // Clawfoot tub
+  shower:                { price: 260 },              // Shower
+  washer:                { price: 240 },              // Washing machine
+  towel:                 { price: 120 },              // Towel rack
+  litter:                { price: 160 },              // Cat litter box
+  bathmat:               { price: 100 },              // Bath mat
+  jacuzzi:               { price: 400 },              // Hot tub (bồn sục giữa phòng)
+  // --- Phòng tắm — tường ---
+  'twall-aqua':          { price: 0 },                // Aqua
+  'twall-white':         { price: 100 },              // White
+  'twall-mint':          { price: 100 },              // Mint
+  'twall-blush':         { price: 100 },              // Blush
+  'twall-lemon':         { price: 100 },              // Lemon
+  'twall-navy':          { price: 100 },              // Navy
+  'twall-charcoal':      { price: 100 },              // Charcoal
+  // --- Phòng tắm — sàn ---
+  'tfloor-white-tiles':  { price: 0 },                // White tiles (sàn mặc định: gạch nhà tắm)
+  'tfloor-oak':          { price: 100 },              // Oak
+  'tfloor-aqua-tiles':   { price: 100 },              // Aqua tiles
+  'tfloor-pink-tiles':   { price: 100 },              // Pink tiles
+  'tfloor-checker':      { price: 100 },              // Checkerboard
+  'tfloor-teak':         { price: 100 },              // Teak
+  'tfloor-slate-tiles':  { price: 100 },              // Slate tiles
   // --- Vườn mở rộng (vườn 2: mở khi thắng màn 10) — đồ ---
   windmill:              { price: 0, lock: 11 },      // Windmill
   sunflowers:            { price: 0, lock: 11 },      // Sunflowers

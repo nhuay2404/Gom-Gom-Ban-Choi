@@ -100,7 +100,7 @@ export const LEVELS = [
   {
     name: 'Garden Fortress', feature: 'Boss: cross board', tier: 'boss',
     moves: 20, target: 370, cats: 'OGWTSK', assist: 0.4,
-    board: ['##..X.##', '##.OG.##', 'X.MK.MSX', '.TW..M..', '..MS.T..', 'X.M.WMOX', '##.SK.##', '##.X..##'],
+    board: ['##..X.#W', '##.OG.##', 'X.MK.MSX', '.TW..M..', '..MS.T..', 'X.M.WMOX', '##.SK.##', '##.X..##'],
     deck: [],
   },
   // ===== Chương 2: phòng khách — mở ô Hold, bàn to dần và nhiều hình; xào lại cơ chế thùng -> kim loại -> cả hai =====
@@ -108,8 +108,8 @@ export const LEVELS = [
     // Mở ô Hold: cất thẻ -> gom -> lấy thẻ ra -> gom. Từ màn này trở đi luôn có Hold.
     // Kiêm giới thiệu chuồng mèo: mèo trắng (ô 13) sát cụm cam ô 0-6-12, mèo mướp (ô 26) sát cụm xám ô 30-31-32,
     // nên hai lần gom theo kịch bản đều chạm chuồng; bong bóng giải thích hiện sau phần Hold.
-    name: 'Fresh Start', feature: 'Hold a card + cat cages', tier: 'normal', introduces: 'hold',
-    moves: 14, target: 250, cats: 'OGWTS', assist: 0.45,
+    name: 'Fresh Start', feature: 'Hold a card + cat cages', tier: 'chill', introduces: 'hold',
+    moves: 14, target: 210, cats: 'OGWTS', assist: 0.45,
     board: ['O....G', 'O.T...', '.w..S.', '..SW..', '..t...', 'GG...O'],
     deck: ['G', 'O'],
     tutorial: [
@@ -180,7 +180,7 @@ export const LEVELS = [
   {
     // Giới thiệu bãi cỏ: mục tiêu là dọn hết 16 ô cỏ (không tính điểm). Cỏ nằm dưới các cặp mèo có sẵn (gom cặp là dọn),
     // dưới vài mèo lẻ và trên ô trống (phải đặt mèo vào rồi gom). Bot: giỏi 95% · trung bình 90% · yếu 84% (24 lượt).
-    name: "Cozy Corner", feature: "Grass: match on grass to clear it", tier: 'normal', introduces: 'grass',
+    name: 'Cozy Corner', feature: 'Grass: match on grass to clear it', tier: 'chill', introduces: 'grass',
     moves: 24, target: 330, cats: 'OGWTS', assist: 0.4,
     board: ['.....TT', '..G....', 'T....SS', 'T.XX...', '.GG....', 'OXOO...', 'X...T.X'],
     grass: ['....~~~', '..~~~..', '~....~~', '~......', '.~~~...', '~.~~...', '.......'],

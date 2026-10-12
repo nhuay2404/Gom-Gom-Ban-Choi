@@ -14,8 +14,11 @@ export const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.
 export const levelsCleared = progress => progress.stars.filter(Boolean).length;
 export const totalStars = progress => progress.stars.reduce((sum, n) => sum + (n || 0), 0);
 
-// Xu thưởng của một màn (lần thắng đầu), tăng dần theo màn — bảng ở tuning.mjs.
-export const levelReward = levelIndex => ECONOMY.LEVEL_REWARD[levelIndex] ?? ECONOMY.REWARD_BEYOND;
+// Xu thưởng của một màn (lần thắng đầu), tăng dần theo màn — công thức + hệ số ở economy.mjs.
+// rewardFor nhận hệ số rời để Level Editor (tab Economy) thử số khác mà vẫn dùng đúng công thức game.
+export const rewardFor = (levelIndex, { REWARD_BASE, REWARD_GROWTH, REWARD_BOSS_MULT }) =>
+  Math.round(REWARD_BASE * REWARD_GROWTH ** levelIndex * ((levelIndex + 1) % 10 ? 1 : REWARD_BOSS_MULT));
+export const levelReward = levelIndex => rewardFor(levelIndex, ECONOMY);
 // Tổng xu đã kiếm được từ các màn đã qua (khởi tạo ví cho save chưa có Deco).
 export const earnedCoins = progress => progress.stars.reduce((sum, n, index) => sum + (n ? levelReward(index) : 0), 0);
 

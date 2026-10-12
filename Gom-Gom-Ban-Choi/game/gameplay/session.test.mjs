@@ -39,13 +39,15 @@ test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom 
   });
 });
 
-test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng giới thiệu cơ chế); từ màn 11 mỗi chương: hard x5, nghỉ x6, boss x0', () => {
+test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng giới thiệu cơ chế); từ màn 11 mỗi chương: hard x5, nghỉ x6, boss x0; màn đầu chương giới thiệu cơ chế mới là chill', () => {
   assert.equal(levelTier(LEVELS[9]), 'boss');
   assert.equal(levelTier(LEVELS[19]), 'boss');
   assert.equal(levelTier(LEVELS[7]), 'chill');
   for (let start = 10; start < LEVELS.length; start += 10) {
     const tiers = LEVELS.slice(start, start + 10).map(levelTier);
-    assert.deepEqual(tiers, ['normal', 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'], `chương màn ${start + 1}–${start + 10}`);
+    // Màn x1 giới thiệu cơ chế mới (Hold ở màn 11, cỏ ở màn 21) là màn nghỉ để người chơi làm quen; còn lại là normal.
+    const first = LEVELS[start].introduces ? 'chill' : 'normal';
+    assert.deepEqual(tiers, [first, 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'], `chương màn ${start + 1}–${start + 10}`);
   }
   assert.equal(LEVELS[4].introduces, 'crate');
   assert.equal(LEVELS[7].introduces, 'metal');
