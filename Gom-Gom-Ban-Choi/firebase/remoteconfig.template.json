@@ -9,15 +9,21 @@
           },
           "valueType": "NUMBER"
         },
-        "LEVEL_REWARD": {
+        "REWARD_BASE": {
           "defaultValue": {
-            "value": "[120,125,130,135,140,143,146,150,152,154,155,157,159,161,162,164,166,168,170,172,90,92,94,96,97,98,100,101,103,105,96,98,99,100,101,102,103,104,105,106]"
+            "value": "120"
           },
-          "valueType": "JSON"
+          "valueType": "NUMBER"
         },
-        "REWARD_BEYOND": {
+        "REWARD_GROWTH": {
           "defaultValue": {
-            "value": "80"
+            "value": "1.01"
+          },
+          "valueType": "NUMBER"
+        },
+        "REWARD_BOSS_MULT": {
+          "defaultValue": {
+            "value": "1.5"
           },
           "valueType": "NUMBER"
         },
@@ -30,6 +36,24 @@
         "COMEBACK_GIFT_MOVES": {
           "defaultValue": {
             "value": "1"
+          },
+          "valueType": "NUMBER"
+        },
+        "IDLE_RATE": {
+          "defaultValue": {
+            "value": "0.04"
+          },
+          "valueType": "NUMBER"
+        },
+        "IDLE_CAP_HOURS": {
+          "defaultValue": {
+            "value": "8"
+          },
+          "valueType": "NUMBER"
+        },
+        "IDLE_FROM_LEVEL": {
+          "defaultValue": {
+            "value": "10"
           },
           "valueType": "NUMBER"
         },
@@ -69,9 +93,21 @@
           },
           "valueType": "NUMBER"
         },
+        "AREA_UNLOCK": {
+          "defaultValue": {
+            "value": "{\"garden2\":{\"level\":10,\"spend\":600},\"living\":{\"level\":20,\"spend\":900},\"bedroom\":{\"level\":30,\"spend\":1100},\"kitchen\":{\"level\":40,\"spend\":1200},\"bathroom\":{\"level\":50,\"spend\":1300}}"
+          },
+          "valueType": "JSON"
+        },
+        "ZONE_PRICE_MULT": {
+          "defaultValue": {
+            "value": "{\"garden\":1,\"garden2\":1,\"living\":1.15,\"bedroom\":1.3,\"kitchen\":1.5,\"bathroom\":1.7}"
+          },
+          "valueType": "JSON"
+        },
         "DECO": {
           "defaultValue": {
-            "value": "{\"flowers\":{\"price\":0},\"stump\":{\"price\":80},\"catnip\":{\"price\":90},\"lantern\":{\"price\":100},\"sandbox\":{\"price\":120},\"cathouse\":{\"price\":150},\"pond\":{\"price\":200,\"lock\":3},\"hammock\":{\"price\":240,\"lock\":4},\"birdbath\":{\"price\":180,\"lock\":6},\"bench\":{\"price\":220,\"lock\":8},\"fence-white\":{\"price\":0},\"fence-wood\":{\"price\":100},\"fence-hedge\":{\"price\":100},\"fence-stone\":{\"price\":100,\"lock\":7},\"ground-grass\":{\"price\":0},\"ground-clover\":{\"price\":100},\"ground-meadow\":{\"price\":100},\"ground-path\":{\"price\":100,\"lock\":5},\"rug\":{\"price\":0},\"armchair\":{\"price\":120},\"plant\":{\"price\":90},\"yarn\":{\"price\":80},\"catbed\":{\"price\":150},\"table\":{\"price\":180},\"lamp\":{\"price\":200},\"cattree\":{\"price\":260},\"shelf\":{\"price\":220},\"tank\":{\"price\":300},\"wall-cream\":{\"price\":0},\"wall-mint\":{\"price\":100},\"wall-peach\":{\"price\":100},\"wall-sky\":{\"price\":100},\"wall-lilac\":{\"price\":100},\"wall-concrete\":{\"price\":100},\"wall-graphite\":{\"price\":100},\"floor-oak\":{\"price\":0},\"floor-walnut\":{\"price\":100},\"floor-carpet\":{\"price\":100},\"floor-tiles\":{\"price\":100},\"floor-concrete\":{\"price\":100},\"floor-ebony\":{\"price\":100},\"bed\":{\"price\":0},\"bedrug\":{\"price\":0},\"laundry\":{\"price\":100,\"lock\":36},\"bedside\":{\"price\":120,\"lock\":36},\"desk\":{\"price\":260,\"lock\":36},\"chair\":{\"price\":180,\"lock\":37},\"closet\":{\"price\":220,\"lock\":37},\"plushie\":{\"price\":150,\"lock\":38},\"catsteps\":{\"price\":240,\"lock\":39},\"bwall-lavender\":{\"price\":0},\"bwall-blush\":{\"price\":100},\"bwall-sage\":{\"price\":100},\"bwall-butter\":{\"price\":100},\"bwall-night\":{\"price\":100},\"bwall-slate\":{\"price\":100},\"bwall-charcoal\":{\"price\":100},\"bfloor-oak\":{\"price\":0},\"bfloor-maple\":{\"price\":100},\"bfloor-ash\":{\"price\":100},\"bfloor-carpet\":{\"price\":100},\"bfloor-tiles\":{\"price\":100},\"bfloor-graphite-tiles\":{\"price\":100},\"bfloor-smoke-carpet\":{\"price\":100},\"sink\":{\"price\":0},\"dining\":{\"price\":0},\"fridge\":{\"price\":220},\"stove\":{\"price\":240},\"pantry\":{\"price\":200},\"kchair\":{\"price\":120},\"catfood\":{\"price\":90},\"cart\":{\"price\":180},\"kplant\":{\"price\":110},\"kwall-butter\":{\"price\":0},\"kwall-mint\":{\"price\":100},\"kwall-peach\":{\"price\":100},\"kwall-sky\":{\"price\":100},\"kwall-sage\":{\"price\":100},\"kwall-brick\":{\"price\":100},\"kwall-slate\":{\"price\":100},\"kwall-vermilion\":{\"price\":100},\"kwall-washi\":{\"price\":100},\"kfloor-oak\":{\"price\":0},\"kfloor-pine\":{\"price\":100},\"kfloor-terracotta-tiles\":{\"price\":100},\"kfloor-mint-tiles\":{\"price\":100},\"kfloor-checker\":{\"price\":100},\"kfloor-slate-tiles\":{\"price\":100},\"kfloor-tatami\":{\"price\":100},\"kfloor-bamboo\":{\"price\":100},\"windmill\":{\"price\":0,\"lock\":11},\"sunflowers\":{\"price\":0,\"lock\":11},\"clothesline\":{\"price\":200,\"lock\":11},\"campfire\":{\"price\":260,\"lock\":12},\"kite\":{\"price\":220,\"lock\":13},\"stream\":{\"price\":280,\"lock\":14},\"swingtree\":{\"price\":320,\"lock\":15},\"slide\":{\"price\":340,\"lock\":17},\"cat-orange\":{\"price\":0},\"cat-gray\":{\"price\":0,\"lock\":7},\"cat-white\":{\"price\":0,\"lock\":10},\"cat-tabby\":{\"price\":0,\"lock\":14},\"cat-siamese\":{\"price\":0,\"lock\":17},\"cat-tuxedo\":{\"price\":0,\"lock\":20}}"
+            "value": "{\"flowers\":{\"price\":0},\"stump\":{\"price\":80},\"catnip\":{\"price\":90},\"lantern\":{\"price\":100},\"sandbox\":{\"price\":120},\"cathouse\":{\"price\":150},\"pond\":{\"price\":200,\"lock\":3},\"hammock\":{\"price\":240,\"lock\":4},\"birdbath\":{\"price\":180,\"lock\":6},\"bench\":{\"price\":220,\"lock\":8},\"fence-white\":{\"price\":0},\"fence-wood\":{\"price\":100},\"fence-hedge\":{\"price\":100},\"fence-stone\":{\"price\":100,\"lock\":7},\"ground-grass\":{\"price\":0},\"ground-clover\":{\"price\":100},\"ground-meadow\":{\"price\":100},\"ground-path\":{\"price\":100,\"lock\":5},\"rug\":{\"price\":0},\"armchair\":{\"price\":120},\"plant\":{\"price\":90},\"yarn\":{\"price\":80},\"catbed\":{\"price\":150},\"table\":{\"price\":180},\"lamp\":{\"price\":200},\"cattree\":{\"price\":260},\"shelf\":{\"price\":220},\"tank\":{\"price\":300},\"wall-cream\":{\"price\":0},\"wall-mint\":{\"price\":100},\"wall-peach\":{\"price\":100},\"wall-sky\":{\"price\":100},\"wall-lilac\":{\"price\":100},\"wall-concrete\":{\"price\":100},\"wall-graphite\":{\"price\":100},\"floor-oak\":{\"price\":0},\"floor-walnut\":{\"price\":100},\"floor-carpet\":{\"price\":100},\"floor-tiles\":{\"price\":100},\"floor-concrete\":{\"price\":100},\"floor-ebony\":{\"price\":100},\"bed\":{\"price\":0},\"bedrug\":{\"price\":0},\"laundry\":{\"price\":100,\"lock\":36},\"bedside\":{\"price\":120,\"lock\":36},\"desk\":{\"price\":260,\"lock\":36},\"chair\":{\"price\":180,\"lock\":37},\"closet\":{\"price\":220,\"lock\":37},\"plushie\":{\"price\":150,\"lock\":38},\"catsteps\":{\"price\":240,\"lock\":39},\"bwall-lavender\":{\"price\":0},\"bwall-blush\":{\"price\":100},\"bwall-sage\":{\"price\":100},\"bwall-butter\":{\"price\":100},\"bwall-night\":{\"price\":100},\"bwall-slate\":{\"price\":100},\"bwall-charcoal\":{\"price\":100},\"bfloor-oak\":{\"price\":0},\"bfloor-maple\":{\"price\":100},\"bfloor-ash\":{\"price\":100},\"bfloor-carpet\":{\"price\":100},\"bfloor-tiles\":{\"price\":100},\"bfloor-graphite-tiles\":{\"price\":100},\"bfloor-smoke-carpet\":{\"price\":100},\"sink\":{\"price\":0},\"dining\":{\"price\":0},\"fridge\":{\"price\":220},\"stove\":{\"price\":240},\"pantry\":{\"price\":200},\"kchair\":{\"price\":120},\"catfood\":{\"price\":90},\"cart\":{\"price\":180},\"kplant\":{\"price\":110},\"kwall-butter\":{\"price\":0},\"kwall-mint\":{\"price\":100},\"kwall-peach\":{\"price\":100},\"kwall-sky\":{\"price\":100},\"kwall-sage\":{\"price\":100},\"kwall-brick\":{\"price\":100},\"kwall-slate\":{\"price\":100},\"kwall-vermilion\":{\"price\":100},\"kwall-washi\":{\"price\":100},\"kfloor-oak\":{\"price\":0},\"kfloor-pine\":{\"price\":100},\"kfloor-terracotta-tiles\":{\"price\":100},\"kfloor-mint-tiles\":{\"price\":100},\"kfloor-checker\":{\"price\":100},\"kfloor-slate-tiles\":{\"price\":100},\"kfloor-tatami\":{\"price\":100},\"kfloor-bamboo\":{\"price\":100},\"toilet\":{\"price\":0},\"vanity\":{\"price\":0},\"bathtub\":{\"price\":300},\"shower\":{\"price\":260},\"washer\":{\"price\":240},\"towel\":{\"price\":120},\"litter\":{\"price\":160},\"bathmat\":{\"price\":100},\"jacuzzi\":{\"price\":400},\"twall-aqua\":{\"price\":0},\"twall-white\":{\"price\":100},\"twall-mint\":{\"price\":100},\"twall-blush\":{\"price\":100},\"twall-lemon\":{\"price\":100},\"twall-navy\":{\"price\":100},\"twall-charcoal\":{\"price\":100},\"tfloor-white-tiles\":{\"price\":0},\"tfloor-oak\":{\"price\":100},\"tfloor-aqua-tiles\":{\"price\":100},\"tfloor-pink-tiles\":{\"price\":100},\"tfloor-checker\":{\"price\":100},\"tfloor-teak\":{\"price\":100},\"tfloor-slate-tiles\":{\"price\":100},\"windmill\":{\"price\":0,\"lock\":11},\"sunflowers\":{\"price\":0,\"lock\":11},\"clothesline\":{\"price\":200,\"lock\":11},\"campfire\":{\"price\":260,\"lock\":12},\"kite\":{\"price\":220,\"lock\":13},\"stream\":{\"price\":280,\"lock\":14},\"swingtree\":{\"price\":320,\"lock\":15},\"slide\":{\"price\":340,\"lock\":17},\"cat-orange\":{\"price\":0},\"cat-gray\":{\"price\":0,\"lock\":7},\"cat-white\":{\"price\":0,\"lock\":10},\"cat-tabby\":{\"price\":0,\"lock\":14},\"cat-siamese\":{\"price\":0,\"lock\":17},\"cat-tuxedo\":{\"price\":0,\"lock\":20}}"
           },
           "valueType": "JSON"
         }
