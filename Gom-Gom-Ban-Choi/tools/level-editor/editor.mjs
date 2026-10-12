@@ -319,7 +319,6 @@ function tierGoal(tier, index) {
 let tuneId = 0;
 function tuneToTier() {
   const index = current, l = level(), tier = l.tier || 'normal', goal = tierGoal(tier, index);
-  if (l.grass) { $('tuneStatus').textContent = 'Màn có cỏ: mục tiêu là dọn hết cỏ (không theo điểm), nên không tự cân mục tiêu điểm. Chỉnh số lượt / số ô cỏ rồi chạy bot.'; return; }
   const id = ++tuneId, before = l.target;
   $('btnTune').disabled = true;
   $('tuneStatus').textContent = `Đang cân mục tiêu điểm cho tier ${tier} (bot giỏi thắng ~${pct(goal)})…`;
@@ -396,7 +395,7 @@ const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]
 function difficultyEV(l, stats, p) {
   const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
   const timeMin = attempts * stats.movesUsed * p.spm / 60;
-  const goalMatches = (l.grass ? grassOf(l) / 3 : l.target / 30) + cagesOf(l);
+  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l);
   const clamp01 = v => Math.max(0, Math.min(1, v));
   const parts = {
     time: clamp01(timeMin / EV_SCALE.timeMin),

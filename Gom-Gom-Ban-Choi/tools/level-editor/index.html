@@ -263,7 +263,7 @@
   <ul>
     <li>Chọn cọ ở hàng ô màu rồi bấm hoặc kéo trên bàn. <b>·</b> trống · <b>#</b> ngoài bàn (tạo hình bàn) · <b>X</b> thùng gỗ · <b>M</b> kim loại · chữ cái = mèo đặt sẵn.</li>
     <li><b>Shift + bấm</b> vào mèo để nhốt / thả chuồng.</li>
-    <li>Cọ <b>~</b> vẽ <b>cỏ</b> (lớp dưới mèo), cọ <b>≈</b> xoá cỏ. Cỏ không nằm dưới vật cản. Màn có cỏ: mục tiêu là dọn hết cỏ (gom mèo đứng trên cỏ), không cần điểm; cỏ tính là một element.</li>
+    <li>Cọ <b>~</b> vẽ <b>cỏ</b> (lớp dưới mèo), cọ <b>≈</b> xoá cỏ. Cỏ không nằm dưới vật cản. Màn có cỏ: phải dọn hết cỏ (gom mèo đứng trên cỏ) <b>và</b> đủ mục tiêu điểm; “Cân lại theo tier” cân mục tiêu điểm như màn thường; cỏ tính là một element.</li>
     <li>Nhập Rộng / Cao rồi bấm <b>Đổi cỡ</b>; <b>Xoá hết mèo</b> làm trống bàn. Bàn khác 6×6 hoặc có ô ngoài bàn thì bật element <i>Bàn rộng/hình</i>.</li>
     <li>Dòng dưới bàn báo lỗi nếu có (vd. bàn đầu đã có sẵn 3 mèo liền nhau); <span class="ok">✓ Màn hợp lệ</span> là ổn.</li>
     <li><b>Mã màn (levels.mjs)</b> (khung gập dưới bàn): mã của màn để copy / dán tay. Không cần dùng khi đã bấm Lưu.</li>
@@ -308,7 +308,7 @@
   <h3>💰 Kinh tế (xu)</h3>
   <ul>
     <li><b>Hàng thẻ trên cùng</b> tóm tắt bộ số đang sửa: tổng xu cả game, lô 10 màn bị lệch, ngày mở bếp, xu dư cuối game, khu không mở được. Thẻ <span class="warn">đỏ</span> = có vấn đề.</li>
-    <li><b>Cột trái = sửa số</b>: ① xu thưởng mỗi màn (xu màn 1, hệ số tăng, hệ số boss, xu ban đầu) và <b>xu tự sinh (idle)</b>: tỉ lệ idle, số giờ tích tối đa, màn bắt đầu có idle · ② mỗi khu: màn mốc, xu cần tiêu cho decor để mở, hệ số giá đồ.</li>
+    <li><b>Cột trái = sửa số</b>: ① xu thưởng mỗi màn (xu màn 1, xu tăng thêm mỗi màn, hệ số boss, xu ban đầu) và <b>xu tự sinh (idle)</b>: tỉ lệ idle, số giờ tích tối đa, màn bắt đầu có idle · ② mỗi khu: màn mốc, xu cần tiêu cho decor để mở, hệ số giá đồ.</li>
     <li><b>Idle trong game</b>: mèo kiếm xu theo giờ, bong bóng xu hiện trên đầu con mèo đầu tiên ở Deco, chạm để nhận. Thẻ “Xu từ idle” cho biết idle chiếm bao nhiêu % tổng xu (nên 5–15%).</li>
     <li><b>Cột phải = kết quả, tự tính lại khi sửa</b>: ③ từng lô 10 màn có đủ xu mua món chính không (xanh 85–115% là vừa) · ④ người chơi ảo: mở từng khu ngày nào, ở màn nào, bao nhiêu % phải chờ tiêu xu, cuối game dư bao nhiêu xu, kèm biểu đồ xu trong ví.</li>
     <li><b>Tuỳ chỉnh người chơi ảo</b> (khung gập ở ④): số ván / ngày, tay nghề, cách mua, số lần nhận idle / ngày của từng kiểu. Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo thật.</li>

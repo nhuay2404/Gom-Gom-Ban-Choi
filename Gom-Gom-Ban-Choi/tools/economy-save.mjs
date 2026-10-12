@@ -37,12 +37,28 @@ function valueRange(text, name) {
   throw new Error(`remote('${name}') không đóng ngoặc`);
 }
 
+// DECO (bảng giá từng món, mỗi dòng có chú thích tên món): chỉ thay con số price của từng dòng, giữ nguyên chú thích / lock / thứ tự.
+function saveDecoPrices(text, rows) {
+  const [from, to] = valueRange(text, 'DECO');
+  let body = text.slice(from, to);
+  for (const [id, row] of Object.entries(rows)) {
+    const price = row?.price;
+    if (!Number.isInteger(price) || price < 0) throw new Error(`Giá của ${id} phải là số nguyên ≥ 0`);
+    const name = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const line = new RegExp(`^(\\s*'?${name}'?:\\s*\\{\\s*price:\\s*)\\d+`, 'm');
+    if (!line.test(body)) throw new Error(`Không thấy món ${id} trong DECO`);
+    body = body.replace(line, `$1${price}`);
+  }
+  return text.slice(0, from) + body + text.slice(to);
+}
+
 // file: mặc định economy.mjs (test truyền bản sao để không đụng file thật khi các test khác đang chạy song song).
 export function saveEconomy({ values }, file = FILE) {
   let text = readFileSync(file, 'utf8');
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
   for (const [name, value] of Object.entries(values ?? {})) {
     if (!EDITABLE.includes(name)) throw new Error(`Không cho sửa ${name} từ editor`);
+    if (name === 'DECO') { text = saveDecoPrices(text, value); continue; }
     const [from, to] = valueRange(text, name);
     text = text.slice(0, from) + toCode(value).replace(/\n/g, eol) + text.slice(to);
   }

@@ -42,8 +42,8 @@ function bestMove(board, card, rng, noise, W, H, grass) {
 export function play(level, seed, { noise = 1, hold: useHold = true, boost = null } = {}) {
   const rng = mulberry32(seed), deal = makeDealer(level, rng), { W, H } = boardSize(level.board);
   const grass = parseGrass(level), grassTotal = grass ? grass.filter(Boolean).length : 0;
-  // Tiến độ tới mục tiêu (0..1+): màn có cỏ = phần cỏ đã phá, màn thường = điểm / mục tiêu.
-  const progress = () => (grassTotal ? 1 - grass.filter(Boolean).length / grassTotal : score / level.target);
+  // Tiến độ tới mục tiêu (0..1+): điểm / mục tiêu; màn có cỏ lấy phần kém hơn giữa điểm và phần cỏ đã phá (phải đủ cả hai).
+  const progress = () => Math.min(score / level.target, grassTotal ? 1 - grass.filter(Boolean).length / grassTotal : Infinity);
   let board = parseBoard(level.board), score = 0, moves = level.moves, hold = null;
   const queue = [];
   const draw = () => { while (queue.length < 2) queue.push(deal(board)); return queue.shift(); };
@@ -73,7 +73,7 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
     board = pick.move.match.board;
     moves--;
     if (grass) pick.move.match.cleared.forEach(index => { grass[index] = false; });
-    if ((grass ? !grass.includes(true) : score >= level.target) && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
+    if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
     active = draw();
     // Thẻ mới không vừa bàn: còn đường thoát nếu cất được vào Gửi tạm (ô trống, hoặc thẻ đang gửi vừa bàn).
     const escape = useHold && (!hold || fits(board, hold, W, H));

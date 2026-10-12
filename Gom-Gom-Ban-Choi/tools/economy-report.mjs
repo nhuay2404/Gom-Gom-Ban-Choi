@@ -28,14 +28,14 @@ for (let s = 1; s <= stages; s++) {
   const base = opened.filter(entry => entry.cat === 'furniture' && !entry.slot), variants = opened.filter(entry => entry.cat === 'furniture' && entry.slot);
   const surfaces = opened.filter(entry => entry.cat === 'walls' || entry.cat === 'floors');
   // Mốc "tiêu xu vào decor" để mở khu có mốc màn trong stage này (không phải chỗ tiêu thêm: chỉ để so với xu nhận).
-  const unlock = AREA_ORDER.filter(area => stageOfLevel(AREA_UNLOCK[area].level) === s).reduce((t, area) => t + AREA_UNLOCK[area].spend, 0);
+  const unlock = AREA_ORDER.filter(area => stageOfLevel(AREA_UNLOCK[area].level) === s).reduce((t, area) => t + AREA_UNLOCK[area].cost, 0);
   const areas = [...new Set(opened.map(entry => (entry.area === 'garden2' ? 'Garden 2' : ZONES[entry.zone].name)))].join(', ') || '—';
   coinsTotal += coins; baseTotal += sum(base); allTotal += sum(opened);
   rows.push({ s, levels: `${from}–${to}`, areas, coins, unlock, base: sum(base), baseN: base.length, variants: sum(variants), variantsN: variants.length,
     surfaces: sum(surfaces), surfacesN: surfaces.length, all: sum(opened), coinsTotal, baseTotal, allTotal });
 }
 
-const header = ['Stage', 'Màn', 'Khu mở đồ', 'Xu nhận', 'Cần tiêu để mở khu kế', 'Món gốc', 'Kiểu khác', 'Tường / sàn', 'Tổng giá đồ mở', 'Xu nhận / giá món gốc', 'Xu luỹ kế', 'Đủ mua món gốc (luỹ kế)', 'Đủ mua tất cả (luỹ kế)'];
+const header = ['Stage', 'Màn', 'Khu mở đồ', 'Xu nhận', 'Giá mở khu kế', 'Món gốc', 'Kiểu khác', 'Tường / sàn', 'Tổng giá đồ mở', 'Xu nhận / giá món gốc', 'Xu luỹ kế', 'Đủ mua món gốc (luỹ kế)', 'Đủ mua tất cả (luỹ kế)'];
 const table = [
   `| ${header.join(' | ')} |`,
   `|${header.map(() => '---').join('|')}|`,
@@ -46,7 +46,7 @@ const md = `# Báo cáo kinh tế (tự sinh — đừng sửa tay)
 Sinh bởi \`npm run economy\` từ [game/gameplay/economy.mjs](../game/gameplay/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
 
 - **Xu nhận**: tổng xu thưởng khi thắng lần đầu mọi màn trong stage${START_COINS ? ` (stage 1 gồm ${fmt(START_COINS)} xu ban đầu)` : ''}.
-- **Cần tiêu để mở khu kế**: số xu phải tiêu cho decor (từ lúc khu trước mở) để mở khu có mốc màn trong stage (economy.mjs AREA_UNLOCK.spend). Không phải chỗ tiêu thêm, không cộng vào tổng.
+- **Giá mở khu kế**: số xu trả để mua khu có mốc màn trong stage (economy.mjs AREA_UNLOCK.cost). Không cộng vào tổng giá đồ.
 - **Món gốc / Kiểu khác / Tường-sàn**: tổng giá các món *mở trong stage đó* (số trong ngoặc = số món). Món giá 0 và mèo không tính.
 - **Tổng giá đồ mở**: mua hết mọi thứ mở trong stage (gốc + kiểu khác + tường/sàn).
 - **Đủ mua … (luỹ kế)**: tổng xu nhận được tới hết stage chia cho tổng giá đồ đã mở tới hết stage. ≥ 100% = mua hết được.
