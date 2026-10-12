@@ -63,6 +63,7 @@ export function buildHill(material) {
   material.vertexColors = true;
   const hill = mesh(geo, material);
   hill.position.set(HILL.x, 0, HILL.z);
+  hill.userData.terrain = true; // QC toon: địa hình được phép toon mượt + màu đỉnh chuyển dần
   hill.userData.closedByGround = true; // đáy hở nhưng nằm dưới mặt cỏ, không bao giờ nhìn thấy lòng
   return group(hill);
 }
@@ -76,18 +77,15 @@ const onSlope = (node, x, z, lift = 0) => { node.position.set(x, groundHeight('g
 
 // ---------- Tán lá lổn nhổn (như bụi góc vườn) ----------
 function puff(r, dark, light, seed) {
-  const geo = new THREE.SphereGeometry(r, 20, 14), pos = geo.attributes.position, colors = new Float32Array(pos.count * 3);
-  const c = new THREE.Color(), d = new THREE.Color(dark), l = new THREE.Color(light), v = new THREE.Vector3();
+  const geo = new THREE.SphereGeometry(r, 20, 14), pos = geo.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i).divideScalar(r);
     const bump = .08 * Math.sin(5 * v.x + seed) * Math.sin(5 * v.y + seed * 2) * Math.sin(5 * v.z + seed * 3);
     pos.setXYZ(i, v.x * r * (1 + bump), v.y * r * (1 + bump), v.z * r * (1 + bump));
-    c.copy(d).lerp(l, THREE.MathUtils.smoothstep(v.y, -.6, .9)).toArray(colors, i * 3);
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const material = mat('#ffffff'); material.vertexColors = true;
-  return mesh(geo, material);
+  // Toon: giữ pháp tuyến mặt cầu trơn + một màu phẳng mỗi khối (khối to sáng hơn), như bụi góc vườn (garden-scene.mjs lumpyPuff).
+  const tone = new THREE.Color(dark).lerp(new THREE.Color(light), THREE.MathUtils.clamp(.3 + (r - .6) * 1.2, .3, .7));
+  return mesh(geo, `#${tone.getHexString()}`);
 }
 // Cây to: thân thuôn + hai cành + tán 5 khối; tán lắc nhẹ theo gió (update trả về để món gọi).
 function bigTree() {

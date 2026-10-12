@@ -145,10 +145,7 @@ function signTexture(text, size = 38) {
 // Viền nâu kiểu sticker: vẽ lại khối ở mặt sau, phình nhẹ (đủ cho khối lồi như đầu mèo, bệ, cây).
 const inkMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
 // pad (đơn vị thế giới): nét dày đều mọi cạnh theo kích thước thật của khối, dùng cho khối dẹt (đầu mèo, tai).
-// Bản LOD xa (lowDetail): bỏ viền — ở gần chân trời viền chỉ còn 1 px mà tốn gấp đôi số tam giác.
-let lowDetail = false;
 function withInk(mesh, grow = .05, pad = 0) {
-  if (lowDetail) return mesh;
   const hull = new THREE.Mesh(mesh.geometry, inkMat);
   if (pad) {
     mesh.geometry.computeBoundingBox();
@@ -213,12 +210,7 @@ const DECOR_GEO = {
   heart: new THREE.SphereGeometry(.055, 6, 4), rock: new THREE.DodecahedronGeometry(1, 0),
   stem: new THREE.CylinderGeometry(.045, .06, .16, 8), cap: new THREE.SphereGeometry(.15, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
 };
-// Bản LOD xa: cùng hình, ít cạnh hơn (~1/3 số tam giác).
-const DECOR_LOW = {
-  trunk: new THREE.CylinderGeometry(.11, .15, .7, 5), cone: [new THREE.ConeGeometry(.62, .85, 6), new THREE.ConeGeometry(.46, .85, 6)],
-  crown: new THREE.SphereGeometry(.62, 8, 6), ball: new THREE.SphereGeometry(1, 7, 5),
-};
-const dg = name => (lowDetail && DECOR_LOW[name]) || DECOR_GEO[name];
+const dg = name => DECOR_GEO[name];
 function tree(rnd) {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(dg('trunk'), decorMats.trunk);
@@ -930,7 +922,7 @@ function newBadgeTexture(text = 'NEW!') {
 const PAW_GEO = new THREE.PlaneGeometry(.34, .34);
 // Hình học khai báo một lần ở cấp module: dựng lại bản đồ không giải phóng các hình này.
 const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.values(PED), PLAIN_BASE, PLAIN_TOP, STAR_GEO, DOT_GEO, TUFT_GEO,
-  WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat(), ...Object.values(DECOR_LOW).flat()]);
+  WING_GEO, BUG_GEO, PAW_GEO, ...Object.values(DECOR_GEO).flat()]);
 
 // ---------- Cảnh ----------
 // Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...).
@@ -1264,7 +1256,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const a = Math.PI * k / 8, dx = Math.cos(a) * ring, dz = Math.sin(a) * ring;
       deco(flower(rnd), dx, -dz / LEVEL_GAP);
     }
-    mergeStatic(decor);
+    mergeStatic(decor, { bakeColors: true });
     decor.userData.angle = angleOf(START_T);
     culled.push(decor);
     content.add(decor);
@@ -1350,29 +1342,22 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       }
       prevKinds = new Set(Object.keys(count));
       chunk.userData.angle = angleOf(i);
-      // Hai bản: gần (đủ chi tiết, viền mực, đổ bóng) và xa (LOD: bỏ món nhỏ + viền, lưới ít cạnh, không đổ bóng).
+      // MỘT bản lưới, chia hai cụm gộp: món to + món nhỏ. Ở xa (LOD_FAR, sát chân trời) chỉ ẩn cụm món nhỏ; viền đã mờ hết
+      // trước đó (INK_FADE). Trước đây mỗi đoạn giữ thêm cả bản xa ít cạnh: 110 đoạn tốn thêm ~36 MB lưới + gấp đôi thời gian dựng
+      // và đẩy lên GPU (khựng khi lướt) mà ở chân trời gần như không nhìn ra khác biệt.
       chunk.userData.build = () => {
         delete chunk.userData.build;
-        const hi = new THREE.Group(), lo = new THREE.Group();
-        for (const { make, x, t, turn, shadow, seed } of items) {
+        const big = new THREE.Group(), small = new THREE.Group();
+        for (const { make, x, t, turn, shadow, small: tiny, seed } of items) {
           const object = make(seeded(seed));
           object.rotation.y = turn;
           if (shadow) object.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
-          hi.add(onDrumAt(object, x, t));
+          (tiny ? small : big).add(onDrumAt(object, x, t));
         }
-        lowDetail = true;
-        try {
-          for (const { make, x, t, turn, small, seed } of items) {
-            if (small) continue;
-            const object = make(seeded(seed));
-            object.rotation.y = turn;
-            lo.add(onDrumAt(object, x, t));
-          }
-        } finally { lowDetail = false; }
-        mergeStatic(hi);
-        mergeStatic(lo);
-        chunk.add(hi, lo);
-        chunk.userData.lod = { hi, lo, ink: fadeInk(hi) };
+        mergeStatic(big, { bakeColors: true });
+        mergeStatic(small, { bakeColors: true });
+        chunk.add(big, small);
+        chunk.userData.lod = { small, ink: fadeInk(chunk) };
       };
       culled.push(chunk);
       unbuilt.push(chunk);
@@ -1397,9 +1382,62 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       if (!unbuilt.length) return;
       unbuilt.sort((a, b) => Math.abs(a.userData.angle - scroll) - Math.abs(b.userData.angle - scroll));
       do unbuilt.shift().userData.build(); while (unbuilt.length && deadline.timeRemaining() > 6);
-      if (unbuilt.length) buildIdle();
+      if (unbuilt.length) buildIdle(); else warmUp();
     });
   }
+  // Làm nóng GPU lúc rảnh, sau khi dựng xong: three chỉ biên dịch shader và đẩy lưới / texture lên GPU khi vật LẦN ĐẦU được vẽ,
+  // nên lần đầu lướt tới đoạn mới bị khựng 150–430 ms (đo được: dịch 5–6 shader + ~200 lần đẩy lưới trong một frame).
+  // Bước 1: compileAsync dịch song song mọi shader chính (tạm bật hiện mọi thứ vì compile chỉ duyệt vật đang hiện).
+  // Bước 2: mỗi lần rảnh vẽ thử vài đoạn (cả bản gần lẫn bản xa) vào ảnh 1×1 ẩn: dịch nốt shader bóng đổ, đẩy sẵn lưới + texture.
+  // Ảnh ẩn mượn cờ XR để three dùng ĐÚNG biến thể shader của canvas (sRGB), không dịch thêm bản cho render target.
+  const warmTarget = new THREE.WebGLRenderTarget(1, 1);
+  warmTarget.isXRRenderTarget = true;
+  warmTarget.texture.colorSpace = THREE.SRGBColorSpace;
+  let warmQueue = null, warmGen = 0;
+  function warmUp() {
+    const gen = ++warmGen;
+    const hidden = [];
+    scene.traverse(node => { if (!node.visible) { hidden.push(node); node.visible = true; } });
+    const ready = renderer.compileAsync ? renderer.compileAsync(scene, camera).catch(() => {}) : Promise.resolve();
+    hidden.forEach(node => { node.visible = false; });
+    ready.then(() => {
+      if (gen !== warmGen) return;
+      warmQueue = culled.filter(o => !o.userData.warm).sort((x, y) => Math.abs(x.userData.angle - scroll) - Math.abs(y.userData.angle - scroll));
+      warmStep();
+    });
+  }
+  function warmStep() {
+    idle(deadline => {
+      // bản đồ đang ẩn (đang chơi màn): dừng, start() làm tiếp
+      if (!warmQueue?.length || !running) return;
+      // đang kéo / trống đang lăn: để frame mượt, thử lại sau
+      if (drag || Math.abs(velocity) > 1e-5 || Math.abs(target - scroll) > 1e-3) { setTimeout(warmStep, 300); return; }
+      const prev = renderer.getRenderTarget();
+      renderer.setRenderTarget(warmTarget);
+      // mỗi lần vẽ thử một vật (đoạn trang trí / màn / dấu chân...), làm tới khi hết ngân sách thời gian rảnh
+      // tối đa ~10 ms mỗi lần (lần rảnh có thể dài tới 50 ms; người chơi bắt đầu kéo giữa chừng sẽ thấy khựng)
+      const until = performance.now() + 10;
+      while (warmQueue.length && deadline.timeRemaining() > 4 && performance.now() < until) {
+        const o = warmQueue.shift();
+        if (!o.parent || o.userData.build) continue;
+        warmOne(o);
+        o.userData.warm = true;
+      }
+      renderer.setRenderTarget(prev);
+      if (warmQueue.length) warmStep(); else warmQueue = null;
+    });
+  }
+  function warmOne(object) {
+    const restore = [];
+    const set = (node, key, value) => { restore.push([node, key, node[key]]); node[key] = value; };
+    // chỉ vẽ vật đang làm nóng: ẩn nền cỏ và mọi thứ khác trên trống cho lần vẽ thử thật rẻ
+    set(ground, 'visible', false);
+    for (const o of content.children) set(o, 'visible', o === object);
+    object.traverse(n => { if (n !== object) set(n, 'visible', true); if (n.isMesh || n.isSprite) set(n, 'frustumCulled', false); });
+    renderer.render(scene, camera);
+    for (let i = restore.length - 1; i >= 0; i--) { const [node, key, value] = restore[i]; node[key] = value; }
+  }
+
 
   // Vẽ lại toàn bộ đường + màn theo tiến độ hiện tại. levels: [{ locked, tier, current }].
   // Tiến độ không đổi (mở lại bản đồ) thì giữ nguyên cảnh, không dựng lại.
@@ -1417,6 +1455,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     pickables.length = 0;
     culled.length = 0;
     unbuilt.length = 0;
+    warmQueue = null; warmGen++;
     flyers = [];
     levelCount = levels.length;
     const open = levels.filter(l => !l.locked).length;
@@ -1579,7 +1618,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       // Đoạn trang trí sắp hiện mà lúc rảnh chưa kịp dựng: dựng ngay.
       if (object.visible && object.userData.build) object.userData.build();
       const lod = object.userData.lod;
-      if (lod && object.visible) { const far = rel > LOD_FAR; lod.hi.visible = !far; lod.lo.visible = far; if (!far) setInk(lod.ink, inkOpacity(rel)); }
+      if (lod && object.visible) { lod.small.visible = rel <= LOD_FAR; setInk(lod.ink, inkOpacity(rel)); }
       if (object.userData.ink && object.visible) setInk(object.userData.ink, inkOpacity(rel));
     }
     for (const node of nodes) {
@@ -1629,7 +1668,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
 
   return {
     render, focus, resize,
-    start() { if (running) return; running = true; lastFrame = 0; resize(); renderer.setAnimationLoop(frame); },
+    scene, // QC toon (qc.mjs toonIssues) quét cảnh bản đồ
+    start() { if (running) return; running = true; lastFrame = 0; resize(); renderer.setAnimationLoop(frame); if (warmQueue?.length) warmStep(); },
     stop() { running = false; renderer.setAnimationLoop(null); },
     get focusIndex() { return focusIndex; },
   };
