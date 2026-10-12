@@ -717,11 +717,10 @@ function bumpScoreBar() {
 // Số điểm + thanh: đang có điểm bay thì giữ số đã hiện (shownScore), bay xong mới tăng.
 function renderScore() {
   if (!scoreFlights && !pendingFlights) shownScore = state.score;
-  // Màn có cỏ: thanh tiến độ = số ô cỏ đã phá / tổng (không có mục tiêu điểm).
-  const clearedGrass = state.grassTotal - game.grassLeft(state);
-  $('score').textContent = state.grassTotal ? clearedGrass : shownScore;
-  $('highscore').textContent = state.grassTotal ? state.grassTotal : state.level.target;
-  const progress = Math.min(1, state.grassTotal ? clearedGrass / state.grassTotal : shownScore / state.level.target);
+  // Thanh tiến độ = điểm / mục tiêu điểm (mọi màn); số ô cỏ còn lại hiện ở ô Goal.
+  $('score').textContent = shownScore;
+  $('highscore').textContent = state.level.target;
+  const progress = Math.min(1, shownScore / state.level.target);
   $('score-fill').style.width = `${progress * 100}%`;
   $('score-fill').parentElement.parentElement.classList.toggle('full', progress >= 1);
 }
@@ -740,7 +739,7 @@ function finishTurn(turn) {
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
   const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
-  const goalText = !turn.win && (state.grassTotal ? !game.grassLeft(state) : state.score >= state.level.target) && state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '';
+  const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
   const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
@@ -840,6 +839,7 @@ function grabbedPiece(x, y) {
 function startCardDrag(event) {
   if (state.over || state.animating || event.button !== 0) return;
   event.preventDefault();
+  cancelCardDrag(); // lượt kéo trước bị mất pointerup (chuột phải / menu): dọn bóng cũ, không để mèo kẹt trên màn hình
   if (hammerArmed) { hammerArmed = false; renderBoosters(); }
   const source = $('active-card');
   try { source.setPointerCapture(event.pointerId); } catch { /* con trỏ giả (test) / đã nhả */ }
@@ -854,8 +854,11 @@ function startCardDrag(event) {
   document.body.classList.add('card-holding');
 }
 
+// Huỷ lượt kéo: bỏ bóng, thẻ về dock, không đặt mèo.
+const cancelCardDrag = () => cardDrag && finishCardDrag({ pointerId: cardDrag.pointerId, type: 'cancel' });
 function moveCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
+  if (event.pointerType === 'mouse' && !(event.buttons & 1)) return cancelCardDrag(); // đã nhả chuột trái mà không nhận pointerup
   cardDrag.lastX = event.clientX; cardDrag.lastY = event.clientY;
   if (!cardDrag.ghost && Math.hypot(event.clientX - cardDrag.startX, event.clientY - cardDrag.startY) < 5) return;
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
@@ -920,7 +923,7 @@ function finishCardDrag(event) {
     holdDropped = true; // thả tay vào ô: mèo rơi xuống ô thay vì bay từ thẻ đang bóc sang
     return holdActive();
   }
-  if (anchor !== null) placeAt(anchor);
+  if (anchor !== null && event.type !== 'cancel') placeAt(anchor);
   else render(); // thả ra ngoài bàn = huỷ kéo, không cần báo
 }
 
@@ -1101,7 +1104,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
   document.querySelectorAll('.score-pop, .score-orb, .praise-pop, .firework-spark, .firework-flash').forEach(node => node.remove());
   fill.style.transition = 'none';
-  const goal = state.grassTotal ? `Clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
+  const goal = state.grassTotal ? `Reach ${level.target} points and clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
   render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}`);
   void fill.offsetWidth;
   fill.style.transition = '';
@@ -1141,6 +1144,9 @@ $('active-card').onpointerdown = startCardDrag;
 document.addEventListener('pointermove', moveCardDrag);
 document.addEventListener('pointerup', finishCardDrag);
 document.addEventListener('pointercancel', finishCardDrag);
+// Chuột phải lúc đang kéo: không mở menu, huỷ lượt kéo. Rời cửa sổ cũng huỷ.
+document.addEventListener('contextmenu', event => { if (cardDrag) { event.preventDefault(); cancelCardDrag(); } });
+addEventListener('blur', cancelCardDrag);
 $('active-card').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); rotateActive(); }
 };
@@ -1485,7 +1491,7 @@ function recordTry(win, reason) {
   if (track.idleSince) track.idleMs += now() - track.idleSince;
   const { plan, level } = state;
   const result = recordAttempt(profile, {
-    level: state.levelIndex, win, reason, ratio: +(state.grassTotal ? 1 - game.grassLeft(state) / state.grassTotal : state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
+    level: state.levelIndex, win, reason, ratio: +Math.min(state.score / level.target, state.grassTotal ? 1 - game.grassLeft(state) / state.grassTotal : Infinity).toFixed(3), stars: win ? state.outcome.stars : 0,
     boosters: track.boosters, boostUse: track.boostUse, bought: track.bought, preBoostRatio: track.preBoostRatio, thinkMs: Math.round(median(track.thinks)), idleMs: Math.round(track.idleMs),
     durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, layout: plan.layout, count: plan.count,
   });

@@ -24,10 +24,11 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Tăng tiến: xu(màn n) = REWARD_BASE × REWARD_GROWTH^(n−1), làm tròn; màn boss (10, 20, 30…) nhân thêm REWARD_BOSS_MULT.
-// Mặc định: màn 1 = 120, màn 50 ≈ 193, màn 100 ≈ 482 (boss). Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
-export const REWARD_BASE = remote('REWARD_BASE', 120);
-export const REWARD_GROWTH = remote('REWARD_GROWTH', 1.01);
+// Tăng đều: xu(màn n) = REWARD_BASE + REWARD_STEP × (n−1), làm tròn; màn boss (10, 20, 30…) nhân thêm REWARD_BOSS_MULT.
+// Tổng N màn (chưa tính boss) = N × REWARD_BASE + REWARD_STEP × N × (N−1) ÷ 2 — vd. 50 + 50 mỗi màn: 1000 màn = 25,025,000 xu.
+// Mặc định: màn 1 = 50, màn 2 = 100, màn 3 = 150 … màn 99 = 4,950, màn 100 = 7,500 (boss ×1.5). Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
+export const REWARD_BASE = remote('REWARD_BASE', 50);
+export const REWARD_STEP = remote('REWARD_STEP', 50);
 export const REWARD_BOSS_MULT = remote('REWARD_BOSS_MULT', 1.5);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
@@ -37,10 +38,11 @@ export const TUTORIAL_TOP_UP = remote('TUTORIAL_TOP_UP', true);
 // Quà an ủi: người chơi sắp bỏ game (thua liên tục) thì lần thắng kế tiếp được tặng bấy nhiêu booster +lượt.
 export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 
-// Xu tự sinh (idle): mèo trong nhà kiếm xu theo giờ, icon xu hiện trên đầu mèo ở Deco, chạm để nhận (gameplay/idle.mjs).
-//   xu / giờ = xu thưởng của màn đang chơi × IDLE_RATE · tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
-//   Giữ nhỏ (~5–15% xu mỗi ngày của người chơi trung bình) để không thay gói xu / không làm người chơi bớt chơi màn.
-export const IDLE_RATE = remote('IDLE_RATE', 0.04);
+// Xu tự sinh (idle): MỖI con mèo trong nhà kiếm xu theo giờ, bong bóng xu trên đầu từng con ở Deco, chạm để nhận (gameplay/idle.mjs).
+//   xu / giờ của một con = xu thưởng của màn đang chơi × IDLE_RATE · mỗi con tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
+//   Nhiều mèo = nhiều xu (tối đa MAX_ROOM_CATS con trong nhà). Giữ tổng nhỏ (~5–15% xu cả game của người chơi trung bình, đủ 6 mèo)
+//   để không thay gói xu / không làm người chơi bớt chơi màn.
+export const IDLE_RATE = remote('IDLE_RATE', 0.44);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 
@@ -74,20 +76,19 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
 // Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
 //   level : đã thắng tới màn này,
-//   spend : đã tiêu bấy nhiêu xu cho đồ trang trí KỂ TỪ LÚC KHU TRƯỚC MỞ (trang trí khu đang có để mở khu sau, kiểu Homescapes).
-//   Không trả thêm xu để mở: xu tiêu cho decor chính là tiến độ. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
-// Cân bằng: spend ≤ ~70% giá món gốc của (các) khu đang mở trước đó, để luôn có đồ để mua cho đủ mốc.
+//   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
 export const AREA_UNLOCK = remote('AREA_UNLOCK', {
-  garden2: { level: 10, spend: 600 },
-  living:  { level: 20, spend: 900 },
-  bedroom: { level: 30, spend: 1100 },
-  kitchen: { level: 40, spend: 1200 },
-  bathroom: { level: 50, spend: 1300 },
+  garden2: { level: 10, cost: 350 },
+  living: { level: 20, cost: 550 },
+  bedroom: { level: 30, cost: 800 },
+  kitchen: { level: 40, cost: 1300 },
+  bathroom: { level: 50, cost: 1500 },
+  backyard: { level: 60, cost: 2000 },
 });
 
 // Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
 // tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1, garden2: 1, living: 1.15, bedroom: 1.3, kitchen: 1.5, bathroom: 1.7 });
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1, garden2: 1, living: 1.1, bedroom: 1.2, kitchen: 1.3, bathroom: 1.4, backyard: 1.5 });
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
@@ -192,6 +193,24 @@ export const DECO = remote('DECO', {
   'kfloor-slate-tiles':  { price: 100 },              // Slate tiles
   'kfloor-tatami':       { price: 100 },              // Tatami
   'kfloor-bamboo':       { price: 100 },              // Bamboo
+  // --- Sân sau (mở theo AREA_UNLOCK.backyard; giá nhân ZONE_PRICE_MULT.backyard) — đồ ---
+  pool:                  { price: 0 },                // Swimming pool (bể có sẵn khi mở khu)
+  greenhouse:            { price: 0 },                // Greenhouse
+  lounger:               { price: 180 },              // Sun lounger
+  parasol:               { price: 220 },              // Parasol table
+  grill:                 { price: 260 },              // BBQ grill
+  deckbox:               { price: 140 },              // Pool toy box
+  vegbed:                { price: 200 },              // Tomato bed
+  veggies:               { price: 160 },              // Veggie patch
+  scarecrow:             { price: 150 },              // Scarecrow
+  rainbarrel:            { price: 120 },              // Rain barrel
+  // --- Sân sau — rào / nền ---
+  'yfence-white':        { price: 0 },                // White picket
+  'yfence-wood':         { price: 100 },              // Wood fence
+  'yfence-hedge':        { price: 100 },              // Hedge
+  'yground-grass':       { price: 0 },                // Grass
+  'yground-clover':      { price: 100 },              // Clover
+  'yground-meadow':      { price: 100 },              // Meadow
   // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
   toilet:                { price: 0 },                // Toilet
   vanity:                { price: 0 },                // Sink vanity

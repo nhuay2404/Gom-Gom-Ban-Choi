@@ -246,7 +246,7 @@ test('màn có chuồng: đủ điểm mà còn mèo bị nhốt thì chưa th�
   assert.equal(s.outcome.win, true);
 });
 
-test('cỏ: cùng cỡ bàn, chỉ nằm dưới mèo / ô trống; gom trên cỏ thì dọn cỏ; màn có cỏ thắng khi hết cỏ (không cần điểm)', () => {
+test('cỏ: cùng cỡ bàn, chỉ nằm dưới mèo / ô trống; gom trên cỏ thì dọn cỏ; màn có cỏ thắng khi hết cỏ VÀ đủ điểm', () => {
   LEVELS.forEach((level, i) => {
     if (!level.grass) return;
     const { W, H } = boardSize(level.board);
@@ -264,7 +264,12 @@ test('cỏ: cùng cỡ bàn, chỉ nằm dưới mèo / ô trống; gom trên c�
   assert.equal(game.grassLeft(s), 1);
   assert.ok(!turn.win);
   s.grass[9] = false;
-  assert.ok(game.goalReached(s), 'hết cỏ là thắng dù 0 điểm mục tiêu');
+  assert.ok(!game.goalReached(s), 'hết cỏ mà chưa đủ điểm thì chưa thắng');
+  s.score = s.level.target;
+  assert.ok(game.goalReached(s), 'hết cỏ + đủ điểm là thắng');
+  s.grass[9] = true;
+  assert.ok(!game.goalReached(s), 'đủ điểm mà còn cỏ thì chưa thắng');
+  s.grass[9] = false;
   // Màn không có cỏ: vẫn theo điểm.
   const plain = staged(3);
   assert.equal(plain.grass, null);

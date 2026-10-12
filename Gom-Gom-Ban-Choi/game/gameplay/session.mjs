@@ -12,7 +12,7 @@ const withNames = card => ({ offsets: card.offsets, items: card.items.map(({ gro
 
 // `level`: bản màn đã chỉnh độ khó (adaptive.mjs); không truyền thì dùng màn gốc.
 // s.W × s.H = kích thước bàn của màn; s.holdOn = màn đã mở ô Hold chưa (tuning.mjs: HOLD).
-// s.grass = ô nào còn cỏ (mảng true/false, null nếu màn không có cỏ) · s.grassTotal = số ô cỏ lúc đầu (> 0 = mục tiêu là dọn hết cỏ).
+// s.grass = ô nào còn cỏ (mảng true/false, null nếu màn không có cỏ) · s.grassTotal = số ô cỏ lúc đầu (> 0 = phải dọn hết cỏ, thêm vào mục tiêu điểm).
 export function createSession(levelIndex, { rng = Math.random, level = LEVELS[levelIndex] } = {}) {
   const { W, H } = boardSize(level.board);
   const s = {
@@ -83,8 +83,8 @@ export function checkStuck(s) {
 // Qua màn = đủ điểm VÀ đã bẻ hết khóa chuồng (không còn mèo nào bị nhốt trên bàn).
 export const cagesLeft = s => s.board.filter(object => object?.cage).length;
 export const grassLeft = s => (s.grass ? s.grass.filter(Boolean).length : 0);
-// Màn có cỏ: dọn hết cỏ; màn thường: đủ điểm. Cả hai đều phải thả hết chuồng.
-export const goalReached = s => cagesLeft(s) === 0 && (s.grassTotal ? grassLeft(s) === 0 : s.score >= s.level.target);
+// Mọi màn phải đủ điểm + thả hết chuồng; màn có cỏ còn phải dọn hết cỏ.
+export const goalReached = s => cagesLeft(s) === 0 && grassLeft(s) === 0 && s.score >= s.level.target;
 function finish(s, win, reason = '') {
   s.over = true;
   s.outcome = { win, reason, stars: win ? starsFor(s.level, s.moves) : 0 };
@@ -164,7 +164,7 @@ export function place(s, anchor) {
     s.active = drawCard(s); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     return { ...turn, win: true };
   }
-  if (s.moves === 0) { finish(s, false, !s.grassTotal && s.score >= s.level.target ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
+  if (s.moves === 0) { finish(s, false, s.score >= s.level.target && !grassLeft(s) ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
   s.active = drawCard(s);
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
