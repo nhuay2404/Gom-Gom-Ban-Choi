@@ -15,7 +15,8 @@ import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG, GRASS_SVG, GRASS_ICON_SVG
 import * as ob from './onboarding.js';
 import { playSound, playMeow, playMeowChorus } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
-import { ZONES, GARDEN_EXPANSION } from '../deco/deco-data.mjs';
+import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
+import { AREA_UNLOCK } from '../gameplay/economy.mjs';
 import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, showToast } from './shared.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
@@ -1526,13 +1527,12 @@ function endLevel(win, reason = '') {
     if (coinsEarned) setDeco({ ...getDeco(), coins: getDeco().coins + coinsEarned });
   }
   const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
-  // Vừa mở một khu mới (thắng đúng màn mốc lần đầu): báo trong hộp kết quả.
-  const unlockedZone = win && coinsEarned > 0 && Object.values(ZONES).find(z => z.unlockAfter > 0 && index + 1 === z.unlockAfter && levelsCleared() === z.unlockAfter);
-  const expandedNow = win && coinsEarned > 0 && index + 1 === GARDEN_EXPANSION.unlockAfter && levelsCleared() === GARDEN_EXPANSION.unlockAfter;
+  // Vừa tới mốc màn của một khu (thắng đúng màn mốc lần đầu): báo trong hộp kết quả (còn bước trang trí ở Deco).
+  const reachedArea = win && coinsEarned > 0 && AREA_ORDER.find(area => index + 1 === AREA_UNLOCK[area].level && levelsCleared() === AREA_UNLOCK[area].level);
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
-  const notes = [unlockedZone && `${unlockedZone.name} unlocked!`, expandedNow && 'Garden expanded!', gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+  const notes = [reachedArea && `${AREA_NAMES[reachedArea]}: level goal reached!`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');

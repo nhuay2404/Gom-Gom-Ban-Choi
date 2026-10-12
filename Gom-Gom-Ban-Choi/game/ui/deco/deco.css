@@ -226,3 +226,39 @@ body.deco-locked .hub-settings{opacity:.5}
 /* Onboarding trước phần Decoration (tutorial Garden): nút trang trí vẫn hiện nhưng mờ, xám, không bấm được */
 body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"],.deco-help){opacity:.45;filter:grayscale(.7);pointer-events:none}
 body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
+/* ===== Mở khu bằng xu: thẻ "khu kế tiếp" (trên hàng chọn khu) + bảng 3 bước (index.html #area-dialog, menu-controller.js renderAreaNext) ===== */
+/* Chấm than vàng trên mảnh đất mờ của khu kế tiếp (room3d.setGhost); chạm mở bảng điều kiện. Vị trí do menu-controller.js placeAreaMarker đặt. */
+.screen>.area-next{width:auto}
+.area-next{position:absolute;left:0;top:0;z-index:6;will-change:transform;display:grid;place-items:center;width:46px;height:46px;margin:-46px 0 0 -23px;
+  border-radius:50%;border:3px solid #fff;background:#ffcf2e;color:#7a4a12;box-shadow:0 4px 0 #73392a40,0 0 0 6px #ffcf2e44}
+.area-next[hidden]{display:none}
+.area-next b{font:900 28px/1 var(--display, inherit)}
+.area-next[data-state=ready]{background:var(--green);color:#fff;box-shadow:0 4px 0 #73392a40,0 0 0 6px #7fd06a55}
+#deco.ui-locked>.area-next{display:none}
+.an-bar{display:block;height:6px;border-radius:99px;background:#e9dcbc;overflow:hidden}
+.an-bar>i{display:block;height:100%;border-radius:inherit;background:var(--green);transition:width .4s}
+@keyframes area-bob{to{translate:0 -6px}}
+@media(prefers-reduced-motion:no-preference){.area-next{animation:area-bob .8s ease-in-out infinite alternate}.area-next[data-state=ready]{animation-duration:.45s}}
+.area-steps{list-style:none;display:flex;flex-direction:column;gap:12px;margin:10px 0 18px;padding:0;text-align:left}
+.area-steps li{display:flex;gap:10px;align-items:flex-start;opacity:.55}
+.area-steps li.active,.area-steps li.done{opacity:1}
+.as-dot{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;border:3px solid #d8c79f;color:#fff;font-weight:900;font-size:14px}
+.area-steps li.active .as-dot{border-color:var(--green)}
+.area-steps li.done .as-dot{background:var(--green);border-color:var(--green)}
+.as-body{display:flex;flex-direction:column;gap:3px;flex:1}
+.as-body b{font-weight:900;font-size:15px}
+.as-body small{font-weight:700;font-size:12px;opacity:.75}
+.area-dialog #area-ok:disabled{opacity:.5}
+.area-dialog #area-ok{display:inline-flex;align-items:center;gap:4px;justify-content:center}
+/* ===== Xu tự sinh (idle): bong bóng xu trên đầu mèo (index.html #idle-coin, menu-controller.js placeIdleCoin) ===== */
+/* .screen>* đặt width:min(420px,100%): bong bóng phải tự co theo nội dung */
+.screen>.idle-coin{width:auto}
+.idle-coin{position:absolute;left:0;top:0;z-index:6;will-change:transform;display:flex;align-items:center;gap:3px;min-height:30px;padding:3px 9px 3px 5px;
+  border-radius:999px;border:2px solid #fff;background:#ffcf4a;color:#7a4a12;font-weight:900;font-size:13px;box-shadow:0 3px 0 #73392a40;margin:-40px 0 0;translate:-50% 0}
+.idle-coin[hidden]{display:none}
+.idle-coin .ico-coin{width:20px;height:20px}
+.idle-coin::after{content:"";position:absolute;left:50%;bottom:-7px;translate:-50% 0;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+.idle-coin.full{background:#ffb02e}
+@media(prefers-reduced-motion:no-preference){.idle-coin{animation:idle-bob 1.2s ease-in-out infinite alternate}.idle-coin.full{animation:idle-bob .6s ease-in-out infinite alternate}}
+@keyframes idle-bob{to{margin-top:-46px}}
+#deco.ui-locked>.idle-coin{display:none}

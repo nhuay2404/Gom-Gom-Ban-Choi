@@ -180,12 +180,17 @@
         <button role="tab" data-zone="living">Living room</button>
         <button role="tab" data-zone="bedroom">Bedroom</button>
         <button role="tab" data-zone="kitchen">Kitchen</button>
+        <button role="tab" data-zone="bathroom">Bathroom</button>
       </div>
       <!-- Một hàng thẻ duy nhất, vuốt ngang để xem món khác; món đã xây thì thẻ biến mất, xây hết thì ẩn cả hàng (hàng chọn khu tụt xuống) -->
       <div id="deco-cards" class="deco-cards" role="list" aria-label="Spots to build"></div>
     </div>
     <!-- Ghim "NEW" nổi trên món có đồ mới mua (Shop) thay được -->
     <div id="deco-pins" class="deco-pins" aria-hidden="true"></div>
+    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, gameplay/idle.mjs) -->
+    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
+    <button id="area-next" class="area-next" hidden></button>
+    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b></button>
     <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
@@ -301,6 +306,15 @@
       <button id="result-next" class="result-wide next" aria-label="Next level"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5Z"/></svg></button>
       <button id="result-continue" class="result-continue" hidden>Continue</button>
       <button id="result-retry" class="result-wide retry" aria-label="Retry"><svg viewBox="0 0 24 24"><path d="M12 3.5v7M7.5 6.5a7.5 7.5 0 1 0 9 0"/></svg></button>
+    </div>
+  </dialog>
+  <!-- Mở khu bằng xu: 3 bước (đủ màn → đủ xu → khánh thành), nút xác nhận trả xu (menu-controller.js openAreaDialog) -->
+  <dialog id="area-dialog" class="level-dialog area-dialog">
+    <h2 id="area-title"></h2>
+    <ol id="area-steps" class="area-steps"></ol>
+    <div class="level-actions">
+      <button id="area-cancel" class="pill-button ghost">Later</button>
+      <button id="area-ok" class="pill-button"></button>
     </div>
   </dialog>
   <!-- Rời / chơi lại ván đang dở: hỏi lại trước -->
