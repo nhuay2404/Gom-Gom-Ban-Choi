@@ -159,6 +159,10 @@ const CAT_IMAGES = {
   siamese: { body: 'ui/shared/img/cats/siamese-body.png', calm: 'ui/shared/img/cats/siamese-calm.png', happy: 'ui/shared/img/cats/siamese-happy.png', cute: 'ui/shared/img/cats/siamese-cute.png', sleepy: 'ui/shared/img/cats/siamese-sleepy.png', angry: 'ui/shared/img/cats/siamese-angry.png', chew: 'ui/shared/img/cats/siamese-chew.png' },
   tabby: { body: 'ui/shared/img/cats/tabby-body.png', calm: 'ui/shared/img/cats/tabby-calm.png', happy: 'ui/shared/img/cats/tabby-happy.png', cute: 'ui/shared/img/cats/tabby-cute.png', sleepy: 'ui/shared/img/cats/tabby-sleepy.png', angry: 'ui/shared/img/cats/tabby-angry.png', chew: 'ui/shared/img/cats/tabby-chew.png' },
 };
+// Đường dẫn tính từ thư mục game/ (không phải trang đang mở): trang khác nạp module này (Level Editor ở tools/level-editor/) vẫn đúng ảnh.
+// Bản HTML một file đã thay đường dẫn bằng data URI: giữ nguyên.
+const GAME_DIR = new URL('../', import.meta.url);
+for (const set of Object.values(CAT_IMAGES)) for (const mood in set) if (!set[mood].startsWith('data:')) set[mood] = new URL(set[mood], GAME_DIR).href;
 export const CAT_EXPRESSIONS = ['calm', 'happy', 'cute', 'sleepy', 'sleep', 'angry', 'chew'];
 const bitmap = (group, mood) => CAT_IMAGES[group][mood];
 // Ảnh biểu cảm (hoặc thân: mood = 'body') của một giống — mèo 3D ở Deco (room-cats.mjs) dán cùng bộ ảnh lên mặt.

@@ -10,10 +10,10 @@ import { idlePending, idleFull, tickIdle, claimIdle } from '../gameplay/idle.mjs
 import { playSound, playMeow, soundOn, setSound, setMusic } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
-  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, AREA_NAMES, areaOpen, areaState, nextArea, unlockArea, spentSinceOpen } from '../deco/deco-data.mjs';
+  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, AREA_NAMES, areaOpen, areaState, nextArea, unlockArea } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
-import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from './shared.js';
+import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag, devMoney } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): main.js nối vào lúc khởi động.
 let play = null;
@@ -252,7 +252,7 @@ function setGuide(on, nearSlot = null) {
   if (on) applyRoom(getDeco());
   room3d?.holdCat(GUIDE_CAT, on, nearSlot);
 }
-const applyRoom = shown => room3d?.apply(withGuide(shown), { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), kitchen: isZoneOpen('kitchen'), bathroom: isZoneOpen('bathroom'), gardenExpand: isGardenExpanded() });
+const applyRoom = shown => room3d?.apply(withGuide(shown), { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), kitchen: isZoneOpen('kitchen'), bathroom: isZoneOpen('bathroom'), backyard: isZoneOpen('backyard'), gardenExpand: isGardenExpanded() });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab !== 'deco') return room3d.stop();
@@ -690,6 +690,7 @@ function setDecoLock(on) {
   button.title = on ? 'Show UI' : 'Hide UI';
   if (on) { decoPick = null; closeDecoPop(false); }
   if (!$('deco').hidden) renderDeco();
+  renderAreaNext(); // chế độ xem: ẩn cả mảnh đất mờ + bong bóng giá
 }
 $('deco-lock').onclick = () => { playSound('pick'); setDecoLock(!decoLocked); };
 // Cột trái (mèo / tường / sàn): bảng mở ngay bên phải nút, đuôi chỉ vào nút; chạm lại nút đang mở = đóng.
@@ -732,35 +733,52 @@ function placeDecoPop() {
   pop.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
 }
 
-// ---------- Xu tự sinh (idle, gameplay/idle.mjs): bong bóng xu bám trên đầu con mèo đầu tiên trong nhà, chạm để nhận ----------
+// ---------- Xu tự sinh (idle, gameplay/idle.mjs): mỗi con mèo trong nhà có bong bóng xu riêng bám trên đầu, chạm để nhận ----------
 // Số màn đã thắng đọc một lần mỗi lần vẽ Deco (không đọc save mỗi khung hình).
-let idleCleared = 0, idleShown = -1;
+let idleCleared = 0;
 function startIdle() {
   idleCleared = levelsCleared();
   const deco = getDeco(), next = tickIdle(deco, idleCleared, Date.now());
   if (next !== deco) setDeco(next);
 }
+// Bong bóng mẫu #idle-coin (index.html) được nhân bản cho từng giống mèo (data-breed), cùng chỗ trong DOM nên dùng chung CSS.
+const idleButtons = {};
+const idleButton = breed => idleButtons[breed] ||= (() => {
+  const button = $('idle-coin').cloneNode(true);
+  button.removeAttribute('id');
+  button.dataset.breed = breed;
+  $('idle-coin').after(button);
+  return button;
+})();
 function placeIdleCoin() {
-  const button = $('idle-coin'), amount = idlePending(getDeco(), idleCleared, Date.now());
-  const at = amount > 0 && !decoLocked && !decoPop ? room3d?.screenRectOfCat(0) : null;
-  button.hidden = !at;
-  if (!at) return;
-  if (amount !== idleShown) {
-    idleShown = amount;
-    button.querySelector('b').textContent = amount;
-    button.classList.toggle('full', idleFull(getDeco(), idleCleared, Date.now()));
+  const deco = getDeco(), now = Date.now();
+  for (const [breed, button] of Object.entries(idleButtons)) if (!deco.cats.includes(breed)) button.hidden = true;
+  for (const breed of deco.cats) {
+    const amount = idlePending(deco, idleCleared, now, breed);
+    const at = amount > 0 && !decoLocked && !decoPop ? room3d?.screenRectOfCat(breed) : null;
+    if (!at && !idleButtons[breed]) continue;
+    const button = idleButton(breed);
+    button.hidden = !at;
+    if (!at) continue;
+    if (button.dataset.amount !== String(amount)) {
+      button.dataset.amount = amount;
+      button.querySelector('b').textContent = amount;
+      button.classList.toggle('full', idleFull(deco, idleCleared, now, breed));
+    }
+    button.style.transform = `translate3d(${Math.round((at.left + at.right) / 2)}px, ${Math.round(at.top)}px, 0)`;
   }
-  button.style.transform = `translate3d(${Math.round((at.left + at.right) / 2)}px, ${Math.round(at.top)}px, 0)`;
 }
-$('idle-coin').addEventListener('click', () => {
-  const { deco, amount } = claimIdle(getDeco(), levelsCleared(), Date.now());
+document.addEventListener('click', event => {
+  const button = event.target.closest('.idle-coin[data-breed]');
+  if (!button) return;
+  const { deco, amount } = claimIdle(getDeco(), levelsCleared(), Date.now(), button.dataset.breed);
   if (!amount) return;
-  shopBurst($('idle-coin'));
+  shopBurst(button);
   setDeco(deco);
-  idleShown = -1;
+  button.dataset.amount = '';
   refreshWallet();
   playSound('reward');
-  showToast(`+${amount} coins from your cats!`);
+  showToast(`+${amount} coins!`);
   renderDeco();
 });
 
@@ -1068,21 +1086,21 @@ function renderZoneSwitch() {
 // ===== Mở khu: thẻ "khu kế tiếp" ở Deco + bảng mở khu (track 3 bước kiểu Idle Theme Park: đủ màn → tiêu xu vào decor → khánh thành) =====
 // Mỗi lúc chỉ hiện MỘT khu kế tiếp (mở theo thứ tự), để người chơi luôn thấy mục tiêu gần nhất.
 const areaInfo = area => {
-  const deco = getDeco(), cleared = levelsCleared(), { level, spend } = AREA_UNLOCK[area];
-  return { area, level, spend, cleared, spent: Math.min(spentSinceOpen(deco), spend), state: areaState(deco, area, cleared), name: AREA_NAMES[area] };
+  const deco = getDeco(), cleared = levelsCleared(), { level, cost } = AREA_UNLOCK[area];
+  return { area, level, cost, cleared, coins: Math.min(deco.coins, cost), state: areaState(deco, area, cleared), name: AREA_NAMES[area] };
 };
-const pct = (have, need) => `${Math.min(100, Math.round(have / need * 100))}%`;
-// Khu kế tiếp hiện thành mảnh đất mờ trong cảnh Deco (room3d.setGhost) + chấm than vàng bám trên đó (placeAreaMarker mỗi khung hình);
-// chạm chấm than mới mở bảng điều kiện. Đủ điều kiện thì chấm than đổi xanh và nảy.
+// Khu kế tiếp hiện thành mảnh đất mờ trong cảnh Deco (room3d.setGhost) + bong bóng giá bám trên đó (placeAreaMarker mỗi khung hình);
+// Đủ điều kiện thì bong bóng đổi xanh và nảy nhanh.
 function renderAreaNext() {
-  const marker = $('area-next'), area = $('deco').hidden || devAllZones() ? null : nextArea(getDeco());
+  const marker = $('area-next'), area = $('deco').hidden || devAllZones() || decoLocked ? null : nextArea(getDeco());
   room3d?.setGhost(area); // tên khu trùng tên ô trong room-layout ZONE_OFFSET
   marker.hidden = !area;
   if (!area) return;
   const info = areaInfo(area);
   marker.dataset.state = info.state;
   marker.setAttribute('aria-label', `${info.name}: how to unlock`);
-  marker.innerHTML = '<b aria-hidden="true">!</b>';
+  // Bong bóng giá trên mảnh đất: giá mở khu; chưa tới màn mốc thì thêm dòng "Level N".
+  marker.innerHTML = `<b aria-hidden="true">${coin(info.cost)}${info.state === 'level' ? `<small>Level ${info.level}</small>` : ''}</b>`;
 }
 function placeAreaMarker() {
   const marker = $('area-next');
@@ -1091,29 +1109,22 @@ function placeAreaMarker() {
   marker.hidden = !at;
   if (at) marker.style.transform = `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0)`;
 }
-let areaPending = null;
-function openAreaDialog(area) {
-  const info = areaInfo(area), levelDone = info.cleared >= info.level, spendDone = info.spent >= info.spend;
-  areaPending = area;
-  $('area-title').textContent = info.name;
-  const step = (done, active, title, sub, have, need) => `<li class="${done ? 'done' : active ? 'active' : ''}"><span class="as-dot">${done ? '✓' : ''}</span>`
-    + `<span class="as-body"><b>${title}</b><small>${sub}</small>${need ? `<span class="an-bar"><i style="width:${pct(have, need)}"></i></span>` : ''}</span></li>`;
-  $('area-steps').innerHTML = step(levelDone, !levelDone, `Reach level ${info.level}`, `${Math.min(info.cleared, info.level)}/${info.level} levels cleared`, info.cleared, info.level)
-    + step(spendDone, levelDone && !spendDone, `Spend ${info.spend} coins on decor`, `${info.spent}/${info.spend} coins spent decorating`, info.spent, info.spend)
-    + step(false, info.state === 'ready', 'Grand opening!', info.state === 'ready' ? 'Everything is ready' : 'New spots, new toys for your cats');
-  const ok = $('area-ok');
-  ok.disabled = info.state !== 'ready';
-  ok.textContent = info.state === 'ready' ? 'Open!' : info.state === 'level' ? `Beat level ${info.level}` : `Spend ${info.spend - info.spent} more`;
-  playSound('pick');
-  $('area-dialog').showModal();
-}
-$('area-next').addEventListener('click', () => { const area = nextArea(getDeco()); if (area) openAreaDialog(area); });
-$('area-cancel').onclick = () => $('area-dialog').close();
-$('area-ok').onclick = () => {
-  const area = areaPending, next = area && unlockArea(getDeco(), area, levelsCleared());
-  if (!next) return;
+// Chạm bong bóng: đủ điều kiện thì mua luôn; thiếu xu / chưa tới màn mốc thì bong bóng nháy đỏ.
+$('area-next').addEventListener('click', () => {
+  const area = nextArea(getDeco());
+  if (!area) return;
+  const { state } = areaInfo(area);
+  if (state === 'ready') return buyArea(area);
+  const marker = $('area-next');
+  marker.classList.remove('deny');
+  void marker.offsetWidth; // chạy lại animation khi chạm liên tiếp
+  marker.classList.add('deny');
+  playSound('invalid');
+});
+$('area-next').addEventListener('animationend', event => { if (event.animationName === 'area-deny') $('area-next').classList.remove('deny'); });
+function buyArea(area) {
+  const next = unlockArea(getDeco(), area, levelsCleared());
   if (next.error) return showToast(next.error);
-  $('area-dialog').close();
   shopBurst($('area-next'));
   // Mở xong: camera lướt sang khu mới (Vườn mở rộng là phần của khu vườn).
   setDeco({ ...next, zone: area === 'garden2' ? 'garden' : area });
@@ -1123,14 +1134,15 @@ $('area-ok').onclick = () => {
   applyRoom(getDeco());
   renderZoneSwitch();
   renderDeco();
+  room3d?.openFx(area);
   playSound('reward');
   showToast(`${AREA_NAMES[area]} is open!`);
-};
+}
 document.addEventListener('click', event => {
   const button = event.target.closest('.zone-switch button');
   if (!button) return;
   const zone = button.dataset.zone;
-  if (!isZoneOpen(zone)) return openAreaDialog(zone);
+  if (!isZoneOpen(zone)) return;
   if (zone === getDeco().zone) return;
   setDeco({ ...getDeco(), zone });
   decoPick = null;
@@ -1257,6 +1269,13 @@ $('dev-unlock').onclick = () => {
   showTab('home');
   showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · ${DEV_COINS.toLocaleString('en-US')} coins`);
 };
+const renderDevMoney = () => $('dev-money').setAttribute('aria-pressed', devMoney());
+renderDevMoney();
+$('dev-money').onclick = () => {
+  try { localStorage.setItem('gomgom-dev-money', devMoney() ? 'off' : 'on'); } catch {}
+  renderDevMoney();
+  showToast(devMoney() ? 'Dev: money mod ON — spending adds coins' : 'Dev: money mod OFF');
+};
 // Reset: xoá tiến độ, deco/xu, booster, hồ sơ độ khó (giữ cài đặt âm thanh, ngày/đêm) rồi tải lại như người chơi mới.
 // Hỏi lại bằng hộp thoại trong game: confirm() của trình duyệt bị webview / trình duyệt trong app chặn (trả về false ngay).
 $('dev-reset').onclick = () => {
@@ -1275,7 +1294,7 @@ function runQC() {
   const report = room3d.qc();
   // Popup xem trước ở Shop: dựng thử từng món (mọi khu mở), soi như popup — còn bị che / quay mặt sau là lỗi.
   for (const entry of CATALOG.filter(e => e.cat === 'furniture')) {
-    room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, bathroom: true, gardenExpand: true });
+    room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, bathroom: true, backyard: true, gardenExpand: true });
     room3d.qcPreview(entry.id).forEach(what => report.push({ level: 'error', zone: entry.zone, what: `preview: ${what}` }));
   }
   applyRoom(getDeco());

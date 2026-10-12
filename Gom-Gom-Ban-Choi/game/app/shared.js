@@ -25,7 +25,12 @@ export function showToast(text) {
 // ===== Ví: đồ deco + xu nằm chung một bản lưu (deco-data.mjs). Màn chơi cộng xu khi thắng, Deco / booster tiêu xu. =====
 let deco = loadDeco(START_COINS + earnedCoins(loadProgress()), levelsCleared(loadProgress()));
 export const getDeco = () => deco;
-export function setDeco(next) { deco = next; saveDeco(deco); }
+// Dev "mod money" (nút Dev: Money): xu tiêu ra được cộng ngược vào ví thay vì trừ.
+export const devMoney = () => DEV_MODE && (() => { try { return localStorage.getItem('gomgom-dev-money') === 'on'; } catch { return false; } })();
+export function setDeco(next) {
+  if (devMoney() && next.coins < deco.coins) next = { ...next, coins: deco.coins * 2 - next.coins };
+  deco = next; saveDeco(deco);
+}
 export function refreshWallet() {
   ['map-coins', 'deco-coins', 'shop-coins'].forEach(id => { $(id).textContent = deco.coins.toLocaleString('en-US'); });
 }

@@ -181,6 +181,7 @@
         <button role="tab" data-zone="bedroom">Bedroom</button>
         <button role="tab" data-zone="kitchen">Kitchen</button>
         <button role="tab" data-zone="bathroom">Bathroom</button>
+        <button role="tab" data-zone="backyard">Backyard</button>
       </div>
       <!-- Một hàng thẻ duy nhất, vuốt ngang để xem món khác; món đã xây thì thẻ biến mất, xây hết thì ẩn cả hàng (hàng chọn khu tụt xuống) -->
       <div id="deco-cards" class="deco-cards" role="list" aria-label="Spots to build"></div>
@@ -224,6 +225,19 @@
       <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
     </div>
     <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
+    <!-- Gem (placeholder, chưa có nguồn gem): gem dùng mua booster, đồ trang trí premium, skin. Chạm = "Coming soon!" (.soon). -->
+    <section class="gem-shop" aria-labelledby="gem-shop-title">
+      <h3 id="gem-shop-title" class="shop-deco-title">Gems</h3>
+      <div class="booster-row">
+        <button class="booster soon"><img src="./ui/play/img/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./ui/play/img/booster-moves.png" alt=""><span>Moves ×3</span><small>Booster pack</small><em>30 gems</em></button>
+      </div>
+      <div class="gem-row">
+        <button class="coin-pack soon"><b>Premium decoration</b><em>Soon</em></button>
+        <button class="coin-pack soon"><b>Cat skins</b><em>Soon</em></button>
+      </div>
+    </section>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
     <section id="shop-deco" class="shop-deco" aria-labelledby="shop-deco-title">
       <h3 id="shop-deco-title" class="shop-deco-title">Decoration</h3>
@@ -308,15 +322,6 @@
       <button id="result-retry" class="result-wide retry" aria-label="Retry"><svg viewBox="0 0 24 24"><path d="M12 3.5v7M7.5 6.5a7.5 7.5 0 1 0 9 0"/></svg></button>
     </div>
   </dialog>
-  <!-- Mở khu bằng xu: 3 bước (đủ màn → đủ xu → khánh thành), nút xác nhận trả xu (menu-controller.js openAreaDialog) -->
-  <dialog id="area-dialog" class="level-dialog area-dialog">
-    <h2 id="area-title"></h2>
-    <ol id="area-steps" class="area-steps"></ol>
-    <div class="level-actions">
-      <button id="area-cancel" class="pill-button ghost">Later</button>
-      <button id="area-ok" class="pill-button"></button>
-    </div>
-  </dialog>
   <!-- Rời / chơi lại ván đang dở: hỏi lại trước -->
   <dialog id="quit-dialog" class="level-dialog">
     <h2 id="quit-title">Leave this level?</h2>
@@ -364,6 +369,7 @@
     <button id="dev-toggle" class="dev-btn dev-toggle" title="Ẩn / hiện nút dev">DEV</button>
     <div class="dev-buttons">
       <button id="dev-unlock" class="dev-btn" title="Mở hết màn (3 sao), mọi khu, +99999 xu">🔓<span>Unlock</span></button>
+      <button id="dev-money" class="dev-btn" title="Mod money: xu tiêu ra được cộng vào ví" aria-pressed="false">💰<span>Money</span></button>
       <button id="dev-reset" class="dev-btn" title="Xoá tiến độ về người chơi mới">↺<span>Reset</span></button>
       <button id="dev-qc" class="dev-btn" title="QC model 3D">🔍<span>QC</span></button>
       <button id="dev-editor" class="dev-btn" title="Level Editor (DDA + bot)">🧩<span>Levels</span></button>
