@@ -1,23 +1,55 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
-// Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (ECONOMY.LEVEL_REWARD). Mèo dùng chung cả 2 khu.
+// Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../gameplay/tuning.mjs';
-import { DECO } from '../gameplay/economy.mjs';
+import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../gameplay/economy.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
-// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 (thắng màn 10) -> Phòng khách (thắng màn 20) -> Phòng ngủ (thắng màn 30) -> Bếp (thắng màn 40).
+// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
 export const ZONES = {
   garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
-  living: { name: 'Living room', unlockAfter: 20, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  bedroom: { name: 'Bedroom', unlockAfter: 30, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  kitchen: { name: 'Kitchen', unlockAfter: 40, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  living: { name: 'Living room', unlockAfter: AREA_UNLOCK.living.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  bedroom: { name: 'Bedroom', unlockAfter: AREA_UNLOCK.bedroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
+// Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
-// Vườn mở rộng (Vườn 2): thắng màn 10 thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
-// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2', mở dần từ màn 11).
-export const GARDEN_EXPANSION = { unlockAfter: 10, name: 'Garden expansion' };
+// Vườn mở rộng (Vườn 2): mở thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
+// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2').
+export const GARDEN_EXPANSION = { unlockAfter: AREA_UNLOCK.garden2.level, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
+
+// ===== Mở khu kiểu Homescapes + Idle Theme Park: trang trí (tiêu xu vào decor) để mở khu kế tiếp. Mỗi khu đi qua các trạng thái =====
+//   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
+//   spend : đủ màn, chưa tiêu đủ xu vào decor (tính từ lúc khu trước mở)    ready : đủ cả hai, chạm "khánh thành" là mở    open : đã mở
+// Không trả thêm xu để mở: xu tiêu cho đồ trang trí chính là tiến độ (deco.spent = tổng xu đã tiêu cho decor, deco.spentAt = mốc lúc mở khu gần nhất).
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom'];
+export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom' };
+export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
+// Xu đã tiêu cho decor kể từ khi khu trước mở (tiến độ bước "Spend").
+export const spentSinceOpen = deco => (deco.spent ?? 0) - (deco.spentAt ?? 0);
+const pay = (deco, price) => ({ ...deco, coins: deco.coins - price, spent: (deco.spent ?? 0) + price });
+// table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
+export function areaState(deco, area, cleared, table = AREA_UNLOCK) {
+  if (areaOpen(deco, area)) return 'open';
+  const before = AREA_ORDER[AREA_ORDER.indexOf(area) - 1];
+  if (before && !areaOpen(deco, before)) return 'soon';
+  if (cleared < table[area].level) return 'level';
+  return spentSinceOpen(deco) >= table[area].spend ? 'ready' : 'spend';
+}
+// Khu kế tiếp chưa mở (null = đã mở hết).
+export const nextArea = deco => AREA_ORDER.find(area => !areaOpen(deco, area)) ?? null;
+export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
+  const state = areaState(deco, area, cleared, table);
+  if (state === 'open') return { error: 'Already open' };
+  if (state === 'soon') return { error: `Open the ${AREA_NAMES[AREA_ORDER[AREA_ORDER.indexOf(area) - 1]].toLowerCase()} first` };
+  if (state === 'level') return { error: `Beat level ${table[area].level} first` };
+  if (state === 'spend') return { error: `Spend ${table[area].spend - spentSinceOpen(deco)} more coins on decor` };
+  // Xu tiêu dư cho khu này không chuyển sang khu sau: mốc tính lại từ lúc mở.
+  return { ...deco, spentAt: deco.spent ?? 0, unlocked: [...(deco.unlocked ?? []), area] };
+}
 
 // Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
 export const CATALOG = [
@@ -118,6 +150,30 @@ export const CATALOG = [
   { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
   { id: 'kfloor-tatami', zone: 'kitchen', cat: 'floors', name: 'Tatami', color: '#cfc994' },
   { id: 'kfloor-bamboo', zone: 'kitchen', cat: 'floors', name: 'Bamboo', color: '#d9c27a' },
+  // --- Phòng tắm (bên trái phòng ngủ, cửa trên tường trái phòng ngủ; mở theo AREA_UNLOCK.bathroom) ---
+  { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Toilet', color: '#ffffff' },
+  { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Sink vanity', color: '#bfe8d6' },
+  { id: 'bathtub', zone: 'bathroom', cat: 'furniture', name: 'Clawfoot tub', color: '#fffaf0' },
+  { id: 'shower', zone: 'bathroom', cat: 'furniture', name: 'Shower', color: '#d4e9ff' },
+  { id: 'washer', zone: 'bathroom', cat: 'furniture', name: 'Washing machine', color: '#f5f8fb' },
+  { id: 'towel', zone: 'bathroom', cat: 'furniture', name: 'Towel rack', color: '#ffd66b' },
+  { id: 'litter', zone: 'bathroom', cat: 'furniture', name: 'Cat litter box', color: '#f4a3b6' },
+  { id: 'bathmat', zone: 'bathroom', cat: 'furniture', name: 'Bath mat', color: '#8fc9f2' },
+  { id: 'jacuzzi', zone: 'bathroom', cat: 'furniture', name: 'Hot tub', color: '#7fd6f0' },
+  { id: 'twall-aqua', zone: 'bathroom', cat: 'walls', name: 'Aqua', color: '#d4f0ee' },
+  { id: 'twall-white', zone: 'bathroom', cat: 'walls', name: 'White', color: '#f5f8fb' },
+  { id: 'twall-mint', zone: 'bathroom', cat: 'walls', name: 'Mint', color: '#d4efd0' },
+  { id: 'twall-blush', zone: 'bathroom', cat: 'walls', name: 'Blush', color: '#ffe0e6' },
+  { id: 'twall-lemon', zone: 'bathroom', cat: 'walls', name: 'Lemon', color: '#fff3b8' },
+  { id: 'twall-navy', zone: 'bathroom', cat: 'walls', name: 'Navy', color: '#3b4f7a' },
+  { id: 'twall-charcoal', zone: 'bathroom', cat: 'walls', name: 'Charcoal', color: '#2f3238' },
+  { id: 'tfloor-white-tiles', zone: 'bathroom', cat: 'floors', name: 'White tiles', color: '#eef2f5' },
+  { id: 'tfloor-oak', zone: 'bathroom', cat: 'floors', name: 'Oak', color: '#e4b574' },
+  { id: 'tfloor-aqua-tiles', zone: 'bathroom', cat: 'floors', name: 'Aqua tiles', color: '#bfe8e6' },
+  { id: 'tfloor-pink-tiles', zone: 'bathroom', cat: 'floors', name: 'Pink tiles', color: '#f6cfd8' },
+  { id: 'tfloor-checker', zone: 'bathroom', cat: 'floors', name: 'Checkerboard', color: '#f4f1ea' },
+  { id: 'tfloor-teak', zone: 'bathroom', cat: 'floors', name: 'Teak', color: '#b9824f' },
+  { id: 'tfloor-slate-tiles', zone: 'bathroom', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
   // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
   { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', color: '#f3d5a8' },
   { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', color: '#ffd23f' },
@@ -235,6 +291,25 @@ const VARIANTS = [
   ['pantry', 'pantry-rack', 'Pantry rack', '#d9a36a'],
   ['kchair', 'kchair-stool', 'Bar stools', '#e8617f'],
   ['catfood', 'catfood-feeder', 'Auto feeder', '#f5f8fb'],
+  // --- Phòng tắm: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
+  ['toilet', 'toilet-wood', 'Wooden-seat toilet', '#d9a36a'],
+  ['toilet', 'toilet-kitty', 'Kitty toilet', '#ffc9d5'],
+  ['vanity', 'vanity-pedestal', 'Pedestal sink', '#fffaf0'],
+  ['vanity', 'vanity-wood', 'Wood vanity', '#c98a55'],
+  ['bathtub', 'bathtub-wood', 'Wooden tub', '#d9a36a'],
+  ['bathtub', 'bathtub-bubble', 'Bubble tub', '#8fc9f2'],
+  ['shower', 'shower-rain', 'Rain shower', '#c8ccd2'],
+  ['shower', 'shower-curtain', 'Curtain shower', '#ff8fb8'],
+  ['washer', 'washer-retro', 'Retro washer', '#ffc9d5'],
+  ['washer', 'washer-stack', 'Washer + dryer', '#c8ccd2'],
+  ['towel', 'towel-ladder', 'Towel ladder', '#c98a55'],
+  ['towel', 'towel-heated', 'Heated rail', '#c8ccd2'],
+  ['litter', 'litter-hood', 'Hooded litter box', '#b48ee8'],
+  ['litter', 'litter-cabinet', 'Litter cabinet', '#e9c58f'],
+  ['bathmat', 'bathmat-fluffy', 'Fluffy mat', '#fff4f6'],
+  ['bathmat', 'bathmat-duck', 'Duck mat', '#ffd66b'],
+  ['jacuzzi', 'jacuzzi-cedar', 'Cedar hot tub', '#9a6a45'],
+  ['jacuzzi', 'jacuzzi-mosaic', 'Mosaic spa', '#5fb8d8'],
   ['cart', 'cart-produce', 'Fruit stand', '#ff6b4a'],
   ['kplant', 'kplant-fig', 'Fiddle-leaf fig', '#3f8a3a'],
   ['sink', 'sink-steel', 'Steel sink', '#c8ccd2'],
@@ -270,10 +345,13 @@ VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
   CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, color, slot });
 });
+// Giá thật = giá trong bảng DECO × hệ số khu, làm tròn 10 xu (mult = ZONE_PRICE_MULT; Level Editor truyền bảng đang sửa).
+export const zonePrice = (entry, mult) => Math.round(entry.basePrice * (mult[entry.area || entry.zone] ?? 1) / 10) * 10;
 // Giá + mốc mở khoá từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
 for (const entry of CATALOG) {
   const row = DECO[entry.id] || DECO[entry.slot] || {};
-  entry.price = row.price ?? 0;
+  entry.basePrice = row.price ?? 0;
+  entry.price = zonePrice(entry, ZONE_PRICE_MULT);
   if (row.lock) entry.lock = row.lock;
 }
 export const itemById = id => CATALOG.find(entry => entry.id === id);
@@ -303,7 +381,7 @@ const zoneDefaults = zone => {
 // Mèo có sẵn từ đầu; các giống khác phải nhận ở Map (nút Claim cạnh màn giống đó xuất hiện lần đầu, sau khi thắng màn đó).
 export const STARTER_CATS = ['gray', 'orange', 'white'];
 function defaults(startCoins) {
-  return { coins: startCoins, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
+  return { coins: startCoins, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', unlocked: [], expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
@@ -316,7 +394,9 @@ function clean(deco) {
 // Lần đầu có Deco: số xu = tổng thưởng các màn đã qua (progression.earnedCoins).
 // Save cũ (trước khi có vườn, đồ mua cho phòng khách): phòng khách giờ khoá tới màn 10, nên hoàn lại xu
 // của đồ đã mua để người chơi sắm cho vườn; phòng khách về mặc định.
-export function loadDeco(startCoins) {
+// cleared = số màn đã thắng: save có từ trước khi mở khu bằng xu (chưa có `unlocked`) giữ các khu đã tới mốc màn (lúc đó mở miễn phí).
+export function loadDeco(startCoins, cleared = 0) {
+  const grandfather = AREA_ORDER.filter(area => cleared >= AREA_UNLOCK[area].level);
   const saved = readJSON(SAVE_KEYS.deco);
   {
     // Save có từ trước khi thêm khu mới (vd. phòng ngủ): khu thiếu lấy mặc định, khu đã có giữ nguyên.
@@ -336,16 +416,16 @@ export function loadDeco(startCoins) {
       }
       // Save có từ trước khi nhận mèo ở Map: mèo đang ở trong nhà coi như đã nhận.
       const claimedCats = saved.claimedCats ?? [...new Set([...STARTER_CATS, ...(saved.cats || [])])];
-      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true });
+      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true, unlocked: saved.unlocked ?? grandfather });
     }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(startCoins);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
       const cats = saved.cats || base.cats;
-      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])] };
+      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])], unlocked: grandfather };
     }
   }
-  return defaults(startCoins);
+  return { ...defaults(startCoins), unlocked: grandfather };
 }
 export function saveDeco(deco) {
   writeJSON(SAVE_KEYS.deco, deco);
@@ -402,7 +482,7 @@ export function applyAction(deco, entry, unlockedLevel) {
   }
   const zone = zoneState(deco, entry.zone);
   let next = deco;
-  if (status === 'buy') next = withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] });
+  if (status === 'buy') next = withZone(pay(deco, entry.price), entry.zone, { owned: [...zone.owned, entry.id] });
   if (entry.cat === 'walls') return withZone(next, entry.zone, { wall: entry.id });
   if (entry.cat === 'floors') return withZone(next, entry.zone, { floor: entry.id });
   // Đặt vào thì thay món khác đang ở cùng chỗ.
@@ -453,7 +533,7 @@ export function buyToStock(deco, entry, unlockedLevel) {
   if (status === 'owned') return { error: 'Already owned' };
   if (status === 'poor') return { error: 'Not enough coins' };
   const zone = zoneState(deco, entry.zone);
-  return { ...withZone({ ...deco, coins: deco.coins - entry.price }, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+  return { ...withZone(pay(deco, entry.price), entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
 export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))

@@ -4,7 +4,7 @@
 // Điểm neo cho mèo ghi trong userData (toạ độ cục bộ của món): seat = chỗ ngồi / nằm, top = mặt trên, steps = các bậc.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { ROOM_HALF, BEDROOM_DOOR, BEDROOM_WINDOW_X } from './room-layout.mjs';
+import { ROOM_HALF, BEDROOM_DOOR } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 import { pendulum, ropeBetween } from './garden-scene.mjs';
 
@@ -643,17 +643,9 @@ function wallFrame(w, h, frameColor, art, u, y) {
 }
 export function decorateBedroomWall(i, wall) {
   if (i === 0) {
-    // Rèm xanh hai bên cửa sổ + thanh treo.
-    const u0 = BEDROOM_WINDOW_X;
-    const rod = at(cyl(.025, .025, 2.3, onWall('#c98a55'), 12), u0, 2.66, .22); rod.rotation.z = Math.PI / 2;
-    wall.add(rod, at(ball(.05, onWall('#c98a55')), u0 - 1.15, 2.66, .22), at(ball(.05, onWall('#c98a55')), u0 + 1.15, 2.66, .22));
-    for (const s of [-1, 1]) {
-      const panel = drape(.5, 1.95, '#9fd0f0', true); panel.position.set(u0 + s * .88, 1.66, .2);
-      wall.add(panel, at(mesh(new THREE.BoxGeometry(.52, .06, .09), onWall('#3b8fe0')), u0 + s * .88, 1.15, .26));
-    }
-    // Đèn dây võng trên đầu giường: bóng nhỏ phát sáng vàng ấm.
+    // Không còn cửa sổ (giữa tường sau là cửa sang phòng tắm). Đèn dây võng phía trên góc máy tính: bóng nhỏ phát sáng vàng ấm.
     const pts = [];
-    for (let k = 0; k <= 16; k++) { const t = k / 16; pts.push(new THREE.Vector3(-3.6 + t * 2.6, 2.82 - Math.sin(t * Math.PI) * .2, .2)); } // cao hơn khung giường màn (2.2)
+    for (let k = 0; k <= 16; k++) { const t = k / 16; pts.push(new THREE.Vector3(1 + t * 2.6, 2.82 - Math.sin(t * Math.PI) * .2, .2)); } // cao hơn poster (đỉnh ~2.35) và khung cửa phòng tắm (2.2)
     const line = new THREE.CatmullRomCurve3(pts);
     wall.add(mesh(new THREE.TubeGeometry(line, 32, .007, 5), onWall('#6a5a4a')));
     for (let k = 1; k < 12; k++) {

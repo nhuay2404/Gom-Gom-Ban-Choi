@@ -220,7 +220,7 @@ export function runModelQC(ctx) {
       decalIssues(decor).forEach(m => add('error', zone, `đồ trang trí sàn: ${m}`));
       ctx.wallDefs.forEach(({ pos, rot }, i) => {
         const g = new THREE.Group(); spec.decorate(i, g);
-        if (i === 0 && spec.sill !== false) { const sill = new THREE.Mesh(new THREE.BoxGeometry(1.34, .1, .12)); sill.position.set(spec.windowU, .88, .16); g.add(sill); } // gờ cửa sổ
+        if (i === 0 && spec.windowU != null && spec.sill !== false) { const sill = new THREE.Mesh(new THREE.BoxGeometry(1.34, .1, .12)); sill.position.set(spec.windowU, .88, .16); g.add(sill); } // gờ cửa sổ
         g.position.set(pos[0], 0, pos[1]); g.rotation.y = rot;
         const list = parts(g);
         list.forEach(p => fixed.push({ zone, name: `đồ treo tường ${i} #${p.mesh.material.color?.getHexString?.() ?? ''}`, b: p.b }));
