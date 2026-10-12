@@ -7,6 +7,7 @@ import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleSaveLevel } from './level-save.mjs';
+import { handleSaveEconomy } from './economy-save.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const START_PORT = Number(process.argv[2] ?? process.env.PORT ?? 4500);
@@ -22,7 +23,7 @@ function safePath(urlPath) {
 }
 
 const server = createServer(async (req, res) => {
-  if (handleSaveLevel(req, res)) return;
+  if (handleSaveLevel(req, res) || handleSaveEconomy(req, res)) return;
   if (req.url === '/') { res.writeHead(302, { location: '/tools/level-editor/' }).end(); return; }
   let file = safePath(req.url);
   if (!file) { res.writeHead(403).end(); return; }

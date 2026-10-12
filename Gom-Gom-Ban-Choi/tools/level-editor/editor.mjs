@@ -7,6 +7,7 @@ import { clearMatches } from '../../game/gameplay/board-rules.mjs';
 import { MATCH_SIZE } from '../../game/gameplay/scoring.mjs';
 import { holdUnlocked, ADAPTIVE } from '../../game/gameplay/tuning.mjs';
 import { playableCells } from '../../game/gameplay/board-shapes.mjs';
+import { catMarkup } from '../../game/ui/cat-art.mjs';
 
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -16,6 +17,9 @@ const baseline = await fetch('../baseline.json').then(r => r.json()).catch(() =>
 const baselineWin = n => baseline.levels.find(row => row.level === n)?.winRate;
 
 const COLORS = { O: '#f3a35a', G: '#9aa0a6', W: '#ffffff', K: '#33302c', S: '#ead9bd', T: '#c98d4f' };
+// Ảnh mèo thật của game (cat-art.mjs) cho ô mèo trên bàn + cọ. Đường dẫn ảnh trong art tính từ game/, editor ở tools/level-editor/.
+const CAT_ART = Object.fromEntries(Object.entries(catMarkup).map(([group, svg]) => [group, svg.replaceAll('href="ui/', 'href="../../game/ui/')]));
+const catArt = letter => CAT_ART[LETTERS[letter]] ?? letter;
 // '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn.
 const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS), '~', '≈'];
 const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ' };
@@ -80,7 +84,7 @@ function update(change) {
 // ---------- Danh sách màn ----------
 function renderList() {
   $('levelList').innerHTML = LEVELS.map((l, i) => `<button data-i="${i}" class="${i === current ? 'on' : ''} ${edits[i] ? 'dirty' : ''}">
-    <span class="n">${i + 1}</span><span>${l.name}</span><span class="tier ${l.tier || 'normal'}">${l.tier || 'normal'}</span></button>`).join('');
+    <span class="n">Màn ${i + 1}</span><span class="tier ${l.tier || 'normal'}">${l.tier || 'normal'}</span></button>`).join('');
 }
 $('levelList').addEventListener('click', event => {
   const button = event.target.closest('button[data-i]');
@@ -147,8 +151,8 @@ function boardHtml(rows, interactive = false, grass = null) {
     const up = ch.toUpperCase(), cat = LETTERS[up];
     const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : '';
     const grassy = grassCells[index] === '~';
-    const style = `${cat ? `background:${COLORS[up]};color:${up === 'K' ? '#fff' : '#333'};` : ''}${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
-    return `<div class="cell ${cls} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}">${ch === '.' || ch === '#' ? '' : up}</div>`;
+    const style = `${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
+    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
   }).join('');
   return `<div class="board" style="grid-template-columns:repeat(${W},auto)">${cells}</div>`;
 }
@@ -157,8 +161,8 @@ function renderBoard() {
   $('bw').value = W; $('bh').value = H;
   $('boardInfo').textContent = `${W}×${H} · ${playableCells(rows)} ô chơi`;
   $('board').innerHTML = boardHtml(rows, true, level().grass);
-  $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''}"
-    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : b}</button>`).join('');
+  $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''} ${LETTERS[b] ? 'cat-brush' : ''}"
+    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
 }
 // Lớp cỏ: chỉ nằm dưới ô trống / mèo; không còn ô cỏ nào thì bỏ hẳn trường grass.
 function withGrass(board, grass) {

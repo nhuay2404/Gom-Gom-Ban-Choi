@@ -4,10 +4,10 @@
 //   - Đồ trang trí MỞ trong stage (theo khu mở + lock) và tổng giá: món gốc / kiểu khác / tường-sàn
 //   - Luỹ kế: tổng xu đã nhận so với tổng giá mọi món đã mở tới hết stage đó (đủ mua bao nhiêu %)
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { START_COINS, BOOSTER_PRICE, COIN_PACKS } from '../game/gameplay/economy.mjs';
+import { START_COINS, BOOSTER_PRICE, COIN_PACKS, AREA_UNLOCK } from '../game/gameplay/economy.mjs';
 import { levelReward } from '../game/gameplay/progression.mjs';
 import { LEVELS } from '../game/gameplay/levels.mjs';
-import { CATALOG, ZONES, GARDEN_EXPANSION } from '../game/deco/deco-data.mjs';
+import { CATALOG, ZONES, GARDEN_EXPANSION, AREA_ORDER } from '../game/deco/deco-data.mjs';
 
 const STAGE = 10, stages = Math.ceil(LEVELS.length / STAGE);
 const stageOfLevel = level => Math.ceil(level / STAGE);
@@ -27,23 +27,26 @@ for (let s = 1; s <= stages; s++) {
   const opened = paid.filter(entry => stageOfLevel(openAt(entry)) === s);
   const base = opened.filter(entry => entry.cat === 'furniture' && !entry.slot), variants = opened.filter(entry => entry.cat === 'furniture' && entry.slot);
   const surfaces = opened.filter(entry => entry.cat === 'walls' || entry.cat === 'floors');
+  // Mốc "tiêu xu vào decor" để mở khu có mốc màn trong stage này (không phải chỗ tiêu thêm: chỉ để so với xu nhận).
+  const unlock = AREA_ORDER.filter(area => stageOfLevel(AREA_UNLOCK[area].level) === s).reduce((t, area) => t + AREA_UNLOCK[area].spend, 0);
   const areas = [...new Set(opened.map(entry => (entry.area === 'garden2' ? 'Garden 2' : ZONES[entry.zone].name)))].join(', ') || '—';
   coinsTotal += coins; baseTotal += sum(base); allTotal += sum(opened);
-  rows.push({ s, levels: `${from}–${to}`, areas, coins, base: sum(base), baseN: base.length, variants: sum(variants), variantsN: variants.length,
+  rows.push({ s, levels: `${from}–${to}`, areas, coins, unlock, base: sum(base), baseN: base.length, variants: sum(variants), variantsN: variants.length,
     surfaces: sum(surfaces), surfacesN: surfaces.length, all: sum(opened), coinsTotal, baseTotal, allTotal });
 }
 
-const header = ['Stage', 'Màn', 'Khu mở đồ', 'Xu nhận', 'Món gốc', 'Kiểu khác', 'Tường / sàn', 'Tổng giá đồ mở', 'Xu nhận / giá món gốc', 'Xu luỹ kế', 'Đủ mua món gốc (luỹ kế)', 'Đủ mua tất cả (luỹ kế)'];
+const header = ['Stage', 'Màn', 'Khu mở đồ', 'Xu nhận', 'Cần tiêu để mở khu kế', 'Món gốc', 'Kiểu khác', 'Tường / sàn', 'Tổng giá đồ mở', 'Xu nhận / giá món gốc', 'Xu luỹ kế', 'Đủ mua món gốc (luỹ kế)', 'Đủ mua tất cả (luỹ kế)'];
 const table = [
   `| ${header.join(' | ')} |`,
   `|${header.map(() => '---').join('|')}|`,
-  ...rows.map(r => `| ${r.s} | ${r.levels} | ${r.areas} | **${fmt(r.coins)}** | ${fmt(r.base)} (${r.baseN}) | ${fmt(r.variants)} (${r.variantsN}) | ${fmt(r.surfaces)} (${r.surfacesN}) | **${fmt(r.all)}** | ${pct(r.coins, r.base)} | ${fmt(r.coinsTotal)} | ${pct(r.coinsTotal, r.baseTotal)} | ${pct(r.coinsTotal, r.allTotal)} |`),
+  ...rows.map(r => `| ${r.s} | ${r.levels} | ${r.areas} | **${fmt(r.coins)}** | ${fmt(r.unlock)} | ${fmt(r.base)} (${r.baseN}) | ${fmt(r.variants)} (${r.variantsN}) | ${fmt(r.surfaces)} (${r.surfacesN}) | **${fmt(r.all)}** | ${pct(r.coins, r.base)} | ${fmt(r.coinsTotal)} | ${pct(r.coinsTotal, r.baseTotal)} | ${pct(r.coinsTotal, r.allTotal)} |`),
 ];
 const md = `# Báo cáo kinh tế (tự sinh — đừng sửa tay)
 
 Sinh bởi \`npm run economy\` từ [game/gameplay/economy.mjs](../game/gameplay/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
 
 - **Xu nhận**: tổng xu thưởng khi thắng lần đầu mọi màn trong stage${START_COINS ? ` (stage 1 gồm ${fmt(START_COINS)} xu ban đầu)` : ''}.
+- **Cần tiêu để mở khu kế**: số xu phải tiêu cho decor (từ lúc khu trước mở) để mở khu có mốc màn trong stage (economy.mjs AREA_UNLOCK.spend). Không phải chỗ tiêu thêm, không cộng vào tổng.
 - **Món gốc / Kiểu khác / Tường-sàn**: tổng giá các món *mở trong stage đó* (số trong ngoặc = số món). Món giá 0 và mèo không tính.
 - **Tổng giá đồ mở**: mua hết mọi thứ mở trong stage (gốc + kiểu khác + tường/sàn).
 - **Đủ mua … (luỹ kế)**: tổng xu nhận được tới hết stage chia cho tổng giá đồ đã mở tới hết stage. ≥ 100% = mua hết được.

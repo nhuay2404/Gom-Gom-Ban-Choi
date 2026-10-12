@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gom Gom Economy Editor</title>
+<style>
+  :root { --bg: #f6f3ee; --panel: #fff; --ink: #2b2620; --mute: #8a8075; --line: #e4ddd2; --accent: #e07a2e; --good: #3a9a5b; --bad: #c8443a; --warn: #d9a21b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0 12px 0 0; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+  section.full { grid-column: 1 / -1; }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--mute); margin: 0 0 8px; }
+  label { display: grid; gap: 2px; font-size: 11px; color: var(--mute); }
+  input, select { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); width: 100%; min-width: 0; }
+  td input, td select { width: 84px; }
+  .form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  button.btn, a.btn { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; color: var(--ink); text-decoration: none; }
+  button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .formula { font: 600 14px/1.5 ui-monospace, monospace; background: #f1ebe2; padding: 8px 10px; border-radius: 8px; margin: 0 0 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--mute); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  .warn { color: var(--bad); font-weight: 600; } .ok { color: var(--good); font-weight: 600; } .mid { color: var(--warn); font-weight: 600; }
+  .muted { color: var(--mute); font-size: 11px; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { font-size: 10px; fill: var(--mute); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; margin-top: 4px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  ul.notes { margin: 6px 0 0; padding-left: 18px; } ul.notes li { margin: 2px 0; }
+  .intro { padding: 12px 12px 0; display: grid; gap: 10px; }
+  main.eco { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px; padding: 12px; align-items: start; }
+  @media (max-width: 1100px) { main.eco { grid-template-columns: 1fr; } }
+  .col > section + section { margin-top: 12px; }
+  label .code { font: 10px ui-monospace, monospace; color: #b3a99c; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+</style>
+<link rel="stylesheet" href="./editor.css">
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">🐱 Gom Gom Editor</span>
+  <nav class="tabs" aria-label="Công cụ">
+    <a href="./#level">🎮 Thiết kế màn</a>
+    <a href="./#curve">📈 Độ khó cả game</a>
+    <a href="./economy.html" class="on">💰 Kinh tế (xu)</a>
+  </nav>
+  <span class="muted" id="status">Đang nạp…</span>
+  <span style="flex:1"></span>
+  <span class="save-group">
+    <span class="muted" id="saveStatus"></span>
+    <button class="btn primary" id="btnSave">💾 Lưu vào game</button>
+    <button class="btn" id="btnReset" title="Bỏ mọi số đang sửa, lấy lại số đang có trong game">↶ Hoàn tác</button>
+    <a class="btn" href="./#help" title="Hướng dẫn sử dụng (mở ở trang Thiết kế màn)">? Hướng dẫn</a>
+  </span>
+</header>
+
+<div class="intro">
+  <p class="hint" style="margin:0">Sửa số ở cột trái → cột phải tự tính lại ngay: người chơi có đủ xu mua đồ không, khi nào mở được từng khu, cuối game dư bao nhiêu xu.
+    Ưng rồi thì bấm <b>💾 Lưu vào game</b> (ghi vào game/gameplay/economy.mjs).</p>
+  <div class="kpis" id="kpis"></div>
+</div>
+
+<main class="eco">
+  <div class="col">
+    <section>
+      <h2><span class="step">1</span> Xu thưởng mỗi màn</h2>
+      <p class="hint">Thắng một màn lần đầu được bấy nhiêu xu. Mỗi màn tăng thêm một chút (hệ số tăng), màn boss (10, 20, 30…) được nhân thêm.</p>
+      <p class="formula">xu màn n = Xu màn 1 × Hệ số tăng<sup>n−1</sup> &nbsp;·&nbsp; màn boss × Hệ số boss</p>
+      <div class="form">
+        <label>Xu màn 1 <span class="code">REWARD_BASE</span><input type="number" step="1" min="0" data-key="REWARD_BASE"></label>
+        <label>Hệ số tăng mỗi màn <span class="code">REWARD_GROWTH</span><input type="number" step="0.001" min="1" data-key="REWARD_GROWTH"></label>
+        <label>Hệ số màn boss <span class="code">REWARD_BOSS_MULT</span><input type="number" step="0.1" min="1" data-key="REWARD_BOSS_MULT"></label>
+        <label>Xu có sẵn lúc đầu <span class="code">START_COINS</span><input type="number" step="10" min="0" data-key="START_COINS"></label>
+      </div>
+      <div id="rewardChart" style="margin-top:10px"></div>
+      <p class="muted" id="rewardInfo"></p>
+      <div class="sub">Xu tự sinh (idle): icon xu trên đầu mèo ở Deco, chạm để nhận</div>
+      <p class="hint">xu / giờ = xu thưởng của màn đang chơi × Tỉ lệ idle · đầy sau <b>Số giờ tối đa</b> thì ngừng tích. Nên giữ idle ≈ 5–15% tổng xu của người chơi trung bình (thẻ tóm tắt).</p>
+      <div class="form" style="grid-template-columns:repeat(3,1fr)">
+        <label>Tỉ lệ idle (× xu màn / giờ) <span class="code">IDLE_RATE</span><input type="number" step="0.005" min="0" data-key="IDLE_RATE"></label>
+        <label>Số giờ tích tối đa <span class="code">IDLE_CAP_HOURS</span><input type="number" step="1" min="1" data-key="IDLE_CAP_HOURS"></label>
+        <label>Mở khi thắng màn <span class="code">IDLE_FROM_LEVEL</span><input type="number" step="1" min="0" data-key="IDLE_FROM_LEVEL"></label>
+      </div>
+      <p class="muted" id="idleInfo"></p>
+    </section>
+
+    <section>
+      <h2><span class="step">2</span> Mở khu & giá đồ</h2>
+      <p class="hint">Mỗi khu mở khi ĐỦ CẢ HAI: thắng tới <b>màn mốc</b> và <b>tiêu đủ xu mua đồ trang trí</b> (tính từ lúc khu trước mở).
+        <b>Hệ số giá</b> nhân vào giá mọi đồ của khu (1.5 = đắt gấp rưỡi).</p>
+      <div class="scroll"><table id="areaTable"></table></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section>
+      <h2><span class="step">3</span> Đủ xu mua đồ không? <span class="muted">(theo từng 10 màn)</span></h2>
+      <p class="hint">Cột cuối = xu kiếm được tới lúc đó ÷ tổng giá món chính đã mở. <span class="ok">Xanh 85–115%</span> là vừa:
+        mua được gần hết mà vẫn phải chơi tiếp. <span class="mid">Vàng</span> hơi lệch, <span class="warn">đỏ</span> = thiếu xu (dưới 70%) hoặc thừa xu (trên 140%).</p>
+      <div class="scroll"><table id="stageTable"></table></div>
+    </section>
+
+    <section>
+      <h2><span class="step">4</span> Người chơi ảo: khi nào mở khu, dư bao nhiêu xu</h2>
+      <p class="hint">Mỗi kiểu người chơi ảo chơi một số ván mỗi ngày, có xu là mua đồ rẻ nhất, đủ điều kiện là mở khu. Tự chạy lại khi sửa số.</p>
+      <div class="scroll"><table id="simTable"></table></div>
+      <div id="walletChart" style="margin-top:10px"></div>
+      <ul class="notes" id="simNotes"></ul>
+      <details class="card">
+        <summary><h2>Tuỳ chỉnh người chơi ảo</h2><span class="muted">— số ván / ngày, tay nghề, cách mua</span></summary>
+        <div class="form" style="grid-template-columns:repeat(3,1fr)">
+          <label>Số người ảo mỗi kiểu<input type="number" id="runs" value="40" min="1" max="500"></label>
+          <label>Số màn<input type="number" id="levels" value="100" min="10" max="300"></label>
+          <label>Tối đa ngày<input type="number" id="maxDays" value="200" min="10" max="1000"></label>
+        </div>
+        <div class="scroll" style="margin-top:8px"><table id="profileTable"></table></div>
+        <p class="muted"><b>Ván / ngày</b>: số lần chơi mỗi ngày. <b>Nhận idle / ngày</b>: số lần mở game nhận xu idle (chia đều trong ngày). <b>Tay nghề</b>: 1 = thắng như bot (tools/baseline.json), 2 = giỏi hơn hẳn
+          (xác suất thắng = 1 − (1 − tỉ lệ thắng của bot)<sup>tay nghề</sup>). <b>Mua</b>: <b>base</b> = chỉ món chính, <b>all</b> = mọi kiểu + tường / sàn.
+          Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo thật.</p>
+        <div class="row"><button class="btn primary" id="btnRun">▶ Chạy lại</button> <span class="muted" id="runInfo"></span></div>
+      </details>
+    </section>
+  </div>
+</main>
+<script type="module" src="./economy.mjs"></script>
+</body>
+</html>
