@@ -1065,12 +1065,13 @@ class Cat {
     if (id === 'catbed') {
       const spot = local(0, .14, 0);
       yield* this.jumpTo(spot.x, spot.y, spot.z); this.surface = id;
-      // nệm: lún bẹp êm
-      this.contact = { spread: .25, sag: .3 };
+      node.userData.bump?.(.9); // thùng các-tông: nắp rung khi mèo đáp vào
+      // thùng các-tông: chui vừa khít, thành thùng ép hai bên nên phồng lên trên ("vừa là ngồi"); nệm: lún bẹp êm
+      this.contact = kind === 'catbed-box' ? { squeeze: 1, spread: .15 } : { spread: .25, sag: .3 };
       // xoay vòng tìm chỗ nằm rồi mới cuộn tròn
       for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
       this.setPose('curl');
-      this.contact = { spread: .55, sag: .45 };
+      this.contact = kind === 'catbed-box' ? { squeeze: 1, spread: .2 } : { spread: .55, sag: .45 };
       yield* this.sleep(rand(8, 15));
       yield* this.yawnStretch();
     } else if (id === 'armchair' && chance(.3)) {
@@ -1114,14 +1115,8 @@ class Cat {
       this.contact = { spread: .45 };
       yield* this.lookAround(rand(4, 7));
       this.tailWag = .25;
-    } else if (id === 'birdhouse') {
-      // Nhà chim: ngồi dưới cột ngước nhìn chú chim, đuôi quất, kêu lắp bắp (chattering) rồi chán bỏ đi.
-      yield* this.turnTo(this.facing(center.x, center.z));
-      this.setPose('sit'); this.face('focus'); this.tailSpeed = 6; this.goal.lean = -.3;
-      for (let t = 0, n = rand(3, 5); t < n; t += this.world.dt) { this.jigV.y += Math.sin(this.world.time * 40) * .02; yield; }
-      this.goal.lean = 0; this.tailSpeed = 1.6; this.face('grumble'); yield* this.wait(.8);
-    } else if (id === 'table' || id === 'dining' || id === 'picnic') {
-      // Bàn trà / bàn ăn / bàn picnic: nhảy lên mặt bàn (bàn ăn có chỗ ngồi riêng: userData.seat), khều cốc rơi xuống sàn.
+    } else if (id === 'table' || id === 'dining') {
+      // Bàn trà / bàn ăn: nhảy lên mặt bàn (bàn ăn có chỗ ngồi riêng: userData.seat), khều cốc rơi xuống sàn.
       const top = node.userData.seat ? local(...node.userData.seat) : local(-.2, .81, -.18);
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
       const mug = node.userData.mug;
@@ -1163,6 +1158,21 @@ class Cat {
       this.tailSpeed = 1.6; this.face('happy');
       this.setPose('sit'); yield* this.wait(1);
       yield* this.groom();
+    } else if (id === 'plant' && kind === 'plant-cactus') {
+      // xương rồng: rướn tới ngửi... mặt chạm gai thì lõm vào, giật bắn lùi lại, xù đuôi
+      this.goal.lean = .9; this.face('focus');
+      yield* this.wait(1);
+      this.contact = { front: 1 }; this.face('annoyed'); this.jigV.z -= 1.4;
+      yield* this.wait(.14);
+      this.contact = {}; this.world.say(this, '!', 1); this.puffUntil = this.world.time + 2; this.earFlopV = (this.earFlopV || 0) + 18;
+      this.goal.lean = 0; this.squash = -.4; this.squashV = 0;
+      const back = this.world.reachable(this.x - Math.sin(this.heading) * .45, this.z - Math.cos(this.heading) * .45);
+      const x0 = this.x, z0 = this.z;
+      for (let t = 0; t < .3; t += this.world.dt) { const k = t / .3; this.x = x0 + (back.x - x0) * k; this.z = z0 + (back.z - z0) * k; this.y = .18 * 4 * k * (1 - k); yield; }
+      this.y = 0; this.squash = .6; this.squashV = 0;
+      this.setPose('sit'); this.face('grumble'); this.goal.paw = 1; yield* this.wait(.2); this.goal.paw = 0; // xoa mũi
+      yield* this.wait(1);
+      yield* this.groom();
     } else if (id === 'plant' || id === 'kplant') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1); // ngửi
@@ -1194,7 +1204,7 @@ class Cat {
       yield* this.turnTo(this.heading + Math.PI);
       this.setPose('loaf'); this.face('blink');
       yield* this.wait(1);
-      this.contact = { spread: .7 }; // ấm quá nên "tan chảy" ra sàn
+      this.contact = { spread: kind === 'lamp-heater' ? 1 : .7 }; // ấm quá nên "tan chảy" ra sàn (lò sưởi tan nhiều nhất)
       yield* this.sleep(rand(5, 8)); // sưởi ấm dưới đèn
     } else if (id === 'bed') {
       // Giường: nhảy lên chăn, nhồi bột rừ rừ, xoay vòng rồi cuộn tròn ngủ một giấc dài trên chăn êm.
@@ -1260,15 +1270,8 @@ class Cat {
       if (cam) { yield* this.turnTo(this.facing(cam.x, cam.z)); meow(); yield* this.wait(.7); meow(); yield* this.wait(1); }
       yield* this.turnTo(this.facing(center.x, center.z));
       yield* this.wait(rand(1.5, 2.5));
-    } else if (id === 'mirror') {
-      // Gương đứng: ngồi trước gương ngắm mình, nghiêng đầu, khều thử 'con mèo trong gương' rồi bỏ đi.
-      this.setPose('sit'); this.face('focus'); this.tailSpeed = 4;
-      for (let t = 0, n = rand(2, 3.5); t < n; t += this.world.dt) { this.lookGoal = Math.sin(this.world.time * 1.6) * .6; yield; }
-      this.lookGoal = 0;
-      if (chance(.6)) { this.goal.lean = .5; this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; yield* this.wait(.4); this.goal.paw = 1; yield* this.wait(.25); this.goal.paw = 0; this.goal.lean = 0; }
-      this.face('open'); this.tailSpeed = 1.6; yield* this.wait(1);
-    } else if (id === 'closet' || id === 'fridge' || id === 'pantry' || id === 'bakerack') {
-      // Tủ quần áo / bàn trang điểm / tủ lạnh / tủ chén / kệ bánh: nhảy phốc lên nóc, nằm canh cả phòng.
+    } else if (id === 'closet' || id === 'fridge' || id === 'pantry') {
+      // Tủ quần áo / bàn trang điểm / tủ lạnh / tủ chén: nhảy phốc lên nóc, nằm canh cả phòng.
       const seat = local(...node.userData.seat);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.facingHome());
@@ -1318,6 +1321,15 @@ class Cat {
       this.lookGoal = 0; this.tailSpeed = 1.6;
       if (chance(.5)) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('happy'); yield* this.wait(.6); }
       yield* this.leaveHill();
+    } else if (id === 'sunflowers' && kind === 'sunflowers-scarecrow') {
+      // Bù nhìn: rình con quạ đậu trên tay bù nhìn rồi vồ — quạ bay mất.
+      const bird = node.userData.bird;
+      this.setPose('crouch'); this.face('focus'); this.tailSpeed = 6; this.wriggle = 1;
+      yield* this.wait(rand(1, 1.6));
+      this.wriggle = 0;
+      if (bird && !bird.userData.away) this.world.scareBird(node);
+      yield* this.jumpTo(this.x + Math.sin(this.heading) * .3, 0, this.z + Math.cos(this.heading) * .3);
+      this.setPose('sit'); this.face('grumble'); yield* this.wait(1.2); this.tailSpeed = 1.6;
     } else if (id === 'sunflowers') {
       // Hướng dương: cả khóm quay mặt nhìn mèo; mèo đứng lên khều bông hoa, hoa lắc lư, hắt xì phấn hoa.
       this.setPose('sit'); this.face('open'); yield* this.wait(1);
@@ -1325,7 +1337,7 @@ class Cat {
       yield* this.wait(.4); this.goal.paw = 1; node.userData.bump?.(.8); yield* this.wait(.3); this.goal.paw = 0;
       this.setPose('sit'); this.face('blink'); this.jigV.z -= .8; yield* this.wait(.5); // hắt xì
       this.face('happy'); yield* this.wait(1);
-    } else if (id === 'clothesline' && (kind === 'clothesline-flags' || kind === 'clothesline-modern')) {
+    } else if (id === 'clothesline' && kind === 'clothesline-flags') {
       // Dây cờ: nhảy chồm khều lá cờ thấp, cả dây cờ rung phần phật.
       for (let i = 0; i < 2; i++) {
         this.setPose('crouch'); this.face('focus'); yield* this.wait(.5);
@@ -1381,6 +1393,14 @@ class Cat {
       this.goal.paw = 1; node.userData.tug?.(1.5);
       yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
       this.setPose('sit'); this.face('happy'); this.tailSpeed = 1.6; yield* this.wait(1.2);
+    } else if (id === 'stream' && kind === 'stream-bridge') {
+      // Cầu suối: nhảy lên đỉnh cầu, ngồi nhìn lá trôi dưới chân.
+      const top = local(...node.userData.top);
+      yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
+      yield* this.turnTo(this.heading + Math.PI / 2, 3);
+      this.setPose('sit'); this.face('focus'); this.lookGoal = -.6;
+      yield* this.wait(rand(3, 5)); this.lookGoal = 0;
+      this.setPose('loaf'); this.face('half'); yield* this.sleep(rand(3, 5));
     } else if (id === 'stream') {
       // Suối: rình bên bờ, đợi chiếc lá trôi ngang qua thì khều — nước bắn tung, giũ chân.
       yield* this.turnTo(this.facing(center.x, center.z));
@@ -1399,6 +1419,13 @@ class Cat {
       for (let i = 0; i < 4; i++) { this.goal.paw = i % 2; yield* this.wait(.12); } // giũ chân
       this.goal.paw = 0; this.tailSpeed = 1.6;
       yield* this.groom();
+    } else if (id === 'swingtree' && kind === 'swingtree-treehouse') {
+      // Nhà cây: leo thang lên sàn, ngồi trước cửa ngắm vườn rồi ngủ trong nhà cây.
+      for (const [x, y, z] of node.userData.steps) { const p = local(x, y, z); yield* this.jumpTo(p.x, p.y, p.z); yield* this.wait(.2); }
+      this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); yield* this.lookAround(rand(3, 5));
+      this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(4, 8));
     } else if (id === 'swingtree') {
       // Xích đu: nhảy lên ván đu (đu đưa mạnh), nằm đu theo gió.
       const seat = local(...node.userData.seat);
@@ -1457,7 +1484,7 @@ class Cat {
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
       yield* this.turnTo(this.facingHome());
       this.setPose('sit');
-      if (kind === 'stump-pink') this.contact = { spread: .35, sag: .3 }; // pouf mềm lún dưới mông
+      if (kind === 'stump-hay') this.contact = { spread: .35, sag: .3 }; // rơm mềm lún dưới mông
       yield* this.lookAround(rand(3, 5));
     } else if (id === 'catnip') {
       this.goal.lean = .8; this.face('focus');
@@ -1591,7 +1618,7 @@ class Cat {
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.heading + Math.PI, 3);
       this.setPose('loaf'); this.face('blink');
-      this.contact = { spread: .55 };
+      this.contact = { spread: kind === 'bench-log' ? .4 : .55, sag: kind === 'bench-log' ? .25 : 0 }; // nằm ôm khúc gỗ tròn: võng nhẹ hai bên
       yield* this.sleep(rand(5, 9));
     }
   }
@@ -2759,12 +2786,12 @@ class Cat {
 // ---------- Cả đàn: chọn hành vi, vật cản, đồ chơi rơi/lăn ----------
 // Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
 // Hammock variants that hang from a beam and swing like a pendulum (not a cloth sling).
-const hangsFromBeam = kind => kind === 'hammock-basket' || kind === 'hammock-modern';
+const hangsFromBeam = kind => kind === 'hammock-tire' || kind === 'hammock-basket';
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
-const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4, mirror: .9 };
-const GARDEN2_TOYS = { windmill: 1.1, sunflowers: 1, clothesline: 1.1, campfire: 1.3, kite: 1.2, stream: 1.3, swingtree: 1.5, slide: 1.6, birdhouse: 1, picnic: 1.2 };
-const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.2, kchair: 1, catfood: 1.8, cart: 1.1, kplant: .8, bakerack: .9 };
+const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4 };
+const GARDEN2_TOYS = { windmill: 1.1, sunflowers: 1, clothesline: 1.1, campfire: 1.3, kite: 1.2, stream: 1.3, swingtree: 1.5, slide: 1.6 };
+const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.2, kchair: 1, catfood: 1.8, cart: 1.1, kplant: .8 };
 // Phòng tắm: chưa có tương tác mèo với đồ (mèo vẫn đi lại / ngủ trong phòng như mọi khu).
 const BATHROOM_TOYS = {};
 // Sân sau (bể bơi + vườn rau): chưa có tương tác mèo với đồ.
@@ -2790,7 +2817,7 @@ export function createCatLife(ctx) {
     splash(pond, cat) { // vòng sóng lan ra trên mặt ao
       const ring = new THREE.Mesh(new THREE.RingGeometry(.05, .08, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, side: THREE.DoubleSide }));
       ring.rotation.x = -Math.PI / 2;
-      ring.position.set(cat.x + Math.sin(cat.heading) * .45, .11, cat.z + Math.cos(cat.heading) * .45);
+      ring.position.set(cat.x + Math.sin(cat.heading) * .45, .06, cat.z + Math.cos(cat.heading) * .45);
       scene.add(ring);
       world.notice(ring.position.x, ring.position.z, { except: cat, radius: 2.4, startle: true });
       world.tween(.9, k => { ring.scale.setScalar(1 + k * 5); ring.material.opacity = 1 - k; }, () => scene.remove(ring));

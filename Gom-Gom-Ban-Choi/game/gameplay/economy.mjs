@@ -70,24 +70,24 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  price : giá xu. 0 = có sẵn miễn phí (không cần mua).
 //  lock  : phải mở tới màn này (thắng màn lock − 1) thì mới mua được. Bỏ trống = mua được ngay khi khu đó mở.
 //          Khu mở khi thắng: Vườn = từ đầu · Vườn mở rộng = màn 10 · Phòng khách = màn 20 · Phòng ngủ = màn 30 · Bếp = màn 40.
-//  Mỗi chỗ đặt có 3 món theo theme: Gỗ (món gốc) → Hồng, Hiện đại (vd. Tree stump → Heart pouf, Glow cube seat): món theme lấy CÙNG giá / lock với món gốc.
-//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-pink': { price: 120 },
-//  (id món theme xem THEMES trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
+//  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
+//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
+//  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
 // Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
 //   level : đã thắng tới màn này,
 //   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
 export const AREA_UNLOCK = remote('AREA_UNLOCK', {
-  garden2: { level: 10, cost: 350 },
-  living: { level: 20, cost: 550 },
-  bedroom: { level: 30, cost: 800 },
-  kitchen: { level: 40, cost: 1300 },
-  bathroom: { level: 50, cost: 1500 },
-  backyard: { level: 60, cost: 2000 },
+  garden2: { level: 10, cost: 550 },
+  living: { level: 20, cost: 1550 },
+  bedroom: { level: 30, cost: 2550 },
+  kitchen: { level: 40, cost: 3550 },
+  bathroom: { level: 50, cost: 4550 },
+  backyard: { level: 60, cost: 5550 },
 });
 
 // Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
 // tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1, garden2: 1, living: 1.1, bedroom: 1.2, kitchen: 1.3, bathroom: 1.4, backyard: 1.5 });
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15 });
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
