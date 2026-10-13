@@ -1088,7 +1088,7 @@ function paintInvalid() {
 
 export function newGame(levelIndex = state?.levelIndex ?? 0) {
   // Màn không còn cố định: bật/tắt element theo profile người chơi (adaptive.mjs); màn có tutorial giữ bản gốc.
-  const plan = planLevel(profile, levelIndex), { level } = plan;
+  const plan = planLevel(profile, levelIndex, { cleared: !!loadProgress().stars[levelIndex] }), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
   ({ W, H } = state);

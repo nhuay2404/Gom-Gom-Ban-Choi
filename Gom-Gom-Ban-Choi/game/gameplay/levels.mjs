@@ -55,13 +55,13 @@ export const LEVELS = [
   },
   {
     name: 'Go Big', feature: 'Free play', tier: 'normal',
-    moves: 10, target: 170, cats: 'OGW', assist: 0.5,
+    moves: 10, target: 150, cats: 'OGW', assist: 0.5,
     board: ['......', '.O..G.', '......', '..WW..', '......', '.G..O.'],
     deck: [],
   },
   {
     name: 'Triple Cards', feature: 'More 3-cat cards', tier: 'normal',
-    moves: 12, target: 260, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
+    moves: 12, target: 180, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
     board: ['O....W', '..GG..', '......', '.W..O.', '..OW..', 'G....G'],
     deck: [],
   },
@@ -98,8 +98,10 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Garden Fortress', feature: 'Boss: cross board', tier: 'boss',
-    moves: 20, target: 370, cats: 'OGWTSK', assist: 0.4,
+    // Paywall đầu tiên: mục tiêu đặt để người chơi trung bình gần như thua lần đầu (~10% thắng) và lần chơi lại qua được khi dùng
+    // booster +lượt (2 cái ~80%, đủ từ quà tặng sẵn). DDA không nới màn này, chơi lại thì nút +lượt mời dùng (adaptive.mjs `paywall`).
+    name: 'Garden Fortress', feature: 'Boss: cross board', tier: 'boss', paywall: true,
+    moves: 20, target: 430, cats: 'OGWTSK', assist: 0.4,
     board: ['##..X.#W', '##.OG.##', 'X.MK.MSX', '.TW..M..', '..MS.T..', 'X.M.WMOX', '##.SK.##', '##.X..##'],
     deck: [],
   },
@@ -738,6 +740,8 @@ export const DEFAULT_ASSIST = 0.3;
 
 // Bộ chia: phát hết thẻ kịch bản, sau đó thẻ ngẫu nhiên theo tỉ lệ hình của màn. `assist` = xác suất màu
 // của một mèo được chọn theo mèo đang có trên bàn (nhiều con cùng màu thì dễ ra màu đó) cho đỡ bí.
+// `harsh` (lần đầu vào màn paywall, adaptive.mjs): thẻ "xấu" — mỗi mèo lấy màu ÍT có trên bàn nhất, các mèo trong cùng thẻ khác màu nhau
+// (khó ghép cụm), không có trợ màu. Màn trông y hệt bình thường (cùng mục tiêu, cùng số lượt).
 export function makeDealer(level, rng = Math.random) {
   const script = (level.deck || []).map(parseCard);
   const pool = [...level.cats].map(ch => LETTERS[ch]);
@@ -753,6 +757,11 @@ export function makeDealer(level, rng = Math.random) {
     let shape = pick(bag);
     if (shape === 'triple') shape = rng() < 0.5 ? 'line' : 'elbow';
     const offsets = SHAPES[shape].map(point => point.slice());
+    if (level.harsh) {
+      const count = group => board.filter(cell => cell?.group === group).length;
+      const order = pool.map(group => [group, count(group) + rng() * .5]).sort((a, b) => a[1] - b[1]).map(([group]) => group);
+      return { offsets, items: offsets.map((_, k) => ({ group: order[k % order.length] })) };
+    }
     return { offsets, items: offsets.map(() => ({ group: color(board) })) };
   };
 }

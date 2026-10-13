@@ -227,3 +227,22 @@ test('booster không đổi thắng/thua', () => {
   assert.equal(detectProfile(withTries(veteran(), try_(12, false), try_(12, false), try_(12, true, carried)), 13).id, 'steady');
   assert.equal(detectProfile(withTries(veteran(), try_(13, false, carried)), 13).id, 'steady');
 });
+
+test('màn paywall (màn 10): thua bao nhiêu cũng không dễ đi; từ lần chơi lại sau khi thua thì mời booster +lượt', () => {
+  const i = LEVELS.findIndex(level => level.paywall);
+  assert.equal(i, 9, 'paywall ở màn 10');
+  assert.equal(planLevel(veteran(), i).suggestBooster, false, 'lần đầu: không mời');
+  const firstVisit = { ...veteran(), attempts: veteran().attempts.filter(a => a.level !== i) };
+  assert.equal(planLevel(firstVisit, i).level.harsh, true, 'lần đầu: hàng thẻ xấu');
+  assert.ok(!planLevel(losing(i, 1), i).level.harsh, 'chơi lại: thẻ bình thường');
+  assert.ok(!planLevel(firstVisit, i, { cleared: true }).level.harsh, 'đã thắng màn 10 (dù lịch sử đã trôi mất): không bao giờ thẻ xấu');
+  const longAgo = recordAttempt(firstVisit, try_(i, false)).profile;
+  assert.ok(!planLevel({ ...longAgo, attempts: [] }, i).level.harsh, 'đã chơi rồi (lịch sử bị cắt): không thẻ xấu lại');
+  for (const n of [1, 2, 4, 6]) {
+    const plan = planLevel(losing(i, n), i);
+    assert.ok(plan.shift >= 0, `thua ${n} lần: không hạ độ khó`);
+    assert.equal(plan.deal, null, `thua ${n} lần: hàng thẻ không nới`);
+    assert.equal(plan.suggestBooster, true, `thua ${n} lần: mời booster`);
+    assert.equal(plan.level.moves, LEVELS[i].moves);
+  }
+});
