@@ -74,6 +74,7 @@
 <nav class="tabs subtabs" aria-label="Kinh tế">
   <button class="on" data-subtab="balance">📊 Cân bằng xu</button>
   <button data-subtab="sim">🧪 Mô phỏng người chơi ảo</button>
+  <button data-subtab="flow">🔀 Sơ đồ dòng xu</button>
 </nav>
 <div data-pane="balance">
 <div class="intro">
@@ -92,14 +93,13 @@
   <div class="col">
     <section>
       <h2><span class="step">1</span> Xu thưởng mỗi màn</h2>
-      <p class="hint">Thắng một màn lần đầu được bấy nhiêu xu. Mỗi màn sau được <b>thêm đúng một lượng cố định</b> so với màn trước (tăng đều), màn boss (10, 20, 30…) được nhân thêm.</p>
-      <p class="formula">xu màn n = Xu màn 1 + Xu tăng thêm × (n − 1) &nbsp;·&nbsp; màn boss nhân thêm</p>
-      <p class="hint" style="margin-top:-4px"><b>Tổng N màn</b> (chưa tính phần boss nhân thêm) = N × Xu màn 1 + Xu tăng thêm × N × (N − 1) ÷ 2, hay = N × (xu màn đầu + xu màn cuối) ÷ 2.
+      <p class="hint">Thắng một màn lần đầu được bấy nhiêu xu. Mỗi màn sau được <b>thêm đúng một lượng cố định</b> so với màn trước (tăng đều), màn boss cũng vậy (không nhân thêm).</p>
+      <p class="formula">xu màn n = Xu màn 1 + Xu tăng thêm × (n − 1)</p>
+      <p class="hint" style="margin-top:-4px"><b>Tổng N màn</b> = N × Xu màn 1 + Xu tăng thêm × N × (N − 1) ÷ 2, hay = N × (xu màn đầu + xu màn cuối) ÷ 2.
         Ví dụ Xu màn 1 = 50, Xu tăng thêm = 50 (50, 100, 150…): 100 màn = 252,500 xu, 1000 màn = 25,025,000 xu. Tổng tăng theo bình phương số màn: gấp đôi số màn ≈ gấp 4 tổng xu.</p>
       <div class="form">
         <label>Xu màn 1 <span class="code">REWARD_BASE</span><input type="number" step="1" min="0" data-key="REWARD_BASE"></label>
         <label>Xu tăng thêm mỗi màn <span class="code">REWARD_STEP</span><input type="number" step="1" min="0" data-key="REWARD_STEP"></label>
-        <label>Màn boss được nhân <span class="code">REWARD_BOSS_MULT</span><input type="number" step="0.1" min="1" data-key="REWARD_BOSS_MULT"></label>
         <label>Xu có sẵn lúc đầu <span class="code">START_COINS</span><input type="number" step="10" min="0" data-key="START_COINS"></label>
       </div>
       <div class="row" style="margin-top:10px">
@@ -111,7 +111,6 @@
         <label>Tới màn<input type="number" id="rangeTo" value="100" min="1"></label>
         <span>Tổng xu thưởng: <b id="rangeTotal">—</b> <span class="muted" id="rangeNote"></span></span>
       </div>
-      <div id="rewardChart" style="margin-top:10px"></div>
       <p class="muted" id="rewardInfo"></p>
       <div class="scroll" style="margin-top:6px"><table id="rewardTable"></table></div>
       <div class="sub">Xu tự sinh: icon xu trên đầu mèo ở Deco, chạm để nhận</div>
@@ -144,6 +143,26 @@
   </div>
 </main>
 </div>
+
+<main data-pane="flow" hidden style="padding:12px">
+  <section>
+    <h2>Sơ đồ dòng xu (kiểu Machinations)</h2>
+    <p class="hint">Mỗi bước = thắng thêm 1 màn. <b>▲ Nguồn</b> đổ xu vào <b>● Ví</b>; <b>◆ Cổng</b> thu giá mở khu khi tới màn mốc; <b>▼ Chỗ tiêu</b> nhận xu mua đồ mặc định của khu (rẻ trước, để dành khi sắp tới cổng).
+      Số trên dây = xu chảy ở bước này · tổng tới giờ. <b>Bấm vào một nút để sửa số</b> (dùng chung bộ số với tab Cân bằng xu).</p>
+    <div class="row flow-ctrl">
+      <button class="btn" id="flowReset" title="Về màn 0">⏮</button>
+      <button class="btn" id="flowBack" title="Lùi 1 màn">◀</button>
+      <button class="btn primary" id="flowPlay">▶ Chạy</button>
+      <button class="btn" id="flowStep" title="Thắng thêm 1 màn">▶| 1 màn</button>
+      <input type="range" id="flowLevel" min="0" max="100" value="0" style="flex:1;min-width:160px">
+      <b id="flowAt">Màn 0</b>
+      <label style="width:110px">Giờ offline / màn<input type="number" id="flowHours" value="1" min="0" step="0.5"></label>
+      <label style="width:90px">Số mèo<input type="number" id="flowCats" value="3" min="1" max="6"></label>
+    </div>
+    <div id="flowWrap"><div id="flowSvg"></div><div id="flowPop" hidden></div></div>
+    <div id="flowSpark"></div>
+  </section>
+</main>
 
 <main data-pane="sim" hidden style="padding:12px">
   <div class="intro" style="padding:0 0 12px">

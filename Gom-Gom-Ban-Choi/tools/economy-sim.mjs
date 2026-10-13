@@ -13,7 +13,7 @@ import { mulberry32 } from './bot.mjs';
 import { idlePerHour } from '../game/gameplay/idle.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
-export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_BOSS_MULT', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
+export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
 
 const CAT_LOCKS = CATALOG.filter(e => e.cat === 'cats').map(e => e.lock ?? 0);
 export const catsAt = cleared => Math.min(MAX_ROOM_CATS, CAT_LOCKS.filter(lock => lock <= cleared).length);
@@ -26,7 +26,7 @@ export const PROFILES = [
   { id: 'hardcore', name: 'Chơi nhiều', attempts: 30, skill: 2.5, buy: 'base', claims: 3, spm: 3 },
 ];
 
-// cfg: { START_COINS, REWARD_BASE, REWARD_STEP, REWARD_BOSS_MULT, ZONE_PRICE_MULT, AREA_UNLOCK }
+// cfg: { START_COINS, REWARD_BASE, REWARD_STEP, ZONE_PRICE_MULT, AREA_UNLOCK }
 // winRates: mảng tỉ lệ thắng theo màn (chỉ số 0); màn ngoài mảng dùng trung bình 10 màn cuối.
 // levelInfo: mỗi màn { moves, movesUsedWin, movesUsedLoss, tier } (tools/baseline.json): thời gian một ván = số lượt bot THẬT SỰ dùng
 //   (ván thắng thường xong sớm, ván thua dùng hết lượt / kẹt) × spm giây; màn khó thua nhiều -> nhiều ván dài. Thiếu số liệu thì dùng hết lượt.

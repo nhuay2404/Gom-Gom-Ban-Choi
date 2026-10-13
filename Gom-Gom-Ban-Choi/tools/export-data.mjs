@@ -43,7 +43,7 @@ save('cards.json', {
 save('scoring.json', {
   minMatch: MATCH_SIZE, pointsByClusterSize: Object.fromEntries([3, 4, 5, 6, 7, 8].map(n => [n, clusterPoints(n)])),
   stars: '3★ if movesLeft >= ceil(moves × 0.3), 2★ if >= ceil(moves × 0.12), else 1★',
-  levelReward: 'round(REWARD_BASE + REWARD_STEP × (level−1)), boss level (×10) × REWARD_BOSS_MULT', rewardBase: tuning.ECONOMY.REWARD_BASE, rewardStep: tuning.ECONOMY.REWARD_STEP, rewardBossMult: tuning.ECONOMY.REWARD_BOSS_MULT,
+  levelReward: 'round(REWARD_BASE + REWARD_STEP × (level−1))', rewardBase: tuning.ECONOMY.REWARD_BASE, rewardStep: tuning.ECONOMY.REWARD_STEP,
 });
 save('cats.json', categories);
 save('deco.json', { zones: ZONES, catalog: CATALOG });
