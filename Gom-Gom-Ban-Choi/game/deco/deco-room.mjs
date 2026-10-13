@@ -627,131 +627,13 @@ const BUILD = {
     };
     return home;
   },
-  // ===== Lựa chọn thứ 4 cho từng chỗ trong phòng khách: phong cách hiện đại, tông đen / xám (cùng điểm neo với món gốc) =====
-  // Thảm graphite: thảm chữ nhật xám đậm, viền và sọc xám nhạt; phẳng, mèo đi qua được.
-  'rug-modern'() {
-    const rug = group(at(rbox(2.5, .035, 1.8, .015, '#3a3d43'), 0, .0175, 0), at(rbox(2.2, .04, 1.5, .015, '#4a4e55'), 0, .02, 0),
-      ...[-.45, 0, .45].map(z => at(box(2.0, .045, .05, '#9aa0a8'), 0, .0225, z)), at(box(.05, .045, 1.2, '#9aa0a8'), .7, .0225, 0));
-    rug.traverse(node => { node.castShadow = false; });
-    rug.userData.top = .045;
-    return rug;
-  },
-  // Ghế lounge da đen trên chân crôm: mặt nệm ~.6 (mèo đáp .66 lún vào nệm).
-  'armchair-lounge'() {
-    const leather = '#26282c', seam = '#3a3d43', chrome = mat('#c8ccd2', { metalness: .8, roughness: .35 });
-    return group(...[-1, 1].map(s => at(rbox(.06, .05, .9, .025, chrome), s * .48, .025, 0)), ...[-1, 1].flatMap(s => [-.38, .38].map(z => at(cyl(.025, .025, .22, chrome, 10), s * .48, .14, z))),
-      at(rbox(1.1, .26, .92, .08, leather), 0, .38, 0), at(rbox(.96, .1, .74, .05, seam), 0, .55, .06),
-      at(rbox(1.1, .78, .22, .1, leather), 0, .78, -.36), ...[-1, 1].map(s => at(rbox(.18, .42, .92, .08, leather), s * .5, .56, 0)),
-      at(rbox(.5, .22, .1, .05, '#8d9196'), .1, .76, -.2).rotateZ(-.12));
-  },
-  // Cây lưỡi hổ trong chậu bê tông đen: lá kiếm thẳng là `leaves` (mèo gặm thì rung).
-  'plant-snake'() {
-    const leaves = group();
-    for (let i = 0; i < 9; i++) {
-      const a = i * 2.4, r = .04 + (i % 3) * .05, h = .55 + (i % 4) * .12;
-      const leaf = squash(at(mesh(new THREE.ConeGeometry(.06, h, 6), i % 2 ? '#3f6b3a' : '#5c8a45'), Math.sin(a) * r, .5 + h / 2, Math.cos(a) * r), 1, 1, .35);
-      leaf.rotation.set(Math.cos(a) * .12, -a, -Math.sin(a) * .12);
-      leaves.add(leaf);
-    }
-    mergeStatic(leaves);
-    const pot = group(at(cyl(.27, .24, .46, '#2f3236', 24), 0, .23, 0), at(cyl(.28, .28, .04, '#45494f', 24), 0, .46, 0),
-      at(cyl(.25, .25, .02, '#5a4632', 24), 0, .485, 0), at(box(.42, .03, .03, '#8d9196'), 0, .12, .247), leaves);
-    pot.userData.leaves = leaves;
-    return pot;
-  },
-  // Thùng đồ chơi nỉ xám: quả bóng trắng trên cùng là đồ chơi mèo khều ra sàn.
-  'yarn-bin'() {
-    const toy = at(ball(.1, '#f2f3f5'), .04, .44, .1);
-    const bin = group(at(cyl(.4, .36, .34, '#4a4e55', 32), 0, .17, 0), at(mesh(new THREE.TorusGeometry(.4, .03, 8, 40), '#2f3236'), 0, .34, 0).rotateX(Math.PI / 2),
-      at(cyl(.36, .36, .02, '#2f3236', 32), 0, .35, 0), squash(at(ball(.12, '#26282c'), -.14, .38, -.06), 1, .7, 1), at(cyl(.03, .03, .26, '#9aa0a8', 10), .15, .42, -.15).rotateZ(.5),
-      ...[-1, 1].map(s => at(rbox(.14, .04, .03, .015, '#26282c'), s * .3, .28, .27).rotateY(s * -.6)), toy);
-    bin.userData.toy = toy;
-    toy.userData.home = toy.position.clone();
-    return bin;
-  },
-  // Ổ kén nỉ xám đậm: viền tròn dày, nệm xám nhạt; mèo nằm ở .14 như ổ gốc.
-  'catbed-pod'() {
-    const rim = mesh(new THREE.TorusGeometry(.5, .17, 20, 56), '#3a3d43');
-    rim.rotation.x = -Math.PI / 2;
-    return group(at(rim, 0, .19, 0), at(cyl(.52, .55, .12, '#2f3236'), 0, .07, 0), at(cyl(.36, .36, .05, '#8d9196'), 0, .155, 0),
-      ...[0, 1, 2].map(k => at(box(.14, .02, .02, '#26282c'), Math.cos(k * 2.1) * .52, .03, Math.sin(k * 2.1) * .52).rotateY(-k * 2.1)));
-  },
-  // Bàn đá đen chân kim loại: mặt bàn .8, cốc đen là thứ mèo đẩy rơi.
-  'table-marble'() {
-    const metal = '#1f2125';
-    const mug = group(at(cyl(.09, .08, .16, '#26282c', 18), 0, 0, 0), at(mesh(new THREE.TorusGeometry(.045, .014, 8, 16), '#26282c'), .1, 0, 0));
-    mug.position.set(.15, .875, .1);
-    const vein = (x, z, len, rot) => at(box(len, .01, .012, '#8d9196'), x, .8, z).rotateY(rot);
-    const table = group(at(cyl(.32, .36, .04, metal, 28), 0, .02, 0), at(cyl(.05, .05, .72, metal, 14), 0, .4, 0),
-      at(cyl(.56, .56, .05, '#2b2d31', 40), 0, .77, 0), vein(-.1, .05, .5, .5), vein(.2, -.2, .3, -.7), vein(-.3, -.15, .22, 1.2),
-      at(rbox(.24, .035, .18, .01, '#9aa0a8'), -.2, .813, -.22).rotateY(.3), at(cyl(.06, .05, .12, '#f2f3f5', 16), -.25, .855, .2), mug);
-    table.userData.mug = mug;
-    mug.userData.home = mug.position.clone();
-    return table;
-  },
-  // Đèn cần cong đen: chao vòm treo trên cần cong, đế đá; mèo nằm sưởi dưới đèn.
-  'lamp-arc'() {
-    const black = '#1f2125';
-    const arc = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, .06, -.2], [0, 1.4, -.22], [0, 2.05, -.05], [0, 2.0, .2]].map(p => new THREE.Vector3(...p))), 32, .022, 8), black);
-    const shade = at(mesh(new THREE.SphereGeometry(.24, 28, 12, 0, TAU, 0, Math.PI / 2), mat(black, { side: THREE.DoubleSide })), 0, 1.86, .24);
-    shade.userData.noOutline = true; // chao đèn là vỏ mỏng hở: viền bằng vành dưới
-    const light = new THREE.PointLight('#ffcf7a', 5, 6, 1.6);
-    light.position.set(0, 1.7, .24);
-    return group(at(cyl(.24, .26, .08, '#45494f', 32), 0, .04, -.2), arc, shade, at(mesh(new THREE.TorusGeometry(.24, .015, 8, 40), black), 0, 1.86, .24).rotateX(Math.PI / 2),
-      at(cyl(.02, .02, .1, black, 8), 0, 2.05, .24), at(ball(.09, mat('#fff6d8', { emissive: '#fff0c0', emissiveIntensity: 1 })), 0, 1.8, .24), light);
-  },
-  // Tháp mèo hiện đại: cột đen, sàn nỉ xám đúng chỗ tầng giữa (~1.15) và đỉnh (~1.87) như cây gốc; bóng xám treo lắc.
-  'cattree-modern'() {
-    const post = '#26282c', felt = '#6b7078';
-    return hangingToy(group(at(rbox(1, .1, 1, .04, '#3a3d43'), 0, .05, 0), at(cyl(.07, .07, 1.05, post), -.25, .6, -.2), at(cyl(.08, .08, 1.7, post), .22, .9, .18),
-      at(cyl(.1, .1, .5, '#9aa0a8'), .22, .35, .18), at(rbox(.72, .1, .72, .04, felt), -.1, 1.1, -.12), at(cyl(.36, .36, .14, felt), .22, 1.8, .18),
-      at(mesh(new THREE.TorusGeometry(.33, .025, 8, 40), post), .22, 1.87, .18).rotateX(Math.PI / 2)), '#9aa0a8', '#26282c');
-  },
-  // Kệ khung thép đen: 4 tầng gỗ tối, bày bình gốm đen, sách xám, chậu cây; nóc cao 2 như kệ sách gốc.
-  'shelf-metal'() {
-    const steel = '#1f2125', board = '#3a3330', parts = [];
-    [-.77, .77].forEach(x => [-.21, .21].forEach(z => parts.push(at(box(.04, 2, .04, steel), x, 1, z))));
-    [.04, .68, 1.32, 1.97].forEach(y => parts.push(at(box(1.6, .05, .48, board), 0, y, 0), at(box(1.6, .03, .02, steel), 0, y, .245)));
-    parts.push(at(cyl(.08, .1, .3, '#26282c', 16), -.5, .22, 0), at(cyl(.05, .07, .22, '#8d9196', 16), -.3, .18, .05),
-      ...[0, 1, 2, 3, 4].map(i => at(box(.07, .3 - (i % 2) * .04, .3, ['#4a4e55', '#6b7078', '#2f3236', '#9aa0a8', '#3a3d43'][i]), .2 + i * .08, .85 - (i % 2) * .02, 0)),
-      at(ball(.13, '#45494f'), -.4, 1.47, 0), at(cyl(.09, .07, .14, '#f2f3f5', 16), .4, 1.42, 0), at(ball(.12, '#5c8a45'), .4, 1.58, 0),
-      at(rbox(.36, .14, .26, .03, '#2f3236'), .45, .13, 0));
-    return group(...parts);
-  },
-  // Bể cá tủ đen: tủ mờ đen, khung kính viền đen; cá bơi như bể gốc (mèo ngồi xem).
-  'tank-aquarium'() {
-    const glass = mesh(new THREE.BoxGeometry(1.1, .72, .52), mat('#e8f8ff', { transparent: true, opacity: .14, roughness: .1, depthWrite: false }));
-    const water = mesh(new THREE.BoxGeometry(1.04, .56, .46), mat('#5fb8d6', { transparent: true, opacity: .75, roughness: .2, side: THREE.BackSide, depthWrite: false }));
-    const waterFront = mesh(new THREE.BoxGeometry(1.04, .56, .46), mat('#5fb8d6', { transparent: true, opacity: .22, roughness: .2, depthWrite: false }));
-    for (const node of [glass, water, waterFront]) node.castShadow = node.receiveShadow = false;
-    const fish = ['#f2f3f5', '#ff7a3d', '#ffd23f'].map((color, i) => {
-      const tail = mesh(new THREE.ConeGeometry(.05, .09, 20), color);
-      tail.rotation.z = Math.PI / 2; tail.position.x = -.1;
-      const body = ball(.07, color); body.scale.set(1.3, .8, .6);
-      const f = group(body, tail);
-      f.userData.phase = i * 2.1;
-      return f;
-    });
-    const edge = (w, h, d, x, y, z) => at(box(w, h, d, '#1f2125'), x, y, z);
-    const tank = group(at(rbox(1.2, .7, .62, .05, '#26282c'), 0, .35, 0), at(box(1.0, .02, .02, '#45494f'), 0, .5, .315),
-      at(glass, 0, 1.07, 0), at(water, 0, 1, 0), at(waterFront, 0, 1, 0), at(box(1.04, .06, .46, '#3a3d43'), 0, .76, 0),
-      edge(1.14, .04, .56, 0, 1.45, 0), edge(1.14, .03, .56, 0, .715, 0), ...fish.map(f => at(f, 0, 1, 0)),
-      squash(at(ball(.08, '#6b7078'), -.35, .82, -.1), 1.3, .6, 1), at(cyl(.015, .02, .28, '#3f6b3a', 6), .35, .93, -.1));
-    tank.userData.fish = fish;
-    tank.userData.update = t => fish.forEach(f => {
-      const a = t * .8 + f.userData.phase;
-      f.position.set(Math.sin(a) * .38, 1 + Math.sin(a * 1.7) * .08, Math.cos(a * .6) * .12);
-      f.rotation.y = Math.cos(a) > 0 ? 0 : Math.PI;
-    });
-    return tank;
-  },
 };
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
 Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, KITCHEN_BUILD, BATHROOM_BUILD, GARDEN2_BUILD, BACKYARD_BUILD);
 // Món tự phát sáng (đèn bàn, màn hình, dải LED, lửa, nến) không có PointLight riêng: khai là nguồn sáng để QC (qc.mjs glow) và
 // chế độ đêm giữ phần sáng. Món KHÁC mà có vật liệu emissive / MeshBasicMaterial không nhận sáng là lỗi (ban đêm sáng rực như đèn).
-for (const id of ['bedside', 'bedside-noir', 'desk', 'desk-study', 'desk-setup', 'fridge-steel', 'stove-wood', 'dining-square']) {
+for (const id of ['bedside', 'desk', 'desk-study', 'fridge-steel', 'stove-wood', 'dining-square']) {
   const make = BUILD[id];
   BUILD[id] = (...args) => { const node = make(...args); node.userData.lightSource = true; return node; };
 }
@@ -766,13 +648,9 @@ const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox'
   // vườn: món không có bộ phận cử động riêng (đèn PointLight giữ nguyên, mergeStatic chỉ gộp mesh)
   'stump', 'stump-hay', 'stump-crate', 'lantern', 'lantern-lamppost', 'sandbox-turtle', 'sandbox-parasol',
   'cathouse-barrel', 'cathouse-mushroom', 'bench-log', 'bench-sofa',
-  // phòng khách / phòng ngủ: lựa chọn hiện đại tông đen / xám
-  'rug-modern', 'armchair-lounge', 'catbed-pod', 'lamp-arc', 'shelf-metal', 'bed-platform', 'bedrug-mono', 'laundry-hamper', 'desk-setup',
-  'closet-noir', 'plushie-shark', 'catsteps-floating',
   // bếp: món không có bộ phận cử động riêng (bàn ăn / xe đẩy giữ cốc cho mèo đẩy rơi nên không gộp)
   'fridge', 'fridge-retro', 'fridge-steel', 'stove', 'stove-wood', 'stove-red', 'sink', 'sink-farm', 'sink-steel', 'pantry', 'pantry-rack', 'pantry-hutch',
   'kchair', 'kchair-stool', 'kchair-bench', 'catfood', 'catfood-feeder', 'catfood-stand',
-  'fridge-asian', 'stove-asian', 'sink-asian', 'pantry-asian', 'kchair-asian', 'catfood-asian',
   // phòng tắm: chưa có bộ phận cử động riêng
   'toilet', 'toilet-wood', 'toilet-kitty', 'vanity', 'vanity-pedestal', 'vanity-wood', 'bathtub', 'bathtub-wood', 'bathtub-bubble',
   'shower', 'shower-rain', 'shower-curtain', 'washer', 'washer-retro', 'washer-stack', 'towel', 'towel-ladder', 'towel-heated',

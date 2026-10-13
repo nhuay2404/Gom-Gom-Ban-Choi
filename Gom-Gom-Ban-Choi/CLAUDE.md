@@ -234,9 +234,10 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 **Dữ liệu**
 - Mỗi chỗ đặt (slot) có `PLACES` + `OBSTACLE_RADIUS`; id món là duy nhất giữa mọi khu (test kiểm).
-- **Mỗi chỗ đặt đồ có đúng 3 món, mỗi món một theme** (bảng `THEMES` trong deco-data.mjs, test kiểm): **Gỗ** = món gốc / mặc định (giữ đủ màu sắc tươi như thiết kế ban đầu — người chơi chê bản tô lại toàn tông gỗ là "chán"),
-  **Hồng** (pastel, điệu đà: tim, nơ, diềm bèo, viền vàng), **Hiện đại** (đen nhám / thép + dải neon LED cyan / magenta / tím; món phát sáng khai `userData.lightSource = true`).
-  Không thêm món thứ 4 vào một chỗ. Bỏ món khỏi danh mục: ghi id vào `RETIRED` (save cũ được hoàn xu đúng giá, chỗ đó quay về món gốc).
+- Kiểu khác của từng chỗ đặt: bảng `VARIANTS` trong deco-data.mjs (KHÔNG chia theo theme màu: đã thử Gỗ / Hồng / Hiện đại và người chơi bỏ, đừng thêm lại).
+  Bỏ món khỏi danh mục: ghi id vào `RETIRED` (save cũ được hoàn xu đúng giá, chỗ đó quay về món gốc).
+- Mở khu (AREA_UNLOCK) CHỈ qua `unlockArea` (đủ màn + trả xu). `loadDeco` không bao giờ tự mở khu theo số màn đã thắng (lỗi cũ: lần đầu
+  mở Deco ở màn 20+ thì Living room mở miễn phí); save thiếu / hỏng `unlocked` = chưa mở khu nào (test "khu KHÔNG BAO GIỜ tự mở").
 - Thêm khu mới: `loadDeco` phải tự thêm khu mặc định cho save cũ (test kiểm). Phòng trong nhà mặc định sàn Oak miễn phí (riêng phòng tắm: gạch nhà tắm White tiles).
 - Khu mới cần: ZONE_OFFSET + LINKS (cửa / cổng nối, mèo tự tìm đường qua nhiều khu), PLACES + OBSTACLE_RADIUS,
   ZONES (mốc mở), nút trong thanh chọn khu, đồ chơi của mèo (ZONE_TOYS) và hành vi cho từng món. QC tự lấy lối cửa từ LINKS.

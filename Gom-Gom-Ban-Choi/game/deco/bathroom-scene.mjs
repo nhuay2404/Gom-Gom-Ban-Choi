@@ -342,3 +342,59 @@ export function bathroomDecor() {
   doormat.traverse(node => { node.castShadow = false; node.userData.noOutline = true; });
   return mergeStatic(group(doormat, bin, plant));
 }
+
+// ---------- Món thêm sau (bathshelf): mỗi chỗ chỉ có món gốc ----------
+// ---------- Kệ đứng áp tường trước (rộng .92, sâu .42, nóc y 1.24): khung 2 vách + 3 tầng + tấm lưng; nóc trống cho mèo ngồi ----------
+const SHELF_Y = [.08, .46, .84];
+function shelfFrame(side, board, back) {
+  return [...[-1, 1].map(s => at(rbox(.04, 1.2, .4, .015, side), s * .43, .6, 0)),
+    ...SHELF_Y.map(y => at(rbox(.82, .04, .37, .015, board), 0, y, .015)),
+    at(rbox(.92, .04, .42, .015, side), 0, 1.22, 0), // nóc
+    at(rbox(.82, 1.16, .03, .012, back), 0, .62, -.185)];
+}
+// Khăn cuộn: trụ nằm, mặt tròn quay ra trước.
+const roll = (r, len, color) => at(cyl(r, r, len, color), 0, 0, 0).rotateX(Math.PI / 2);
+const rolls = (colors, x0, y) => [at(roll(.07, .26, colors[0]), x0, y + .07, 0), at(roll(.07, .26, colors[1]), x0 + .15, y + .07, 0),
+  at(roll(.07, .26, colors[2]), x0 + .075, y + .2, 0)];
+const shelfBottles = (colors, cap, x0, y) => colors.flatMap((c, k) => [at(cyl(.04, .045, .18, c, 12), x0 + k * .12, y + .09, 0), at(cyl(.016, .02, .04, cap, 8), x0 + k * .12, y + .2, 0)]);
+const rubberDuck = (x, y, z, color = '#ffd23f') => group(squash(at(ball(.07, color), x, y + .056, z), 1.2, .8, 1), at(ball(.045, color), x + .05, y + .12, z),
+  at(cone(.02, .05, '#ff8a3d', 8), x + .1, y + .12, z).rotateZ(-Math.PI / 2));
+// Chậu cây nhỏ (gỗ + lá xanh) đặt trên mặt phẳng ở độ cao y.
+const pottedPlant = (x, y, z, s = 1) => group(at(cyl(.05 * s, .04 * s, .08 * s, '#e9c58f', 12), x, y + .04 * s, z),
+  at(ball(.065 * s, '#7fb069'), x, y + .11 * s, z), at(ball(.045 * s, '#5fae46'), x + .03 * s, y + .15 * s, z + .01 * s));
+const SHELF_SEAT = [0, 1.28, .03];
+Object.assign(BATHROOM_BUILD, {
+  // Kệ đứng màu tươi: vách xanh, tầng vàng; khăn cuộn + giỏ cam tầng dưới, lọ dầu gội + vịt cao su tầng giữa, chậu cây + xà phòng tầng trên, đệm đỏ trên nóc.
+  bathshelf() {
+    const g = group(...shelfFrame('#5bb8e8', '#ffd66b', '#fffaf0'),
+      ...rolls(['#ff8fb8', '#ffffff', '#b48ee8'], -.3, .1), at(rbox(.26, .18, .26, .04, '#e98b5a'), .22, .19, 0),
+      ...shelfBottles(['#ff8fb8', '#8fc9f2', '#bfe3a0'], '#ffffff', -.3, .48), rubberDuck(.18, .48, 0),
+      pottedPlant(-.2, .86, 0, 1.3), at(rbox(.14, .05, .09, .02, '#e8617f'), .2, .885, 0), at(rbox(.12, .05, .08, .02, '#7fc45a'), .2, .935, 0),
+      at(rbox(.42, .04, .3, .015, '#e8617f'), 0, 1.26, .03));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+  // Kệ thang gỗ: hai thanh đứng như thang, ba tầng gỗ, khăn vắt trên thanh ngang, giỏ mây + chai sữa tắm; nóc phẳng cho mèo nằm.
+  'bathshelf-ladder'() {
+    const wood = '#c98a55';
+    const g = group(...[-1, 1].flatMap(s => [at(rbox(.05, 1.22, .05, .02, wood), s * .43, .61, -.15), at(rbox(.05, 1.22, .05, .02, wood), s * .43, .61, .15)]),
+      ...[.12, .5, .88].map(y => at(rbox(.86, .04, .36, .015, '#e9c58f'), 0, y, 0)), at(rbox(.92, .04, .4, .015, wood), 0, 1.24, 0),
+      at(cyl(.016, .016, .86, wood, 8), 0, .34, .2).rotateZ(Math.PI / 2), at(rbox(.36, .26, .03, .012, '#8fc9f2'), -.12, .23, .225), at(box(.36, .03, .034, '#ffffff'), -.12, .14, .225),
+      at(rbox(.3, .16, .24, .05, '#d9a35a'), .2, .22, -.02), ...rolls(['#ffffff', '#ffd66b', '#7fc45a'], -.32, .52),
+      ...shelfBottles(['#ffd66b', '#ff8fb8'], '#ffffff', .12, .52), pottedPlant(.22, .9, 0, 1.3), at(rbox(.2, .06, .14, .025, '#ffffff'), -.2, .93, 0),
+      rubberDuck(-.2, .96, 0, '#ff8fb8'));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+  // Kệ ô vuông trắng 2 × 3 ô, mỗi ô một giỏ vải màu (vàng, xanh, hồng), nóc đặt bình hoa nhỏ + khăn cuộn.
+  'bathshelf-baskets'() {
+    const ROW = [.03, .43, .83], COL = [-.29, 0, .29], colors = ['#ffd66b', '#8fc9f2', '#ff8fb8', '#bfe3a0', '#b48ee8', '#ffb347'];
+    const g = group(...[-1, 1].map(s => at(rbox(.04, 1.22, .4, .015, '#fffaf0'), s * .45, .61, 0)), ...[-1, 1].map(s => at(rbox(.03, 1.18, .4, .012, '#fffaf0'), s * .145, .61, 0)),
+      ...ROW.map(y => at(rbox(.88, .04, .4, .015, '#fffaf0'), 0, y + .02, 0)), at(rbox(.92, .04, .42, .015, '#fffaf0'), 0, 1.24, 0),
+      at(rbox(.88, 1.2, .03, .012, '#f3e9da'), 0, .62, -.185));
+    ROW.slice(0, 2).forEach((y, r) => COL.forEach((x, c) => g.add(at(rbox(.24, .26, .3, .04, colors[r * 3 + c]), x, y + .17, .02), at(rbox(.08, .03, .02, .01, '#fffaf0'), x, y + .26, .175))));
+    g.add(...rolls(['#ffffff', '#8fc9f2', '#ffd66b'], -.3, .84), at(cyl(.06, .07, .2, '#8fc9f2', 14), .2, .96, 0), ...[-.03, .03].map(dx => at(ball(.05, '#ff8fb8'), .2 + dx, 1.1, 0)));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+});
