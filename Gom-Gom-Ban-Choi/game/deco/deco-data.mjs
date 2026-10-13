@@ -13,6 +13,7 @@ export const ZONES = {
   kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
+  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 // Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
@@ -25,8 +26,8 @@ export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter
 // ===== Mở khu: đủ màn + đủ xu thì mua khu (trừ xu). Mỗi khu đi qua các trạng thái =====
 //   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
 //   coins : đủ màn, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
-export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard'];
-export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard' };
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
+export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
 export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
 const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
 // table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
@@ -166,6 +167,23 @@ export const CATALOG = [
   { id: 'yground-grass', zone: 'backyard', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
   { id: 'yground-clover', zone: 'backyard', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
   { id: 'yground-meadow', zone: 'backyard', cat: 'floors', name: 'Meadow', color: '#b5dd7a', style: 'ground-meadow' },
+  // --- Trường mẫu giáo: lớp học + sân chơi (bên kia đường trước vườn; mở theo AREA_UNLOCK.kinder). Món kép: kdesk, kcubby, kspring, kbench ---
+  { id: 'kdesk', zone: 'kinder', cat: 'furniture', name: 'Kids desks (2 sets)', color: '#5fb8e8' },
+  { id: 'kboard', zone: 'kinder', cat: 'furniture', name: 'Chalkboard', color: '#2f5d4a' },
+  { id: 'kcubby', zone: 'kinder', cat: 'furniture', name: 'Toy cubbies (pair)', color: '#ffd66b' },
+  { id: 'kpiano', zone: 'kinder', cat: 'furniture', name: 'Upright piano', color: '#e98b9a' },
+  { id: 'kplayset', zone: 'kinder', cat: 'furniture', name: 'Slide tower', color: '#ff6b6b' },
+  { id: 'kswing', zone: 'kinder', cat: 'furniture', name: 'Swing set', color: '#5fb8e8' },
+  { id: 'kspring', zone: 'kinder', cat: 'furniture', name: 'Spring riders (pair)', color: '#ffd66b' },
+  { id: 'ksandpit', zone: 'kinder', cat: 'furniture', name: 'Sandpit', color: '#efd8a4' },
+  { id: 'kmerry', zone: 'kinder', cat: 'furniture', name: 'Merry-go-round', color: '#b48ee8' },
+  { id: 'kbench', zone: 'kinder', cat: 'furniture', name: 'Benches (pair)', color: '#ff8fb8' },
+  { id: 'kfence-picket', zone: 'kinder', cat: 'walls', name: 'Yellow picket', color: '#ffd66b', style: 'fence-white' },
+  { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Blue rails', color: '#8fc9f2', style: 'fence-wood' },
+  { id: 'kfence-hedge', zone: 'kinder', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  { id: 'kground-grass', zone: 'kinder', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
+  { id: 'kground-clover', zone: 'kinder', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
+  { id: 'kground-path', zone: 'kinder', cat: 'floors', name: 'Stone path', color: '#d9d2c4', style: 'ground-path' },
   // --- Phòng tắm (bên trái phòng ngủ, cửa trên tường trái phòng ngủ; mở theo AREA_UNLOCK.bathroom) ---
   { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Toilet', color: '#ffffff' },
   { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Sink vanity', color: '#bfe8d6' },
@@ -369,6 +387,27 @@ const VARIANTS = [
   ['scarecrow', 'scarecrow-vane', 'Weathervane', '#2f3238'],
   ['rainbarrel', 'rainbarrel-well', 'Wishing well', '#e8483a'],
   ['rainbarrel', 'rainbarrel-pump', 'Hand pump', '#e8483a'],
+  // --- Trường mẫu giáo ---
+  ['kdesk', 'kdesk-round', 'Round tables (2 sets)', '#ffd66b'],
+  ['kdesk', 'kdesk-mats', 'Floor tables (2 sets)', '#bfe6f6'],
+  ['kboard', 'kboard-white', 'Whiteboard', '#ffffff'],
+  ['kboard', 'kboard-felt', 'Pin-up board', '#ff8fb8'],
+  ['kcubby', 'kcubby-books', 'Bookshelves (pair)', '#7fc45a'],
+  ['kcubby', 'kcubby-lockers', 'Backpack lockers (pair)', '#ff6b6b'],
+  ['kpiano', 'kpiano-desk', "Teacher's desk", '#c98a55'],
+  ['kpiano', 'kpiano-drums', 'Xylophone & drum', '#ff9a3c'],
+  ['kplayset', 'kplayset-house', 'Playhouse', '#fff0c2'],
+  ['kplayset', 'kplayset-tunnel', 'Rainbow climber', '#7fc45a'],
+  ['kswing', 'kswing-tire', 'Tire swing', '#2f3238'],
+  ['kswing', 'kswing-nest', 'Nest swing', '#ff9a3c'],
+  ['kspring', 'kspring-rocker', 'Rocking horses (pair)', '#c98a55'],
+  ['kspring', 'kspring-cars', 'Pedal cars (pair)', '#ff6b6b'],
+  ['ksandpit', 'ksandpit-paddling', 'Paddling pool', '#5fb8e8'],
+  ['ksandpit', 'ksandpit-water', 'Water table', '#5fb8e8'],
+  ['kmerry', 'kmerry-seesaw', 'Seesaw', '#ffd66b'],
+  ['kmerry', 'kmerry-carousel', 'Mini carousel', '#ff8fb8'],
+  ['kbench', 'kbench-picnic', 'Picnic tables (pair)', '#7fc45a'],
+  ['kbench', 'kbench-planter', 'Planter benches (pair)', '#c98a55'],
 ];
 // Món theme Hồng / Hiện đại đã bỏ (quay lại các kiểu khác ở trên) -> chỗ của nó. Save còn giữ món này: hoàn đúng giá (giá món gốc), chỗ đang đặt quay về món gốc (clean).
 export const RETIRED = Object.fromEntries(Object.entries({

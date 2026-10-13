@@ -14,13 +14,44 @@ const ZONE_STEP = ROOM_HALF * 2 + .4;
 // (x từ -ROOM_HALF tới GARDEN_EXT_X + ROOM_HALF). Đồ của phần mở rộng vẫn là đồ của vườn (PLACES theo toạ độ vườn).
 // 'garden2' chỉ còn là ô đi lại nội bộ cho mèo (room-cats.mjs) + tâm phần mở rộng, KHÔNG phải một khu Deco riêng.
 export const GARDEN_EXT_X = ROOM_HALF * 2;
+// Con đường trước vườn (meadow-scene.mjs buildRoad): bề rộng các dải từ gần vườn ra xa (m) — vệ cỏ, vỉa hè, lề, mặt đường, lề, vỉa hè; mép gần ROAD_NEAR.
+export const ROAD = { gap: 1.1, sidewalk: 1.5, curb: .24, road: 3.8, length: 240, lampEvery: 9 };
+export const ROAD_BAND = ROAD.gap + ROAD.sidewalk * 2 + ROAD.curb * 2 + ROAD.road;
+export const ROAD_NEAR = ROOM_HALF + .3;
+// Trường mẫu giáo: MỘT khu Deco hình chữ nhật (cùng khung với sân sau: kinderBounds) ngay bên kia đường, đối diện vườn. Như sân sau,
+// 'kinder2' (nửa phải) chỉ là ô đi lại của mèo. Cổng trước vườn + cổng trường cùng ở x = KINDER_GATE_X (giữa ghế dài và đèn lồng của vườn);
+// mèo qua đường bằng cầu vòm (BRIDGE, kinder-scene.mjs kinderDecor).
+export const KINDER_GATE_X = -.3;
+// Mốc z các dải đường (toạ độ khu nhà): mép nền vườn, vỉa hè gần (s0..s1), lề, mặt đường (c1..r1), lề, vỉa hè xa (c2..s2). Mặt vỉa hè ở y SIDEWALK_Y.
+const S0 = ROAD_NEAR + ROAD.gap;
+export const ROAD_Z = { verge: ROOM_HALF + .01, s0: S0, s1: S0 + ROAD.sidewalk, c1: S0 + ROAD.sidewalk + ROAD.curb, r1: S0 + ROAD.sidewalk + ROAD.curb + ROAD.road,
+  c2: S0 + ROAD.sidewalk + ROAD.curb * 2 + ROAD.road, s2: ROAD_NEAR + ROAD_BAND };
+export const SIDEWALK_Y = -.21;
+// Cầu vòm đi bộ, lệch sang phải cổng (không nối thẳng hai cổng): chân cầu đáp trên hai vỉa hè (z0..z1), đỉnh vòm cao rise trên vỉa hè.
+export const BRIDGE = { x: KINDER_GATE_X + 2.6, w: 1.2, rise: 1.2, z0: ROAD_Z.s0 + .5, z1: ROAD_Z.s2 - .75 };
+// Độ cao mặt đi của lối qua đường tại (x, z) (toạ độ khu nhà): mặt cầu, bậc đá cổng vườn -> vỉa hè, bậc vỉa hè -> cổng trường, vỉa hè;
+// null ngoài vùng lối qua đường.
+export function crossingHeight(x, z) {
+  const B = BRIDGE, g = KINDER_GATE_X, Z = ROAD_Z;
+  if (Math.abs(x - B.x) < B.w / 2 && z > B.z0 && z < B.z1) { const t = (z - B.z0) / (B.z1 - B.z0); return SIDEWALK_Y + B.rise * 4 * t * (1 - t); }
+  if (x < g - .6 || x > B.x + .6 || z < Z.verge || z > Z.s2 + .12) return null;
+  const k = (a, b) => Math.min(1, Math.max(0, (z - a) / (b - a)));
+  if (Math.abs(x - g) < .6 && z < Z.s0) return SIDEWALK_Y * k(Z.verge, Z.s0);
+  if (Math.abs(x - g) < .6 && z > Z.s2 - .35) return SIDEWALK_Y * (1 - k(Z.s2 - .35, Z.s2 + .12));
+  return SIDEWALK_Y;
+}
+// Cửa lớp học ở tường trước (toạ độ khu kinder; kinder-scene.mjs CLASSROOM): giữa lối hai cụm bàn.
+export const KINDER_DOOR = { x: 8.4, w: 1.1, h: 1.9 };
+// Tâm khu: mép gần mảnh đất (z0 = -ROOM_HALF - .2) cách vỉa hè xa .12.
+export const KINDER_Z = ROAD_NEAR + ROAD_BAND + .12 + ROOM_HALF + .2;
 export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], bathroom: [-ZONE_STEP, -2 * ZONE_STEP], garden2: [GARDEN_EXT_X, 0],
-  backyard: [0, -2 * ZONE_STEP], backyard2: [ZONE_STEP, -2 * ZONE_STEP] };
+  backyard: [0, -2 * ZONE_STEP], backyard2: [ZONE_STEP, -2 * ZONE_STEP], kinder: [0, KINDER_Z], kinder2: [ZONE_STEP, KINDER_Z] };
 // Sân sau (bể bơi + vườn rau): MỘT khu Deco hình chữ nhật phía sau phòng khách + bếp, bên phải phòng tắm (cửa trên tường phải phòng tắm).
 // Giống vườn mở rộng: 'backyard2' (sau bếp) chỉ là ô đi lại nội bộ của mèo; đồ đặt theo toạ độ khu 'backyard' (tâm sau phòng khách),
 // nửa trái là vườn rau, nửa phải (x ≈ BACKYARD_EXT_X) là bể bơi. Mặt trong hàng rào: backyardBounds().
 export const BACKYARD_EXT_X = ZONE_STEP;
 export const backyardBounds = () => ({ x0: -ROOM_HALF - .2, x1: BACKYARD_EXT_X + ROOM_HALF + .2, z0: -ROOM_HALF - .2, z1: ROOM_HALF + .2 });
+export const kinderBounds = backyardBounds;
 // Khung vườn (mặt trong hàng rào) khi chưa / đã mở rộng.
 // Toạ độ texture của nền vườn tại (x, z) (toạ độ vườn): khối nền (deco-room.mjs, mặt trên BoxGeometry) trải texture mỗi ô 2·ROOM_HALF m.
 // Đồi (garden2-scene.mjs buildHill) dùng đúng công thức này để vân cỏ trên đồi liền với nền, không lộ đường viền ở chân đồi.
@@ -52,6 +83,9 @@ export const LINKS = [
   { a: 'garden', b: 'garden2', at: 0, w: ROOM_HALF * 2, open: true },
   { a: 'bathroom', b: 'backyard', at: ZONE_OFFSET.bathroom[1] + BACKYARD_DOOR.z, w: BACKYARD_DOOR.w },
   { a: 'backyard', b: 'backyard2', at: ZONE_OFFSET.backyard[1], w: ROOM_HALF * 2, open: true },
+  // via: điểm đi qua giữa hai cổng (toạ độ khu nhà, theo chiều a -> b): xuống vỉa hè, dọc vỉa hè tới chân cầu, qua cầu, về cổng trường
+  { a: 'garden', b: 'kinder', at: KINDER_GATE_X, w: 1, via: [[KINDER_GATE_X, ROAD_Z.s0 + .25], [BRIDGE.x, ROAD_Z.s0 + .25], [BRIDGE.x, ROAD_Z.s2 - .45], [KINDER_GATE_X, ROAD_Z.s2 - .45]] },
+  { a: 'kinder', b: 'kinder2', at: KINDER_Z, w: ROOM_HALF * 2, open: true },
 ];
 
 // ---------- Đồi nhỏ ở phần vườn mở rộng ----------
@@ -98,6 +132,12 @@ export const PLACES = {
   // hòm đồ bơi góc sau-trái bể.
   greenhouse: [-2.35, -2.6, 0], vegbed: [1.65, -3.25, 0], veggies: [.6, 1.2, 0], scarecrow: [3.4, .55], rainbarrel: [-3.35, 3.2, 0],
   pool: [8.4, -1.2, 0], parasol: [6.0, 2.4], lounger: [11.3, 2.2, Math.PI], grill: [11.5, -3.2, 0], deckbox: [5.3, -3.3, 0],
+  // trường mẫu giáo (toạ độ khu kinder: x -4.2 .. 12.6, z -4.2 .. 4.2; mép -z giáp vỉa hè, cổng x = KINDER_GATE_X). Lớp học (nửa phải, sau,
+  // kinder-scene.mjs CLASSROOM x 4.7..12.3, z -3.85..0.3): bảng giữa tường sau, piano góc sau-phải, hai cụm bàn (kép), hai tủ ngăn áp hai vách (kép).
+  // Sân chơi: tháp cầu trượt góc sau-trái, xích đu trước-trái, thú nhún (kép) giữa, hố cát trước, đu quay + ghế băng (kép) trước lớp.
+  // Món kép xoay 0 (vật cản phụ OBSTACLE_EXTRA không xoay theo món).
+  kboard: [8.4, -3.79, 0], kpiano: [11.0, -3.45, 0], kdesk: [8.4, -1.4, 0], kcubby: [8.4, -1.6, 0],
+  kplayset: [-2.4, -2.4, 0], kswing: [-2.5, 1.7, 0], kspring: [.6, .6, 0], ksandpit: [2.7, 2.7, 0], kmerry: [5.6, 2.3, 0], kbench: [9.7, 2.9, 0],
   // bếp (cửa sang phòng khách ở tường trái z = -.6, cửa sổ tường sau x = .55 ngay trên bồn rửa): tủ lạnh góc sau-trái, bếp nấu cạnh
   // tủ lạnh, bồn rửa dưới cửa sổ, quầy chữ L (bồn rửa + dãy quầy dọc tường sau rồi tường phải),
   // tủ chén tường phải phía trước, bàn ăn giữa phòng, bốn ghế quanh bàn (gốc model = tâm bàn), chậu cây giữa tường trước, khay ăn của mèo góc trước-trái,
@@ -130,6 +170,7 @@ export const OBSTACLE_RADIUS = {
   flowers: 0, stump: .45, catnip: .45, lantern: .28, sandbox: .62, cathouse: .75, pond: 1, hammock: .7, birdbath: .36, bench: .75,
   bed: 1.25, bedside: .35, desk: .8, chair: .42, closet: .75, catsteps: .32, bedrug: 0, plushie: .5, laundry: .38, mirror: .38,
   greenhouse: 1.15, vegbed: .55, veggies: .01, scarecrow: .45, rainbarrel: .55, pool: 1.35, parasol: .75, lounger: .45, grill: .45, deckbox: .5,
+  kboard: .3, kpiano: .6, kdesk: .01, kcubby: .01, kplayset: .01, kswing: .01, kspring: .01, ksandpit: .9, kmerry: .92, kbench: .01,
   shower: .75, bathtub: .45, toilet: .45, vanity: .55, towel: .3, washer: .5, litter: .5, bathmat: 0, jacuzzi: 1.25, bathshelf: .5, // bồn sục: thân 1.02 + bậc phía trước
   fridge: .6, stove: .55, sink: .78, pantry: .6, dining: .95, kchair: .01, kplant: .42, catfood: .5, cart: .55, bakerack: .5,
   windmill: .65, swingtree: .55, clothesline: .3, campfire: .7, sunflowers: .55, kite: .2, stream: .75, slide: .6, birdhouse: .25, picnic: .6,
@@ -142,12 +183,18 @@ export const OBSTACLE_EXTRA = {
   bathtub: [[-.55, 0, .42], [.55, 0, .42]], // bồn tắm dài 1.6 dọc tường sau
   greenhouse: [[-.8, 0, 1.15], [.8, 0, 1.15]], vegbed: [[-1.0, 0, .55], [1.0, 0, .55]], veggies: [-1.2, 1.35].flatMap(dz => [-.95, 0, .95].map(dx => [dx, dz, .65])), // hai luống hai bên lối đá, giữa là lối đi // nhà kính 3 × 2.2, luống 3 × 1
   pool: [[-1.5, 0, 1.35], [1.5, 0, 1.35]], lounger: [[0, -.55, .45], [0, .55, .45]], // bể 4.6 × 2.6, ghế nằm dài 1.8
+  // trường mẫu giáo: món kép = vật cản ở cả hai chỗ, giữa hai chỗ để trống cho mèo đi
+  kdesk: [[-1.7, 0, .9], [1.7, 0, .9]], kcubby: [-3.5, 3.5].flatMap(dx => [[dx, -.45, .45], [dx, .45, .45]]),
+  kspring: [[0, -1.3, .45], [0, 1.3, .45]], kbench: [-1.9, 1.9].flatMap(dx => [[dx - .35, 0, .45], [dx + .35, 0, .45]]),
+  kplayset: [[-.5, 0, .75], [.85, 0, .4]], kswing: [[-1.2, 0, .6], [0, 0, .5], [1.2, 0, .6]],
   sink: [[1.0, 0, .35], [1.7, 0, .35], [2.4, 0, .35], [3.1, .1, .4], [3.1, .8, .35], [3.1, 1.5, .35], [3.1, 2.2, .35], [3.1, 2.7, .35]],
 };
 
 // Cửa sổ vòm trên tường sau (phòng khách): chỗ mèo ngồi ngắm chim. Phòng ngủ không có cửa sổ (giữa tường sau là cửa sang phòng tắm).
 // Cửa sổ bếp (tường sau): ngay trên bồn rửa, không có gờ riêng (mặt bàn bồn rửa làm gờ).
 export const KITCHEN_WINDOW_X = .55;
+// Cửa sổ nhỏ ở tường trước bếp (toạ độ u của tường, mặt ngoài nhìn ra vườn).
+export const KITCHEN_FRONT_WINDOW_U = 1.3;
 // Cửa sổ phòng tắm (tường sau): ngay trên bồn tắm.
 export const BATHROOM_WINDOW_X = 2.35;
 export const WINDOW = { x: -1.6, z: -ROOM_HALF + .5 };

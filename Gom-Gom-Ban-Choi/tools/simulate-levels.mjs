@@ -10,7 +10,7 @@ import { holdUnlocked } from '../game/gameplay/tuning.mjs';
 import { playableCells } from '../game/gameplay/board-shapes.mjs';
 import { clearMatches } from '../game/gameplay/board-rules.mjs';
 import { MATCH_SIZE } from '../game/gameplay/scoring.mjs';
-import { play } from './bot.mjs';
+import { play, PACES } from './bot.mjs';
 import { writeFileSync } from 'node:fs';
 
 const RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 400);
@@ -31,14 +31,15 @@ log(`Mô phỏng ${RUNS} ván mỗi màn\n`);
 log('Màn | Tên              | Bàn         | Lượt | Mục tiêu | Thắng | Kẹt  | ★ TB | Điểm TB');
 LEVELS.forEach((level, i) => {
   validate(level, i + 1);
-  const results = Array.from({ length: RUNS }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i) }));
+  const results = Array.from({ length: RUNS }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i), pace: PACES }));
   const wins = results.filter(r => r.win), stuck = results.filter(r => r.reason === 'stuck').length;
   const stars = wins.length ? wins.reduce((s, r) => s + r.stars, 0) / wins.length : 0;
   const avg = results.reduce((s, r) => s + r.score, 0) / RUNS;
-  // Số lượt thật sự dùng (thắng thường xong sớm, thua dùng hết lượt / kẹt): mô phỏng economy tính thời gian chơi theo đây.
+  // Số lượt + giây thật sự dùng (thắng thường xong sớm, thua dùng hết lượt / kẹt); giây theo từng nhịp chơi (bot.mjs PACES): mô phỏng economy tính thời gian chơi theo đây.
   const mean = (list, f) => (list.length ? +(list.reduce((t, r) => t + f(r), 0) / list.length).toFixed(1) : null);
   const losses = results.filter(r => !r.win);
-  rows.push({ level: i + 1, name: level.name, board: boardLabel(level), tier: level.tier || 'normal', moves: level.moves, target: level.target, winRate: +(wins.length / RUNS).toFixed(3), stuckRate: +(stuck / RUNS).toFixed(3), avgStars: +stars.toFixed(2), avgScore: Math.round(avg), movesUsedWin: mean(wins, r => r.movesUsed), movesUsedLoss: mean(losses, r => r.movesUsed) });
+  rows.push({ level: i + 1, name: level.name, board: boardLabel(level), tier: level.tier || 'normal', moves: level.moves, target: level.target, winRate: +(wins.length / RUNS).toFixed(3), stuckRate: +(stuck / RUNS).toFixed(3), avgStars: +stars.toFixed(2), avgScore: Math.round(avg), movesUsedWin: mean(wins, r => r.movesUsed), movesUsedLoss: mean(losses, r => r.movesUsed),
+    secWin: Object.fromEntries(Object.keys(PACES).map(id => [id, mean(wins, r => r.sec[id])])), secLoss: Object.fromEntries(Object.keys(PACES).map(id => [id, mean(losses, r => r.sec[id])])) });
   log(`${String(i + 1).padStart(3)} | ${level.name.padEnd(16)} | ${boardLabel(level).padEnd(11)} | ${String(level.moves).padStart(4)} | ${String(level.target).padStart(8)} | ${(wins.length / RUNS * 100).toFixed(0).padStart(4)}% | ${(stuck / RUNS * 100).toFixed(0).padStart(3)}% | ${stars.toFixed(1).padStart(4)} | ${avg.toFixed(0).padStart(6)}`);
 });
 

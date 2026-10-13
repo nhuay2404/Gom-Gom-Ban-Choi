@@ -6,7 +6,7 @@
 // want(id) trả về true nếu người chơi có (hoặc chịu mua) booster đó; kho và xu do bên gọi quản lý.
 // `trace` = mảng (tuỳ chọn): mỗi lượt đẩy vào { placed (bàn sau khi đặt, trước khi gom), board (sau khi gom), cells (ô vừa đặt), cleared,
 //   card, hold (có dùng Gửi tạm), points, score, movesLeft, boosts } để Level Editor phát lại ván chơi.
-import { parseBoard, makeDealer, starsFor, boardSize, parseGrass } from '../game/gameplay/levels.mjs';
+import { parseBoard, makeDealer, starsFor, boardSize } from '../game/gameplay/levels.mjs';
 import { BOOSTERS } from '../game/gameplay/tuning.mjs';
 import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/gameplay/board-rules.mjs';
 import { openingCard } from '../game/gameplay/session.mjs';
@@ -19,9 +19,9 @@ const rotations = offsets => { const out = [offsets]; for (let i = 0; i < 3; i++
 const fits = (board, card, W, H) => rotations(card.offsets).some(o => board.some((_, a) => placementIndices(board, W, H, a, o)));
 
 // Mọi nước đặt hợp lệ của thẻ kèm giá trị (đánh giá nhìn 1 nước). Thứ tự duyệt + số lần gọi rng giữ như cũ để bot cũ cho đúng kết quả cũ.
-function movesFor(board, card, rng, noise, W, H, grass) {
+function movesFor(board, card, rng, noise, W, H) {
   const out = [];
-  for (const offsets of rotations(card.offsets)) for (let anchor = 0; anchor < W * H; anchor++) {
+  for (const [rot, offsets] of rotations(card.offsets).entries()) for (let anchor = 0; anchor < W * H; anchor++) {
     const indices = placementIndices(board, W, H, anchor, offsets);
     if (!indices) continue;
     const next = board.slice();
@@ -32,17 +32,14 @@ function movesFor(board, card, rng, noise, W, H, grass) {
     let setup = 0;
     indices.forEach(index => { if (match.board[index]) setup += connectedGroup(match.board, W, H, index).length - 1; });
     const empty = match.board.filter(cell => !cell).length;
-    // Màn có cỏ: mỗi ô cỏ phá được đáng giá như một cú gom; đặt mèo lên cỏ (chuẩn bị gom) cũng được cộng.
-    const cleaned = grass ? match.cleared.filter(index => grass[index]).length : 0;
-    const onGrass = grass ? indices.filter(index => grass[index] && match.board[index]).length : 0;
-    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + rng() * noise;
-    out.push({ value, match, points, cleaned, indices, placed: next });
+    const value = points * 10 + setup * 6 + empty * 0.5 + rng() * noise;
+    out.push({ value, match, points, indices, placed: next, rot });
   }
   return out;
 }
-function bestMove(board, card, rng, noise, W, H, grass) {
+function bestMove(board, card, rng, noise, W, H) {
   let best = null;
-  for (const move of movesFor(board, card, rng, noise, W, H, grass)) if (!best || move.value > best.value) best = move;
+  for (const move of movesFor(board, card, rng, noise, W, H)) if (!best || move.value > best.value) best = move;
   return best;
 }
 // Nhìn trước 1 nước (người chơi giỏi): lấy LOOK_TOP nước tốt nhất (cả thẻ đang bóc lẫn đổi Hold), chấm bằng điểm THẬT của nước này + nước tốt nhất
@@ -61,44 +58,64 @@ function potential(board, W, H) {
   });
   return value + board.filter(cell => !cell).length * .5;
 }
-function lookaheadPick(board, options, active, hold, queue, useHold, rng, noise, W, H, grass) {
-  const cands = options.flatMap(option => movesFor(board, option.card, rng, noise, W, H, grass).map(move => ({ option, move })))
+function lookaheadPick(board, options, active, hold, queue, useHold, rng, noise, W, H) {
+  const cands = options.flatMap(option => movesFor(board, option.card, rng, noise, W, H).map(move => ({ option, move })))
     .sort((a, b) => b.move.value - a.move.value).slice(0, LOOK_TOP);
   let pick = null;
   for (const c of cands) {
     const usedActive = c.option.card === active;
     // Sau nước này: thẻ kế biết trước = Next (nếu Hold đang trống mà đổi Hold thì Next đã bị rút, thẻ kế chưa biết); Hold = thẻ cất vào.
     const nextCard = usedActive || hold ? queue[0] : null, nextHold = usedActive ? hold : active;
-    const grassAfter = grass && grass.map((g, i) => g && !c.move.match.cleared.includes(i));
     // Lượt sau: điểm thật (×10) + cỏ phá được + thế cờ để lại; nếu không biết thẻ kế thì chấm thế cờ ngay sau nước này.
     let follow = null;
     for (const card of [nextCard, useHold ? nextHold : null]) {
       if (!card) continue;
-      for (const m of movesFor(c.move.match.board, card, () => 0, 0, W, H, grassAfter)) {
-        const v = m.points * 10 + m.cleaned * 40 + potential(m.match.board, W, H);
+      for (const m of movesFor(c.move.match.board, card, () => 0, 0, W, H)) {
+        const v = m.points * 10 + potential(m.match.board, W, H);
         if (follow === null || v > follow) follow = v;
       }
     }
     if (follow === null) follow = nextCard || (useHold && nextHold) ? -STUCK_PENALTY : potential(c.move.match.board, W, H);
-    const total = c.move.points * 10 + c.move.cleaned * 40 + LOOK_DISCOUNT * follow;
+    const total = c.move.points * 10 + LOOK_DISCOUNT * follow;
     if (!pick || total > pick.total) pick = { ...c, total };
   }
   return pick;
 }
 
-// Chơi một ván. Trả về { win, reason ('moves' | 'stuck'), score, stars, movesUsed, boostUse, preBoostRatio }.
+// Thời gian một lượt của người chơi (giây) khi truyền pace = { look, think, drag, rotate, hold, gom, settle }:
+//   nghĩ = look + think × log2(1 + số lựa chọn) (định luật Hick). Thấy được nước gom thì chọn ngay (một nhịp think,
+//   như chọn giữa 2 lựa chọn); chưa có thì phải dò mọi chỗ đặt hợp lệ (thẻ đang bóc lẫn thẻ đổi Hold): bàn rộng càng nghĩ lâu.
+//   Nước có tay hướng dẫn (tutorial 'drag' của màn) không phải nghĩ: chỉ còn look.
+//   thao tác = drag + rotate × số lần xoay thẻ + hold (khi đổi Hold); chờ anim = gom (có gom) hoặc settle (chỉ đặt thẻ).
+// Nhịp chơi chuẩn của 3 kiểu người chơi (dùng chung: bảng thời gian chơi + curve EV ở Level Editor, baseline.json cho mô phỏng kinh tế).
+// gom / settle là thời gian anim của game, như nhau cho mọi kiểu.
+const ANIM = { gom: 1.0, settle: .35 };
+export const PACES = {
+  weak: { look: 1.0, think: .8, drag: 1.2, rotate: .6, hold: 1.0, ...ANIM },
+  mid: { look: .7, think: .55, drag: .9, rotate: .45, hold: .7, ...ANIM },
+  good: { look: .4, think: .35, drag: .6, rotate: .3, hold: .45, ...ANIM },
+};
+// Đặc điểm một lượt (tính một lần, dùng cho mọi nhịp): bits = log2(1 + số lựa chọn), 0 nếu có tay hướng dẫn.
+function turnShape(board, options, pick, W, H, guided) {
+  const all = guided ? [] : options.flatMap(o => movesFor(board, o.card, () => 0, 0, W, H));
+  const choices = all.some(m => m.points > 0) ? 1 : all.length;
+  return { bits: guided ? 0 : Math.log2(1 + choices), rot: pick.move.rot, hold: pick.hold, gom: pick.move.points > 0 };
+}
+const turnCost = (pace, t) => pace.look + pace.think * t.bits + pace.drag + pace.rotate * t.rot + (t.hold ? pace.hold : 0) + (t.gom ? pace.gom : pace.settle);
+// Chơi một ván. Trả về { win, reason ('moves' | 'stuck'), score, stars, movesUsed, sec, boostUse, preBoostRatio }.
+// pace: một nhịp ({ look, … }) -> sec là số giây; hoặc bảng nhiều nhịp ({ weak: {…}, … }) -> sec là { weak: giây, … } (cùng một ván).
 // lookahead = nhìn trước 1 nước với thẻ đã biết (người chơi giỏi); mặc định tắt để các tool cũ (baseline, sinh màn) giữ kết quả.
-export function play(level, seed, { noise = 1, hold: useHold = true, boost = null, trace = null, lookahead = false } = {}) {
+export function play(level, seed, { noise = 1, hold: useHold = true, boost = null, trace = null, lookahead = false, pace = null } = {}) {
   const rng = mulberry32(seed), deal = makeDealer(level, rng), { W, H } = boardSize(level.board);
-  const grass = parseGrass(level), grassTotal = grass ? grass.filter(Boolean).length : 0;
-  // Tiến độ tới mục tiêu (0..1+): điểm / mục tiêu; màn có cỏ lấy phần kém hơn giữa điểm và phần cỏ đã phá (phải đủ cả hai).
-  const progress = () => Math.min(score / level.target, grassTotal ? 1 - grass.filter(Boolean).length / grassTotal : Infinity);
+  const progress = () => score / level.target; // tiến độ tới mục tiêu điểm (0..1+)
   let board = parseBoard(level.board), score = 0, moves = level.moves, hold = null;
   const queue = [];
   const draw = () => { while (queue.length < 2) queue.push(deal(board)); return queue.shift(); };
   const boostUse = { hammer: 0, swap: 0, moves: 0 };
-  let preBoostRatio = null, added = 0;
-  const done = result => ({ ...result, ratio: progress(), score, movesUsed: level.moves + added - moves, boostUse, preBoostRatio });
+  const many = pace && !('look' in pace);
+  let preBoostRatio = null, added = 0, sec = many ? Object.fromEntries(Object.keys(pace).map(id => [id, 0])) : 0;
+  const guided = (level.tutorial || []).filter(step => step.type === 'drag').length;
+  const done = result => ({ ...result, ratio: progress(), score, movesUsed: level.moves + added - moves, sec, boostUse, preBoostRatio });
   // Thẻ đầu luôn gom được ngay (như session.mjs createSession).
   let active = openingCard(board, W, H, draw());
   while (moves > 0) {
@@ -111,20 +128,23 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
     const options = [{ card: active, after: () => {} }];
     const swapCard = hold || queue[0];
     if (useHold) options.push({ card: swapCard, after: () => { if (hold) hold = active; else { hold = active; queue.shift(); } } });
-    let pick = lookahead ? lookaheadPick(board, options, active, hold, queue, useHold, rng, noise, W, H, grass) : null;
+    let pick = lookahead ? lookaheadPick(board, options, active, hold, queue, useHold, rng, noise, W, H) : null;
     if (!lookahead) for (const option of options) {
-      const move = bestMove(board, option.card, rng, noise, W, H, grass);
+      const move = bestMove(board, option.card, rng, noise, W, H);
       if (move && (!pick || move.value > pick.move.value)) pick = { option, move };
     }
     if (!pick) return done({ win: false, reason: 'stuck' });
+    if (pace) {
+      const shape = turnShape(board, options, { move: pick.move, hold: pick.option.card !== active }, W, H, level.moves + added - moves < guided);
+      if (many) for (const id in pace) sec[id] += turnCost(pace[id], shape); else sec += turnCost(pace, shape);
+    }
     if (pick.option.card !== active) pick.option.after();
     score += pick.move.points;
     board = pick.move.match.board;
     moves--;
-    if (grass) pick.move.match.cleared.forEach(index => { grass[index] = false; });
     trace?.push({ placed: pick.move.placed, board, cells: pick.move.indices, cleared: pick.move.match.cleared, card: pick.option.card, hold: pick.option.card !== active,
-      points: pick.move.points, score, movesLeft: moves, boosts: { ...boostUse }, grass: grass && grass.slice() });
-    if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
+      points: pick.move.points, score, movesLeft: moves, boosts: { ...boostUse } });
+    if (score >= level.target && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
     active = draw();
     // Thẻ mới không vừa bàn: còn đường thoát nếu cất được vào Gửi tạm (ô trống, hoặc thẻ đang gửi vừa bàn).
     const escape = useHold && (!hold || fits(board, hold, W, H));

@@ -15,7 +15,17 @@
       "avgStars": 3,
       "avgScore": 60,
       "movesUsedWin": 2,
-      "movesUsedLoss": null
+      "movesUsedLoss": null,
+      "secWin": {
+        "weak": 9,
+        "mid": 7.1,
+        "good": 5.3
+      },
+      "secLoss": {
+        "weak": null,
+        "mid": null,
+        "good": null
+      }
     },
     {
       "level": 2,
@@ -29,7 +39,17 @@
       "avgStars": 3,
       "avgScore": 90,
       "movesUsedWin": 3,
-      "movesUsedLoss": null
+      "movesUsedLoss": null,
+      "secWin": {
+        "weak": 14.8,
+        "mid": 11.5,
+        "good": 8.4
+      },
+      "secLoss": {
+        "weak": null,
+        "mid": null,
+        "good": null
+      }
     },
     {
       "level": 3,
@@ -37,13 +57,23 @@
       "board": "6×6 36ô",
       "tier": "normal",
       "moves": 10,
-      "target": 170,
-      "winRate": 0.887,
+      "target": 150,
+      "winRate": 0.995,
       "stuckRate": 0,
-      "avgStars": 1.69,
-      "avgScore": 178,
-      "movesUsedWin": 8.4,
-      "movesUsedLoss": 10
+      "avgStars": 2.13,
+      "avgScore": 163,
+      "movesUsedWin": 7.7,
+      "movesUsedLoss": 10,
+      "secWin": {
+        "weak": 49.9,
+        "mid": 37.2,
+        "good": 25.8
+      },
+      "secLoss": {
+        "weak": 73,
+        "mid": 53.5,
+        "good": 36.3
+      }
     },
     {
       "level": 4,
@@ -51,13 +81,23 @@
       "board": "6×6 36ô",
       "tier": "normal",
       "moves": 12,
-      "target": 260,
-      "winRate": 0.91,
+      "target": 180,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.8,
-      "avgScore": 276,
-      "movesUsedWin": 9.9,
-      "movesUsedLoss": 12
+      "avgStars": 2.83,
+      "avgScore": 201,
+      "movesUsedWin": 7,
+      "movesUsedLoss": null,
+      "secWin": {
+        "weak": 42.2,
+        "mid": 31.8,
+        "good": 22.3
+      },
+      "secLoss": {
+        "weak": null,
+        "mid": null,
+        "good": null
+      }
     },
     {
       "level": 5,
@@ -71,7 +111,17 @@
       "avgStars": 2.62,
       "avgScore": 196,
       "movesUsedWin": 7.9,
-      "movesUsedLoss": null
+      "movesUsedLoss": null,
+      "secWin": {
+        "weak": 50.9,
+        "mid": 37.9,
+        "good": 26.2
+      },
+      "secLoss": {
+        "weak": null,
+        "mid": null,
+        "good": null
+      }
     },
     {
       "level": 6,
@@ -85,7 +135,17 @@
       "avgStars": 2.22,
       "avgScore": 276,
       "movesUsedWin": 10.2,
-      "movesUsedLoss": 14
+      "movesUsedLoss": 14,
+      "secWin": {
+        "weak": 66.8,
+        "mid": 49.8,
+        "good": 34.4
+      },
+      "secLoss": {
+        "weak": 100.1,
+        "mid": 73.5,
+        "good": 50
+      }
     },
     {
       "level": 7,
@@ -99,7 +159,17 @@
       "avgStars": 2.13,
       "avgScore": 263,
       "movesUsedWin": 9.1,
-      "movesUsedLoss": 9.5
+      "movesUsedLoss": 9.5,
+      "secWin": {
+        "weak": 54.6,
+        "mid": 41.1,
+        "good": 28.7
+      },
+      "secLoss": {
+        "weak": 62.2,
+        "mid": 46.1,
+        "good": 31.5
+      }
     },
     {
       "level": 8,
@@ -113,7 +183,17 @@
       "avgStars": 1.71,
       "avgScore": 250,
       "movesUsedWin": 14.8,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 101.2,
+        "mid": 74.8,
+        "good": 51.3
+      },
+      "secLoss": {
+        "weak": 131.6,
+        "mid": 96.3,
+        "good": 65.2
+      }
     },
     {
       "level": 9,
@@ -127,7 +207,17 @@
       "avgStars": 1.66,
       "avgScore": 307,
       "movesUsedWin": 13.9,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 90.7,
+        "mid": 67.5,
+        "good": 46.7
+      },
+      "secLoss": {
+        "weak": 110.9,
+        "mid": 81.8,
+        "good": 55.9
+      }
     },
     {
       "level": 10,
@@ -135,13 +225,23 @@
       "board": "8×8 49ô",
       "tier": "boss",
       "moves": 20,
-      "target": 370,
-      "winRate": 0.703,
+      "target": 430,
+      "winRate": 0.235,
       "stuckRate": 0.02,
-      "avgStars": 1.31,
-      "avgScore": 364,
-      "movesUsedWin": 18,
-      "movesUsedLoss": 19.1
+      "avgStars": 1.14,
+      "avgScore": 381,
+      "movesUsedWin": 19,
+      "movesUsedLoss": 19.6,
+      "secWin": {
+        "weak": 121,
+        "mid": 90.3,
+        "good": 62.5
+      },
+      "secLoss": {
+        "weak": 131.3,
+        "mid": 97.2,
+        "good": 66.8
+      }
     },
     {
       "level": 11,
@@ -155,7 +255,17 @@
       "avgStars": 2.27,
       "avgScore": 236,
       "movesUsedWin": 10.1,
-      "movesUsedLoss": 14
+      "movesUsedLoss": 14,
+      "secWin": {
+        "weak": 70,
+        "mid": 52.1,
+        "good": 36
+      },
+      "secLoss": {
+        "weak": 99.5,
+        "mid": 73.8,
+        "good": 50.8
+      }
     },
     {
       "level": 12,
@@ -169,7 +279,17 @@
       "avgStars": 1.89,
       "avgScore": 291,
       "movesUsedWin": 12.3,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 86.9,
+        "mid": 64.4,
+        "good": 44.3
+      },
+      "secLoss": {
+        "weak": 116.6,
+        "mid": 85.4,
+        "good": 58
+      }
     },
     {
       "level": 13,
@@ -183,7 +303,17 @@
       "avgStars": 1.61,
       "avgScore": 280,
       "movesUsedWin": 13.1,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 89.4,
+        "mid": 66.6,
+        "good": 46.1
+      },
+      "secLoss": {
+        "weak": 110.2,
+        "mid": 81.2,
+        "good": 55.4
+      }
     },
     {
       "level": 14,
@@ -197,7 +327,17 @@
       "avgStars": 1.7,
       "avgScore": 327,
       "movesUsedWin": 13.9,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 97.5,
+        "mid": 72.3,
+        "good": 49.8
+      },
+      "secLoss": {
+        "weak": 121.7,
+        "mid": 89.4,
+        "good": 60.8
+      }
     },
     {
       "level": 15,
@@ -211,21 +351,41 @@
       "avgStars": 1.39,
       "avgScore": 366,
       "movesUsedWin": 16,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 117.7,
+        "mid": 86.9,
+        "good": 59.5
+      },
+      "secLoss": {
+        "weak": 137.2,
+        "mid": 100.8,
+        "good": 68.7
+      }
     },
     {
       "level": 16,
       "name": "Tea Break",
       "board": "8×7 40ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 20,
-      "target": 280,
-      "winRate": 0.973,
+      "target": 320,
+      "winRate": 0.782,
       "stuckRate": 0,
-      "avgStars": 1.89,
-      "avgScore": 293,
-      "movesUsedWin": 16.3,
-      "movesUsedLoss": 20
+      "avgStars": 1.43,
+      "avgScore": 324,
+      "movesUsedWin": 17.9,
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 132.4,
+        "mid": 97.6,
+        "good": 66.7
+      },
+      "secLoss": {
+        "weak": 155.9,
+        "mid": 114.1,
+        "good": 77.4
+      }
     },
     {
       "level": 17,
@@ -239,7 +399,17 @@
       "avgStars": 2.51,
       "avgScore": 377,
       "movesUsedWin": 13.8,
-      "movesUsedLoss": 22
+      "movesUsedLoss": 22,
+      "secWin": {
+        "weak": 93.4,
+        "mid": 69.8,
+        "good": 48.5
+      },
+      "secLoss": {
+        "weak": 156.6,
+        "mid": 116.2,
+        "good": 80.2
+      }
     },
     {
       "level": 18,
@@ -253,21 +423,41 @@
       "avgStars": 2.36,
       "avgScore": 356,
       "movesUsedWin": 13.9,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 98.7,
+        "mid": 73.1,
+        "good": 50.3
+      },
+      "secLoss": {
+        "weak": 140.1,
+        "mid": 103.3,
+        "good": 70.6
+      }
     },
     {
       "level": 19,
       "name": "Divided",
       "board": "8×7 56ô",
-      "tier": "normal",
+      "tier": "hard",
       "moves": 15,
-      "target": 240,
-      "winRate": 0.848,
+      "target": 280,
+      "winRate": 0.33,
       "stuckRate": 0,
-      "avgStars": 1.58,
-      "avgScore": 244,
-      "movesUsedWin": 13.3,
-      "movesUsedLoss": 15
+      "avgStars": 1.28,
+      "avgScore": 261,
+      "movesUsedWin": 14,
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 99.8,
+        "mid": 73.9,
+        "good": 50.9
+      },
+      "secLoss": {
+        "weak": 113.4,
+        "mid": 83.4,
+        "good": 56.9
+      }
     },
     {
       "level": 20,
@@ -281,7 +471,17 @@
       "avgStars": 1.25,
       "avgScore": 428,
       "movesUsedWin": 20.4,
-      "movesUsedLoss": 22
+      "movesUsedLoss": 22,
+      "secWin": {
+        "weak": 140.4,
+        "mid": 104.2,
+        "good": 71.9
+      },
+      "secLoss": {
+        "weak": 158,
+        "mid": 116.7,
+        "good": 80
+      }
     },
     {
       "level": 21,
@@ -290,12 +490,22 @@
       "tier": "chill",
       "moves": 24,
       "target": 470,
-      "winRate": 0.922,
+      "winRate": 0.973,
       "stuckRate": 0,
-      "avgStars": 1.87,
-      "avgScore": 489,
+      "avgStars": 1.84,
+      "avgScore": 483,
       "movesUsedWin": 19.7,
-      "movesUsedLoss": 24
+      "movesUsedLoss": 24,
+      "secWin": {
+        "weak": 142.5,
+        "mid": 105.5,
+        "good": 72.6
+      },
+      "secLoss": {
+        "weak": 188.9,
+        "mid": 138.5,
+        "good": 94.1
+      }
     },
     {
       "level": 22,
@@ -309,7 +519,17 @@
       "avgStars": 1.94,
       "avgScore": 291,
       "movesUsedWin": 12,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 81.7,
+        "mid": 60.9,
+        "good": 42.2
+      },
+      "secLoss": {
+        "weak": 111.4,
+        "mid": 82.1,
+        "good": 56.1
+      }
     },
     {
       "level": 23,
@@ -323,7 +543,17 @@
       "avgStars": 1.56,
       "avgScore": 379,
       "movesUsedWin": 14.4,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 97.9,
+        "mid": 73.1,
+        "good": 50.8
+      },
+      "secLoss": {
+        "weak": 126.1,
+        "mid": 93.2,
+        "good": 64
+      }
     },
     {
       "level": 24,
@@ -337,7 +567,17 @@
       "avgStars": 1.81,
       "avgScore": 385,
       "movesUsedWin": 18.3,
-      "movesUsedLoss": 22
+      "movesUsedLoss": 22,
+      "secWin": {
+        "weak": 130.6,
+        "mid": 96.8,
+        "good": 66.6
+      },
+      "secLoss": {
+        "weak": 163.6,
+        "mid": 120.6,
+        "good": 82.4
+      }
     },
     {
       "level": 25,
@@ -351,13 +591,23 @@
       "avgStars": 1.78,
       "avgScore": 441,
       "movesUsedWin": 16.9,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 122.2,
+        "mid": 90.5,
+        "good": 62.3
+      },
+      "secLoss": {
+        "weak": 149.1,
+        "mid": 110,
+        "good": 75.4
+      }
     },
     {
       "level": 26,
       "name": "Teacup",
       "board": "8×7 40ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 20,
       "target": 360,
       "winRate": 0.98,
@@ -365,7 +615,17 @@
       "avgStars": 1.95,
       "avgScore": 373,
       "movesUsedWin": 16.1,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 115.9,
+        "mid": 85.8,
+        "good": 59
+      },
+      "secLoss": {
+        "weak": 154.1,
+        "mid": 113,
+        "good": 76.8
+      }
     },
     {
       "level": 27,
@@ -379,7 +639,17 @@
       "avgStars": 1.63,
       "avgScore": 366,
       "movesUsedWin": 13,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 88.3,
+        "mid": 65.9,
+        "good": 45.7
+      },
+      "secLoss": {
+        "weak": 109.1,
+        "mid": 80.6,
+        "good": 55.3
+      }
     },
     {
       "level": 28,
@@ -393,7 +663,17 @@
       "avgStars": 1.39,
       "avgScore": 387,
       "movesUsedWin": 14.9,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 102.9,
+        "mid": 76.7,
+        "good": 53.2
+      },
+      "secLoss": {
+        "weak": 125.7,
+        "mid": 92.9,
+        "good": 63.8
+      }
     },
     {
       "level": 29,
@@ -407,7 +687,17 @@
       "avgStars": 1.35,
       "avgScore": 386,
       "movesUsedWin": 16.1,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 114.4,
+        "mid": 84.8,
+        "good": 58.5
+      },
+      "secLoss": {
+        "weak": 136.7,
+        "mid": 100.6,
+        "good": 68.7
+      }
     },
     {
       "level": 30,
@@ -421,21 +711,41 @@
       "avgStars": 1.14,
       "avgScore": 500,
       "movesUsedWin": 21,
-      "movesUsedLoss": 22
+      "movesUsedLoss": 22,
+      "secWin": {
+        "weak": 143.1,
+        "mid": 106.6,
+        "good": 73.8
+      },
+      "secLoss": {
+        "weak": 157,
+        "mid": 116.2,
+        "good": 79.9
+      }
     },
     {
       "level": 31,
       "name": "Pillow Fort",
       "board": "7×7 49ô",
-      "tier": "normal",
+      "tier": "chill",
       "moves": 15,
-      "target": 350,
-      "winRate": 0.935,
+      "target": 340,
+      "winRate": 0.975,
       "stuckRate": 0,
-      "avgStars": 1.9,
-      "avgScore": 361,
-      "movesUsedWin": 12.3,
-      "movesUsedLoss": 15
+      "avgStars": 2.03,
+      "avgScore": 353,
+      "movesUsedWin": 11.8,
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 81.3,
+        "mid": 60.6,
+        "good": 42
+      },
+      "secLoss": {
+        "weak": 115.9,
+        "mid": 85.2,
+        "good": 58
+      }
     },
     {
       "level": 32,
@@ -449,7 +759,17 @@
       "avgStars": 1.81,
       "avgScore": 320,
       "movesUsedWin": 13.5,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 90.5,
+        "mid": 67.6,
+        "good": 47
+      },
+      "secLoss": {
+        "weak": 115.2,
+        "mid": 85.2,
+        "good": 58.4
+      }
     },
     {
       "level": 33,
@@ -463,7 +783,17 @@
       "avgStars": 1.73,
       "avgScore": 368,
       "movesUsedWin": 13.7,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 94.6,
+        "mid": 70.4,
+        "good": 48.7
+      },
+      "secLoss": {
+        "weak": 119.6,
+        "mid": 88.1,
+        "good": 60.2
+      }
     },
     {
       "level": 34,
@@ -477,7 +807,17 @@
       "avgStars": 1.7,
       "avgScore": 339,
       "movesUsedWin": 13.9,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 95.3,
+        "mid": 70.9,
+        "good": 49.1
+      },
+      "secLoss": {
+        "weak": 117.9,
+        "mid": 87,
+        "good": 59.6
+      }
     },
     {
       "level": 35,
@@ -491,13 +831,23 @@
       "avgStars": 1.17,
       "avgScore": 385,
       "movesUsedWin": 16.8,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 116.8,
+        "mid": 86.9,
+        "good": 60.1
+      },
+      "secLoss": {
+        "weak": 133,
+        "mid": 98.1,
+        "good": 67.3
+      }
     },
     {
       "level": 36,
       "name": "Nap Time",
       "board": "7×7 37ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 20,
       "target": 370,
       "winRate": 0.953,
@@ -505,7 +855,17 @@
       "avgStars": 1.86,
       "avgScore": 380,
       "movesUsedWin": 16.4,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 117.7,
+        "mid": 87.1,
+        "good": 59.9
+      },
+      "secLoss": {
+        "weak": 151.7,
+        "mid": 111.5,
+        "good": 76
+      }
     },
     {
       "level": 37,
@@ -519,7 +879,17 @@
       "avgStars": 1.56,
       "avgScore": 428,
       "movesUsedWin": 14.5,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 98,
+        "mid": 73.1,
+        "good": 50.8
+      },
+      "secLoss": {
+        "weak": 124.4,
+        "mid": 92,
+        "good": 63.1
+      }
     },
     {
       "level": 38,
@@ -533,7 +903,17 @@
       "avgStars": 1.71,
       "avgScore": 386,
       "movesUsedWin": 15.9,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 111.4,
+        "mid": 82.8,
+        "good": 57.2
+      },
+      "secLoss": {
+        "weak": 138.5,
+        "mid": 102.4,
+        "good": 70.3
+      }
     },
     {
       "level": 39,
@@ -547,7 +927,17 @@
       "avgStars": 1.33,
       "avgScore": 383,
       "movesUsedWin": 17.1,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 123.4,
+        "mid": 91.3,
+        "good": 62.8
+      },
+      "secLoss": {
+        "weak": 144.7,
+        "mid": 106.5,
+        "good": 72.6
+      }
     },
     {
       "level": 40,
@@ -561,13 +951,23 @@
       "avgStars": 1.07,
       "avgScore": 549,
       "movesUsedWin": 23.2,
-      "movesUsedLoss": 23.9
+      "movesUsedLoss": 23.9,
+      "secWin": {
+        "weak": 156.9,
+        "mid": 116.9,
+        "good": 81
+      },
+      "secLoss": {
+        "weak": 169.5,
+        "mid": 125.5,
+        "good": 86.3
+      }
     },
     {
       "level": 41,
       "name": "Kitchen Door",
       "board": "7×7 49ô",
-      "tier": "normal",
+      "tier": "chill",
       "moves": 15,
       "target": 370,
       "winRate": 0.917,
@@ -575,7 +975,17 @@
       "avgStars": 1.89,
       "avgScore": 380,
       "movesUsedWin": 12.3,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 84.3,
+        "mid": 62.9,
+        "good": 43.7
+      },
+      "secLoss": {
+        "weak": 112.8,
+        "mid": 83,
+        "good": 56.7
+      }
     },
     {
       "level": 42,
@@ -589,7 +999,17 @@
       "avgStars": 2.25,
       "avgScore": 294,
       "movesUsedWin": 12.1,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 82.2,
+        "mid": 61.3,
+        "good": 42.6
+      },
+      "secLoss": {
+        "weak": 115.5,
+        "mid": 85.5,
+        "good": 58.8
+      }
     },
     {
       "level": 43,
@@ -603,7 +1023,17 @@
       "avgStars": 1.95,
       "avgScore": 287,
       "movesUsedWin": 13,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 88,
+        "mid": 65.5,
+        "good": 45.4
+      },
+      "secLoss": {
+        "weak": 115.1,
+        "mid": 85,
+        "good": 58.2
+      }
     },
     {
       "level": 44,
@@ -617,7 +1047,17 @@
       "avgStars": 1.46,
       "avgScore": 505,
       "movesUsedWin": 14.7,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 101.1,
+        "mid": 75.4,
+        "good": 52.3
+      },
+      "secLoss": {
+        "weak": 125.3,
+        "mid": 92.6,
+        "good": 63.5
+      }
     },
     {
       "level": 45,
@@ -631,13 +1071,23 @@
       "avgStars": 1.23,
       "avgScore": 436,
       "movesUsedWin": 17.4,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 117.2,
+        "mid": 87.5,
+        "good": 60.8
+      },
+      "secLoss": {
+        "weak": 134.9,
+        "mid": 100,
+        "good": 68.9
+      }
     },
     {
       "level": 46,
       "name": "Milk Break",
       "board": "8×7 40ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 20,
       "target": 360,
       "winRate": 0.963,
@@ -645,7 +1095,17 @@
       "avgStars": 1.93,
       "avgScore": 373,
       "movesUsedWin": 16.2,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 113.8,
+        "mid": 84.5,
+        "good": 58.3
+      },
+      "secLoss": {
+        "weak": 152.2,
+        "mid": 112,
+        "good": 76.4
+      }
     },
     {
       "level": 47,
@@ -659,7 +1119,17 @@
       "avgStars": 1.38,
       "avgScore": 413,
       "movesUsedWin": 15,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 100,
+        "mid": 74.7,
+        "good": 52
+      },
+      "secLoss": {
+        "weak": 122.5,
+        "mid": 90.6,
+        "good": 62.3
+      }
     },
     {
       "level": 48,
@@ -673,7 +1143,17 @@
       "avgStars": 1.48,
       "avgScore": 394,
       "movesUsedWin": 15.7,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 109.4,
+        "mid": 81.3,
+        "good": 56.2
+      },
+      "secLoss": {
+        "weak": 131.7,
+        "mid": 97.2,
+        "good": 66.7
+      }
     },
     {
       "level": 49,
@@ -687,7 +1167,17 @@
       "avgStars": 1.28,
       "avgScore": 410,
       "movesUsedWin": 16.4,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 111.7,
+        "mid": 83.4,
+        "good": 57.9
+      },
+      "secLoss": {
+        "weak": 132.1,
+        "mid": 97.7,
+        "good": 67.1
+      }
     },
     {
       "level": 50,
@@ -701,13 +1191,23 @@
       "avgStars": 1.23,
       "avgScore": 548,
       "movesUsedWin": 22.6,
-      "movesUsedLoss": 24
+      "movesUsedLoss": 24,
+      "secWin": {
+        "weak": 151.5,
+        "mid": 113.1,
+        "good": 78.5
+      },
+      "secLoss": {
+        "weak": 169.5,
+        "mid": 125.6,
+        "good": 86.4
+      }
     },
     {
       "level": 51,
       "name": "Dusty Trunk",
       "board": "8×7 40ô",
-      "tier": "normal",
+      "tier": "chill",
       "moves": 16,
       "target": 310,
       "winRate": 0.983,
@@ -715,7 +1215,17 @@
       "avgStars": 2.13,
       "avgScore": 323,
       "movesUsedWin": 12.5,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 86.1,
+        "mid": 64.1,
+        "good": 44.4
+      },
+      "secLoss": {
+        "weak": 124.9,
+        "mid": 91.5,
+        "good": 62.1
+      }
     },
     {
       "level": 52,
@@ -724,12 +1234,22 @@
       "tier": "normal",
       "moves": 31,
       "target": 510,
-      "winRate": 0.895,
+      "winRate": 0.943,
       "stuckRate": 0,
-      "avgStars": 1.59,
-      "avgScore": 528,
-      "movesUsedWin": 26.9,
-      "movesUsedLoss": 31
+      "avgStars": 1.66,
+      "avgScore": 522,
+      "movesUsedWin": 26.5,
+      "movesUsedLoss": 31,
+      "secWin": {
+        "weak": 191.7,
+        "mid": 141.6,
+        "good": 97.1
+      },
+      "secLoss": {
+        "weak": 238.7,
+        "mid": 175.1,
+        "good": 119.1
+      }
     },
     {
       "level": 53,
@@ -738,12 +1258,22 @@
       "tier": "normal",
       "moves": 29,
       "target": 500,
-      "winRate": 0.858,
+      "winRate": 0.948,
       "stuckRate": 0,
-      "avgStars": 1.61,
-      "avgScore": 523,
-      "movesUsedWin": 24.9,
-      "movesUsedLoss": 29
+      "avgStars": 1.67,
+      "avgScore": 510,
+      "movesUsedWin": 24.6,
+      "movesUsedLoss": 29,
+      "secWin": {
+        "weak": 177.3,
+        "mid": 131.2,
+        "good": 90.1
+      },
+      "secLoss": {
+        "weak": 220.8,
+        "mid": 162.2,
+        "good": 110.5
+      }
     },
     {
       "level": 54,
@@ -757,7 +1287,17 @@
       "avgStars": 1.57,
       "avgScore": 380,
       "movesUsedWin": 14.4,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 98.9,
+        "mid": 73.6,
+        "good": 51
+      },
+      "secLoss": {
+        "weak": 127.2,
+        "mid": 93.8,
+        "good": 64.2
+      }
     },
     {
       "level": 55,
@@ -766,26 +1306,46 @@
       "tier": "hard",
       "moves": 19,
       "target": 370,
-      "winRate": 0.263,
+      "winRate": 0.777,
       "stuckRate": 0,
-      "avgStars": 1.41,
-      "avgScore": 387,
-      "movesUsedWin": 16.8,
-      "movesUsedLoss": 19
+      "avgStars": 1.4,
+      "avgScore": 374,
+      "movesUsedWin": 16.9,
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 116.4,
+        "mid": 86.6,
+        "good": 59.9
+      },
+      "secLoss": {
+        "weak": 138.6,
+        "mid": 102.3,
+        "good": 70
+      }
     },
     {
       "level": 56,
       "name": "Sunny Window",
       "board": "6×6 36ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 15,
-      "target": 260,
-      "winRate": 0.92,
+      "target": 280,
+      "winRate": 0.823,
       "stuckRate": 0,
-      "avgStars": 2.08,
-      "avgScore": 278,
-      "movesUsedWin": 11.7,
-      "movesUsedLoss": 15
+      "avgStars": 1.8,
+      "avgScore": 288,
+      "movesUsedWin": 12.5,
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 88.2,
+        "mid": 65.5,
+        "good": 45.2
+      },
+      "secLoss": {
+        "weak": 112.6,
+        "mid": 82.9,
+        "good": 56.6
+      }
     },
     {
       "level": 57,
@@ -799,7 +1359,17 @@
       "avgStars": 1.48,
       "avgScore": 425,
       "movesUsedWin": 15.6,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 104.7,
+        "mid": 78.2,
+        "good": 54.4
+      },
+      "secLoss": {
+        "weak": 128.7,
+        "mid": 95.4,
+        "good": 65.6
+      }
     },
     {
       "level": 58,
@@ -813,7 +1383,17 @@
       "avgStars": 1.44,
       "avgScore": 400,
       "movesUsedWin": 15.8,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 108.1,
+        "mid": 80.4,
+        "good": 55.7
+      },
+      "secLoss": {
+        "weak": 131.8,
+        "mid": 97.3,
+        "good": 66.6
+      }
     },
     {
       "level": 59,
@@ -827,7 +1407,17 @@
       "avgStars": 1.87,
       "avgScore": 419,
       "movesUsedWin": 15.4,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 105.6,
+        "mid": 78.7,
+        "good": 54.5
+      },
+      "secLoss": {
+        "weak": 137.3,
+        "mid": 101.6,
+        "good": 69.8
+      }
     },
     {
       "level": 60,
@@ -836,26 +1426,46 @@
       "tier": "boss",
       "moves": 26,
       "target": 590,
-      "winRate": 0.225,
+      "winRate": 0.675,
       "stuckRate": 0,
-      "avgStars": 1.26,
-      "avgScore": 627,
-      "movesUsedWin": 23.7,
-      "movesUsedLoss": 26
+      "avgStars": 1.36,
+      "avgScore": 602,
+      "movesUsedWin": 23.4,
+      "movesUsedLoss": 26,
+      "secWin": {
+        "weak": 165.5,
+        "mid": 122.9,
+        "good": 84.8
+      },
+      "secLoss": {
+        "weak": 190.3,
+        "mid": 140.7,
+        "good": 96.6
+      }
     },
     {
       "level": 61,
       "name": "Flower Pots",
       "board": "8×7 40ô",
-      "tier": "normal",
+      "tier": "chill",
       "moves": 16,
-      "target": 280,
-      "winRate": 0.943,
+      "target": 240,
+      "winRate": 0.955,
       "stuckRate": 0,
-      "avgStars": 2.32,
-      "avgScore": 295,
-      "movesUsedWin": 11.8,
-      "movesUsedLoss": 16
+      "avgStars": 2.63,
+      "avgScore": 267,
+      "movesUsedWin": 10.2,
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 70.4,
+        "mid": 52.4,
+        "good": 36.3
+      },
+      "secLoss": {
+        "weak": 118.4,
+        "mid": 87.3,
+        "good": 59.7
+      }
     },
     {
       "level": 62,
@@ -864,12 +1474,22 @@
       "tier": "normal",
       "moves": 26,
       "target": 430,
-      "winRate": 0.855,
+      "winRate": 0.865,
       "stuckRate": 0,
-      "avgStars": 1.63,
-      "avgScore": 448,
-      "movesUsedWin": 22.1,
-      "movesUsedLoss": 26
+      "avgStars": 1.56,
+      "avgScore": 445,
+      "movesUsedWin": 22.4,
+      "movesUsedLoss": 26,
+      "secWin": {
+        "weak": 163.1,
+        "mid": 120.4,
+        "good": 82.6
+      },
+      "secLoss": {
+        "weak": 195.9,
+        "mid": 144.1,
+        "good": 98.3
+      }
     },
     {
       "level": 63,
@@ -878,12 +1498,22 @@
       "tier": "normal",
       "moves": 17,
       "target": 330,
-      "winRate": 0.813,
+      "winRate": 0.935,
       "stuckRate": 0,
-      "avgStars": 1.92,
-      "avgScore": 352,
-      "movesUsedWin": 13.2,
-      "movesUsedLoss": 17
+      "avgStars": 1.98,
+      "avgScore": 342,
+      "movesUsedWin": 13,
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 93.3,
+        "mid": 69.1,
+        "good": 47.5
+      },
+      "secLoss": {
+        "weak": 131.4,
+        "mid": 96.3,
+        "good": 65.5
+      }
     },
     {
       "level": 64,
@@ -892,12 +1522,22 @@
       "tier": "normal",
       "moves": 39,
       "target": 640,
-      "winRate": 0.795,
+      "winRate": 0.935,
       "stuckRate": 0,
-      "avgStars": 1.46,
-      "avgScore": 662,
-      "movesUsedWin": 34.7,
-      "movesUsedLoss": 39
+      "avgStars": 1.47,
+      "avgScore": 652,
+      "movesUsedWin": 34.6,
+      "movesUsedLoss": 39,
+      "secWin": {
+        "weak": 254.3,
+        "mid": 187.6,
+        "good": 128.4
+      },
+      "secLoss": {
+        "weak": 297.9,
+        "mid": 218.6,
+        "good": 148.7
+      }
     },
     {
       "level": 65,
@@ -911,13 +1551,23 @@
       "avgStars": 1.2,
       "avgScore": 416,
       "movesUsedWin": 18.7,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 127.8,
+        "mid": 95,
+        "good": 65.6
+      },
+      "secLoss": {
+        "weak": 143.6,
+        "mid": 106,
+        "good": 72.6
+      }
     },
     {
       "level": 66,
       "name": "Sun Lounger",
       "board": "8×7 40ô",
-      "tier": "chill",
+      "tier": "normal",
       "moves": 15,
       "target": 330,
       "winRate": 0.945,
@@ -925,7 +1575,17 @@
       "avgStars": 2,
       "avgScore": 342,
       "movesUsedWin": 12,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 85.6,
+        "mid": 63.5,
+        "good": 43.7
+      },
+      "secLoss": {
+        "weak": 119.2,
+        "mid": 87.3,
+        "good": 59.2
+      }
     },
     {
       "level": 67,
@@ -939,7 +1599,17 @@
       "avgStars": 1.45,
       "avgScore": 406,
       "movesUsedWin": 15.7,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 109.2,
+        "mid": 81.2,
+        "good": 56.2
+      },
+      "secLoss": {
+        "weak": 133.8,
+        "mid": 98.6,
+        "good": 67.4
+      }
     },
     {
       "level": 68,
@@ -953,7 +1623,17 @@
       "avgStars": 1.37,
       "avgScore": 382,
       "movesUsedWin": 16.1,
-      "movesUsedLoss": 18
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 112.7,
+        "mid": 83.7,
+        "good": 57.8
+      },
+      "secLoss": {
+        "weak": 133.1,
+        "mid": 98.1,
+        "good": 67.1
+      }
     },
     {
       "level": 69,
@@ -967,7 +1647,17 @@
       "avgStars": 1.43,
       "avgScore": 394,
       "movesUsedWin": 16.8,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 114.8,
+        "mid": 85.6,
+        "good": 59.4
+      },
+      "secLoss": {
+        "weak": 138.7,
+        "mid": 102.5,
+        "good": 70.4
+      }
     },
     {
       "level": 70,
@@ -976,26 +1666,46 @@
       "tier": "boss",
       "moves": 30,
       "target": 640,
-      "winRate": 0.16,
+      "winRate": 0.85,
       "stuckRate": 0,
-      "avgStars": 1.16,
-      "avgScore": 675,
-      "movesUsedWin": 28.1,
-      "movesUsedLoss": 30
+      "avgStars": 1.41,
+      "avgScore": 652,
+      "movesUsedWin": 26.9,
+      "movesUsedLoss": 30,
+      "secWin": {
+        "weak": 190.8,
+        "mid": 141.5,
+        "good": 97.6
+      },
+      "secLoss": {
+        "weak": 223,
+        "mid": 164.5,
+        "good": 112.7
+      }
     },
     {
       "level": 71,
       "name": "Bubble Bath",
       "board": "8×7 44ô",
-      "tier": "normal",
+      "tier": "chill",
       "moves": 35,
       "target": 580,
-      "winRate": 0.94,
+      "winRate": 0.963,
       "stuckRate": 0,
-      "avgStars": 1.69,
-      "avgScore": 599,
-      "movesUsedWin": 29.4,
-      "movesUsedLoss": 35
+      "avgStars": 1.7,
+      "avgScore": 591,
+      "movesUsedWin": 29.3,
+      "movesUsedLoss": 35,
+      "secWin": {
+        "weak": 217,
+        "mid": 160.1,
+        "good": 109.7
+      },
+      "secLoss": {
+        "weak": 269.2,
+        "mid": 197.7,
+        "good": 134.6
+      }
     },
     {
       "level": 72,
@@ -1004,12 +1714,22 @@
       "tier": "normal",
       "moves": 37,
       "target": 600,
-      "winRate": 0.897,
+      "winRate": 0.95,
       "stuckRate": 0,
-      "avgStars": 1.58,
-      "avgScore": 618,
-      "movesUsedWin": 32.1,
-      "movesUsedLoss": 37
+      "avgStars": 1.62,
+      "avgScore": 614,
+      "movesUsedWin": 31.8,
+      "movesUsedLoss": 37,
+      "secWin": {
+        "weak": 230.5,
+        "mid": 170.3,
+        "good": 116.7
+      },
+      "secLoss": {
+        "weak": 280,
+        "mid": 205.8,
+        "good": 140.2
+      }
     },
     {
       "level": 73,
@@ -1023,7 +1743,17 @@
       "avgStars": 1.7,
       "avgScore": 322,
       "movesUsedWin": 14,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 96.8,
+        "mid": 71.9,
+        "good": 49.7
+      },
+      "secLoss": {
+        "weak": 127.8,
+        "mid": 93.9,
+        "good": 63.9
+      }
     },
     {
       "level": 74,
@@ -1032,12 +1762,22 @@
       "tier": "normal",
       "moves": 27,
       "target": 520,
-      "winRate": 0.81,
+      "winRate": 0.983,
       "stuckRate": 0,
-      "avgStars": 1.65,
-      "avgScore": 553,
-      "movesUsedWin": 22.7,
-      "movesUsedLoss": 27
+      "avgStars": 1.79,
+      "avgScore": 532,
+      "movesUsedWin": 21.9,
+      "movesUsedLoss": 27,
+      "secWin": {
+        "weak": 157.4,
+        "mid": 116.7,
+        "good": 80.4
+      },
+      "secLoss": {
+        "weak": 208.4,
+        "mid": 153,
+        "good": 104.2
+      }
     },
     {
       "level": 75,
@@ -1051,7 +1791,17 @@
       "avgStars": 1.19,
       "avgScore": 445,
       "movesUsedWin": 18.7,
-      "movesUsedLoss": 20
+      "movesUsedLoss": 20,
+      "secWin": {
+        "weak": 130.1,
+        "mid": 96.7,
+        "good": 66.8
+      },
+      "secLoss": {
+        "weak": 144.6,
+        "mid": 106.9,
+        "good": 73.4
+      }
     },
     {
       "level": 76,
@@ -1065,7 +1815,17 @@
       "avgStars": 1.92,
       "avgScore": 283,
       "movesUsedWin": 12.2,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 85.5,
+        "mid": 63.5,
+        "good": 43.9
+      },
+      "secLoss": {
+        "weak": 115.9,
+        "mid": 85.1,
+        "good": 57.9
+      }
     },
     {
       "level": 77,
@@ -1074,12 +1834,22 @@
       "tier": "normal",
       "moves": 28,
       "target": 520,
-      "winRate": 0.75,
+      "winRate": 0.935,
       "stuckRate": 0,
-      "avgStars": 1.52,
-      "avgScore": 550,
-      "movesUsedWin": 24.3,
-      "movesUsedLoss": 28
+      "avgStars": 1.66,
+      "avgScore": 533,
+      "movesUsedWin": 23.8,
+      "movesUsedLoss": 28,
+      "secWin": {
+        "weak": 171.6,
+        "mid": 127,
+        "good": 87.3
+      },
+      "secLoss": {
+        "weak": 215.6,
+        "mid": 158.4,
+        "good": 107.9
+      }
     },
     {
       "level": 78,
@@ -1088,12 +1858,22 @@
       "tier": "normal",
       "moves": 26,
       "target": 480,
-      "winRate": 0.69,
+      "winRate": 0.902,
       "stuckRate": 0,
-      "avgStars": 1.39,
-      "avgScore": 500,
-      "movesUsedWin": 23,
-      "movesUsedLoss": 26
+      "avgStars": 1.46,
+      "avgScore": 490,
+      "movesUsedWin": 22.8,
+      "movesUsedLoss": 26,
+      "secWin": {
+        "weak": 163.2,
+        "mid": 120.8,
+        "good": 83
+      },
+      "secLoss": {
+        "weak": 195.4,
+        "mid": 143.8,
+        "good": 98.1
+      }
     },
     {
       "level": 79,
@@ -1102,12 +1882,22 @@
       "tier": "normal",
       "moves": 29,
       "target": 550,
-      "winRate": 0.695,
+      "winRate": 0.958,
       "stuckRate": 0,
-      "avgStars": 1.58,
-      "avgScore": 592,
-      "movesUsedWin": 25.1,
-      "movesUsedLoss": 29
+      "avgStars": 1.8,
+      "avgScore": 561,
+      "movesUsedWin": 24.1,
+      "movesUsedLoss": 29,
+      "secWin": {
+        "weak": 174.4,
+        "mid": 129,
+        "good": 88.5
+      },
+      "secLoss": {
+        "weak": 224.4,
+        "mid": 164.6,
+        "good": 111.8
+      }
     },
     {
       "level": 80,
@@ -1116,12 +1906,22 @@
       "tier": "boss",
       "moves": 30,
       "target": 620,
-      "winRate": 0.198,
+      "winRate": 0.7,
       "stuckRate": 0,
-      "avgStars": 1.16,
-      "avgScore": 651,
-      "movesUsedWin": 28.2,
-      "movesUsedLoss": 30
+      "avgStars": 1.33,
+      "avgScore": 635,
+      "movesUsedWin": 27.2,
+      "movesUsedLoss": 30,
+      "secWin": {
+        "weak": 194.2,
+        "mid": 143.9,
+        "good": 99
+      },
+      "secLoss": {
+        "weak": 222.3,
+        "mid": 164,
+        "good": 112.4
+      }
     },
     {
       "level": 81,
@@ -1135,7 +1935,17 @@
       "avgStars": 2.11,
       "avgScore": 322,
       "movesUsedWin": 12.5,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 83,
+        "mid": 62.1,
+        "good": 43.3
+      },
+      "secLoss": {
+        "weak": 117.6,
+        "mid": 86.9,
+        "good": 59.6
+      }
     },
     {
       "level": 82,
@@ -1149,7 +1959,17 @@
       "avgStars": 2.05,
       "avgScore": 314,
       "movesUsedWin": 12.8,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 88.8,
+        "mid": 66,
+        "good": 45.5
+      },
+      "secLoss": {
+        "weak": 119.8,
+        "mid": 88,
+        "good": 59.9
+      }
     },
     {
       "level": 83,
@@ -1163,7 +1983,17 @@
       "avgStars": 1.53,
       "avgScore": 378,
       "movesUsedWin": 14.5,
-      "movesUsedLoss": 17
+      "movesUsedLoss": 17,
+      "secWin": {
+        "weak": 99.3,
+        "mid": 74,
+        "good": 51.3
+      },
+      "secLoss": {
+        "weak": 128.2,
+        "mid": 94.4,
+        "good": 64.5
+      }
     },
     {
       "level": 84,
@@ -1172,12 +2002,22 @@
       "tier": "normal",
       "moves": 26,
       "target": 420,
-      "winRate": 0.823,
+      "winRate": 0.963,
       "stuckRate": 0,
-      "avgStars": 1.64,
-      "avgScore": 445,
-      "movesUsedWin": 22.1,
-      "movesUsedLoss": 26
+      "avgStars": 1.66,
+      "avgScore": 432,
+      "movesUsedWin": 21.8,
+      "movesUsedLoss": 26,
+      "secWin": {
+        "weak": 154.6,
+        "mid": 114.5,
+        "good": 78.8
+      },
+      "secLoss": {
+        "weak": 198.9,
+        "mid": 146,
+        "good": 99.2
+      }
     },
     {
       "level": 85,
@@ -1186,12 +2026,22 @@
       "tier": "hard",
       "moves": 18,
       "target": 400,
-      "winRate": 0.217,
+      "winRate": 0.745,
       "stuckRate": 0,
-      "avgStars": 1.21,
-      "avgScore": 412,
-      "movesUsedWin": 16.6,
-      "movesUsedLoss": 18
+      "avgStars": 1.35,
+      "avgScore": 400,
+      "movesUsedWin": 16.1,
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 110.5,
+        "mid": 82.2,
+        "good": 56.9
+      },
+      "secLoss": {
+        "weak": 132.7,
+        "mid": 97.9,
+        "good": 67
+      }
     },
     {
       "level": 86,
@@ -1202,10 +2052,20 @@
       "target": 540,
       "winRate": 0.393,
       "stuckRate": 0,
-      "avgStars": 1.18,
-      "avgScore": 515,
-      "movesUsedWin": 24.2,
-      "movesUsedLoss": 26
+      "avgStars": 1.17,
+      "avgScore": 518,
+      "movesUsedWin": 24.3,
+      "movesUsedLoss": 26,
+      "secWin": {
+        "weak": 176.3,
+        "mid": 130.4,
+        "good": 89.6
+      },
+      "secLoss": {
+        "weak": 195.9,
+        "mid": 144.3,
+        "good": 98.6
+      }
     },
     {
       "level": 87,
@@ -1214,12 +2074,22 @@
       "tier": "normal",
       "moves": 22,
       "target": 430,
-      "winRate": 0.782,
+      "winRate": 0.948,
       "stuckRate": 0,
-      "avgStars": 1.83,
-      "avgScore": 456,
-      "movesUsedWin": 18.2,
-      "movesUsedLoss": 22
+      "avgStars": 1.91,
+      "avgScore": 442,
+      "movesUsedWin": 17.9,
+      "movesUsedLoss": 22,
+      "secWin": {
+        "weak": 130.2,
+        "mid": 96.1,
+        "good": 65.9
+      },
+      "secLoss": {
+        "weak": 172,
+        "mid": 125.9,
+        "good": 85.4
+      }
     },
     {
       "level": 88,
@@ -1228,12 +2098,22 @@
       "tier": "normal",
       "moves": 27,
       "target": 480,
-      "winRate": 0.74,
+      "winRate": 0.915,
       "stuckRate": 0,
-      "avgStars": 1.39,
-      "avgScore": 512,
-      "movesUsedWin": 23.9,
-      "movesUsedLoss": 27
+      "avgStars": 1.57,
+      "avgScore": 491,
+      "movesUsedWin": 23.2,
+      "movesUsedLoss": 27,
+      "secWin": {
+        "weak": 165.6,
+        "mid": 122.7,
+        "good": 84.5
+      },
+      "secLoss": {
+        "weak": 205.3,
+        "mid": 150.9,
+        "good": 102.9
+      }
     },
     {
       "level": 89,
@@ -1242,12 +2122,22 @@
       "tier": "normal",
       "moves": 25,
       "target": 430,
-      "winRate": 0.682,
+      "winRate": 0.975,
       "stuckRate": 0,
-      "avgStars": 1.81,
-      "avgScore": 483,
-      "movesUsedWin": 20.8,
-      "movesUsedLoss": 25
+      "avgStars": 2.07,
+      "avgScore": 444,
+      "movesUsedWin": 19.6,
+      "movesUsedLoss": 25,
+      "secWin": {
+        "weak": 137.7,
+        "mid": 102.3,
+        "good": 70.6
+      },
+      "secLoss": {
+        "weak": 191,
+        "mid": 140.4,
+        "good": 95.7
+      }
     },
     {
       "level": 90,
@@ -1256,12 +2146,22 @@
       "tier": "boss",
       "moves": 32,
       "target": 690,
-      "winRate": 0.212,
+      "winRate": 0.33,
       "stuckRate": 0,
-      "avgStars": 1.25,
-      "avgScore": 722,
-      "movesUsedWin": 29.9,
-      "movesUsedLoss": 32
+      "avgStars": 1.34,
+      "avgScore": 724,
+      "movesUsedWin": 29.1,
+      "movesUsedLoss": 32,
+      "secWin": {
+        "weak": 208.6,
+        "mid": 154.6,
+        "good": 106.5
+      },
+      "secLoss": {
+        "weak": 234,
+        "mid": 173,
+        "good": 118.8
+      }
     },
     {
       "level": 91,
@@ -1275,7 +2175,17 @@
       "avgStars": 2.07,
       "avgScore": 331,
       "movesUsedWin": 12.6,
-      "movesUsedLoss": 16
+      "movesUsedLoss": 16,
+      "secWin": {
+        "weak": 86.9,
+        "mid": 64.7,
+        "good": 44.8
+      },
+      "secLoss": {
+        "weak": 119.7,
+        "mid": 88.1,
+        "good": 60.1
+      }
     },
     {
       "level": 92,
@@ -1284,12 +2194,22 @@
       "tier": "normal",
       "moves": 35,
       "target": 640,
-      "winRate": 0.897,
+      "winRate": 0.983,
       "stuckRate": 0,
-      "avgStars": 1.63,
-      "avgScore": 665,
-      "movesUsedWin": 29.9,
-      "movesUsedLoss": 35
+      "avgStars": 1.67,
+      "avgScore": 652,
+      "movesUsedWin": 29.4,
+      "movesUsedLoss": 35,
+      "secWin": {
+        "weak": 213.4,
+        "mid": 157.8,
+        "good": 108.5
+      },
+      "secLoss": {
+        "weak": 276.4,
+        "mid": 202.5,
+        "good": 137.5
+      }
     },
     {
       "level": 93,
@@ -1298,12 +2218,22 @@
       "tier": "normal",
       "moves": 38,
       "target": 630,
-      "winRate": 0.873,
+      "winRate": 0.953,
       "stuckRate": 0,
-      "avgStars": 1.51,
-      "avgScore": 650,
-      "movesUsedWin": 33.5,
-      "movesUsedLoss": 38
+      "avgStars": 1.55,
+      "avgScore": 641,
+      "movesUsedWin": 33,
+      "movesUsedLoss": 38,
+      "secWin": {
+        "weak": 243.3,
+        "mid": 179.4,
+        "good": 122.8
+      },
+      "secLoss": {
+        "weak": 294.4,
+        "mid": 216,
+        "good": 146.9
+      }
     },
     {
       "level": 94,
@@ -1312,12 +2242,22 @@
       "tier": "normal",
       "moves": 28,
       "target": 480,
-      "winRate": 0.845,
+      "winRate": 0.938,
       "stuckRate": 0,
-      "avgStars": 1.59,
-      "avgScore": 500,
-      "movesUsedWin": 24,
-      "movesUsedLoss": 28
+      "avgStars": 1.69,
+      "avgScore": 491,
+      "movesUsedWin": 23.6,
+      "movesUsedLoss": 28,
+      "secWin": {
+        "weak": 169.3,
+        "mid": 125.2,
+        "good": 86.1
+      },
+      "secLoss": {
+        "weak": 215.7,
+        "mid": 158.3,
+        "good": 107.7
+      }
     },
     {
       "level": 95,
@@ -1326,12 +2266,22 @@
       "tier": "hard",
       "moves": 24,
       "target": 480,
-      "winRate": 0.263,
+      "winRate": 0.407,
       "stuckRate": 0,
-      "avgStars": 1.5,
-      "avgScore": 516,
-      "movesUsedWin": 21.6,
-      "movesUsedLoss": 24
+      "avgStars": 1.49,
+      "avgScore": 511,
+      "movesUsedWin": 21.4,
+      "movesUsedLoss": 24,
+      "secWin": {
+        "weak": 152.5,
+        "mid": 112.9,
+        "good": 77.7
+      },
+      "secLoss": {
+        "weak": 175.8,
+        "mid": 129.7,
+        "good": 88.8
+      }
     },
     {
       "level": 96,
@@ -1345,7 +2295,17 @@
       "avgStars": 2.08,
       "avgScore": 323,
       "movesUsedWin": 11.7,
-      "movesUsedLoss": 15
+      "movesUsedLoss": 15,
+      "secWin": {
+        "weak": 78.9,
+        "mid": 58.9,
+        "good": 40.9
+      },
+      "secLoss": {
+        "weak": 113.1,
+        "mid": 83.3,
+        "good": 56.9
+      }
     },
     {
       "level": 97,
@@ -1354,12 +2314,22 @@
       "tier": "normal",
       "moves": 19,
       "target": 400,
-      "winRate": 0.715,
+      "winRate": 0.91,
       "stuckRate": 0,
-      "avgStars": 1.61,
-      "avgScore": 423,
-      "movesUsedWin": 16.3,
-      "movesUsedLoss": 19
+      "avgStars": 1.72,
+      "avgScore": 411,
+      "movesUsedWin": 15.9,
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 112.8,
+        "mid": 83.5,
+        "good": 57.5
+      },
+      "secLoss": {
+        "weak": 143.6,
+        "mid": 105.5,
+        "good": 71.9
+      }
     },
     {
       "level": 98,
@@ -1368,12 +2338,22 @@
       "tier": "normal",
       "moves": 18,
       "target": 300,
-      "winRate": 0.65,
+      "winRate": 0.95,
       "stuckRate": 0,
-      "avgStars": 1.64,
-      "avgScore": 334,
-      "movesUsedWin": 15.2,
-      "movesUsedLoss": 18
+      "avgStars": 1.82,
+      "avgScore": 316,
+      "movesUsedWin": 14.5,
+      "movesUsedLoss": 18,
+      "secWin": {
+        "weak": 102,
+        "mid": 75.6,
+        "good": 52.1
+      },
+      "secLoss": {
+        "weak": 136.3,
+        "mid": 100.1,
+        "good": 68.2
+      }
     },
     {
       "level": 99,
@@ -1387,7 +2367,17 @@
       "avgStars": 1.41,
       "avgScore": 442,
       "movesUsedWin": 16.9,
-      "movesUsedLoss": 19
+      "movesUsedLoss": 19,
+      "secWin": {
+        "weak": 118.3,
+        "mid": 87.9,
+        "good": 60.7
+      },
+      "secLoss": {
+        "weak": 141.5,
+        "mid": 104.3,
+        "good": 71.3
+      }
     },
     {
       "level": 100,
@@ -1396,12 +2386,22 @@
       "tier": "boss",
       "moves": 29,
       "target": 640,
-      "winRate": 0.147,
+      "winRate": 0.63,
       "stuckRate": 0,
-      "avgStars": 1.14,
-      "avgScore": 657,
-      "movesUsedWin": 27.3,
-      "movesUsedLoss": 29
+      "avgStars": 1.28,
+      "avgScore": 641,
+      "movesUsedWin": 26.6,
+      "movesUsedLoss": 29,
+      "secWin": {
+        "weak": 188.2,
+        "mid": 139.6,
+        "good": 96.3
+      },
+      "secLoss": {
+        "weak": 214.1,
+        "mid": 158.1,
+        "good": 108.4
+      }
     }
   ]
 }

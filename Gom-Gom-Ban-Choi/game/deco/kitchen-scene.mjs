@@ -6,7 +6,7 @@
 // bowls = các chén ăn / uống.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X } from './room-layout.mjs';
+import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
@@ -509,11 +509,9 @@ export function decorateKitchenWall(i, wall) {
     sign.position.set(-1.9, 2.15, -.175); sign.rotation.y = Math.PI;
     wall.add(at(rbox(1.1, .35, .06, .02, onWall('#c98a55')), -1.9, 2.15, -.14), sign,
       ...[-.4, .4].map(dx => at(box(.04, .12, .04, onWall('#9a6a45')), -1.9 + dx, 2.4, -.12)));
-    const win = 1.3;
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(.7, .8), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true, userData: { nightDim: true, wallKeep: true } }));
-    glass.position.set(win, 1.85, -.175); glass.rotation.y = Math.PI;
-    wall.add(at(box(.9, 1.0, .06, onWall('#fff4e0')), win, 1.85, -.13), glass,
-      ...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.13)),
+    // Cửa sổ thật (khoét lỗ: deco-room.mjs windows, KITCHEN_FRONT_WINDOW_U): ở đây chỉ thêm cánh cửa chớp hai bên + hộp hoa dưới bậu.
+    const win = KITCHEN_FRONT_WINDOW_U;
+    wall.add(...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.14)),
       at(rbox(.9, .14, .2, .04, onWall('#c98a55')), win, 1.3, -.2),
       ...[-.3, -.1, .1, .3].flatMap((dx, k) => [at(ball(.06, onWall(['#ff8fb8', '#ffd23f', '#fffaf0', '#ff6b4a'][k])), win + dx, 1.42, -.2), at(ball(.04, onWall('#5fae46')), win + dx + .03, 1.36, -.26)]));
     const lantern = u => [at(box(.03, .03, .2, onWall('#3a3f4a')), u, 2.5, -.2), at(cyl(.07, .07, .16, mat('#ffe9a8', { transparent: true, emissive: '#ffcf6a', emissiveIntensity: .7 }), 12), u, 2.32, -.3),

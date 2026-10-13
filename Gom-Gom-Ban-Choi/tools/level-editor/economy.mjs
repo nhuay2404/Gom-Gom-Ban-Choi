@@ -46,10 +46,11 @@ const sumLevels = (from, to) => cum[to] - cum[from - 1];
 function markDirty() { dirty = true; $('saveStatus').textContent = '● chưa lưu'; }
 
 // ---------- 1. Công thức ----------
-// Mỗi hàng bảng gom bao nhiêu màn: tự động = bội của 10 nhỏ nhất để bảng ≤ 20 hàng (100 màn: 10 / hàng, 300000 màn: 100000 / hàng).
+// Mỗi hàng bảng gom bao nhiêu màn: tự động = từng màn khi xem ≤ 100 màn; nhiều hơn thì bội của 10 nhỏ nhất để bảng ≤ 20 hàng (300000 màn: 100000 / hàng).
 function bucketSize(n) {
   const pick = Number($('bucket').value);
   if (pick) return pick;
+  if (n <= 100) return 1;
   let size = 10;
   while (Math.ceil(n / size) > 20) size *= 10;
   return size;
@@ -74,12 +75,12 @@ function renderReward() {
     <tr><th>Màn đầu</th><th>Màn cuối</th><th>Tổng khoảng</th><th>Luỹ kế<br><span class="muted">(+ xu ban đầu)</span></th>
     <th style="border-left:2px solid var(--line)">Mở khu</th><th>Đồ mặc định</th><th>Đồ full</th><th>Khu + mặc định</th><th>Khu + full</th></tr>`;
   const body = Array.from({ length: Math.ceil(n / size) }, (_, r) => {
-    const from = r * size + 1, to = Math.min(n, (r + 1) * size);
+    const from = r * size + 1, to = Math.min(n, (r + 1) * size), range = from === to ? from.toLocaleString('en-US') : `${from.toLocaleString('en-US')}–${to.toLocaleString('en-US')}`;
     const opened = paid.filter(e => openLevel(e) >= from && openLevel(e) <= to);
     const areas = AREA_ORDER.filter(ar => cfg.AREA_UNLOCK[ar].level + 1 >= from && cfg.AREA_UNLOCK[ar].level + 1 <= to);
     const cost = areas.reduce((t, ar) => t + cfg.AREA_UNLOCK[ar].cost, 0);
     const base = opened.filter(isBase).reduce((t, e) => t + price(e), 0), full = opened.reduce((t, e) => t + price(e), 0);
-    return `<tr><td>${from.toLocaleString('en-US')}–${to.toLocaleString('en-US')}</td><td>${fmt(reward(from - 1))}</td><td>${fmt(reward(to - 1))}</td>
+    return `<tr><td>${range}</td><td>${fmt(reward(from - 1))}</td><td>${fmt(reward(to - 1))}</td>
       <td><b>${fmt(sumLevels(from, to))}</b></td><td>${fmt(cum[to] + cfg.START_COINS)}</td>
       <td style="border-left:2px solid var(--line)" title="${areas.map(ar => AREA_NAMES[ar]).join(', ')}">${cost ? fmt(cost) : '—'}</td><td>${base ? fmt(base) : '—'}</td><td>${full ? fmt(full) : '—'}</td>
       <td><b>${cost + base ? fmt(cost + base) : '—'}</b></td><td><b>${cost + full ? fmt(cost + full) : '—'}</b></td></tr>`;
@@ -134,13 +135,13 @@ function renderStages() {
 
 // ---------- 4. Biến số ----------
 function renderProfiles() {
-  $('profileTable').innerHTML = `<tr><th>Kiểu người chơi</th><th>Lượt/ngày</th><th>Tay nghề</th><th>Mua</th><th>Nhận xu tự sinh<br>mấy lần / ngày</th><th>Giây / lượt</th></tr>` + profiles.map((p, i) => `<tr>
+  $('profileTable').innerHTML = `<tr><th>Kiểu người chơi</th><th>Lượt/ngày</th><th>Tay nghề</th><th>Mua</th><th>Nhận xu tự sinh<br>mấy lần / ngày</th><th>Nhịp chơi</th></tr>` + profiles.map((p, i) => `<tr>
     <td><input style="width:190px" data-p="${i}" data-f="name" value="${p.name}"></td>
     <td><input type="number" min="1" data-p="${i}" data-f="attempts" value="${p.attempts}"></td>
     <td><input type="number" min="0.1" step="0.1" data-p="${i}" data-f="skill" value="${p.skill}"></td>
     <td><select data-p="${i}" data-f="buy"><option${p.buy === 'base' ? ' selected' : ''} value="base">chỉ món mặc định</option><option${p.buy === 'all' ? ' selected' : ''} value="all">mọi kiểu + tường/sàn</option></select></td>
     <td><input type="number" min="1" max="12" data-p="${i}" data-f="claims" value="${p.claims ?? 2}"></td>
-    <td><input type="number" min="1" max="30" step="0.5" data-p="${i}" data-f="spm" value="${p.spm ?? 5}"></td></tr>`).join('');
+    <td><select data-p="${i}" data-f="pace">${[['weak', 'Yếu'], ['mid', 'Trung bình'], ['good', 'Giỏi']].map(([v, t]) => `<option${(p.pace ?? 'mid') === v ? ' selected' : ''} value="${v}">${t}</option>`).join('')}</select></td></tr>`).join('');
 }
 
 // ---------- 5. Mô phỏng ----------
@@ -333,7 +334,7 @@ function openFlowPop(g) {
   const key = (label, k, step) => num(`${label} <span class="code">${k}</span>`, `data-key="${k}"`, cfg[k], step);
   const body = {
     start: () => ['Xu ban đầu', key('Xu có sẵn khi vào game', 'START_COINS', 10)],
-    win: () => ['Thắng màn', key('Xu màn 1', 'REWARD_BASE', 10) + key('Xu tăng thêm mỗi màn', 'REWARD_STEP', 5)],
+    win: () => ['Thắng màn', key('Xu màn 1', 'REWARD_BASE', 10) + key('Xu tăng thêm mỗi màn', 'REWARD_STEP', 5) + key('Tăng bước mỗi cụm 10 màn', 'REWARD_GROWTH', .01)],
     idle: () => ['Mèo tự sinh', key('Tỉ lệ idle (× xu màn / giờ)', 'IDLE_RATE', .01) + key('Giờ tích tối đa', 'IDLE_CAP_HOURS', 1) + key('Bắt đầu từ màn', 'IDLE_FROM_LEVEL', 1)],
     pool: () => ['Ví xu', '<p class="hint" style="margin:0">Ví = xu vào − xu ra. Sửa các nút Nguồn / Cổng / Chỗ tiêu để đổi dòng chảy.</p>'],
     gate: () => [`Mở ${name}`, num('Màn mốc', `data-area="${area}" data-field="level"`, cfg.AREA_UNLOCK[area].level) + num('Giá mở khu (xu)', `data-area="${area}" data-field="cost"`, cfg.AREA_UNLOCK[area].cost, 50)],
@@ -374,7 +375,7 @@ document.addEventListener('input', event => {
   else if (el.dataset.area) { cfg.AREA_UNLOCK[el.dataset.area][el.dataset.field] = Number(el.value); markDirty(); renderStages(); }
   else if (el.dataset.mult) { cfg.ZONE_PRICE_MULT[el.dataset.mult] = Number(el.value); markDirty(); renderStages(); }
   if (el.dataset.key || el.dataset.area || el.dataset.mult) { buildFlow(); renderFlow(); }
-  if (el.dataset.p) { const p = profiles[el.dataset.p]; p[el.dataset.f] = el.dataset.f === 'name' || el.dataset.f === 'buy' ? el.value : Number(el.value); }
+  if (el.dataset.p) { const p = profiles[el.dataset.p]; p[el.dataset.f] = ['name', 'buy', 'pace'].includes(el.dataset.f) ? el.value : Number(el.value); }
   else if (el.id === 'viewLevels' || el.id === 'bucket') return renderAll();
   else if (el.id === 'rangeFrom' || el.id === 'rangeTo') {
     // Gõ "tới màn" quá số màn đang xem: nới cả board (bảng, biểu đồ, tổng quan) tới màn đó luôn.
@@ -412,7 +413,7 @@ window.addEventListener('beforeunload', event => { if (dirty) event.preventDefau
 try {
   const baseline = (await (await fetch('../baseline.json')).json()).levels;
   winRates = baseline.map(level => level.winRate);
-  levelInfo = baseline.map(({ moves, movesUsedWin, movesUsedLoss, tier }) => ({ moves, movesUsedWin, movesUsedLoss, tier }));
+  levelInfo = baseline.map(({ moves, movesUsedWin, movesUsedLoss, secWin, secLoss, tier }) => ({ moves, movesUsedWin, movesUsedLoss, secWin, secLoss, tier }));
 } catch {
   winRates = [];
 }

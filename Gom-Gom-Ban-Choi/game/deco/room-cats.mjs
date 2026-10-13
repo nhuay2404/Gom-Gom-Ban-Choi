@@ -23,7 +23,8 @@ const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.e
 // ±ROOM quanh tâm khu; hai khu cạnh nhau nối bằng một lối hẹp qua cửa (LINKS) xuyên qua tường / cổng rào.
 const zoneHome = zone => ({ x: ZONE_OFFSET[zone][0], z: ZONE_OFFSET[zone][1] });
 // Mỗi lối: trục hai khu lệch nhau (x hoặc z), ô lối đi (box) giữa hai mép khu, và điểm đứng ngay trong mỗi khu (steps).
-const PASSES = LINKS.map(({ a, b, at, w, open = false }) => {
+// via (lối qua đường sang trường): các điểm đi qua giữa hai bước cửa; mỗi chặng là một ô đi được (boxes) rộng bằng lối.
+const PASSES = LINKS.map(({ a, b, at, w, open = false, via = [] }) => {
   const [ax, az] = ZONE_OFFSET[a], [bx, bz] = ZONE_OFFSET[b];
   const axis = Math.abs(ax - bx) > Math.abs(az - bz) ? 'x' : 'z', side = axis === 'x' ? 'z' : 'x';
   const ca = axis === 'x' ? ax : az, cb = axis === 'x' ? bx : bz, dir = Math.sign(cb - ca);
@@ -31,7 +32,11 @@ const PASSES = LINKS.map(({ a, b, at, w, open = false }) => {
   const edgeA = ca + dir * ROOM, edgeB = cb - dir * ROOM, half = open ? ROOM : w / 2 - .2;
   const point = (along, across) => (axis === 'x' ? { x: along, z: across } : { x: across, z: along });
   const lo = point(Math.min(edgeA, edgeB), at - half), hi = point(Math.max(edgeA, edgeB), at + half);
-  return { a, b, open, box: [lo.x, hi.x, lo.z, hi.z], steps: { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) } };
+  const steps = { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) }, path = via.map(([x, z]) => ({ x, z }));
+  const chain = [steps[a], ...path, steps[b]];
+  const boxes = path.length ? chain.slice(1).map((q, i) => { const p = chain[i]; return [Math.min(p.x, q.x) - half, Math.max(p.x, q.x) + half, Math.min(p.z, q.z) - half, Math.max(p.z, q.z) + half]; })
+    : [[lo.x, hi.x, lo.z, hi.z]];
+  return { a, b, open, boxes, steps, via: path };
 });
 // Đường đi qua các khu (đồ thị nhỏ, tìm theo chiều rộng): danh sách khu từ `from` tới `to` chỉ qua các khu đã mở.
 function zoneRoute(from, to, open) {
@@ -683,7 +688,8 @@ class Cat {
       for (let i = 1; i < route.length; i++) {
         const pass = passBetween(route[i - 1], route[i]);
         if (pass.open) continue; // lối thông thoáng (vườn <-> phần mở rộng): đi thẳng, không vòng qua cửa
-        for (const step of [pass.steps[route[i - 1]], pass.steps[route[i]]]) {
+        const via = pass.a === route[i - 1] ? pass.via : [...pass.via].reverse();
+        for (const step of [pass.steps[route[i - 1]], ...via, pass.steps[route[i]]]) {
           yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: Math.max(6, this.travelTime(step.x, step.z, run, pace)), pace, glide: true, direct: true });
         }
       }
@@ -2476,8 +2482,7 @@ class Cat {
     let changed = ropes.length > 0 || !!trough || this.wasHeld;
     for (let k = 0; k < 7; k++) if (Math.abs(now[k] - sig[k]) > 1e-4) { changed = true; sig[k] = now[k]; }
     this.wasHeld = ropes.length > 0 || !!trough; // vừa rời dây / võng: uốn lại một lần nữa cho về dáng thường
-    const skipBody = !changed, skipDecals = skipBody && Math.abs(this.look - (this.decalLook ?? NaN)) < 1e-4;
-    this.decalLook = this.look;
+    const skipBody = !changed, skipDecals = skipBody;
     if (!skipBody) for (let i = 0; i < arr.length; i += 3) {
       this.deform(base[i], base[i + 1], base[i + 2], v);
       if (ropes.length) dentByRopes(v, ropes);
@@ -2486,12 +2491,12 @@ class Cat {
     }
     if (!skipBody) { out.needsUpdate = true; body.geometry.boundingSphere = null; } // tính lại khối bao để raycast (bấm vào mèo) đúng hình mới
     // Mặt / mắt: dán lên mặt trước bo tròn rồi uốn cùng công thức với đỉnh thân -> luôn khít với thân.
-    // Mắt liếc (this.look) = trượt dọc bề mặt, không phải dời cả tấm ra khỏi thân.
+    // Mặt luôn nằm chính giữa mặt trước thân: KHÔNG trượt theo hướng liếc (this.look). Lỗi cũ: trượt ±3 cm, mèo hay đứng yên giữa lúc
+    // liếc nên cả mặt (mắt + miệng) trông dán lệch trái / phải. Hướng nhìn đã thể hiện bằng xoay thân (roller) + vành tai.
     for (const decal of [rig.eyes]) {
       const flat = decal.userData.flat, lift = decal.userData.lift, attr = decal.geometry.attributes.position, a = attr.array;
-      const shift = decal === rig.eyes ? this.look * .03 : 0;
       if (!skipDecals) for (let i = 0; i < a.length; i += 3) {
-        const x = flat[i] + shift, y = flat[i + 1];
+        const x = flat[i], y = flat[i + 1];
         this.deform(x, y, frontSurface(x, y) + lift, v, lift);
         if (trough) holdInTrough(v, trough, lift);
         a[i] = v.x; a[i + 1] = v.y; a[i + 2] = v.z;
@@ -2670,7 +2675,6 @@ class Cat {
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
     // jelly() nhân scale.y của lớp biểu cảm theo thân đang co: đặt lại 1 mỗi frame, không thì mặt bị bóp dần tới mất
     rig.eyes.scale.y = 1;
-    // mắt liếc ngang (this.look): cộng trong jelly() cùng với độ lắc của thân
 
     // ---- Tai: giật bằng xung lò xo, cụp khi tiếp đất, dỏng khi tập trung, cụp khi bực ----
     this.nextEar -= dt;
@@ -2816,7 +2820,9 @@ const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.
 const BATHROOM_TOYS = {};
 // Sân sau (bể bơi + vườn rau): chưa có tương tác mèo với đồ.
 const BACKYARD_TOYS = {};
-const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS, backyard: BACKYARD_TOYS, backyard2: BACKYARD_TOYS };
+// Trường mẫu giáo: chưa có tương tác mèo với đồ.
+const KINDER_TOYS = {};
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS, backyard: BACKYARD_TOYS, backyard2: BACKYARD_TOYS, kinder: KINDER_TOYS, kinder2: KINDER_TOYS };
 // Tương tác nhiều mèo với một món (xem stareDown / squeezeIn / watchTogether / copycat):
 const RESTS = ['catbed', 'armchair', 'bed', 'chair', 'kchair', 'bench', 'hammock', 'stove', 'lamp', 'lantern']; // chỗ nằm ấm: tranh chỗ
 const SQUEEZE = ['catbed']; // ổ đủ rộng để chen hai con
@@ -2877,7 +2883,7 @@ export function createCatLife(ctx) {
       let best = null, bestD = Infinity;
       const consider = p => { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < bestD) { best = p; bestD = d; } };
       for (const zone of world.zones()) { const h = zoneHome(zone); consider(boxNearest(x, z, h.x - ROOM, h.x + ROOM, h.z - ROOM, h.z + ROOM)); }
-      for (const p of PASSES) if (world.zones().includes(p.a) && world.zones().includes(p.b)) consider(boxNearest(x, z, ...p.box));
+      for (const p of PASSES) if (world.zones().includes(p.a) && world.zones().includes(p.b)) for (const box of p.boxes) consider(boxNearest(x, z, ...box));
       return best;
     },
     // Cửa sổ vòm phòng khách theo toạ độ khu nhà.

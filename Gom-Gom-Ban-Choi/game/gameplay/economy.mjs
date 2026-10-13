@@ -24,11 +24,14 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Tăng đều: xu(màn n) = REWARD_BASE + REWARD_STEP × (n−1), làm tròn; màn boss cũng theo đúng công thức này (không nhân thêm).
-// Tổng N màn = N × REWARD_BASE + REWARD_STEP × N × (N−1) ÷ 2 — vd. 50 + 50 mỗi màn: 1000 màn = 25,025,000 xu.
-// Mặc định: màn 1 = 50, màn 2 = 100, màn 3 = 150 … màn 99 = 4,950, màn 100 = 5,000. Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
+// Tăng theo cụm 10 màn: trong một cụm mỗi màn cộng cùng một bước; sang cụm mới bước nhân (1 + REWARD_GROWTH) — cụm 1 (màn 1–10) bước
+// REWARD_STEP, cụm 2 bước × (1 + G), cụm 3 × (1 + G)²… (progression.mjs rewardFor). Mỗi màn lệch thêm REWARD_JITTER × lệch(n) × bước,
+// lệch(n) cố định theo màn trong −0.5..0.5: khó đoán mà vẫn luôn tăng (REWARD_JITTER < 1). Màn boss cũng theo công thức này.
+// Mặc định (bước 50, +10% mỗi cụm): màn 1–6 ≈ 67, 82, 152, 195, 248, 305 … màn 30 ≈ 1,678, màn 50 ≈ 3,041, màn 100 ≈ 7,946; 100 màn ≈ 340,000 xu.
 export const REWARD_BASE = remote('REWARD_BASE', 50);
 export const REWARD_STEP = remote('REWARD_STEP', 50);
+export const REWARD_GROWTH = remote('REWARD_GROWTH', .1);
+export const REWARD_JITTER = remote('REWARD_JITTER', .8);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
@@ -83,11 +86,12 @@ export const AREA_UNLOCK = remote('AREA_UNLOCK', {
   kitchen: { level: 40, cost: 3550 },
   bathroom: { level: 50, cost: 4550 },
   backyard: { level: 60, cost: 5550 },
+  kinder: { level: 70, cost: 6550 },
 });
 
 // Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
 // tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15 });
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15, kinder: 60 });
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
@@ -212,6 +216,24 @@ export const DECO = remote('DECO', {
   'yground-grass':       { price: 0 },                // Grass
   'yground-clover':      { price: 100 },              // Clover
   'yground-meadow':      { price: 100 },              // Meadow
+  // --- Trường mẫu giáo (mở theo AREA_UNLOCK.kinder; giá nhân ZONE_PRICE_MULT.kinder) — đồ ---
+  kdesk:                 { price: 0 },                // Kids desks (lớp có sẵn bàn khi mở khu)
+  kplayset:              { price: 0 },                // Slide tower
+  kboard:                { price: 160 },              // Chalkboard
+  kcubby:                { price: 180 },              // Toy cubbies
+  kpiano:                { price: 240 },              // Upright piano
+  kswing:                { price: 220 },              // Swing set
+  kspring:               { price: 150 },              // Spring riders
+  ksandpit:              { price: 140 },              // Sandpit
+  kmerry:                { price: 260 },              // Merry-go-round
+  kbench:                { price: 120 },              // Benches
+  // --- Trường mẫu giáo — rào / nền ---
+  'kfence-picket':       { price: 0 },                // Yellow picket
+  'kfence-rail':         { price: 100 },              // Blue rails
+  'kfence-hedge':        { price: 100 },              // Hedge
+  'kground-grass':       { price: 0 },                // Grass
+  'kground-clover':      { price: 100 },              // Clover
+  'kground-path':        { price: 100 },              // Stone path
   // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
   toilet:                { price: 0 },                // Toilet
   vanity:                { price: 0 },                // Sink vanity

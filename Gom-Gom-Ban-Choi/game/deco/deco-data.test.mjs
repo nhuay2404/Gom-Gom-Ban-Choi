@@ -14,7 +14,7 @@ test('save mới: xu khởi tạo = số truyền vào, bắt đầu ở vườn
   assert.equal(deco.zone, 'garden');
   // cối xay + hướng dương (phần vườn mở rộng) đặt sẵn nhưng chỉ hiện khi vườn đã mở rộng
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers']);
-  assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard']);
+  assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder']);
 });
 
 test('vườn mở rộng (thắng màn 10): cùng khu vườn, đồ mới nằm trong danh mục vườn, khoá từ màn 11', () => {
@@ -42,7 +42,7 @@ test('save cũ: gộp khu "garden2" thử nghiệm vào vườn; save trước k
     garden: { ...base.zones.garden, placed: ['flowers'] },
     garden2: { owned: ['windmill', 'kite', 'g2fence-old'], placed: ['windmill', 'kite', 'g2fence-old'], wall: 'g2fence-old', floor: 'g2ground-old' } } });
   const deco = loadDeco(0);
-  assert.deepEqual(Object.keys(deco.zones).sort(), ['backyard', 'bathroom', 'bedroom', 'garden', 'kitchen', 'living']);
+  assert.deepEqual(Object.keys(deco.zones).sort(), ['backyard', 'bathroom', 'bedroom', 'garden', 'kinder', 'kitchen', 'living']);
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'kite']);
   assert.ok(deco.zones.garden.owned.includes('kite'));
   assert.equal(deco.zones.garden.wall, 'fence-white', 'giữ rào của vườn');
@@ -134,7 +134,7 @@ test('xem trước không trừ xu; khu phòng khách mở khi thắng màn 10',
 });
 
 test('danh mục: mỗi khu có đủ 4 nhóm, mèo dùng chung', () => {
-  for (const zone of ['garden', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
+  for (const zone of ['garden', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder']) for (const cat of ['furniture', 'walls', 'floors', 'cats']) assert.ok(catalogFor(zone, cat).length > 0, `${zone}/${cat}`);
   assert.equal(new Set(CATALOG.map(entry => entry.id)).size, CATALOG.length, 'id trùng');
 });
 
@@ -305,6 +305,6 @@ test('món đã bỏ (theme Hồng / Hiện đại, lựa chọn thứ 4 cũ): h
 
 test('mỗi khu (kể cả vườn mở rộng) có đúng 10 món mặc định (10 chỗ đặt đồ)', () => {
   const area = e => e.area || e.zone;
-  for (const a of ['garden', 'garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard'])
+  for (const a of ['garden', 'garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'])
     assert.equal(CATALOG.filter(e => e.cat === 'furniture' && !e.slot && area(e) === a).length, 10, a);
 });

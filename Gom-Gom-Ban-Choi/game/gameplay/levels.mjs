@@ -13,7 +13,6 @@
 //     x7–x9 normal khó dần lên · x0 BOSS (đỉnh cuối chương); màn x1 chương sau lại dễ (thở sau boss).
 //   Mục tiêu điểm cân bằng bot (tỉ lệ thắng của bot, cận dưới của người thật): normal 95% -> ~70% trong chương,
 //   hard 45% -> 33%, nghỉ ≥95%, boss 30% -> 22% (chương sau khó hơn chương trước một chút).
-//   Màn 21 giới thiệu cỏ (`grass`): mục tiêu màn là dọn hết cỏ thay cho điểm.
 //   Chương 3 (21–30) phòng khách, chương 4 (31–40) phòng ngủ, chương 5 (41–50) bếp; mỗi chương mở sau boss chương trước.
 //   Màn 21–50 dựng bằng script một lần: đặt mèo theo cặp không tạo cụm gom sẵn, mục tiêu điểm cân bằng bot
 //
@@ -147,8 +146,8 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Tea Break', feature: 'Heart board, take a breather', tier: 'chill',
-    moves: 20, target: 280, cats: 'OGWT', assist: 0.5,
+    name: 'Tea Break', feature: 'Heart board, take a breather', tier: 'normal',
+    moves: 20, target: 320, cats: 'OGWT', assist: 0.5,
     board: ['#..##..#', '.OO.M...', '.M....M.', '...MM...', '#M..GG.#', '##..M.##', '###..###'],
     deck: [],
   },
@@ -166,8 +165,8 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Divided', feature: 'A metal wall splits the board', tier: 'normal',
-    moves: 15, target: 240, cats: 'OGWTSK', assist: 0.4,
+    name: 'Divided', feature: 'A metal wall splits the board', tier: 'hard',
+    moves: 15, target: 280, cats: 'OGWTSK', assist: 0.4,
     board: ['...MM...', '.O..M.G.', '..MM..S.', '.K..MM..', '.G.M..O.', '..MM.T..', 'W..M....'],
     deck: [],
   },
@@ -180,14 +179,10 @@ export const LEVELS = [
 
   // ===== Chương 3: phòng khách (mở sau màn 20) — xào lại mọi cơ chế, thêm chuồng mèo vào hầu hết các màn =====
   {
-    // Giới thiệu bãi cỏ: mục tiêu là dọn hết 16 ô cỏ (không tính điểm). Cỏ nằm dưới các cặp mèo có sẵn (gom cặp là dọn),
-    // dưới vài mèo lẻ và trên ô trống (phải đặt mèo vào rồi gom). Bot: giỏi 95% · trung bình 90% · yếu 84% (24 lượt).
-    name: 'Cozy Corner', feature: 'Grass: match on grass to clear it', tier: 'chill', introduces: 'grass',
+    name: 'Cozy Corner', feature: 'Take a breather', tier: 'chill',
     moves: 24, target: 470, cats: 'OGWTS', assist: 0.4,
     board: ['.....TT', '..G....', 'T....SS', 'T.XX...', '.GG....', 'OXOO...', 'X...T.X'],
-    grass: ['....~~~', '..~~~..', '~....~~', '~......', '.~~~...', '~.~~...', '.......'],
     deck: [],
-    tutorial: [{ type: 'info', text: 'Match cats on the grass to clear it. Clear all the grass and reach the points to win!' }],
   },
   {
     name: "Sofa Rows", feature: "Rows of metal", tier: 'normal',
@@ -214,7 +209,7 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: "Teacup", feature: "Heart board, take a breather", tier: 'chill',
+    name: 'Teacup', feature: 'Heart board, take a breather', tier: 'normal',
     moves: 20, target: 360, cats: 'OGWT', assist: 0.5,
     board: ['#..##..#', '.G..O...', '.G....M.', '...MO..G', '#.O.OM.#', '##OW..##', '###W.###'],
     deck: [],
@@ -245,8 +240,8 @@ export const LEVELS = [
   },
   // ===== Chương 4: phòng ngủ (mở sau màn 30) — bàn đông vật cản hơn, mục tiêu cao hơn =====
   {
-    name: "Pillow Fort", feature: "Crates everywhere", tier: 'normal',
-    moves: 15, target: 350, cats: 'OGWTSK', assist: 0.4,
+    name: 'Pillow Fort', feature: 'Crates everywhere', tier: 'chill',
+    moves: 15, target: 340, cats: 'OGWTSK', assist: 0.4,
     board: ['.S.....', '.SOX..X', 'SX.KWX.', '...KX..', '....X..', 'S....OO', 'SGG....'],
     deck: [],
   },
@@ -275,7 +270,7 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: "Nap Time", feature: "Diamond board, take a breather", tier: 'chill',
+    name: 'Nap Time', feature: 'Diamond board, take a breather', tier: 'normal',
     moves: 20, target: 370, cats: 'OGWT', assist: 0.5,
     board: ['##.W.##', '#..W..#', '...MW.T', '...M..T', '..OO...', '#..G.T#', '##.G.##'],
     deck: [],
@@ -306,7 +301,7 @@ export const LEVELS = [
   },
   // ===== Chương 5: bếp (mở sau màn 40) — xào lại cả bốn vật cản theo cặp =====
   {
-    name: "Kitchen Door", feature: "Crates by the door", tier: 'normal',
+    name: 'Kitchen Door', feature: 'Crates by the door', tier: 'chill',
     moves: 15, target: 370, cats: 'OGWTSK', assist: 0.4,
     board: ['T.....S', 'TXT..X.', 'WW.X...', 'XO.TT.X', 'SO.X...', '.X..GX.', '.....KK'],
     deck: [],
@@ -336,7 +331,7 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: "Milk Break", feature: "Heart board, take a breather", tier: 'chill',
+    name: 'Milk Break', feature: 'Heart board, take a breather', tier: 'normal',
     moves: 20, target: 360, cats: 'OGWT', assist: 0.4,
     board: ['#W.##..#', '.WG...O.', '....TT.O', '...MM...', '#WW....#', '##....##', '###TT###'],
     deck: [],
@@ -367,23 +362,21 @@ export const LEVELS = [
   },
   // ===== Chương 6: Attic (màn 51–60) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
   {
-    name: 'Dusty Trunk', feature: 'crates', tier: 'normal',
+    name: 'Dusty Trunk', feature: 'crates', tier: 'chill',
     moves: 16, target: 310, cats: 'OGWTSK', assist: 0.4,
     board: ['#KW##..#', '.KW...KX', '.....GK.', '.S.X...X', '#....O.#', '##KSXO##', '###..###'],
     deck: [],
   },
   {
-    name: 'Old Lamp', feature: 'grass + cages', tier: 'normal',
+    name: 'Old Lamp', feature: 'cages', tier: 'normal',
     moves: 31, target: 510, cats: 'OGWTSK', assist: 0.4,
     board: ['..T..T', 'W....T', '.k....', '.TS...', '.T...W', '.k..K.'],
-    grass: ['......', '~~....', '~.....', '....~~', '.....~', '....~~'],
     deck: [],
   },
   {
-    name: 'Hat Box', feature: 'metal + grass', tier: 'normal',
+    name: 'Hat Box', feature: 'metal', tier: 'normal',
     moves: 29, target: 500, cats: 'OGWTSK', assist: 0.4,
     board: ['#.M...#', '.GM....', '.GKM...', 'S.KM..K', 'S..G..K', '.K.GW..', '#..TW.#'],
-    grass: ['.....~.', '.....~.', '.......', '.......', '.....~.', '...~~~.', '..~~~~.'],
     deck: [],
   },
   {
@@ -393,17 +386,15 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Secret Map', feature: 'metal + grass + cages', tier: 'hard',
+    name: 'Secret Map', feature: 'metal + cages', tier: 'hard',
     moves: 19, target: 370, cats: 'OGWTSK', assist: 0.35,
     board: ['##.M..##', '#O.MM.G#', '...kMSKG', 'T..K.sKG', 'T..O..M.', '#....OM#', '##....##'],
-    grass: ['.....~..', '.~~..~~.', '~~~~.~~.', '...~~...', '........', '........', '........'],
     deck: [],
   },
   {
-    name: 'Sunny Window', feature: 'grass', tier: 'chill',
-    moves: 15, target: 260, cats: 'OGWTS', assist: 0.45,
+    name: 'Sunny Window', feature: 'take a breather', tier: 'normal',
+    moves: 15, target: 280, cats: 'OGWTS', assist: 0.45,
     board: ['.G....', '.GW..W', '.....W', '......', 'W..G..', 'W..G..'],
-    grass: ['......', '......', '.~~...', '~~....', '..~~..', '......'],
     deck: [],
   },
   {
@@ -425,38 +416,34 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Attic Fortress', feature: 'metal + cages + crates + grass', tier: 'boss',
+    name: 'Attic Fortress', feature: 'metal + cages + crates', tier: 'boss',
     moves: 26, target: 590, cats: 'OGWTSK', assist: 0.35,
     board: ['MGG.T..X', 'MOX.GX..', 'TO.XG.k.', 't.S.T.S.', '..SGTMsX', '.....M..', 'X...XM..', '..GSXM.X'],
-    grass: ['....~~~.', '......~~', '~...~~~~', '~~.~~~~~', '~~......', '~.......', '........', '........'],
     deck: [],
   },
   // ===== Chương 7: Balcony (màn 61–70) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
   {
-    name: 'Flower Pots', feature: 'cages', tier: 'normal',
-    moves: 16, target: 280, cats: 'OGWTSK', assist: 0.4,
+    name: 'Flower Pots', feature: 'cages', tier: 'chill',
+    moves: 16, target: 240, cats: 'OGWTSK', assist: 0.4,
     board: ['#g.##.G#', '.G..G.g.', '...T..K.', '..GO..K.', '#.GO...#', '##....##', '###..###'],
     deck: [],
   },
   {
-    name: 'Wind Chime', feature: 'cages + grass', tier: 'normal',
+    name: 'Wind Chime', feature: 'cages', tier: 'normal',
     moves: 26, target: 430, cats: 'OGWTSK', assist: 0.4,
     board: ['##...##', '#.k...#', 'G......', 'gS.....', '.SO..S.', '#.OG.S#', '##.G.##'],
-    grass: ['..~~...', '.......', '.~.....', '.~~....', '.~~....', '..~....', '.......'],
     deck: [],
   },
   {
-    name: 'Clothesline', feature: 'cages + grass', tier: 'normal',
+    name: 'Clothesline', feature: 'cages', tier: 'normal',
     moves: 17, target: 330, cats: 'OGWTSK', assist: 0.4,
     board: ['#.O##WT#', '....Tw.W', '....T..w', '......SS', '#....S.#', '##...S##', '###..###'],
-    grass: ['.....~~.', '....~~~.', '....~~..', '.....~..', '.....~..', '........', '........'],
     deck: [],
   },
   {
-    name: 'Rain Drops', feature: 'grass + cages', tier: 'normal',
+    name: 'Rain Drops', feature: 'cages', tier: 'normal',
     moves: 39, target: 640, cats: 'OGWTSK', assist: 0.4,
     board: ['###O.###', '##....##', '##...G##', '#..G..K#', '#.T...O#', 'G.....o.', 'G....wK.'],
-    grass: ['........', '..~~....', '..~.....', '........', '........', '.......~', '..~~..~~'],
     deck: [],
   },
   {
@@ -466,7 +453,7 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Sun Lounger', feature: 'crates', tier: 'chill',
+    name: 'Sun Lounger', feature: 'crates', tier: 'normal',
     moves: 15, target: 330, cats: 'OGWTS', assist: 0.45,
     board: ['#W.##.G#', '......G.', '........', '.X.OTX..', '#W.O.OT#', '##.W.O##', '###..###'],
     deck: [],
@@ -490,25 +477,22 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Balcony Fortress', feature: 'cages + grass + metal + crates', tier: 'boss',
+    name: 'Balcony Fortress', feature: 'cages + metal + crates', tier: 'boss',
     moves: 30, target: 640, cats: 'OGWTSK', assist: 0.35,
     board: ['.....M.T', '.X...MMT', '.X..X.M.', '.MK##...', '.MK##TOX', '.g.W..OK', 'WGKX.XXK', 'w.k..XGG'],
-    grass: ['......~~', '~......~', '~......~', '.....~~~', '.....~~.', '...~~~~~', '.......~', '......~~'],
     deck: [],
   },
   // ===== Chương 8: Bathroom (màn 71–80) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
   {
-    name: 'Bubble Bath', feature: 'grass', tier: 'normal',
+    name: 'Bubble Bath', feature: 'take a breather', tier: 'chill',
     moves: 35, target: 580, cats: 'OGWTSK', assist: 0.4,
     board: ['##...T##', '#WO..T.#', 'OWO.....', 'O.....O.', '...W..O.', '#..W.T.#', '##....##'],
-    grass: ['........', '....~~~.', '....~.~~', '........', '...~....', '...~~...', '...~....'],
     deck: [],
   },
   {
-    name: 'Rubber Duck', feature: 'grass + cages', tier: 'normal',
+    name: 'Rubber Duck', feature: 'cages', tier: 'normal',
     moves: 37, target: 600, cats: 'OGWTSK', assist: 0.4,
     board: ['##go.##', '#..OG.#', 'O...G.O', 'OW.....', '.WK....', '#O....#', '##...##'],
-    grass: ['...~...', '...~...', '...~...', '..~....', '..~....', '..~~~..', '.......'],
     deck: [],
   },
   {
@@ -518,10 +502,9 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Soap Slide', feature: 'crates + grass', tier: 'normal',
+    name: 'Soap Slide', feature: 'crates', tier: 'normal',
     moves: 27, target: 520, cats: 'OGWTSK', assist: 0.4,
     board: ['WOO.KT.', 'W.X.KT.', '.......', '.S.G...', '.S.W...', 'XX..X..', 'KKX.W..'],
-    grass: ['...~~~.', '....~~~', '.....~.', '.......', '...~...', '...~...', '...~~..'],
     deck: [],
   },
   {
@@ -537,31 +520,27 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Tile Puzzle', feature: 'grass + cages', tier: 'normal',
+    name: 'Tile Puzzle', feature: 'cages', tier: 'normal',
     moves: 28, target: 520, cats: 'OGWTSK', assist: 0.4,
     board: ['#t....#', '.T.SO..', '...SO..', '.W...S.', '..WSO..', '...Go..', '#.O.G.#'],
-    grass: ['.......', '.......', '~...~..', '~~..~~.', '~...~..', '.....~.', '.....~.'],
     deck: [],
   },
   {
-    name: 'Drip Drop', feature: 'crates + grass + cages', tier: 'normal',
+    name: 'Drip Drop', feature: 'crates + cages', tier: 'normal',
     moves: 26, target: 480, cats: 'OGWTSK', assist: 0.4,
     board: ['#..##XK#', '....X.K.', 'Wg....WX', 'SGX...w.', '#S.....#', '##T.T.##', '###.K###'],
-    grass: ['........', '.....~~.', '.....~..', '........', '.....~..', '...~~~..', '...~~...'],
     deck: [],
   },
   {
-    name: 'Shower Curtain', feature: 'crates + grass', tier: 'normal',
+    name: 'Shower Curtain', feature: 'crates', tier: 'normal',
     moves: 29, target: 550, cats: 'OGWTSK', assist: 0.4,
     board: ['#..##W.#', '...W.WXG', 'S..W...K', 'S.GOO.X.', '#..X.X.#', '##S.K.##', '###..###'],
-    grass: ['........', '~~~.....', '.......~', '.......~', '......~.', '....~...', '...~~...'],
     deck: [],
   },
   {
-    name: 'Bathroom Fortress', feature: 'grass + crates + metal + cages', tier: 'boss',
+    name: 'Bathroom Fortress', feature: 'crates + metal + cages', tier: 'boss',
     moves: 30, target: 620, cats: 'OGWTSK', assist: 0.35,
     board: ['...GM..W', '....M..W', 'XT.SS.M.', 'X.w##KMX', '..X##.MX', 'K...XGMS', 'k...XG.K', 'GW..s.GX'],
-    grass: ['.....~~~', '.....~~~', '.......~', '........', '........', '.~~~....', '.~~~.~..', '..~~~~~.'],
     deck: [],
   },
   // ===== Chương 9: Rooftop (màn 81–90) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
@@ -584,52 +563,45 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Pigeon Post', feature: 'grass + metal', tier: 'normal',
+    name: 'Pigeon Post', feature: 'metal', tier: 'normal',
     moves: 26, target: 420, cats: 'OGWTSK', assist: 0.4,
     board: ['###..###', '##G..G##', '##...G##', '#O..MK.#', '#W.MMK.#', '.OGM....', '.OG.....'],
-    grass: ['........', '........', '..~~....', '..~..~~.', '......~.', '.~......', '.~......'],
     deck: [],
   },
   {
-    name: 'Gutter Run', feature: 'grass + crates + cages', tier: 'hard',
+    name: 'Gutter Run', feature: 'crates + cages', tier: 'hard',
     moves: 18, target: 400, cats: 'OGWTSK', assist: 0.35,
     board: ['#WK##X.#', '.WK.G..X', '...oGXG.', '.GXw...T', '#....X.#', '##..WW##', '###..###'],
-    grass: ['........', '.~..~~~.', '.~..~...', '.~......', '........', '..~~~...', '...~~...'],
     deck: [],
   },
   {
-    name: 'Sunset Nap', feature: 'grass', tier: 'hard',
+    name: 'Sunset Nap', feature: 'take a breather', tier: 'hard',
     moves: 26, target: 540, cats: 'OGWTS', assist: 0.45,
     board: ['#O....#', 'GO.G...', 'G..G...', '.....W.', '..G.OW.', '..S.O..', '#.....#'],
-    grass: ['.......', '.......', '..~....', '......~', '.....~~', '....~~~', '.......'],
     deck: [],
   },
   {
-    name: 'Antenna Maze', feature: 'grass + crates', tier: 'normal',
+    name: 'Antenna Maze', feature: 'crates', tier: 'normal',
     moves: 22, target: 430, cats: 'OGWTSK', assist: 0.4,
     board: ['###GG###', '##.X.G##', '##.W.G##', '#..W...#', '#.T.SGX#', '..T..G..', '....XX..'],
-    grass: ['........', '........', '........', '...~.~~.', '..~~....', '~~~.....', '........'],
     deck: [],
   },
   {
-    name: 'Skylight', feature: 'grass + cages', tier: 'normal',
+    name: 'Skylight', feature: 'cages', tier: 'normal',
     moves: 27, target: 480, cats: 'OGWTSK', assist: 0.4,
     board: ['#.....#', '....T.O', 'S....SO', 'S.....G', 'K.S..k.', 'K.S..Ko', '#.....#'],
-    grass: ['.......', '...~~..', '.......', '...~~~.', '....~..', '..~....', '.~~~...'],
     deck: [],
   },
   {
-    name: 'Starry Gable', feature: 'grass + metal', tier: 'normal',
+    name: 'Starry Gable', feature: 'metal', tier: 'normal',
     moves: 25, target: 430, cats: 'OGWTSK', assist: 0.4,
     board: ['.W...T.', '.WM.T.W', '..MMKOG', '...M.OG', '.T.....', '.T..T..', '....TO.'],
-    grass: ['...~~~~', '...~~~.', '....~..', '.......', '.......', '.....~.', '.....~~'],
     deck: [],
   },
   {
-    name: 'Rooftop Fortress', feature: 'cages + crates + metal + grass', tier: 'boss',
+    name: 'Rooftop Fortress', feature: 'cages + crates + metal', tier: 'boss',
     moves: 32, target: 690, cats: 'OGWTSK', assist: 0.35,
     board: ['.W.KGT..', 'X...g...', 'KXTMM...', '..TMMk.X', '..G.XK.X', 'XXGKXM.k', 'G..KXM..', 'G.S.O...'],
-    grass: ['.....~~.', '....~~~~', '.....~..', '........', '......~.', '..~...~~', '.~~~..~~', '.~~~...~'],
     deck: [],
   },
   // ===== Chương 10: Moon Garden (màn 91–100) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
@@ -640,31 +612,27 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Glow Worms', feature: 'grass + crates', tier: 'normal',
+    name: 'Glow Worms', feature: 'crates', tier: 'normal',
     moves: 35, target: 640, cats: 'OGWTSK', assist: 0.4,
     board: ['.X.KGT.', 'W...GT.', 'WXX.XO.', '.K..XGS', '.K....S', '.....G.', '....O..'],
-    grass: ['....~..', '...~~~.', '.......', '......~', '......~', '~~....~', '~~.....'],
     deck: [],
   },
   {
-    name: 'Night Blooms', feature: 'cages + grass', tier: 'normal',
+    name: 'Night Blooms', feature: 'cages', tier: 'normal',
     moves: 38, target: 630, cats: 'OGWTSK', assist: 0.4,
     board: ['#T.##..#', 'T.......', 'tG..w...', '.O..G.G.', '#...G..#', '##ST..##', '###.O###'],
-    grass: ['.....~~.', '.....~~~', '......~~', '.....~~.', '........', '........', '........'],
     deck: [],
   },
   {
-    name: 'Lantern Row', feature: 'grass + metal', tier: 'normal',
+    name: 'Lantern Row', feature: 'metal', tier: 'normal',
     moves: 28, target: 480, cats: 'OGWTSK', assist: 0.4,
     board: ['##.M..##', '#K.M.OK#', '.K...OK.', '.TO.....', '.T..O..G', '#SS..M.#', '##...M##'],
-    grass: ['....~...', '....~~..', '....~...', '...~....', '...~~...', '.~~~....', '........'],
     deck: [],
   },
   {
-    name: 'Owl Watch', feature: 'cages + grass + crates', tier: 'hard',
+    name: 'Owl Watch', feature: 'cages + crates', tier: 'hard',
     moves: 24, target: 480, cats: 'OGWTSK', assist: 0.35,
     board: ['#.X##G.#', 'S..K...O', 'SX...X.O', '.SK....K', '#sTXT..#', '##.X..##', '###w.###'],
-    grass: ['........', '...~~~..', '....~.~~', '......~~', '........', '....~~..', '...~~...'],
     deck: [],
   },
   {
@@ -674,17 +642,15 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Firefly Field', feature: 'grass + metal + crates', tier: 'normal',
+    name: 'Firefly Field', feature: 'metal + crates', tier: 'normal',
     moves: 19, target: 400, cats: 'OGWTSK', assist: 0.4,
     board: ['#.G##MK#', '..G..MK.', 'XX..KK..', 'TXX.TSS.', '#.S.TM.#', '##...M##', '###..###'],
-    grass: ['......~.', '......~~', '...~~.~~', '...~..~.', '........', '........', '........'],
     deck: [],
   },
   {
-    name: 'Midnight Maze', feature: 'grass + cages + metal', tier: 'normal',
+    name: 'Midnight Maze', feature: 'cages + metal', tier: 'normal',
     moves: 18, target: 300, cats: 'OGWTSK', assist: 0.4,
     board: ['##.M.##', '#KgM.W#', '...oS..', 'TK.O...', 'TK...M.', '#....M#', '##W..##'],
-    grass: ['.......', '.......', '.......', '~......', '~~~~...', '....~..', '...~~..'],
     deck: [],
   },
   {
@@ -694,10 +660,9 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Moon Fortress', feature: 'crates + metal + grass + cages', tier: 'boss',
+    name: 'Moon Fortress', feature: 'crates + metal + cages', tier: 'boss',
     moves: 29, target: 640, cats: 'OGWTSK', assist: 0.35,
     board: ['.X...TK.', '.o.M.TKO', '.OXMX..O', 'M..##.M.', 'MXO##KM.', 'X.OT.XX.', 'K..T..XO', 'k.....Wo'],
-    grass: ['~.~~....', '~~~.....', '~~......', '.~~.....', '..~.....', '.~~.~...', '..~~~~..', '....~...'],
     deck: [],
   },
 ];
@@ -720,12 +685,6 @@ export function parseCard(spec) {
   return { offsets: offsets.map(point => point.slice()), items: [...letters].map(ch => ({ group: LETTERS[ch] })) };
 }
 
-// Cỏ (`grass`): lớp nằm DƯỚI mèo / ô trống, các hàng chuỗi cùng cỡ với `board` ('~' = ô có cỏ, '.' = sạch). Gom một cụm thì
-// cỏ dưới các mèo của cụm bị phá (session.mjs). Màn có cỏ: mục tiêu là dọn hết cỏ (không cần đạt điểm `target`).
-export function parseGrass(level) {
-  return level.grass ? level.grass.join('').split('').map(ch => ch === '~') : null;
-}
-export const grassCount = level => (level.grass ? [...level.grass.join('')].filter(ch => ch === '~').length : 0);
 
 // Sao theo số lượt còn dư lúc thắng.
 export function starsFor(level, movesLeft) {

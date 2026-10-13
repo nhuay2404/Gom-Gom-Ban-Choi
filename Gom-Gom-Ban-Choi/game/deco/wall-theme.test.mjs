@@ -51,7 +51,7 @@ test('deco-room.mjs gọi themeWallDecor mỗi lần áp tường và bỏ qua k
   assert.ok(room.includes("import { fitToWall, fitToFloor } from './wall-theme.mjs'"), 'thiếu import fitToWall / fitToFloor');
   assert.ok(room.includes('themeFloorDecor(inside, floorEntry.color)'), 'đổi sàn phải tô lại đồ cố định trên sàn');
   assert.ok(room.includes('m.userData.wallKeep') && room.includes('m.map') && room.includes('m.emissive'), 'thiếu bộ lọc kính / texture / phát sáng');
-  assert.ok((room.match(/wallKeep: true/g) || []).length >= 2, 'kính trời cửa sổ phải đánh dấu wallKeep');
+  assert.ok(/wallKeep: true, baseOpacity/.test(room), 'kính cửa sổ (lỗ thật trên tường) phải đánh dấu wallKeep');
 });
 
 // Đồ cố định trên sàn (tủ thấp, gối, thảm chùi chân, dép, thùng rác...): vẽ cho sàn sồi mặc định, hoà theo sàn đang chọn.

@@ -31,7 +31,7 @@ export function economyVerdict({ off, avg, others, cfg }) {
     if (waited.length) hit(1, `Vừa thắng màn mốc mà ví còn thiếu nhiều xu để mở: ${waited.map(x => `${AREA_NAMES[x.area]} (thiếu ${fmt(x.short)} / ${fmt(cfg.AREA_UNLOCK[x.area].cost)} xu)`).join(', ')}. Cố ý thì giữ; không thì người chơi thấy bị chặn.`,
       `Muốn mở khu ngay khi tới màn mốc: giảm giá ~15% (${waited.map(x => `${AREA_NAMES[x.area]} ${fmt(cfg.AREA_UNLOCK[x.area].cost)} → ${fmt(round50(cfg.AREA_UNLOCK[x.area].cost * .85))}`).join(', ')}).`);
     if (avg.owned >= avg.shopSize && avg.wallet > 2000) hit(2, `Cuối game người chơi ${name.toLowerCase()} đã mua hết đồ mà còn dư ${fmt(avg.wallet)} xu — xu không còn giá trị.`,
-      `Giảm Xu tăng thêm mỗi màn từ ${cfg.REWARD_STEP} xuống ${Math.max(0, Math.round(cfg.REWARD_STEP * .7 * 10) / 10)}, hoặc thêm đồ để mua ở khu cuối.`);
+      `Giảm % tăng mỗi màn từ ${Math.round(cfg.REWARD_GROWTH * 1000) / 10}% xuống ${Math.round(cfg.REWARD_GROWTH * .7 * 1000) / 10}%, hoặc thêm đồ để mua ở khu cuối.`);
     else good.push(`Cuối game không dư xu quá nhiều (${fmt(avg.wallet)} xu).`);
     if (avg.idleShare > .15) hit(1, `Xu tự sinh chiếm ${Math.round(avg.idleShare * 100)}% tổng xu — người chơi không cần chơi màn vẫn giàu.`,
       `Giảm "Mỗi giờ sinh" từ ${cfg.IDLE_RATE} xuống ${+(cfg.IDLE_RATE * .7).toFixed(3)}.`);
