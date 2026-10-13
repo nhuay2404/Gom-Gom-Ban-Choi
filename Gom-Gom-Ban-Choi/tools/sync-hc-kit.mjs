@@ -1,14 +1,14 @@
 // Chép hc-kit (kit Economy + LiveOps dùng chung, repo riêng) vào game/hc-kit/ và ghi phiên bản đang dùng.
 // Kit phải nằm TRONG game/: server chỉ phục vụ game/, còn build:html chỉ chép game/ ra thư mục tạm rồi mới gộp.
 // Bản chép được commit vào repo này, nên máy không có repo kit vẫn chạy / build được. Không sửa tay game/hc-kit/: sửa ở repo kit rồi chạy lại.
-// Chạy: npm run sync:kit  (repo kit: biến môi trường HC_KIT, mặc định là thư mục LiveOps-Kit nằm cạnh repo Gom Gom)
+// Chạy: npm run sync:kit  (kit: biến môi trường HC_KIT, mặc định thư mục liveops/ của repo Game-kit — Asset-Game-Kit/liveops nằm cạnh repo Gom Gom)
 import { cpSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const kit = resolve(process.env.HC_KIT || join(root, '..', '..', 'LiveOps-Kit'));
+const kit = resolve(process.env.HC_KIT || join(root, '..', '..', 'Asset-Game-Kit', 'liveops'));
 if (!existsSync(join(kit, 'src', 'index.mjs'))) {
   console.error(`Không thấy hc-kit ở ${kit}. Đặt biến môi trường HC_KIT trỏ tới repo kit.`);
   process.exit(1);

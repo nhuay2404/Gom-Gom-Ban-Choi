@@ -256,7 +256,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 ## LiveOps chạy song song với main
 - Core game + content làm trên `main`; LiveOps làm trên nhánh `Liveops`. Luật Economy + LiveOps dùng chung cho nhiều game nằm ở repo riêng
-  **hc-kit** (thư mục `hc-kit` cạnh repo này; tài liệu tích hợp: `hc-kit/docs/INTEGRATION.md`, hợp đồng: `index.d.ts`); thiết kế: `tai-lieu/6-Thiet-ke-LiveOps.html`.
+  **hc-kit**, nằm ở thư mục `liveops/` của repo Game-kit (`github.com/dulv08/Game-kit`, máy này: `Asset-Game-Kit/liveops` cạnh repo Gom Gom; tài liệu tích hợp: `liveops/docs/INTEGRATION.md`, hợp đồng: `index.d.ts`). Sửa kit ngay trong thư mục đó; thiết kế: `tai-lieu/6-Thiet-ke-LiveOps.html`.
 - `game/hc-kit/` là bản chép `src/` của kit (để server + build:html thấy). Không sửa tay: sửa ở repo kit, `npm test` bên kit, rồi
   `npm run sync:kit` (biến môi trường `HC_KIT` nếu kit không nằm cạnh repo) và commit kèm `VERSION.json`.
 - Cờ `LIVEOPS_ON` (`liveops/config.mjs`, Firebase cùng tên) mặc định TẮT; `?liveops=1` / `?liveops=0` trên URL ghi đè. Tắt: Home / Shop
