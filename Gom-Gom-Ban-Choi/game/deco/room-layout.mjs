@@ -85,12 +85,13 @@ export const PLACES = {
   bed: [-2.4, -2.68, 0], bedside: [-.85, -3.55, 0], desk: [2.45, -3.6, 0], chair: [2.45, -2.45, Math.PI],
   closet: [-3.62, .7, Math.PI / 2], catsteps: [ROOM_HALF - .28, -.5, -Math.PI / 2], bedrug: [.2, .4, 0],
   plushie: [-3, 3], laundry: [.9, 3.1],
+  mirror: [-3.62, -.6, Math.PI / 2], // gương đứng tường trái giữa giường và tủ áo, dưới kệ treo (đỉnh gương < 1.7)
   // phòng tắm (cửa sang phòng ngủ ở tường trước x = .2, cửa sổ tường sau x = 2.4 ngay trên bồn tắm): buồng tắm đứng góc sau-trái,
   // bồn tắm dọc tường sau bên phải, bồn cầu + bồn rửa mặt dọc tường trái, giá khăn + máy giặt dọc tường phải (giữa là cửa ra sân sau, z = 1), khay cát của mèo góc
   // trước-trái, thảm trước bồn tắm, bồn sục lớn giữa phòng. Đồ cố định (rèm cửa sổ, gương nhỏ, kệ đồ tắm, thảm chùi chân, thùng rác): bathroomDecor().
   shower: [-3.3, -3.3, 0], bathtub: [2.35, -3.5, 0], toilet: [-3.55, -1.2, Math.PI / 2], vanity: [-3.62, .75, Math.PI / 2],
   towel: [ROOM_HALF - .4, -1.7, -Math.PI / 2], washer: [3.5, 2.5, -Math.PI / 2], litter: [-3, 3.1, 0], bathmat: [2.2, -2.2, 0],
-  jacuzzi: [-.1, .3, 0],
+  jacuzzi: [-.1, .3, 0], bathshelf: [-1.5, ROOM_HALF - .23, Math.PI], // kệ đứng áp tường trước giữa khay cát và cửa phòng ngủ, dưới / cạnh đồng hồ
   // sân sau (toạ độ khu backyard: tâm sau phòng khách; x -4.2 .. 12.6, z -4.2 .. 4.2; mép +z là tường sau phòng khách + bếp, cửa phòng tắm ở
   // mép trái z = 1). Nửa trái vườn rau: nhà kính góc sau-trái, luống cà chua, luống rau củ hai bên lối đá, bù nhìn, thùng nước mưa góc trước-trái
   // (chừa lối 1 m trước cửa phòng tắm). Nửa phải bể bơi: bể giữa, ô dù + bàn trước-trái bể, ghế nằm bên phải, bếp nướng góc sau-phải,
@@ -103,6 +104,7 @@ export const PLACES = {
   // xe đẩy tường phải. Đồ cố định (rèm, giá treo dụng cụ, bảng thực đơn, thảm, thùng rác): kitchenDecor().
   fridge: [-3.05, -3.58, 0], stove: [-1.55, -3.62, 0], sink: [.55, -3.62, 0], pantry: [3.7, 2.95, -Math.PI / 2],
   dining: [.1, .7], kchair: [.1, .7, 0], kplant: [1.9, 3.3, 0], catfood: [-3, 2.6], cart: [3.65, 1.6, -Math.PI / 2],
+  bakerack: [-3.74, .65, Math.PI / 2], // kệ bánh áp tường trái ngay sau cửa sang phòng khách (mép cửa z -.1), dưới bảng thực đơn (đáy 1.44, từ z 1.15)
   // phần vườn mở rộng (toạ độ vườn, x ≈ 4..12; đồi ở sau-phải): cối xay gió trên đỉnh đồi, cây xích đu sau-trái, dây
   // phơi đồ dọc rào sau, lửa trại bên trái, hoa hướng dương giữa, diều cắm cọc trước chân đồi, suối nhỏ trước-phải, cầu
   // trượt trước-trái. Món không có hướng riêng quay mặt vào giữa phần mở rộng. Đồ cố định (lối đá, đá, hoa dại,
@@ -110,6 +112,9 @@ export const PLACES = {
   windmill: [HILL.x, HILL.z, 0], swingtree: [GARDEN_EXT_X - 2.6, -2.2, Math.atan2(2.6, 2.2)], clothesline: [GARDEN_EXT_X - 1.1, -3.55, 0],
   campfire: [GARDEN_EXT_X - 2.4, -.1, Math.atan2(2.4, .1)], sunflowers: [GARDEN_EXT_X - .2, 1.6, Math.atan2(.2, -1.6)],
   kite: [GARDEN_EXT_X + 1.6, 1.95, 0], stream: [GARDEN_EXT_X + 1.7, 2.95, 0], slide: [GARDEN_EXT_X - 1.7, 2.85, 0],
+  // nhà chim ở khoảng trống trước-trái (khe ≥ 1 m tới lửa trại / cầu trượt / hoa); bàn picnic khép sát diều + suối (khe ≤ .1) ở trước-phải,
+  // cách chân đồi .82: cả hai quay mặt ra phía camera (+z).
+  birdhouse: [GARDEN_EXT_X - 3.2, 1.75, 0], picnic: [GARDEN_EXT_X + 2.45, 1.75, 0],
   // Lối đi quanh đồi: giữa hai vật cản (bán kính OBSTACLE_RADIUS, đồi HILL_OBSTACLE_R) hoặc để khe ≥ .8 m cho mèo lọt,
   // hoặc khép hẳn (≤ .1 m) — khe "suýt lọt" làm mèo kẹt giữa hai lực đẩy (lỗi khóm hướng dương sát chân đồi).
   // vườn (cổng sang phòng khách ở hàng rào sau x = -1.6: lối trống)
@@ -123,11 +128,11 @@ export const facingOf = id => PLACES[id][2] ?? Math.atan2(-PLACES[id][0], -PLACE
 export const OBSTACLE_RADIUS = {
   catbed: .75, armchair: .8, cattree: .65, table: .62, shelf: .9, yarn: .5, plant: .45, tank: .8, lamp: .38, rug: 0,
   flowers: 0, stump: .45, catnip: .45, lantern: .28, sandbox: .62, cathouse: .75, pond: 1, hammock: .7, birdbath: .36, bench: .75,
-  bed: 1.25, bedside: .35, desk: .8, chair: .42, closet: .75, catsteps: .32, bedrug: 0, plushie: .5, laundry: .38,
+  bed: 1.25, bedside: .35, desk: .8, chair: .42, closet: .75, catsteps: .32, bedrug: 0, plushie: .5, laundry: .38, mirror: .38,
   greenhouse: 1.15, vegbed: .55, veggies: .01, scarecrow: .45, rainbarrel: .55, pool: 1.35, parasol: .75, lounger: .45, grill: .45, deckbox: .5,
-  shower: .75, bathtub: .45, toilet: .45, vanity: .55, towel: .3, washer: .5, litter: .5, bathmat: 0, jacuzzi: 1.25, // bồn sục: thân 1.02 + bậc phía trước
-  fridge: .6, stove: .55, sink: .78, pantry: .6, dining: .95, kchair: .01, kplant: .42, catfood: .5, cart: .55,
-  windmill: .65, swingtree: .55, clothesline: .3, campfire: .7, sunflowers: .55, kite: .2, stream: .75, slide: .6,
+  shower: .75, bathtub: .45, toilet: .45, vanity: .55, towel: .3, washer: .5, litter: .5, bathmat: 0, jacuzzi: 1.25, bathshelf: .5, // bồn sục: thân 1.02 + bậc phía trước
+  fridge: .6, stove: .55, sink: .78, pantry: .6, dining: .95, kchair: .01, kplant: .42, catfood: .5, cart: .55, bakerack: .5,
+  windmill: .65, swingtree: .55, clothesline: .3, campfire: .7, sunflowers: .55, kite: .2, stream: .75, slide: .6, birdhouse: .25, picnic: .6,
 };
 
 // Vật cản phụ của món dài / chữ L (xoay 0): [dx, dz, bán kính] so với gốc món. Quầy bếp chữ L (sink): dãy sau dọc tường sau,

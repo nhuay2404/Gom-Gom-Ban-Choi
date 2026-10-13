@@ -44,6 +44,12 @@
   .profile-note { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; } .profile-note > span { margin-left: 6px; font-size: 12px; } #profilesSummary { background: #fffaf0; }
   .profile-note ul { margin: 4px 0 0; padding-left: 18px; } .profile-note li { margin: 2px 0; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  [hidden] { display: none !important; } main[data-pane="sim"] { display: block; }
+  .subtabs { margin: 12px 12px 0; align-self: start; width: max-content; }
+  .subtabs button { font: inherit; font-weight: 600; padding: 6px 12px; border: 0; border-radius: 7px; background: none; color: var(--ink); cursor: pointer; }
+  .subtabs button.on { background: #fff; box-shadow: 0 1px 2px #0002; color: var(--accent); }
+  .range-total { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; background: #f1ebe2; padding: 8px 10px; border-radius: 8px; margin-top: 8px; }
+  .range-total label { width: 110px; } .range-total b { font-size: 16px; }
 </style>
 <link rel="stylesheet" href="./editor.css">
 </head>
@@ -65,35 +71,21 @@
   </span>
 </header>
 
+<nav class="tabs subtabs" aria-label="Kinh tế">
+  <button class="on" data-subtab="balance">📊 Cân bằng xu</button>
+  <button data-subtab="sim">🧪 Mô phỏng người chơi ảo</button>
+</nav>
+<div data-pane="balance">
 <div class="intro">
-  <p class="hint" style="margin:0">Sửa số ở cột trái → cột phải tự tính lại ngay: người chơi có đủ xu mua đồ không, khi nào mở được từng khu, cuối game dư bao nhiêu xu.
+  <p class="hint" style="margin:0">Sửa số ở cột trái → cột phải tự tính lại ngay: xu nhận theo màn, giá mở khu, có đủ xu mua đồ không. Người chơi ảo (khi nào mở khu, dư bao nhiêu xu) ở tab Mô phỏng.
     Ưng rồi thì bấm <b>💾 Lưu vào game</b> (ghi vào game/gameplay/economy.mjs).</p>
-  <div class="kpis" id="kpis"></div>
-  <details class="card">
-    <summary><b>Các thẻ trên được tính thế nào?</b></summary>
-    <ul class="notes">
-      <li><b>Tổng xu cả game</b>: xu ban đầu + xu thưởng thắng lần đầu mọi màn (công thức ở mục 1). Chưa tính xu tự sinh.</li>
-      <li><b>Xu dư cuối game</b> và <b>Xu tự sinh chiếm</b> lấy từ mô phỏng người chơi ảo kiểu <b>Trung bình</b> (mục 4): chơi 12 ván / ngày,
-        tay nghề 1.5, chỉ mua món mặc định, mở game nhận xu tự sinh 2 lần / ngày (số mặc định, sửa ở “Tuỳ chỉnh người chơi ảo”). Mỗi kiểu chạy nhiều người ảo (ô “Số người ảo mỗi kiểu”), thẻ hiện <b>trung vị</b> (người ở giữa).</li>
-      <li><b>Xu tự sinh chiếm</b> = xu tự sinh nhận được cả game ÷ tổng xu nhận được cả game (xu ban đầu + xu thưởng màn + xu tự sinh).
-        Mỗi lần nhận, người ảo được: số giờ đã chờ (24 giờ ÷ số lần nhận mỗi ngày, không quá “Số giờ tích tối đa”)
-        × xu một con mèo sinh mỗi giờ ở màn đang chơi × số mèo trong nhà (số mèo đã nhận được ở Map tới màn đó, tối đa 6).</li>
-      <li>Nên giữ 5–15%: thấp hơn thì xu tự sinh không đáng để quay lại nhận; cao hơn thì người chơi không cần chơi màn vẫn giàu.
-        Chỉnh bằng ô “Mỗi giờ 1 con mèo sinh” và “Số giờ tích tối đa” ở mục 1.</li>
-    </ul>
-  </details>
-  <section>
-    <h2>Kết luận: kinh tế đã cân bằng chưa?</h2>
-    <p class="hint" style="margin:0">Tự chấm theo các bảng bên dưới (xu từng chặng, mở khu, người chơi ảo), cập nhật ngay khi sửa số.</p>
-    <div id="verdict" class="verdict"></div>
-  </section>
 </div>
 
 <section class="intro-table" style="margin:12px 12px 0">
   <h2>Tổng quan Gold: nguồn xu (Source) và chỗ tiêu (Sink)</h2>
   <p class="hint">Tự tính theo bộ số đang sửa. <b>Total Asset</b> = tổng giá mọi đồ của khu (món mặc định + kiểu khác + tường / sàn).
     <b>Default</b> = món mặc định (món đầu tiên của mỗi chỗ đặt). <b>Nâng cấp 2, 3…</b> = kiểu khác thứ 2, 3… của các chỗ đặt (đổi trong Deco, mua ở Shop).
-    Mỗi ô ghi số món · tổng giá. Xu tự sinh cả game lấy từ người chơi ảo kiểu Trung bình (mục 4).</p>
+    Mỗi ô ghi số món · tổng giá. Dòng Idle: tổng cả game lấy từ tab Mô phỏng (người chơi ảo Trung bình).</p>
   <div class="scroll"><table id="overviewTable"></table></div>
 </section>
 <main class="eco">
@@ -109,6 +101,15 @@
         <label>Xu tăng thêm mỗi màn <span class="code">REWARD_STEP</span><input type="number" step="1" min="0" data-key="REWARD_STEP"></label>
         <label>Màn boss được nhân <span class="code">REWARD_BOSS_MULT</span><input type="number" step="0.1" min="1" data-key="REWARD_BOSS_MULT"></label>
         <label>Xu có sẵn lúc đầu <span class="code">START_COINS</span><input type="number" step="10" min="0" data-key="START_COINS"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label style="width:150px">Số màn xem (cả trang)<input type="number" id="viewLevels" value="100" min="10" max="1000000" step="10"></label>
+        <label style="width:150px">Mỗi hàng bảng gom<select id="bucket"><option value="0">tự động (≤ 20 hàng)</option><option>10</option><option>100</option><option>1000</option><option>10000</option><option>100000</option></select></label>
+      </div>
+      <div class="range-total">
+        <label>Từ màn<input type="number" id="rangeFrom" value="1" min="1"></label>
+        <label>Tới màn<input type="number" id="rangeTo" value="100" min="1"></label>
+        <span>Tổng xu thưởng: <b id="rangeTotal">—</b> <span class="muted" id="rangeNote"></span></span>
       </div>
       <div id="rewardChart" style="margin-top:10px"></div>
       <p class="muted" id="rewardInfo"></p>
@@ -130,30 +131,45 @@
       <div class="scroll"><table id="areaTable"></table></div>
     </section>
 
-    <section>
-      <h2><span class="step">2b</span> Giá từng món</h2>
-      <p class="hint">Giá gốc của từng món (đồ, tường / rào, sàn / nền). <b>Giá thật</b> = giá gốc × Nhân giá đồ của khu (làm tròn 10 xu).
-        Kiểu khác của một món dùng chung giá với món gốc. Sửa xong các bảng bên phải tự tính lại; bấm <b>💾 Lưu vào game</b> để ghi.</p>
-      <div class="row" style="margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center">Khu <select id="priceZone" style="width:auto"></select></label>
-        <span class="muted" id="priceInfo"></span></div>
-      <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="priceTable"></table></div>
-    </section>
   </div>
 
   <div class="col">
     <section>
-      <h2><span class="step">3</span> Đủ xu mua đồ không? <span class="muted">(mỗi chặng = 10 màn)</span></h2>
+      <h2><span class="step">3</span> Đủ xu mua đồ không? <span class="muted">(mỗi chặng = 10 màn; chỉ hiện chặng có khu / đồ mới mở + chặng cuối)</span></h2>
       <p class="hint">Cột <b>“Đủ mua món mặc định sau khi trả tiền mở khu”</b> = (xu kiếm được tới lúc đó − tiền đã trả mở các khu) ÷ tổng giá món mặc định đã mở,
         tức xu thật còn trong ví để mua đồ. Nên <b>giảm dần</b> qua từng chặng (khu sau khó mua đủ hơn).
         <span class="ok">Xanh</span> = giảm so với chặng trước, <span class="mid">vàng</span> = tăng lại (dư xu: chặng đó không có khu / đồ mới), <span class="warn">đỏ</span> = dưới 25% (thiếu xu).</p>
       <div class="scroll"><table id="stageTable"></table></div>
-      <h3 style="margin:14px 0 4px">Từng chặng: xu nhận so với giá khu + giá đồ</h3>
-      <p class="hint">Xu nhận trong chặng (chặng 1 gồm xu ban đầu) so với giá mở khu mới + tổng giá mọi đồ mới mở trong chặng. Bấm tên khu để xem từng món.</p>
-      <div class="scroll"><table id="stageItems"></table></div>
     </section>
+  </div>
+</main>
+</div>
 
+<main data-pane="sim" hidden style="padding:12px">
+  <div class="intro" style="padding:0 0 12px">
+  <div class="kpis" id="kpis"></div>
+  <details class="card">
+    <summary><b>Các thẻ trên được tính thế nào?</b></summary>
+    <ul class="notes">
+      <li><b>Tổng xu cả game</b>: xu ban đầu + xu thưởng thắng lần đầu mọi màn (công thức ở mục 1). Chưa tính xu tự sinh.</li>
+      <li><b>Xu dư cuối game</b> và <b>Xu tự sinh chiếm</b> lấy từ mô phỏng người chơi ảo kiểu <b>Trung bình</b> : chơi 12 ván / ngày,
+        tay nghề 1.5, chỉ mua món mặc định, mở game nhận xu tự sinh 2 lần / ngày (số mặc định, sửa ở “Tuỳ chỉnh người chơi ảo”). Mỗi kiểu chạy nhiều người ảo (ô “Số người ảo mỗi kiểu”), thẻ hiện <b>trung vị</b> (người ở giữa).</li>
+      <li><b>Xu tự sinh chiếm</b> = xu tự sinh nhận được cả game ÷ tổng xu nhận được cả game (xu ban đầu + xu thưởng màn + xu tự sinh).
+        Mỗi lần nhận, người ảo được: số giờ đã chờ (24 giờ ÷ số lần nhận mỗi ngày, không quá “Số giờ tích tối đa”)
+        × xu một con mèo sinh mỗi giờ ở màn đang chơi × số mèo trong nhà (số mèo đã nhận được ở Map tới màn đó, tối đa 6).</li>
+      <li>Nên giữ 5–15%: thấp hơn thì xu tự sinh không đáng để quay lại nhận; cao hơn thì người chơi không cần chơi màn vẫn giàu.
+        Chỉnh bằng ô “Mỗi giờ 1 con mèo sinh” và “Số giờ tích tối đa” ở mục 1.</li>
+    </ul>
+  </details>
+  <section>
+    <h2>Kết luận: kinh tế đã cân bằng chưa?</h2>
+    <p class="hint" style="margin:0">Tự chấm theo bảng “Đủ xu mua đồ không?” ở tab Cân bằng xu và người chơi ảo bên dưới, cập nhật ngay khi sửa số.</p>
+    <div id="verdict" class="verdict"></div>
+  </section>
+  </div>
+  <div>
     <section>
-      <h2><span class="step">4</span> Người chơi ảo: khi nào mở khu, dư bao nhiêu xu</h2>
+      <h2>Người chơi ảo: khi nào mở khu, dư bao nhiêu xu</h2>
       <p class="hint">Mỗi kiểu người chơi ảo chơi một số ván mỗi ngày, tới màn mốc thì để dành xu mở khu trước, còn lại có xu là mua đồ rẻ nhất.
         <b>Thiếu xu lúc tới mốc</b> = vừa thắng màn mốc thì ví còn thiếu bao nhiêu xu so với giá mở khu (vàng: thiếu từ nửa giá khu trở lên). Tự chạy lại khi sửa số.</p>
       <details class="card" style="margin-bottom:8px" open>

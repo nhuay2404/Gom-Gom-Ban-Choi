@@ -71,9 +71,9 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  price : giá xu. 0 = có sẵn miễn phí (không cần mua).
 //  lock  : phải mở tới màn này (thắng màn lock − 1) thì mới mua được. Bỏ trống = mua được ngay khi khu đó mở.
 //          Khu mở khi thắng: Vườn = từ đầu · Vườn mở rộng = màn 10 · Phòng khách = màn 20 · Phòng ngủ = màn 30 · Bếp = màn 40.
-//  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
-//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
-//  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
+//  Mỗi chỗ đặt có 3 món theo theme: Gỗ (món gốc) → Hồng, Hiện đại (vd. Tree stump → Heart pouf, Glow cube seat): món theme lấy CÙNG giá / lock với món gốc.
+//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-pink': { price: 120 },
+//  (id món theme xem THEMES trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
 // Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
 //   level : đã thắng tới màn này,
 //   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
@@ -148,6 +148,7 @@ export const DECO = remote('DECO', {
   closet:                { price: 220, lock: 37 },    // Closet
   plushie:               { price: 150, lock: 38 },    // Teddy bear
   catsteps:              { price: 240, lock: 39 },    // Wall steps
+  mirror:                { price: 200, lock: 39 },    // Floor mirror
   // --- Phòng ngủ — tường / rào ---
   'bwall-lavender':      { price: 0 },                // Lavender
   'bwall-blush':         { price: 100 },              // Blush
@@ -174,6 +175,7 @@ export const DECO = remote('DECO', {
   catfood:               { price: 90 },               // Cat bowls
   cart:                  { price: 180 },              // Tea cart
   kplant:                { price: 110 },              // Monstera
+  bakerack:              { price: 160 },              // Baker's rack
   // --- Bếp — tường / rào ---
   'kwall-butter':        { price: 0 },                // Butter
   'kwall-mint':          { price: 100 },              // Mint
@@ -221,6 +223,7 @@ export const DECO = remote('DECO', {
   litter:                { price: 160 },              // Cat litter box
   bathmat:               { price: 100 },              // Bath mat
   jacuzzi:               { price: 400 },              // Hot tub (bồn sục giữa phòng)
+  bathshelf:             { price: 140 },              // Bath shelf
   // --- Phòng tắm — tường ---
   'twall-aqua':          { price: 0 },                // Aqua
   'twall-white':         { price: 100 },              // White
@@ -246,6 +249,8 @@ export const DECO = remote('DECO', {
   stream:                { price: 280, lock: 14 },    // Little stream
   swingtree:             { price: 320, lock: 15 },    // Swing tree
   slide:                 { price: 340, lock: 17 },    // Slide
+  birdhouse:             { price: 240, lock: 16 },    // Birdhouse
+  picnic:                { price: 300, lock: 18 },    // Picnic table
   // --- Mèo (giá 0; lock = màn thưởng, nhận ở Map; không lock = có sẵn từ đầu) ---
   'cat-orange':          { price: 0 },                // Orange cat
   'cat-gray':            { price: 0, lock: 7 },       // Gray cat

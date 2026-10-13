@@ -85,9 +85,8 @@ test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; m�
   assert.equal(zoneOpen('kitchen', 39), false);
   assert.equal(zoneOpen('kitchen', 40), true);
   const bases = CATALOG.filter(e => e.zone === 'kitchen' && e.cat === 'furniture' && !e.slot);
-  assert.equal(bases.length, 9);
-  bases.forEach(base => assert.equal(CATALOG.filter(e => e.slot === base.id).length, 3, `${base.id}: 4 lựa chọn`));
-  assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 4), true);
+  assert.equal(bases.length, 10);
+  assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 3), true);
 });
 
 test('mọi món nội thất có chỗ đặt + bán kính vật cản; các khu nối liền qua cửa', async () => {
@@ -145,8 +144,8 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
   const bases = CATALOG.filter(entry => entry.cat === 'furniture' && !entry.slot);
   bases.forEach(base => {
     const alts = CATALOG.filter(entry => entry.slot === base.id);
-    // Sân sau: mới có 10 món gốc, phương án thay thế thêm sau.
-    if (base.zone !== 'backyard') assert.ok(alts.length >= 1, `${base.id} có phương án thay thế`);
+    // Đúng 3 theme mỗi chỗ: Gỗ (món gốc) -> Hồng -> Hiện đại.
+    assert.deepEqual([base, ...alts].map(e => e.theme), ['wood', 'pink', 'modern'], `${base.id}: 3 theme`);
     alts.forEach(alt => {
       assert.equal(alt.price, base.price, `${alt.id} đồng giá`);
       assert.equal(alt.lock, base.lock, `${alt.id} cùng khoá`);
@@ -156,12 +155,12 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
   });
   setStorageBackend(memoryStore());
   let deco = loadDeco(10);
-  const shrooms = itemById('flowers-mushroom');
+  const shrooms = itemById('flowers-tulips');
   assert.deepEqual(deco.zones.garden.placed, ['flowers', 'windmill', 'sunflowers'], 'mặc định chỉ đặt món gốc');
   assert.equal(occupantOf(deco, shrooms).id, 'flowers');
-  assert.deepEqual(previewDeco(deco, shrooms).zones.garden.placed, ['windmill', 'sunflowers', 'flowers-mushroom']);
+  assert.deepEqual(previewDeco(deco, shrooms).zones.garden.placed, ['windmill', 'sunflowers', 'flowers-tulips']);
   deco = applyAction(deco, shrooms, 1); // giá 0: nhận luôn, đặt vào thay bồn hoa cũ
-  assert.deepEqual(deco.zones.garden.placed, ['windmill', 'sunflowers', 'flowers-mushroom']);
+  assert.deepEqual(deco.zones.garden.placed, ['windmill', 'sunflowers', 'flowers-tulips']);
   assert.equal(itemStatus(deco, itemById('flowers'), 1), 'owned');
   deco = applyAction(deco, itemById('flowers'), 1);
   assert.deepEqual(deco.zones.garden.placed, ['windmill', 'sunflowers', 'flowers']);
@@ -170,7 +169,7 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
 test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tường / sàn / mèo là một nhóm', () => {
   const groups = slotGroups('garden', 'furniture');
   groups.forEach(group => assert.ok(group.every(e => (e.slot || e.id) === (group[0].slot || group[0].id)), 'cùng chỗ'));
-  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom', 'flowers-tulips']);
+  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-tulips', 'flowers-modern']);
   assert.equal(groups.flat().length, catalogFor('garden', 'furniture').length, 'không sót món nào');
   assert.equal(slotGroups('living', 'walls').length, 1);
   assert.equal(slotGroups('living', 'cats').length, 1);
@@ -179,11 +178,11 @@ test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tư�
 test('previewAllNew: mỗi chỗ hiện một món chưa mua, không trừ xu, không đổi save', () => {
   setStorageBackend(memoryStore());
   let deco = loadDeco(5000);
-  deco = applyAction(deco, itemById('stump'), 1); // đã mua gốc cây → chỗ đó hiện phương án chưa mua (đống rơm)
+  deco = applyAction(deco, itemById('stump'), 1); // đã mua gốc cây → chỗ đó hiện phương án chưa mua (ghế pouf hồng)
   const { deco: shown, items } = previewAllNew(deco, 'garden');
   const ids = items.map(e => e.id);
-  assert.ok(ids.includes('stump-hay') && !ids.includes('stump'), 'món đã mua không nằm trong danh sách');
-  assert.ok(!ids.includes('flowers') && !ids.includes('flowers-mushroom') && !ids.includes('flowers-tulips'), 'món miễn phí coi như đã có');
+  assert.ok(ids.includes('stump-pink') && !ids.includes('stump'), 'món đã mua không nằm trong danh sách');
+  assert.ok(!ids.includes('flowers') && !ids.includes('flowers-tulips') && !ids.includes('flowers-modern'), 'món miễn phí coi như đã có');
   assert.ok(ids.includes('catnip'), 'chỗ chưa mua gì: ưu tiên món gốc');
   const slots = shown.zones.garden.placed.map(id => itemById(id).slot || id);
   assert.equal(new Set(slots).size, slots.length, 'mỗi chỗ chỉ một món');
@@ -214,18 +213,18 @@ test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua v�
   let deco = { ...loadDeco(0), coins: 1000 };
   assert.ok(shopCatalog('garden').every(entry => !isBase(entry)), 'Shop không bán món gốc');
   assert.ok(shopCatalog('garden').some(entry => entry.id === 'fence-wood'), 'Shop bán rào khác');
-  const hay = itemById('stump-hay');
+  const hay = itemById('stump-pink');
   assert.equal(shopStatus(deco, hay, 99), 'needBase');
   assert.ok(buyToStock(deco, hay, 99).error);
   deco = applyAction(deco, itemById('stump'), 99); // xây chỗ ở Deco: mua + đặt món gốc
   assert.ok(deco.zones.garden.placed.includes('stump'));
   deco = buyToStock(deco, hay, 99);
   assert.equal(deco.coins, 1000 - 80 - 80);
-  assert.ok(!deco.zones.garden.placed.includes('stump-hay'), 'mua ở Shop chưa đặt');
+  assert.ok(!deco.zones.garden.placed.includes('stump-pink'), 'mua ở Shop chưa đặt');
   assert.deepEqual([...freshKeys(deco, 'garden')], ['stump']);
-  assert.deepEqual(ownedOptions(deco, 'garden', 'stump').map(e => e.id), ['stump', 'stump-hay']);
+  assert.deepEqual(ownedOptions(deco, 'garden', 'stump').map(e => e.id), ['stump', 'stump-pink']);
   deco = useItem(deco, hay);
-  assert.ok(deco.zones.garden.placed.includes('stump-hay') && !deco.zones.garden.placed.includes('stump'));
+  assert.ok(deco.zones.garden.placed.includes('stump-pink') && !deco.zones.garden.placed.includes('stump'));
   assert.equal(freshKeys(deco, 'garden').size, 0);
   deco = clearFresh(buyToStock(deco, itemById('fence-wood'), 99), 'garden', 'walls');
   assert.equal(freshKeys(deco, 'garden').size, 0);
@@ -275,4 +274,22 @@ test('economy.mjs: mọi món gốc có đúng một dòng giá trong DECO, khô
   const ids = new Set(CATALOG.map(entry => entry.id));
   for (const entry of CATALOG) if (!entry.slot) assert.ok(DECO[entry.id], `thiếu giá cho "${entry.id}" trong game/gameplay/economy.mjs DECO`);
   for (const id of Object.keys(DECO)) assert.ok(ids.has(id), `DECO có "${id}" nhưng danh mục không có món này`);
+});
+
+test('món đã bỏ khi chia 3 theme: hoàn xu đúng giá, chỗ đang đặt về món gốc, lưu ngay (mở lại không hoàn thêm)', async () => {
+  const { RETIRED } = await import('./deco-data.mjs');
+  assert.ok(Object.keys(RETIRED).every(id => !itemById(id) && itemById(RETIRED[id])), 'món đã bỏ không còn trong danh mục, chỗ của nó còn');
+  setStorageBackend(memoryStore());
+  const deco = loadDeco(0), garden = deco.zones.garden;
+  writeJSON(SAVE_KEYS.deco, { ...deco, coins: 10, zones: { ...deco.zones, garden: { ...garden, owned: [...garden.owned, 'stump', 'stump-hay'], placed: [...garden.placed, 'stump-hay'] } } });
+  const loaded = loadDeco(0);
+  assert.equal(loaded.coins, 10 + itemById('stump').price);
+  assert.ok(loaded.zones.garden.placed.includes('stump') && !loaded.zones.garden.owned.includes('stump-hay'));
+  assert.equal(loadDeco(0).coins, loaded.coins, 'không hoàn hai lần');
+});
+
+test('mỗi khu (kể cả vườn mở rộng) có đúng 10 món mặc định (10 chỗ đặt đồ)', () => {
+  const area = e => e.area || e.zone;
+  for (const a of ['garden', 'garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard'])
+    assert.equal(CATALOG.filter(e => e.cat === 'furniture' && !e.slot && area(e) === a).length, 10, a);
 });

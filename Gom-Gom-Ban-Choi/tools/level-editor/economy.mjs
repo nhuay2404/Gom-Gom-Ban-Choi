@@ -30,39 +30,73 @@ const totals = area => {
 };
 // Món mở ở chặng nào: khu mở theo mốc màn (thắng mốc -> mua được từ màn mốc + 1), cộng lock của món.
 const openLevel = entry => Math.max(1, (cfg.AREA_UNLOCK[areaOf(entry)]?.level ?? 0) + 1, entry.lock || 1);
-const levelsCount = () => Math.max(10, Number($('levels').value) || 100);
+const levelsCount = () => Math.max(10, Math.min(1e6, Math.round(Number($('viewLevels').value) || 100)));
+const simLevels = () => Math.max(10, Number($('levels').value) || 100);
 const reward = index => rewardFor(index, cfg);
+// Tổng luỹ kế xu thưởng: cum[k] = tổng màn 1..k (tính lại khi đổi công thức / số màn) -> tổng một khoảng màn bất kỳ trong O(1).
+let cum = new Float64Array(1);
+function buildCum() {
+  const n = levelsCount();
+  cum = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) cum[i + 1] = cum[i] + reward(i);
+}
+const sumLevels = (from, to) => cum[to] - cum[from - 1];
 
 function markDirty() { dirty = true; $('saveStatus').textContent = '● chưa lưu'; }
 
 // ---------- 1. Công thức ----------
+// Mỗi hàng bảng gom bao nhiêu màn: tự động = bội của 10 nhỏ nhất để bảng ≤ 20 hàng (100 màn: 10 / hàng, 300000 màn: 100000 / hàng).
+function bucketSize(n) {
+  const pick = Number($('bucket').value);
+  if (pick) return pick;
+  let size = 10;
+  while (Math.ceil(n / size) > 20) size *= 10;
+  return size;
+}
+function renderRangeTotal() {
+  const n = levelsCount(), clamp = v => Math.max(1, Math.min(n, Math.round(Number(v) || 1)));
+  const from = clamp($('rangeFrom').value), to = Math.max(from, clamp($('rangeTo').value));
+  $('rangeTotal').textContent = `${fmt(sumLevels(from, to))} xu`;
+  $('rangeNote').textContent = `(màn ${from.toLocaleString('en-US')} → ${to.toLocaleString('en-US')}, ${(to - from + 1).toLocaleString('en-US')} màn, gồm thưởng boss; chưa gồm ${fmt(cfg.START_COINS)} xu ban đầu${to > Number($('rangeTo').value) || from !== Number($('rangeFrom').value) ? ' · đã kẹp trong ' + n.toLocaleString('en-US') + ' màn xem' : ''})`;
+}
 function renderReward() {
   for (const input of document.querySelectorAll('[data-key]')) if (document.activeElement !== input) input.value = cfg[input.dataset.key];
-  const n = levelsCount(), values = Array.from({ length: n }, (_, i) => reward(i)), max = Math.max(...values, 1);
-  const W = 600, H = 150, bw = W / n;
-  const bars = values.map((v, i) => `<rect x="${i * bw}" y="${H - v / max * (H - 14)}" width="${Math.max(1, bw - 1)}" height="${v / max * (H - 14)}" fill="${(i + 1) % 10 ? '#e7b27f' : '#e07a2e'}"><title>Màn ${i + 1}: ${v} xu</title></rect>`).join('');
-  const ticks = [1, ...Array.from({ length: Math.floor(n / 10) }, (_, k) => (k + 1) * 10)].map(l => `<text x="${(l - .5) * bw}" y="${H + 11}" text-anchor="middle">${l}</text>`).join('');
-  $('rewardChart').innerHTML = `<svg viewBox="0 -2 ${W} ${H + 16}">${bars}<text x="2" y="10">${max} xu</text>${ticks}</svg>`;
-  const total = values.reduce((a, b) => a + b, 0) + cfg.START_COINS;
+  const n = levelsCount();
+  buildCum();
+  // Biểu đồ: tối đa 600 cột, mỗi cột = xu cao nhất trong nhóm màn của nó (màn boss nổi lên).
+  const W = 600, H = 150, per = Math.ceil(n / W), cols = Math.ceil(n / per);
+  const bars = Array.from({ length: cols }, (_, c) => {
+    let top = 0, boss = false;
+    for (let i = c * per; i < Math.min(n, (c + 1) * per); i++) { const v = reward(i); if (v > top) { top = v; boss = (i + 1) % 10 === 0; } }
+    return { top, boss, from: c * per + 1, to: Math.min(n, (c + 1) * per) };
+  });
+  const max = Math.max(1, ...bars.map(bar => bar.top)), bw = W / cols;
+  const rects = bars.map((bar, c) => `<rect x="${c * bw}" y="${H - bar.top / max * (H - 14)}" width="${Math.max(.5, bw - (bw > 2 ? 1 : 0))}" height="${bar.top / max * (H - 14)}" fill="${per === 1 && !bar.boss ? '#e7b27f' : '#e07a2e'}"><title>Màn ${bar.from}${bar.to > bar.from ? '–' + bar.to : ''}: ${fmt(bar.top)} xu${per > 1 ? ' (cao nhất)' : ''}</title></rect>`).join('');
+  const ticks = Array.from({ length: 6 }, (_, k) => Math.max(1, Math.round(n * k / 5))).map(l => `<text x="${Math.min(W - 20, (l - .5) / n * W)}" y="${H + 11}" text-anchor="middle">${l.toLocaleString('en-US')}</text>`).join('');
+  $('rewardChart').innerHTML = `<svg viewBox="0 -2 ${W} ${H + 16}">${rects}<text x="2" y="10">${fmt(max)} xu</text>${ticks}</svg>`;
   const idleAt = [cfg.IDLE_FROM_LEVEL, 30, 50].filter(l => l < n);
   $('idleInfo').textContent = `Xu tự sinh mỗi con mèo: ${idleAt.map(l => `ở màn ${l + 1} ≈ ${Math.round(idlePerHour(l, cfg))} xu/giờ, đầy ${idleCap(l, cfg)} xu`).join(' · ')} (nhân số mèo trong nhà, tối đa 6)`;
-  $('rewardInfo').textContent = `Màn 1: ${values[0]} · màn 10 (boss): ${values[9]} · màn 50: ${values[49] ?? '—'} · màn ${n}: ${values[n - 1]} · tổng ${n} màn + xu ban đầu: ${fmt(total)} xu`;
-  // Bảng xu thưởng từng màn (Source) + chỗ tiêu mới mở trong chặng (Sink): mỗi hàng một chặng 10 màn, màn boss tô đậm.
-  // Sink: giá mở khu mới + đồ mặc định mới mở (món đầu mỗi chỗ đặt) / đồ full (thêm kiểu khác, tường / sàn) của chặng đó.
-  const price = e => zonePrice(e, cfg.ZONE_PRICE_MULT);
-  const head = `<tr><th rowspan="2">Chặng</th><th colspan="11" style="text-align:center">Source: xu thưởng từng màn</th>
-    <th colspan="5" style="text-align:center;border-left:2px solid var(--line)">Sink: chi tiêu mới mở trong chặng</th></tr>
-    <tr>${Array.from({ length: 10 }, (_, k) => `<th>+${k + 1}</th>`).join('')}<th>Tổng chặng</th>
+  $('rewardInfo').textContent = `Màn 1: ${fmt(reward(0))} · màn 10 (boss): ${fmt(reward(9))} · màn ${n.toLocaleString('en-US')}: ${fmt(reward(n - 1))} · tổng ${n.toLocaleString('en-US')} màn + xu ban đầu: ${fmt(cum[n] + cfg.START_COINS)} xu`;
+  // Bảng Source (xu thưởng) + Sink (chỗ tiêu mới mở) theo khoảng màn; hàng gom bucketSize màn nên 300000 màn vẫn chỉ ~20 hàng.
+  const size = bucketSize(n), price = e => zonePrice(e, cfg.ZONE_PRICE_MULT);
+  const head = `<tr><th rowspan="2">Màn</th><th colspan="5" style="text-align:center">Source: xu thưởng (mỗi hàng ${size.toLocaleString('en-US')} màn)</th>
+    <th colspan="5" style="text-align:center;border-left:2px solid var(--line)">Sink: chi tiêu mới mở trong khoảng</th></tr>
+    <tr><th>Màn đầu</th><th>Màn cuối</th><th>Boss cao nhất</th><th>Tổng khoảng</th><th>Luỹ kế<br><span class="muted">(+ xu ban đầu)</span></th>
     <th style="border-left:2px solid var(--line)">Mở khu</th><th>Đồ mặc định</th><th>Đồ full</th><th>Khu + mặc định</th><th>Khu + full</th></tr>`;
-  const body = Array.from({ length: Math.ceil(n / 10) }, (_, s) => {
-    const row = values.slice(s * 10, s * 10 + 10), got = row.reduce((a, b) => a + b, 0);
-    const opened = paid.filter(e => Math.ceil(openLevel(e) / 10) === s + 1);
-    const area = AREA_ORDER.find(a => Math.ceil((cfg.AREA_UNLOCK[a].level + 1) / 10) === s + 1), cost = area ? cfg.AREA_UNLOCK[area].cost : 0;
+  const body = Array.from({ length: Math.ceil(n / size) }, (_, r) => {
+    const from = r * size + 1, to = Math.min(n, (r + 1) * size);
+    const lastBoss = Math.floor(to / 10) * 10, boss = lastBoss >= from ? reward(lastBoss - 1) : null;
+    const opened = paid.filter(e => openLevel(e) >= from && openLevel(e) <= to);
+    const areas = AREA_ORDER.filter(ar => cfg.AREA_UNLOCK[ar].level + 1 >= from && cfg.AREA_UNLOCK[ar].level + 1 <= to);
+    const cost = areas.reduce((t, ar) => t + cfg.AREA_UNLOCK[ar].cost, 0);
     const base = opened.filter(isBase).reduce((t, e) => t + price(e), 0), full = opened.reduce((t, e) => t + price(e), 0);
-    return `<tr><td>Màn ${s * 10 + 1}–${s * 10 + row.length}</td>${row.map((v, k) => `<td${(s * 10 + k + 1) % 10 ? '' : ' style="color:#e07a2e;font-weight:700" title="màn boss"'}>${fmt(v)}</td>`).join('')}<td><b>${fmt(got)}</b></td>
-      <td style="border-left:2px solid var(--line)" title="${area ? AREA_NAMES[area] : ''}">${area ? fmt(cost) : '—'}</td><td>${fmt(base)}</td><td>${fmt(full)}</td><td><b>${fmt(cost + base)}</b></td><td><b>${fmt(cost + full)}</b></td></tr>`;
+    return `<tr><td>${from.toLocaleString('en-US')}–${to.toLocaleString('en-US')}</td><td>${fmt(reward(from - 1))}</td><td>${fmt(reward(to - 1))}</td>
+      <td style="color:#e07a2e">${boss == null ? '—' : fmt(boss)}</td><td><b>${fmt(sumLevels(from, to))}</b></td><td>${fmt(cum[to] + cfg.START_COINS)}</td>
+      <td style="border-left:2px solid var(--line)" title="${areas.map(ar => AREA_NAMES[ar]).join(', ')}">${cost ? fmt(cost) : '—'}</td><td>${base ? fmt(base) : '—'}</td><td>${full ? fmt(full) : '—'}</td>
+      <td><b>${cost + base ? fmt(cost + base) : '—'}</b></td><td><b>${cost + full ? fmt(cost + full) : '—'}</b></td></tr>`;
   }).join('');
   $('rewardTable').innerHTML = head + body;
+  renderRangeTotal();
 }
 
 // ---------- 2. Khu ----------
@@ -79,17 +113,19 @@ function renderAreas() {
 }
 
 // ---------- 3. Stage ----------
-const ratioClass = r => (r >= .85 && r <= 1.15 ? 'ok' : r >= .7 && r <= 1.4 ? 'mid' : 'warn');
 function renderStages() {
   const n = levelsCount(), stages = Math.ceil(n / 10);
-  let income = cfg.START_COINS, base = 0, all = 0, areaPaid = 0, prevLeft = null, rows = '', itemRows = '';
+  let income = cfg.START_COINS, base = 0, all = 0, areaPaid = 0, prevLeft = null, rows = '';
+  // Món mới mở theo chặng (tính một lần, không lọc lại cả danh mục mỗi chặng: 300000 màn = 30000 chặng).
+  const openedAt = new Map();
+  for (const e of paid) { const st = Math.ceil(openLevel(e) / 10); openedAt.set(st, [...(openedAt.get(st) || []), e]); }
   stageStats = { off: [], income: 0 };
   for (let s = 1; s <= stages; s++) {
     const from = (s - 1) * 10 + 1, to = Math.min(n, s * 10);
-    let coins = 0;
-    for (let l = from; l <= to; l++) coins += reward(l - 1);
+    let coins;
+    coins = sumLevels(from, to);
     income += coins;
-    const opened = paid.filter(e => Math.ceil(openLevel(e) / 10) === s), price = e => zonePrice(e, cfg.ZONE_PRICE_MULT);
+    const opened = openedAt.get(s) || [], price = e => zonePrice(e, cfg.ZONE_PRICE_MULT);
     const stageBase = opened.filter(isBase).reduce((t, e) => t + price(e), 0), stageAll = opened.reduce((t, e) => t + price(e), 0);
     base += stageBase; all += stageAll;
     const area = AREA_ORDER.find(a => Math.ceil((cfg.AREA_UNLOCK[a].level + 1) / 10) === s);
@@ -100,17 +136,9 @@ function renderStages() {
     const rise = left != null && prevLeft != null && left > prevLeft + .01, low = left != null && left < .25;
     if (rise || low) stageStats.off.push({ s, r: left, prev: prevLeft, kind: low ? 'low' : 'rise' });
     if (left != null) prevLeft = left;
-    // Bảng chi tiết: xu nhận trong lô so với giá mở khu + giá mọi đồ mới mở trong lô, kèm danh sách đồ theo khu.
-    const areaCost = area ? cfg.AREA_UNLOCK[area].cost : 0, need = areaCost + stageAll, got = coins + (s === 1 ? cfg.START_COINS : 0);
-    const byArea = AREAS.map(([id, name]) => [name, opened.filter(e => areaOf(e) === id).sort((a, b) => price(a) - price(b))]).filter(([, list]) => list.length);
-    const items = byArea.map(([name, list]) => `<details><summary><b>${name}</b> · ${list.length} món · ${fmt(list.reduce((t, e) => t + price(e), 0))} xu</summary>`
-      + `<div class="muted">${list.map(e => `${e.name} ${fmt(price(e))}`).join(' · ')}</div></details>`).join('') || '—';
-    itemRows += `<tr><td>${s}</td><td>${from}–${to}</td><td>${fmt(got)}</td><td>${area ? `${AREA_NAMES[area]} ${fmt(areaCost)}` : '—'}</td><td>${fmt(stageAll)} <span class="muted">(${opened.length})</span></td>
-      <td>${fmt(need)}</td><td>${need ? `<span class="${ratioClass(got / need)}">${Math.round(got / need * 100)}%</span>` : '—'}</td><td style="text-align:left">${items}</td></tr>`;
-    rows += `<tr><td>${s}</td><td>${from}–${to}</td><td>${area ? AREA_NAMES[area] : s === 1 ? 'Garden' : '—'}</td><td>${fmt(stageBase)}</td><td>${fmt(income)}</td><td>${left == null ? '—' : `<b class="${low ? 'warn' : rise ? 'mid' : 'ok'}">${Math.round(left * 100)}%</b>`}</td><td>${all ? Math.round(income / all * 100) + '%' : '—'}</td></tr>`;
+    if (s === 1 || s === stages || opened.length || area) rows += `<tr><td>${s}</td><td>${from}–${to}</td><td>${area ? AREA_NAMES[area] : s === 1 ? 'Garden' : '—'}</td><td>${fmt(stageBase)}</td><td>${fmt(income)}</td><td>${left == null ? '—' : `<b class="${low ? 'warn' : rise ? 'mid' : 'ok'}">${Math.round(left * 100)}%</b>`}</td><td>${all ? Math.round(income / all * 100) + '%' : '—'}</td></tr>`;
   }
   stageStats.income = income;
-  $('stageItems').innerHTML = `<tr><th>Chặng</th><th>Màn</th><th>Xu nhận<br>trong chặng</th><th>Mở khu<br>(giá)</th><th>Giá đồ mới mở<br><span class="muted">(số món)</span></th><th>Tổng cần<br>(khu + đồ)</th><th>Xu nhận /<br>tổng cần</th><th>Đồ mua được trong chặng (theo khu, rẻ → đắt)</th></tr>${itemRows}`;
   $('stageTable').innerHTML = `<tr><th>Chặng</th><th>Màn</th><th>Khu mới mở</th><th>Giá món mặc định<br>mới mở</th><th>Xu kiếm được<br>tới lúc này</th><th title="Xu kiếm được trừ tiền mở các khu đã mua, chia cho giá món mặc định đã mở. Nên giảm dần: khu sau khó mua đủ hơn.">Đủ mua món mặc định<br>sau khi trả tiền mở khu</th><th>Đủ mua mọi đồ<br>(tới lúc này)</th></tr>${rows}`;
   renderKpis();
 }
@@ -133,7 +161,7 @@ const SHORT_WARN = .5;
 const playTime = min => (min < 60 ? `${Math.round(min * 10) / 10} phút` : `${Math.floor(min / 60)} giờ${Math.round(min % 60) ? ` ${Math.round(min % 60)} phút` : ''}`);
 const COLORS = ['#3a9a5b', '#e07a2e', '#5a8fd6', '#b0559c', '#8a8075'];
 function runSim() {
-  const t0 = performance.now(), opts = { runs: Number($('runs').value) || 40, levels: levelsCount(), maxDays: Number($('maxDays').value) || 200 };
+  const t0 = performance.now(), opts = { runs: Number($('runs').value) || 40, levels: simLevels(), maxDays: Number($('maxDays').value) || 200 };
   const results = profiles.map(p => simulateProfile(cfg, p, winRates, { ...opts, levelInfo }));
   const head = `<tr><th>Kiểu người chơi</th><th>Số ngày để<br>chơi hết ${opts.levels} màn</th><th>Thời gian chơi<br><span class="muted">mỗi màn · mỗi ngày · cả game</span></th>${AREA_ORDER.map(a => `<th>${AREA_NAMES[a]}<br><span class="muted">mở ngày · ở màn · thiếu xu lúc tới mốc</span></th>`).join('')}<th>Xu dư<br>cuối game</th><th>Đồ đã mua</th><th>Mua đủ đồ mặc định<br><span class="muted">ngày · ở màn · giờ chơi</span></th></tr>`;
   const rows = results.map((r, i) => `<tr><td><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${COLORS[i % COLORS.length]}"></i> ${r.profile.name}</td>
@@ -173,22 +201,6 @@ function renderVerdict() {
     + `<h3>Điểm ổn</h3>${list(v.good, 'Chưa có điểm nào ổn.')}<h3>Vấn đề</h3>${list(v.issues, 'Không thấy vấn đề.')}<h3>Nên sửa</h3>${list(v.fixes, 'Giữ nguyên bộ số.')}`;
 }
 
-// ---------- 2b. Giá từng món ----------
-const CAT_NAMES = { furniture: 'Đồ', walls: 'Tường / rào', floors: 'Sàn / nền' };
-const priceArea = id => (CATALOG.find(e => e.id === id)?.area === 'garden2' ? 'garden2' : CATALOG.find(e => e.id === id)?.zone);
-function renderPrices() {
-  const zone = $('priceZone').value || AREAS[0][0];
-  const rows = Object.keys(cfg.DECO).map(id => CATALOG.find(e => e.id === id)).filter(e => e && priceArea(e.id) === zone);
-  const mult = cfg.ZONE_PRICE_MULT[zone] ?? 1;
-  $('priceInfo').textContent = `${rows.length} món · Nhân giá đồ khu này: ×${mult}`;
-  $('priceTable').innerHTML = `<tr><th>Món</th><th>Loại</th><th>Giá gốc</th><th>Giá thật</th><th>Mở ở màn</th></tr>` + rows.map(e => `<tr>
-    <td>${e.name} <span class="muted">${e.id}</span></td><td>${CAT_NAMES[e.cat] ?? e.cat}</td>
-    <td><input type="number" min="0" step="10" data-price="${e.id}" value="${cfg.DECO[e.id].price}"></td>
-    <td data-real="${e.id}">${fmt(zonePrice(e, cfg.ZONE_PRICE_MULT))}</td><td>${cfg.DECO[e.id].lock ?? '—'}</td></tr>`).join('');
-}
-$('priceZone').innerHTML = AREAS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-$('priceZone').onchange = renderPrices;
-
 // ---------- Tổng quan Gold (bảng trên cùng): nguồn xu + chỗ tiêu theo từng khu ----------
 function renderOverview() {
   const n = levelsCount(), price = e => zonePrice(e, cfg.ZONE_PRICE_MULT);
@@ -220,14 +232,14 @@ function renderOverview() {
   $('overviewTable').innerHTML = `<tr><th colspan="${span + 1}" style="text-align:left">Gold</th></tr>
     <tr><th>Source</th><th>Số lượng</th><th>Total Gold</th><th colspan="${span - 2}"></th></tr>
     <tr><td>Màn chơi</td><td>${n} màn</td><td><b>${fmt(levelGold)}</b></td><td colspan="${span - 2}" class="muted" style="text-align:left">xu thưởng thắng lần đầu mọi màn${cfg.START_COINS ? ` + ${fmt(cfg.START_COINS)} xu ban đầu` : ''}</td></tr>
-    <tr><td>Idle</td><td>${perSec(idleFrom)}–${perSec(idleTo)} Gold/s / mèo</td><td><b>${avg ? fmt(avg.idleEarned) : '…'}</b></td><td colspan="${span - 2}" class="muted" style="text-align:left">≈ ${Math.round(idleFrom)}–${Math.round(idleTo)} xu / giờ mỗi mèo (màn ${cfg.IDLE_FROM_LEVEL + 1} → màn ${n}), tối đa 6 mèo · tổng cả game của người chơi Trung bình</td></tr>
+    <tr><td>Idle</td><td>${perSec(idleFrom)}–${perSec(idleTo)} Gold/s / mèo</td><td><b>${avg ? fmt(avg.idleEarned) : '…'}</b></td><td colspan="${span - 2}" class="muted" style="text-align:left">≈ ${Math.round(idleFrom)}–${Math.round(idleTo)} xu / giờ mỗi mèo (màn ${cfg.IDLE_FROM_LEVEL + 1} → màn ${n}), tối đa 6 mèo · tổng cả game của người chơi ảo Trung bình (tab Mô phỏng)</td></tr>
     <tr><th>Sink</th><th colspan="${span}"></th></tr>
     <tr><th rowspan="2">Deco</th><th rowspan="2">Mở khu</th><th rowspan="2">Total Asset</th><th rowspan="2">Default</th><th colspan="${levelCols.length}" style="text-align:center">Nâng cấp</th></tr>
     <tr>${levelCols.map(k => `<th>${k}</th>`).join('')}</tr>${rows}
     <tr><td><b>Tổng</b></td><td><b>${fmt(unlockTotal)} xu</b></td><td><b>${fmt(assetTotal)}</b></td><td colspan="${span - 2}" class="muted" style="text-align:left">Tổng chỗ tiêu = mở khu + mọi đồ = ${fmt(unlockTotal + assetTotal)} xu (chưa tính booster)</td></tr>`;
 }
 
-function renderAll() { renderReward(); renderAreas(); renderStages(); renderPrices(); renderOverview(); }
+function renderAll() { renderReward(); renderAreas(); renderStages(); renderOverview(); }
 
 // ---------- Tóm tắt (thẻ số trên cùng): đọc nhanh bộ số đang sửa có ổn không ----------
 let stageStats = { off: [], income: 0 }, simResults = null;
@@ -250,19 +262,24 @@ document.addEventListener('input', event => {
   const el = event.target;
   if (el.dataset.key) { cfg[el.dataset.key] = Number(el.value); markDirty(); renderReward(); renderStages(); }
   else if (el.dataset.area) { cfg.AREA_UNLOCK[el.dataset.area][el.dataset.field] = Number(el.value); markDirty(); renderStages(); }
-  else if (el.dataset.mult) { cfg.ZONE_PRICE_MULT[el.dataset.mult] = Number(el.value); markDirty(); renderStages(); renderPrices(); }
-  else if (el.dataset.price) {
-    const id = el.dataset.price, entry = CATALOG.find(e => e.id === id);
-    cfg.DECO[id].price = Math.max(0, Math.round(Number(el.value) || 0));
-    applyPrices(); markDirty(); renderStages();
-    document.querySelector(`[data-real="${id}"]`).textContent = fmt(zonePrice(entry, cfg.ZONE_PRICE_MULT));
-  }
+  else if (el.dataset.mult) { cfg.ZONE_PRICE_MULT[el.dataset.mult] = Number(el.value); markDirty(); renderStages(); }
   else if (el.dataset.p) { const p = profiles[el.dataset.p]; p[el.dataset.f] = el.dataset.f === 'name' || el.dataset.f === 'buy' ? el.value : Number(el.value); }
-  else if (el.id === 'levels') renderAll();
+  else if (el.id === 'viewLevels' || el.id === 'bucket') return renderAll();
+  else if (el.id === 'rangeFrom' || el.id === 'rangeTo') {
+    // Gõ "tới màn" quá số màn đang xem: nới cả board (bảng, biểu đồ, tổng quan) tới màn đó luôn.
+    const want = Math.max(Number($('rangeFrom').value) || 0, Number($('rangeTo').value) || 0);
+    if (want > levelsCount() && want <= 1e6) { $('viewLevels').value = Math.round(want); return renderAll(); }
+    return renderRangeTotal();
+  }
   scheduleSim();
 });
 // Bảng khu vẽ lại khi rời ô (vẽ lại lúc đang gõ làm mất con trỏ).
-document.addEventListener('change', event => { if (event.target.dataset.area || event.target.dataset.mult || event.target.dataset.price) renderAreas(); });
+document.addEventListener('change', event => { if (event.target.dataset.area || event.target.dataset.mult) renderAreas(); });
+// Tab con: Cân bằng xu / Mô phỏng người chơi ảo (mô phỏng vẫn chạy nền để thẻ tóm tắt + kết luận ở tab Cân bằng có số).
+for (const button of document.querySelectorAll('[data-subtab]')) button.onclick = () => {
+  document.querySelectorAll('[data-subtab]').forEach(b => b.classList.toggle('on', b === button));
+  document.querySelectorAll('[data-pane]').forEach(pane => { pane.hidden = pane.dataset.pane !== button.dataset.subtab; });
+};
 $('btnRun').onclick = runSim;
 $('btnReset').onclick = () => { cfg = fromGame(); applyPrices(); dirty = false; $('saveStatus').textContent = ''; renderAll(); };
 $('btnSave').onclick = async () => {
