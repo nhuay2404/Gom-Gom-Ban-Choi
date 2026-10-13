@@ -24,12 +24,11 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Tăng đều: xu(màn n) = REWARD_BASE + REWARD_STEP × (n−1), làm tròn; màn boss (10, 20, 30…) nhân thêm REWARD_BOSS_MULT.
-// Tổng N màn (chưa tính boss) = N × REWARD_BASE + REWARD_STEP × N × (N−1) ÷ 2 — vd. 50 + 50 mỗi màn: 1000 màn = 25,025,000 xu.
-// Mặc định: màn 1 = 50, màn 2 = 100, màn 3 = 150 … màn 99 = 4,950, màn 100 = 7,500 (boss ×1.5). Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
+// Tăng đều: xu(màn n) = REWARD_BASE + REWARD_STEP × (n−1), làm tròn; màn boss cũng theo đúng công thức này (không nhân thêm).
+// Tổng N màn = N × REWARD_BASE + REWARD_STEP × N × (N−1) ÷ 2 — vd. 50 + 50 mỗi màn: 1000 màn = 25,025,000 xu.
+// Mặc định: màn 1 = 50, màn 2 = 100, màn 3 = 150 … màn 99 = 4,950, màn 100 = 5,000. Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
 export const REWARD_BASE = remote('REWARD_BASE', 50);
 export const REWARD_STEP = remote('REWARD_STEP', 50);
-export const REWARD_BOSS_MULT = remote('REWARD_BOSS_MULT', 1.5);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.

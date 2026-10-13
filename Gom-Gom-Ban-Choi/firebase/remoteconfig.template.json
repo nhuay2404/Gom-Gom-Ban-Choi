@@ -21,12 +21,6 @@
           },
           "valueType": "NUMBER"
         },
-        "REWARD_BOSS_MULT": {
-          "defaultValue": {
-            "value": "1.5"
-          },
-          "valueType": "NUMBER"
-        },
         "TUTORIAL_TOP_UP": {
           "defaultValue": {
             "value": "true"

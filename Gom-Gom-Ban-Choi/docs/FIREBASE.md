@@ -6,7 +6,7 @@ người chơi mở lại game là nhận số mới, **không cần build / ph�
 ## Cách hoạt động
 
 - Mỗi hằng số trong code khai bằng `remote('TÊN', mặc định)` ↔ một **tham số cùng TÊN** trên Firebase.
-  - [`game/gameplay/economy.mjs`](../game/gameplay/economy.mjs) — nhóm **Economy**: `START_COINS`, `REWARD_BASE`, `REWARD_STEP`, `REWARD_BOSS_MULT`,
+  - [`game/gameplay/economy.mjs`](../game/gameplay/economy.mjs) — nhóm **Economy**: `START_COINS`, `REWARD_BASE`, `REWARD_STEP`,
     `TUTORIAL_TOP_UP`, `COMEBACK_GIFT_MOVES`, `COIN_PACKS`, `STARTER_PACK`, `BOOSTER_PRICE`, `BOOSTER_START_STOCK`,
     `BOOSTER_UNLOCK_LEVEL`, `BOOSTER_EXTRA_MOVES`, `DECO`
   - [`game/gameplay/tuning.mjs`](../game/gameplay/tuning.mjs) — nhóm **Gameplay tuning**: `BOARD`, `HOLD`, `CAGE`, `TIMING`, `DRAG`,

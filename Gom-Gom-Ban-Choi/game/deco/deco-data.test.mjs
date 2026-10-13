@@ -235,9 +235,7 @@ test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ k�
   const { AREA_UNLOCK } = await import('../gameplay/economy.mjs');
   const sum = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => levelReward(from - 1 + i)).reduce((a, b) => a + b, 0);
   const base = (zone, area) => CATALOG.filter(e => e.zone === zone && e.cat === 'furniture' && !e.slot && e.area === area).reduce((a, e) => a + e.price, 0);
-  // Bỏ qua màn ngay sau boss (màn 11, 21…): thấp hơn boss là đúng.
-  for (let n = 1; n < 100; n++) if (n % 10) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
-  for (let n = 9; n < 100; n += 10) assert.ok(levelReward(n) > levelReward(n - 1), `màn boss ${n + 1} thưởng nhiều hơn màn trước`);
+  for (let n = 1; n < 100; n++) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
   let cost = 0, paid = 0, prev = Infinity;
   for (const [to, zone, area] of [[10, 'garden'], [20, 'garden', 'garden2'], [30, 'living'], [40, 'bedroom'], [50, 'kitchen'], [60, 'bathroom']]) {
     cost += base(zone, area);
