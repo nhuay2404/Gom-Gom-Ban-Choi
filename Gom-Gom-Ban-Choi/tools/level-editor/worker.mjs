@@ -22,7 +22,25 @@ function curveStats(job) {
   return { winRate: wins / job.runs, movesUsed: used / job.runs, movesUsedWin: wins ? usedWin / wins : job.level.moves };
 }
 
-self.onmessage = ({ data: { id, jobs, tune, curve } }) => {
+// Thời gian chơi: { id, playtime: [{ key, level, index, noise, hold, runs, boost }] } -> từng { id, key, stats: { winRate, usedWin, usedLoss } }
+// (lượt trung bình của ván thắng / ván thua, đã gồm lượt cộng thêm từ booster). boost = có booster không giới hạn.
+const BOOST = { at: .7, want: () => true };
+function playtimeStats(job) {
+  let wins = 0, usedWin = 0, usedLoss = 0;
+  for (let run = 0; run < job.runs; run++) {
+    const r = play(job.level, (job.index + 1) * 100000 + run, { noise: job.noise, hold: job.hold, lookahead: job.lookahead, boost: job.boost ? BOOST : null });
+    if (r.win) { wins++; usedWin += r.movesUsed; } else usedLoss += r.movesUsed;
+  }
+  const losses = job.runs - wins;
+  return { winRate: wins / job.runs, usedWin: wins ? usedWin / wins : job.level.moves, usedLoss: losses ? usedLoss / losses : job.level.moves };
+}
+
+self.onmessage = ({ data: { id, jobs, tune, curve, playtime } }) => {
+  if (playtime) {
+    for (const job of playtime) self.postMessage({ id, key: job.key, stats: playtimeStats(job) });
+    self.postMessage({ id, done: true });
+    return;
+  }
   if (curve) {
     for (const job of curve) self.postMessage({ id, key: job.key, stats: curveStats(job) });
     self.postMessage({ id, done: true });

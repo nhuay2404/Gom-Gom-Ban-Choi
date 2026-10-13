@@ -166,6 +166,23 @@
       <div class="palette" id="palette"></div>
       <div id="board" style="margin-top:8px"></div>
       <ul id="issues" class="muted"></ul>
+      <div class="replay">
+        <h3 class="sub">▶ Xem AI chơi màn này <span class="muted">— phát lại từng nước bot đi (chọn màn khác là tự chơi lại màn đó)</span></h3>
+        <div class="row">
+          <label>Profile<select id="rpProfile"></select></label>
+          <label>Ván số<input type="number" id="rpSeed" value="1" min="1" style="width:70px"></label>
+          <label class="check"><input type="checkbox" id="rpBoost"> Có booster</label>
+          <button class="btn" id="rpNewGame" title="Chơi ván khác (đổi thứ tự thẻ)">🎲 Ván khác</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" id="rpFirst" title="Về đầu">⏮</button><button class="btn" id="rpPrev" title="Lượt trước">◀</button>
+          <button class="btn primary" id="rpPlay">▶ Phát</button><button class="btn" id="rpNext" title="Lượt sau">▶|</button><button class="btn" id="rpLast" title="Tới cuối">⏭</button>
+          <input type="range" id="rpStep" min="0" value="0" style="flex:1;min-width:120px">
+        </div>
+        <div id="rpInfo" class="rp-info"></div>
+        <div id="rpBoard" style="margin-top:6px"></div>
+        <div class="legend muted"><span><i style="background:#3a9a5b"></i>thẻ vừa đặt</span><span><i style="background:#e07a2e"></i>bị gom (biến mất ở bước sau)</span></div>
+      </div>
     </section>
     <details class="card">
       <summary><h2>Mã màn (levels.mjs)</h2><span class="muted">— chỉ cần khi muốn dán tay; nút Lưu đã ghi thẳng vào game</span></summary>
@@ -240,6 +257,14 @@
     </details>
   </div>
 </main>
+  <section id="playtimeSection" class="view" data-view="level">
+    <h2>Thời gian chơi theo profile người chơi</h2>
+    <p class="hint">Bot chơi từng màn theo 3 profile (yếu / trung bình / giỏi). <b>Thời gian</b> = (số lần thua × lượt của ván thua + lượt của ván thắng) × giây mỗi lượt.
+      <b>Booster</b>: bot có sẵn booster không giới hạn (+3 lượt khi còn 1 lượt mà đã gần đủ điểm, đổi thẻ khi thẻ không vừa bàn); cột Δ = thời gian thay đổi so với không dùng booster.</p>
+    <div class="row"><label style="width:120px">Số ván mỗi màn<input type="number" id="ptRuns" value="60" min="10" max="400" step="10"></label>
+      <button class="btn primary" id="btnPlaytime">▶ Chạy bảng</button><span class="muted" id="ptStatus"></span></div>
+    <div class="scroll" style="margin-top:8px;max-height:520px"><table id="playtimeTable"></table></div>
+  </section>
 <dialog id="help">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">Hướng dẫn sử dụng</h2>
     <button class="btn" onclick="document.getElementById('help').close()">Đóng ✕</button></div>
