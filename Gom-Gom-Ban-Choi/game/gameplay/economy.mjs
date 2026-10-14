@@ -24,22 +24,14 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Mỗi dòng = 1 stage (10 màn). Màn ngoài bảng nhận REWARD_BEYOND.
-export const LEVEL_REWARD = remote('LEVEL_REWARD', [
-  /* stage 1: màn  1–10 */ 120, 125, 130, 135, 140, 143, 146, 150, 152, 154,
-  /* stage 2: màn 11–20 */ 155, 157, 159, 161, 162, 164, 166, 168, 170, 172,
-  /* stage 3: màn 21–30 */  90,  92,  94,  96,  97,  98, 100, 101, 103, 105,
-  /* stage 4: màn 31–40 */  96,  98,  99, 100, 101, 102, 103, 104, 105, 106,
-  /* stage 5: màn 41–50 */  80,  80,  80,  80,  80,  80,  80,  80,  80,  80,
-  // Stage 6–10 (màn 51–100, sinh bằng tools/generate-levels.mjs): không mở khu Deco mới, xu dùng mua các kiểu khác / tường / sàn còn lại.
-  // Tăng dần ~4 xu mỗi stage; màn boss (x0) +10.
-  /* stage 6: màn 51–60 */ 100, 101, 102, 103, 104, 105, 106, 107, 108, 119,
-  /* stage 7: màn 61–70 */ 104, 105, 106, 107, 108, 109, 110, 111, 112, 123,
-  /* stage 8: màn 71–80 */ 108, 109, 110, 111, 112, 113, 114, 115, 116, 127,
-  /* stage 9: màn 81–90 */ 112, 113, 114, 115, 116, 117, 118, 119, 120, 131,
-  /* stage 10: màn 91–100 */ 116, 117, 118, 119, 120, 121, 122, 123, 124, 135,
-]);
-export const REWARD_BEYOND = remote('REWARD_BEYOND', 80); // xu mỗi màn ngoài bảng trên (từ màn 101 trở đi)
+// Tăng theo cụm 10 màn: trong một cụm mỗi màn cộng cùng một bước; sang cụm mới bước nhân (1 + REWARD_GROWTH) — cụm 1 (màn 1–10) bước
+// REWARD_STEP, cụm 2 bước × (1 + G), cụm 3 × (1 + G)²… (progression.mjs rewardFor). Mỗi màn lệch thêm REWARD_JITTER × lệch(n) × bước,
+// lệch(n) cố định theo màn trong −0.5..0.5: khó đoán mà vẫn luôn tăng (REWARD_JITTER < 1). Màn boss cũng theo công thức này.
+// Mặc định (bước 50, +10% mỗi cụm): màn 1–6 ≈ 67, 82, 152, 195, 248, 305 … màn 30 ≈ 1,678, màn 50 ≈ 3,041, màn 100 ≈ 7,946; 100 màn ≈ 340,000 xu.
+export const REWARD_BASE = remote('REWARD_BASE', 50);
+export const REWARD_STEP = remote('REWARD_STEP', 50);
+export const REWARD_GROWTH = remote('REWARD_GROWTH', .1);
+export const REWARD_JITTER = remote('REWARD_JITTER', .8);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
@@ -47,6 +39,15 @@ export const TUTORIAL_TOP_UP = remote('TUTORIAL_TOP_UP', true);
 
 // Quà an ủi: người chơi sắp bỏ game (thua liên tục) thì lần thắng kế tiếp được tặng bấy nhiêu booster +lượt.
 export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
+
+// Xu tự sinh (idle): MỖI con mèo trong nhà kiếm xu theo giờ, bong bóng xu trên đầu từng con ở Deco, chạm để nhận (gameplay/idle.mjs).
+//   xu / giờ của một con = xu thưởng của màn đang chơi × IDLE_RATE · mỗi con tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
+//   Nhiều mèo = nhiều xu (tối đa MAX_ROOM_CATS con trong nhà). Giữ tổng nhỏ (~5–15% xu cả game của người chơi trung bình, đủ 6 mèo)
+//   để không thay gói xu / không làm người chơi bớt chơi màn.
+//   0.015 (trước 0.44): mô phỏng economy-sim cho xu idle chiếm ~12% tổng xu (trung bình), 14% (casual), 7% (chơi nhiều); 0.44 là ~80%.
+export const IDLE_RATE = remote('IDLE_RATE', 0.015);
+export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
+export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 
 // Gói xu trong Shop (tiền thật — hiện mới là "coming soon", chưa bán). coins = xu nhận, usd = giá hiển thị.
 export const COIN_PACKS = remote('COIN_PACKS', [
@@ -76,6 +77,23 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
 //  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
 //  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
+// Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
+//   level : đã thắng tới màn này,
+//   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
+export const AREA_UNLOCK = remote('AREA_UNLOCK', {
+  garden2: { level: 10, cost: 550 },
+  living: { level: 20, cost: 1550 },
+  bedroom: { level: 30, cost: 2550 },
+  kitchen: { level: 40, cost: 3550 },
+  bathroom: { level: 50, cost: 4550 },
+  backyard: { level: 60, cost: 5550 },
+  kinder: { level: 70, cost: 6550 },
+});
+
+// Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
+// tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15, kinder: 60 });
+
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
   flowers:               { price: 0 },                // Flower bed
@@ -134,6 +152,7 @@ export const DECO = remote('DECO', {
   closet:                { price: 220, lock: 37 },    // Closet
   plushie:               { price: 150, lock: 38 },    // Teddy bear
   catsteps:              { price: 240, lock: 39 },    // Wall steps
+  mirror:                { price: 200, lock: 39 },    // Floor mirror
   // --- Phòng ngủ — tường / rào ---
   'bwall-lavender':      { price: 0 },                // Lavender
   'bwall-blush':         { price: 100 },              // Blush
@@ -160,6 +179,7 @@ export const DECO = remote('DECO', {
   catfood:               { price: 90 },               // Cat bowls
   cart:                  { price: 180 },              // Tea cart
   kplant:                { price: 110 },              // Monstera
+  bakerack:              { price: 160 },              // Baker's rack
   // --- Bếp — tường / rào ---
   'kwall-butter':        { price: 0 },                // Butter
   'kwall-mint':          { price: 100 },              // Mint
@@ -179,6 +199,69 @@ export const DECO = remote('DECO', {
   'kfloor-slate-tiles':  { price: 100 },              // Slate tiles
   'kfloor-tatami':       { price: 100 },              // Tatami
   'kfloor-bamboo':       { price: 100 },              // Bamboo
+  // --- Sân sau (mở theo AREA_UNLOCK.backyard; giá nhân ZONE_PRICE_MULT.backyard) — đồ ---
+  pool:                  { price: 0 },                // Swimming pool (bể có sẵn khi mở khu)
+  greenhouse:            { price: 0 },                // Greenhouse
+  lounger:               { price: 180 },              // Sun lounger
+  parasol:               { price: 220 },              // Parasol table
+  grill:                 { price: 260 },              // BBQ grill
+  deckbox:               { price: 140 },              // Pool toy box
+  vegbed:                { price: 200 },              // Tomato bed
+  veggies:               { price: 160 },              // Veggie patch
+  scarecrow:             { price: 150 },              // Scarecrow
+  rainbarrel:            { price: 120 },              // Rain barrel
+  // --- Sân sau — rào / nền ---
+  'yfence-white':        { price: 0 },                // White picket
+  'yfence-wood':         { price: 100 },              // Wood fence
+  'yfence-hedge':        { price: 100 },              // Hedge
+  'yground-grass':       { price: 0 },                // Grass
+  'yground-clover':      { price: 100 },              // Clover
+  'yground-meadow':      { price: 100 },              // Meadow
+  // --- Trường mẫu giáo (mở theo AREA_UNLOCK.kinder; giá nhân ZONE_PRICE_MULT.kinder) — đồ ---
+  kdesk:                 { price: 0 },                // Kids desks (lớp có sẵn bàn khi mở khu)
+  kplayset:              { price: 0 },                // Slide tower
+  kboard:                { price: 160 },              // Chalkboard
+  kcubby:                { price: 180 },              // Toy cubbies
+  kpiano:                { price: 240 },              // Upright piano
+  kswing:                { price: 220 },              // Swing set
+  kspring:               { price: 150 },              // Spring riders
+  ksandpit:              { price: 140 },              // Sandpit
+  kmerry:                { price: 260 },              // Merry-go-round
+  kbench:                { price: 120 },              // Benches
+  // --- Trường mẫu giáo — rào / nền ---
+  'kfence-picket':       { price: 0 },                // Yellow picket
+  'kfence-rail':         { price: 100 },              // Blue rails
+  'kfence-hedge':        { price: 100 },              // Hedge
+  'kground-grass':       { price: 0 },                // Grass
+  'kground-clover':      { price: 100 },              // Clover
+  'kground-path':        { price: 100 },              // Stone path
+  // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
+  toilet:                { price: 0 },                // Toilet
+  vanity:                { price: 0 },                // Sink vanity
+  bathtub:               { price: 300 },              // Clawfoot tub
+  shower:                { price: 260 },              // Shower
+  washer:                { price: 240 },              // Washing machine
+  towel:                 { price: 120 },              // Towel rack
+  litter:                { price: 160 },              // Cat litter box
+  bathmat:               { price: 100 },              // Bath mat
+  jacuzzi:               { price: 400 },              // Hot tub (bồn sục giữa phòng)
+  bathshelf:             { price: 140 },              // Bath shelf
+  // --- Phòng tắm — tường ---
+  'twall-aqua':          { price: 0 },                // Aqua
+  'twall-white':         { price: 100 },              // White
+  'twall-mint':          { price: 100 },              // Mint
+  'twall-blush':         { price: 100 },              // Blush
+  'twall-lemon':         { price: 100 },              // Lemon
+  'twall-navy':          { price: 100 },              // Navy
+  'twall-charcoal':      { price: 100 },              // Charcoal
+  // --- Phòng tắm — sàn ---
+  'tfloor-white-tiles':  { price: 0 },                // White tiles (sàn mặc định: gạch nhà tắm)
+  'tfloor-oak':          { price: 100 },              // Oak
+  'tfloor-aqua-tiles':   { price: 100 },              // Aqua tiles
+  'tfloor-pink-tiles':   { price: 100 },              // Pink tiles
+  'tfloor-checker':      { price: 100 },              // Checkerboard
+  'tfloor-teak':         { price: 100 },              // Teak
+  'tfloor-slate-tiles':  { price: 100 },              // Slate tiles
   // --- Vườn mở rộng (vườn 2: mở khi thắng màn 10) — đồ ---
   windmill:              { price: 0, lock: 11 },      // Windmill
   sunflowers:            { price: 0, lock: 11 },      // Sunflowers
@@ -188,6 +271,8 @@ export const DECO = remote('DECO', {
   stream:                { price: 280, lock: 14 },    // Little stream
   swingtree:             { price: 320, lock: 15 },    // Swing tree
   slide:                 { price: 340, lock: 17 },    // Slide
+  birdhouse:             { price: 240, lock: 16 },    // Birdhouse
+  picnic:                { price: 300, lock: 18 },    // Picnic table
   // --- Mèo (giá 0; lock = màn thưởng, nhận ở Map; không lock = có sẵn từ đầu) ---
   'cat-orange':          { price: 0 },                // Orange cat
   'cat-gray':            { price: 0, lock: 7 },       // Gray cat
@@ -195,5 +280,12 @@ export const DECO = remote('DECO', {
   'cat-tabby':           { price: 0, lock: 14 },      // Calico cat
   'cat-siamese':         { price: 0, lock: 17 },      // Siamese cat
   'cat-tuxedo':          { price: 0, lock: 20 },      // Tuxedo cat
+  // --- Chó (như mèo; stage 3 + 4: màn 4, 7, 10 của stage) ---
+  'dog-shiba':           { price: 0, lock: 24 },      // Shiba dog
+  'dog-golden':          { price: 0, lock: 27 },      // Golden dog
+  'dog-pug':             { price: 0, lock: 30 },      // Pug dog
+  'dog-dalmatian':       { price: 0, lock: 34 },      // Dalmatian dog
+  'dog-malamute':        { price: 0, lock: 37 },      // Malamute dog
+  'dog-rottweiler':      { price: 0, lock: 40 },      // Rottweiler dog
 
 });

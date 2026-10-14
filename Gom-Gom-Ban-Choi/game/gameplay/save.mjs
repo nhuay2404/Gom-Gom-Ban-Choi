@@ -21,6 +21,7 @@ export const SAVE_KEYS = {
   decoTour: 'gomgom-rotate-deco-tour-v1',
   onboarding: 'gomgom-rotate-onboarding-v1',
   liveops: 'gomgom-rotate-liveops-v1',
+  skin: 'gomgom-rotate-skin', // bộ quân trên bàn: 'cats' | 'dogs' (mở bộ chó ở màn 30, app/shared.js pieceSkin)
 };
 
 function defaultBackend() {

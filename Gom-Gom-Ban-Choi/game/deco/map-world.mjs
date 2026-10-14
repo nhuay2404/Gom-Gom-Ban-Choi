@@ -4,11 +4,11 @@
 import * as THREE from 'three';
 import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
 import { roundedBox, mergeStatic } from './mesh-detail.mjs';
-import { catModel, setCatFace } from './room-cats.mjs';
+import { catModel, setCatFace, poseTail } from './room-cats.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.
-const WORLD = { R: 11, STEP: .4, SWING: 1.55, FREQ: .95, ROAD: 1.05, EDGE: .2 };
+const WORLD = { R: 18, STEP: .14, SWING: 1.55, FREQ: .95, ROAD: 1.05, EDGE: .2 };
 // Khoảng cách trên mặt cỏ giữa hai màn liền nhau.
 const LEVEL_GAP = WORLD.R * WORLD.STEP;
 const INK = MAP_INK;
@@ -19,7 +19,7 @@ const COLORS = {
   body: { normal: 0xf2557f, chill: 0xf2557f, hard: 0xf2557f, boss: 0x6d2fd6, locked: 0x8a6f62 },
 };
 // Góc nhìn: camera đứng trên đỉnh trống nhìn chéo xuống; bề ngang thấy được ~ ±HALF_W đơn vị ở chỗ màn đang chọn.
-const CAM = { height: 11.5, back: 9.5, aimAhead: -1, aimUp: 0, halfW: 3.9 };
+const CAM = { height: 13, back: 7.5, aimAhead: 1.5, aimUp: 0, halfW: 3.9 };
 // Màn đang chơi: bệ + khối đầu mèo phóng to hơn các màn khác.
 const CURRENT_SCALE = 1.15;
 
@@ -1731,6 +1731,7 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
       const legSwing = running ? e : 0;
       rig?.legs.forEach((leg, i) => { leg.hip.rotation.x = Math.sin(step + (i === 0 || i === 3 ? 0 : Math.PI)) * .9 * legSwing; });
       rig?.tail.forEach((joint, i) => { joint.rotation.y = Math.sin(t * (resting ? 14 : 9) - i) * (resting ? .6 : .3); });
+      if (rig) poseTail(rig);
       rig?.ears.forEach((ear, i) => { ear.rotation.z = (i ? 1 : -1) * -.18 + Math.sin(t * 12 + i * 2) * (resting ? .22 : .06); });
       // Mặt: ngạc nhiên -> cười hí mắt khi chạy (thỉnh thoảng mở to mắt) -> sung sướng khi nhún nhảy.
       if (rig) setCatFace(rig, breed, t <= 1.1 ? 'focus' : resting ? (rest < .35 ? 'focus' : 'happy') : (Math.floor(t * 1.2) % 3 === 2 ? 'open' : 'happy'), 'open');

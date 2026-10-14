@@ -4,7 +4,7 @@
 // Điểm neo cho mèo ghi trong userData (toạ độ cục bộ của món): seat = chỗ ngồi / nằm, top = mặt trên, steps = các bậc.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { ROOM_HALF, BEDROOM_DOOR, BEDROOM_WINDOW_X } from './room-layout.mjs';
+import { ROOM_HALF, BEDROOM_DOOR } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 import { pendulum, ropeBetween } from './garden-scene.mjs';
 
@@ -514,123 +514,6 @@ export const BEDROOM_BUILD = {
     return node;
   },
 
-  // ===== Lựa chọn thứ 4 cho từng chỗ trong phòng ngủ: phong cách hiện đại, tông đen / xám (cùng điểm neo với món gốc) =====
-  // Giường bọc nỉ xám đậm: đầu giường ô nệm cao, chăn than chì; mèo nằm trên chăn như giường gốc.
-  'bed-platform'() {
-    const z = -1.22;
-    const bed = group(...bedBase({ wood: '#2b2e33', duvet: '#4a4e55', duvetLine: '#3a3d43', pillow: '#c9ccd1', headboard: false }),
-      at(rbox(2.2, 1.1, .16, .07, '#3a3d43'), 0, .74, z), ...[-.72, -.24, .24, .72].map(x => at(rbox(.44, .8, .04, .02, '#45494f'), x, .8, z + .1)),
-      at(box(2.24, .02, .02, mat('#c8ccd2', { metalness: .8, roughness: .35 })), 0, 1.3, z + .08),
-      at(rbox(1.96, .06, .5, .03, '#6b7078'), 0, .64, .95)); // khăn phủ cuối giường
-    bed.userData.seat = [.15, .63, .15];
-    return bed;
-  },
-  // Thảm sọc đen trắng: phẳng, nằm gọn trong khung thảm lông.
-  'bedrug-mono'() {
-    const rug = group(at(rbox(2.4, .035, 1.9, .015, '#2b2e33'), 0, .0175, 0),
-      ...[-.6, -.3, 0, .3, .6].map(z => at(box(2.1, .045, .12, '#d6d8dc'), 0, .0225, z)));
-    rug.traverse(node => { node.castShadow = false; });
-    rug.userData.top = .045;
-    return rug;
-  },
-  // Giỏ đồ giặt nỉ xám có quai da: quần áo xám / đen bên trong; mèo chui vào nằm (.5).
-  'laundry-hamper'() {
-    const felt = '#4a4e55', leather = '#26282c';
-    const hamper = group(at(cyl(.36, .32, .5, felt, 28), 0, .25, 0), at(mesh(new THREE.TorusGeometry(.36, .025, 8, 36), mat(leather)), 0, .5, 0).rotateX(Math.PI / 2),
-      ...[-1, 1].map(s => at(rbox(.16, .05, .03, .015, leather), s * .3, .44, s * .16).rotateY(s * .5 + Math.PI / 2)),
-      squash(at(ball(.3, '#6b7078'), 0, .44, 0), 1, .35, 1), squash(at(ball(.16, '#26282c'), -.1, .52, .08), 1.2, .4, 1), squash(at(ball(.14, '#d6d8dc'), .12, .53, -.06), 1, .45, 1.2),
-      at(rbox(.11, .3, .07, .035, '#d6d8dc'), .33, .4, .12).rotateZ(.3));
-    hamper.userData.seat = [0, .5, 0];
-    return hamper;
-  },
-  // Tủ đầu giường đen chân crôm: loa thông minh + đồng hồ xám (mèo đẩy rơi).
-  'bedside-noir'() {
-    const chrome = mat('#c8ccd2', { metalness: .8, roughness: .35 });
-    const clock = group(at(rbox(.18, .1, .08, .03, '#45494f'), 0, 0, 0), at(box(.12, .05, .01, glow('#1a1c20', '#7fd0ff', .9)), 0, 0, .046));
-    clock.position.set(.15, .63, .06);
-    const speaker = at(cyl(.07, .07, .16, '#6b7078', 20), -.16, .66, -.06);
-    const stand = group(...legs4(.22, .15, .12, chrome, .015), at(rbox(.56, .42, .42, .04, '#26282c'), 0, .33, 0), at(rbox(.6, .03, .46, .015, '#3a3d43'), 0, .555, 0),
-      at(box(.5, .006, .02, chrome), 0, .33, .215), speaker, at(cyl(.05, .05, .01, '#9aa0a8', 20), -.16, .745, -.06), clock);
-    stand.userData.mug = clock;
-    clock.userData.home = clock.position.clone();
-    stand.userData.top = .58;
-    return stand;
-  },
-  // Bàn setup tối: mặt bàn đen, hai màn hình, dải LED trắng lạnh; mèo nằm chễm chệ trên bàn phím (.77).
-  'desk-setup'() {
-    const top = '#26282c', dark = '#1a1c20', frame = '#3a3d43';
-    const monitor = x => group(at(rbox(.22, .02, .16, .01, dark), 0, .775, -.16), at(box(.04, .26, .04, dark), 0, .9, -.2),
-      at(rbox(.62, .4, .04, .02, dark), 0, 1.15, -.2), at(screen(.56, .34, docScreen()), 0, 1.15, -.174)).translateX(x);
-    const keys = screen(.5, .15, rgbKeys()); keys.rotation.x = -Math.PI / 2; keys.position.set(0, .801, .12);
-    const desk = group(at(rbox(1.7, .05, .72, .02, top), 0, .74, 0),
-      ...[-1, 1].map(s => at(rbox(.06, .72, .62, .02, frame), s * .78, .36, 0)), at(box(1.5, .08, .03, frame), 0, .66, -.3),
-      at(box(1.6, .015, .015, glow('#d6eaff', '#d6eaff', 1.2)), 0, .71, .35),
-      monitor(-.34), monitor(.34), at(rbox(.56, .03, .18, .01, dark), 0, .78, .12), keys,
-      at(rbox(.3, .006, .24, .003, '#45494f'), .55, .768, .1), squash(at(ball(.04, dark), .55, .785, .12), 1, .55, 1.4),
-      at(cyl(.045, .04, .1, '#9aa0a8', 14), -.6, .815, .18));
-    desk.userData.seat = [0, .77, .12];
-    desk.userData.top = .77;
-    return desk;
-  },
-  // Ghế văn phòng lưng lưới đen: xoay khi mèo đáp lên, mặt ngồi .55 như ghế gốc.
-  'chair-office'() {
-    const dark = '#1f2125', chrome = '#9aa0a8';
-    const spokes = [0, 1, 2, 3, 4].flatMap(k => {
-      const a = k / 5 * TAU, spoke = at(box(.34, .035, .05, chrome), Math.cos(a) * .17, .1, Math.sin(a) * .17);
-      spoke.rotation.y = -a;
-      return [spoke, at(ball(.035, dark), Math.cos(a) * .32, .035, Math.sin(a) * .32)];
-    });
-    const back = group(at(rbox(.52, .78, .06, .03, dark), 0, 0, 0), at(rbox(.42, .64, .02, .01, '#45494f'), 0, 0, .04), at(rbox(.34, .1, .08, .04, '#3a3d43'), 0, -.2, .06));
-    back.position.set(0, .58, -.27); back.rotation.x = -.1;
-    const arm = s => group(at(box(.035, .2, .035, dark), s * .3, .2, -.02), at(rbox(.07, .035, .28, .015, dark), s * .3, .31, 0));
-    const seat = group(at(rbox(.54, .1, .54, .05, dark), 0, .06, 0), at(rbox(.44, .04, .46, .02, '#45494f'), 0, .12, .02), back, arm(1), arm(-1));
-    seat.position.y = .4;
-    const chair = group(...spokes, at(cyl(.035, .035, .32, chrome, 12), 0, .26, 0), seat);
-    let last = 0;
-    seat.userData.v = 0;
-    chair.userData.spin = v => { seat.userData.v += v; };
-    chair.userData.update = t => {
-      const dt = Math.min(.05, Math.max(0, t - (last || t))); last = t;
-      seat.userData.v += (-5 * seat.rotation.y - 1.1 * seat.userData.v) * dt;
-      seat.rotation.y += seat.userData.v * dt;
-    };
-    seat.userData.restPos = seat.position.clone();
-    chair.userData.ride = seat;
-    chair.userData.seat = [0, .55, .02];
-    return chair;
-  },
-  // Tủ áo đen mờ tay nắm crôm: nóc cao 2.06 như tủ gốc, mèo nằm canh phòng.
-  'closet-noir'() {
-    const body = '#26282c', door = '#2f3236', chrome = mat('#c8ccd2', { metalness: .8, roughness: .35 });
-    const closet = group(at(rbox(1.36, .1, .58, .03, '#1a1c20'), 0, .05, 0),
-      at(rbox(1.3, 1.92, .6, .06, body), 0, 1.06, 0), at(rbox(1.4, .06, .66, .03, '#3a3d43'), 0, 2.03, 0),
-      ...[-1, 1].flatMap(s => [at(rbox(.6, 1.78, .03, .015, door), s * .32, 1.06, .3), at(rbox(.025, .5, .03, .012, chrome), s * .06, 1.1, .335)]),
-      at(rbox(.36, .26, .3, .04, '#6b7078'), -.36, 2.19, 0), at(rbox(.26, .16, .26, .03, '#9aa0a8'), -.36, 2.4, .02));
-    closet.userData.seat = [.25, 2.06, .02];
-    return closet;
-  },
-  // Cá mập bông xám: nằm sấp, vây lưng, bụng trắng; mèo rúc ngủ bên cạnh.
-  'plushie-shark'() {
-    const grey = '#6b7078', belly = '#e6e8eb';
-    const shark = group(squash(at(ball(.3, grey), 0, .24, 0), 1.6, .8, 1), squash(at(ball(.24, belly), 0, .18, .04), 1.5, .5, .9),
-      at(mesh(new THREE.ConeGeometry(.12, .24, 16), grey), -.04, .5, 0).rotateZ(.25), at(mesh(new THREE.ConeGeometry(.13, .26, 16), grey), -.44, .3, 0).rotateZ(Math.PI / 2.4),
-      ...[-1, 1].map(s => squash(at(ball(.1, grey), .1, .12, s * .26), 1.4, .4, 1)),
-      ...[-1, 1].map(s => at(ball(.03, '#1a1c20'), .4, .3, s * .17)), at(box(.16, .012, .02, '#1a1c20'), .44, .19, 0));
-    shark.children.forEach(part => { part.position.y += .02; });
-    shark.userData.seat = [.38, 0, .38];
-    return shark;
-  },
-  // Kệ treo tường thép đen: ba bậc nỉ xám gắn giá sắt, đệm trên cùng; tấm cào móng xám dưới chân.
-  'catsteps-floating'() {
-    const steel = '#1f2125', felt = '#6b7078';
-    const step = (x, y) => group(at(rbox(.56, .05, .32, .02, felt), x, y, 0), at(box(.52, .03, .03, steel), x, y - .04, .14),
-      ...[-.2, .2].map(dx => at(box(.03, .18, .03, steel), x + dx, y - .12, -.13)));
-    const steps = [[-.35, .65], [.35, 1.2], [-.2, 1.75]];
-    const node = group(...steps.map(([x, y]) => step(x, y)), at(rbox(.5, .06, .28, .03, '#3a3d43'), -.2, 1.8, 0),
-      at(rbox(.7, .02, .5, .008, '#45494f'), 0, .01, .15));
-    node.userData.steps = [[-.35, .68, 0], [.35, 1.23, 0], [-.2, 1.84, 0]];
-    return node;
-  },
 };
 
 // ---------- Trang trí cố định trên tường phòng ngủ (u = trục ngang của tường, +z = mặt hướng vào phòng) ----------
@@ -643,17 +526,9 @@ function wallFrame(w, h, frameColor, art, u, y) {
 }
 export function decorateBedroomWall(i, wall) {
   if (i === 0) {
-    // Rèm xanh hai bên cửa sổ + thanh treo.
-    const u0 = BEDROOM_WINDOW_X;
-    const rod = at(cyl(.025, .025, 2.3, onWall('#c98a55'), 12), u0, 2.66, .22); rod.rotation.z = Math.PI / 2;
-    wall.add(rod, at(ball(.05, onWall('#c98a55')), u0 - 1.15, 2.66, .22), at(ball(.05, onWall('#c98a55')), u0 + 1.15, 2.66, .22));
-    for (const s of [-1, 1]) {
-      const panel = drape(.5, 1.95, '#9fd0f0', true); panel.position.set(u0 + s * .88, 1.66, .2);
-      wall.add(panel, at(mesh(new THREE.BoxGeometry(.52, .06, .09), onWall('#3b8fe0')), u0 + s * .88, 1.15, .26));
-    }
-    // Đèn dây võng trên đầu giường: bóng nhỏ phát sáng vàng ấm.
+    // Không còn cửa sổ (giữa tường sau là cửa sang phòng tắm). Đèn dây võng phía trên góc máy tính: bóng nhỏ phát sáng vàng ấm.
     const pts = [];
-    for (let k = 0; k <= 16; k++) { const t = k / 16; pts.push(new THREE.Vector3(-3.6 + t * 2.6, 2.82 - Math.sin(t * Math.PI) * .2, .2)); } // cao hơn khung giường màn (2.2)
+    for (let k = 0; k <= 16; k++) { const t = k / 16; pts.push(new THREE.Vector3(1 + t * 2.6, 2.82 - Math.sin(t * Math.PI) * .2, .2)); } // cao hơn poster (đỉnh ~2.35) và khung cửa phòng tắm (2.2)
     const line = new THREE.CatmullRomCurve3(pts);
     wall.add(mesh(new THREE.TubeGeometry(line, 32, .007, 5), onWall('#6a5a4a')));
     for (let k = 1; k < 12; k++) {
@@ -692,3 +567,51 @@ export function bedroomDecor() {
   bin.position.set(3.45, 0, -2.75);
   return mergeStatic(group(mat2, slipper(-1.05, -1.05, .2), slipper(-.85, -1.1, -.1), bin));
 }
+
+// ---------- Món thêm sau (mirror): mỗi chỗ chỉ có món gốc ----------
+const shine = () => new THREE.MeshBasicMaterial({ color: '#ffffff', userData: { nightDim: true } });
+// Mặt gương: tấm phẳng không nhận sáng, ban đêm tối đi cùng cảnh.
+const glassMat = () => new THREE.MeshBasicMaterial({ color: '#d8f1ff', userData: { nightDim: true } });
+Object.assign(BEDROOM_BUILD, {
+  // ---------- Gương đứng kê tường trái (mèo ngồi trước gương ngắm mình: approach = chỗ đứng trước gương) ----------
+  // Mặt gương cách mặt khung 6 mm, vệt sáng cách mặt gương 6 mm; đỉnh < 1.7 m (kệ treo tường phía trên, đáy ở 1.72).
+  mirror() {
+    // Khung cam bo tròn, chân đế xanh ngọc, hoa hồng nhỏ góc trên.
+    const frame = '#ffa94d', teal = '#4fc1b0';
+    const streak = (w, h, x, y) => at(new THREE.Mesh(new THREE.PlaneGeometry(w, h), shine()), x, y, .042).rotateZ(.5);
+    const node = group(at(rbox(.7, .06, .36, .03, teal), 0, .03, 0), ...[-1, 1].map(s => at(rbox(.07, .2, .07, .03, teal), s * .22, .15, 0)),
+      at(rbox(.62, 1.36, .06, .03, frame), 0, .86, 0), at(new THREE.Mesh(new THREE.PlaneGeometry(.5, 1.24), glassMat()), 0, .86, .036),
+      streak(.05, .5, -.1, 1.05), streak(.025, .3, .03, 1.08),
+      // hoa trên mép khung, ngoài mặt gương (gương tới y 1.48)
+      ...[0, 1, 2, 3, 4].map(k => at(ball(.035, '#ff8fb8'), .24 + Math.cos(k / 5 * TAU) * .045, 1.58 + Math.sin(k / 5 * TAU) * .045, .05)),
+      at(ball(.03, '#ffd66b'), .24, 1.58, .065));
+    node.userData.approach = [0, 0, .75];
+    return node;
+  },
+  // Gương xoay khung gỗ (cheval): hai trụ đứng trên chân chữ T, mặt gương bầu dục xoay trên chốt, khăn len vắt ngang trụ.
+  'mirror-cheval'() {
+    const wood = '#b9854a', dark = '#8a5a3a';
+    const oval = group(squash(at(cyl(.3, .3, .05, wood, 36), 0, 0, 0).rotateX(Math.PI / 2), 1, 1, 1.55),
+      squash(at(new THREE.Mesh(new THREE.CircleGeometry(.25, 36), glassMat()), 0, 0, .031), 1, 1.55, 1),
+      at(new THREE.Mesh(new THREE.PlaneGeometry(.04, .4), shine()), -.08, .12, .033).rotateZ(.5));
+    oval.position.set(0, .92, 0); oval.rotation.x = -.06;
+    const node = group(...[-1, 1].flatMap(s => [at(rbox(.06, .05, .34, .025, dark), s * .36, .025, 0), at(rbox(.05, 1.2, .05, .025, wood), s * .36, .63, 0),
+      at(ball(.035, dark), s * .36, 1.25, 0), at(cyl(.03, .03, .06, dark, 10), s * .335, .92, 0).rotateZ(Math.PI / 2)]),
+      oval, at(rbox(.06, .3, .04, .02, '#e8617f'), .36, .95, .05));
+    node.userData.approach = [0, 0, .75];
+    return node;
+  },
+  // Gương vòm dựa tường: khung trắng đỉnh cong, chậu cây nhỏ dưới chân bên phải.
+  'mirror-arch'() {
+    const W = .56, H = 1.42, r = W / 2;
+    const arch = (w, h, rr) => { const sh = new THREE.Shape(); sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(w / 2, h - rr); sh.absarc(0, h - rr, rr, 0, Math.PI, false); sh.lineTo(-w / 2, 0); return sh; };
+    const frame = mesh(new THREE.ExtrudeGeometry(arch(W, H, r), { depth: .05, bevelEnabled: false }), '#fffaf0');
+    frame.position.set(0, .04, -.05);
+    const glass = at(new THREE.Mesh(new THREE.ShapeGeometry(arch(W - .1, H - .1, r - .05), 24), glassMat()), 0, .09, .006);
+    const node = group(at(rbox(.62, .04, .3, .02, '#e9c58f'), 0, .02, -.03), frame, glass,
+      at(new THREE.Mesh(new THREE.PlaneGeometry(.04, .5), shine()), -.1, .95, .009).rotateZ(.5),
+      at(cyl(.07, .06, .12, '#e98b5a', 14), .24, .1, .1), at(ball(.08, '#6fbf4a'), .24, .22, .1), at(ball(.05, '#5fae46'), .21, .3, .12));
+    node.userData.approach = [0, 0, .75];
+    return node;
+  },
+});

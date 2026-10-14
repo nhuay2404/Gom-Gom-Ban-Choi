@@ -95,6 +95,21 @@ export function createDecoFx(scene) {
       ring(base, r * 1.8, '#ffd23f', .75);
       ring(base, r * 1.2, '#fff6c8', .55);
     }
+    // Mở khu mới: pháo giấy bắn lên khắp mảnh đất, sao lấp lánh rải rộng, 3 vòng sáng lan dần ra mép khu.
+    if (kind === 'open') {
+      for (let i = 0; i < 90; i++) {
+        const a = rand(0, Math.PI * 2), d = r * rand(0, .8);
+        spawn({ node: sprite(DOT, CONFETTI[i % CONFETTI.length], .14), pos: new THREE.Vector3(base.x + Math.cos(a) * d, base.y + .2, base.z + Math.sin(a) * d),
+          vel: new THREE.Vector3(Math.cos(a) * rand(.5, 1.6), rand(4, 6.5), Math.sin(a) * rand(.5, 1.6)), gravity: 6.5, drag: 1,
+          life: rand(1.6, 2.3), delay: rand(0, .35), size0: .2, size1: rand(.14, .22), peak: 1 });
+      }
+      for (let i = 0; i < 36; i++) {
+        const a = rand(0, Math.PI * 2), d = r * rand(.1, .95);
+        spawn({ node: sprite(STAR, '#ffe680', .1), pos: new THREE.Vector3(base.x + Math.cos(a) * d, base.y + rand(.1, top), base.z + Math.sin(a) * d),
+          vel: new THREE.Vector3(0, rand(.5, 1), 0), drag: .5, life: rand(1, 1.5), delay: .15 + i * .03, size0: .08, size1: rand(.35, .55), peak: 1, twinkle: true });
+      }
+      [[1, '#ffd23f', .9], [.75, '#fff6c8', 1.1], [.5, '#ffffff', 1.3]].forEach(([k, color, life]) => ring(base, r * k, color, life));
+    }
   }
   function update(dt) {
     for (let i = live.length - 1; i >= 0; i--) {

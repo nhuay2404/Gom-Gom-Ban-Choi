@@ -853,7 +853,7 @@ export function groundTexture(entry) {
 
 // Chất cát (hộp cát, bồn rùa): nền vàng cát + vệt cào gợn sóng + hàng nghìn hạt sáng / tối + vài vỏ ốc, sỏi nhỏ.
 let sandTexture = null;
-function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ướt / nén thì sẫm hơn
+export function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ướt / nén thì sẫm hơn
   if (!sandTexture) {
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
     const g = canvas.getContext('2d');

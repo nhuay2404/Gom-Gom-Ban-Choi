@@ -166,11 +166,10 @@
       <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
       <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
       <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
     <div class="deco-side">
-      <button data-key="cats" aria-label="Cats in your home"><svg viewBox="0 0 24 24"><path d="M4.5 19.5V10L4 4l5 3.5h6L20 4l-.5 6v9.5Z"/><path d="M9 13.5v.5M15 13.5v.5M10.5 17h3"/></svg><span>Cats</span></button>
+      <button data-key="cats" aria-label="Pets in your home"><svg viewBox="0 0 24 24"><path d="M4.5 19.5V10L4 4l5 3.5h6L20 4l-.5 6v9.5Z"/><path d="M9 13.5v.5M15 13.5v.5M10.5 17h3"/></svg><span>Pets</span></button>
       <button data-key="walls"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3ZM3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/></svg><span>Walls</span></button>
       <button data-key="floors"><svg viewBox="0 0 24 24"><path d="M6.5 6h11L21 19H3ZM4.7 12.5h14.6M12 6v13M9.2 6 7.5 19M14.8 6l1.7 13"/></svg><span>Floors</span></button>
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
@@ -183,12 +182,19 @@
         <button role="tab" data-zone="living">Living room</button>
         <button role="tab" data-zone="bedroom">Bedroom</button>
         <button role="tab" data-zone="kitchen">Kitchen</button>
+        <button role="tab" data-zone="bathroom">Bathroom</button>
+        <button role="tab" data-zone="backyard">Backyard</button>
+        <button role="tab" data-zone="kinder">Kindergarten</button>
       </div>
       <!-- Một hàng thẻ duy nhất, vuốt ngang để xem món khác; món đã xây thì thẻ biến mất, xây hết thì ẩn cả hàng (hàng chọn khu tụt xuống) -->
       <div id="deco-cards" class="deco-cards" role="list" aria-label="Spots to build"></div>
     </div>
     <!-- Ghim "NEW" nổi trên món có đồ mới mua (Shop) thay được -->
     <div id="deco-pins" class="deco-pins" aria-hidden="true"></div>
+    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, gameplay/idle.mjs) -->
+    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
+    <button id="area-next" class="area-next" hidden></button>
+    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b><i class="idle-spark s1"></i><i class="idle-spark s2"></i><i class="idle-spark s3"></i><i class="idle-spark s4"></i><i class="idle-spark s5"></i><i class="idle-spark s6"></i></button>
     <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
@@ -206,7 +212,6 @@
       <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
       <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
       <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
     </div>
     <div id="shop-pages" class="shop-pages" role="tablist" aria-label="Shop">
       <button role="tab" data-page="store" aria-selected="true">Shop</button>
@@ -228,6 +233,19 @@
       <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
     </div>
     <p class="soon-note core-only">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
+    <!-- Gem (placeholder, chưa có nguồn gem): gem dùng mua booster, đồ trang trí premium, skin. Chạm = "Coming soon!" (.soon). -->
+    <section class="gem-shop core-only" aria-labelledby="gem-shop-title">
+      <h3 id="gem-shop-title" class="shop-deco-title">Gems</h3>
+      <div class="booster-row">
+        <button class="booster soon"><img src="./ui/play/img/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./ui/play/img/booster-moves.png" alt=""><span>Moves ×3</span><small>Booster pack</small><em>30 gems</em></button>
+      </div>
+      <div class="gem-row">
+        <button class="coin-pack soon"><b>Premium decoration</b><em>Soon</em></button>
+        <button class="coin-pack soon"><b>Cat skins</b><em>Soon</em></button>
+      </div>
+    </section>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
     <section id="shop-deco" class="shop-deco" aria-labelledby="shop-deco-title">
       <h3 id="shop-deco-title" class="shop-deco-title">Decoration</h3>
@@ -253,7 +271,6 @@
         <button class="fh-pill fh-gems lo-only" data-open="gems" aria-label="Gems"><b class="gems-count">0</b></button>
         <button class="fh-pill fh-lives lo-only" data-open="lives" aria-label="Lives"><i class="ico-heart"></i><b class="lives-count">5</b><small class="lives-timer">Full</small></button>
         <button class="fh-pill fh-gems soon core-only" aria-label="Gems (coming soon)"><b>0</b></button>
-        <button class="fh-pill fh-energy soon core-only" aria-label="Energy (coming soon)"></button>
       </div>
       <!-- Cột trái: Daily (điểm danh + nhiệm vụ ngày, liveops-ui.js), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
       <button id="home-daily" class="fh-btn fh-daily" aria-label="Daily rewards and quests"></button>
@@ -262,6 +279,8 @@
       <!-- Event hằng tuần (liveops-ui.js, hc-kit): một nút event chính + tối đa một nút event phụ, ẩn khi không có event -->
       <button id="home-event-main" class="fh-btn fh-event" hidden></button>
       <button id="home-event-side" class="fh-btn fh-event side" hidden></button>
+      <!-- Bộ quân trên bàn (mèo / chó): hiện khi chơi tới màn 30 (shared.js DOG_SKIN_LEVEL); chạm để đổi bộ -->
+      <button id="home-skin" class="fh-btn fh-feedback fh-skin" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
       <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>
@@ -415,9 +434,11 @@
     <button id="dev-toggle" class="dev-btn dev-toggle" title="Ẩn / hiện nút dev">DEV</button>
     <div class="dev-buttons">
       <button id="dev-unlock" class="dev-btn" title="Mở hết màn (3 sao), mọi khu, +99999 xu">🔓<span>Unlock</span></button>
+      <button id="dev-money" class="dev-btn" title="Mod money: xu tiêu ra được cộng vào ví" aria-pressed="false">💰<span>Money</span></button>
       <button id="dev-reset" class="dev-btn" title="Xoá tiến độ về người chơi mới">↺<span>Reset</span></button>
       <button id="dev-qc" class="dev-btn" title="QC model 3D">🔍<span>QC</span></button>
       <button id="dev-editor" class="dev-btn" title="Level Editor (DDA + bot)">🧩<span>Levels</span></button>
+      <button id="dev-studio" class="dev-btn" title="UI Studio: chỉnh UI 2D trực tiếp trong game" aria-pressed="false" hidden>🎨<span>Studio</span></button>
     </div>
   </div>
   <!-- Dev: Level Editor (tools/level-editor/) mở toàn màn hình trong iframe; cần máy chủ npm start (phục vụ /tools). -->

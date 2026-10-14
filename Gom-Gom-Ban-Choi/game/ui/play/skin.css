@@ -276,3 +276,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .firework-flash{position:fixed;z-index:59;width:70px;height:70px;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,#fff 0 18%,var(--fw) 40%,transparent 70%)}
 .firework-spark{position:fixed;z-index:59;width:9px;height:9px;border-radius:50%;pointer-events:none;background:var(--fw);box-shadow:0 0 8px 2px var(--fw)}
+
+/* Confetti khi gom (play-controller.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
+.confetti{position:fixed;z-index:60;width:13px;height:18px;border-radius:2px;pointer-events:none;box-shadow:0 1px 0 #0002;will-change:transform,opacity}
+.confetti.ribbon{width:8px;height:28px;border-radius:4px}

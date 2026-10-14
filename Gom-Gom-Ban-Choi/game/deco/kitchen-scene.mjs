@@ -6,7 +6,7 @@
 // bowls = các chén ăn / uống.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X } from './room-layout.mjs';
+import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
@@ -319,6 +319,7 @@ export const KITCHEN_BUILD = {
     table.userData.top = .78;
     return table;
   },
+  // bàn thấp: không kèm đệm ngồi riêng (chỗ ghế quanh bàn đã có ghế / đệm, kèm thêm là thừa chỗ ngồi chồng nhau)
   'dining-low'() {
     const mug = cup('#8fc9f2', .2, .41, .12);
     const teapot = group(squash(at(ball(.09, '#fffaf0'), 0, .077, 0), 1, .85, 1), at(ball(.025, '#e8617f'), 0, .165, 0),
@@ -326,7 +327,6 @@ export const KITCHEN_BUILD = {
     teapot.position.set(-.1, .41, -.08);
     const table = group(...[[-.3, -.3], [.3, -.3], [-.3, .3], [.3, .3]].map(([x, z]) => at(cyl(.03, .025, .35, '#9a6a45', 10), x, .175, z)),
       at(cyl(.62, .62, .05, '#c98a55'), 0, .385, 0), at(ring(.3, .012, '#e8617f'), 0, .412, 0).rotateX(Math.PI / 2),
-      at(rbox(.52, .08, .52, .035, '#e8617f'), -.82, .04, 0), at(rbox(.52, .08, .52, .035, '#8fc9f2'), .82, .04, 0),
       teapot, at(cyl(.04, .035, .08, '#fffaf0', 12), -.3, .45, .18), mug);
     table.userData.mug = mug;
     table.userData.seat = [-.2, .43, .2];
@@ -466,130 +466,6 @@ export const KITCHEN_BUILD = {
     return finishCart(cart, mug);
   },
 
-  // ===== Phong cách châu Á (Asian): gỗ tối, sơn mài đỏ, vàng đồng, tre, gốm xanh trắng =====
-  'fridge-asian'() {
-    const wood = '#5a3a28', red = '#b83a2e', gold = '#e0b04a', paper = '#f3ead3';
-    const f = group(...fridgeFeet('#3a2418'),
-      at(rbox(.88, 1.72, .74, .05, wood), 0, .94, 0),
-      at(rbox(.82, .6, .03, .015, red), 0, 1.46, .385), at(rbox(.82, .98, .03, .015, red), 0, .63, .385),
-      at(rbox(.03, .3, .05, .012, gold), -.32, 1.4, .425), at(rbox(.03, .5, .05, .012, gold), -.32, .86, .425),
-      at(cyl(.11, .11, .012, gold, 28), .1, .95, .408).rotateX(Math.PI / 2), at(cyl(.07, .07, .012, red, 24), .1, .95, .416).rotateX(Math.PI / 2),
-      at(rbox(.18, .26, .012, .005, paper), .16, 1.46, .408), at(cyl(.045, .045, .008, red, 20), .16, 1.46, .416).rotateX(Math.PI / 2));
-    f.userData.seat = [0, 1.83, 0];
-    return f;
-  },
-  'stove-asian'() {
-    const wood = '#5a3a28', dark = '#26282c', red = '#b83a2e', gold = '#e0b04a', bamboo = '#d9b66a';
-    const wokMat = mat('#3a3f4a', { side: THREE.DoubleSide, metalness: .5, roughness: .45 });
-    const wokBowl = squash(mesh(new THREE.SphereGeometry(.22, 24, 12, 0, TAU, Math.PI / 2, Math.PI / 2), wokMat), 1, .5, 1);
-    wokBowl.userData.noOutline = true; // vỏ mỏng hở: viền mép là vòng ring riêng
-    const wok = group(wokBowl, at(ring(.22, .012, dark), 0, .0, 0).rotateX(Math.PI / 2),
-      at(rbox(.3, .035, .045, .015, dark), .38, .0, 0), at(rbox(.14, .045, .05, .02, '#8a5a35'), .52, .0, 0),
-      ...[[-.07, .02], [.05, -.03], [0, .06], [.08, .05]].map(([x, z], k) => squash(at(ball(.04, ['#e8483a', '#7fc45a', '#ffd23f', '#ff9f43'][k]), x, -.07, z), 1, .6, 1)));
-    wok.position.set(-.22, 1.04, -.12);
-    const steamer = group(...[0, 1, 2].flatMap(k => [at(cyl(.15, .15, .09, bamboo), 0, .045 + k * .1, 0), at(ring(.15, .008, '#8a6a45'), 0, .07 + k * .1, 0).rotateX(Math.PI / 2)]),
-      at(cone(.16, .09, bamboo, 20), 0, .35, 0), at(ball(.025, '#8a6a45'), 0, .41, 0));
-    steamer.position.set(.22, .92, -.12);
-    const stove = group(at(rbox(.84, .08, .62, .02, '#3a2418'), 0, .04, 0), at(rbox(.9, .78, .7, .04, wood), 0, .47, 0), at(rbox(.92, .05, .72, .02, dark), 0, .895, 0),
-      ...burners('#3a3f4a', .935), wok, steamer,
-      at(rbox(.74, .5, .03, .015, red), 0, .45, .365), at(box(.62, .02, .012, gold), 0, .45, .386),
-      ...[-.2, 0, .2].map(x => at(box(.012, .38, .012, gold), x, .45, .386)), at(rbox(.62, .03, .04, .015, gold), 0, .66, .395),
-      ...[-.3, -.1, .1, .3].map(x => at(cyl(.03, .03, .03, gold, 14), x, .8, .365).rotateX(Math.PI / 2)));
-    stove.userData.seat = [0, .96, .2];
-    return stove;
-  },
-  'sink-asian'() {
-    const chr = chrome(), gold = '#e0b04a', wood = '#5a3a28';
-    const neko = group(squash(at(ball(.1, '#fffaf0'), 0, .1, 0), 1, 1.05, .9), at(ball(.075, '#fffaf0'), 0, .22, .01), at(cone(.03, .05, '#fffaf0', 4), -.045, .29, .01), at(cone(.03, .05, '#fffaf0', 4), .045, .29, .01),
-      at(ring(.065, .01, '#b83a2e'), 0, .165, .01).rotateX(Math.PI / 2), at(ball(.02, gold), 0, .15, .075), at(rbox(.045, .13, .04, .018, '#fffaf0'), .1, .17, .03).rotateZ(-.3),
-      at(ball(.01, '#26282c'), -.025, .23, .075), at(ball(.01, '#26282c'), .025, .23, .075));
-    neko.position.set(1.2, .9, -.15);
-    const bamboo = group(at(cyl(.06, .05, .1, '#2f3a5a', 12), 0, .05, 0), ...[-.02, .02, .0].map((dx, k) => at(cyl(.012, .014, .22 + k * .05, '#7fb23a', 6), dx, .21 + k * .02, k * .02 - .01)));
-    bamboo.position.set(-.68, .9, -.2);
-    const teapot = group(squash(at(ball(.09, '#3a3f4a'), 0, .077, 0), 1, .85, 1), at(ball(.022, gold), 0, .165, 0), at(cyl(.012, .018, .1, '#3a3f4a', 8), .12, .11, 0).rotateZ(-.8), at(ring(.05, .01, '#3a3f4a'), -.1, .1, 0));
-    teapot.position.set(1.75, .9, -.2);
-    const rice = group(at(cyl(.1, .1, .16, '#b83a2e', 18), 0, .08, 0), at(cyl(.105, .105, .03, '#fffaf0', 18), 0, .175, 0), at(ball(.02, gold), 0, .21, 0));
-    rice.position.set(2.25, .9, -.2);
-    const steamer = group(...[0, 1].map(k => at(cyl(.15, .15, .08, '#d9b66a'), 0, .04 + k * .09, 0)), at(cone(.16, .08, '#d9b66a', 20), 0, .22, 0));
-    steamer.position.set(3.1, .9, 1.0);
-    const neck = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, 0, 0], [0, .3, 0], [0, .42, .06], [0, .38, .15], [0, .3, .17]].map(p => new THREE.Vector3(...p))), 16, .013, 6), chr);
-    neck.position.set(-.25, .9, -.2);
-    const sink = group(...counterL({ body: wood, top: '#c9b46a', kick: '#3a2418', door: '#7a4a30', knob: gold }),
-      at(rbox(.56, .03, .4, .015, '#c8ccd2'), -.25, .915, .03), at(rbox(.46, .012, .3, .006, '#6f8190'), -.25, .934, .03),
-      neck, at(cyl(.03, .035, .04, chr, 12), -.25, .92, -.2),
-      bamboo, neko, teapot, rice, steamer,
-      ...[0, 1, 2].map(k => at(cyl(.09, .06, .05, k % 2 ? '#fffaf0' : '#3b4a7a', 16), 2.75, .925 + k * .05, -.2)),
-      at(cyl(.045, .04, .09, '#3b4a7a', 12), 3.0, .945, 1.9), at(rbox(.3, .02, .2, .01, '#d9b66a'), 3.1, .91, 1.5));
-    sink.userData.seat = [.4, .92, .08];
-    sink.userData.tap = [-.25, 1.2, -.12];
-    return sink;
-  },
-  'pantry-asian'() {
-    const dark = '#4a2f1f', wood = '#6b4630', gold = '#e0b04a';
-    const drawers = [0, 1, 2, 3, 4, 5, 6].flatMap(r => [-1, 1].flatMap(s => [at(rbox(.44, .21, .03, .012, wood), s * .245, .2 + r * .25, .265), at(ball(.02, gold), s * .245, .2 + r * .25, .292)]));
-    const vase = group(at(cyl(.1, .08, .22, '#f5f8fb', 18), 0, .11, 0), at(ring(.1, .012, '#3b4a7a'), 0, .17, 0).rotateX(Math.PI / 2), at(ring(.085, .01, '#3b4a7a'), 0, .06, 0).rotateX(Math.PI / 2), at(cyl(.05, .1, .05, '#f5f8fb', 18), 0, .245, 0));
-    vase.position.set(-.3, 1.98, 0);
-    const pantry = group(at(rbox(1.04, .06, .54, .02, '#3a2418'), 0, .03, 0), at(rbox(1.0, 1.9, .5, .04, dark), 0, .98, 0), at(rbox(1.06, .05, .54, .02, wood), 0, 1.955, 0), ...drawers, vase,
-      at(rbox(.12, .1, .08, .03, '#b83a2e'), -.08, 2.0, 0));
-    pantry.userData.seat = [.25, 2.0, 0];
-    return pantry;
-  },
-  'dining-asian'() {
-    const mug = cup('#3b4a7a', .2, .41, .12);
-    const teapot = group(squash(at(ball(.09, '#3a3f4a'), 0, .077, 0), 1, .85, 1), at(ball(.022, '#e0b04a'), 0, .165, 0), at(cyl(.012, .018, .1, '#3a3f4a', 8), .12, .11, 0).rotateZ(-.8), at(ring(.05, .01, '#3a3f4a'), -.1, .1, 0));
-    teapot.position.set(-.12, .41, -.1);
-    const cushion = (x, z) => at(rbox(.52, .09, .52, .04, '#3b4a7a'), x, .045, z);
-    const table = group(...legs4(.4, .4, .35, '#26282c', .03), at(rbox(1.04, .06, 1.04, .025, '#b83a2e'), 0, .38, 0), at(rbox(.84, .01, .84, .004, '#e0b04a'), 0, .413, 0),
-      cushion(-.74, 0), cushion(.74, 0), cushion(0, -.74), cushion(0, .74),
-      teapot, at(cyl(.045, .035, .05, '#fffaf0', 12), -.32, .435, .2), at(cyl(.06, .05, .02, '#fffaf0', 16), .28, .425, -.25), squash(at(ball(.035, '#f3c2cc'), .28, .45, -.25), 1, .8, 1), mug);
-    table.userData.mug = mug;
-    table.userData.seat = [-.2, .43, .22];
-    table.userData.top = .41;
-    return table;
-  },
-  'kchair-asian'() {
-    const zaisu = () => group(at(rbox(.46, .07, .46, .03, '#5a3a28'), 0, .035, 0), at(rbox(.4, .07, .4, .03, '#b83a2e'), 0, .105, .01),
-      at(rbox(.44, .32, .05, .02, '#5a3a28'), 0, .27, -.2), at(rbox(.36, .22, .02, .01, '#e0b04a'), 0, .27, -.165));
-    const set = around(zaisu);
-    set.userData.seat = [-1.35, .16, 0];
-    set.userData.approach = [-1.95, 0, 0];
-    return set;
-  },
-  'kplant-asian'() {
-    const leaves = group();
-    leaves.position.y = .34;
-    [[-.1, .0, 1.5], [.1, .05, 1.7], [0, -.1, 1.35], [.05, .12, 1.2], [-.12, .1, 1.55]].forEach(([x, z, h], k) => {
-      leaves.add(at(cyl(.02, .026, h, '#7fb23a', 8), x, h / 2, z));
-      for (let n = 1; n <= 4; n++) leaves.add(at(ring(.027, .006, '#5f9a2a'), x, h * n / 5, z).rotateX(Math.PI / 2));
-      [0, 1].forEach(s => leaves.add(squash(at(ball(.1, k % 2 ? '#5fae46' : '#6fbf4a'), x + (s ? .12 : -.12), h - .05 - s * .12, z), 1.5, .22, .7)));
-    });
-    const plant = group(at(cyl(.24, .18, .34, '#2f3a5a'), 0, .17, 0), at(ring(.24, .014, '#f5f8fb'), 0, .33, 0).rotateX(Math.PI / 2), at(cyl(.22, .22, .02, '#5a3a22'), 0, .345, 0),
-      ...[[-.1, .08], [.12, -.06], [.04, .14]].map(([x, z]) => at(ball(.035, '#f5f8fb'), x, .365, z)), leaves);
-    plant.userData.leaves = leaves;
-    return plant;
-  },
-  'catfood-asian'() {
-    const food = bowl('#f5f8fb', -.22, .02, .02), water = bowl('#3b4a7a', .22, .02, .02);
-    food.add(squash(at(ball(.13, '#b06a3a'), 0, .105, 0), 1, .45, 1));
-    water.add(at(cyl(.12, .12, .012, '#cfeaff', 20), 0, .1, 0));
-    const fish = group(squash(at(ball(.07, '#8fc9f2'), 0, .02, 0), 1.5, .45, .8), at(cone(.04, .07, '#8fc9f2', 4), -.12, .02, 0).rotateZ(Math.PI / 2));
-    fish.position.set(.0, .03, .2);
-    const station = group(at(rbox(.92, .03, .58, .012, '#d9b66a'), 0, .015, 0), at(rbox(.88, .01, .54, .005, '#c9a04a'), 0, .035, 0), food, water, fish,
-      at(cyl(.045, .04, .08, '#b83a2e', 14), -.38, .07, -.16));
-    station.userData.bowls = [[-.22, .13, .02], [.22, .13, .02]];
-    return station;
-  },
-  'cart-asian'() {
-    const mug = cup('#fffaf0', .12, .795, .12);
-    const teapot = group(squash(at(ball(.09, '#3a3f4a'), 0, .077, 0), 1, .85, 1), at(ball(.022, '#e0b04a'), 0, .165, 0), at(cyl(.012, .018, .1, '#3a3f4a', 8), .12, .11, 0).rotateZ(-.8), at(ring(.05, .01, '#3a3f4a'), -.1, .1, 0));
-    teapot.position.set(.3, .795, -.04);
-    const steamers = group(...[0, 1, 2].flatMap(k => [at(cyl(.17, .17, .09, '#d9b66a'), 0, .045 + k * .1, 0), at(ring(.17, .009, '#8a6a45'), 0, .07 + k * .1, 0).rotateX(Math.PI / 2)]),
-      at(cone(.18, .09, '#d9b66a', 22), 0, .35, 0), at(ball(.025, '#b83a2e'), 0, .41, 0));
-    steamers.position.set(-.2, .795, 0);
-    const cart = group(...cartFrame('#b83a2e', '#26282c'), steamers, teapot, mug,
-      ...[0, 1, 2].map(k => at(cyl(.1, .06, .05, k % 2 ? '#fffaf0' : '#3b4a7a', 16), -.2, .26 + k * .05, 0)), at(cyl(.07, .06, .1, '#f5f8fb', 14), .2, .28, 0), squash(at(ball(.07, '#ffe6ae'), .22, .36, 0), 1, .7, 1));
-    return finishCart(cart, mug);
-  },
 };
 
 // ---------- Trang trí cố định trên tường bếp (u = trục ngang của tường, +z = mặt hướng vào phòng) ----------
@@ -633,11 +509,9 @@ export function decorateKitchenWall(i, wall) {
     sign.position.set(-1.9, 2.15, -.175); sign.rotation.y = Math.PI;
     wall.add(at(rbox(1.1, .35, .06, .02, onWall('#c98a55')), -1.9, 2.15, -.14), sign,
       ...[-.4, .4].map(dx => at(box(.04, .12, .04, onWall('#9a6a45')), -1.9 + dx, 2.4, -.12)));
-    const win = 1.3;
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(.7, .8), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true, userData: { nightDim: true, wallKeep: true } }));
-    glass.position.set(win, 1.85, -.175); glass.rotation.y = Math.PI;
-    wall.add(at(box(.9, 1.0, .06, onWall('#fff4e0')), win, 1.85, -.13), glass,
-      ...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.13)),
+    // Cửa sổ thật (khoét lỗ: deco-room.mjs windows, KITCHEN_FRONT_WINDOW_U): ở đây chỉ thêm cánh cửa chớp hai bên + hộp hoa dưới bậu.
+    const win = KITCHEN_FRONT_WINDOW_U;
+    wall.add(...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.14)),
       at(rbox(.9, .14, .2, .04, onWall('#c98a55')), win, 1.3, -.2),
       ...[-.3, -.1, .1, .3].flatMap((dx, k) => [at(ball(.06, onWall(['#ff8fb8', '#ffd23f', '#fffaf0', '#ff6b4a'][k])), win + dx, 1.42, -.2), at(ball(.04, onWall('#5fae46')), win + dx + .03, 1.36, -.26)]));
     const lantern = u => [at(box(.03, .03, .2, onWall('#3a3f4a')), u, 2.5, -.2), at(cyl(.07, .07, .16, mat('#ffe9a8', { transparent: true, emissive: '#ffcf6a', emissiveIntensity: .7 }), 12), u, 2.32, -.3),
@@ -653,9 +527,24 @@ export function decorateKitchenWall(i, wall) {
     });
     wall.add(at(cyl(.08, .06, .13, onWall('#e98b5a'), 14), u + .3, shelfY + .09, .24), at(ball(.09, onWall('#6fbf4a')), u + .3, shelfY + .2, .24));
     for (let k = 0; k < 6; k++) wall.add(at(ball(.035, onWall(k % 2 ? '#6fbf4a' : '#5fae46')), u + .4 + Math.sin(k) * .02, shelfY - .06 - k * .08, .3));
-    wall.add(at(box(.9, .06, .04, onWall('#c98a55')), 1.3, 1.75, .15), ...[-.3, 0, .3].map(dx => at(ball(.025, onWall('#e8617f')), 1.3 + dx, 1.7, .2)));
-    wall.add(at(rbox(.34, .5, .012, .005, onWall('#e8617f')), 1.0, 1.4, .2), at(box(.34, .06, .016, onWall('#fffaf0')), 1.0, 1.52, .2),
-      at(rbox(.24, .36, .012, .005, onWall('#8fc9f2')), 1.55, 1.48, .2), at(box(.24, .05, .016, onWall('#fffaf0')), 1.55, 1.58, .2));
+    // Giá móc tạp dề: thanh gỗ có 3 móc, hai cái tạp dề treo bằng dây cổ (yếm + thân + dây buộc eo + túi). Đặt giữa cửa sổ thật
+    // (KITCHEN_FRONT_WINDOW_U 1.3, rộng .7) và tranh ở u 3.1 — trước đây giá nằm đè lên cửa sổ, tạp dề che kính.
+    const ua = 2.3, hookY = 1.8;
+    wall.add(at(rbox(.9, .07, .05, .02, onWall('#c98a55')), ua, hookY, .14));
+    for (const dx of [-.3, 0, .3]) wall.add(at(cyl(.012, .012, .07, onWall('#9a6a45'), 6), ua + dx, hookY - .01, .2).rotateX(Math.PI / 2), at(ball(.022, onWall('#e8617f')), ua + dx, hookY - .01, .235));
+    const apron = (x, color, accent, scale) => {
+      const a = group(), s = scale;
+      // dây cổ: hai sợi xiên từ móc xuống hai mép yếm
+      for (const side of [-1, 1]) { const strap = at(box(.012 * s, .2 * s, .008, onWall(accent)), side * .045 * s, -.09 * s, 0); strap.rotation.z = side * .38; a.add(strap); }
+      a.add(at(rbox(.2 * s, .17 * s, .014, .006, onWall(color)), 0, -.27 * s, 0),
+        at(rbox(.34 * s, .36 * s, .014, .006, onWall(color)), 0, -.53 * s, 0),
+        at(box(.36 * s, .035 * s, .02, onWall(accent)), 0, -.36 * s, .004),
+        at(rbox(.14 * s, .1 * s, .01, .004, onWall(accent)), .05 * s, -.55 * s, .012),
+        ...[-1, 1].map(side => at(box(.02 * s, .14 * s, .01, onWall(accent)), side * .19 * s, -.42 * s, .006).rotateZ(side * .25)));
+      a.position.set(x, hookY - .03, .22);
+      return a;
+    };
+    wall.add(apron(ua - .3, '#e8617f', '#fffaf0', 1), apron(ua + .3, '#8fc9f2', '#fffaf0', .82));
     wall.add(wallFrame(.6, .44, '#e0b36a', '#c9e8b0', -.3, 1.9), wallFrame(.4, .5, '#fff4e0', '#ffd9c4', 3.1, 1.85), wallFrame(.36, .36, '#c98a55', '#bfe6ff', -3.2, 2.0));
   }
   if (i === 2) {
@@ -688,3 +577,56 @@ export function kitchenDecor() {
   bin.position.set(-3.6, 0, 3.5);
   return mergeStatic(group(doormat, runner, bin));
 }
+
+// ---------- Món thêm sau (bakerack): mỗi chỗ chỉ có món gốc ----------
+
+Object.assign(KITCHEN_BUILD, {
+  // ===== Kệ bánh (tường trái, cạnh cửa sang phòng khách): rộng .94, sâu .46, nóc cao ~1.32 — mèo nhảy lên nóc (seat) =====
+  // Gốc: kệ bốn tầng khung xanh dương, mặt kệ vàng, nóc cam: giỏ trái cây + nồi đỏ tầng dưới, bánh mì + lọ tầng giữa,
+  // chồng đĩa + cốc tầng trên, chậu rau thơm trên nóc.
+  bakerack() {
+    const post = '#3b8fe0', shelf = '#ffd66b';
+    const loaf = (x, y, color) => squash(at(ball(.09, color), x, y, 0), 1.5, .65, 1);
+    const fruit = [[-.29, '#e8463a'], [-.2, '#ffa53a'], [-.11, '#7fc45a'], [-.24, '#ffd23f'], [-.15, '#e8463a']];
+    const rack = group(...[[-.43, -.18], [.43, -.18], [-.43, .18], [.43, .18]].flatMap(([x, z]) => [at(cyl(.022, .022, 1.3, post, 10), x, .65, z), at(ball(.03, '#e8617f'), x, .03, z)]),
+      ...[.12, .5, .9].map(y => at(rbox(.92, .035, .42, .015, shelf), 0, y, 0)), at(rbox(.96, .04, .46, .02, '#ff6b4a'), 0, 1.3, 0),
+      ...[-1, 1].map(s => at(ball(.03, '#e8617f'), s * .45, 1.35, .2)),
+      at(cyl(.17, .13, .12, '#e0a050'), -.2, .2, 0), at(ring(.17, .012, '#c98a55'), -.2, .26, 0).rotateX(Math.PI / 2),
+      ...fruit.map(([x, color], k) => at(ball(.05, color), x, k < 3 ? .28 : .32, k < 3 ? -.03 : .04)),
+      at(cyl(.13, .12, .14, '#e8617f'), .22, .21, 0), at(cyl(.135, .135, .025, '#e8617f'), .22, .29, 0), at(ball(.025, '#fffaf0'), .22, .315, 0),
+      loaf(-.27, .57, '#e0a050'), loaf(-.02, .57, '#d08a40'), ...jar('#ffd66b', '#e8617f', .22, .5175), ...jar('#bfe3a0', '#3b8fe0', .36, .5175, 0, .05, .16),
+      ...[0, 1, 2].map(k => at(cyl(.13, .12, .02, ['#fffaf0', '#8fc9f2', '#fffaf0'][k], 20), -.2, .93 + k * .025, 0)),
+      ...[[.12, '#3b8fe0'], [.27, '#7fc45a']].map(([x, color]) => at(cyl(.045, .04, .09, color, 14), x, .9625, .05)),
+      at(cyl(.08, .065, .12, '#c9693d'), -.3, 1.38, -.05), ...[[-.33, 0], [-.27, .02], [-.3, -.04]].map(([x, dz], k) => at(ball(.05, k % 2 ? '#5fae46' : '#6fbf4a'), x, 1.46 + k * .02, -.05 + dz)));
+    rack.userData.seat = [.15, 1.32, 0];
+    return rack;
+  },
+  // Kệ bánh mì gỗ: ba tầng nghiêng có giỏ mây đựng bánh mì que, bánh tròn, croissant; nóc phẳng cho mèo nằm (seat).
+  'bakerack-bread'() {
+    const wood = '#c98a55', dark = '#9a6a45';
+    const basket = (x, y) => group(at(rbox(.36, .12, .3, .04, '#d9a35a'), x, y + .06, 0), at(box(.37, .02, .31, '#b8803e'), x, y + .1, 0));
+    const baguette = (x, y, z, a) => { const b = squash(at(cyl(.035, .035, .34, '#e0a050', 10), x, y, z), 1, 1, 1); b.rotation.set(0, 0, Math.PI / 2 - a); return b; };
+    const rack = group(...[-1, 1].map(s => at(rbox(.05, 1.3, .42, .02, dark), s * .45, .65, 0)), at(rbox(.96, .04, .46, .02, wood), 0, 1.3, 0),
+      ...[.1, .5, .9].map(y => at(rbox(.86, .035, .4, .015, wood), 0, y, 0)), at(rbox(.86, .9, .02, .01, '#f3d5a8'), 0, .58, -.2),
+      basket(-.22, .12), basket(.22, .12), basket(-.22, .52), basket(.22, .52),
+      baguette(-.26, .32, -.05, .3), baguette(-.18, .33, .05, .25), squash(at(ball(.1, '#d08a40'), .22, .28, 0), 1.3, .7, 1),
+      ...[-.08, .08].map(dx => squash(at(ball(.07, '#e9b464'), -.22 + dx, .67, 0), 1.6, .6, .9)), squash(at(ball(.11, '#c47a30'), .22, .68, 0), 1.2, .75, 1.1),
+      at(cyl(.13, .12, .02, '#fffaf0', 20), -.2, .93, 0), at(cyl(.1, .1, .07, '#ff8fb8', 18), -.2, .975, 0), at(ball(.02, '#e5483a'), -.2, 1.02, 0),
+      at(rbox(.22, .16, .14, .04, '#8fc9f2'), .22, .995, 0), at(rbox(.24, .02, .16, .01, '#fffaf0'), .22, 1.085, 0));
+    rack.userData.seat = [.15, 1.32, 0];
+    return rack;
+  },
+  // Kệ thùng gỗ xếp chồng: ba thùng táo gỗ chồng lên nhau làm kệ, đựng hũ mứt, rổ trứng, chậu thảo mộc; nóc thùng cho mèo nằm.
+  'bakerack-crates'() {
+    const crate = (y, h, color) => group(at(rbox(.92, .04, .42, .015, color), 0, y + .02, 0), ...[-1, 1].map(s => at(rbox(.04, h, .42, .015, color), s * .44, y + h / 2, 0)),
+      at(rbox(.92, h, .03, .012, color), 0, y + h / 2, -.195), ...[.3, .7].map(f => at(box(.92, .05, .02, color), 0, y + h * f, .2)));
+    const rack = group(crate(0, .42, '#c9955e'), crate(.43, .42, '#b9854a'), crate(.86, .42, '#c9955e'), at(rbox(.94, .04, .44, .02, '#9a6a45'), 0, 1.3, 0),
+      ...jar('#ff8fb8', '#e8617f', -.28, .04), ...jar('#ffd66b', '#3b8fe0', -.12, .04, 0, .055, .17),
+      at(rbox(.3, .1, .22, .04, '#e9c58f'), .22, .09, 0), ...[-.08, 0, .08].map(dx => squash(at(ball(.04, '#fff6e6'), .22 + dx, .16, 0), 1, 1.25, 1)),
+      ...[-.25, -.05, .2].map((x, k) => group(at(cyl(.07, .06, .12, '#e98b5a', 12), x, .53, 0), at(ball(.07 + k * .01, k % 2 ? '#5fae46' : '#7fc45a'), x, .65, 0))),
+      at(cyl(.12, .1, .14, '#e0a050'), -.18, 1.0, 0), ...[[-.22, '#e8463a'], [-.14, '#ffa53a'], [-.18, '#7fc45a']].map(([x, c], k) => at(ball(.05, c), x, 1.1 + (k > 1 ? .04 : 0), k > 1 ? .03 : 0)),
+      at(cyl(.08, .065, .12, '#c9693d'), .25, .96, 0), at(ball(.09, '#6fbf4a'), .25, 1.08, 0));
+    rack.userData.seat = [.1, 1.32, 0];
+    return rack;
+  },
+});

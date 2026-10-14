@@ -6,12 +6,16 @@ người chơi mở lại game là nhận số mới, **không cần build / ph�
 ## Cách hoạt động
 
 - Mỗi hằng số trong code khai bằng `remote('TÊN', mặc định)` ↔ một **tham số cùng TÊN** trên Firebase.
-  - [`game/gameplay/economy.mjs`](../game/gameplay/economy.mjs) — nhóm **Economy**: `START_COINS`, `LEVEL_REWARD`, `REWARD_BEYOND`,
+  - [`game/gameplay/economy.mjs`](../game/gameplay/economy.mjs) — nhóm **Economy**: `START_COINS`, `REWARD_BASE`, `REWARD_STEP`, `REWARD_GROWTH`, `REWARD_JITTER`,
     `TUTORIAL_TOP_UP`, `COMEBACK_GIFT_MOVES`, `COIN_PACKS`, `STARTER_PACK`, `BOOSTER_PRICE`, `BOOSTER_START_STOCK`,
     `BOOSTER_UNLOCK_LEVEL`, `BOOSTER_EXTRA_MOVES`, `DECO`
   - [`game/gameplay/tuning.mjs`](../game/gameplay/tuning.mjs) — nhóm **Gameplay tuning**: `BOARD`, `HOLD`, `CAGE`, `TIMING`, `DRAG`,
     `LOW_MOVES`, `CAT_BODY`, `CAT_MOTION`, `ADAPTIVE`
 - Lúc mở game, [`game/app/main.js`](../game/app/main.js) tải config từ Firebase (chờ tối đa 2,5 s) **rồi mới nạp game**.
+  - Không dùng Firebase JS SDK: [`game/app/remote-config.js`](../game/app/remote-config.js) gọi thẳng REST API
+    `firebaseremoteconfig.googleapis.com/v1/projects/<messagingSenderId>/namespaces/firebase:fetch?key=<apiKey>` bằng `fetch`,
+    nên chạy được cả khi mở file HTML trên điện thoại (`file://`, SDK hỏng ở đó).
+  - **Đừng giới hạn API key theo domain (HTTP referrer)** trong Google Cloud: bản `file://` không có domain nên sẽ bị chặn.
   - Tải được: dùng số trên Firebase và lưu lại trong máy.
   - Mạng chậm / mất mạng: dùng bản đã lưu lần trước; chưa từng tải được thì dùng số mặc định trong code.
 - Tham số kiểu JSON (object) chỉ cần chứa phần muốn đổi: vd. `BOOSTER_PRICE` = `{"hammer": 50}` thì `swap`, `moves` giữ mặc định.

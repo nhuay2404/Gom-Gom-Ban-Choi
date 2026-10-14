@@ -58,6 +58,10 @@
   -webkit-text-stroke:calc(3.5 * var(--u)) #2f6f35;paint-order:stroke fill}
 .screen.shop .coin-pack:active{translate:0 calc(2 * var(--u))}
 .screen.shop .soon-note{width:calc(338 * var(--u))}
+/* Gem (placeholder): dùng lại thẻ booster + dòng gói xu, cả khối mờ nhẹ cho biết chưa mở */
+.screen.shop .gem-shop{display:flex;flex-direction:column;gap:calc(8 * var(--u));opacity:.75}
+.screen.shop .gem-row{display:flex;flex-direction:column;gap:calc(8 * var(--u))}
+.screen.shop .gem-shop .coin-pack b{font-size:calc(17 * var(--u))}
 /* ===== Shop → Decoration: kiểu khác của món + tường / sàn khác (mua vào kho, đổi trong Deco) ===== */
 .screen.shop .shop-deco{display:flex;flex-direction:column;gap:calc(8 * var(--u))}
 .shop-deco-title{margin:0;text-align:center;font-family:var(--display);font-size:calc(24 * var(--u));font-weight:800;color:#fff;-webkit-text-stroke:calc(5 * var(--u)) #73392a;paint-order:stroke fill}

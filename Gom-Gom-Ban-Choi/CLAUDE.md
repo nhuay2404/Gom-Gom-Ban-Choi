@@ -2,7 +2,7 @@
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
-`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/garden2-scene.mjs` (phần vườn mở rộng); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
+`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/bathroom-scene.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/garden2-scene.mjs` (phần vườn mở rộng), `game/deco/backyard-scene.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/kinder-scene.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
@@ -160,6 +160,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Đi bộ (`walkTo`): lách vật cản về **phía gần**; giới hạn thời gian tính theo quãng đường (vườn mở rộng dài 16 m);
   chống kẹt: 1.2 s không tiến ≥ .25 m thì lách (`detourSpot`, không xuyên rào) / nhảy qua đồi (`hopOverHill`).
   Thử hành vi mèo ở khu rộng: cho mèo đi giữa hai đầu xa nhất (góc phần mở rộng ↔ phòng khách / phòng ngủ).
+  Kẹt vì con khác (ùn ở cửa / cổng, hai dòng ngược chiều): con kẹt len qua (`squeezeUntil`: bỏ va chạm giữa các con SQUEEZE_TIME giây,
+  rồi tách dần ≤ 1.5 cm mỗi lượt). Đừng chỉ lách sang bên: cửa rộng 1 m không có chỗ lách (lỗi cũ: 10 con ở cổng vườn, 2 con qua được sau 25 s).
 - Test mèo trong trình duyệt: giữ thức bằng `window.dispatchEvent(new PointerEvent('pointerup'))` mỗi 1.5 s (AFK 5 s
   thì mèo đi ngủ); PointerEvent tự tạo không nổi bọt nên phải phát ở `window`.
 - Món có phần đung đưa / xoay mà mèo ngồi lên: `userData.ride` + lò xo kéo về góc nghỉ 0.
@@ -237,7 +239,11 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 **Dữ liệu**
 - Mỗi chỗ đặt (slot) có `PLACES` + `OBSTACLE_RADIUS`; id món là duy nhất giữa mọi khu (test kiểm).
-- Thêm khu mới: `loadDeco` phải tự thêm khu mặc định cho save cũ (test kiểm). Phòng trong nhà mặc định sàn Oak miễn phí.
+- Kiểu khác của từng chỗ đặt: bảng `VARIANTS` trong deco-data.mjs (KHÔNG chia theo theme màu: đã thử Gỗ / Hồng / Hiện đại và người chơi bỏ, đừng thêm lại).
+  Bỏ món khỏi danh mục: ghi id vào `RETIRED` (save cũ được hoàn xu đúng giá, chỗ đó quay về món gốc).
+- Mở khu (AREA_UNLOCK) CHỈ qua `unlockArea` (đủ màn + trả xu). `loadDeco` không bao giờ tự mở khu theo số màn đã thắng (lỗi cũ: lần đầu
+  mở Deco ở màn 20+ thì Living room mở miễn phí); save thiếu / hỏng `unlocked` = chưa mở khu nào (test "khu KHÔNG BAO GIỜ tự mở").
+- Thêm khu mới: `loadDeco` phải tự thêm khu mặc định cho save cũ (test kiểm). Phòng trong nhà mặc định sàn Oak miễn phí (riêng phòng tắm: gạch nhà tắm White tiles).
 - Khu mới cần: ZONE_OFFSET + LINKS (cửa / cổng nối, mèo tự tìm đường qua nhiều khu), PLACES + OBSTACLE_RADIUS,
   ZONES (mốc mở), nút trong thanh chọn khu, đồ chơi của mèo (ZONE_TOYS) và hành vi cho từng món. QC tự lấy lối cửa từ LINKS.
 - **Mở rộng một khu** (vd. vườn mở rộng khi thắng màn 10, `GARDEN_EXPANSION`): KHÔNG tạo khu Deco mới. Vẫn một khu, chung
@@ -267,7 +273,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Mặc định TẮT để playtest core đo riêng RR1 / playtime, sau đó A/B có LiveOps.
 
 ## Khác
-- UI Studio (`npm run studio`, mở `?studio`; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
+- UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
   hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
   định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.

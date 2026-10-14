@@ -92,7 +92,7 @@
 .screen.deco,.screen.deco:not(.home){padding:0;gap:0;overflow:hidden}
 .screen.deco>.room.deco-view,.screen.deco>.room.deco-view.is-3d{position:absolute;inset:0;z-index:0;width:auto;height:auto;max-height:none;margin:0;border:0;
   -webkit-mask-image:none;mask-image:none}
-.screen.deco>.wallet-hud{position:absolute;z-index:6;top:calc(18 * var(--u) + env(safe-area-inset-top));left:50%;translate:-50% 0}
+.screen.deco>.wallet-hud{position:absolute;z-index:6;top:calc(18 * var(--u) + env(safe-area-inset-top));left:env(safe-area-inset-left);margin-left:0;translate:none}
 /* Nút mèo: cột trái, cùng toạ độ cột nút ở Home */
 .deco-side{position:absolute;z-index:6;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(17 * var(--u) + env(safe-area-inset-left));width:auto;
   display:flex;flex-direction:column;gap:calc(8 * var(--u))}
@@ -122,10 +122,11 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-dock{position:absolute;z-index:6;left:0;right:0;bottom:calc(86 * var(--u) + env(safe-area-inset-bottom));width:auto;display:flex;flex-direction:column;align-items:center;gap:6px;
   pointer-events:none}
 .deco-dock>*{pointer-events:auto}
-.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px)}
+.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px);scroll-snap-type:x proximity;scroll-behavior:smooth}
+.deco-dock .zone-switch button{scroll-snap-align:start} /* tối đa 3 khu (menu-controller.js fitZoneSwitch), còn lại vuốt ngang */
 .deco-dock .zone-switch button{min-height:36px;padding:0 12px}
 .zone-switch button small{margin-left:3px;font-size:11px;opacity:.8}
-.deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:var(--frame-w);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+.deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:none; /* hàng thẻ món dài hết bề ngang màn hình (không cắt theo khung UI) */overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
   padding:8px 12px 6px;scrollbar-width:none;touch-action:pan-x}
 .deco-cards::-webkit-scrollbar{display:none}
 .deco-card{position:relative;flex:none;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;width:92px;min-height:0;padding:0 0 7px;
@@ -226,3 +227,46 @@ body.deco-locked .hub-settings{opacity:.5}
 /* Onboarding trước phần Decoration (tutorial Garden): nút trang trí vẫn hiện nhưng mờ, xám, không bấm được */
 body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"],.deco-help){opacity:.45;filter:grayscale(.7);pointer-events:none}
 body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
+/* ===== Mở khu bằng xu: bong bóng giá trên mảnh đất mờ của khu kế tiếp (menu-controller.js renderAreaNext) ===== */
+/* Chấm than vàng trên mảnh đất mờ của khu kế tiếp (room3d.setGhost); chạm mở bảng điều kiện. Vị trí do menu-controller.js placeAreaMarker đặt. */
+.screen>.area-next{width:auto}
+/* Chỉ có dấu "!" (không nền tròn): chữ vàng viền nâu + quầng trắng để đọc được trên cỏ / sàn. */
+/* Bong bóng giá: viên kem viền nâu + đuôi nhọn chỉ xuống mảnh đất; đủ điều kiện thì viền xanh. translate -50%/-100% để đuôi chạm điểm neo. */
+.area-next{position:absolute;left:0;top:0;z-index:6;will-change:transform;padding:0;border:0;background:none;color:var(--ink)}
+.area-next[hidden]{display:none}
+.area-next b{position:relative;display:flex;flex-direction:column;align-items:center;translate:-50% calc(-100% - 10px);padding:5px 12px;border:3px solid #73392a;
+  border-radius:16px;background:#fff8e4;box-shadow:0 3px 0 #73392a66;font:800 17px/1.1 var(--display, inherit);white-space:nowrap}
+.area-next b::after{content:'';position:absolute;left:50%;bottom:-9px;width:12px;height:12px;margin-left:-6px;rotate:45deg;background:inherit;
+  border:inherit;border-width:0 3px 3px 0}
+.area-next b .ico-coin{width:18px;height:18px;margin-right:4px;vertical-align:-3px}
+.area-next small{font-size:11px;color:#a0705a}
+.area-next[data-state=ready] b{border-color:#2f7d3a;background:#e9f9df}
+/* Thiếu xu: nháy đỏ + rung ngang (menu-controller.js thêm .deny) */
+.area-next.deny b{animation:area-deny .5s ease-out}
+@keyframes area-deny{0%,100%{box-shadow:0 3px 0 #73392a66,0 0 0 0 #ff3b3b00}30%{border-color:#d93030;background:#ffe1dc;box-shadow:0 3px 0 #73392a66,0 0 0 10px #ff3b3b55;
+  transform:translateX(-4px)}55%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+#deco.ui-locked>.area-next{display:none}
+@keyframes area-bob{to{translate:0 -6px}}
+@media(prefers-reduced-motion:no-preference){.area-next{animation:area-bob .8s ease-in-out infinite alternate}.area-next[data-state=ready]{animation-duration:.45s}}
+
+/* ===== Xu tự sinh (idle): bong bóng xu trên đầu mèo (index.html #idle-coin, menu-controller.js placeIdleCoin) ===== */
+/* .screen>* đặt width:min(420px,100%): bong bóng phải tự co theo nội dung */
+.screen>.idle-coin{width:auto}
+.idle-coin{position:absolute;left:0;top:0;z-index:4;will-change:transform;display:flex;align-items:center;gap:5px;min-height:40px;padding:4px 14px 4px 6px;
+  border-radius:999px;border:2px solid #fff;background:#fff;color:#7a4a12;font-weight:900;font-size:17px;box-shadow:0 3px 0 #73392a40;margin:-48px 0 0;translate:-50% 0}
+.idle-coin[hidden]{display:none}
+.idle-coin .ico-coin{width:32px;height:32px;box-shadow:none;background:url('../shop/img/coin.png') center/contain no-repeat}
+.idle-coin::after{content:"";position:absolute;left:50%;bottom:-7px;translate:-50% 0;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+.idle-coin.full{background:#fff;border-color:#ffb02e}
+/* Đốm sáng lấp lánh quanh bong bóng (6 ngôi sao bốn cánh nằm rìa bong bóng, mỗi cái một cỡ / nhịp / độ trễ); bong bóng đầy xu thì lấp lánh nhanh hơn */
+.idle-spark{position:absolute;width:13px;height:13px;pointer-events:none;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+  filter:drop-shadow(0 0 3px #fff3a0) drop-shadow(0 0 6px #ffd84a);opacity:0}
+.idle-spark.s1{left:-8px;top:-6px}.idle-spark.s2{left:30%;top:-12px;width:10px;height:10px}.idle-spark.s3{right:-9px;top:-3px;width:16px;height:16px}
+.idle-spark.s4{right:6px;bottom:-10px;width:11px;height:11px}.idle-spark.s5{left:-12px;bottom:2px;width:10px;height:10px}.idle-spark.s6{left:46%;top:-16px;width:8px;height:8px}
+@media(prefers-reduced-motion:no-preference){
+  .idle-spark{animation:idle-twinkle 1.4s ease-in-out infinite}.idle-coin.full .idle-spark{animation-duration:.8s}
+  .idle-spark.s2{animation-delay:.25s}.idle-spark.s3{animation-delay:.55s}.idle-spark.s4{animation-delay:.8s}.idle-spark.s5{animation-delay:1.05s}.idle-spark.s6{animation-delay:.4s}}
+@media(prefers-reduced-motion:reduce){.idle-spark{opacity:.9}}
+@keyframes idle-twinkle{0%,100%{opacity:0;scale:.2;rotate:0deg}45%{opacity:1;scale:1.15;rotate:25deg}70%{opacity:.8;scale:.8;rotate:45deg}}
+#deco.ui-locked>.idle-coin{display:none}
+.deco-dock .zone-switch.dragging{cursor:grabbing;user-select:none}

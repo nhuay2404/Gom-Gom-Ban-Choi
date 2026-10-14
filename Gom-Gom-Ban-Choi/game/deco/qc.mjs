@@ -21,7 +21,7 @@
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';
-import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds } from './room-layout.mjs';
+import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds, backyardBounds, kinderBounds } from './room-layout.mjs';
 import { geometryNotes, withoutMerging } from './mesh-detail.mjs';
 
 const DECAL_GAP = .004;          // tấm phẳng phải cách mặt khối phía sau ít nhất 4 mm
@@ -30,6 +30,10 @@ const OUTDOOR = new Set(['garden']);
 // Khung đặt đồ (toạ độ khu): trong nhà là tường; vườn là mặt trong rào — đồ phần mở rộng theo khung đã mở rộng,
 // đồ vườn gốc theo khung vuông (rào bên phải vẫn ở x = ROOM_HALF khi chưa mở rộng).
 const innerBounds = (zone, expanded) => {
+  // Sân sau: cạnh trước / trái là tường nhà (mặt ngoài tường), cạnh sau / phải là rào.
+  if (zone === 'backyard') { const b = backyardBounds(); return { x0: b.x0, x1: b.x1 - FENCE_GAP, z0: b.z0 + FENCE_GAP, z1: b.z1 }; }
+  // Trường mẫu giáo: rào bao cả bốn cạnh.
+  if (zone === 'kinder') { const b = kinderBounds(); return { x0: b.x0 + FENCE_GAP, x1: b.x1 - FENCE_GAP, z0: b.z0 + FENCE_GAP, z1: b.z1 - FENCE_GAP }; }
   if (!OUTDOOR.has(zone)) return { x0: -H, x1: H, z0: -H, z1: H };
   const b = gardenBounds(expanded);
   return { x0: b.x0 + FENCE_GAP, x1: b.x1 - FENCE_GAP, z0: b.z0 + FENCE_GAP, z1: b.z1 - FENCE_GAP };
@@ -303,7 +307,8 @@ export function runModelQC(ctx) {
       decalIssues(decor).forEach(m => add('error', zone, `đồ trang trí sàn: ${m}`));
       ctx.wallDefs.forEach(({ pos, rot }, i) => {
         const g = new THREE.Group(); spec.decorate(i, g);
-        if (i === 0 && spec.sill !== false) { const sill = new THREE.Mesh(new THREE.BoxGeometry(1.34, .1, .12)); sill.position.set(spec.windowU, .88, .16); g.add(sill); } // gờ cửa sổ
+        // bậu trong của cửa sổ (deco-room.mjs windows: mặc định rộng 1.2, đáy lỗ .95)
+        for (const w of (spec.windows || []).filter(w => w.wall === i && w.sill !== false)) { const width = w.w ?? 1.2, y0 = w.y0 ?? .95; const sill = new THREE.Mesh(new THREE.BoxGeometry(width + .28, .08, .14)); sill.position.set(w.u, y0 - .06, .17); g.add(sill); }
         g.position.set(pos[0], 0, pos[1]); g.rotation.y = rot;
         const list = parts(g);
         list.forEach(p => fixed.push({ zone, name: `đồ treo tường ${i} #${p.mesh.material.color?.getHexString?.() ?? ''}`, b: p.b }));

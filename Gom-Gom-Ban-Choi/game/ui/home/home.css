@@ -42,7 +42,7 @@
 .round-button.small{width:40px;height:40px;font-size:18px}
 .map>.fh-layer{position:absolute;z-index:3;top:0;bottom:0;left:50%;translate:-50% 0;
   width:var(--frame-w);max-width:none;pointer-events:none}
-.map>.fh-layer>.wallet-hud{left:0;top:calc(18 * var(--u) + env(safe-area-inset-top));width:calc(393 * var(--u));height:calc(50 * var(--u));background:none}
+.map>.fh-layer>.wallet-hud{left:calc(-1 * var(--gutter) + env(safe-area-inset-left));top:calc(18 * var(--u) + env(safe-area-inset-top));width:calc(393 * var(--u));height:calc(50 * var(--u));background:none}
 .fh-layer>*{position:absolute;pointer-events:auto;padding:0;border:0;background:center/100% 100% no-repeat}
 .fh-layer button:active{translate:0 calc(2 * var(--u))}
 /* Hàng ví (pill có số in sẵn đã xoá; game tự viết số lên đúng chỗ) */
@@ -52,7 +52,6 @@
 .fh-coins b{left:calc(56 * var(--u));width:calc(56 * var(--u))}
 .fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./img/pill-gems.png')}
 .fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
-.fh-energy{left:calc(243 * var(--u));top:calc(58 * var(--u));width:calc(145 * var(--u));height:calc(48 * var(--u));background-image:url('./img/pill-energy.png')}
 /* Cột trái: Daily, Starter Pack */
 .fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
 .fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-starter.png')}
@@ -66,6 +65,11 @@
 .fh-feedback svg{width:calc(25 * var(--u));height:calc(25 * var(--u));fill:#ff8fb0;stroke:#6b3329;stroke-width:1.8;stroke-linejoin:round;color:#fff}
 .fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
 .fh-feedback:active{translate:0 calc(2 * var(--u))}
+/* Nút đổi bộ quân (mèo / chó): cùng kiểu nút Feedback, ngay dưới; ảnh là quân mèo / chó thu nhỏ */
+.fh-skin{top:calc(317 * var(--u));padding:0;font:inherit;cursor:pointer}
+.fh-skin[hidden]{display:none}
+.fh-skin-art{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u))}
+.fh-skin-art svg{width:100%;height:100%;overflow:visible}
 /* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
 .fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
 .fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}

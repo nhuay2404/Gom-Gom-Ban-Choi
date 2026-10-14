@@ -2,11 +2,13 @@
 // và chạy bot (tools/bot.mjs, trong Web Worker) để đo tỉ lệ thắng của mọi biến thể. Dùng đúng code game, không chép logic.
 // Màn đã sửa lưu ở localStorage của trình duyệt; muốn đưa vào game thì copy khối "Xuất" dán vào game/gameplay/levels.mjs.
 import { LEVELS, LETTERS, parseBoard, parseCard, boardSize } from '../../game/gameplay/levels.mjs';
+import { play, PACES } from '../bot.mjs';
 import { levelElements, elementCount, difficultyOf, variantFor, planLevel, SHIFT_MIN, SHIFT_MAX, layoutEase, isAdaptive, ELEMENTS, MAX_ELEMENTS } from '../../game/gameplay/adaptive.mjs';
 import { clearMatches } from '../../game/gameplay/board-rules.mjs';
 import { MATCH_SIZE } from '../../game/gameplay/scoring.mjs';
 import { holdUnlocked, ADAPTIVE } from '../../game/gameplay/tuning.mjs';
 import { playableCells } from '../../game/gameplay/board-shapes.mjs';
+import { catMarkup } from '../../game/ui/cat-art.mjs';
 
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -16,6 +18,9 @@ const baseline = await fetch('../baseline.json').then(r => r.json()).catch(() =>
 const baselineWin = n => baseline.levels.find(row => row.level === n)?.winRate;
 
 const COLORS = { O: '#f3a35a', G: '#9aa0a6', W: '#ffffff', K: '#33302c', S: '#ead9bd', T: '#c98d4f' };
+// Ảnh mèo thật của game (cat-art.mjs) cho ô mèo trên bàn + cọ. Đường dẫn ảnh trong art tính từ game/, editor ở tools/level-editor/.
+const CAT_ART = Object.fromEntries(Object.entries(catMarkup).map(([group, svg]) => [group, svg.replaceAll('href="ui/', 'href="../../game/ui/')]));
+const catArt = letter => CAT_ART[LETTERS[letter]] ?? letter;
 // '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn.
 const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS), '~', '≈'];
 const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ' };
@@ -80,7 +85,7 @@ function update(change) {
 // ---------- Danh sách màn ----------
 function renderList() {
   $('levelList').innerHTML = LEVELS.map((l, i) => `<button data-i="${i}" class="${i === current ? 'on' : ''} ${edits[i] ? 'dirty' : ''}">
-    <span class="n">${i + 1}</span><span>${l.name}</span><span class="tier ${l.tier || 'normal'}">${l.tier || 'normal'}</span></button>`).join('');
+    <span class="n">Màn ${i + 1}</span><span class="tier ${l.tier || 'normal'}">${l.tier || 'normal'}</span></button>`).join('');
 }
 $('levelList').addEventListener('click', event => {
   const button = event.target.closest('button[data-i]');
@@ -92,9 +97,8 @@ $('levelList').addEventListener('click', event => {
 
 // ---------- Form ----------
 const FIELDS = [
-  { key: 'name', label: 'Tên', cls: 'wide' },
   { key: 'tier', label: 'Tier', type: 'select', options: ['normal', 'hard', 'chill', 'boss'] },
-  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage'] },
+  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage', 'grass'] },
   { key: 'moves', label: 'Lượt', type: 'number' },
   { key: 'target', label: 'Mục tiêu điểm', type: 'number' },
   { key: 'cats', label: 'Giống mèo (OGWKST)' },
@@ -147,8 +151,8 @@ function boardHtml(rows, interactive = false, grass = null) {
     const up = ch.toUpperCase(), cat = LETTERS[up];
     const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : '';
     const grassy = grassCells[index] === '~';
-    const style = `${cat ? `background:${COLORS[up]};color:${up === 'K' ? '#fff' : '#333'};` : ''}${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
-    return `<div class="cell ${cls} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}">${ch === '.' || ch === '#' ? '' : up}</div>`;
+    const style = `${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
+    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
   }).join('');
   return `<div class="board" style="grid-template-columns:repeat(${W},auto)">${cells}</div>`;
 }
@@ -157,8 +161,8 @@ function renderBoard() {
   $('bw').value = W; $('bh').value = H;
   $('boardInfo').textContent = `${W}×${H} · ${playableCells(rows)} ô chơi`;
   $('board').innerHTML = boardHtml(rows, true, level().grass);
-  $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''}"
-    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : b}</button>`).join('');
+  $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''} ${LETTERS[b] ? 'cat-brush' : ''}"
+    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
 }
 // Lớp cỏ: chỉ nằm dưới ô trống / mèo; không còn ô cỏ nào thì bỏ hẳn trường grass.
 function withGrass(board, grass) {
@@ -315,7 +319,6 @@ function tierGoal(tier, index) {
 let tuneId = 0;
 function tuneToTier() {
   const index = current, l = level(), tier = l.tier || 'normal', goal = tierGoal(tier, index);
-  if (l.grass) { $('tuneStatus').textContent = 'Màn có cỏ: mục tiêu là dọn hết cỏ (không theo điểm), nên không tự cân mục tiêu điểm. Chỉnh số lượt / số ô cỏ rồi chạy bot.'; return; }
   const id = ++tuneId, before = l.target;
   $('btnTune').disabled = true;
   $('tuneStatus').textContent = `Đang cân mục tiêu điểm cho tier ${tier} (bot giỏi thắng ~${pct(goal)})…`;
@@ -366,14 +369,14 @@ function renderBot() {
 }
 
 // ---------- Curve độ khó (EV) ----------
-// Profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi (giây mỗi lượt). "Cơ bản" là curve chính,
+// Profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi `pace` (bot.mjs PACES / turnShape). "Cơ bản" là curve chính,
 // các profile khác vẽ chồng lên như biến thiên quanh curve cơ bản.
 const EV_PROFILES = [
-  { id: 'base', label: 'Cơ bản', noise: 30, hold: true, spm: 5, color: '#e07a2e', width: 3 },
-  { id: 'pro', label: 'Cao thủ', noise: 1, hold: true, spm: 3, color: '#3a7bd5', width: 1.5 },
-  { id: 'thinker', label: 'Suy nghĩ kỹ', noise: 10, hold: true, spm: 9, color: '#8e5bd1', width: 1.5 },
-  { id: 'weak', label: 'Người yếu', noise: 90, hold: true, spm: 7, color: '#c8443a', width: 1.5 },
-  { id: 'new', label: 'Người mới (không Hold)', noise: 60, hold: false, spm: 6, color: '#3a9a5b', width: 1.5 },
+  { id: 'base', label: 'Cơ bản', noise: 30, hold: true, pace: PACES.mid, color: '#e07a2e', width: 3 },
+  { id: 'pro', label: 'Cao thủ', noise: 1, hold: true, pace: PACES.good, color: '#3a7bd5', width: 1.5 },
+  { id: 'thinker', label: 'Suy nghĩ kỹ', noise: 10, hold: true, pace: { ...PACES.mid, look: 1.2, think: 1.4 }, color: '#8e5bd1', width: 1.5 },
+  { id: 'weak', label: 'Người yếu', noise: 90, hold: true, pace: PACES.weak, color: '#c8443a', width: 1.5 },
+  { id: 'new', label: 'Người mới (không Hold)', noise: 60, hold: false, pace: { ...PACES.weak, look: .9, think: .7 }, color: '#3a9a5b', width: 1.5 },
 ];
 // Trọng số các thành phần EV (tổng = 1) và mốc chuẩn hoá (giá trị ứng với 100%).
 const EV_WEIGHTS = { time: 0.35, pressure: 0.2, goal: 0.2, label: 0.15, cats: 0.1 };
@@ -383,16 +386,16 @@ let curveCache = {};
 try { curveCache = JSON.parse(localStorage.getItem(CURVE_STORE)) ?? {}; } catch { curveCache = {}; }
 const shown = new Set(EV_PROFILES.map(p => p.id));
 const hashText = text => [...text].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7).toString(36);
-const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${runs}`;
-const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
+const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${JSON.stringify(p.pace)}:${runs}`;
 const grassOf = l => (l.grass ? [...l.grass.join('')].filter(ch => ch === '~').length : 0);
+const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
 const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).length;
 
 // EV của một màn với một profile (stats = kết quả bot). Trả về { ev, parts (0..1 mỗi thành phần), raw }.
 function difficultyEV(l, stats, p) {
   const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
-  const timeMin = attempts * stats.movesUsed * p.spm / 60;
-  const goalMatches = (l.grass ? grassOf(l) / 3 : l.target / 30) + cagesOf(l);
+  const timeMin = attempts * stats.secAvg / 60;
+  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l);
   const clamp01 = v => Math.max(0, Math.min(1, v));
   const parts = {
     time: clamp01(timeMin / EV_SCALE.timeMin),
@@ -414,7 +417,7 @@ const curveWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type:
 $('btnCurve').onclick = () => {
   const runs = Number($('curveRuns').value), id = ++curveRun;
   // Profile cơ bản trước (curve chính hiện ra sớm), rồi tới các profile khác; bỏ qua cặp (màn, profile) đã có trong bộ đệm.
-  const jobs = EV_PROFILES.flatMap(p => LEVELS.map((level, index) => ({ key: curveKey(index, p, runs), level, index, noise: p.noise, hold: p.hold && holdUnlocked(index), runs })))
+  const jobs = EV_PROFILES.flatMap(p => LEVELS.map((level, index) => ({ key: curveKey(index, p, runs), level, index, noise: p.noise, hold: p.hold && holdUnlocked(index), pace: p.pace, runs })))
     .filter(job => !curveCache[job.key]);
   if (!jobs.length) { $('curveStatus').textContent = 'Đã có đủ trong bộ đệm'; renderCurve(); return; }
   let done = 0;
@@ -462,7 +465,7 @@ function renderCurve() {
     const path = segs.map(points => `<polyline points="${points.join(' ')}" fill="none" stroke="${p.color}" stroke-width="${p.width}" ${p.id === 'base' ? '' : 'stroke-dasharray="5 3" opacity=".75"'}/>`).join('');
     const dots = p.id !== 'base' ? '' : LEVELS.map((l, i) => {
       const e = evAt(i, p);
-      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1}. ${l.name} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
+      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
     }).join('');
     return path + dots;
   }).join('');
@@ -485,7 +488,7 @@ function renderBreakdown() {
   }).join('');
   // Bot không thắng ván nào: EV không đáng tin (số lần thử bị chặn ở 10) và màn có thể đang hỏng.
   const broken = base && !base.raw.winRate ? `<tr><td colspan="9" class="warn">⚠ Profile cơ bản không thắng ván nào ở màn này — EV không đáng tin (số lần thử bị chặn ở 10). Kiểm tra lại màn (bàn, lượt, mục tiêu).</td></tr>` : '';
-  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}: ${level().name}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
+  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
 }
 $('evChart').addEventListener('click', event => { const i = event.target.dataset?.i; if (i !== undefined) { current = Number(i); lastBot = null; renderAll(); } });
 $('curveLegend').addEventListener('change', event => { const id = event.target.dataset.p; if (!id) return; if (event.target.checked) shown.add(id); else shown.delete(id); renderCurve(); });
@@ -523,3 +526,88 @@ function renderStatus() {
   $('status').textContent = `Màn ${current + 1}/${LEVELS.length} · ${Object.keys(edits).length} màn đã sửa chưa lưu vào game`;
 }
 renderAll();
+
+// ---------- Thời gian chơi theo profile (bảng cuối tab Thiết kế màn) ----------
+// 3 profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi `pace` (giây, xem bot.mjs turnSeconds): mỗi lượt =
+// nhìn bàn (look) + nghĩ think × log2(1 + số lựa chọn thật trên bàn) + kéo thả (drag) + xoay (rotate × số lần) + đổi Hold (hold) + chờ anim gom (gom)
+// / đặt (settle). Không còn giây / lượt cố định: nước rõ ràng (có tay hướng dẫn, chỉ 1–2 chỗ gom) nhanh, bàn rộng chưa thấy nước gom thì lâu.
+// Nhịp chuẩn: bot.mjs PACES.
+const PT_PROFILES = [
+  { id: 'weak', label: 'Yếu', noise: 90, hold: true, pace: PACES.weak, note: 'hay bỏ lỡ nước gom, biết dùng Hold (đã học ở màn 11), nhìn chậm, nghĩ lâu khi nhiều lựa chọn' },
+  { id: 'mid', label: 'Trung bình', noise: 30, hold: true, pace: PACES.mid, note: 'thỉnh thoảng bỏ lỡ nước gom, biết dùng Hold' },
+  { id: 'good', label: 'Giỏi', noise: 1, hold: true, lookahead: true, pace: PACES.good, note: 'nhìn trước thẻ Next, chờ ghép cụm to, dùng Hold, thao tác nhanh' },
+];
+// Số lần thua trước khi thắng (kỳ vọng) và thời gian (giây) từ kết quả bot; tỉ lệ thắng tối thiểu 3% để không chia cho 0.
+const playtimeOf = stats => {
+  const p = Math.max(.03, stats.winRate), fails = (1 - p) / p;
+  return { fails, sec: fails * stats.secLoss + stats.secWin };
+};
+// m:ss, từ 1 giờ trở lên thì h:mm:ss
+const mmss = sec => { const t = Math.round(sec), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), ss = String(t % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`; };
+let ptCache = {};
+const ptKey = (i, p, boost, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${!!p.lookahead}:${JSON.stringify(p.pace)}:${boost}:${runs}`;
+function renderPlaytime() {
+  const runs = Number($('ptRuns').value), sum = {};
+  const head = `<tr><th rowspan="2">Màn</th>${PT_PROFILES.map(p => `<th colspan="5" style="text-align:center;border-left:2px solid var(--line)" title="${p.note}">${p.label}<br><span class="muted">${p.note}</span></th>`).join('')}</tr>
+    <tr>${PT_PROFILES.map(() => '<th style="border-left:2px solid var(--line)">Thắng</th><th>Thua TB</th><th>Thời gian</th><th>Có booster<br><span class="muted">thời gian (Δ) · thua</span></th><th>Luỹ kế<br><span class="muted">từ màn 1 · có booster</span></th>').join('')}</tr>`;
+  const rows = LEVELS.map((level, i) => `<tr${i === current ? ' id="ptCurrent" class="pt-current"' : ''}><td>${i + 1} <span class="tier ${level.tier || 'normal'}">${level.tier || 'normal'}</span></td>${PT_PROFILES.map(p => {
+    const a = ptCache[ptKey(i, p, false, runs)], b = ptCache[ptKey(i, p, true, runs)];
+    if (!a) return '<td style="border-left:2px solid var(--line)">…</td><td></td><td></td><td></td><td></td>';
+    const t = playtimeOf(a), tb = b && playtimeOf(b), s = (sum[p.id] ??= { t: 0, tb: 0 });
+    s.t += t.sec; if (tb) s.tb += tb.sec;
+    const delta = tb ? Math.round((tb.sec - t.sec) / t.sec * 100) : null;
+    return `<td style="border-left:2px solid var(--line)">${Math.round(a.winRate * 100)}%</td><td>${t.fails.toFixed(1)}</td><td><b>${mmss(t.sec)}</b></td>
+      <td>${tb ? `${mmss(tb.sec)} <span class="${delta < 0 ? 'ok' : 'warn'}">(${delta > 0 ? '+' : ''}${delta}%)</span> · ${tb.fails.toFixed(1)}` : '…'}</td>
+      <td>${mmss(s.t)}${tb ? ` · <span class="muted">${mmss(s.tb)}</span>` : ''}</td>`;
+  }).join('')}</tr>`).join('');
+  const total = `<tr><th>Tổng</th>${PT_PROFILES.map(p => { const s = sum[p.id]; return s ? `<th style="border-left:2px solid var(--line)"></th><th></th><th>${mmss(s.t)}</th><th>${s.tb ? `${mmss(s.tb)} (${Math.round((s.tb - s.t) / s.t * 100)}%)` : ''}</th><th></th>` : '<th style="border-left:2px solid var(--line)"></th><th></th><th></th><th></th><th></th>'; }).join('')}</tr>`;
+  $('playtimeTable').innerHTML = head + rows + total;
+}
+// Chạy bot cho các màn `indices` (3 profile × có / không booster), bỏ qua phần đã có trong bộ đệm.
+// Mỗi luồng một worker riêng: chạy cả bảng (nút Chạy bảng) và chạy màn vừa chọn không cắt ngang nhau.
+function ptSimulate(worker, indices, { onProgress, onDone }) {
+  const runs = Number($('ptRuns').value), id = worker.runId = (worker.runId || 0) + 1; // id theo từng worker: lượt mới của worker này bỏ lượt cũ
+  const jobs = PT_PROFILES.flatMap(p => [false, true].flatMap(boost => indices.map(index => ({ key: ptKey(index, p, boost, runs), level: LEVELS[index], index, noise: p.noise, hold: p.hold && holdUnlocked(index), lookahead: !!p.lookahead, pace: p.pace, runs, boost }))))
+    .filter(job => !ptCache[job.key]);
+  if (!jobs.length) return onDone();
+  let done = 0;
+  worker.onmessage = ({ data }) => {
+    if (data.id !== id) return;
+    if (data.done) return onDone();
+    ptCache[data.key] = data.stats;
+    onProgress?.(++done, jobs.length);
+  };
+  worker.postMessage({ id, playtime: jobs });
+}
+const ptWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+const ptOneWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+$('btnPlaytime').onclick = () => {
+  $('btnPlaytime').disabled = true;
+  ptSimulate(ptWorker, LEVELS.map((_, i) => i), {
+    onProgress: (done, total) => { if (done % 10 === 0) { $('ptStatus').textContent = `${done}/${total}`; renderPlaytime(); } },
+    onDone: () => { $('btnPlaytime').disabled = false; $('ptStatus').textContent = 'Xong'; renderPlaytime(); },
+  });
+};
+// Chọn màn (danh sách bên trái / biểu đồ): giả lập ngay màn đó cho cả 3 profile rồi cuộn bảng tới hàng của màn.
+function ptSelectLevel() {
+  const index = current;
+  $('ptStatus').textContent = `Đang giả lập màn ${index + 1}…`;
+  renderPlaytime(); scrollToCurrent();
+  ptSimulate(ptOneWorker, [index], { onDone: () => { if (index === current) $('ptStatus').textContent = `Màn ${index + 1}: xong`; renderPlaytime(); scrollToCurrent(); } });
+}
+function scrollToCurrent() {
+  const row = $('ptCurrent'), box = $('playtimeTable').parentElement;
+  if (row) box.scrollTop = row.offsetTop - box.clientHeight / 2;
+}
+$('levelList').addEventListener('click', event => { if (event.target.closest('button[data-i]')) ptSelectLevel(); });
+$('evChart').addEventListener('click', event => { if (event.target.dataset?.i !== undefined) ptSelectLevel(); });
+$('btnPlaytimeOne').onclick = ptSelectLevel;
+$('ptRuns').addEventListener('change', renderPlaytime);
+renderPlaytime();
+
+// Game thật chạy ngay trong editor (iframe, cùng máy chủ: /game/index.html?level=N, chỉ dev). Đọc thẳng file màn đã lưu.
+const rpGameOpen = () => { $('rpFrame').src = `../../game/index.html?dev&embed&level=${current + 1}${$('rpWho').value ? `&bot=${$('rpWho').value}` : ''}`; $('rpGame').hidden = false; };
+$('rpPlayGame').onclick = rpGameOpen;
+$('rpWho').onchange = () => { if (!$('rpGame').hidden) rpGameOpen(); };
+$('rpGameClose').onclick = () => { $('rpGame').hidden = true; $('rpFrame').src = 'about:blank'; };
+for (const id of ['levelList', 'evChart']) $(id).addEventListener('click', event => { if (!$('rpGame').hidden && (event.target.closest('button[data-i]') || event.target.dataset?.i !== undefined)) rpGameOpen(); });

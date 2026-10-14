@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic } from './mesh-detail.mjs';
 import { TOON, toonMat, DECAL_LAYER } from './toon.mjs';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { ROAD, ROAD_NEAR, KINDER_GATE_X } from './room-layout.mjs';
 
 const TAU = Math.PI * 2;
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
@@ -25,7 +26,7 @@ const ball = (r, color) => mesh(new THREE.SphereGeometry(r, sphereSegments(r), M
 // đêm xanh lam trăng sâu (không tím đặc), cỏ / lá ngả xanh ngọc tối để đèn vàng nổi bật.
 export const MEADOW_LOOKS = {
   day: { ground: '#a6c68c', fog: '#bfe2f2', leaf: '#74bf5c', leafDark: '#57a656', pine: '#4a9257', bush: '#80c565', wood: '#a8784e', rock: '#c4bcae' },
-  dusk: { ground: '#aab886', fog: '#f7c6a8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
+  dusk: { ground: '#b0b088', fog: '#f1b6c8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
   night: { ground: '#2e4a48', fog: '#1b2846', leaf: '#29544c', leafDark: '#214840', pine: '#1c4440', bush: '#2b5648', wood: '#3a3440', rock: '#3e4a5e' },
 };
 
@@ -123,9 +124,7 @@ function tuft(m, rnd) { // cụm cỏ xanh: vài mũi nhọn ngả nghiêng
 // ---------- Con đường phía trước vườn ----------
 // Con đường dài chạy ngang (trục x) song song hàng rào vườn, đối diện vườn: vệ cỏ, vỉa hè gạch, lề đường (bó vỉa), mặt đường nhựa với vạch
 // kẻ đứt + vạch mép, vạch qua đường trước cổng vườn, cây đèn đường, ghế, chậu cây ven vỉa hè. Toàn bộ tĩnh (mergeStatic).
-// Bề rộng từ gần vườn ra xa (m): vệ cỏ GAP, vỉa hè SIDEWALK, lề CURB, đường ROAD, lề, vỉa hè.
-const ROAD = { gap: 1.1, sidewalk: 1.5, curb: .24, road: 3.8, length: 240, lampEvery: 9 };
-export const ROAD_BAND = ROAD.gap + ROAD.sidewalk * 2 + ROAD.curb * 2 + ROAD.road;
+// Bề rộng các dải (ROAD) + mép gần (ROAD_NEAR): room-layout.mjs — trường mẫu giáo nằm ngay bên kia đường.
 const LAMP_GLOW = { day: '#ffe9b0', dusk: '#ffd08a', night: '#fff2b8' };
 // zNear: mặt ngoài hàng rào vườn phía trước (z lớn nhất của khung khu nhà). Trả về { group, lampMat }.
 function buildRoad(zNear) {
@@ -161,9 +160,8 @@ function buildRoad(zNear) {
   // Vạch giữa đường (đứt), vạch mép đường liền hai bên.
   for (let x = X0; x < X1; x += 2.4) group_.add(slab(x, x + 1.2, mid - .07, mid + .07, topRoad, topRoad + .006, m.paint, true));
   for (const z of [zC1 + .22, zR1 - .22]) group_.add(slab(X0, X1, z - .04, z + .04, topRoad, topRoad + .006, m.paint, true));
-  // Vạch qua đường (ngựa vằn) thẳng cổng vườn.
-  const crossX = -1.6;
-  for (let k = -3; k <= 3; k++) group_.add(slab(crossX + k * .5 - .17, crossX + k * .5 + .17, zC1 + .4, zR1 - .4, topRoad, topRoad + .008, m.paint, true));
+  // Cầu sang trường mẫu giáo bắc qua đường thẳng cổng trước vườn (kinder-scene.mjs): không vạch qua đường, chừa chỗ đèn.
+  const crossX = KINDER_GATE_X;
   // Cây đèn đường: cột + tay đỡ hướng ra đường + chao đèn sáng. Đặt trên vỉa hè gần vườn, cách vạch qua đường.
   const lampZ = (zS0 + zS1) / 2 + .1, lampHeads = [];
   for (let x = X0 + 4; x < X1; x += ROAD.lampEvery) {
@@ -230,8 +228,8 @@ function lampGlow(xs, z, yTop, yGround) {
   return { pools: make(merged(pool, yGround), LAMP_POOL.day), beams: make(merged(beam, yGround + H / 2), LAMP_BEAM.day) };
 }
 
-// bounds: khung khu nhà { x0, x1, z0, z1 } (toạ độ cảnh, đã cộng lề) — vật rải ngoài khung này.
-export function buildMeadow(bounds) {
+// bounds: khung khu nhà { x0, x1, z0, z1 } (toạ độ cảnh, đã cộng lề) — vật rải ngoài khung này và ngoài các khung `holes` (trường mẫu giáo bên kia đường).
+export function buildMeadow(bounds, holes = []) {
   const root = new THREE.Group();
   let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const look = MEADOW_LOOKS.day;
@@ -246,12 +244,13 @@ export function buildMeadow(bounds) {
     grass: mat('#5fb548'), petal: mat('#ffffff'), petalPink: mat('#ff9ec0'), heart: mat('#ffd23f'),
     cap: mat('#f2605a'), capPink: mat('#ff9ec0'), stem: mat('#fff1dc'),
   };
-  const road = buildRoad(bounds.z1 + .3);
+  const road = buildRoad(ROAD_NEAR);
   root.add(road.group);
   const props = group();
   // Vật rải ngoài khung khu nhà và ngoài dải đường (cây không mọc giữa đường).
   const free = (x, z, margin) => (x < bounds.x0 - margin || x > bounds.x1 + margin || z < bounds.z0 - margin || z > bounds.z1 + margin)
-    && !(z > road.zFrom - margin && z < road.zTo + margin);
+    && !(z > road.zFrom - margin && z < road.zTo + margin)
+    && !holes.some(h => x > h.x0 - margin && x < h.x1 + margin && z > h.z0 - margin && z < h.z1 + margin);
   const cx = (bounds.x0 + bounds.x1) / 2, cz = (bounds.z0 + bounds.z1) / 2;
   const scatter = (count, minR, maxR, margin, make) => {
     for (let placed = 0, tries = 0; placed < count && tries < count * 40; tries++) {

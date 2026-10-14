@@ -6,6 +6,7 @@ import * as play from './play-controller.js';
 import * as menus from './menu-controller.js';
 import { loadProgress, unlockedCount } from '../gameplay/progression.mjs';
 import * as ob from './onboarding.js';
+import { DEV_MODE } from './shared.js';
 
 play.connectMenus(menus);
 menus.connectPlay(play);
@@ -15,6 +16,14 @@ play.newGame(unlockedCount(loadProgress()) - 1);
 menus.showTab('home');
 // Lần đầu chơi (chưa qua màn nào): vào thẳng level 1, không dừng ở Home. Thoát / xong màn thì về Home như thường.
 if (!loadProgress().stars.some(Boolean)) play.startLevel(0);
+// ?level=N (chỉ dev; level editor mở từ nút "Chơi thử trong game"): vào thẳng màn N, kể cả màn chưa mở khoá.
+const devLevel = Number(new URLSearchParams(location.search).get('level'));
+if (DEV_MODE && devLevel >= 1) play.startLevel(devLevel - 1);
+// ?embed (Level Editor nhúng game trong khung): ẩn cột nút Dev (chỉ ẩn, không xoá: menu-controller.js còn bám nút Studio trong đó).
+if (new URLSearchParams(location.search).has('embed')) document.getElementById('dev-panel')?.style.setProperty('display', 'none', 'important');
+// ?bot=weak|mid|good (chỉ dev): bot tự chơi ván hiện tại ngay trên giao diện game.
+const botProfile = new URLSearchParams(location.search).get('bot');
+if (DEV_MODE && botProfile) import('./dev-bot.js').then(m => m.startBot(botProfile));
 // Đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn (tắt game giữa chừng): làm tiếp ngay.
 if (ob.pending()) menus.sceneReady.then(() => menus.runOnboarding());
 

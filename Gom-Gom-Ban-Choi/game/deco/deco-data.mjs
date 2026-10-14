@@ -1,23 +1,53 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
-// Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (ECONOMY.LEVEL_REWARD). Mèo dùng chung cả 2 khu.
+// Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../gameplay/tuning.mjs';
-import { DECO } from '../gameplay/economy.mjs';
+import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../gameplay/economy.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
-// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 (thắng màn 10) -> Phòng khách (thắng màn 20) -> Phòng ngủ (thắng màn 30) -> Bếp (thắng màn 40).
+// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
 export const ZONES = {
-  garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
-  living: { name: 'Living room', unlockAfter: 20, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  bedroom: { name: 'Bedroom', unlockAfter: 30, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  kitchen: { name: 'Kitchen', unlockAfter: 40, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
+  garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
+  living: { name: 'Living room', unlockAfter: AREA_UNLOCK.living.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  bedroom: { name: 'Bedroom', unlockAfter: AREA_UNLOCK.bedroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
+  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
+// Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
 export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
-// Vườn mở rộng (Vườn 2): thắng màn 10 thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
-// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2', mở dần từ màn 11).
-export const GARDEN_EXPANSION = { unlockAfter: 10, name: 'Garden expansion' };
+// Vườn mở rộng (Vườn 2): mở thì vườn nới dài thêm về bên phải — CÙNG một khu vườn (chung nền,
+// chung hàng rào), có thêm đồi và thêm đồ trong danh mục vườn (area: 'garden2').
+export const GARDEN_EXPANSION = { unlockAfter: AREA_UNLOCK.garden2.level, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
+
+// ===== Mở khu: đủ màn + đủ xu thì mua khu (trừ xu). Mỗi khu đi qua các trạng thái =====
+//   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
+//   coins : đủ màn, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
+export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
+export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
+const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
+// table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
+export function areaState(deco, area, cleared, table = AREA_UNLOCK) {
+  if (areaOpen(deco, area)) return 'open';
+  const before = AREA_ORDER[AREA_ORDER.indexOf(area) - 1];
+  if (before && !areaOpen(deco, before)) return 'soon';
+  if (cleared < table[area].level) return 'level';
+  return deco.coins >= table[area].cost ? 'ready' : 'coins';
+}
+// Khu kế tiếp chưa mở (null = đã mở hết).
+export const nextArea = deco => AREA_ORDER.find(area => !areaOpen(deco, area)) ?? null;
+export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
+  const state = areaState(deco, area, cleared, table);
+  if (state === 'open') return { error: 'Already open' };
+  if (state === 'soon') return { error: `Open the ${AREA_NAMES[AREA_ORDER[AREA_ORDER.indexOf(area) - 1]].toLowerCase()} first` };
+  if (state === 'level') return { error: `Beat level ${table[area].level} first` };
+  if (state === 'coins') return { error: `Need ${table[area].cost - deco.coins} more coins` };
+  return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
+}
 
 // Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
 export const CATALOG = [
@@ -75,6 +105,7 @@ export const CATALOG = [
   { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', color: '#fff4e0' },
   { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', color: '#d9a36a' },
   { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', color: '#c98a55' },
+  { id: 'mirror', zone: 'bedroom', cat: 'furniture', name: 'Floor mirror', color: '#e0b36a' },
   { id: 'bwall-lavender', zone: 'bedroom', cat: 'walls', name: 'Lavender', color: '#ebe3f8' },
   { id: 'bwall-blush', zone: 'bedroom', cat: 'walls', name: 'Blush', color: '#ffe0e6' },
   { id: 'bwall-sage', zone: 'bedroom', cat: 'walls', name: 'Sage', color: '#dcebd6' },
@@ -101,6 +132,7 @@ export const CATALOG = [
   { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Cat bowls', color: '#f4a3b6' },
   { id: 'cart', zone: 'kitchen', cat: 'furniture', name: 'Tea cart', color: '#ffd66b' },
   { id: 'kplant', zone: 'kitchen', cat: 'furniture', name: 'Monstera', color: '#5fae46' },
+  { id: 'bakerack', zone: 'kitchen', cat: 'furniture', name: "Baker's rack", color: '#ffb347' },
   { id: 'kwall-butter', zone: 'kitchen', cat: 'walls', name: 'Butter', color: '#fff0c2' },
   { id: 'kwall-mint', zone: 'kitchen', cat: 'walls', name: 'Mint', color: '#d4efd0' },
   { id: 'kwall-peach', zone: 'kitchen', cat: 'walls', name: 'Peach', color: '#ffd9c4' },
@@ -118,6 +150,65 @@ export const CATALOG = [
   { id: 'kfloor-slate-tiles', zone: 'kitchen', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
   { id: 'kfloor-tatami', zone: 'kitchen', cat: 'floors', name: 'Tatami', color: '#cfc994' },
   { id: 'kfloor-bamboo', zone: 'kitchen', cat: 'floors', name: 'Bamboo', color: '#d9c27a' },
+  // --- Sân sau: bể bơi + vườn rau (sau phòng khách + bếp, cửa từ phòng tắm; mở theo AREA_UNLOCK.backyard). Rào / nền dùng kiểu của vườn (style) ---
+  { id: 'pool', zone: 'backyard', cat: 'furniture', name: 'Swimming pool', color: '#5fc8e8' },
+  { id: 'lounger', zone: 'backyard', cat: 'furniture', name: 'Sun lounger', color: '#ff8fb8' },
+  { id: 'parasol', zone: 'backyard', cat: 'furniture', name: 'Parasol table', color: '#ffd66b' },
+  { id: 'grill', zone: 'backyard', cat: 'furniture', name: 'BBQ grill', color: '#e8483a' },
+  { id: 'deckbox', zone: 'backyard', cat: 'furniture', name: 'Pool toy box', color: '#8fc9f2' },
+  { id: 'greenhouse', zone: 'backyard', cat: 'furniture', name: 'Greenhouse', color: '#cfeaf6' },
+  { id: 'vegbed', zone: 'backyard', cat: 'furniture', name: 'Tomato bed', color: '#e8483a' },
+  { id: 'veggies', zone: 'backyard', cat: 'furniture', name: 'Veggie patch', color: '#ff9a3c' },
+  { id: 'scarecrow', zone: 'backyard', cat: 'furniture', name: 'Scarecrow', color: '#f2c14e' },
+  { id: 'rainbarrel', zone: 'backyard', cat: 'furniture', name: 'Rain barrel', color: '#9a6a45' },
+  { id: 'yfence-white', zone: 'backyard', cat: 'walls', name: 'White picket', color: '#fffaf0', style: 'fence-white' },
+  { id: 'yfence-wood', zone: 'backyard', cat: 'walls', name: 'Wood fence', color: '#c9955e', style: 'fence-wood' },
+  { id: 'yfence-hedge', zone: 'backyard', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  { id: 'yground-grass', zone: 'backyard', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
+  { id: 'yground-clover', zone: 'backyard', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
+  { id: 'yground-meadow', zone: 'backyard', cat: 'floors', name: 'Meadow', color: '#b5dd7a', style: 'ground-meadow' },
+  // --- Trường mẫu giáo: lớp học + sân chơi (bên kia đường trước vườn; mở theo AREA_UNLOCK.kinder). Món kép: kdesk, kcubby, kspring, kbench ---
+  { id: 'kdesk', zone: 'kinder', cat: 'furniture', name: 'Kids desks (2 sets)', color: '#5fb8e8' },
+  { id: 'kboard', zone: 'kinder', cat: 'furniture', name: 'Chalkboard', color: '#2f5d4a' },
+  { id: 'kcubby', zone: 'kinder', cat: 'furniture', name: 'Toy cubbies (pair)', color: '#ffd66b' },
+  { id: 'kpiano', zone: 'kinder', cat: 'furniture', name: 'Upright piano', color: '#e98b9a' },
+  { id: 'kplayset', zone: 'kinder', cat: 'furniture', name: 'Slide tower', color: '#ff6b6b' },
+  { id: 'kswing', zone: 'kinder', cat: 'furniture', name: 'Swing set', color: '#5fb8e8' },
+  { id: 'kspring', zone: 'kinder', cat: 'furniture', name: 'Spring riders (pair)', color: '#ffd66b' },
+  { id: 'ksandpit', zone: 'kinder', cat: 'furniture', name: 'Sandpit', color: '#efd8a4' },
+  { id: 'kmerry', zone: 'kinder', cat: 'furniture', name: 'Merry-go-round', color: '#b48ee8' },
+  { id: 'kbench', zone: 'kinder', cat: 'furniture', name: 'Benches (pair)', color: '#ff8fb8' },
+  { id: 'kfence-picket', zone: 'kinder', cat: 'walls', name: 'Yellow picket', color: '#ffd66b', style: 'fence-white' },
+  { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Blue rails', color: '#8fc9f2', style: 'fence-wood' },
+  { id: 'kfence-hedge', zone: 'kinder', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  { id: 'kground-grass', zone: 'kinder', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
+  { id: 'kground-clover', zone: 'kinder', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
+  { id: 'kground-path', zone: 'kinder', cat: 'floors', name: 'Stone path', color: '#d9d2c4', style: 'ground-path' },
+  // --- Phòng tắm (bên trái phòng ngủ, cửa trên tường trái phòng ngủ; mở theo AREA_UNLOCK.bathroom) ---
+  { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Toilet', color: '#ffffff' },
+  { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Sink vanity', color: '#bfe8d6' },
+  { id: 'bathtub', zone: 'bathroom', cat: 'furniture', name: 'Clawfoot tub', color: '#fffaf0' },
+  { id: 'shower', zone: 'bathroom', cat: 'furniture', name: 'Shower', color: '#d4e9ff' },
+  { id: 'washer', zone: 'bathroom', cat: 'furniture', name: 'Washing machine', color: '#f5f8fb' },
+  { id: 'towel', zone: 'bathroom', cat: 'furniture', name: 'Towel rack', color: '#ffd66b' },
+  { id: 'litter', zone: 'bathroom', cat: 'furniture', name: 'Cat litter box', color: '#f4a3b6' },
+  { id: 'bathmat', zone: 'bathroom', cat: 'furniture', name: 'Bath mat', color: '#8fc9f2' },
+  { id: 'jacuzzi', zone: 'bathroom', cat: 'furniture', name: 'Hot tub', color: '#7fd6f0' },
+  { id: 'bathshelf', zone: 'bathroom', cat: 'furniture', name: 'Bath shelf', color: '#8fc9f2' },
+  { id: 'twall-aqua', zone: 'bathroom', cat: 'walls', name: 'Aqua', color: '#d4f0ee' },
+  { id: 'twall-white', zone: 'bathroom', cat: 'walls', name: 'White', color: '#f5f8fb' },
+  { id: 'twall-mint', zone: 'bathroom', cat: 'walls', name: 'Mint', color: '#d4efd0' },
+  { id: 'twall-blush', zone: 'bathroom', cat: 'walls', name: 'Blush', color: '#ffe0e6' },
+  { id: 'twall-lemon', zone: 'bathroom', cat: 'walls', name: 'Lemon', color: '#fff3b8' },
+  { id: 'twall-navy', zone: 'bathroom', cat: 'walls', name: 'Navy', color: '#3b4f7a' },
+  { id: 'twall-charcoal', zone: 'bathroom', cat: 'walls', name: 'Charcoal', color: '#2f3238' },
+  { id: 'tfloor-white-tiles', zone: 'bathroom', cat: 'floors', name: 'White tiles', color: '#eef2f5' },
+  { id: 'tfloor-oak', zone: 'bathroom', cat: 'floors', name: 'Oak', color: '#e4b574' },
+  { id: 'tfloor-aqua-tiles', zone: 'bathroom', cat: 'floors', name: 'Aqua tiles', color: '#bfe8e6' },
+  { id: 'tfloor-pink-tiles', zone: 'bathroom', cat: 'floors', name: 'Pink tiles', color: '#f6cfd8' },
+  { id: 'tfloor-checker', zone: 'bathroom', cat: 'floors', name: 'Checkerboard', color: '#f4f1ea' },
+  { id: 'tfloor-teak', zone: 'bathroom', cat: 'floors', name: 'Teak', color: '#b9824f' },
+  { id: 'tfloor-slate-tiles', zone: 'bathroom', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
   // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
   { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', color: '#f3d5a8' },
   { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', color: '#ffd23f' },
@@ -127,6 +218,8 @@ export const CATALOG = [
   { id: 'stream', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Little stream', color: '#6fc3e0' },
   { id: 'swingtree', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Swing tree', color: '#6fbf4a' },
   { id: 'slide', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Slide', color: '#ffb347' },
+  { id: 'birdhouse', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Birdhouse', color: '#e8617f' },
+  { id: 'picnic', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Picnic table', color: '#e5483a' },
   // --- Mèo (dùng chung) ---
   // lock = màn thưởng mèo đó (thắng rồi nhận ở Map, xem catRewardsAt). Mèo cam mở sẵn từ đầu (mèo dẫn đường); stage 1 thưởng
   // thêm xám (màn 7), trắng (màn 10); từ stage 2 mỗi stage 3 bé rải đều ở màn 4, 7, 10 của stage (màn cuối stage luôn có một bé).
@@ -136,6 +229,13 @@ export const CATALOG = [
   { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', breed: 'tabby' },
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', breed: 'siamese' },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', breed: 'tuxedo' },
+  // Chó: cùng mục 'cats' (thú cưng), cùng luật nhận thưởng ở Map (stage 3 + 4: màn 4, 7, 10 của stage)
+  { id: 'dog-shiba', cat: 'cats', name: 'Shiba dog', breed: 'shiba' },
+  { id: 'dog-golden', cat: 'cats', name: 'Golden dog', breed: 'golden' },
+  { id: 'dog-pug', cat: 'cats', name: 'Pug dog', breed: 'pug' },
+  { id: 'dog-dalmatian', cat: 'cats', name: 'Dalmatian dog', breed: 'dalmatian' },
+  { id: 'dog-malamute', cat: 'cats', name: 'Malamute dog', breed: 'malamute' },
+  { id: 'dog-rottweiler', cat: 'cats', name: 'Rottweiler dog', breed: 'rottweiler' },
 ];
 // Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
 // Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
@@ -206,28 +306,7 @@ const VARIANTS = [
   ['closet', 'closet-ladder', 'Plant shelf', '#d9a36a'],
   ['plushie', 'plushie-bunny', 'Bunny plush', '#fff4f6'],
   ['catsteps', 'catsteps-clouds', 'Cloud steps', '#9fd0f0'],
-  // lựa chọn thứ 4: phong cách hiện đại, tông đen / xám (phòng khách)
-  ['rug', 'rug-modern', 'Graphite rug', '#3a3d43'],
-  ['armchair', 'armchair-lounge', 'Lounge chair', '#26282c'],
-  ['plant', 'plant-snake', 'Snake plant', '#2f3236'],
-  ['yarn', 'yarn-bin', 'Felt toy bin', '#4a4e55'],
-  ['catbed', 'catbed-pod', 'Cat pod', '#3a3d43'],
-  ['table', 'table-marble', 'Black marble table', '#2b2d31'],
-  ['lamp', 'lamp-arc', 'Arc lamp', '#1f2125'],
-  ['cattree', 'cattree-modern', 'Modern cat tower', '#6b7078'],
-  ['shelf', 'shelf-metal', 'Steel shelf', '#1f2125'],
-  ['tank', 'tank-aquarium', 'Black aquarium', '#26282c'],
-  // lựa chọn thứ 4: phong cách hiện đại, tông đen / xám (phòng ngủ)
-  ['bed', 'bed-platform', 'Platform bed', '#3a3d43'],
-  ['bedrug', 'bedrug-mono', 'Mono stripe rug', '#2b2e33'],
-  ['laundry', 'laundry-hamper', 'Felt hamper', '#4a4e55'],
-  ['bedside', 'bedside-noir', 'Noir nightstand', '#26282c'],
-  ['desk', 'desk-setup', 'Dark setup desk', '#1a1c20'],
-  ['chair', 'chair-office', 'Mesh office chair', '#1f2125'],
-  ['closet', 'closet-noir', 'Noir wardrobe', '#26282c'],
-  ['plushie', 'plushie-shark', 'Shark plush', '#6b7078'],
-  ['catsteps', 'catsteps-floating', 'Steel wall shelves', '#1f2125'],
-  // --- Bếp: 4 lựa chọn mỗi chỗ (món gốc + 2 phương án + 1 phong cách châu Á) ---
+  // --- Bếp: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
   ['sink', 'sink-farm', 'Farmhouse sink', '#d9a36a'],
   ['dining', 'dining-square', 'Pine table', '#e9c58f'],
   ['fridge', 'fridge-retro', 'Retro fridge', '#ffc9d5'],
@@ -235,6 +314,25 @@ const VARIANTS = [
   ['pantry', 'pantry-rack', 'Pantry rack', '#d9a36a'],
   ['kchair', 'kchair-stool', 'Bar stools', '#e8617f'],
   ['catfood', 'catfood-feeder', 'Auto feeder', '#f5f8fb'],
+  // --- Phòng tắm: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
+  ['toilet', 'toilet-wood', 'Wooden-seat toilet', '#d9a36a'],
+  ['toilet', 'toilet-kitty', 'Kitty toilet', '#ffc9d5'],
+  ['vanity', 'vanity-pedestal', 'Pedestal sink', '#fffaf0'],
+  ['vanity', 'vanity-wood', 'Wood vanity', '#c98a55'],
+  ['bathtub', 'bathtub-wood', 'Wooden tub', '#d9a36a'],
+  ['bathtub', 'bathtub-bubble', 'Bubble tub', '#8fc9f2'],
+  ['shower', 'shower-rain', 'Rain shower', '#c8ccd2'],
+  ['shower', 'shower-curtain', 'Curtain shower', '#ff8fb8'],
+  ['washer', 'washer-retro', 'Retro washer', '#ffc9d5'],
+  ['washer', 'washer-stack', 'Washer + dryer', '#c8ccd2'],
+  ['towel', 'towel-ladder', 'Towel ladder', '#c98a55'],
+  ['towel', 'towel-heated', 'Heated rail', '#c8ccd2'],
+  ['litter', 'litter-hood', 'Hooded litter box', '#b48ee8'],
+  ['litter', 'litter-cabinet', 'Litter cabinet', '#e9c58f'],
+  ['bathmat', 'bathmat-fluffy', 'Fluffy mat', '#fff4f6'],
+  ['bathmat', 'bathmat-duck', 'Duck mat', '#ffd66b'],
+  ['jacuzzi', 'jacuzzi-cedar', 'Cedar hot tub', '#9a6a45'],
+  ['jacuzzi', 'jacuzzi-mosaic', 'Mosaic spa', '#5fb8d8'],
   ['cart', 'cart-produce', 'Fruit stand', '#ff6b4a'],
   ['kplant', 'kplant-fig', 'Fiddle-leaf fig', '#3f8a3a'],
   ['sink', 'sink-steel', 'Steel sink', '#c8ccd2'],
@@ -246,15 +344,6 @@ const VARIANTS = [
   ['catfood', 'catfood-stand', 'Raised feeder', '#d9a36a'],
   ['cart', 'cart-coffee', 'Coffee cart', '#e8617f'],
   ['kplant', 'kplant-herbs', 'Herb planter', '#8fd46a'],
-  ['sink', 'sink-asian', 'Asian counter', '#5a3a28'],
-  ['dining', 'dining-asian', 'Chabudai table', '#b83a2e'],
-  ['fridge', 'fridge-asian', 'Lacquer fridge', '#b83a2e'],
-  ['stove', 'stove-asian', 'Wok range', '#26282c'],
-  ['pantry', 'pantry-asian', 'Tansu chest', '#6b4630'],
-  ['kchair', 'kchair-asian', 'Zaisu floor chairs', '#b83a2e'],
-  ['catfood', 'catfood-asian', 'Porcelain bowls', '#3b4a7a'],
-  ['cart', 'cart-asian', 'Dim sum cart', '#b83a2e'],
-  ['kplant', 'kplant-asian', 'Bamboo pot', '#7fb23a'],
   // --- Vườn mở rộng ---
   ['windmill', 'windmill-turbine', 'Wind turbine', '#f5f8fb'],
   ['sunflowers', 'sunflowers-scarecrow', 'Scarecrow', '#e9c25a'],
@@ -264,7 +353,90 @@ const VARIANTS = [
   ['stream', 'stream-bridge', 'Stream bridge', '#c9955e'],
   ['swingtree', 'swingtree-treehouse', 'Treehouse', '#c98a55'],
   ['slide', 'slide-seesaw', 'Seesaw', '#7fc45a'],
+  // lựa chọn thứ 3 cho từng chỗ ở vườn mở rộng
+  ['windmill', 'windmill-windpump', 'Farm windpump', '#e5483a'],
+  ['sunflowers', 'sunflowers-lavender', 'Lavender patch', '#9a7fd8'],
+  ['clothesline', 'clothesline-lanterns', 'Paper lanterns', '#ffb347'],
+  ['campfire', 'campfire-firepit', 'Stone fire pit', '#b5aea3'],
+  ['kite', 'kite-windsock', 'Windsock', '#ff6b4a'],
+  ['stream', 'stream-wheel', 'Water wheel', '#c9955e'],
+  ['swingtree', 'swingtree-bench', 'Bench swing', '#c98a55'],
+  ['slide', 'slide-dome', 'Climbing dome', '#3b8fe0'],
+  ['birdhouse', 'birdhouse-dovecote', 'Dovecote', '#5a8fd6'],
+  ['birdhouse', 'birdhouse-gourd', 'Gourd birdhouse', '#e9c58f'],
+  ['picnic', 'picnic-blanket', 'Picnic blanket', '#3b8fe0'],
+  ['picnic', 'picnic-cafe', 'Garden tea table', '#ff8fb8'],
+  // --- Phòng ngủ / bếp / phòng tắm: món thêm sau (gương, kệ bánh, kệ tắm) ---
+  ['mirror', 'mirror-cheval', 'Cheval mirror', '#b9854a'],
+  ['mirror', 'mirror-arch', 'Arched mirror', '#fffaf0'],
+  ['bakerack', 'bakerack-bread', 'Bread shelf', '#e0a050'],
+  ['bakerack', 'bakerack-crates', 'Crate shelf', '#c9955e'],
+  ['bathshelf', 'bathshelf-ladder', 'Ladder shelf', '#c98a55'],
+  ['bathshelf', 'bathshelf-baskets', 'Basket cubby', '#ffd66b'],
+  // --- Sân sau ---
+  ['pool', 'pool-inflatable', 'Inflatable pool', '#5fb8e8'],
+  ['pool', 'pool-lily', 'Lily pond', '#5fae46'],
+  ['lounger', 'lounger-hammock', 'Hammock stand', '#ffb347'],
+  ['lounger', 'lounger-deckchair', 'Deck chair', '#3b8fe0'],
+  ['parasol', 'parasol-canopy', 'Canopy table', '#3b8fe0'],
+  ['parasol', 'parasol-tree', 'Lemon tree bench', '#ffd23f'],
+  ['grill', 'grill-kettle', 'Kettle grill', '#2f3238'],
+  ['grill', 'grill-pizza', 'Pizza oven', '#c9693d'],
+  ['deckbox', 'deckbox-cooler', 'Cooler box', '#3b8fe0'],
+  ['deckbox', 'deckbox-basket', 'Beach basket', '#d9a35a'],
+  ['greenhouse', 'greenhouse-shed', 'Garden shed', '#e9c58f'],
+  ['greenhouse', 'greenhouse-tunnel', 'Polytunnel', '#e8f6f0'],
+  ['vegbed', 'vegbed-berries', 'Strawberry bed', '#e8483a'],
+  ['vegbed', 'vegbed-corn', 'Corn bed', '#ffd23f'],
+  ['veggies', 'veggies-flowers', 'Flower beds', '#ff5f7e'],
+  ['veggies', 'veggies-herbs', 'Herb beds', '#9a7fd8'],
+  ['scarecrow', 'scarecrow-owl', 'Owl decoy', '#9a6a45'],
+  ['scarecrow', 'scarecrow-vane', 'Weathervane', '#2f3238'],
+  ['rainbarrel', 'rainbarrel-well', 'Wishing well', '#e8483a'],
+  ['rainbarrel', 'rainbarrel-pump', 'Hand pump', '#e8483a'],
+  // --- Trường mẫu giáo ---
+  ['kdesk', 'kdesk-round', 'Round tables (2 sets)', '#ffd66b'],
+  ['kdesk', 'kdesk-mats', 'Floor tables (2 sets)', '#bfe6f6'],
+  ['kboard', 'kboard-white', 'Whiteboard', '#ffffff'],
+  ['kboard', 'kboard-felt', 'Pin-up board', '#ff8fb8'],
+  ['kcubby', 'kcubby-books', 'Bookshelves (pair)', '#7fc45a'],
+  ['kcubby', 'kcubby-lockers', 'Backpack lockers (pair)', '#ff6b6b'],
+  ['kpiano', 'kpiano-desk', "Teacher's desk", '#c98a55'],
+  ['kpiano', 'kpiano-drums', 'Xylophone & drum', '#ff9a3c'],
+  ['kplayset', 'kplayset-house', 'Playhouse', '#fff0c2'],
+  ['kplayset', 'kplayset-tunnel', 'Rainbow climber', '#7fc45a'],
+  ['kswing', 'kswing-tire', 'Tire swing', '#2f3238'],
+  ['kswing', 'kswing-nest', 'Nest swing', '#ff9a3c'],
+  ['kspring', 'kspring-rocker', 'Rocking horses (pair)', '#c98a55'],
+  ['kspring', 'kspring-cars', 'Pedal cars (pair)', '#ff6b6b'],
+  ['ksandpit', 'ksandpit-paddling', 'Paddling pool', '#5fb8e8'],
+  ['ksandpit', 'ksandpit-water', 'Water table', '#5fb8e8'],
+  ['kmerry', 'kmerry-seesaw', 'Seesaw', '#ffd66b'],
+  ['kmerry', 'kmerry-carousel', 'Mini carousel', '#ff8fb8'],
+  ['kbench', 'kbench-picnic', 'Picnic tables (pair)', '#7fc45a'],
+  ['kbench', 'kbench-planter', 'Planter benches (pair)', '#c98a55'],
 ];
+// Món theme Hồng / Hiện đại đã bỏ (quay lại các kiểu khác ở trên) -> chỗ của nó. Save còn giữ món này: hoàn đúng giá (giá món gốc), chỗ đang đặt quay về món gốc (clean).
+export const RETIRED = Object.fromEntries(Object.entries({
+  flowers: ['flowers-modern'], stump: ['stump-pink', 'stump-modern'], lantern: ['lantern-pink'], sandbox: ['sandbox-modern'], cathouse: ['cathouse-modern'],
+  pond: ['pond-modern'], hammock: ['hammock-modern'], birdbath: ['birdbath-modern'], bench: ['bench-modern'],
+  windmill: ['windmill-pink'], sunflowers: ['sunflowers-pink', 'sunflowers-modern'], clothesline: ['clothesline-modern'], campfire: ['campfire-modern'],
+  kite: ['kite-modern'], stream: ['stream-pink', 'stream-modern'], swingtree: ['swingtree-pink', 'swingtree-modern'], birdhouse: ['birdhouse-pink', 'birdhouse-modern'],
+  picnic: ['picnic-pink', 'picnic-modern'], slide: ['slide-modern'], mirror: ['mirror-pink', 'mirror-modern'],
+  sink: ['sink-pink'], dining: ['dining-pink', 'dining-modern'], stove: ['stove-modern'], pantry: ['pantry-modern'], catfood: ['catfood-pink'], cart: ['cart-modern'],
+  bakerack: ['bakerack-pink', 'bakerack-modern'], kplant: ['kplant-pink'],
+  toilet: ['toilet-modern'], vanity: ['vanity-modern'], bathtub: ['bathtub-modern'], towel: ['towel-pink'], litter: ['litter-modern'], bathmat: ['bathmat-modern'],
+  bathshelf: ['bathshelf-pink', 'bathshelf-modern'], jacuzzi: ['jacuzzi-pink'],
+  pool: ['pool-pink', 'pool-modern'], lounger: ['lounger-pink', 'lounger-modern'], parasol: ['parasol-pink', 'parasol-modern'], grill: ['grill-pink', 'grill-modern'],
+  deckbox: ['deckbox-pink', 'deckbox-modern'], greenhouse: ['greenhouse-pink', 'greenhouse-modern'], vegbed: ['vegbed-pink', 'vegbed-modern'],
+  veggies: ['veggies-pink', 'veggies-modern'], scarecrow: ['scarecrow-pink', 'scarecrow-modern'], rainbarrel: ['rainbarrel-pink', 'rainbarrel-modern'],
+  // Lựa chọn thứ 4 cũ (hiện đại tông đen ở phòng khách / phòng ngủ, châu Á ở bếp): mỗi chỗ chỉ giữ 3 món.
+  rug: ['rug-modern'], armchair: ['armchair-lounge'], plant: ['plant-snake'], yarn: ['yarn-bin'], catbed: ['catbed-pod'], table: ['table-marble'],
+  lamp: ['lamp-arc'], cattree: ['cattree-modern'], shelf: ['shelf-metal'], tank: ['tank-aquarium'],
+  bed: ['bed-platform'], bedrug: ['bedrug-mono'], laundry: ['laundry-hamper'], bedside: ['bedside-noir'], desk: ['desk-setup'], chair: ['chair-office'],
+  closet: ['closet-noir'], plushie: ['plushie-shark'], catsteps: ['catsteps-floating'],
+  ...Object.fromEntries(['sink', 'dining', 'fridge', 'stove', 'pantry', 'kchair', 'catfood', 'cart', 'kplant'].map(slot => [`${slot}:asian`, [`${slot}-asian`]])),
+}).flatMap(([slot, ids]) => ids.map(id => [id, slot.split(':')[0]])));
 // Chèn mỗi phương án sau món gốc + các phương án cùng chỗ đã chèn (giữ thứ tự khai báo); giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
 VARIANTS.forEach(([slot, id, name, color]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
@@ -279,10 +451,13 @@ EXCLUSIVES.forEach(([slot, id, name, color, event]) => {
   const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
   CATALOG.splice(at + 1, 0, { id, zone: base.zone, cat: base.cat, name, color, slot, exclusive: event });
 });
+// Giá thật = giá trong bảng DECO × hệ số khu, làm tròn 10 xu (mult = ZONE_PRICE_MULT; Level Editor truyền bảng đang sửa).
+export const zonePrice = (entry, mult) => Math.round(entry.basePrice * (mult[entry.area || entry.zone] ?? 1) / 10) * 10;
 // Giá + mốc mở khoá từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
 for (const entry of CATALOG) {
   const row = DECO[entry.id] || DECO[entry.slot] || {};
-  entry.price = row.price ?? 0;
+  entry.basePrice = row.price ?? 0;
+  entry.price = zonePrice(entry, ZONE_PRICE_MULT);
   if (row.lock && !entry.exclusive) entry.lock = row.lock;
 }
 export const itemById = id => CATALOG.find(entry => entry.id === id);
@@ -318,19 +493,26 @@ const zoneDefaults = zone => {
 // Mèo có sẵn từ đầu; các giống khác phải nhận ở Map (nút Claim cạnh màn giống đó xuất hiện lần đầu, sau khi thắng màn đó).
 export const STARTER_CATS = ['gray', 'orange', 'white'];
 function defaults(startCoins) {
-  return { coins: startCoins, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
+  return { coins: startCoins, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', unlocked: [], expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
+// Món theme đã bỏ (RETIRED): hoàn xu đúng giá món gốc, chỗ đang đặt món đó đặt lại món gốc.
 function clean(deco) {
   const known = id => !!itemById(id);
-  const zones = Object.fromEntries(Object.entries(deco.zones).filter(([zone]) => ZONES[zone]).map(([zone, state]) => [zone, { ...state, owned: state.owned.filter(known), placed: state.placed.filter(known) }]));
-  return { ...deco, zones };
+  let coins = deco.coins;
+  const zones = Object.fromEntries(Object.entries(deco.zones).filter(([zone]) => ZONES[zone]).map(([zone, state]) => {
+    state.owned.filter(id => RETIRED[id]).forEach(id => { coins += itemById(RETIRED[id]).price; });
+    const placed = state.placed.map(id => RETIRED[id] ?? id).filter((id, i, list) => known(id) && list.indexOf(id) === i);
+    return [zone, { ...state, owned: state.owned.filter(known), placed }];
+  }));
+  return { ...deco, coins, zones, fresh: (deco.fresh || []).filter(known) };
 }
 
 // Lần đầu có Deco: số xu = tổng thưởng các màn đã qua (progression.earnedCoins).
 // Save cũ (trước khi có vườn, đồ mua cho phòng khách): phòng khách giờ khoá tới màn 10, nên hoàn lại xu
 // của đồ đã mua để người chơi sắm cho vườn; phòng khách về mặc định.
+// Mở khu CHỈ qua unlockArea (đủ màn + trả xu). loadDeco không bao giờ tự mở khu: save thiếu `unlocked` (save mới, save cũ, save hỏng) = chưa mở khu nào.
 export function loadDeco(startCoins) {
   const saved = readJSON(SAVE_KEYS.deco);
   {
@@ -351,16 +533,23 @@ export function loadDeco(startCoins) {
       }
       // Save có từ trước khi nhận mèo ở Map: mèo đang ở trong nhà coi như đã nhận.
       const claimedCats = saved.claimedCats ?? [...new Set([...STARTER_CATS, ...(saved.cats || [])])];
-      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true });
+      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true, unlocked: validUnlocked(saved.unlocked) });
     }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(startCoins);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
       const cats = saved.cats || base.cats;
-      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])] };
+      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])], unlocked: [] };
     }
   }
+  // Chưa có save Deco (lần đầu mở Deco, kể cả khi đã qua màn mốc): mọi khu vẫn phải trả xu để mở.
   return defaults(startCoins);
+}
+// Chỉ giữ tên khu hợp lệ, không trùng, đúng thứ tự mở (khu sau chỉ mở được khi khu trước đã mở).
+function validUnlocked(list) {
+  const set = new Set(Array.isArray(list) ? list : []), out = [];
+  for (const area of AREA_ORDER) { if (!set.has(area)) break; out.push(area); }
+  return out;
 }
 export function saveDeco(deco) {
   writeJSON(SAVE_KEYS.deco, deco);
@@ -409,20 +598,31 @@ export function applyAction(deco, entry, unlockedLevel) {
   if (status === 'poor') return { error: 'Not enough coins' };
   if (entry.cat === 'cats') {
     if (status === 'using') {
-      if (deco.cats.length <= 1) return { error: 'Keep at least one cat' };
+      if (deco.cats.length <= 1) return { error: 'Keep at least one pet' };
       return { ...deco, cats: deco.cats.filter(breed => breed !== entry.breed) };
     }
-    if (deco.cats.length >= MAX_ROOM_CATS) return { error: `Up to ${MAX_ROOM_CATS} cats` };
     return { ...deco, cats: [...deco.cats, entry.breed] };
   }
   const zone = zoneState(deco, entry.zone);
   let next = deco;
-  if (status === 'buy') next = withZone({ ...deco, coins: deco.coins - costOf(entry) }, entry.zone, { owned: [...zone.owned, entry.id] });
+  if (status === 'buy') next = withZone(pay(deco, costOf(entry)), entry.zone, { owned: [...zone.owned, entry.id] });
   if (entry.cat === 'walls') return withZone(next, entry.zone, { wall: entry.id });
   if (entry.cat === 'floors') return withZone(next, entry.zone, { floor: entry.id });
   // Đặt vào thì thay món khác đang ở cùng chỗ.
   const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...withoutSlot(zone.placed, entry), entry.id];
   return withZone(next, entry.zone, { placed });
+}
+
+// Dev (nút Unlock): có sẵn MỌI món mặc định (món gốc của từng chỗ đặt) ở mọi khu; chỗ nào còn trống thì đặt món gốc vào, chỗ đang đặt kiểu khác thì giữ.
+export function ownAllBase(deco) {
+  let next = deco;
+  for (const entry of CATALOG.filter(isBase)) {
+    const zone = zoneState(next, entry.zone);
+    if (!zone) continue;
+    const taken = zone.placed.some(id => slotOf(itemById(id) ?? entry) === slotOf(entry));
+    next = withZone(next, entry.zone, { owned: zone.owned.includes(entry.id) ? zone.owned : [...zone.owned, entry.id], placed: taken ? zone.placed : [...zone.placed, entry.id] });
+  }
+  return next;
 }
 
 // Món đã có (đã mua, hoặc miễn phí) — chưa tính đang đặt hay không.
@@ -470,7 +670,7 @@ export function buyToStock(deco, entry, unlockedLevel) {
   if (status === 'exclusive') return { error: 'Event reward only' };
   if (status === 'poor') return { error: 'Not enough coins' };
   const zone = zoneState(deco, entry.zone);
-  return { ...withZone({ ...deco, coins: deco.coins - costOf(entry) }, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+  return { ...withZone(pay(deco, costOf(entry)), entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
 export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))

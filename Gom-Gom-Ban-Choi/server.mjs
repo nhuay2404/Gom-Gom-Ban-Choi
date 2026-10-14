@@ -6,6 +6,7 @@ import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleSaveLevel } from './tools/level-save.mjs';
+import { handleSaveEconomy } from './tools/economy-save.mjs';
 import { handleStudio, studioCss } from './tools/ui-studio.mjs';
 import { networkInterfaces } from 'node:os';
 
@@ -35,8 +36,7 @@ function safePath(urlPath) {
 const server = createServer(async (req, res) => {
   try {
     // Level Editor (nút dev LEVELS) lưu màn vào game/gameplay/levels.mjs. Máy chủ chỉ nghe 127.0.0.1.
-    if (handleSaveLevel(req, res)) return;
-    if (handleStudio(req, res)) return;
+    if (handleSaveLevel(req, res) || handleSaveEconomy(req, res)) return;
     if (handleStudio(req, res)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end('Method Not Allowed'); return; }
     let file = safePath(req.url === '/' ? '/index.html' : req.url);
