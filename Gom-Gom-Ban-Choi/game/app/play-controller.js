@@ -1491,6 +1491,17 @@ export const mapTier = index => TIERS[TIER_LABEL[levelTier(LEVELS[index])] ?? (d
 // ?dda trên URL: ghi profile đang nhận diện ra console mỗi lần vào màn (để QA), người chơi thường không thấy.
 const DDA_DEBUG = new URLSearchParams(location.search).has('dda');
 
+// Cổng cho bot tự chơi (dev-bot.js, ?bot=...): đọc ván hiện tại + gọi đúng các hàm người chơi dùng (xoay / Hold / đặt thẻ).
+export const botApi = {
+  state: () => state,
+  // bot thao tác = người chơi đang chơi: không cho mèo AFK ngủ gật giữa chừng
+  rotate() { armAfk(); rotateActive(); }, hold() { armAfk(); holdActive(); }, place(anchor) { armAfk(); placeAt(anchor); },
+  // bot không cần hướng dẫn: bỏ bước tutorial của màn
+  // thua thì chơi lại ngay màn đó: đóng bảng kết quả / hộp thoại đang mở rồi vào lại màn
+  retry() { armAfk(); if ($('result-dialog').open) leaveResult(); document.querySelectorAll('dialog[open]').forEach(d => d.close()); startLevel(state.levelIndex); },
+  skipTutorial() { if (state?.tutorial) { state.tutorial = null; renderTutorial(); } },
+};
+
 // Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
 export function startLevel(index) {
   menus.hideMenus();

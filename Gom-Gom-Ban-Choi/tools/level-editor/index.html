@@ -146,7 +146,7 @@
   <div class="col">
     <section>
       <h2><span class="step">1</span> Thông số màn</h2>
-      <p class="hint">Tên, loại màn (tier), số lượt, mục tiêu điểm, giống mèo… Đổi tier thì mục tiêu điểm tự cân lại theo bot.</p>
+      <p class="hint">Loại màn (tier), số lượt, mục tiêu điểm, giống mèo… Đổi tier thì mục tiêu điểm tự cân lại theo bot.</p>
       <div class="form" id="form"></div>
       <div class="row" style="margin-top:8px">
         <label class="check"><input type="checkbox" id="autoTune" checked> Đổi tier thì tự cân mục tiêu điểm</label>
@@ -167,21 +167,15 @@
       <div id="board" style="margin-top:8px"></div>
       <ul id="issues" class="muted"></ul>
       <div class="replay">
-        <h3 class="sub">▶ Xem AI chơi màn này <span class="muted">— phát lại từng nước bot đi (chọn màn khác là tự chơi lại màn đó)</span></h3>
+        <h3 class="sub">🎮 Chơi thử màn này <span class="muted">— xem bot chơi ngay trong game thật (bản local)</span></h3>
         <div class="row">
-          <label>Profile<select id="rpProfile"></select></label>
-          <label>Ván số<input type="number" id="rpSeed" value="1" min="1" style="width:70px"></label>
-          <label class="check"><input type="checkbox" id="rpBoost"> Có booster</label>
-          <button class="btn" id="rpNewGame" title="Chơi ván khác (đổi thứ tự thẻ)">🎲 Ván khác</button>
+          <label>Ai chơi<select id="rpWho"><option value="weak">Bot yếu</option><option value="mid" selected>Bot trung bình</option><option value="good">Bot giỏi</option><option value="">Tôi tự chơi</option></select></label>
+          <button class="btn primary" id="rpPlayGame" title="Vào thẳng màn đang chọn (bấm lại = chơi lại từ đầu)">🎮 Chơi thử trong game</button>
         </div>
-        <div class="row" style="margin-top:6px">
-          <button class="btn" id="rpFirst" title="Về đầu">⏮</button><button class="btn" id="rpPrev" title="Lượt trước">◀</button>
-          <button class="btn primary" id="rpPlay">▶ Phát</button><button class="btn" id="rpNext" title="Lượt sau">▶|</button><button class="btn" id="rpLast" title="Tới cuối">⏭</button>
-          <input type="range" id="rpStep" min="0" value="0" style="flex:1;min-width:120px">
+        <div id="rpGame" class="rp-game" hidden>
+          <div class="row"><span class="muted">Chọn màn khác ở danh sách thì tự vào màn đó; sửa màn thì Lưu rồi bấm 🎮 lại.</span><button class="btn" id="rpGameClose">✕ Đóng</button></div>
+          <iframe id="rpFrame" title="Game"></iframe>
         </div>
-        <div id="rpInfo" class="rp-info"></div>
-        <div id="rpBoard" style="margin-top:6px"></div>
-        <div class="legend muted"><span><i style="background:#3a9a5b"></i>thẻ vừa đặt</span><span><i style="background:#e07a2e"></i>bị gom (biến mất ở bước sau)</span></div>
       </div>
     </section>
     <details class="card">
@@ -262,7 +256,7 @@
     <p class="hint">Bot chơi từng màn theo 3 profile (yếu / trung bình / giỏi). <b>Thời gian</b> = số lần thua × thời gian ván thua + thời gian ván thắng; mỗi lượt = nhìn bàn + nghĩ (tăng theo log số lựa chọn thật trên bàn: có nước gom thì chỉ đếm nước gom, nước có tay hướng dẫn không phải nghĩ) + kéo / xoay / đổi Hold + anim gom.
       <b>Booster</b>: bot có sẵn booster không giới hạn (+3 lượt khi còn 1 lượt mà đã gần đủ điểm, đổi thẻ khi thẻ không vừa bàn); cột Δ = thời gian thay đổi so với không dùng booster.</p>
     <div class="row"><label style="width:120px">Số ván mỗi màn<input type="number" id="ptRuns" value="60" min="10" max="400" step="10"></label>
-      <button class="btn primary" id="btnPlaytime">▶ Chạy bảng</button><span class="muted" id="ptStatus"></span></div>
+      <button class="btn primary" id="btnPlaytime">▶ Chạy bảng</button><button class="btn" id="btnPlaytimeOne" title="Chỉ chạy bot cho màn đang chọn (3 profile, có / không booster)">▶ Chạy màn hiện tại</button><span class="muted" id="ptStatus"></span></div>
     <div class="scroll" style="margin-top:8px;max-height:520px"><table id="playtimeTable"></table></div>
   </section>
 <dialog id="help">

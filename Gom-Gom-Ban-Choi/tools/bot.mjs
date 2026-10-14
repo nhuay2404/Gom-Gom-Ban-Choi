@@ -33,7 +33,7 @@ function movesFor(board, card, rng, noise, W, H) {
     indices.forEach(index => { if (match.board[index]) setup += connectedGroup(match.board, W, H, index).length - 1; });
     const empty = match.board.filter(cell => !cell).length;
     const value = points * 10 + setup * 6 + empty * 0.5 + rng() * noise;
-    out.push({ value, match, points, indices, placed: next, rot });
+    out.push({ value, match, points, indices, placed: next, rot, anchor });
   }
   return out;
 }
@@ -80,6 +80,19 @@ function lookaheadPick(board, options, active, hold, queue, useHold, rng, noise,
     if (!pick || total > pick.total) pick = { ...c, total };
   }
   return pick;
+}
+
+// Chọn nước đi cho game thật (Level Editor chạy bot trong game): trạng thái hiện tại -> { hold: có đổi Gửi tạm trước không, rot: số lần xoay, anchor }.
+// next = thẻ kế trong hàng chờ (mảng; thẻ đầu là thẻ sẽ được bóc). Không có nước nào thì trả về null.
+export function pickMove({ board, W, H, active, hold = null, next = [], useHold = true, noise = 1, lookahead = false, rng = Math.random }) {
+  const options = [{ card: active }];
+  if (useHold && (hold || next[0])) options.push({ card: hold || next[0] });
+  let pick = lookahead ? lookaheadPick(board, options, active, hold, next, useHold, rng, noise, W, H) : null;
+  if (!lookahead) for (const option of options) {
+    const move = bestMove(board, option.card, rng, noise, W, H);
+    if (move && (!pick || move.value > pick.move.value)) pick = { option, move };
+  }
+  return pick && { hold: pick.option.card !== active, rot: pick.move.rot, anchor: pick.move.anchor };
 }
 
 // Thời gian một lượt của người chơi (giây) khi truyền pace = { look, think, drag, rotate, hold, gom, settle }:

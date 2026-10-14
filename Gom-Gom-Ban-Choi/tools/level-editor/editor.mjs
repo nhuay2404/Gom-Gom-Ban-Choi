@@ -96,7 +96,6 @@ $('levelList').addEventListener('click', event => {
 
 // ---------- Form ----------
 const FIELDS = [
-  { key: 'name', label: 'Tên', cls: 'wide' },
   { key: 'tier', label: 'Tier', type: 'select', options: ['normal', 'hard', 'chill', 'boss'] },
   { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage'] },
   { key: 'moves', label: 'Lượt', type: 'number' },
@@ -445,7 +444,7 @@ function renderCurve() {
     const path = segs.map(points => `<polyline points="${points.join(' ')}" fill="none" stroke="${p.color}" stroke-width="${p.width}" ${p.id === 'base' ? '' : 'stroke-dasharray="5 3" opacity=".75"'}/>`).join('');
     const dots = p.id !== 'base' ? '' : LEVELS.map((l, i) => {
       const e = evAt(i, p);
-      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1}. ${l.name} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
+      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
     }).join('');
     return path + dots;
   }).join('');
@@ -468,7 +467,7 @@ function renderBreakdown() {
   }).join('');
   // Bot không thắng ván nào: EV không đáng tin (số lần thử bị chặn ở 10) và màn có thể đang hỏng.
   const broken = base && !base.raw.winRate ? `<tr><td colspan="9" class="warn">⚠ Profile cơ bản không thắng ván nào ở màn này — EV không đáng tin (số lần thử bị chặn ở 10). Kiểm tra lại màn (bàn, lượt, mục tiêu).</td></tr>` : '';
-  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}: ${level().name}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
+  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
 }
 $('evChart').addEventListener('click', event => { const i = event.target.dataset?.i; if (i !== undefined) { current = Number(i); lastBot = null; renderAll(); } });
 $('curveLegend').addEventListener('change', event => { const id = event.target.dataset.p; if (!id) return; if (event.target.checked) shown.add(id); else shown.delete(id); renderCurve(); });
@@ -581,68 +580,13 @@ function scrollToCurrent() {
 }
 $('levelList').addEventListener('click', event => { if (event.target.closest('button[data-i]')) ptSelectLevel(); });
 $('evChart').addEventListener('click', event => { if (event.target.dataset?.i !== undefined) ptSelectLevel(); });
+$('btnPlaytimeOne').onclick = ptSelectLevel;
 $('ptRuns').addEventListener('change', renderPlaytime);
 renderPlaytime();
 
-// ---------- Xem AI chơi (khung Vẽ bàn chơi): phát lại từng nước bot đi ở màn đang chọn ----------
-// Mỗi lượt 2 khung hình: (1) bàn sau khi đặt thẻ (ô vừa đặt xanh, ô sắp bị gom cam) và (2) bàn sau khi gom.
-const GROUP_LETTER = Object.fromEntries(Object.entries(LETTERS).map(([letter, group]) => [group, letter]));
-// Bàn của bot (mảng ô) -> các hàng chữ như levels.mjs để vẽ bằng boardHtml.
-function rowsOf(board, W) {
-  const ch = cell => !cell ? '.' : cell.void ? '#' : cell.metal ? 'M' : cell.block ? 'X'
-    : (l => (cell.cage > 0 ? l.toLowerCase() : l))(GROUP_LETTER[cell.group] ?? '?');
-  const flat = board.map(ch).join('');
-  return Array.from({ length: flat.length / W }, (_, r) => flat.slice(r * W, r * W + W));
-}
-let rpFrames = [], rpTimer = 0;
-$('rpProfile').innerHTML = PT_PROFILES.map((p, i) => `<option value="${i}" ${i === 1 ? 'selected' : ''}>${p.label}</option>`).join('');
-function rpBuild() {
-  const l = level(), p = PT_PROFILES[Number($('rpProfile').value)], seed = Math.max(1, Number($('rpSeed').value) || 1), { W } = boardSize(l.board);
-  const trace = [];
-  const result = play(l, (current + 1) * 100000 + seed - 1, { noise: p.noise, hold: p.hold && holdUnlocked(current), lookahead: !!p.lookahead, boost: $('rpBoost').checked ? { at: .7, want: () => true } : null, trace });
-  const goal = `${l.target} điểm`;
-  rpFrames = [{ rows: l.board, text: `Bắt đầu · ${l.moves} lượt · mục tiêu ${goal}` }];
-  trace.forEach((t, k) => {
-    const card = t.card.items.map(item => catArt(GROUP_LETTER[item.group])).join('');
-    const head = `Lượt ${k + 1}: đặt <span class="rp-card">${card}</span>${t.hold ? ' <b>(lấy từ Hold)</b>' : ''}`;
-    const boosts = t.boosts.moves || t.boosts.swap ? ` · booster: +lượt ×${t.boosts.moves}, đổi thẻ ×${t.boosts.swap}` : '';
-    rpFrames.push({ rows: rowsOf(t.placed, W), cells: t.cells, cleared: t.cleared,
-      text: `${head} · ${t.cleared.length ? `gom ${t.cleared.length} mèo, +${t.points}` : 'chưa gom được'}` });
-    rpFrames.push({ rows: rowsOf(t.board, W),
-      text: `Sau lượt ${k + 1}: ${t.score}/${l.target} điểm · còn ${t.movesLeft} lượt${boosts}` });
-  });
-  // Lý do thua: điểm chưa đủ, hoặc đủ điểm nhưng còn mèo trong chuồng (thắng cần đủ cả hai).
-  const last = trace.at(-1), caged = last ? last.board.filter(cell => cell?.cage).length : 0;
-  const missing = [result.score < l.target ? `thiếu ${l.target - result.score} điểm` : '', caged ? `còn ${caged} mèo trong chuồng` : ''].filter(Boolean).join(', ');
-  const end = result.win ? `✅ Thắng ${result.stars}⭐ sau ${result.movesUsed} lượt` : `❌ Thua: ${result.reason === 'stuck' ? 'kẹt, thẻ không còn chỗ đặt' : 'hết lượt'}${missing ? ` (${missing})` : ''}`;
-  rpFrames.at(-1).text += ` — <b>${end}</b>`;
-  $('rpStep').max = rpFrames.length - 1;
-  rpShow(0);
-}
-function rpShow(i) {
-  i = Math.max(0, Math.min(rpFrames.length - 1, i));
-  $('rpStep').value = i;
-  const f = rpFrames[i];
-  $('rpBoard').innerHTML = boardHtml(f.rows, false);
-  const cells = $('rpBoard').querySelectorAll('.cell');
-  f.cells?.forEach(c => cells[c]?.classList.add('rp-placed'));
-  f.cleared?.forEach(c => cells[c]?.classList.add('rp-cleared'));
-  $('rpInfo').innerHTML = `<span class="muted">${i}/${rpFrames.length - 1}</span> ${f.text}`;
-}
-const rpStop = () => { clearInterval(rpTimer); rpTimer = 0; $('rpPlay').textContent = '▶ Phát'; };
-$('rpFirst').onclick = () => { rpStop(); rpShow(0); };
-$('rpPrev').onclick = () => { rpStop(); rpShow(Number($('rpStep').value) - 1); };
-$('rpNext').onclick = () => { rpStop(); rpShow(Number($('rpStep').value) + 1); };
-$('rpLast').onclick = () => { rpStop(); rpShow(rpFrames.length - 1); };
-$('rpStep').oninput = () => { rpStop(); rpShow(Number($('rpStep').value)); };
-$('rpPlay').onclick = () => {
-  if (rpTimer) return rpStop();
-  if (Number($('rpStep').value) >= rpFrames.length - 1) rpShow(0);
-  $('rpPlay').textContent = '⏸ Dừng';
-  rpTimer = setInterval(() => { const i = Number($('rpStep').value) + 1; if (i >= rpFrames.length) return rpStop(); rpShow(i); }, 700);
-};
-$('rpNewGame').onclick = () => { $('rpSeed').value = Number($('rpSeed').value) + 1; rpStop(); rpBuild(); };
-for (const id of ['rpProfile', 'rpSeed', 'rpBoost']) $(id).addEventListener('change', () => { rpStop(); rpBuild(); });
-$('levelList').addEventListener('click', event => { if (event.target.closest('button[data-i]')) { rpStop(); rpBuild(); } });
-$('evChart').addEventListener('click', event => { if (event.target.dataset?.i !== undefined) { rpStop(); rpBuild(); } });
-rpBuild();
+// Game thật chạy ngay trong editor (iframe, cùng máy chủ: /game/index.html?level=N, chỉ dev). Đọc thẳng file màn đã lưu.
+const rpGameOpen = () => { $('rpFrame').src = `../../game/index.html?dev&embed&level=${current + 1}${$('rpWho').value ? `&bot=${$('rpWho').value}` : ''}`; $('rpGame').hidden = false; };
+$('rpPlayGame').onclick = rpGameOpen;
+$('rpWho').onchange = () => { if (!$('rpGame').hidden) rpGameOpen(); };
+$('rpGameClose').onclick = () => { $('rpGame').hidden = true; $('rpFrame').src = 'about:blank'; };
+for (const id of ['levelList', 'evChart']) $(id).addEventListener('click', event => { if (!$('rpGame').hidden && (event.target.closest('button[data-i]') || event.target.dataset?.i !== undefined)) rpGameOpen(); });
