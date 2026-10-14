@@ -163,7 +163,6 @@
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
       <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
     <div class="deco-side">
@@ -192,7 +191,7 @@
     <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, gameplay/idle.mjs) -->
     <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
     <button id="area-next" class="area-next" hidden></button>
-    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b></button>
+    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b><i class="idle-spark s1"></i><i class="idle-spark s2"></i><i class="idle-spark s3"></i><i class="idle-spark s4"></i><i class="idle-spark s5"></i><i class="idle-spark s6"></i></button>
     <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
@@ -208,7 +207,6 @@
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
       <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-      <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
     </div>
     <div id="shop-pages" class="shop-pages" role="tablist" aria-label="Shop">
       <button role="tab" data-page="store" aria-selected="true">Shop</button>
@@ -262,7 +260,6 @@
       <div class="wallet-hud">
         <span class="fh-pill fh-coins" aria-label="Coins"><b id="map-coins">0</b></span>
         <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
-        <button class="fh-pill fh-energy soon" aria-label="Energy (coming soon)"></button>
       </div>
       <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
       <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
