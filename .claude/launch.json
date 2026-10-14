@@ -46,7 +46,7 @@
    "name": "hc-kit-sandbox",
    "runtimeExecutable": "node",
    "runtimeArgs": [
-    "../Asset-Game-Kit/liveops/tools/serve.mjs",
+    "../Game-kit/liveops/tools/serve.mjs",
     "4431"
    ],
    "port": 4431
