@@ -199,8 +199,10 @@ test('mèo nhận ở Map: chưa nhận thì khoá (dù đã qua màn); nhận r
   const claimed = claimCat(deco, 'tabby');
   assert.equal(itemStatus(claimed, tabby, 1), 'using');
   assert.equal(claimCat(claimed, 'tabby'), claimed);
-  const full = { ...deco, cats: Array.from({ length: MAX_ROOM_CATS }, (_, k) => ['gray', 'orange', 'white', 'siamese', 'tuxedo'][k % 5]) };
-  assert.equal(itemStatus(claimCat(full, 'tabby'), tabby, 1), 'owned');
+  // Không giới hạn số thú trong nhà: nhà đông vẫn nhận thêm (12 giống mèo + chó)
+  const crowded = { ...deco, cats: ['gray', 'orange', 'white', 'siamese', 'tuxedo', 'shiba', 'pug', 'golden'] };
+  assert.equal(itemStatus(claimCat(crowded, 'tabby'), tabby, 1), 'using');
+  assert.equal(applyAction({ ...crowded, claimedCats: [...crowded.cats, 'rottweiler'] }, itemById('dog-rottweiler'), 99).cats.length, 9);
   const store = memoryStore();
   setStorageBackend(store);
   writeJSON(SAVE_KEYS.deco, { ...deco, claimedCats: undefined, cats: ['gray', 'tabby'] });

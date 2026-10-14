@@ -157,6 +157,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Đi bộ (`walkTo`): lách vật cản về **phía gần**; giới hạn thời gian tính theo quãng đường (vườn mở rộng dài 16 m);
   chống kẹt: 1.2 s không tiến ≥ .25 m thì lách (`detourSpot`, không xuyên rào) / nhảy qua đồi (`hopOverHill`).
   Thử hành vi mèo ở khu rộng: cho mèo đi giữa hai đầu xa nhất (góc phần mở rộng ↔ phòng khách / phòng ngủ).
+  Kẹt vì con khác (ùn ở cửa / cổng, hai dòng ngược chiều): con kẹt len qua (`squeezeUntil`: bỏ va chạm giữa các con SQUEEZE_TIME giây,
+  rồi tách dần ≤ 1.5 cm mỗi lượt). Đừng chỉ lách sang bên: cửa rộng 1 m không có chỗ lách (lỗi cũ: 10 con ở cổng vườn, 2 con qua được sau 25 s).
 - Test mèo trong trình duyệt: giữ thức bằng `window.dispatchEvent(new PointerEvent('pointerup'))` mỗi 1.5 s (AFK 5 s
   thì mèo đi ngủ); PointerEvent tự tạo không nổi bọt nên phải phát ở `window`.
 - Món có phần đung đưa / xoay mà mèo ngồi lên: `userData.ride` + lò xo kéo về góc nghỉ 0.
