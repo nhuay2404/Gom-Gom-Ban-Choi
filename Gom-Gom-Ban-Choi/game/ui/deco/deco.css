@@ -263,11 +263,10 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
   filter:drop-shadow(0 0 3px #fff3a0) drop-shadow(0 0 6px #ffd84a);opacity:0}
 .idle-spark.s1{left:-8px;top:-6px}.idle-spark.s2{left:30%;top:-12px;width:10px;height:10px}.idle-spark.s3{right:-9px;top:-3px;width:16px;height:16px}
 .idle-spark.s4{right:6px;bottom:-10px;width:11px;height:11px}.idle-spark.s5{left:-12px;bottom:2px;width:10px;height:10px}.idle-spark.s6{left:46%;top:-16px;width:8px;height:8px}
-@media(prefers-reduced-motion:no-preference){.idle-coin{animation:idle-bob 1.2s ease-in-out infinite alternate}.idle-coin.full{animation:idle-bob .6s ease-in-out infinite alternate}
+@media(prefers-reduced-motion:no-preference){
   .idle-spark{animation:idle-twinkle 1.4s ease-in-out infinite}.idle-coin.full .idle-spark{animation-duration:.8s}
   .idle-spark.s2{animation-delay:.25s}.idle-spark.s3{animation-delay:.55s}.idle-spark.s4{animation-delay:.8s}.idle-spark.s5{animation-delay:1.05s}.idle-spark.s6{animation-delay:.4s}}
 @media(prefers-reduced-motion:reduce){.idle-spark{opacity:.9}}
-@keyframes idle-bob{to{margin-top:-54px}}
 @keyframes idle-twinkle{0%,100%{opacity:0;scale:.2;rotate:0deg}45%{opacity:1;scale:1.15;rotate:25deg}70%{opacity:.8;scale:.8;rotate:45deg}}
 #deco.ui-locked>.idle-coin{display:none}
 .deco-dock .zone-switch.dragging{cursor:grabbing;user-select:none}

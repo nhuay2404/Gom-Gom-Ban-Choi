@@ -7,8 +7,18 @@ export const categories = {
   tuxedo: { name: 'Tuxedo cat', color: '#2f2c31', fur: '#322f35', side: '#1a181c', belly: '#fbf8f3', muzzle: true, paw: '#fbf8f3', eye: '#e8b53a', ears: 'small', eyeStyle: 'slit', mood: 'wink' },
   siamese: { name: 'Siamese cat', color: '#e8d6bd', fur: '#efe0cb', side: '#c4ab8c', mask: '#6b4a3a', belly: '#f7ecdc', paw: '#6b4a3a', eye: '#4aa3e0', ears: 'wide', eyeStyle: 'iris', mood: 'smile' },
   tabby: { name: 'Calico cat', color: '#f2952f', fur: '#faf6ef', side: '#2f2b2d', stripe: '#f2952f', belly: '#faf6ef', paw: '#faf6ef', eye: '#7fae3a', ears: 'fold', eyeStyle: 'slit', mood: 'blep' },
+  // Chó (Figma "dog-<giống>-board / face-*"): chỉ vẽ bằng ảnh Figma; ears 'pointy' = tai dựng (3D: tai tam giác như mèo), 'fold' = tai cụp (3D: vạt tai rủ).
+  shiba: { name: 'Shiba dog', dog: true, color: '#de7d3a', fur: '#de7d3a', side: '#bc5e22', belly: '#faf0e2', paw: '#faf0e2', eye: '#2a1d18', ears: 'pointy', eyeStyle: 'dot', mood: 'happy' },
+  dalmatian: { name: 'Dalmatian dog', dog: true, color: '#3a3a40', fur: '#f7f5f0', side: '#dcd8cf', belly: '#ffffff', paw: '#ffffff', eye: '#2a2a30', ears: 'fold', eyeStyle: 'dot', mood: 'happy' },
+  rottweiler: { name: 'Rottweiler dog', dog: true, color: '#2a2a30', fur: '#2a2a30', side: '#0b0b0d', belly: '#b8642b', paw: '#b8642b', eye: '#e8b53a', ears: 'fold', eyeStyle: 'dot', mood: 'happy' },
+  pug: { name: 'Pug dog', dog: true, color: '#e8c08a', fur: '#e8c08a', side: '#a87c44', belly: '#f6e3c4', paw: '#f6e3c4', eye: '#2a2420', ears: 'fold', eyeStyle: 'dot', mood: 'happy' },
+  golden: { name: 'Golden dog', dog: true, color: '#fbc02d', fur: '#fbc02d', side: '#dd9a12', belly: '#fff0be', paw: '#fce9bc', eye: '#2a1d18', ears: 'fold', eyeStyle: 'dot', mood: 'happy' },
+  malamute: { name: 'Malamute dog', dog: true, color: '#7b828d', fur: '#7b828d', side: '#5f6670', belly: '#f8f7f4', paw: '#f8f7f4', eye: '#2a2a30', ears: 'pointy', eyeStyle: 'dot', mood: 'happy' },
 };
 export const catGroups = Object.keys(categories);
+// Bộ chó trên bàn chơi (từ màn 30, chọn ở Home hub): luật vẫn theo 6 nhóm mèo, chỉ đổi hình — mỗi giống mèo vẽ bằng một giống chó cùng tông màu.
+export const DOG_OF = { orange: 'shiba', gray: 'malamute', white: 'dalmatian', tuxedo: 'rottweiler', siamese: 'pug', tabby: 'golden' };
+export const skinGroup = (group, skin) => (skin === 'dogs' && DOG_OF[group]) || group;
 
 // Tăng độ đậm màu (saturation) cho mọi màu của mèo; màu gần như không sắc (trắng, xám) gần như giữ nguyên.
 const SATURATION = 1.7;
@@ -158,6 +168,13 @@ const CAT_IMAGES = {
   tuxedo: { body: 'ui/shared/img/cats/tuxedo-body.png', calm: 'ui/shared/img/cats/tuxedo-calm.png', happy: 'ui/shared/img/cats/tuxedo-happy.png', cute: 'ui/shared/img/cats/tuxedo-cute.png', sleepy: 'ui/shared/img/cats/tuxedo-sleepy.png', angry: 'ui/shared/img/cats/tuxedo-angry.png', chew: 'ui/shared/img/cats/tuxedo-chew.png' },
   siamese: { body: 'ui/shared/img/cats/siamese-body.png', calm: 'ui/shared/img/cats/siamese-calm.png', happy: 'ui/shared/img/cats/siamese-happy.png', cute: 'ui/shared/img/cats/siamese-cute.png', sleepy: 'ui/shared/img/cats/siamese-sleepy.png', angry: 'ui/shared/img/cats/siamese-angry.png', chew: 'ui/shared/img/cats/siamese-chew.png' },
   tabby: { body: 'ui/shared/img/cats/tabby-body.png', calm: 'ui/shared/img/cats/tabby-calm.png', happy: 'ui/shared/img/cats/tabby-happy.png', cute: 'ui/shared/img/cats/tabby-cute.png', sleepy: 'ui/shared/img/cats/tabby-sleepy.png', angry: 'ui/shared/img/cats/tabby-angry.png', chew: 'ui/shared/img/cats/tabby-chew.png' },
+  // Chó: cùng khuôn, ảnh ở ui/shared/img/dogs; có thêm mặt 'sleep' dạng ảnh (mèo vẽ mặt ngủ bằng SLEEP_FACE).
+  shiba: { body: 'ui/shared/img/dogs/shiba-body.png', calm: 'ui/shared/img/dogs/shiba-calm.png', happy: 'ui/shared/img/dogs/shiba-happy.png', cute: 'ui/shared/img/dogs/shiba-cute.png', sleepy: 'ui/shared/img/dogs/shiba-sleepy.png', sleep: 'ui/shared/img/dogs/shiba-sleep.png', angry: 'ui/shared/img/dogs/shiba-angry.png', chew: 'ui/shared/img/dogs/shiba-chew.png' },
+  dalmatian: { body: 'ui/shared/img/dogs/dalmatian-body.png', calm: 'ui/shared/img/dogs/dalmatian-calm.png', happy: 'ui/shared/img/dogs/dalmatian-happy.png', cute: 'ui/shared/img/dogs/dalmatian-cute.png', sleepy: 'ui/shared/img/dogs/dalmatian-sleepy.png', sleep: 'ui/shared/img/dogs/dalmatian-sleep.png', angry: 'ui/shared/img/dogs/dalmatian-angry.png', chew: 'ui/shared/img/dogs/dalmatian-chew.png' },
+  rottweiler: { body: 'ui/shared/img/dogs/rottweiler-body.png', calm: 'ui/shared/img/dogs/rottweiler-calm.png', happy: 'ui/shared/img/dogs/rottweiler-happy.png', cute: 'ui/shared/img/dogs/rottweiler-cute.png', sleepy: 'ui/shared/img/dogs/rottweiler-sleepy.png', sleep: 'ui/shared/img/dogs/rottweiler-sleep.png', angry: 'ui/shared/img/dogs/rottweiler-angry.png', chew: 'ui/shared/img/dogs/rottweiler-chew.png' },
+  pug: { body: 'ui/shared/img/dogs/pug-body.png', calm: 'ui/shared/img/dogs/pug-calm.png', happy: 'ui/shared/img/dogs/pug-happy.png', cute: 'ui/shared/img/dogs/pug-cute.png', sleepy: 'ui/shared/img/dogs/pug-sleepy.png', sleep: 'ui/shared/img/dogs/pug-sleep.png', angry: 'ui/shared/img/dogs/pug-angry.png', chew: 'ui/shared/img/dogs/pug-chew.png' },
+  golden: { body: 'ui/shared/img/dogs/golden-body.png', calm: 'ui/shared/img/dogs/golden-calm.png', happy: 'ui/shared/img/dogs/golden-happy.png', cute: 'ui/shared/img/dogs/golden-cute.png', sleepy: 'ui/shared/img/dogs/golden-sleepy.png', sleep: 'ui/shared/img/dogs/golden-sleep.png', angry: 'ui/shared/img/dogs/golden-angry.png', chew: 'ui/shared/img/dogs/golden-chew.png' },
+  malamute: { body: 'ui/shared/img/dogs/malamute-body.png', calm: 'ui/shared/img/dogs/malamute-calm.png', happy: 'ui/shared/img/dogs/malamute-happy.png', cute: 'ui/shared/img/dogs/malamute-cute.png', sleepy: 'ui/shared/img/dogs/malamute-sleepy.png', sleep: 'ui/shared/img/dogs/malamute-sleep.png', angry: 'ui/shared/img/dogs/malamute-angry.png', chew: 'ui/shared/img/dogs/malamute-chew.png' },
 };
 // Đường dẫn tính từ thư mục game/ (không phải trang đang mở): trang khác nạp module này (Level Editor ở tools/level-editor/) vẫn đúng ảnh.
 // Bản HTML một file đã thay đường dẫn bằng data URI: giữ nguyên.
@@ -177,7 +194,26 @@ const BODY_BOX = `x="${CAT_BODY_BOX.x}" y="${CAT_BODY_BOX.y}" width="${CAT_BODY_
 // Ảnh thân vẽ theo khổ khác bộ chung (tam thể: ảnh 256 × 256, khối thân chỉ rộng 234 px, cao 200 px — đặt chung khung thì thấp và
 // hẹp hơn các con khác): kéo riêng theo hai trục cho khối thân bằng khối thân chuẩn (ảnh cam: rộng 256, cao 241 px).
 // w, h: cỡ ảnh; sx, sy: hệ số kéo so với tỉ lệ chung (bề rộng thân chuẩn / bề rộng thân ảnh này...).
-export const CAT_BODY_STRETCH = { tabby: { w: 256, h: 256, sx: 256 / 234, sy: 241 / 200 } };
+export const CAT_BODY_STRETCH = {
+  tabby: { w: 256, h: 256, sx: 256 / 234, sy: 241 / 200 },
+  // Chó: ảnh rộng 256 nhưng khối thân hẹp hơn (shiba / malamute 228 px, còn lại 200 px): phóng đều hai trục cho bằng bề rộng thân chuẩn
+  // (giữ đúng tỉ lệ khối như bảng mẫu Figma "_expressions_preview").
+  shiba: { w: 256, h: 291, sx: 256 / 228, sy: 256 / 228 }, malamute: { w: 256, h: 291, sx: 256 / 228, sy: 256 / 228 },
+  dalmatian: { w: 256, h: 226, sx: 256 / 200, sy: 256 / 200 }, golden: { w: 256, h: 226, sx: 256 / 200, sy: 256 / 200 },
+  rottweiler: { w: 256, h: 242, sx: 256 / 200, sy: 256 / 200 }, pug: { w: 256, h: 242, sx: 256 / 200, sy: 256 / 200 },
+};
+// Lớp biểu cảm của chó to gần bằng cả ảnh thân (khác mèo): [x, y, cạnh] tính theo px ảnh thân, đo bằng cách khớp ảnh mặt lên bảng mẫu
+// Figma "_expressions_preview" (sai số ~1 px).
+const DOG_FACE_PX = {
+  golden: [2, -11, 252], dalmatian: [2, -11, 252], rottweiler: [3, -5, 251], pug: [3, -5, 251], shiba: [-14, 4, 286], malamute: [-16, 3, 289],
+};
+// Khung lớp biểu cảm (toạ độ 100 × 106) của một giống: mèo dùng chung CAT_EXPR_BOX, chó theo DOG_FACE_PX.
+export function catExprBox(group) {
+  const f = DOG_FACE_PX[group], s = CAT_BODY_STRETCH[group];
+  if (!f) return { x: CAT_EXPR_BOX.x, y: CAT_EXPR_BOX.y, w: CAT_EXPR_BOX.size, h: CAT_EXPR_BOX.size };
+  const b = catBodyPlacement(group, s.w, s.h);
+  return { x: b.x + f[0] * b.kx, y: b.y + f[1] * b.ky, w: f[2] * b.kx, h: f[2] * b.ky };
+}
 // Vị trí ảnh thân trong khung 100 × 106: góc trên trái (x, y) + số đơn vị SVG cho mỗi px ảnh theo hai trục (kx, ky). Ảnh canh giữa, đáy
 // trùng đáy CAT_BODY_BOX. room-cats.mjs dùng để quy khung biểu cảm về mặt trước của mèo 3D.
 export function catBodyPlacement(group, w, h) {
@@ -190,7 +226,7 @@ const bodyBox = group => {
   const b = catBodyPlacement(group, s.w, s.h);
   return `x="${b.x.toFixed(2)}" y="${b.y.toFixed(2)}" width="${(s.w * b.kx).toFixed(2)}" height="${(s.h * b.ky).toFixed(2)}" preserveAspectRatio="none"`;
 };
-const EXPR_BOX = `x="${CAT_EXPR_BOX.x.toFixed(2)}" y="${CAT_EXPR_BOX.y.toFixed(2)}" width="${CAT_EXPR_BOX.size.toFixed(2)}" height="${CAT_EXPR_BOX.size.toFixed(2)}"`;
+const exprBox = group => { const e = catExprBox(group); return `x="${e.x.toFixed(2)}" y="${e.y.toFixed(2)}" width="${e.w.toFixed(2)}" height="${e.h.toFixed(2)}" preserveAspectRatio="none"`; };
 // Mặt ngủ say (cột "sleep" trong Figma, vẽ bằng vector): hai mắt nhắm cong "‿" đen, dày ở giữa, miệng "^" nâu nhỏ.
 // Toạ độ trong khung biểu cảm 100 × 100 (cùng khung với ảnh biểu cảm).
 export const SLEEP_FACE = `<g fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -208,6 +244,12 @@ const HANG_COLORS = {
   tuxedo: { fur: '#322d30', side: '#1f1a1d', belly: '#f9f4ea', paw: '#f8f0e5', pawSide: '#d8cdbf', toe: '#7e7165' },
   siamese: { fur: '#f7e5ce', side: '#7a4530', belly: '#e3c39f', paw: '#6a3521', pawSide: '#4c2416', toe: '#bf8069', tail: ['#4c2416', '#6a3521'] },
   tabby: { fur: '#faf6ef', side: '#2f2b2d', belly: '#fbf5ed', paw: '#f3ede1', pawSide: '#d4ccbd', toe: '#5f5548', stripe: '#f2952f' }, // mèo tam thể (calico): khung 'tabby' giữ nguyên id
+  shiba: { fur: '#de7d3a', side: '#bc5e22', belly: '#faf0e2', paw: '#faf0e2', pawSide: '#e0cdb4', toe: '#b89676' },
+  dalmatian: { fur: '#f7f5f0', side: '#dcd8cf', belly: '#ffffff', paw: '#ffffff', pawSide: '#dcd8cf', toe: '#2a2a30' },
+  rottweiler: { fur: '#2a2a30', side: '#0b0b0d', belly: '#b8642b', paw: '#b8642b', pawSide: '#8a461b', toe: '#5e3012' },
+  pug: { fur: '#e8c08a', side: '#a87c44', belly: '#f6e3c4', paw: '#f6e3c4', pawSide: '#cc9f63', toe: '#8a6a45' },
+  golden: { fur: '#fbc02d', side: '#dd9a12', belly: '#fff0be', paw: '#fce9bc', pawSide: '#e6c98a', toe: '#c08850' },
+  malamute: { fur: '#7b828d', side: '#5f6670', belly: '#f8f7f4', paw: '#f8f7f4', pawSide: '#d9d9de', toe: '#9aa0a8' },
 };
 // Đa giác bát giác (hình chữ nhật vát góc c)
 const oct = (x, y, w, h, c) => `M${x + c} ${y}H${x + w - c}L${x + w} ${y + c}V${y + h - c}L${x + w - c} ${y + h}H${x + c}L${x} ${y + h - c}V${y + c}Z`;
@@ -228,9 +270,9 @@ function blockHang(group) {
     </g>`;
 }
 function bitmapCatSvg(group, hang) {
-  const face = mood => mood === 'sleep'
+  const face = mood => mood === 'sleep' && !CAT_IMAGES[group].sleep
     ? `<g transform="translate(${CAT_EXPR_BOX.x.toFixed(2)} ${CAT_EXPR_BOX.y.toFixed(2)}) scale(${(CAT_EXPR_BOX.size / 100).toFixed(4)})">${SLEEP_FACE}</g>`
-    : `<image href="${bitmap(group, mood)}" ${EXPR_BOX}/>`;
+    : `<image href="${bitmap(group, mood)}" ${exprBox(group)}/>`;
   const afk = (name, mood, extra = '') => `<g class="afk afk-${name}" visibility="hidden">${face(mood)}${extra}</g>`;
   // Mặt ngủ say (AFK lâu): ba chữ z xanh viền trắng (to → nhỏ) bay lên ở góc trên phải đầu (CSS .afk-z path lo anim, lệch nhịp từng chữ)
   const zzz = `<g class="afk-z" fill="none" stroke-linecap="round" stroke-linejoin="round">${[[68, 30, 13], [79, 15, 10.5], [88, 3, 8.5]].map(([x, y, w], i) =>

@@ -65,6 +65,11 @@
 .fh-feedback svg{width:calc(25 * var(--u));height:calc(25 * var(--u));fill:#ff8fb0;stroke:#6b3329;stroke-width:1.8;stroke-linejoin:round;color:#fff}
 .fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
 .fh-feedback:active{translate:0 calc(2 * var(--u))}
+/* Nút đổi bộ quân (mèo / chó): cùng kiểu nút Feedback, ngay dưới; ảnh là quân mèo / chó thu nhỏ */
+.fh-skin{top:calc(317 * var(--u));padding:0;font:inherit;cursor:pointer}
+.fh-skin[hidden]{display:none}
+.fh-skin-art{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u))}
+.fh-skin-art svg{width:100%;height:100%;overflow:visible}
 /* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
 .fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
 .fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}

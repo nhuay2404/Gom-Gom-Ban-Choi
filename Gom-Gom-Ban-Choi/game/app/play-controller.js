@@ -4,20 +4,20 @@
 // Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở main.js).
 import { mergeTarget, placementIndices } from '../gameplay/board-rules.mjs';
 import { clusterPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
-import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS } from '../ui/cat-art.mjs';
+import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS, skinGroup } from '../ui/cat-art.mjs';
 import { LEVELS } from '../gameplay/levels.mjs';
 import * as game from '../gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from '../gameplay/tuning.mjs';
 import { COMEBACK_GIFT_MOVES } from '../gameplay/economy.mjs';
 import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
-import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG } from '../ui/board-art.mjs';
+import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG, GRASS_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
 import * as ob from './onboarding.js';
 import { playSound, playMeow, playMeowChorus } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
 import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
 import { AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, showToast } from './shared.js';
+import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, showToast, pieceSkin } from './shared.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
@@ -40,8 +40,18 @@ function startTracking() {
   track = { start: t, last: t, thinks: [], idleMs: 0, idleSince: 0, boosters: 0, boostUse: { hammer: 0, swap: 0, moves: 0 }, bought: 0, preBoostRatio: null, done: false };
 }
 const median = list => { const s = [...list].sort((a, b) => a - b); return s.length ? s[s.length >> 1] : 0; };
+// Bộ quân đang dùng (mèo / chó, shared.js pieceSkin): đọc lại mỗi lần vào màn. look(nhóm) = giống vẽ trên bàn (tên, màu, hình).
+let skin = pieceSkin();
+// Đổi bộ giữa chừng (nút Home hub): vẽ lại quân đang có trên bàn + thẻ đang cầm / kế tiếp / Hold ở lần render tới
+addEventListener('pieceskin', () => {
+  skin = pieceSkin();
+  $('board').querySelectorAll(':scope > .cell').forEach(cell => { cell.renderedObject = undefined; });
+  for (const el of document.querySelectorAll('*')) if ('renderedKey' in el) el.renderedKey = null; // thẻ đang cầm / kế tiếp / Hold (sự kiện hiếm)
+  if (state) render();
+});
+const look = group => categories[skinGroup(group, skin)];
 function addArt(element, object) {
-  addCatArt(element, object.group);
+  addCatArt(element, skinGroup(object.group, skin));
 }
 
 function normalizePreview(offsets) {
@@ -69,7 +79,7 @@ function renderCard(container, card, compact = false) {
     const cell = document.createElement('span');
     cell.className = `piece-object ${card.items[index].group}`;
     cell.style.gridArea = `${row + 1}/${col + 1}`;
-    cell.style.setProperty('--group-color', categories[card.items[index].group].color);
+    cell.style.setProperty('--group-color', look(card.items[index].group).color);
     addArt(cell, card.items[index]); grid.append(cell);
   });
   container.append(grid);
@@ -266,10 +276,20 @@ function placeAt(anchor) {
   breakCrates(match.broken, DROP_MS + LIFT_MS + MERGE_MS * .7);
   match.broken?.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, DROP_MS + LIFT_MS + MERGE_MS * .7 + 120, 'crate'); else releaseScoreSlot(); });
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  flyGrass(turn.cleaned, DROP_MS + LIFT_MS + MERGE_MS * .7);
   celebrateMatch(merges, DROP_MS + LIFT_MS + MERGE_MS * .7);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
   finishTurn(turn);
+}
+
+// Cỏ vừa bị phá: vài đốm cỏ văng ra từ ô (ô đã được vẽ lại sạch).
+function flyGrass(cleaned, delay) {
+  if (reduceMotion.matches || !cleaned?.length) return;
+  setTimeout(() => {
+    const layer = fxLayer();
+    cleaned.forEach(index => { const cell = cellEl(index); if (cell) flyBits(layer, cell, 'grass-bit', 5); });
+  }, delay);
 }
 
 // Chuồng mèo khi có gom sát bên: chuồng còn khóa thì rung + một ổ khóa bật ra; chuồng vỡ thì song sắt văng ra, mèo được thả.
@@ -392,7 +412,7 @@ function spawnGhosts(indices, board, placed = new Set()) {
     const ghost = document.createElement('span');
     ghost.className = `cell locked ${object.group} merge-ghost${placed.has(index) ? ' drop' : ''}`;
     ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
-    ghost.style.setProperty('--group-color', categories[object.group].color);
+    ghost.style.setProperty('--group-color', look(object.group).color);
     addArt(ghost, object);
     layer.append(ghost);
     ghosts.set(index, ghost);
@@ -761,8 +781,9 @@ function finishTurn(turn) {
   else playSound('place');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
-  const goalText = !turn.win && state.score >= state.level.target ? (state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => categories[group].name).join(', ')}! +${gained} points.${crateText}${cageText}${goalText}` : goalText.trim();
+  const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
+  const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
@@ -953,12 +974,12 @@ function render(message = '', error = false) {
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('level-title').dataset.digits = String(state.levelIndex + 1).length; // số 2 chữ số: chữ nhỏ lại cho lọt giữa hai lá trên badge
   $('moves').textContent = state.moves;
-  // Màn có lồng: ô Goal = số mèo còn bị nhốt. Hiện cạnh ô Move.
+  // Màn có cỏ: ô Goal = số ô cỏ còn lại; màn có lồng: số mèo còn bị nhốt. Hiện cạnh ô Move.
   const cages = state.board.filter(object => object?.cage).length;
-  const hasGoal = !!state.hasCages;
+  const hasGoal = !!(state.grassTotal || state.hasCages);
   $('goal-box').hidden = !hasGoal;
   $('goal-box').closest('.fg-panel').classList.toggle('has-goal', hasGoal);
-  $('goal-count').textContent = cages;
+  $('goal-count').textContent = state.grassTotal ? game.grassLeft(state) : cages;
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
   $('message').textContent = message;
@@ -1011,9 +1032,10 @@ function renderBoard() {
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    const object = state.board[index] || null;
-    if (cell.renderedObject === object) return;
+    const object = state.board[index] || null, grass = !!state.grass?.[index];
+    if (cell.renderedObject === object && cell.renderedGrass === grass) return;
     cell.renderedObject = object;
+    cell.renderedGrass = grass;
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
@@ -1030,11 +1052,12 @@ function renderBoard() {
       cell.innerHTML = object.metal ? METAL_SVG : CRATE_SVG;
       return;
     }
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}`;
-    cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty`
-      : object.cage ? `Caged ${categories[object.group].name}. Match next to it to break the lock` : `${object.name}, locked`);
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}${grass ? ' grass' : ''}`;
+    cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty${grass ? ', on grass' : ''}`
+      : object.cage ? `Caged ${look(object.group).name}. Match next to it to break the lock` : `${object.name}${grass ? ', on grass' : ''}, locked`);
+    if (grass) { cell.insertAdjacentHTML('afterbegin', GRASS_SVG); cell.firstElementChild.style.backgroundPosition = `${(index * 37) % 100}% ${(index * 61) % 100}%`; }
     if (!object) return;
-    cell.style.setProperty('--group-color', categories[object.group].color);
+    cell.style.setProperty('--group-color', look(object.group).color);
     addArt(cell, object);
     if (object.cage) cell.insertAdjacentHTML('beforeend', cageSvg());
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
@@ -1113,8 +1136,8 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
   ({ W, H } = state);
   state.hasCages = state.board.some(object => object?.cage);
-  $('goal-icon').innerHTML = CAGE_ICON_SVG;
-  $('goal-box').setAttribute('aria-label', 'Caged cats left');
+  $('goal-icon').innerHTML = state.grassTotal ? GRASS_ICON_SVG : CAGE_ICON_SVG;
+  $('goal-box').setAttribute('aria-label', state.grassTotal ? 'Grass tiles left' : 'Caged cats left');
   hammerArmed = false;
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -1124,7 +1147,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   flightGen++; scoreFlights = 0; pendingFlights = 0; // điểm còn bay từ ván trước: bỏ
   document.querySelectorAll('.score-pop, .score-orb, .praise-pop, .firework-spark, .firework-flash').forEach(node => node.remove());
   fill.style.transition = 'none';
-  const goal = `Reach ${level.target} points in ${level.moves} moves!`;
+  const goal = state.grassTotal ? `Reach ${level.target} points and clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
   render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}`);
   void fill.offsetWidth;
   fill.style.transition = '';
@@ -1313,7 +1336,7 @@ function smashAt(cell) {
     render(message);
     return celebrateWin(message).then(() => endLevel(true));
   }
-  render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${categories[turn.object.group].name} is free!` : `Bye, ${categories[turn.object.group].name}!`);
+  render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${look(turn.object.group).name} is free!` : `Bye, ${look(turn.object.group).name}!`);
 }
 
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
@@ -1504,6 +1527,7 @@ export const botApi = {
 
 // Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
 export function startLevel(index) {
+  skin = pieceSkin();
   menus.hideMenus();
   document.body.classList.remove('level-over');
   $('map').hidden = true;
@@ -1523,7 +1547,7 @@ function recordTry(win, reason) {
   if (track.idleSince) track.idleMs += now() - track.idleSince;
   const { plan, level } = state;
   const result = recordAttempt(profile, {
-    level: state.levelIndex, win, reason, ratio: +(state.score / level.target).toFixed(3), stars: win ? state.outcome.stars : 0,
+    level: state.levelIndex, win, reason, ratio: +Math.min(state.score / level.target, state.grassTotal ? 1 - game.grassLeft(state) / state.grassTotal : Infinity).toFixed(3), stars: win ? state.outcome.stars : 0,
     boosters: track.boosters, boostUse: track.boostUse, bought: track.bought, preBoostRatio: track.preBoostRatio, thinkMs: Math.round(median(track.thinks)), idleMs: Math.round(track.idleMs),
     durationMs: Math.round(now() - track.start), profile: plan.profile, shift: plan.shift, mode: plan.mode, layout: plan.layout, count: plan.count,
   });
