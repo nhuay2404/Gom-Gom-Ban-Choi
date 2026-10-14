@@ -20,25 +20,24 @@ export const ROAD_BAND = ROAD.gap + ROAD.sidewalk * 2 + ROAD.curb * 2 + ROAD.roa
 export const ROAD_NEAR = ROOM_HALF + .3;
 // Trường mẫu giáo: MỘT khu Deco hình chữ nhật (cùng khung với sân sau: kinderBounds) ngay bên kia đường, đối diện vườn. Như sân sau,
 // 'kinder2' (nửa phải) chỉ là ô đi lại của mèo. Cổng trước vườn + cổng trường cùng ở x = KINDER_GATE_X (giữa ghế dài và đèn lồng của vườn);
-// mèo qua đường bằng cầu vòm (BRIDGE, kinder-scene.mjs kinderDecor).
+// mèo đi bộ qua đường ở vạch sang đường (kinder-scene.mjs kinderDecor).
 export const KINDER_GATE_X = -.3;
 // Mốc z các dải đường (toạ độ khu nhà): mép nền vườn, vỉa hè gần (s0..s1), lề, mặt đường (c1..r1), lề, vỉa hè xa (c2..s2). Mặt vỉa hè ở y SIDEWALK_Y.
 const S0 = ROAD_NEAR + ROAD.gap;
 export const ROAD_Z = { verge: ROOM_HALF + .01, s0: S0, s1: S0 + ROAD.sidewalk, c1: S0 + ROAD.sidewalk + ROAD.curb, r1: S0 + ROAD.sidewalk + ROAD.curb + ROAD.road,
   c2: S0 + ROAD.sidewalk + ROAD.curb * 2 + ROAD.road, s2: ROAD_NEAR + ROAD_BAND };
 export const SIDEWALK_Y = -.21;
-// Cầu vòm đi bộ, lệch sang phải cổng (không nối thẳng hai cổng): chân cầu đáp trên hai vỉa hè (z0..z1), đỉnh vòm cao rise trên vỉa hè.
-export const BRIDGE = { x: KINDER_GATE_X + 2.6, w: 1.2, rise: 1.2, z0: ROAD_Z.s0 + .5, z1: ROAD_Z.s2 - .75 };
-// Độ cao mặt đi của lối qua đường tại (x, z) (toạ độ khu nhà): mặt cầu, bậc đá cổng vườn -> vỉa hè, bậc vỉa hè -> cổng trường, vỉa hè;
+// Mặt đường nhựa (meadow-scene.mjs buildRoad: base -.31 + .03): vạch sang đường đi ngang qua đây.
+export const ROAD_Y = -.28;
+// Độ cao mặt đi của lối qua đường tại (x, z) (toạ độ khu nhà): bậc đá cổng vườn -> vỉa hè, vạch sang đường ngay tại cổng, bậc vỉa hè -> cổng trường;
 // null ngoài vùng lối qua đường.
 export function crossingHeight(x, z) {
-  const B = BRIDGE, g = KINDER_GATE_X, Z = ROAD_Z;
-  if (Math.abs(x - B.x) < B.w / 2 && z > B.z0 && z < B.z1) { const t = (z - B.z0) / (B.z1 - B.z0); return SIDEWALK_Y + B.rise * 4 * t * (1 - t); }
-  if (x < g - .6 || x > B.x + .6 || z < Z.verge || z > Z.s2 + .12) return null;
+  const g = KINDER_GATE_X, Z = ROAD_Z;
+  if (Math.abs(x - g) >= .6 || z < Z.verge || z > Z.s2 + .12) return null;
   const k = (a, b) => Math.min(1, Math.max(0, (z - a) / (b - a)));
-  if (Math.abs(x - g) < .6 && z < Z.s0) return SIDEWALK_Y * k(Z.verge, Z.s0);
-  if (Math.abs(x - g) < .6 && z > Z.s2 - .35) return SIDEWALK_Y * (1 - k(Z.s2 - .35, Z.s2 + .12));
-  return SIDEWALK_Y;
+  if (z < Z.s0) return SIDEWALK_Y * k(Z.verge, Z.s0);
+  if (z > Z.s2 - .35) return SIDEWALK_Y * (1 - k(Z.s2 - .35, Z.s2 + .12));
+  return z > Z.c1 && z < Z.r1 ? ROAD_Y : SIDEWALK_Y;
 }
 // Cửa lớp học ở tường trước (toạ độ khu kinder; kinder-scene.mjs CLASSROOM): giữa lối hai cụm bàn.
 export const KINDER_DOOR = { x: 8.4, w: 1.1, h: 1.9 };
@@ -83,8 +82,8 @@ export const LINKS = [
   { a: 'garden', b: 'garden2', at: 0, w: ROOM_HALF * 2, open: true },
   { a: 'bathroom', b: 'backyard', at: ZONE_OFFSET.bathroom[1] + BACKYARD_DOOR.z, w: BACKYARD_DOOR.w },
   { a: 'backyard', b: 'backyard2', at: ZONE_OFFSET.backyard[1], w: ROOM_HALF * 2, open: true },
-  // via: điểm đi qua giữa hai cổng (toạ độ khu nhà, theo chiều a -> b): xuống vỉa hè, dọc vỉa hè tới chân cầu, qua cầu, về cổng trường
-  { a: 'garden', b: 'kinder', at: KINDER_GATE_X, w: 1, via: [[KINDER_GATE_X, ROAD_Z.s0 + .25], [BRIDGE.x, ROAD_Z.s0 + .25], [BRIDGE.x, ROAD_Z.s2 - .45], [KINDER_GATE_X, ROAD_Z.s2 - .45]] },
+  // via: điểm đi qua giữa hai cổng (toạ độ khu nhà, theo chiều a -> b): xuống vỉa hè, đi bộ thẳng qua vạch sang đường, lên vỉa hè xa
+  { a: 'garden', b: 'kinder', at: KINDER_GATE_X, w: 1, via: [[KINDER_GATE_X, ROAD_Z.s0 + .25], [KINDER_GATE_X, ROAD_Z.s2 - .45]] },
   { a: 'kinder', b: 'kinder2', at: KINDER_Z, w: ROOM_HALF * 2, open: true },
 ];
 

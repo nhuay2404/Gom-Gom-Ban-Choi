@@ -5,8 +5,9 @@
 // Toạ độ khu kinder (room-layout.mjs PLACES); mép -z của khu giáp vỉa hè, cổng rào ở KINDER_GATE_X.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { KINDER_GATE_X, KINDER_DOOR, KINDER_Z, ROAD_Z, SIDEWALK_Y, BRIDGE, crossingHeight } from './room-layout.mjs';
+import { KINDER_GATE_X, KINDER_DOOR, KINDER_Z, ROAD_Z, SIDEWALK_Y, ROAD_Y } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
+import { sandMat } from './garden-scene.mjs';
 
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
   : new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, specularIntensity: .55, ...extra });
@@ -37,65 +38,98 @@ const pairX = (dx, thumb, make) => pair('x', dx, thumb, make), pairZ = (dz, thum
 // Lớp học: khung sàn + tường sau (toạ độ khu). Đồ trong lớp đặt trong khung này (room-layout.mjs PLACES).
 export const CLASSROOM = { x0: 4.7, x1: 12.3, z0: -3.85, z1: .3, wallH: 2.4 };
 
-// ---------- Đồ cố định: lối qua đường nâng từ cổng vườn sang cổng trường, sàn + tường sau lớp học ----------
+// ---------- Đồ cố định: lối qua đường (bậc + vạch sang đường), bãi cát sân chơi, sàn + bốn tường lớp học (cửa sổ thật, biển KINDERGARTEN) ----------
 export function kinderDecor() {
   const g = group(), C = CLASSROOM;
-  // Lối sang trường (toạ độ khu nhà ROAD_Z / BRIDGE trừ KINDER_Z): bậc đá từ cổng vườn xuống vỉa hè, cầu vòm đi bộ lệch sang phải cổng
-  // (hai chân cầu đáp trên hai vỉa hè), bậc từ vỉa hè lên cổng trường. Mặt đi đúng theo crossingHeight (mèo đi theo nó).
-  const Z = ROAD_Z, K = KINDER_Z, gate = KINDER_GATE_X, B = BRIDGE, PAVER = '#e8cfa6', base = -.31;
+  // Lối sang trường (toạ độ khu nhà ROAD_Z trừ KINDER_Z): bậc đá từ cổng vườn xuống vỉa hè, vạch sang đường thẳng hai cổng,
+  // bậc từ vỉa hè lên cổng trường. Mặt đi đúng theo crossingHeight (mèo đi theo nó).
+  const Z = ROAD_Z, K = KINDER_Z, gate = KINDER_GATE_X, PAVER = '#e8cfa6', base = -.31;
   const step = (z0, z1, top, bottom = base) => g.add(at(rbox(1.0, top - bottom, z1 - z0, .02, PAVER), gate, (top + bottom) / 2, (z0 + z1) / 2 - K));
   for (let i = 0; i < 3; i++) step(Z.verge + i * (Z.s0 - Z.verge) / 3, Z.verge + (i + 1) * (Z.s0 - Z.verge) / 3, SIDEWALK_Y * (i + .5) / 3);
   step(Z.s2 - .35, Z.s2 + .12, SIDEWALK_Y / 2, SIDEWALK_Y);
-  // Cầu: mặt gỗ theo vòm (từng đoạn nghiêng), dầm trắng hai mép, lan can trụ trắng + tay vịn đỏ, bốn cột đỡ trên hai lề đường.
-  const N = 18, len = B.z1 - B.z0, h = z => crossingHeight(B.x, z) ?? SIDEWALK_Y;
-  const along = (x, z0, z1, dy, w, hgt, color) => {
-    const y0 = h(z0) + dy, y1 = h(z1) + dy, seg = rbox(w, hgt, Math.hypot(z1 - z0, y1 - y0) + .02, Math.min(.02, w / 2, hgt / 2), color);
-    seg.position.set(x, (y0 + y1) / 2, (z0 + z1) / 2 - K); seg.rotation.x = -Math.atan2(y1 - y0, z1 - z0);
-    g.add(seg);
+  // Vạch sang đường: các thanh trắng dài theo chiều xe chạy (x), xếp nối nhau theo chiều người đi (z), giữa hai lề đường.
+  const mid = (Z.c1 + Z.r1) / 2;
+  for (let k = -2; k <= 2; k++) {
+    const stripe = at(box(2.4, .012, .38, '#fffaf0'), gate, ROAD_Y + .008, mid + k * .68 - K);
+    stripe.userData.noOutline = true;
+    g.add(stripe);
+  }
+  // Bãi cát lớn của sân chơi (nửa trái, cùng đồ chơi đứng trên): tấm phẳng bo góc có texture cát + viền cát ướt sẫm bên dưới (đều thấp hơn 1 cm: đồ không "chạm").
+  const roundedRect = (x0, x1, y0, y1, r) => {
+    const s = new THREE.Shape();
+    s.moveTo(x0 + r, y0); s.lineTo(x1 - r, y0); s.quadraticCurveTo(x1, y0, x1, y0 + r); s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1);
+    s.lineTo(x0 + r, y1); s.quadraticCurveTo(x0, y1, x0, y1 - r); s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0);
+    return s;
   };
-  for (let i = 0; i < N; i++) {
-    const z0 = B.z0 + len * i / N, z1 = B.z0 + len * (i + 1) / N;
-    along(B.x, z0, z1, -.04, B.w, .08, '#d9a36a');
-    for (const s of [-1, 1]) { along(B.x + s * (B.w / 2 + .05), z0, z1, -.08, .1, .2, '#fffaf0'); along(B.x + s * (B.w / 2 + .03), z0, z1, .55, .07, .07, RED); }
-  }
-  for (let i = 0; i <= N; i += 2) for (const s of [-1, 1]) {
-    const z = B.z0 + len * i / N;
-    g.add(at(rbox(.07, .55, .07, .02, '#fffaf0'), B.x + s * (B.w / 2 + .03), h(z) + .27, z - K));
-  }
-  for (const z of [Z.c1 - .12, Z.c2 + .12]) for (const s of [-1, 1]) {
-    const top = h(z) - .18, bottom = base + .16;
-    g.add(at(cyl(.07, .09, top - bottom, '#fffaf0', 10), B.x + s * .4, (top + bottom) / 2, z - K));
-  }
+  const patch = (x0, x1, z0, z1, r, y, material) => {
+    const geo = new THREE.ShapeGeometry(roundedRect(x0, x1, -z1, -z0, r), 16); // shape (x, y) -> sau xoay: z = -y
+    geo.rotateX(-Math.PI / 2);
+    const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.4, uv.getY(i) / 2.4);
+    const node = new THREE.Mesh(geo, material); node.position.y = y;
+    node.receiveShadow = true; node.castShadow = false; node.userData.noOutline = true;
+    return node;
+  };
+  const sand = typeof document === 'undefined' ? mat('#efd8a4') : sandMat();
+  if (sand.map) sand.map.wrapS = sand.map.wrapT = THREE.RepeatWrapping;
+  g.add(patch(-4.05, 4.4, -4.05, 4.05, 1.1, .006, mat('#cfae72')), patch(-3.9, 4.25, -3.9, 3.9, 1.0, .013, sand));
   // Sàn lớp học (tấm phẳng sát nền: đồ trong lớp đứng trên nền, không tính chạm) + bậc thềm trước.
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(C.x1 - C.x0, C.z1 - C.z0), mat('#f4e3c1'));
   floor.rotation.x = -Math.PI / 2; floor.position.set((C.x0 + C.x1) / 2, .006, (C.z0 + C.z1) / 2); floor.receiveShadow = true;
   floor.castShadow = false; floor.userData.noOutline = true; // sàn phẳng: không viền
   g.add(floor);
-  // Tường sau lớp học: vàng kem, chân tường hồng, hai cửa sổ hai bên bảng, mái hiên sọc + cầu vồng trên đỉnh, cột hai đầu.
-  // Bốn tường (dày .2, mặt trong đúng khung CLASSROOM; tường trái lùi thêm 2 cm cho lưng tủ ngăn) + cửa ở tường trước.
+  // Bốn tường (dày .2, mặt trong đúng khung CLASSROOM; tường trái lùi thêm 2 cm cho lưng tủ ngăn): vàng kem, chân tường hồng + gờ đá,
+  // dải vàng + mái hiên trắng nhô ra trên đỉnh, cột góc nhô. Cửa sổ và cửa ra vào là LỖ THẬT trên tường (đoạn tường chừa lỗ), có khung sâu + bậu cửa.
   const cx = (C.x0 + C.x1) / 2, wz = C.z0 - .1, W = C.x1 - C.x0, H = C.wallH;
   const lx = C.x0 - .12, rx = C.x1 + .1, fz = C.z1 + .1, D = KINDER_DOOR;
-  const wall = group();
-  // đoạn tường dọc trục x (từ a tới b, cao y0..y1) / dọc trục z; chân tường hồng + gờ đỉnh trắng theo cùng đoạn
-  const runX = (a, b, z, y0 = 0, y1 = H) => {
-    wall.add(at(box(b - a, y1 - y0, .2, '#fff0c2'), (a + b) / 2, (y0 + y1) / 2, z));
-    if (y0 === 0) wall.add(at(box(b - a, .3, .22, PINK), (a + b) / 2, .15, z));
-    if (y1 === H) wall.add(at(box(b - a, .08, .26, '#fffaf0'), (a + b) / 2, H + .04, z));
+  const wall = group(), TRIM = '#fffaf0';
+  // một đoạn tường dọc trục axis từ a tới b (cao y0..y1) ở vị trí p của trục còn lại; chân hồng khi sát đất, mái hiên + dải vàng khi tới đỉnh
+  const seg = (axis, a, b, p, y0, y1) => {
+    if (b - a < .01) return;
+    const len = b - a, c = (a + b) / 2;
+    const add = (h, t, color, y) => wall.add(axis === 'x' ? at(box(len, h, t, color), c, y, p) : at(box(t, h, len, color), p, y, c));
+    add(y1 - y0, .2, '#fff0c2', (y0 + y1) / 2);
+    if (y0 === 0) add(.3, .22, PINK, .15);
+    if (y1 === H) { add(.1, .38, TRIM, H + .05); add(.1, .22, YELLOW, H - .15); }
   };
-  const runZ = (a, b, x) => wall.add(at(box(.2, H, b - a, '#fff0c2'), x, H / 2, (a + b) / 2), at(box(.22, .3, b - a, PINK), x, .15, (a + b) / 2),
-    at(box(.26, .08, b - a, '#fffaf0'), x, H + .04, (a + b) / 2));
-  runX(lx, rx, wz); runZ(wz + .1, fz - .1, lx); runZ(wz + .1, fz - .1, rx);
-  runX(lx - .1, D.x - D.w / 2, fz); runX(D.x + D.w / 2, rx + .1, fz); runX(D.x - D.w / 2, D.x + D.w / 2, fz, D.h, H);
+  // cuts: các lỗ {c: tâm, w: rộng, y0, y1} trên đoạn tường
+  const wallLine = (axis, a, b, p, cuts) => {
+    let cur = a;
+    for (const { c, w, y0, y1 } of [...cuts].sort((m, n) => m.c - n.c)) {
+      seg(axis, cur, c - w / 2, p, 0, H);
+      if (y0 > 0) seg(axis, c - w / 2, c + w / 2, p, 0, y0);
+      seg(axis, c - w / 2, c + w / 2, p, y1, H);
+      cur = c + w / 2;
+    }
+    seg(axis, cur, b, p, 0, H);
+  };
+  const win = c => ({ c, w: 1.1, y0: 1.16, y1: 2.04 });
+  wallLine('x', lx, rx, wz, [win(C.x0 + 1.1), win(C.x1 - 1.3)]);
+  wallLine('z', wz + .1, fz - .1, lx, [win(-1.8)]);
+  wallLine('z', wz + .1, fz - .1, rx, [win(-1.8)]);
+  wallLine('x', lx - .1, rx + .1, fz, [{ c: D.x, w: D.w, y0: 0, y1: D.h }, win(6.0), win(10.8)]);
   // cột góc + quả cầu trên đỉnh
-  for (const x of [lx, rx]) for (const z of [wz, fz]) wall.add(at(rbox(.34, H + .2, .34, .05, '#fffaf0'), x, (H + .2) / 2, z), at(ball(.14, RAINBOW[(x > cx) * 2 + (z > 0)]), x, H + .32, z));
-  // Cửa sổ hai mặt (kính + khung trong lẫn ngoài), mặt ngoài có bồn hoa. side: hướng mặt ngoài theo trục z cục bộ.
-  const windowAt = (x, z, rotY, side, box2 = true) => {
-    const w = group();
-    for (const s of [-1, 1]) w.add(at(box(1.1, .8, .02, '#bfe6f6'), 0, 1.6, s * .11), at(box(1.24, .08, .06, '#fffaf0'), 0, 2.04, s * .12),
-      at(box(1.24, .08, .06, '#fffaf0'), 0, 1.16, s * .12), at(box(.06, .8, .04, '#fffaf0'), 0, 1.6, s * .12));
-    if (box2) {
-      w.add(at(rbox(1.2, .18, .22, .04, WOOD), 0, 1.03, side * .25));
-      for (let k = 0; k < 5; k++) w.add(at(ball(.08, k % 2 ? GREEN : RAINBOW[k]), -.44 + k * .22, 1.17, side * .25));
+  for (const x of [lx, rx]) for (const z of [wz, fz]) wall.add(at(rbox(.34, H + .2, .34, .05, TRIM), x, (H + .2) / 2, z), at(ball(.14, RAINBOW[(x > cx) * 2 + (z > 0)]), x, H + .32, z));
+  // Gờ đá nền nhô ra ngoài chân tường (thấp 10 cm; bỏ trước cửa: lối của mèo)
+  const ledge = (axis, a, b, p) => wall.add(axis === 'x' ? at(box(b - a, .1, .14, '#e8cfa6'), (a + b) / 2, .05, p) : at(box(.14, .1, b - a, '#e8cfa6'), p, .05, (a + b) / 2));
+  ledge('x', lx - .17, rx + .17, wz - .17); ledge('z', wz - .1, fz + .17, lx - .17); ledge('z', wz - .1, fz + .17, rx + .17);
+  ledge('x', lx - .17, D.x - .65, fz + .17); ledge('x', D.x + .65, rx + .17, fz + .17);
+  // Cửa sổ thật: kính (vệt phản chiếu hai mặt), khung + song chữ thập xuyên hết bề dày tường, nẹp viền hai mặt, bậu cửa trong lẫn ngoài.
+  // side: hướng mặt ngoài theo trục z cục bộ; planter: bồn hoa dưới bậu cửa mặt ngoài.
+  const windowAt = (x, z, rotY, side, planter = true) => {
+    // kính trong suốt (nhìn xuyên qua thấy trong lớp / ngoài sân), không đổ bóng
+    const pane = at(mesh(new THREE.BoxGeometry(1.1, .88, .02), mat('#cfeeff', { transparent: true, opacity: .28, depthWrite: false })), 0, 1.6, 0);
+    pane.castShadow = false; pane.userData.noOutline = true;
+    const w = group(pane);
+    w.add(at(box(.08, .88, .24, TRIM), -.51, 1.6, 0), at(box(.08, .88, .24, TRIM), .51, 1.6, 0), at(box(1.1, .08, .24, TRIM), 0, 1.2, 0), at(box(1.1, .08, .24, TRIM), 0, 2.0, 0),
+      at(box(.05, .8, .22, TRIM), 0, 1.6, 0), at(box(1.0, .05, .22, TRIM), 0, 1.6, 0));
+    for (const s of [-1, 1]) {
+      w.add(at(box(.1, 1.0, .05, TRIM), -.62, 1.6, s * .125), at(box(.1, 1.0, .05, TRIM), .62, 1.6, s * .125), at(box(1.34, .1, .05, TRIM), 0, 2.09, s * .125),
+        at(box(.07, .62, .012, '#e8f7ff'), -.27, 1.65, s * .018).rotateZ(.45), at(box(.03, .62, .012, '#e8f7ff'), -.15, 1.65, s * .018).rotateZ(.45));
+    }
+    w.add(at(rbox(1.38, .07, .34, .02, TRIM), 0, 1.125, side * .27), at(rbox(1.3, .06, .2, .02, TRIM), 0, 1.125, -side * .2));
+    if (planter) {
+      w.add(at(rbox(1.2, .18, .22, .04, WOOD), 0, .93, side * .22));
+      for (let k = 0; k < 5; k++) w.add(at(ball(.08, k % 2 ? GREEN : RAINBOW[k]), -.44 + k * .22, 1.04, side * .22));
     }
     w.position.set(x, 0, z); w.rotation.y = rotY;
     wall.add(w);
@@ -104,9 +138,38 @@ export function kinderDecor() {
   windowAt(C.x0 + 1.1, wz, 0, -1, false); windowAt(C.x1 - 1.3, wz, 0, -1, false);
   windowAt(lx, -1.8, Math.PI / 2, -1); windowAt(rx, -1.8, Math.PI / 2, 1, false);
   windowAt(6.0, fz, 0, 1); windowAt(10.8, fz, 0, 1);
+  // Biển "KINDERGARTEN" trên tường sau (mặt nhìn ra đường): khung gỗ nhô ra, chữ nhiều màu vẽ canvas, hai quả cầu hai đầu.
+  const signMat = () => {
+    if (typeof document === 'undefined') return mat('#fff3d6');
+    const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 256;
+    const c2 = canvas.getContext('2d'), word = 'KINDERGARTEN', colors = [RED, ORANGE, '#f2b705', GREEN, BLUE, PURPLE];
+    c2.fillStyle = '#fff3d6'; c2.fillRect(0, 0, 1024, 256);
+    c2.font = '900 170px "Baloo 2", "Fredoka", "Arial Rounded MT Bold", Arial, sans-serif'; c2.textBaseline = 'middle'; c2.lineJoin = 'round'; c2.lineWidth = 14; c2.strokeStyle = '#6b4a35';
+    const widths = [...word].map(ch => c2.measureText(ch).width + 6), total = widths.reduce((s, v) => s + v, 0), k = Math.min(1, 960 / total);
+    c2.save(); c2.translate((1024 - total * k) / 2, 134); c2.scale(k, k);
+    let px = 0;
+    [...word].forEach((ch, i) => { c2.fillStyle = colors[i % colors.length]; c2.strokeText(ch, px, 0); c2.fillText(ch, px, 0); px += widths[i]; });
+    c2.restore();
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
+    return mat('#ffffff', { map: texture });
+  };
+  const sy = 1.75, sz = wz - .1;
+  wall.add(at(rbox(3.5, .94, .08, .03, WOOD), cx, sy, sz - .04), at(ball(.13, YELLOW), cx - 1.85, sy, sz - .04), at(ball(.13, PINK), cx + 1.85, sy, sz - .04));
+  const signFace = (rotY, y, z) => {
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(3.3, .82), signText);
+    face.rotation.y = rotY; face.position.set(cx, y, z); face.castShadow = false; face.receiveShadow = true; face.userData.noOutline = true;
+    return face;
+  };
+  const signText = signMat();
+  wall.add(signFace(Math.PI, sy, sz - .09));
+  // Biển thứ hai đứng trên đỉnh tường trước (mặt nhìn về phía camera Deco / sân chơi): hai trụ nhỏ đỡ khung.
+  const ty = H + .65, tz = fz;
+  wall.add(at(rbox(3.5, .94, .1, .03, WOOD), cx, ty, tz), at(ball(.13, YELLOW), cx - 1.85, ty, tz), at(ball(.13, PINK), cx + 1.85, ty, tz),
+    ...[-1.2, 1.2].map(x => at(box(.1, .22, .1, WOOD_DARK), cx + x, H + .21, tz)));
+  wall.add(signFace(0, ty, tz + .06));
   // Chấm bi màu sơn mặt ngoài (đĩa dẹt cách mặt tường 1 cm): tường sau nhìn ra đường, tường trái nhìn ra sân chơi.
   const dot = (r, c) => cyl(r, r, .02, c, 16);
-  [[5.0, .9, .22], [6.9, 1.9, .3], [7.6, .8, .18], [8.6, 1.5, .34], [9.6, .9, .2], [10.2, 2.0, .16], [12.0, 1.4, .24]].forEach(([x, y, r], k) =>
+  [[5.0, .9, .22], [7.6, .8, .18], [9.6, .9, .2], [12.0, 1.4, .24]].forEach(([x, y, r], k) =>
     wall.add(at(dot(r, RAINBOW[k % 6]), x, y, wz - .12).rotateX(Math.PI / 2)));
   [[-3.4, .9, .24], [-2.6, 2.0, .18], [-.6, 1.0, .3], [.0, 1.95, .16]].forEach(([z, y, r], k) =>
     wall.add(at(dot(r, RAINBOW[(k + 2) % 6]), lx - .12, y, z).rotateZ(Math.PI / 2)));
@@ -121,7 +184,11 @@ export function kinderDecor() {
     ...[RED, YELLOW, GREEN, BLUE, PURPLE].map((c, k) => at(rbox(.2, .2, .06, .03, c), D.x - .5 + k * .25, H - .15, fz + .19)));
   // bụi hoa hai bên cửa (ngoài, chừa lối 1 m trước cửa)
   for (const x of [5.2, 7.2, 9.7, 11.7]) wall.add(at(ball(.28, GREEN), x, .2, fz + .42), at(ball(.07, PINK), x - .1, .45, fz + .5), at(ball(.07, YELLOW), x + .12, .42, fz + .45));
-  for (let k = 0; k < 10; k++) wall.add(at(box(W / 10 - .01, .06, .5, k % 2 ? '#fffaf0' : RED), C.x0 + (k + .5) * W / 10, C.wallH + .02, wz + .3).rotateX(.25));
+  // Dù đỏ trắng chìa hẳn ra ngoài (phía đường), dốc thấp dần ra mép, thêm diềm vải ở mép ngoài
+  for (let k = 0; k < 10; k++) {
+    const c = k % 2 ? '#fffaf0' : RED;
+    wall.add(at(box(W / 10 - .01, .06, .95, c), C.x0 + (k + .5) * W / 10, C.wallH - .02, wz - .5).rotateX(-.3), at(box(W / 10 - .01, .16, .04, c), C.x0 + (k + .5) * W / 10, C.wallH - .2, wz - .95));
+  }
   RAINBOW.forEach((c, k) => { const arc = ring(1.25 - k * .12, .06, c, Math.PI); arc.position.set(cx, C.wallH + .05, wz - .02); wall.add(arc); });
   wall.add(at(ball(.22, '#fffaf0'), cx - 1.3, C.wallH + .1, wz - .02), at(ball(.22, '#fffaf0'), cx + 1.3, C.wallH + .1, wz - .02));
   g.add(wall);

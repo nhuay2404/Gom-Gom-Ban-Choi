@@ -1450,7 +1450,7 @@ export function createRoom() {
     scene, furniture, butterflies,
     zones: () => openZones(),
     // Mặt đất (độ cao) tại điểm khu nhà: đồi ở phần vườn mở rộng, còn lại phẳng. Vật cản cố định: đồi (mèo chỉ lên bằng hành vi trèo đồi).
-    groundAt: (x, z) => (opened.kinder ? crossingHeight(x, z) : null) ?? (expanded ? groundHeight('garden', x, z) : 0), // lối qua cầu sang trường (mặt cầu / vỉa hè); vườn ở gốc toạ độ: toạ độ vườn = toạ độ khu nhà
+    groundAt: (x, z) => (opened.kinder ? crossingHeight(x, z) : null) ?? (expanded ? groundHeight('garden', x, z) : 0), // lối qua đường sang trường (vạch sang đường / vỉa hè); vườn ở gốc toạ độ: toạ độ vườn = toạ độ khu nhà
     staticObstacles: () => expanded ? [{ id: 'hill', x: HILL.x, z: HILL.z, r: HILL_OBSTACLE_R }] : [],
     get night() { return night; },
     get ambient() { return ambient; }, // day / dusk / night: lửa trại chiều tối có mèo quây quần
