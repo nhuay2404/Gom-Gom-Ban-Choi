@@ -294,9 +294,9 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: "Bedroom Fortress", feature: "Boss: cross board", tier: 'boss',
-    moves: 24, target: 600, cats: 'OGWTSK', assist: 0.4,
-    board: ['##.MM.##', '##WMO.##', '..WT.TM.', 'M..t.TXs', 'O.MGMMOS', 'XXX...o.', '##X.KX##', '##TTk.##'],
+    name: 'Bedroom Fortress', feature: 'Boss: cross board', tier: 'boss',
+    moves: 24, target: 570, cats: 'OGWTSK', assist: 0.4,
+    board: ['##.MM.##', '##WMO.##', '..WT.TM.', 'M..t.TXs', 'O.MG.MOS', 'X.X...o.', '##X.KX##', '##TTk.##'],
     deck: [],
   },
   // ===== Chương 5: bếp (mở sau màn 40) — xào lại cả bốn vật cản theo cặp =====
@@ -417,8 +417,8 @@ export const LEVELS = [
   },
   {
     name: 'Attic Fortress', feature: 'metal + cages + crates', tier: 'boss',
-    moves: 26, target: 590, cats: 'OGWTSK', assist: 0.35,
-    board: ['MGG.T..X', 'MOX.GX..', 'TO.XG.k.', 't.S.T.S.', '..SGTMsX', '.....M..', 'X...XM..', '..GSXM.X'],
+    moves: 26, target: 650, cats: 'OGWTSK', assist: 0.35,
+    board: ['MGG.T..X', 'MOMMGX..', 'TOMXG.k.', 't.S.T.S.', '..SGTMsX', '.M...M..', 'X...XM..', '..GSXM.X'],
     deck: [],
   },
   // ===== Chương 7: Balcony (màn 61–70) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
@@ -478,8 +478,8 @@ export const LEVELS = [
   },
   {
     name: 'Balcony Fortress', feature: 'cages + metal + crates', tier: 'boss',
-    moves: 30, target: 640, cats: 'OGWTSK', assist: 0.35,
-    board: ['.....M.T', '.X...MMT', '.X..X.M.', '.MK##...', '.MK##TOX', '.g.W..OK', 'WGKX.XXK', 'w.k..XGG'],
+    moves: 30, target: 670, cats: 'OGWTSK', assist: 0.35,
+    board: ['..X..M..', '.X...MMT', '.X..XXM.', 'GM.##...', '.M.##T.X', '.g.WM.OK', 'W..X.XXK', 'w.kM.XGG'],
     deck: [],
   },
   // ===== Chương 8: Bathroom (màn 71–80) — sinh bằng tools/generate-levels.mjs, số liệu do bot định =====
