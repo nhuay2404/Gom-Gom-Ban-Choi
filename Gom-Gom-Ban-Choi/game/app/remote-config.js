@@ -4,38 +4,50 @@
 // - Lần mở trước tải được thì lưu lại trong máy: lần sau mạng chậm / mất mạng vẫn dùng bản đó; chưa có thì dùng mặc định trong code.
 import { FIREBASE_CONFIG, FETCH_INTERVAL_MS, FETCH_TIMEOUT_MS } from '../config/firebase-config.js';
 
-const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const CACHE_KEY = 'gomgom-remote-config';
+const ID_KEY = 'gomgom-remote-config-id';
 const dev = ['localhost', '127.0.0.1'].includes(location.hostname) || new URLSearchParams(location.search).has('dev');
 
-const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || null; } catch { return null; } };
-const writeCache = values => { try { localStorage.setItem(CACHE_KEY, JSON.stringify(values)); } catch { /* hết chỗ / chặn storage */ } };
+// Cache = { at: lúc tải, values }; bản lưu kiểu cũ (chỉ có values) coi như đã hết hạn.
+const readCache = () => { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); return c?.values ? c : c ? { at: 0, values: c } : null; } catch { return null; } };
+const writeCache = values => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), values })); } catch { /* hết chỗ / chặn storage */ } };
+
+function instanceId() {
+  try {
+    let id = localStorage.getItem(ID_KEY);
+    if (!id) localStorage.setItem(ID_KEY, (id = crypto.randomUUID?.() || String(Math.random()).slice(2)));
+    return id;
+  } catch { return 'no-storage'; }
+}
 
 // Giá trị Remote Config (chuỗi) -> giá trị JS: JSON / số / true-false, còn lại giữ chuỗi.
 function parse(text) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-async function fetchRemote() {
-  // Đường dẫn ghép chuỗi: bundler (build:html) không gộp SDK vào bản build, vẫn nạp từ CDN lúc chạy.
-  const [{ initializeApp }, rc] = await Promise.all([import(/* @vite-ignore */ `${SDK}firebase-app.js`), import(/* @vite-ignore */ `${SDK}firebase-remote-config.js`)]);
-  const remoteConfig = rc.getRemoteConfig(initializeApp(FIREBASE_CONFIG));
-  remoteConfig.settings.minimumFetchIntervalMillis = dev ? 0 : FETCH_INTERVAL_MS;
-  remoteConfig.settings.fetchTimeoutMillis = FETCH_TIMEOUT_MS;
-  await rc.fetchAndActivate(remoteConfig);
-  const values = {};
-  for (const [name, value] of Object.entries(rc.getAll(remoteConfig))) if (value.getSource() === 'remote') values[name] = parse(value.asString());
-  return values;
+// Gọi thẳng REST API của Remote Config thay cho Firebase JS SDK: SDK cần IndexedDB + origin http(s) + nạp module từ CDN,
+// nên hỏng khi mở file HTML trên điện thoại (file://). fetch thường chạy được ở mọi nơi.
+async function fetchRemote(signal) {
+  const { apiKey, appId, messagingSenderId } = FIREBASE_CONFIG;
+  const url = `https://firebaseremoteconfig.googleapis.com/v1/projects/${messagingSenderId}/namespaces/firebase:fetch?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app_id: appId, app_instance_id: instanceId() }),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const { entries = {} } = await response.json();
+  return Object.fromEntries(Object.entries(entries).map(([name, value]) => [name, parse(value)]));
 }
 
 export async function loadRemoteConfig() {
   globalThis.__GAME_CONFIG__ = {};
   if (!FIREBASE_CONFIG) return { source: 'code' }; // tắt Firebase: chỉ dùng số trong code (bỏ qua bản lưu cũ)
   const cached = readCache();
-  globalThis.__GAME_CONFIG__ = cached || {};
+  globalThis.__GAME_CONFIG__ = cached?.values || {};
+  if (cached && !dev && Date.now() - cached.at < FETCH_INTERVAL_MS) return { source: 'cache' }; // mới tải trong giờ qua
   try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), FETCH_TIMEOUT_MS));
-    const values = await Promise.race([fetchRemote(), timeout]);
+    const values = await fetchRemote(AbortSignal.timeout(FETCH_TIMEOUT_MS));
     globalThis.__GAME_CONFIG__ = values;
     writeCache(values);
     return { source: 'firebase', count: Object.keys(values).length };
