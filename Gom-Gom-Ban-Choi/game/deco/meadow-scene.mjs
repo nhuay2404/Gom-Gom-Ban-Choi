@@ -26,7 +26,7 @@ const ball = (r, color) => mesh(new THREE.SphereGeometry(r, sphereSegments(r), M
 // đêm xanh lam trăng sâu (không tím đặc), cỏ / lá ngả xanh ngọc tối để đèn vàng nổi bật.
 export const MEADOW_LOOKS = {
   day: { ground: '#a6c68c', fog: '#bfe2f2', leaf: '#74bf5c', leafDark: '#57a656', pine: '#4a9257', bush: '#80c565', wood: '#a8784e', rock: '#c4bcae' },
-  dusk: { ground: '#aab886', fog: '#f7c6a8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
+  dusk: { ground: '#b0b088', fog: '#f1b6c8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
   night: { ground: '#2e4a48', fog: '#1b2846', leaf: '#29544c', leafDark: '#214840', pine: '#1c4440', bush: '#2b5648', wood: '#3a3440', rock: '#3e4a5e' },
 };
 

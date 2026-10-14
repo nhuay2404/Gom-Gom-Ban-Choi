@@ -16,7 +16,7 @@ import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scen
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './kitchen-scene.mjs';
 import { BATHROOM_BUILD, bathroomDecor, decorateBathroomWall } from './bathroom-scene.mjs';
 import { BACKYARD_BUILD, buildBackyardFence, backyardDecor } from './backyard-scene.mjs';
-import { KINDER_BUILD, kinderDecor } from './kinder-scene.mjs';
+import { KINDER_BUILD, kinderDecor, CLASSROOM } from './kinder-scene.mjs';
 import { buildMeadow } from './meadow-scene.mjs';
 import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
 import { runModelQC } from './qc.mjs';
@@ -1310,12 +1310,12 @@ export function createRoom() {
   // Tranh / cờ / nước... ban đêm: nhân màu (setRGB nhận giá trị TUYẾN TÍNH, .13 tuyến tính ≈ .4 sRGB) cho tối bằng bề mặt có nhận sáng ở cạnh
   // (tường kem ban đêm ra khoảng sRGB .37 / .39 / .49). Số cũ .38 / .42 / .62 tuyến tính = sRGB .65+ nên tranh sáng hơn tường hẳn.
   const NIGHT_ART = new THREE.Color().setRGB(.13, .14, .23);
-  const DUSK_ART = new THREE.Color().setRGB(.8, .6, .5), DUSK_INK = new THREE.Color().setRGB(.88, .74, .68); // chiều: ngả cam ấm, viền hơi sẫm
+  const DUSK_ART = new THREE.Color().setRGB(.82, .58, .6), DUSK_INK = new THREE.Color().setRGB(.86, .72, .78); // chiều: ngả cam đào + hồng tím, viền hơi sẫm
   // Tông "chill" (dịu, ấm, ít gắt): ngày là nắng sớm ấm nhẹ — trời kem, nắng bớt gắt cho nấc sáng tối êm hơn; chiều là giờ vàng — ánh
-  // đào hồng, đất hắt hồng thay vì nâu đục; đêm là trăng xanh lam (bớt tím), đèn vàng ấm rực hơn cho cảm giác ấm cúng.
+  // đào hồng pha tím (trời hồng, đất hắt tím mận, nắng san hô) thay vì nâu đục; đêm là trăng xanh lam (bớt tím), đèn vàng ấm rực hơn cho cảm giác ấm cúng.
   const LIGHTING = {
     day: { sky: '#fff4e0', ground: '#dcc09a', hemi: 1.18, sun: '#ffefd2', sunI: 1.55, glass: '#d4ecff', lamps: 1, env: .4, grass: '#cecdb6' },
-    dusk: { sky: '#ffd0a8', ground: '#c08a7a', hemi: 1.05, sun: '#ffac6c', sunI: 1.35, glass: '#ffc49a', lamps: 1.45, env: .28, sunFrom: [7, 4, 3], grass: '#e4cfae' },
+    dusk: { sky: '#f9bccb', ground: '#9e7aa8', hemi: 1.05, sun: '#ff9f80', sunI: 1.35, glass: '#f3b4d4', lamps: 1.45, env: .28, sunFrom: [7, 4, 3], grass: '#dcc0bc' },
     night: { sky: '#7f9bd2', ground: '#36405c', hemi: .44, sun: '#b4c6ff', sunI: .62, glass: '#22305a', lamps: 2.1, env: .1, grass: '#6e82a4' },
   };
   // Đổi ambient: màu trời / nắng / cỏ / sương / viền / cửa kính / đèn chuyển dần trong AMBIENT_FADE giây (như trời ngả chiều thật),
@@ -1451,7 +1451,7 @@ export function createRoom() {
     zones: () => openZones(),
     // Mặt đất (độ cao) tại điểm khu nhà: đồi ở phần vườn mở rộng, còn lại phẳng. Vật cản cố định: đồi (mèo chỉ lên bằng hành vi trèo đồi).
     groundAt: (x, z) => (opened.kinder ? crossingHeight(x, z) : null) ?? (expanded ? groundHeight('garden', x, z) : 0), // lối qua đường sang trường (vạch sang đường / vỉa hè); vườn ở gốc toạ độ: toạ độ vườn = toạ độ khu nhà
-    staticObstacles: () => expanded ? [{ id: 'hill', x: HILL.x, z: HILL.z, r: HILL_OBSTACLE_R }] : [],
+    staticObstacles: () => [...(expanded ? [{ id: 'hill', x: HILL.x, z: HILL.z, r: HILL_OBSTACLE_R }] : []), ...(opened.kinder ? CLASSROOM_BLOCK : [])],
     get night() { return night; },
     get ambient() { return ambient; }, // day / dusk / night: lửa trại chiều tối có mèo quây quần
     heartsAt(position) { symbolAt(position); },
@@ -1471,6 +1471,16 @@ export function createRoom() {
   const floorTextures = {};
   // zoneId = khu đang trang trí ở Deco (camera Deco khoá vào khu này). opened = các khu đã mở khoá.
   let zoneId = 'garden', applied = false, revealPending = null;
+  // Lớp học trường mẫu giáo (kinder-scene.mjs CLASSROOM, toạ độ khu nhà): mèo không đi xuyên tường. Chuỗi vật cản tròn sát nhau dọc 4 tường
+  // + vài vòng to phủ lòng lớp (freeSpot không chọn chỗ trong lớp, mèo không cố chui vào). Mèo chưa có tương tác với đồ trong lớp.
+  const CLASSROOM_BLOCK = (() => {
+    const [ox, oz] = ZONE_OFFSET.kinder, C = CLASSROOM, x0 = ox + C.x0 - .12, x1 = ox + C.x1 + .1, z0 = oz + C.z0 - .1, z1 = oz + C.z1 + .1, out = [];
+    const line = (ax, az, bx, bz) => { const n = Math.ceil(Math.hypot(bx - ax, bz - az) / .3); for (let i = 0; i <= n; i++) out.push({ id: 'classroom', x: ax + (bx - ax) * i / n, z: az + (bz - az) * i / n, r: .22 }); };
+    line(x0, z0, x1, z0); line(x1, z0, x1, z1); line(x1, z1, x0, z1); line(x0, z1, x0, z0);
+    const cz = (z0 + z1) / 2, r = (z1 - z0) / 2;
+    for (let x = x0 + r; x < x1; x += r) out.push({ id: 'classroom', x: Math.min(x, x1 - r), z: cz, r: r - .15 });
+    return out;
+  })();
   const opened = { garden: true, living: false, bedroom: false, kitchen: false, bathroom: false, backyard: false, kinder: false };
   const OPENABLE = ['living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
   const zoneGroup = zone => zone === 'garden2' ? gardenExt : zone === 'backyard' ? yard : zone === 'kinder' ? kid : interiors[zone]?.room; // nhóm "mọc lên" khi vừa mở
@@ -1922,6 +1932,67 @@ export function createRoom() {
     }
     return out;
   }
+  // ---------- Xu 3D bay từ mèo vào thanh xu (nhận xu idle) ----------
+  // Mỗi đồng xu là mô hình 3D (đĩa vàng + mặt nổi sáng, đứng nghiêng quay tròn): bật lên khỏi lưng mèo toả ra một chút rồi bay vòng cung
+  // thẳng tới ĐIỂM TRONG CẢNH nằm sau thanh xu trên màn hình (tính lại mỗi khung từ toạ độ px của thanh nên camera xoay / zoom vẫn đúng).
+  // Thanh xu là UI đè trên canvas nên đồng xu chui vào sau nó.
+  const coinGroup = new THREE.Group();
+  coinGroup.userData.structure = true;
+  scene.add(coinGroup);
+  const coinGeo = new THREE.CylinderGeometry(.24, .24, .06, 24).rotateX(Math.PI / 2), faceGeo = new THREE.CylinderGeometry(.165, .165, .07, 20).rotateX(Math.PI / 2);
+  const coinBody = mat('#ffbe1f'), coinFace = mat('#ffe27a');
+  const flying = [], coinRay = new THREE.Vector3(), coinTo = new THREE.Vector3(), coinCam = new THREE.Vector3();
+  // from: giống mèo (chuỗi) hoặc vị trí; target: { x, y } px màn hình (thanh xu); count: số xu; onLand(i): mỗi đồng chạm thanh; trả Promise khi xong cả loạt.
+  function flyCoins(breed, target, count = 8, onLand) {
+    const cat = cats.bodies().find(body => body.breed === breed);
+    if (!cat || !container) { for (let i = 0; i < count; i++) onLand?.(i); return Promise.resolve(); }
+    const origin = new THREE.Vector3(); cat.rig.root.getWorldPosition(origin); origin.y += .55;
+    return new Promise(done => {
+      let left = count;
+      for (let i = 0; i < count; i++) {
+        const coin = new THREE.Group(), body = new THREE.Mesh(coinGeo, coinBody), face = new THREE.Mesh(faceGeo, coinFace);
+        coin.add(body, face);
+        [body, face].forEach(m => { m.castShadow = false; m.userData.noOutline = true; });
+        const angle = (i / count) * Math.PI * 2 + Math.random() * .6, spread = .5 + Math.random() * .5;
+        coin.position.copy(origin);
+        coin.scale.setScalar(.01);
+        coin.visible = false; // chờ tới lượt (so le từng đồng)
+        coinGroup.add(coin);
+        flying.push({ coin, t: -i * .07, burst: new THREE.Vector3(Math.cos(angle) * spread, 1 + Math.random() * .6, Math.sin(angle) * spread), spin: 6 + Math.random() * 6,
+          origin: origin.clone(), target, last: new THREE.Vector3(), onLand: () => { onLand?.(i); if (--left === 0) done(); } });
+      }
+    });
+  }
+  const BURST = .38, FLY = .8; // giây: bật lên / bay vào thanh
+  function updateCoins(dt) {
+    if (!flying.length) return;
+    const rect = renderer.domElement.getBoundingClientRect(), dist = camera.position.distanceTo(controls.target);
+    for (let k = flying.length - 1; k >= 0; k--) {
+      const f = flying[k];
+      f.t += dt;
+      if (f.t < 0) continue;
+      const c = f.coin;
+      c.visible = true;
+      // Điểm đích trong cảnh: tia từ camera qua px của thanh xu, cách camera ~nửa khoảng nhìn (đủ gần để đồng xu to dần khi bay vào)
+      coinTo.set((f.target.x - rect.left) / rect.width * 2 - 1, 1 - (f.target.y - rect.top) / rect.height * 2, .5).unproject(camera);
+      coinCam.copy(camera.position);
+      coinRay.copy(coinTo).sub(coinCam).normalize();
+      coinTo.copy(coinCam).addScaledVector(coinRay, dist * .45);
+      c.rotation.y += f.spin * dt;
+      if (f.t < BURST) { // bật lên toả ra, hơi nảy
+        const p = f.t / BURST, e = 1 - (1 - p) * (1 - p);
+        c.position.set(f.origin.x + f.burst.x * e, f.origin.y + f.burst.y * e - 1.2 * p * p * .35, f.origin.z + f.burst.z * e);
+        c.scale.setScalar(Math.min(1, .2 + p * 1.4));
+        f.last.copy(c.position);
+      } else {
+        const p = Math.min(1, (f.t - BURST) / FLY), e = p * p * (3 - 2 * p);
+        c.position.lerpVectors(f.last, coinTo, e);
+        c.position.y += Math.sin(p * Math.PI) * .6; // vòng cung nhẹ
+        c.scale.setScalar(1 + p * .6);
+        if (p >= 1) { coinGroup.remove(c); flying.splice(k, 1); f.onLand(); }
+      }
+    }
+  }
   // Khu kế tiếp chưa mở: mảnh đất mờ (nền nhạt trong suốt + viền nét đứt) đúng chỗ khu đó sẽ mở. menu-controller.js đặt chấm than
   // vàng lên trên (screenOfGhost) — chạm chấm than mới hiện điều kiện mở. Chỉ hiện ở Deco; không chặn chạm, không viền, không bóng.
   // Mảnh đất phủ đúng khung của khu: ô vuông 8 × 8 (phòng, vườn mở rộng), sân sau là hình chữ nhật dài (zoneRect).
@@ -2274,6 +2345,7 @@ export function createRoom() {
     });
     brush(Math.min(.05, (now - (lastFrame || now)) / 1000));
     decoFx.update(Math.min(.05, (now - (lastFrame || now)) / 1000));
+    updateCoins(Math.min(.05, (now - (lastFrame || now)) / 1000));
     // Bướm bay trong nhóm vườn: toạ độ theo tâm vườn, giống vị trí bồn hoa.
     if (furniture.flowers?.visible) flowerCenter.set(furniture.flowers.position.x, 0, furniture.flowers.position.z); else flowerCenter.set(0, 0, 0);
     butterflies.forEach(b => b.update(t, Math.min(.05, (now - (lastFrame || now)) / 1000), flowerCenter));
@@ -2285,6 +2357,10 @@ export function createRoom() {
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
     rideAlong();
     lastFrame = now;
+    // Mặt phẳng gần (near) đi theo độ xa của camera: near cố định .1 thì zoom ra xa (tới ~80 m) độ chính xác depth chỉ còn vài mm, các tấm phẳng
+    // sát nhau (sàn lớp, bãi cát, vạch đường, thảm) tranh nhau chập chờn. Camera luôn cao >= ~1/3 khoảng nhìn nên near = 6% khoảng nhìn không cắt gì.
+    const nearNow = THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * .06, .1, 4);
+    if (Math.abs(camera.near - nearNow) > camera.near * .05) { camera.near = nearNow; camera.updateProjectionMatrix(); }
     if (now - lastShadowAt >= SHADOW_STEP_MS) { sun.shadow.needsUpdate = true; lastShadowAt = now; }
     const restoreShadows = castLampShadows();
     if (TOON) {
@@ -2385,6 +2461,7 @@ export function createRoom() {
     screenOfGhost,
     screenRectOf,
     screenRectOfCat,
+    flyCoins,
     // Hướng dẫn: giữ mèo giống `breed` ngồi yên nhìn camera (on = true) / thả ra (false). nearSlot: chỗ đặt (vườn) mà hướng dẫn
     // sắp chỉ tới — mèo ngồi sẵn cạnh đó để camera lướt tới món thì mèo vẫn trong khung.
     holdCat: (breed, on, nearSlot) => {

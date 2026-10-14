@@ -70,8 +70,13 @@ export function kinderDecor() {
     return node;
   };
   const sand = typeof document === 'undefined' ? mat('#efd8a4') : sandMat();
-  if (sand.map) sand.map.wrapS = sand.map.wrapT = THREE.RepeatWrapping;
-  g.add(patch(-4.05, 4.4, -4.05, 4.05, 1.1, .006, mat('#cfae72')), patch(-3.9, 4.25, -3.9, 3.9, 1.0, .013, sand));
+  // Texture cát của vườn dùng chung (kẹp mép, đã nạp lên GPU): đổi wrap trên bản gốc thì không chắc ăn -> sao chép riêng, lặp theo uv (uv > 1 mà kẹp mép = vệt sọc loang khi xoay camera).
+  if (sand.map) { sand.map = sand.map.clone(); sand.map.wrapS = sand.map.wrapT = THREE.RepeatWrapping; sand.map.needsUpdate = true; }
+  // Hai tấm phẳng chồng lên nhau + nền cỏ (đã bị đẩy lùi): kéo lên trước bằng polygonOffset để xa camera cũng không z-fighting
+  const edge = mat('#cfae72');
+  Object.assign(edge, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  Object.assign(sand, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  g.add(patch(-4.05, 4.4, -4.05, 4.05, 1.1, .006, edge), patch(-3.9, 4.25, -3.9, 3.9, 1.0, .013, sand));
   // Sàn lớp học (tấm phẳng sát nền: đồ trong lớp đứng trên nền, không tính chạm) + bậc thềm trước.
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(C.x1 - C.x0, C.z1 - C.z0), mat('#f4e3c1'));
   floor.rotation.x = -Math.PI / 2; floor.position.set((C.x0 + C.x1) / 2, .006, (C.z0 + C.z1) / 2); floor.receiveShadow = true;
@@ -273,9 +278,10 @@ export const KINDER_BUILD = {
   },
 
   // ===== Xích đu khung chữ A: xà ngang 2.4, hai ghế treo =====
+  // khung chữ A (cả 3 kiểu): hai chân chụm ở xà trên (y 1.95, z 0), xoè ra ở đất (z ±.65)
   kswing() {
     const g = group(at(cyl(.05, .05, 2.5, RED, 10), 0, 1.95, 0).rotateZ(Math.PI / 2));
-    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, BLUE, 10), x, .98, s * .3); leg.rotation.x = s * .32; g.add(leg); }
+    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, BLUE, 10), x, .98, s * .33); leg.rotation.x = -s * .32; g.add(leg); }
     for (const [x, c] of [[-.5, YELLOW], [.5, GREEN]]) g.add(at(rbox(.45, .05, .2, .02, c), x, .45, 0), ...[-.18, .18].map(dx => at(cyl(.01, .01, 1.45, '#6b7078', 6), x + dx, 1.2, 0)));
     return g;
   },
@@ -379,14 +385,14 @@ Object.assign(KINDER_BUILD, {
   // Xích đu lốp xe: một lốp treo ba dây
   'kswing-tire'() {
     const g = group(at(cyl(.05, .05, 2.5, GREEN, 10), 0, 1.95, 0).rotateZ(Math.PI / 2));
-    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, WOOD, 10), x, .98, s * .3); leg.rotation.x = s * .32; g.add(leg); }
+    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, WOOD, 10), x, .98, s * .33); leg.rotation.x = -s * .32; g.add(leg); }
     g.add(at(ring(.3, .1, '#2f3238'), 0, .55, 0).rotateX(Math.PI / 2), ...[0, 1, 2].map(k => { const a = k * Math.PI * 2 / 3; return at(cyl(.01, .01, 1.4, '#6b7078', 6), Math.sin(a) * .25, 1.25, Math.cos(a) * .25); }));
     return g;
   },
   // Xích đu tổ chim: vòng đệm tròn + lưới, treo bốn dây
   'kswing-nest'() {
     const g = group(at(cyl(.05, .05, 2.5, PURPLE, 10), 0, 1.95, 0).rotateZ(Math.PI / 2));
-    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, '#fffaf0', 10), x, .98, s * .3); leg.rotation.x = s * .32; g.add(leg); }
+    for (const x of [-1.2, 1.2]) for (const s of [-1, 1]) { const leg = at(cyl(.045, .045, 2.05, '#fffaf0', 10), x, .98, s * .33); leg.rotation.x = -s * .32; g.add(leg); }
     g.add(at(ring(.45, .06, ORANGE), 0, .5, 0).rotateX(Math.PI / 2), at(cyl(.43, .43, .02, '#fff0c2', 24), 0, .48, 0),
       ...[-1, 1].flatMap(x => [-1, 1].map(z => at(cyl(.01, .01, 1.5, '#6b7078', 6), x * .3, 1.22, z * .3))));
     return g;

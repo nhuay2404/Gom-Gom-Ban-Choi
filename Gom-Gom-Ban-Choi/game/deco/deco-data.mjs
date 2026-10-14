@@ -592,6 +592,18 @@ export function applyAction(deco, entry, unlockedLevel) {
   return withZone(next, entry.zone, { placed });
 }
 
+// Dev (nút Unlock): có sẵn MỌI món mặc định (món gốc của từng chỗ đặt) ở mọi khu; chỗ nào còn trống thì đặt món gốc vào, chỗ đang đặt kiểu khác thì giữ.
+export function ownAllBase(deco) {
+  let next = deco;
+  for (const entry of CATALOG.filter(isBase)) {
+    const zone = zoneState(next, entry.zone);
+    if (!zone) continue;
+    const taken = zone.placed.some(id => slotOf(itemById(id) ?? entry) === slotOf(entry));
+    next = withZone(next, entry.zone, { owned: zone.owned.includes(entry.id) ? zone.owned : [...zone.owned, entry.id], placed: taken ? zone.placed : [...zone.placed, entry.id] });
+  }
+  return next;
+}
+
 // Món đã có (đã mua, hoặc miễn phí) — chưa tính đang đặt hay không.
 export const isOwned = (deco, entry) => entry.price === 0 || (entry.cat === 'cats' ? true : zoneState(deco, entry.zone).owned.includes(entry.id));
 
