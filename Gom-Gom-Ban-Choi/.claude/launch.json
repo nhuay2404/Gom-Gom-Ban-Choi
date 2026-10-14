@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "start",
+      "runtimeExecutable": "C:\\Users\\CPU13403\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "runtimeArgs": [
+        "server.mjs",
+        "--lan"
+      ],
+      "port": 4400,
+      "autoPort": true
+    }
+  ]
+}

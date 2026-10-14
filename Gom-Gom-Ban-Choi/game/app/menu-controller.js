@@ -1312,6 +1312,12 @@ $('dev-qc').onclick = () => runQC();
 const DEV_PANEL_KEY = 'gomgom-dev-panel-collapsed';
 $('dev-panel').classList.toggle('collapsed', readText(DEV_PANEL_KEY) === 'on');
 $('dev-toggle').onclick = () => writeText(DEV_PANEL_KEY, $('dev-panel').classList.toggle('collapsed') ? 'on' : 'off');
+// UI Studio (app/ui-studio.js, main.js nạp khi có nút dev): nút chỉ hiện khi studio đã nạp (nó báo qua sự kiện 'ui-studio:state').
+addEventListener('ui-studio:state', event => {
+  $('dev-studio').hidden = false;
+  $('dev-studio').setAttribute('aria-pressed', event.detail.shown);
+});
+$('dev-studio').onclick = () => dispatchEvent(new Event('ui-studio:toggle'));
 // Level Editor (tools/level-editor/): mở toàn màn hình trong iframe. Bản HTML một file (file://) không có máy chủ phục vụ /tools.
 $('dev-editor').hidden = location.protocol === 'file:';
 $('dev-editor').onclick = () => {

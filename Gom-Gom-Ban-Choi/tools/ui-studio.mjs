@@ -43,7 +43,7 @@ function readBody(req, limit = 20 * 1024 * 1024) {
     let size = 0;
     req.on('data', chunk => {
       size += chunk.length;
-      if (size > limit) { fail(new Error('File quá lớn')); req.destroy(); } else parts.push(chunk);
+      if (size > limit) { fail(new Error('File too large')); req.destroy(); } else parts.push(chunk);
     });
     req.on('end', () => ok(Buffer.concat(parts)));
     req.on('error', fail);
@@ -69,27 +69,27 @@ export function handleStudio(req, res, url = new URL(req.url, 'http://x')) {
     return true;
   }
   if (req.method !== 'POST') { json(res, 405, { error: 'POST' }); return true; }
-  if (!isLocal(req)) { json(res, 403, { error: 'Chỉ lưu được từ máy đang chạy server' }); return true; }
+  if (!isLocal(req)) { json(res, 403, { error: 'Saving only works on the computer running the server' }); return true; }
   (async () => {
     try {
       if (route === 'css') {
         const { file, selector, index = 0, props } = JSON.parse((await readBody(req)).toString('utf8'));
         const full = resolve(GAME, String(file));
-        if (!inside(UI, full) || extname(full) !== '.css' || !existsSync(full)) throw new Error('Chỉ sửa được file .css trong game/ui/');
-        if (!selector || !props || typeof props !== 'object') throw new Error('Thiếu selector / props');
+        if (!inside(UI, full) || extname(full) !== '.css' || !existsSync(full)) throw new Error('Only .css files inside game/ui/ can be edited');
+        if (!selector || !props || typeof props !== 'object') throw new Error('Missing selector / props');
         const before = readFileSync(full, 'utf8');
         const after = patchCss(before, String(selector), Number(index) || 0, props);
         if (after !== before) writeFileSync(full, after);
         json(res, 200, { ok: true, changed: after !== before });
       } else if (route === 'upload') {
         const target = resolve(GAME, url.searchParams.get('path') || '');
-        if (!inside(UI, target) || !IMAGE_EXT.has(extname(target).toLowerCase())) throw new Error('Chỉ ghi được ảnh (.png .jpg .webp .gif .svg) trong game/ui/');
-        if (!existsSync(dirname(target))) throw new Error('Thư mục không tồn tại: ' + relative(GAME, dirname(target)));
+        if (!inside(UI, target) || !IMAGE_EXT.has(extname(target).toLowerCase())) throw new Error('Only images (.png .jpg .webp .gif .svg) inside game/ui/ can be written');
+        if (!existsSync(dirname(target))) throw new Error('Folder does not exist: ' + relative(GAME, dirname(target)));
         const body = await readBody(req);
-        if (!body.length) throw new Error('File rỗng');
+        if (!body.length) throw new Error('Empty file');
         writeFileSync(target, body);
         json(res, 200, { ok: true, path: relative(GAME, target).split(sep).join('/') });
-      } else json(res, 404, { error: 'Không có lệnh ' + route });
+      } else json(res, 404, { error: 'Unknown command ' + route });
     } catch (error) {
       json(res, 400, { error: error.message });
     }
