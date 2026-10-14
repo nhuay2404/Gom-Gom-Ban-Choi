@@ -107,7 +107,7 @@
   <div id="evChart" style="margin-top:8px"></div>
   <div class="row" style="align-items:flex-start;gap:16px">
     <table id="evBreakdown" style="max-width:760px"></table>
-    <div class="muted" style="max-width:420px">EV 0–100 = tổng có trọng số của: <b>thời gian</b> tới khi thắng (số lần thử kỳ vọng × lượt dùng × giây/lượt của profile) · <b>áp lực lượt</b> (lượt dùng / lượt có) · <b>mục tiêu</b> (số lần gom cần: điểm ÷ 30 hoặc ô cỏ ÷ 3, + chuồng) · <b>nhãn</b> (số element / 7) · <b>mèo</b> (mật độ mèo đặt sẵn). Kết quả lưu đệm theo nội dung màn.</div>
+    <div class="muted" style="max-width:420px">EV 0–100 = tổng có trọng số của: <b>thời gian</b> tới khi thắng (số lần thử kỳ vọng × giây chơi một ván theo nhịp của profile) · <b>áp lực lượt</b> (lượt dùng / lượt có) · <b>mục tiêu</b> (số lần gom cần: điểm ÷ 30 hoặc ô cỏ ÷ 3, + chuồng) · <b>nhãn</b> (số element / 7) · <b>mèo</b> (mật độ mèo đặt sẵn). Kết quả lưu đệm theo nội dung màn.</div>
   </div>
   <details class="profile-doc">
     <summary>Các profile (Cơ bản, Cao thủ…) là gì? Bảng trống?</summary>
@@ -116,19 +116,19 @@
     <p>Mỗi lượt bot thử mọi chỗ đặt thẻ, chấm điểm nước đi (gom được bao nhiêu, dọn cỏ, chuẩn bị gom lượt sau, chừa ô trống) rồi
       <b>cộng nhiễu ngẫu nhiên 0…noise</b> và chọn nước cao nhất. Một cú gom 3 đáng ~30 điểm, nên noise ≥ 30 là hay bỏ lỡ nước gom.</p>
     <table>
-      <tr><th style="text-align:left">Profile</th><th>noise (lóng ngóng)</th><th>Dùng Hold</th><th>Giây / lượt</th><th style="text-align:left">Đại diện cho</th></tr>
-      <tr><td><b>Cơ bản</b> (curve chính)</td><td>30</td><td>có</td><td>5</td><td style="text-align:left">Người chơi trung bình: thấy phần lớn nước gom, đôi khi bỏ lỡ</td></tr>
-      <tr><td><b>Cao thủ</b></td><td>1</td><td>có</td><td>3</td><td style="text-align:left">Gần như luôn chọn nước tốt nhất, chơi nhanh</td></tr>
-      <tr><td><b>Suy nghĩ kỹ</b></td><td>10</td><td>có</td><td>9</td><td style="text-align:left">Chọn nước tốt nhưng nghĩ lâu: màn tốn thời gian hơn</td></tr>
-      <tr><td><b>Người yếu</b></td><td>90</td><td>có</td><td>7</td><td style="text-align:left">Chọn gần như ngẫu nhiên, thường thua</td></tr>
-      <tr><td><b>Người mới (không Hold)</b></td><td>60</td><td>không</td><td>6</td><td style="text-align:left">Chưa biết dùng ô Gửi tạm (Hold)</td></tr>
+      <tr><th style="text-align:left">Profile</th><th>noise (lóng ngóng)</th><th>Dùng Hold</th><th>Nhịp chơi</th><th style="text-align:left">Đại diện cho</th></tr>
+      <tr><td><b>Cơ bản</b> (curve chính)</td><td>30</td><td>có</td><td>Trung bình</td><td style="text-align:left">Người chơi trung bình: thấy phần lớn nước gom, đôi khi bỏ lỡ</td></tr>
+      <tr><td><b>Cao thủ</b></td><td>1</td><td>có</td><td>Giỏi</td><td style="text-align:left">Gần như luôn chọn nước tốt nhất, chơi nhanh</td></tr>
+      <tr><td><b>Suy nghĩ kỹ</b></td><td>10</td><td>có</td><td>Trung bình, nghĩ gấp ~2.5</td><td style="text-align:left">Chọn nước tốt nhưng nghĩ lâu: màn tốn thời gian hơn</td></tr>
+      <tr><td><b>Người yếu</b></td><td>90</td><td>có</td><td>Yếu</td><td style="text-align:left">Chọn gần như ngẫu nhiên, thường thua</td></tr>
+      <tr><td><b>Người mới (không Hold)</b></td><td>60</td><td>không</td><td>Yếu, nghĩ nhanh hơn</td><td style="text-align:left">Chưa biết dùng ô Gửi tạm (Hold)</td></tr>
     </table>
-    <p class="muted">"Giây / lượt" không ảnh hưởng bot thắng hay thua, chỉ dùng tính thành phần <b>thời gian</b> của EV.</p>
+    <p class="muted">"Nhịp chơi" (bot.mjs PACES) không ảnh hưởng bot thắng hay thua, chỉ dùng tính thành phần <b>thời gian</b> của EV. Mỗi lượt = nhìn bàn + nghĩ (tăng theo log số lựa chọn thật trên bàn; thấy nước gom thì chọn ngay; nước có tay hướng dẫn không phải nghĩ) + kéo / xoay / đổi Hold + anim gom.</p>
     <h3>Các cột trong bảng</h3>
     <ul>
       <li><b>EV</b> 0–100: độ khó tổng = 35% thời gian + 20% áp lực lượt + 20% mục tiêu + 15% nhãn + 10% mèo (cách tính ở đoạn chữ bên cạnh).
         Số trong ngoặc = chênh lệch so với profile Cơ bản (<span class="warn">đỏ</span> = khó hơn, <span class="ok">xanh</span> = dễ hơn).</li>
-      <li><b>Thắng</b>: tỉ lệ ván bot thắng. <b>Thời gian</b>: phút kỳ vọng tới khi thắng = (1 ÷ tỉ lệ thắng, tối đa 10 lần thử) × lượt dùng × giây/lượt ÷ 60.</li>
+      <li><b>Thắng</b>: tỉ lệ ván bot thắng. <b>Thời gian</b>: phút kỳ vọng tới khi thắng = (1 ÷ tỉ lệ thắng, tối đa 10 lần thử) × giây chơi trung bình một ván ÷ 60.</li>
       <li><b>Thời gian % … Mèo %</b>: từng thành phần của EV, 100% = chạm mốc chuẩn (vd. thời gian 8 phút, mục tiêu 20 lần gom).</li>
     </ul>
     <p class="muted">Bot tham lam chỉ nhìn 1 nước nên tỉ lệ thắng là <b>cận dưới</b> của người thật. Profile / trọng số sửa ở <code>EV_PROFILES</code> / <code>EV_WEIGHTS</code> (tools/level-editor/editor.mjs).</p>
@@ -166,6 +166,23 @@
       <div class="palette" id="palette"></div>
       <div id="board" style="margin-top:8px"></div>
       <ul id="issues" class="muted"></ul>
+      <div class="replay">
+        <h3 class="sub">▶ Xem AI chơi màn này <span class="muted">— phát lại từng nước bot đi (chọn màn khác là tự chơi lại màn đó)</span></h3>
+        <div class="row">
+          <label>Profile<select id="rpProfile"></select></label>
+          <label>Ván số<input type="number" id="rpSeed" value="1" min="1" style="width:70px"></label>
+          <label class="check"><input type="checkbox" id="rpBoost"> Có booster</label>
+          <button class="btn" id="rpNewGame" title="Chơi ván khác (đổi thứ tự thẻ)">🎲 Ván khác</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" id="rpFirst" title="Về đầu">⏮</button><button class="btn" id="rpPrev" title="Lượt trước">◀</button>
+          <button class="btn primary" id="rpPlay">▶ Phát</button><button class="btn" id="rpNext" title="Lượt sau">▶|</button><button class="btn" id="rpLast" title="Tới cuối">⏭</button>
+          <input type="range" id="rpStep" min="0" value="0" style="flex:1;min-width:120px">
+        </div>
+        <div id="rpInfo" class="rp-info"></div>
+        <div id="rpBoard" style="margin-top:6px"></div>
+        <div class="legend muted"><span><i style="background:#3a9a5b"></i>thẻ vừa đặt</span><span><i style="background:#e07a2e"></i>bị gom (biến mất ở bước sau)</span></div>
+      </div>
     </section>
     <details class="card">
       <summary><h2>Mã màn (levels.mjs)</h2><span class="muted">— chỉ cần khi muốn dán tay; nút Lưu đã ghi thẳng vào game</span></summary>
@@ -240,6 +257,14 @@
     </details>
   </div>
 </main>
+  <section id="playtimeSection" class="view" data-view="level">
+    <h2>Thời gian chơi theo profile người chơi</h2>
+    <p class="hint">Bot chơi từng màn theo 3 profile (yếu / trung bình / giỏi). <b>Thời gian</b> = số lần thua × thời gian ván thua + thời gian ván thắng; mỗi lượt = nhìn bàn + nghĩ (tăng theo log số lựa chọn thật trên bàn: có nước gom thì chỉ đếm nước gom, nước có tay hướng dẫn không phải nghĩ) + kéo / xoay / đổi Hold + anim gom.
+      <b>Booster</b>: bot có sẵn booster không giới hạn (+3 lượt khi còn 1 lượt mà đã gần đủ điểm, đổi thẻ khi thẻ không vừa bàn); cột Δ = thời gian thay đổi so với không dùng booster.</p>
+    <div class="row"><label style="width:120px">Số ván mỗi màn<input type="number" id="ptRuns" value="60" min="10" max="400" step="10"></label>
+      <button class="btn primary" id="btnPlaytime">▶ Chạy bảng</button><span class="muted" id="ptStatus"></span></div>
+    <div class="scroll" style="margin-top:8px;max-height:520px"><table id="playtimeTable"></table></div>
+  </section>
 <dialog id="help">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">Hướng dẫn sử dụng</h2>
     <button class="btn" onclick="document.getElementById('help').close()">Đóng ✕</button></div>
@@ -308,7 +333,7 @@
   <h3>💰 Kinh tế (xu)</h3>
   <ul>
     <li><b>Hàng thẻ trên cùng</b> tóm tắt bộ số đang sửa: tổng xu cả game, lô 10 màn bị lệch, ngày mở bếp, xu dư cuối game, khu không mở được. Thẻ <span class="warn">đỏ</span> = có vấn đề.</li>
-    <li><b>Cột trái = sửa số</b>: ① xu thưởng mỗi màn (xu màn 1, xu tăng thêm mỗi màn, hệ số boss, xu ban đầu) và <b>xu tự sinh (idle)</b>: tỉ lệ idle, số giờ tích tối đa, màn bắt đầu có idle · ② mỗi khu: màn mốc, xu cần tiêu cho decor để mở, hệ số giá đồ.</li>
+    <li><b>Cột trái = sửa số</b>: ① xu thưởng mỗi màn (xu màn 1, xu tăng thêm mỗi màn, xu ban đầu) và <b>xu tự sinh (idle)</b>: tỉ lệ idle, số giờ tích tối đa, màn bắt đầu có idle · ② mỗi khu: màn mốc, xu cần tiêu cho decor để mở, hệ số giá đồ.</li>
     <li><b>Idle trong game</b>: mèo kiếm xu theo giờ, bong bóng xu hiện trên đầu con mèo đầu tiên ở Deco, chạm để nhận. Thẻ “Xu từ idle” cho biết idle chiếm bao nhiêu % tổng xu (nên 5–15%).</li>
     <li><b>Cột phải = kết quả, tự tính lại khi sửa</b>: ③ từng lô 10 màn có đủ xu mua món chính không (xanh 85–115% là vừa) · ④ người chơi ảo: mở từng khu ngày nào, ở màn nào, bao nhiêu % phải chờ tiêu xu, cuối game dư bao nhiêu xu, kèm biểu đồ xu trong ví.</li>
     <li><b>Tuỳ chỉnh người chơi ảo</b> (khung gập ở ④): số ván / ngày, tay nghề, cách mua, số lần nhận idle / ngày của từng kiểu. Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo thật.</li>

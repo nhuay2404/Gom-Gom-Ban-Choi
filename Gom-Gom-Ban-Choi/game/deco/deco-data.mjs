@@ -13,6 +13,7 @@ export const ZONES = {
   kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
   backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
+  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 // Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
@@ -25,8 +26,8 @@ export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter
 // ===== Mở khu: đủ màn + đủ xu thì mua khu (trừ xu). Mỗi khu đi qua các trạng thái =====
 //   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
 //   coins : đủ màn, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
-export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard'];
-export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard' };
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
+export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
 export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
 const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
 // table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
@@ -99,8 +100,8 @@ export const CATALOG = [
   { id: 'bedrug', zone: 'bedroom', cat: 'furniture', name: 'Fluffy rug', color: '#e6dcff' },
   { id: 'laundry', zone: 'bedroom', cat: 'furniture', name: 'Laundry basket', color: '#e9c58f' },
   { id: 'bedside', zone: 'bedroom', cat: 'furniture', name: 'Bedside table', color: '#f3d5a8' },
-  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Study desk', color: '#d9a36a' },
-  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Wooden chair', color: '#ffd66b' },
+  { id: 'desk', zone: 'bedroom', cat: 'furniture', name: 'Gaming desk', color: '#3a3f4a' },
+  { id: 'chair', zone: 'bedroom', cat: 'furniture', name: 'Gaming chair', color: '#e8617f' },
   { id: 'closet', zone: 'bedroom', cat: 'furniture', name: 'Closet', color: '#fff4e0' },
   { id: 'plushie', zone: 'bedroom', cat: 'furniture', name: 'Teddy bear', color: '#d9a36a' },
   { id: 'catsteps', zone: 'bedroom', cat: 'furniture', name: 'Wall steps', color: '#c98a55' },
@@ -122,13 +123,13 @@ export const CATALOG = [
   { id: 'bfloor-graphite-tiles', zone: 'bedroom', cat: 'floors', name: 'Graphite tiles', color: '#4a4e55' },
   { id: 'bfloor-smoke-carpet', zone: 'bedroom', cat: 'floors', name: 'Smoke carpet', color: '#5c6068' },
   // --- Bếp (mở cả khu khi thắng màn 40, nên đồ không cần khoá thêm theo màn) ---
-  { id: 'sink', zone: 'kitchen', cat: 'furniture', name: 'Farmhouse sink', color: '#d9a36a' },
-  { id: 'dining', zone: 'kitchen', cat: 'furniture', name: 'Pine table', color: '#e9c58f' },
+  { id: 'sink', zone: 'kitchen', cat: 'furniture', name: 'Sink counter', color: '#fff4e0' },
+  { id: 'dining', zone: 'kitchen', cat: 'furniture', name: 'Dining table', color: '#f3c2cc' },
   { id: 'fridge', zone: 'kitchen', cat: 'furniture', name: 'Fridge', color: '#bfe8d6' },
-  { id: 'stove', zone: 'kitchen', cat: 'furniture', name: 'Wood stove', color: '#2f3238' },
+  { id: 'stove', zone: 'kitchen', cat: 'furniture', name: 'Stove', color: '#fff4e0' },
   { id: 'pantry', zone: 'kitchen', cat: 'furniture', name: 'Pantry cupboard', color: '#ffe9b0' },
   { id: 'kchair', zone: 'kitchen', cat: 'furniture', name: 'Dining chairs (set of 4)', color: '#d9a36a' },
-  { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Raised feeder', color: '#d9a36a' },
+  { id: 'catfood', zone: 'kitchen', cat: 'furniture', name: 'Cat bowls', color: '#f4a3b6' },
   { id: 'cart', zone: 'kitchen', cat: 'furniture', name: 'Tea cart', color: '#ffd66b' },
   { id: 'kplant', zone: 'kitchen', cat: 'furniture', name: 'Monstera', color: '#5fae46' },
   { id: 'bakerack', zone: 'kitchen', cat: 'furniture', name: "Baker's rack", color: '#ffb347' },
@@ -166,16 +167,33 @@ export const CATALOG = [
   { id: 'yground-grass', zone: 'backyard', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
   { id: 'yground-clover', zone: 'backyard', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
   { id: 'yground-meadow', zone: 'backyard', cat: 'floors', name: 'Meadow', color: '#b5dd7a', style: 'ground-meadow' },
+  // --- Trường mẫu giáo: lớp học + sân chơi (bên kia đường trước vườn; mở theo AREA_UNLOCK.kinder). Món kép: kdesk, kcubby, kspring, kbench ---
+  { id: 'kdesk', zone: 'kinder', cat: 'furniture', name: 'Kids desks (2 sets)', color: '#5fb8e8' },
+  { id: 'kboard', zone: 'kinder', cat: 'furniture', name: 'Chalkboard', color: '#2f5d4a' },
+  { id: 'kcubby', zone: 'kinder', cat: 'furniture', name: 'Toy cubbies (pair)', color: '#ffd66b' },
+  { id: 'kpiano', zone: 'kinder', cat: 'furniture', name: 'Upright piano', color: '#e98b9a' },
+  { id: 'kplayset', zone: 'kinder', cat: 'furniture', name: 'Slide tower', color: '#ff6b6b' },
+  { id: 'kswing', zone: 'kinder', cat: 'furniture', name: 'Swing set', color: '#5fb8e8' },
+  { id: 'kspring', zone: 'kinder', cat: 'furniture', name: 'Spring riders (pair)', color: '#ffd66b' },
+  { id: 'ksandpit', zone: 'kinder', cat: 'furniture', name: 'Sandpit', color: '#efd8a4' },
+  { id: 'kmerry', zone: 'kinder', cat: 'furniture', name: 'Merry-go-round', color: '#b48ee8' },
+  { id: 'kbench', zone: 'kinder', cat: 'furniture', name: 'Benches (pair)', color: '#ff8fb8' },
+  { id: 'kfence-picket', zone: 'kinder', cat: 'walls', name: 'Yellow picket', color: '#ffd66b', style: 'fence-white' },
+  { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Blue rails', color: '#8fc9f2', style: 'fence-wood' },
+  { id: 'kfence-hedge', zone: 'kinder', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  { id: 'kground-grass', zone: 'kinder', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
+  { id: 'kground-clover', zone: 'kinder', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
+  { id: 'kground-path', zone: 'kinder', cat: 'floors', name: 'Stone path', color: '#d9d2c4', style: 'ground-path' },
   // --- Phòng tắm (bên trái phòng ngủ, cửa trên tường trái phòng ngủ; mở theo AREA_UNLOCK.bathroom) ---
-  { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Wooden-seat toilet', color: '#d9a36a' },
-  { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Wood vanity', color: '#c98a55' },
-  { id: 'bathtub', zone: 'bathroom', cat: 'furniture', name: 'Wooden tub', color: '#d9a36a' },
+  { id: 'toilet', zone: 'bathroom', cat: 'furniture', name: 'Toilet', color: '#ffffff' },
+  { id: 'vanity', zone: 'bathroom', cat: 'furniture', name: 'Sink vanity', color: '#bfe8d6' },
+  { id: 'bathtub', zone: 'bathroom', cat: 'furniture', name: 'Clawfoot tub', color: '#fffaf0' },
   { id: 'shower', zone: 'bathroom', cat: 'furniture', name: 'Shower', color: '#d4e9ff' },
   { id: 'washer', zone: 'bathroom', cat: 'furniture', name: 'Washing machine', color: '#f5f8fb' },
-  { id: 'towel', zone: 'bathroom', cat: 'furniture', name: 'Towel ladder', color: '#c98a55' },
-  { id: 'litter', zone: 'bathroom', cat: 'furniture', name: 'Litter cabinet', color: '#e9c58f' },
+  { id: 'towel', zone: 'bathroom', cat: 'furniture', name: 'Towel rack', color: '#ffd66b' },
+  { id: 'litter', zone: 'bathroom', cat: 'furniture', name: 'Cat litter box', color: '#f4a3b6' },
   { id: 'bathmat', zone: 'bathroom', cat: 'furniture', name: 'Bath mat', color: '#8fc9f2' },
-  { id: 'jacuzzi', zone: 'bathroom', cat: 'furniture', name: 'Cedar hot tub', color: '#9a6a45' },
+  { id: 'jacuzzi', zone: 'bathroom', cat: 'furniture', name: 'Hot tub', color: '#7fd6f0' },
   { id: 'bathshelf', zone: 'bathroom', cat: 'furniture', name: 'Bath shelf', color: '#8fc9f2' },
   { id: 'twall-aqua', zone: 'bathroom', cat: 'walls', name: 'Aqua', color: '#d4f0ee' },
   { id: 'twall-white', zone: 'bathroom', cat: 'walls', name: 'White', color: '#f5f8fb' },
@@ -212,113 +230,211 @@ export const CATALOG = [
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', breed: 'siamese' },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', breed: 'tuxedo' },
 ];
-// Mỗi chỗ đặt (slot) có đúng 3 món, mỗi món một theme: Gỗ (món gốc, mặc định — giữ đủ màu sắc tươi như thiết kế ban đầu, không tô lại tông gỗ), Hồng (nhẹ nhàng, điệu đà)
-// và Hiện đại (công nghệ, neon, đèn LED). Món Hồng / Hiện đại đặt đúng chỗ của món gốc, cùng giá, cùng mốc mở khoá.
-// Model riêng (BUILD[id] trong deco-room.mjs / *-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
+// Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
+// Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
 // nên mèo vẫn chơi được như cũ (ví dụ đài phun nước vẫn có cá để rình, tủ đầu giường vẫn có bình hoa để đẩy rơi).
 // Mỗi slot chỉ đặt được một món: đặt món khác thì nó thay chỗ món đang ở đó.
-export const THEME_IDS = ['wood', 'pink', 'modern'];
-export const THEME_NAMES = { wood: 'Wood', pink: 'Pink', modern: 'Modern' };
-// slot: [[id Hồng, tên, màu], [id Hiện đại, tên, màu]]
-const THEMES = {
+const VARIANTS = [
   // --- Vườn ---
-  flowers: [['flowers-tulips', 'Pink tulips', '#ff8fb6'], ['flowers-modern', 'Neon planter', '#3fe0ff']],
-  stump: [['stump-pink', 'Heart pouf', '#ffb3c8'], ['stump-modern', 'Glow cube seat', '#5ef0ff']],
-  catnip: [['catnip-pot', 'Pink catnip pot', '#ff9fc0'], ['catnip-grass', 'Grow-light tray', '#b07cff']],
-  lantern: [['lantern-pink', 'Heart lantern', '#ff9fc0'], ['lantern-lamppost', 'Neon lamp post', '#3fe0ff']],
-  sandbox: [['sandbox-parasol', 'Pink parasol sandbox', '#ff8fb6'], ['sandbox-modern', 'Glow sandpit', '#3fe0ff']],
-  cathouse: [['cathouse-mushroom', 'Pink mushroom house', '#ff8fb6'], ['cathouse-modern', 'Cat pod house', '#3a3d43']],
-  pond: [['pond-fountain', 'Pink fountain', '#ffc2d4'], ['pond-modern', 'LED pond', '#3fe0ff']],
-  hammock: [['hammock-basket', 'Pink hanging basket', '#ffb3c8'], ['hammock-modern', 'Egg pod swing', '#26282c']],
-  birdbath: [['birdbath-mosaic', 'Pink mosaic bath', '#ff9fc0'], ['birdbath-modern', 'Smart bird feeder', '#3fe0ff']],
-  bench: [['bench-sofa', 'Pink wicker sofa', '#ffb3c8'], ['bench-modern', 'Neon bench', '#26282c']],
-  // --- Vườn mở rộng ---
-  windmill: [['windmill-pink', 'Pinwheel mill', '#ffb3c8'], ['windmill-turbine', 'Wind turbine', '#f5f8fb']],
-  sunflowers: [['sunflowers-pink', 'Rose bush', '#ff8fb6'], ['sunflowers-modern', 'Glow flowers', '#3fe0ff']],
-  clothesline: [['clothesline-flags', 'Heart bunting', '#ff9fc0'], ['clothesline-modern', 'Neon string lights', '#b07cff']],
-  campfire: [['campfire-tent', 'Pink tent', '#ff9fc0'], ['campfire-modern', 'Gas fire pit', '#26282c']],
-  kite: [['kite-balloons', 'Heart balloons', '#ff8fb6'], ['kite-modern', 'Drone', '#3fe0ff']],
-  stream: [['stream-pink', 'Blossom stream', '#ffc2d4'], ['stream-modern', 'LED water channel', '#3fe0ff']],
-  swingtree: [['swingtree-pink', 'Blossom swing', '#ffb3c8'], ['swingtree-modern', 'Neon swing', '#b07cff']],
-  birdhouse: [['birdhouse-pink', 'Pink birdhouse', '#ffb3c8'], ['birdhouse-modern', 'Smart birdhouse', '#3fe0ff']],
-  picnic: [['picnic-pink', 'Pink picnic set', '#ff9fc0'], ['picnic-modern', 'Neon picnic table', '#26282c']],
-  slide: [['slide-seesaw', 'Pink seesaw', '#ff8fb6'], ['slide-modern', 'Neon tube slide', '#3fe0ff']],
+  ['flowers', 'flowers-mushroom', 'Mushroom ring', '#e5483a'],
+  ['stump', 'stump-hay', 'Hay bale', '#e8c25a'],
+  ['catnip', 'catnip-grass', 'Cat grass tray', '#5fb83a'],
+  ['lantern', 'lantern-torch', 'Tiki torch', '#ffb347'],
+  ['sandbox', 'sandbox-turtle', 'Turtle sandbox', '#4fb34a'],
+  ['cathouse', 'cathouse-barrel', 'Barrel house', '#b9854a'],
+  ['pond', 'pond-fountain', 'Fountain', '#d9d2c4'],
+  ['hammock', 'hammock-tire', 'Tire swing', '#3a3a3a'],
+  ['birdbath', 'birdbath-feeder', 'Bird feeder', '#e5483a'],
+  ['bench', 'bench-log', 'Log bench', '#9a6a45'],
+  // lựa chọn thứ 3 cho từng chỗ trong vườn
+  ['flowers', 'flowers-tulips', 'Tulip patch', '#ff5f7e'],
+  ['stump', 'stump-crate', 'Apple crate', '#c9955e'],
+  ['catnip', 'catnip-pot', 'Catnip pot', '#c9693d'],
+  ['lantern', 'lantern-lamppost', 'Lamp post', '#2f3a3a'],
+  ['sandbox', 'sandbox-parasol', 'Parasol sandbox', '#e5483a'],
+  ['cathouse', 'cathouse-mushroom', 'Mushroom house', '#e5483a'],
+  ['pond', 'pond-tub', 'Wooden tub pond', '#b9854a'],
+  ['hammock', 'hammock-basket', 'Hanging basket', '#d9a36a'],
+  ['birdbath', 'birdbath-mosaic', 'Mosaic bath', '#3a9aa0'],
+  ['bench', 'bench-sofa', 'Wicker sofa', '#8fd4c4'],
   // --- Phòng khách ---
-  rug: [['rug-quilt', 'Pink quilt rug', '#ff9fc0'], ['rug-modern', 'Neon-edge rug', '#3a3d43']],
-  armchair: [['armchair-papasan', 'Papasan chair', '#ec5b8c'], ['armchair-lounge', 'Lounge chair', '#26282c']],
-  plant: [['plant-tulips', 'Tulip pot', '#ff8fb6'], ['plant-snake', 'Snake plant', '#2f3236']],
-  yarn: [['yarn-ballpit', 'Pink ball pit', '#ffb3c8'], ['yarn-bin', 'Glow toy bin', '#4a4e55']],
-  catbed: [['catbed-heart', 'Heart cushion', '#ff8fb8'], ['catbed-pod', 'Glow cat pod', '#3a3d43']],
-  table: [['table-nightstand', 'Pink side table', '#ffc2d4'], ['table-marble', 'Black marble table', '#2b2d31']],
-  lamp: [['lamp-lantern', 'Pink paper lantern', '#ffc2d4'], ['lamp-arc', 'Arc lamp', '#1f2125']],
-  cattree: [['cattree-castle', 'Pink cat castle', '#ffc2d4'], ['cattree-modern', 'Modern cat tower', '#6b7078']],
-  shelf: [['shelf-cubby', 'Pink cubby shelf', '#ffc2d4'], ['shelf-metal', 'Steel shelf', '#1f2125']],
-  tank: [['tank-hamster', 'Hamster home', '#ff9fc0'], ['tank-aquarium', 'Black aquarium', '#26282c']],
+  ['rug', 'rug-quilt', 'Patchwork quilt', '#ec5b8c'],
+  ['armchair', 'armchair-rocker', 'Rocking chair', '#b9854a'],
+  ['plant', 'plant-cactus', 'Cactus', '#4f9f5a'],
+  ['yarn', 'yarn-toybox', 'Toy box', '#3b8fe0'],
+  ['catbed', 'catbed-box', 'Cardboard box', '#d9a36a'],
+  ['table', 'table-nightstand', 'Nightstand', '#f5f0e6'],
+  ['lamp', 'lamp-heater', 'Heater', '#e5483a'],
+  ['cattree', 'cattree-cactus', 'Cactus tower', '#4f9f5a'],
+  ['shelf', 'shelf-wardrobe', 'Wardrobe', '#8fc9f2'],
+  ['tank', 'tank-birdcage', 'Bird cage', '#d9a13a'],
+  // lựa chọn thứ 3 cho từng chỗ trong phòng khách
+  ['rug', 'rug-fish', 'Fish rug', '#8fc9f2'],
+  ['armchair', 'armchair-papasan', 'Papasan chair', '#ec5b8c'],
+  ['plant', 'plant-tulips', 'Tulip pot', '#ff8fb6'],
+  ['yarn', 'yarn-ballpit', 'Ball pit', '#ffd23f'],
+  ['catbed', 'catbed-heart', 'Heart cushion', '#ff8fb8'],
+  ['table', 'table-crate', 'Crate table', '#c98a55'],
+  ['lamp', 'lamp-lantern', 'Paper lantern', '#fff1d6'],
+  ['cattree', 'cattree-castle', 'Cat castle', '#e6dfd2'],
+  ['shelf', 'shelf-cubby', 'Cubby shelf', '#f5f0e6'],
+  ['tank', 'tank-hamster', 'Hamster home', '#ffd66b'],
   // --- Phòng ngủ ---
-  bed: [['bed-canopy', 'Canopy bed', '#ffb3c4'], ['bed-platform', 'Platform bed', '#3a3d43']],
-  bedrug: [['bedrug-cloud', 'Pink cloud rug', '#ffc2d4'], ['bedrug-mono', 'LED stripe rug', '#2b2e33']],
-  laundry: [['laundry-washer', 'Pink mini washer', '#ffc2d4'], ['laundry-hamper', 'LED hamper', '#4a4e55']],
-  bedside: [['bedside-drawers', 'Pink drawers', '#ffc2d4'], ['bedside-noir', 'Noir nightstand', '#26282c']],
-  desk: [['desk-piano', 'Pink piano', '#ff9fc0'], ['desk-setup', 'RGB gaming desk', '#1a1c20']],
-  chair: [['chair-beanbag', 'Pink beanbag', '#ffb3c8'], ['chair-office', 'Gaming chair', '#1f2125']],
-  closet: [['closet-dresser', 'Vanity dresser', '#ffc9d5'], ['closet-noir', 'Noir wardrobe', '#26282c']],
-  plushie: [['plushie-bunny', 'Pink bunny', '#ffc2d4'], ['plushie-shark', 'Robo shark', '#6b7078']],
-  mirror: [['mirror-pink', 'Heart mirror', '#ffc2d4'], ['mirror-modern', 'LED mirror', '#26282c']],
-  catsteps: [['catsteps-clouds', 'Pink cloud steps', '#ffc2d4'], ['catsteps-floating', 'LED wall shelves', '#1f2125']],
-  // --- Bếp ---
-  sink: [['sink-pink', 'Pink sink counter', '#ffc2d4'], ['sink-steel', 'Steel sink', '#c8ccd2']],
-  dining: [['dining-pink', 'Pink dining table', '#f3c2cc'], ['dining-modern', 'Glass dining table', '#26282c']],
-  fridge: [['fridge-retro', 'Retro fridge', '#ffc9d5'], ['fridge-steel', 'Steel fridge', '#c8ccd2']],
-  stove: [['stove-red', 'Pink range', '#ff9fc0'], ['stove-modern', 'Induction range', '#26282c']],
-  pantry: [['pantry-hutch', 'Pink dish hutch', '#ffc2d4'], ['pantry-modern', 'Smart pantry', '#26282c']],
-  kchair: [['kchair-bench', 'Pink cushion bench', '#ffb3c8'], ['kchair-stool', 'Bar stools', '#26282c']],
-  catfood: [['catfood-pink', 'Pink cat bowls', '#f4a3b6'], ['catfood-feeder', 'Auto feeder', '#f5f8fb']],
-  cart: [['cart-coffee', 'Pink coffee cart', '#ff9fc0'], ['cart-modern', 'Steel bar cart', '#26282c']],
-  bakerack: [['bakerack-pink', 'Cake stand rack', '#ffc2d4'], ['bakerack-modern', 'Smart oven tower', '#26282c']],
-  kplant: [['kplant-pink', 'Pink anthurium', '#ff8fb6'], ['kplant-fig', 'Grow-light fig', '#3f8a3a']],
-  // --- Phòng tắm ---
-  toilet: [['toilet-kitty', 'Kitty toilet', '#ffc9d5'], ['toilet-modern', 'Smart toilet', '#f5f8fb']],
-  vanity: [['vanity-pedestal', 'Pink pedestal sink', '#ffc2d4'], ['vanity-modern', 'LED mirror vanity', '#26282c']],
-  bathtub: [['bathtub-bubble', 'Pink bubble tub', '#ffc2d4'], ['bathtub-modern', 'LED soaking tub', '#f5f8fb']],
-  shower: [['shower-curtain', 'Curtain shower', '#ff8fb8'], ['shower-rain', 'LED rain shower', '#c8ccd2']],
-  washer: [['washer-retro', 'Retro washer', '#ffc9d5'], ['washer-stack', 'Washer + dryer', '#c8ccd2']],
-  towel: [['towel-pink', 'Pink towel rack', '#ffb3c8'], ['towel-heated', 'Heated rail', '#c8ccd2']],
-  litter: [['litter-hood', 'Pink litter box', '#ffb3c8'], ['litter-modern', 'Self-clean litter', '#f5f8fb']],
-  bathmat: [['bathmat-fluffy', 'Pink fluffy mat', '#ffc2d4'], ['bathmat-modern', 'Glow bath mat', '#3a3d43']],
-  bathshelf: [['bathshelf-pink', 'Pink bath shelf', '#ffb3c8'], ['bathshelf-modern', 'LED bath cabinet', '#26282c']],
-  jacuzzi: [['jacuzzi-pink', 'Pink hot tub', '#ffb3c8'], ['jacuzzi-mosaic', 'LED spa', '#3fe0ff']],
+  ['bed', 'bed-canopy', 'Canopy bed', '#ffb3c4'],
+  ['bedrug', 'bedrug-cloud', 'Cloud rug', '#f4f8ff'],
+  ['laundry', 'laundry-box', 'Moving box', '#d9a36a'],
+  ['bedside', 'bedside-drawers', 'Chest of drawers', '#9fd0f0'],
+  ['desk', 'desk-study', 'Study desk', '#d9a36a'],
+  ['chair', 'chair-beanbag', 'Beanbag', '#ffd27a'],
+  ['closet', 'closet-dresser', 'Vanity dresser', '#ffc9d5'],
+  ['plushie', 'plushie-dino', 'Dino plush', '#7fc45a'],
+  ['catsteps', 'catsteps-bridge', 'Rope bridge', '#b9854a'],
+  // lựa chọn thứ 3 cho từng chỗ trong phòng ngủ
+  ['bed', 'bed-kitty', 'Kitty bed', '#f7c99a'],
+  ['bedrug', 'bedrug-star', 'Star rug', '#ffd66b'],
+  ['laundry', 'laundry-washer', 'Mini washer', '#f5f8fb'],
+  ['bedside', 'bedside-books', 'Book stack', '#e8617f'],
+  ['desk', 'desk-piano', 'Piano', '#5a3a2e'],
+  ['chair', 'chair-stool', 'Mushroom stool', '#e8617f'],
+  ['closet', 'closet-ladder', 'Plant shelf', '#d9a36a'],
+  ['plushie', 'plushie-bunny', 'Bunny plush', '#fff4f6'],
+  ['catsteps', 'catsteps-clouds', 'Cloud steps', '#9fd0f0'],
+  // --- Bếp: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
+  ['sink', 'sink-farm', 'Farmhouse sink', '#d9a36a'],
+  ['dining', 'dining-square', 'Pine table', '#e9c58f'],
+  ['fridge', 'fridge-retro', 'Retro fridge', '#ffc9d5'],
+  ['stove', 'stove-wood', 'Wood stove', '#2f3238'],
+  ['pantry', 'pantry-rack', 'Pantry rack', '#d9a36a'],
+  ['kchair', 'kchair-stool', 'Bar stools', '#e8617f'],
+  ['catfood', 'catfood-feeder', 'Auto feeder', '#f5f8fb'],
+  // --- Phòng tắm: 3 lựa chọn mỗi chỗ (món gốc + 2 phương án) ---
+  ['toilet', 'toilet-wood', 'Wooden-seat toilet', '#d9a36a'],
+  ['toilet', 'toilet-kitty', 'Kitty toilet', '#ffc9d5'],
+  ['vanity', 'vanity-pedestal', 'Pedestal sink', '#fffaf0'],
+  ['vanity', 'vanity-wood', 'Wood vanity', '#c98a55'],
+  ['bathtub', 'bathtub-wood', 'Wooden tub', '#d9a36a'],
+  ['bathtub', 'bathtub-bubble', 'Bubble tub', '#8fc9f2'],
+  ['shower', 'shower-rain', 'Rain shower', '#c8ccd2'],
+  ['shower', 'shower-curtain', 'Curtain shower', '#ff8fb8'],
+  ['washer', 'washer-retro', 'Retro washer', '#ffc9d5'],
+  ['washer', 'washer-stack', 'Washer + dryer', '#c8ccd2'],
+  ['towel', 'towel-ladder', 'Towel ladder', '#c98a55'],
+  ['towel', 'towel-heated', 'Heated rail', '#c8ccd2'],
+  ['litter', 'litter-hood', 'Hooded litter box', '#b48ee8'],
+  ['litter', 'litter-cabinet', 'Litter cabinet', '#e9c58f'],
+  ['bathmat', 'bathmat-fluffy', 'Fluffy mat', '#fff4f6'],
+  ['bathmat', 'bathmat-duck', 'Duck mat', '#ffd66b'],
+  ['jacuzzi', 'jacuzzi-cedar', 'Cedar hot tub', '#9a6a45'],
+  ['jacuzzi', 'jacuzzi-mosaic', 'Mosaic spa', '#5fb8d8'],
+  ['cart', 'cart-produce', 'Fruit stand', '#ff6b4a'],
+  ['kplant', 'kplant-fig', 'Fiddle-leaf fig', '#3f8a3a'],
+  ['sink', 'sink-steel', 'Steel sink', '#c8ccd2'],
+  ['dining', 'dining-low', 'Tea table', '#c98a55'],
+  ['fridge', 'fridge-steel', 'Steel fridge', '#c8ccd2'],
+  ['stove', 'stove-red', 'Red range', '#e8483a'],
+  ['pantry', 'pantry-hutch', 'Dish hutch', '#8fc9f2'],
+  ['kchair', 'kchair-bench', 'Cushion bench', '#8fc9f2'],
+  ['catfood', 'catfood-stand', 'Raised feeder', '#d9a36a'],
+  ['cart', 'cart-coffee', 'Coffee cart', '#e8617f'],
+  ['kplant', 'kplant-herbs', 'Herb planter', '#8fd46a'],
+  // --- Vườn mở rộng ---
+  ['windmill', 'windmill-turbine', 'Wind turbine', '#f5f8fb'],
+  ['sunflowers', 'sunflowers-scarecrow', 'Scarecrow', '#e9c25a'],
+  ['clothesline', 'clothesline-flags', 'Flag line', '#ffd66b'],
+  ['campfire', 'campfire-tent', 'Camping tent', '#ff9f43'],
+  ['kite', 'kite-balloons', 'Balloons', '#9fd0f0'],
+  ['stream', 'stream-bridge', 'Stream bridge', '#c9955e'],
+  ['swingtree', 'swingtree-treehouse', 'Treehouse', '#c98a55'],
+  ['slide', 'slide-seesaw', 'Seesaw', '#7fc45a'],
+  // lựa chọn thứ 3 cho từng chỗ ở vườn mở rộng
+  ['windmill', 'windmill-windpump', 'Farm windpump', '#e5483a'],
+  ['sunflowers', 'sunflowers-lavender', 'Lavender patch', '#9a7fd8'],
+  ['clothesline', 'clothesline-lanterns', 'Paper lanterns', '#ffb347'],
+  ['campfire', 'campfire-firepit', 'Stone fire pit', '#b5aea3'],
+  ['kite', 'kite-windsock', 'Windsock', '#ff6b4a'],
+  ['stream', 'stream-wheel', 'Water wheel', '#c9955e'],
+  ['swingtree', 'swingtree-bench', 'Bench swing', '#c98a55'],
+  ['slide', 'slide-dome', 'Climbing dome', '#3b8fe0'],
+  ['birdhouse', 'birdhouse-dovecote', 'Dovecote', '#5a8fd6'],
+  ['birdhouse', 'birdhouse-gourd', 'Gourd birdhouse', '#e9c58f'],
+  ['picnic', 'picnic-blanket', 'Picnic blanket', '#3b8fe0'],
+  ['picnic', 'picnic-cafe', 'Garden tea table', '#ff8fb8'],
+  // --- Phòng ngủ / bếp / phòng tắm: món thêm sau (gương, kệ bánh, kệ tắm) ---
+  ['mirror', 'mirror-cheval', 'Cheval mirror', '#b9854a'],
+  ['mirror', 'mirror-arch', 'Arched mirror', '#fffaf0'],
+  ['bakerack', 'bakerack-bread', 'Bread shelf', '#e0a050'],
+  ['bakerack', 'bakerack-crates', 'Crate shelf', '#c9955e'],
+  ['bathshelf', 'bathshelf-ladder', 'Ladder shelf', '#c98a55'],
+  ['bathshelf', 'bathshelf-baskets', 'Basket cubby', '#ffd66b'],
   // --- Sân sau ---
-  pool: [['pool-pink', 'Heart pool', '#ff9fc0'], ['pool-modern', 'LED infinity pool', '#3fe0ff']],
-  lounger: [['lounger-pink', 'Pink lounger', '#ffb3c8'], ['lounger-modern', 'Neon lounger', '#26282c']],
-  parasol: [['parasol-pink', 'Pink parasol', '#ff9fc0'], ['parasol-modern', 'Solar canopy', '#26282c']],
-  grill: [['grill-pink', 'Pink BBQ', '#ff9fc0'], ['grill-modern', 'Smart grill', '#26282c']],
-  deckbox: [['deckbox-pink', 'Pink toy chest', '#ffb3c8'], ['deckbox-modern', 'Smart storage', '#26282c']],
-  greenhouse: [['greenhouse-pink', 'Pink greenhouse', '#ffc2d4'], ['greenhouse-modern', 'Dome greenhouse', '#3fe0ff']],
-  vegbed: [['vegbed-pink', 'Strawberry bed', '#ff8fb6'], ['vegbed-modern', 'Hydroponic bed', '#3fe0ff']],
-  veggies: [['veggies-pink', 'Radish patch', '#ff9fc0'], ['veggies-modern', 'Grow-light patch', '#b07cff']],
-  scarecrow: [['scarecrow-pink', 'Pink scarecrow', '#ffb3c8'], ['scarecrow-modern', 'Robot scarecrow', '#3fe0ff']],
-  rainbarrel: [['rainbarrel-pink', 'Pink rain barrel', '#ff9fc0'], ['rainbarrel-modern', 'Smart water tank', '#26282c']],
-};
-// Món đã bỏ khi chia 3 theme -> chỗ của nó. Save còn giữ món này: hoàn đúng giá (giá món gốc), chỗ đang đặt quay về món gốc (loadDeco).
+  ['pool', 'pool-inflatable', 'Inflatable pool', '#5fb8e8'],
+  ['pool', 'pool-lily', 'Lily pond', '#5fae46'],
+  ['lounger', 'lounger-hammock', 'Hammock stand', '#ffb347'],
+  ['lounger', 'lounger-deckchair', 'Deck chair', '#3b8fe0'],
+  ['parasol', 'parasol-canopy', 'Canopy table', '#3b8fe0'],
+  ['parasol', 'parasol-tree', 'Lemon tree bench', '#ffd23f'],
+  ['grill', 'grill-kettle', 'Kettle grill', '#2f3238'],
+  ['grill', 'grill-pizza', 'Pizza oven', '#c9693d'],
+  ['deckbox', 'deckbox-cooler', 'Cooler box', '#3b8fe0'],
+  ['deckbox', 'deckbox-basket', 'Beach basket', '#d9a35a'],
+  ['greenhouse', 'greenhouse-shed', 'Garden shed', '#e9c58f'],
+  ['greenhouse', 'greenhouse-tunnel', 'Polytunnel', '#e8f6f0'],
+  ['vegbed', 'vegbed-berries', 'Strawberry bed', '#e8483a'],
+  ['vegbed', 'vegbed-corn', 'Corn bed', '#ffd23f'],
+  ['veggies', 'veggies-flowers', 'Flower beds', '#ff5f7e'],
+  ['veggies', 'veggies-herbs', 'Herb beds', '#9a7fd8'],
+  ['scarecrow', 'scarecrow-owl', 'Owl decoy', '#9a6a45'],
+  ['scarecrow', 'scarecrow-vane', 'Weathervane', '#2f3238'],
+  ['rainbarrel', 'rainbarrel-well', 'Wishing well', '#e8483a'],
+  ['rainbarrel', 'rainbarrel-pump', 'Hand pump', '#e8483a'],
+  // --- Trường mẫu giáo ---
+  ['kdesk', 'kdesk-round', 'Round tables (2 sets)', '#ffd66b'],
+  ['kdesk', 'kdesk-mats', 'Floor tables (2 sets)', '#bfe6f6'],
+  ['kboard', 'kboard-white', 'Whiteboard', '#ffffff'],
+  ['kboard', 'kboard-felt', 'Pin-up board', '#ff8fb8'],
+  ['kcubby', 'kcubby-books', 'Bookshelves (pair)', '#7fc45a'],
+  ['kcubby', 'kcubby-lockers', 'Backpack lockers (pair)', '#ff6b6b'],
+  ['kpiano', 'kpiano-desk', "Teacher's desk", '#c98a55'],
+  ['kpiano', 'kpiano-drums', 'Xylophone & drum', '#ff9a3c'],
+  ['kplayset', 'kplayset-house', 'Playhouse', '#fff0c2'],
+  ['kplayset', 'kplayset-tunnel', 'Rainbow climber', '#7fc45a'],
+  ['kswing', 'kswing-tire', 'Tire swing', '#2f3238'],
+  ['kswing', 'kswing-nest', 'Nest swing', '#ff9a3c'],
+  ['kspring', 'kspring-rocker', 'Rocking horses (pair)', '#c98a55'],
+  ['kspring', 'kspring-cars', 'Pedal cars (pair)', '#ff6b6b'],
+  ['ksandpit', 'ksandpit-paddling', 'Paddling pool', '#5fb8e8'],
+  ['ksandpit', 'ksandpit-water', 'Water table', '#5fb8e8'],
+  ['kmerry', 'kmerry-seesaw', 'Seesaw', '#ffd66b'],
+  ['kmerry', 'kmerry-carousel', 'Mini carousel', '#ff8fb8'],
+  ['kbench', 'kbench-picnic', 'Picnic tables (pair)', '#7fc45a'],
+  ['kbench', 'kbench-planter', 'Planter benches (pair)', '#c98a55'],
+];
+// Món theme Hồng / Hiện đại đã bỏ (quay lại các kiểu khác ở trên) -> chỗ của nó. Save còn giữ món này: hoàn đúng giá (giá món gốc), chỗ đang đặt quay về món gốc (clean).
 export const RETIRED = Object.fromEntries(Object.entries({
-  flowers: ['flowers-mushroom'], stump: ['stump-hay', 'stump-crate'], lantern: ['lantern-torch'], sandbox: ['sandbox-turtle'],
-  cathouse: ['cathouse-barrel'], pond: ['pond-tub'], hammock: ['hammock-tire'], birdbath: ['birdbath-feeder'], bench: ['bench-log'],
-  sunflowers: ['sunflowers-scarecrow'], stream: ['stream-bridge'], swingtree: ['swingtree-treehouse'],
-  rug: ['rug-fish'], armchair: ['armchair-rocker'], plant: ['plant-cactus'], yarn: ['yarn-toybox'], catbed: ['catbed-box'], table: ['table-crate'],
-  lamp: ['lamp-heater'], cattree: ['cattree-cactus'], shelf: ['shelf-wardrobe'], tank: ['tank-birdcage'],
-  bed: ['bed-kitty'], bedrug: ['bedrug-star'], laundry: ['laundry-box'], bedside: ['bedside-books'], desk: ['desk-study'], chair: ['chair-stool'],
-  closet: ['closet-ladder'], plushie: ['plushie-dino'], catsteps: ['catsteps-bridge'],
-  sink: ['sink-farm', 'sink-asian'], dining: ['dining-square', 'dining-low', 'dining-asian'], fridge: ['fridge-asian'], stove: ['stove-wood', 'stove-asian'],
-  pantry: ['pantry-rack', 'pantry-asian'], kchair: ['kchair-asian'], catfood: ['catfood-stand', 'catfood-asian'], cart: ['cart-produce', 'cart-asian'],
-  kplant: ['kplant-herbs', 'kplant-asian'],
-  toilet: ['toilet-wood'], vanity: ['vanity-wood'], bathtub: ['bathtub-wood'], towel: ['towel-ladder'], litter: ['litter-cabinet'], bathmat: ['bathmat-duck'], jacuzzi: ['jacuzzi-cedar'],
-}).flatMap(([slot, ids]) => ids.map(id => [id, slot])));
-// Chèn hai món theme ngay sau món gốc (Gỗ -> Hồng -> Hiện đại); giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
-for (const [slot, options] of Object.entries(THEMES)) {
-  const at = CATALOG.findIndex(entry => entry.id === slot), base = CATALOG[at];
-  base.theme = 'wood';
-  CATALOG.splice(at + 1, 0, ...options.map(([id, name, color], k) => ({ id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, color, slot, theme: THEME_IDS[k + 1] })));
-}
+  flowers: ['flowers-modern'], stump: ['stump-pink', 'stump-modern'], lantern: ['lantern-pink'], sandbox: ['sandbox-modern'], cathouse: ['cathouse-modern'],
+  pond: ['pond-modern'], hammock: ['hammock-modern'], birdbath: ['birdbath-modern'], bench: ['bench-modern'],
+  windmill: ['windmill-pink'], sunflowers: ['sunflowers-pink', 'sunflowers-modern'], clothesline: ['clothesline-modern'], campfire: ['campfire-modern'],
+  kite: ['kite-modern'], stream: ['stream-pink', 'stream-modern'], swingtree: ['swingtree-pink', 'swingtree-modern'], birdhouse: ['birdhouse-pink', 'birdhouse-modern'],
+  picnic: ['picnic-pink', 'picnic-modern'], slide: ['slide-modern'], mirror: ['mirror-pink', 'mirror-modern'],
+  sink: ['sink-pink'], dining: ['dining-pink', 'dining-modern'], stove: ['stove-modern'], pantry: ['pantry-modern'], catfood: ['catfood-pink'], cart: ['cart-modern'],
+  bakerack: ['bakerack-pink', 'bakerack-modern'], kplant: ['kplant-pink'],
+  toilet: ['toilet-modern'], vanity: ['vanity-modern'], bathtub: ['bathtub-modern'], towel: ['towel-pink'], litter: ['litter-modern'], bathmat: ['bathmat-modern'],
+  bathshelf: ['bathshelf-pink', 'bathshelf-modern'], jacuzzi: ['jacuzzi-pink'],
+  pool: ['pool-pink', 'pool-modern'], lounger: ['lounger-pink', 'lounger-modern'], parasol: ['parasol-pink', 'parasol-modern'], grill: ['grill-pink', 'grill-modern'],
+  deckbox: ['deckbox-pink', 'deckbox-modern'], greenhouse: ['greenhouse-pink', 'greenhouse-modern'], vegbed: ['vegbed-pink', 'vegbed-modern'],
+  veggies: ['veggies-pink', 'veggies-modern'], scarecrow: ['scarecrow-pink', 'scarecrow-modern'], rainbarrel: ['rainbarrel-pink', 'rainbarrel-modern'],
+  // Lựa chọn thứ 4 cũ (hiện đại tông đen ở phòng khách / phòng ngủ, châu Á ở bếp): mỗi chỗ chỉ giữ 3 món.
+  rug: ['rug-modern'], armchair: ['armchair-lounge'], plant: ['plant-snake'], yarn: ['yarn-bin'], catbed: ['catbed-pod'], table: ['table-marble'],
+  lamp: ['lamp-arc'], cattree: ['cattree-modern'], shelf: ['shelf-metal'], tank: ['tank-aquarium'],
+  bed: ['bed-platform'], bedrug: ['bedrug-mono'], laundry: ['laundry-hamper'], bedside: ['bedside-noir'], desk: ['desk-setup'], chair: ['chair-office'],
+  closet: ['closet-noir'], plushie: ['plushie-shark'], catsteps: ['catsteps-floating'],
+  ...Object.fromEntries(['sink', 'dining', 'fridge', 'stove', 'pantry', 'kchair', 'catfood', 'cart', 'kplant'].map(slot => [`${slot}:asian`, [`${slot}-asian`]])),
+}).flatMap(([slot, ids]) => ids.map(id => [id, slot.split(':')[0]])));
+// Chèn mỗi phương án sau món gốc + các phương án cùng chỗ đã chèn (giữ thứ tự khai báo); giá / khoá / khu lấy từ món gốc nên luôn đồng giá.
+VARIANTS.forEach(([slot, id, name, color]) => {
+  const at = CATALOG.findLastIndex(entry => entry.id === slot || entry.slot === slot), base = CATALOG.find(entry => entry.id === slot);
+  CATALOG.splice(at + 1, 0, { id, zone: base.zone, ...(base.area && { area: base.area }), cat: base.cat, name, color, slot });
+});
 // Giá thật = giá trong bảng DECO × hệ số khu, làm tròn 10 xu (mult = ZONE_PRICE_MULT; Level Editor truyền bảng đang sửa).
 export const zonePrice = (entry, mult) => Math.round(entry.basePrice * (mult[entry.area || entry.zone] ?? 1) / 10) * 10;
 // Giá + mốc mở khoá từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
@@ -359,7 +475,7 @@ function defaults(startCoins) {
 }
 
 // Bỏ các id không còn trong danh mục (đồ đã đổi tên / bỏ khỏi game) khỏi save.
-// Món đã bỏ khi chia 3 theme (RETIRED): hoàn xu đúng giá món gốc, chỗ đang đặt món đó đặt lại món gốc.
+// Món theme đã bỏ (RETIRED): hoàn xu đúng giá món gốc, chỗ đang đặt món đó đặt lại món gốc.
 function clean(deco) {
   const known = id => !!itemById(id);
   let coins = deco.coins;
@@ -374,9 +490,8 @@ function clean(deco) {
 // Lần đầu có Deco: số xu = tổng thưởng các màn đã qua (progression.earnedCoins).
 // Save cũ (trước khi có vườn, đồ mua cho phòng khách): phòng khách giờ khoá tới màn 10, nên hoàn lại xu
 // của đồ đã mua để người chơi sắm cho vườn; phòng khách về mặc định.
-// cleared = số màn đã thắng: save có từ trước khi mở khu bằng xu (chưa có `unlocked`) giữ các khu đã tới mốc màn (lúc đó mở miễn phí).
-export function loadDeco(startCoins, cleared = 0) {
-  const grandfather = AREA_ORDER.filter(area => cleared >= AREA_UNLOCK[area].level);
+// Mở khu CHỈ qua unlockArea (đủ màn + trả xu). loadDeco không bao giờ tự mở khu: save thiếu `unlocked` (save mới, save cũ, save hỏng) = chưa mở khu nào.
+export function loadDeco(startCoins) {
   const saved = readJSON(SAVE_KEYS.deco);
   {
     // Save có từ trước khi thêm khu mới (vd. phòng ngủ): khu thiếu lấy mặc định, khu đã có giữ nguyên.
@@ -396,19 +511,23 @@ export function loadDeco(startCoins, cleared = 0) {
       }
       // Save có từ trước khi nhận mèo ở Map: mèo đang ở trong nhà coi như đã nhận.
       const claimedCats = saved.claimedCats ?? [...new Set([...STARTER_CATS, ...(saved.cats || [])])];
-      const deco = clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true, unlocked: saved.unlocked ?? grandfather });
-      // Có hoàn xu món đã bỏ: lưu ngay, không thì mỗi lần mở game lại hoàn thêm.
-      if (deco.coins !== (saved.coins ?? base.coins)) saveDeco(deco);
-      return deco;
+      return clean({ ...base, ...saved, zones, claimedCats, expansionSeeded: true, unlocked: validUnlocked(saved.unlocked) });
     }
     if (saved && Array.isArray(saved.owned)) {
       const base = defaults(startCoins);
       const refund = saved.owned.reduce((sum, id) => sum + (itemById(id)?.zone === 'living' ? itemById(id).price : 0), 0);
       const cats = saved.cats || base.cats;
-      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])], unlocked: grandfather };
+      return { ...base, coins: (saved.coins ?? 0) + refund, cats, claimedCats: [...new Set([...STARTER_CATS, ...cats])], unlocked: [] };
     }
   }
-  return { ...defaults(startCoins), unlocked: grandfather };
+  // Chưa có save Deco (lần đầu mở Deco, kể cả khi đã qua màn mốc): mọi khu vẫn phải trả xu để mở.
+  return defaults(startCoins);
+}
+// Chỉ giữ tên khu hợp lệ, không trùng, đúng thứ tự mở (khu sau chỉ mở được khi khu trước đã mở).
+function validUnlocked(list) {
+  const set = new Set(Array.isArray(list) ? list : []), out = [];
+  for (const area of AREA_ORDER) { if (!set.has(area)) break; out.push(area); }
+  return out;
 }
 export function saveDeco(deco) {
   writeJSON(SAVE_KEYS.deco, deco);

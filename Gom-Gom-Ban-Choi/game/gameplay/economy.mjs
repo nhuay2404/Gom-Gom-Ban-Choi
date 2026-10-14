@@ -24,12 +24,14 @@ import { remote } from './remote-config.mjs';
 export const START_COINS = remote('START_COINS', 0);
 
 // Xu thưởng khi thắng một màn LẦN ĐẦU (chơi lại màn đã thắng không ra xu; không phụ thuộc số sao).
-// Tăng đều: xu(màn n) = REWARD_BASE + REWARD_STEP × (n−1), làm tròn; màn boss (10, 20, 30…) nhân thêm REWARD_BOSS_MULT.
-// Tổng N màn (chưa tính boss) = N × REWARD_BASE + REWARD_STEP × N × (N−1) ÷ 2 — vd. 50 + 50 mỗi màn: 1000 màn = 25,025,000 xu.
-// Mặc định: màn 1 = 50, màn 2 = 100, màn 3 = 150 … màn 99 = 4,950, màn 100 = 7,500 (boss ×1.5). Giá deco tăng theo khu (ZONE_PRICE_MULT) để đi cùng nhịp.
+// Tăng theo cụm 10 màn: trong một cụm mỗi màn cộng cùng một bước; sang cụm mới bước nhân (1 + REWARD_GROWTH) — cụm 1 (màn 1–10) bước
+// REWARD_STEP, cụm 2 bước × (1 + G), cụm 3 × (1 + G)²… (progression.mjs rewardFor). Mỗi màn lệch thêm REWARD_JITTER × lệch(n) × bước,
+// lệch(n) cố định theo màn trong −0.5..0.5: khó đoán mà vẫn luôn tăng (REWARD_JITTER < 1). Màn boss cũng theo công thức này.
+// Mặc định (bước 50, +10% mỗi cụm): màn 1–6 ≈ 67, 82, 152, 195, 248, 305 … màn 30 ≈ 1,678, màn 50 ≈ 3,041, màn 100 ≈ 7,946; 100 màn ≈ 340,000 xu.
 export const REWARD_BASE = remote('REWARD_BASE', 50);
 export const REWARD_STEP = remote('REWARD_STEP', 50);
-export const REWARD_BOSS_MULT = remote('REWARD_BOSS_MULT', 1.5);
+export const REWARD_GROWTH = remote('REWARD_GROWTH', .1);
+export const REWARD_JITTER = remote('REWARD_JITTER', .8);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
@@ -71,24 +73,25 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  price : giá xu. 0 = có sẵn miễn phí (không cần mua).
 //  lock  : phải mở tới màn này (thắng màn lock − 1) thì mới mua được. Bỏ trống = mua được ngay khi khu đó mở.
 //          Khu mở khi thắng: Vườn = từ đầu · Vườn mở rộng = màn 10 · Phòng khách = màn 20 · Phòng ngủ = màn 30 · Bếp = màn 40.
-//  Mỗi chỗ đặt có 3 món theo theme: Gỗ (món gốc) → Hồng, Hiện đại (vd. Tree stump → Heart pouf, Glow cube seat): món theme lấy CÙNG giá / lock với món gốc.
-//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-pink': { price: 120 },
-//  (id món theme xem THEMES trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
+//  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
+//  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
+//  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
 // Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
 //   level : đã thắng tới màn này,
 //   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
 export const AREA_UNLOCK = remote('AREA_UNLOCK', {
-  garden2: { level: 10, cost: 350 },
-  living: { level: 20, cost: 550 },
-  bedroom: { level: 30, cost: 800 },
-  kitchen: { level: 40, cost: 1300 },
-  bathroom: { level: 50, cost: 1500 },
-  backyard: { level: 60, cost: 2000 },
+  garden2: { level: 10, cost: 550 },
+  living: { level: 20, cost: 1550 },
+  bedroom: { level: 30, cost: 2550 },
+  kitchen: { level: 40, cost: 3550 },
+  bathroom: { level: 50, cost: 4550 },
+  backyard: { level: 60, cost: 5550 },
+  kinder: { level: 70, cost: 6550 },
 });
 
 // Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
 // tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1, garden2: 1, living: 1.1, bedroom: 1.2, kitchen: 1.3, bathroom: 1.4, backyard: 1.5 });
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15, kinder: 60 });
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
@@ -213,6 +216,24 @@ export const DECO = remote('DECO', {
   'yground-grass':       { price: 0 },                // Grass
   'yground-clover':      { price: 100 },              // Clover
   'yground-meadow':      { price: 100 },              // Meadow
+  // --- Trường mẫu giáo (mở theo AREA_UNLOCK.kinder; giá nhân ZONE_PRICE_MULT.kinder) — đồ ---
+  kdesk:                 { price: 0 },                // Kids desks (lớp có sẵn bàn khi mở khu)
+  kplayset:              { price: 0 },                // Slide tower
+  kboard:                { price: 160 },              // Chalkboard
+  kcubby:                { price: 180 },              // Toy cubbies
+  kpiano:                { price: 240 },              // Upright piano
+  kswing:                { price: 220 },              // Swing set
+  kspring:               { price: 150 },              // Spring riders
+  ksandpit:              { price: 140 },              // Sandpit
+  kmerry:                { price: 260 },              // Merry-go-round
+  kbench:                { price: 120 },              // Benches
+  // --- Trường mẫu giáo — rào / nền ---
+  'kfence-picket':       { price: 0 },                // Yellow picket
+  'kfence-rail':         { price: 100 },              // Blue rails
+  'kfence-hedge':        { price: 100 },              // Hedge
+  'kground-grass':       { price: 0 },                // Grass
+  'kground-clover':      { price: 100 },              // Clover
+  'kground-path':        { price: 100 },              // Stone path
   // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
   toilet:                { price: 0 },                // Toilet
   vanity:                { price: 0 },                // Sink vanity

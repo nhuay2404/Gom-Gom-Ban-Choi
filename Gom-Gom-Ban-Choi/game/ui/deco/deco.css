@@ -122,7 +122,8 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-dock{position:absolute;z-index:6;left:0;right:0;bottom:calc(86 * var(--u) + env(safe-area-inset-bottom));width:auto;display:flex;flex-direction:column;align-items:center;gap:6px;
   pointer-events:none}
 .deco-dock>*{pointer-events:auto}
-.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px)}
+.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px);scroll-snap-type:x proximity;scroll-behavior:smooth}
+.deco-dock .zone-switch button{scroll-snap-align:start} /* tối đa 3 khu (menu-controller.js fitZoneSwitch), còn lại vuốt ngang */
 .deco-dock .zone-switch button{min-height:36px;padding:0 12px}
 .zone-switch button small{margin-left:3px;font-size:11px;opacity:.8}
 .deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:var(--frame-w);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
@@ -260,3 +261,4 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 @media(prefers-reduced-motion:no-preference){.idle-coin{animation:idle-bob 1.2s ease-in-out infinite alternate}.idle-coin.full{animation:idle-bob .6s ease-in-out infinite alternate}}
 @keyframes idle-bob{to{margin-top:-46px}}
 #deco.ui-locked>.idle-coin{display:none}
+.deco-dock .zone-switch.dragging{cursor:grabbing;user-select:none}

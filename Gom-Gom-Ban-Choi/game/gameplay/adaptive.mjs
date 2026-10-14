@@ -29,18 +29,17 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const round2 = x => Math.round(x * 100) / 100;
 
 // ---------- Element và nhãn độ khó (chỉ để hiển thị, tính trên bản thiết kế) ----------
-export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board', 'cage', 'grass'];
+export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board', 'cage'];
 export function levelElements(level) {
   const cells = level.board.join('');
   return {
-    moves: !level.grass && level.target / level.moves >= A.TIGHT_PPM,
+    moves: level.target / level.moves >= A.TIGHT_PPM,
     colors: level.cats.length >= A.MANY_COLORS,
     crate: cells.includes('X'),
     wall: cells.includes('M'),
     board: !isPlainSquare(level.board),
     cage: /[a-z]/.test(cells),
     // Cỏ: mục tiêu dọn cỏ thay cho điểm, làm màn khó hơn.
-    grass: !!level.grass?.join('').includes('~'),
   };
 }
 export const elementCount = level => Object.values(levelElements(level)).filter(Boolean).length;
@@ -48,6 +47,8 @@ export const difficultyOf = count => (count <= 1 ? 'easy' : count <= 3 ? 'medium
 export const MAX_ELEMENTS = ELEMENTS.length;
 export const isAdaptive = level => !level.tutorial;
 export const SHIFT_MIN = -2, SHIFT_MAX = 2;
+// Hàng thẻ lần đầu vào màn paywall: gần như toàn thẻ 1 mèo (ít điểm mỗi lượt). Cùng thẻ xấu, bot giỏi + 3 booster +lượt vẫn không đủ điểm (tools: 0/300).
+export const PAYWALL_FIRST_SHAPES = { single: 10, domino: 1, triple: 0 };
 
 // ---------- Bố trí mèo đặt sẵn ----------
 // Ô "tự do": ô trống hoặc mèo không bị nhốt. Vật cản, ô ngoài bàn, mèo trong chuồng là thiết kế: không bao giờ dời.
@@ -266,7 +267,8 @@ function retryLayout(profile, levelIndex, base) {
 
 // Bản màn cho lần vào màn kế tiếp. `level` là dữ liệu màn đã chỉnh, đưa thẳng vào createSession.
 // `layout` = bố trí bàn của lần này (lưu vào lần thử để chơi lại dùng lại).
-export function planLevel(profile, levelIndex) {
+// cleared = màn này đã từng thắng (progress.stars[levelIndex]): màn paywall đã thắng thì chơi lại không bao giờ bị thẻ xấu.
+export function planLevel(profile, levelIndex, { cleared = false } = {}) {
   const base = LEVELS[levelIndex], baseCount = elementCount(base), difficulty = difficultyOf(baseCount);
   const fixed = id => ({ level: base, profile: id, shift: 0, mode: null, layout: base.board, deal: null, suggestBooster: false, retry: false, baseCount, count: baseCount, difficulty });
   // Màn tutorial luôn chơi đúng thiết kế.
@@ -278,10 +280,12 @@ export function planLevel(profile, levelIndex) {
   let shift = clamp(p.free ? p.shift : clamp(p.shift, lastShift - 1, lastShift + 1), SHIFT_MIN, SHIFT_MAX);
   if (profile.cooldown > 0) shift = Math.min(shift, 0);
   if (base.tier === 'boss') shift = Math.max(shift, -1); // boss chỉ nới nhẹ
+  // Màn paywall (levels.mjs `paywall: true`): không bao giờ dễ đi, kể cả khi thua nhiều — muốn qua phải dùng booster.
+  if (base.paywall) shift = Math.max(shift, 0);
 
   // Bố trí: chơi lại sau khi thua thì giữ nguyên bố trí cũ; lần đầu vào màn (hoặc chơi lại sau khi thắng) thì xếp mới.
   const kept = retryLayout(profile, levelIndex, base);
-  const board = kept ?? pickCatLayout(base, shift, hashOf(base.name) ^ Math.imul(profile.attempts.length + 1, 2654435761), { swap: !!p.swap });
+  const board = kept ?? pickCatLayout(base, shift, hashOf(base.name) ^ Math.imul(profile.attempts.length + 1, 2654435761), { swap: !!p.swap && !base.paywall });
   let level = board === base.board ? base : { ...base, board };
 
   // Hàng thẻ: mức shift + lý do các lần thua liên tiếp ở chính màn này (bỏ ngang không tính vào lý do nào).
@@ -291,9 +295,16 @@ export function planLevel(profile, levelIndex) {
     if (recent[i].reason in losses) losses[recent[i].reason]++;
   }
   // Thua sát nút: chỉ theo mức shift (luật sát nút giữ độ khó và mời booster), không cộng thêm theo lý do thua.
-  const tuned = tuneDealer(level, p.id === 'near-miss' ? { shift } : { shift, ...losses });
+  // Màn paywall: hàng thẻ cũng không nới theo số lần thua; từ lần chơi lại sau khi thua, nút booster +lượt nhấp nháy mời dùng.
+  const tuned = tuneDealer(level, p.id === 'near-miss' || base.paywall ? { shift } : { shift, ...losses });
   level = tuned.level;
-  return { level, profile: p.id, shift, mode: p.swap ? 'swap' : null, layout: level.board, deal: tuned.deal, suggestBooster: !!p.suggestBooster, retry: !!kept, baseCount, count: baseCount, difficulty };
+  // Lần ĐẦU vào màn paywall: hàng thẻ xấu (levels.mjs makeDealer `harsh`) để không thể thắng; từ lần chơi lại thì thẻ bình thường.
+  // "Lần đầu" = chưa từng thắng màn này VÀ chưa từng chơi (paywallTried lưu vĩnh viễn, không bị cắt như lịch sử attempts).
+  const tried = (profile.paywallTried ?? []).includes(levelIndex) || profile.attempts.some(a => a.level === levelIndex);
+  const firstTry = !!base.paywall && !cleared && !tried;
+  if (firstTry) level = { ...level, harsh: true, shapes: PAYWALL_FIRST_SHAPES };
+  const paywallRetry = !!base.paywall && recent.some(a => a.level === levelIndex && !a.win);
+  return { level, profile: p.id, shift, mode: p.swap ? 'swap' : null, layout: level.board, deal: tuned.deal, suggestBooster: !!p.suggestBooster || paywallRetry, retry: !!kept, baseCount, count: baseCount, difficulty };
 }
 
 // Ghi một lần thử. `attempt` gồm metric lần chơi + { profile, shift, mode, layout } của plan đã dùng.
@@ -308,7 +319,9 @@ export function recordAttempt(profile, attempt, now = Date.now()) {
     if (giftPending) { gift = true; giftPending = false; }
     if (!frustrated && cooldown > 0) cooldown--;
   }
-  const next = { ...profile, attempts, streakFrom: Math.max(0, profile.streakFrom - dropped), cooldown, giftPending, warmup: false, lastSeen: now };
+  // Màn paywall: nhớ vĩnh viễn là đã chơi (lịch sử attempts chỉ giữ A.HISTORY lần gần nhất).
+  const paywallTried = LEVELS[attempt.level]?.paywall ? [...new Set([...(profile.paywallTried ?? []), attempt.level])] : profile.paywallTried;
+  const next = { ...profile, paywallTried, attempts, streakFrom: Math.max(0, profile.streakFrom - dropped), cooldown, giftPending, warmup: false, lastSeen: now };
   return { profile: next, gift };
 }
 

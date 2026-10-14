@@ -2,7 +2,7 @@
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
-`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/bathroom-scene.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/garden2-scene.mjs` (phần vườn mở rộng), `game/deco/backyard-scene.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
+`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/bathroom-scene.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/garden2-scene.mjs` (phần vườn mở rộng), `game/deco/backyard-scene.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/kinder-scene.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
@@ -234,9 +234,10 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 **Dữ liệu**
 - Mỗi chỗ đặt (slot) có `PLACES` + `OBSTACLE_RADIUS`; id món là duy nhất giữa mọi khu (test kiểm).
-- **Mỗi chỗ đặt đồ có đúng 3 món, mỗi món một theme** (bảng `THEMES` trong deco-data.mjs, test kiểm): **Gỗ** = món gốc / mặc định (giữ đủ màu sắc tươi như thiết kế ban đầu — người chơi chê bản tô lại toàn tông gỗ là "chán"),
-  **Hồng** (pastel, điệu đà: tim, nơ, diềm bèo, viền vàng), **Hiện đại** (đen nhám / thép + dải neon LED cyan / magenta / tím; món phát sáng khai `userData.lightSource = true`).
-  Không thêm món thứ 4 vào một chỗ. Bỏ món khỏi danh mục: ghi id vào `RETIRED` (save cũ được hoàn xu đúng giá, chỗ đó quay về món gốc).
+- Kiểu khác của từng chỗ đặt: bảng `VARIANTS` trong deco-data.mjs (KHÔNG chia theo theme màu: đã thử Gỗ / Hồng / Hiện đại và người chơi bỏ, đừng thêm lại).
+  Bỏ món khỏi danh mục: ghi id vào `RETIRED` (save cũ được hoàn xu đúng giá, chỗ đó quay về món gốc).
+- Mở khu (AREA_UNLOCK) CHỈ qua `unlockArea` (đủ màn + trả xu). `loadDeco` không bao giờ tự mở khu theo số màn đã thắng (lỗi cũ: lần đầu
+  mở Deco ở màn 20+ thì Living room mở miễn phí); save thiếu / hỏng `unlocked` = chưa mở khu nào (test "khu KHÔNG BAO GIỜ tự mở").
 - Thêm khu mới: `loadDeco` phải tự thêm khu mặc định cho save cũ (test kiểm). Phòng trong nhà mặc định sàn Oak miễn phí (riêng phòng tắm: gạch nhà tắm White tiles).
 - Khu mới cần: ZONE_OFFSET + LINKS (cửa / cổng nối, mèo tự tìm đường qua nhiều khu), PLACES + OBSTACLE_RADIUS,
   ZONES (mốc mở), nút trong thanh chọn khu, đồ chơi của mèo (ZONE_TOYS) và hành vi cho từng món. QC tự lấy lối cửa từ LINKS.

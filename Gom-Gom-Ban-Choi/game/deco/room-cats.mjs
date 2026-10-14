@@ -23,7 +23,8 @@ const damp = (value, target, rate, dt) => value + (target - value) * (1 - Math.e
 // ±ROOM quanh tâm khu; hai khu cạnh nhau nối bằng một lối hẹp qua cửa (LINKS) xuyên qua tường / cổng rào.
 const zoneHome = zone => ({ x: ZONE_OFFSET[zone][0], z: ZONE_OFFSET[zone][1] });
 // Mỗi lối: trục hai khu lệch nhau (x hoặc z), ô lối đi (box) giữa hai mép khu, và điểm đứng ngay trong mỗi khu (steps).
-const PASSES = LINKS.map(({ a, b, at, w, open = false }) => {
+// via (lối qua đường sang trường): các điểm đi qua giữa hai bước cửa; mỗi chặng là một ô đi được (boxes) rộng bằng lối.
+const PASSES = LINKS.map(({ a, b, at, w, open = false, via = [] }) => {
   const [ax, az] = ZONE_OFFSET[a], [bx, bz] = ZONE_OFFSET[b];
   const axis = Math.abs(ax - bx) > Math.abs(az - bz) ? 'x' : 'z', side = axis === 'x' ? 'z' : 'x';
   const ca = axis === 'x' ? ax : az, cb = axis === 'x' ? bx : bz, dir = Math.sign(cb - ca);
@@ -31,7 +32,11 @@ const PASSES = LINKS.map(({ a, b, at, w, open = false }) => {
   const edgeA = ca + dir * ROOM, edgeB = cb - dir * ROOM, half = open ? ROOM : w / 2 - .2;
   const point = (along, across) => (axis === 'x' ? { x: along, z: across } : { x: across, z: along });
   const lo = point(Math.min(edgeA, edgeB), at - half), hi = point(Math.max(edgeA, edgeB), at + half);
-  return { a, b, open, box: [lo.x, hi.x, lo.z, hi.z], steps: { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) } };
+  const steps = { [a]: point(edgeA - dir * .15, at), [b]: point(edgeB + dir * .15, at) }, path = via.map(([x, z]) => ({ x, z }));
+  const chain = [steps[a], ...path, steps[b]];
+  const boxes = path.length ? chain.slice(1).map((q, i) => { const p = chain[i]; return [Math.min(p.x, q.x) - half, Math.max(p.x, q.x) + half, Math.min(p.z, q.z) - half, Math.max(p.z, q.z) + half]; })
+    : [[lo.x, hi.x, lo.z, hi.z]];
+  return { a, b, open, boxes, steps, via: path };
 });
 // Đường đi qua các khu (đồ thị nhỏ, tìm theo chiều rộng): danh sách khu từ `from` tới `to` chỉ qua các khu đã mở.
 function zoneRoute(from, to, open) {
@@ -683,7 +688,8 @@ class Cat {
       for (let i = 1; i < route.length; i++) {
         const pass = passBetween(route[i - 1], route[i]);
         if (pass.open) continue; // lối thông thoáng (vườn <-> phần mở rộng): đi thẳng, không vòng qua cửa
-        for (const step of [pass.steps[route[i - 1]], pass.steps[route[i]]]) {
+        const via = pass.a === route[i - 1] ? pass.via : [...pass.via].reverse();
+        for (const step of [pass.steps[route[i - 1]], ...via, pass.steps[route[i]]]) {
           yield* this.walkTo(step.x, step.z, { run, near: .2, ignore, maxTime: Math.max(6, this.travelTime(step.x, step.z, run, pace)), pace, glide: true, direct: true });
         }
       }
@@ -1065,12 +1071,13 @@ class Cat {
     if (id === 'catbed') {
       const spot = local(0, .14, 0);
       yield* this.jumpTo(spot.x, spot.y, spot.z); this.surface = id;
-      // nệm: lún bẹp êm
-      this.contact = { spread: .25, sag: .3 };
+      node.userData.bump?.(.9); // thùng các-tông: nắp rung khi mèo đáp vào
+      // thùng các-tông: chui vừa khít, thành thùng ép hai bên nên phồng lên trên ("vừa là ngồi"); nệm: lún bẹp êm
+      this.contact = kind === 'catbed-box' ? { squeeze: 1, spread: .15 } : { spread: .25, sag: .3 };
       // xoay vòng tìm chỗ nằm rồi mới cuộn tròn
       for (let i = 0; i < 2; i++) yield* this.turnTo(this.heading + Math.PI * .95, 3.5);
       this.setPose('curl');
-      this.contact = { spread: .55, sag: .45 };
+      this.contact = kind === 'catbed-box' ? { squeeze: 1, spread: .2 } : { spread: .55, sag: .45 };
       yield* this.sleep(rand(8, 15));
       yield* this.yawnStretch();
     } else if (id === 'armchair' && chance(.3)) {
@@ -1163,6 +1170,21 @@ class Cat {
       this.tailSpeed = 1.6; this.face('happy');
       this.setPose('sit'); yield* this.wait(1);
       yield* this.groom();
+    } else if (id === 'plant' && kind === 'plant-cactus') {
+      // xương rồng: rướn tới ngửi... mặt chạm gai thì lõm vào, giật bắn lùi lại, xù đuôi
+      this.goal.lean = .9; this.face('focus');
+      yield* this.wait(1);
+      this.contact = { front: 1 }; this.face('annoyed'); this.jigV.z -= 1.4;
+      yield* this.wait(.14);
+      this.contact = {}; this.world.say(this, '!', 1); this.puffUntil = this.world.time + 2; this.earFlopV = (this.earFlopV || 0) + 18;
+      this.goal.lean = 0; this.squash = -.4; this.squashV = 0;
+      const back = this.world.reachable(this.x - Math.sin(this.heading) * .45, this.z - Math.cos(this.heading) * .45);
+      const x0 = this.x, z0 = this.z;
+      for (let t = 0; t < .3; t += this.world.dt) { const k = t / .3; this.x = x0 + (back.x - x0) * k; this.z = z0 + (back.z - z0) * k; this.y = .18 * 4 * k * (1 - k); yield; }
+      this.y = 0; this.squash = .6; this.squashV = 0;
+      this.setPose('sit'); this.face('grumble'); this.goal.paw = 1; yield* this.wait(.2); this.goal.paw = 0; // xoa mũi
+      yield* this.wait(1);
+      yield* this.groom();
     } else if (id === 'plant' || id === 'kplant') {
       this.goal.lean = .8; this.face('focus');
       yield* this.wait(1); // ngửi
@@ -1194,7 +1216,7 @@ class Cat {
       yield* this.turnTo(this.heading + Math.PI);
       this.setPose('loaf'); this.face('blink');
       yield* this.wait(1);
-      this.contact = { spread: .7 }; // ấm quá nên "tan chảy" ra sàn
+      this.contact = { spread: kind === 'lamp-heater' ? 1 : .7 }; // ấm quá nên "tan chảy" ra sàn (lò sưởi tan nhiều nhất)
       yield* this.sleep(rand(5, 8)); // sưởi ấm dưới đèn
     } else if (id === 'bed') {
       // Giường: nhảy lên chăn, nhồi bột rừ rừ, xoay vòng rồi cuộn tròn ngủ một giấc dài trên chăn êm.
@@ -1268,7 +1290,7 @@ class Cat {
       if (chance(.6)) { this.goal.lean = .5; this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; yield* this.wait(.4); this.goal.paw = 1; yield* this.wait(.25); this.goal.paw = 0; this.goal.lean = 0; }
       this.face('open'); this.tailSpeed = 1.6; yield* this.wait(1);
     } else if (id === 'closet' || id === 'fridge' || id === 'pantry' || id === 'bakerack') {
-      // Tủ quần áo / bàn trang điểm / tủ lạnh / tủ chén / kệ bánh: nhảy phốc lên nóc, nằm canh cả phòng.
+      // Tủ quần áo / bàn trang điểm / tủ lạnh / tủ chén: nhảy phốc lên nóc, nằm canh cả phòng.
       const seat = local(...node.userData.seat);
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.facingHome());
@@ -1318,6 +1340,15 @@ class Cat {
       this.lookGoal = 0; this.tailSpeed = 1.6;
       if (chance(.5)) { this.goal.paw = 1; yield* this.wait(.3); this.goal.paw = 0; this.face('happy'); yield* this.wait(.6); }
       yield* this.leaveHill();
+    } else if (id === 'sunflowers' && kind === 'sunflowers-scarecrow') {
+      // Bù nhìn: rình con quạ đậu trên tay bù nhìn rồi vồ — quạ bay mất.
+      const bird = node.userData.bird;
+      this.setPose('crouch'); this.face('focus'); this.tailSpeed = 6; this.wriggle = 1;
+      yield* this.wait(rand(1, 1.6));
+      this.wriggle = 0;
+      if (bird && !bird.userData.away) this.world.scareBird(node);
+      yield* this.jumpTo(this.x + Math.sin(this.heading) * .3, 0, this.z + Math.cos(this.heading) * .3);
+      this.setPose('sit'); this.face('grumble'); yield* this.wait(1.2); this.tailSpeed = 1.6;
     } else if (id === 'sunflowers') {
       // Hướng dương: cả khóm quay mặt nhìn mèo; mèo đứng lên khều bông hoa, hoa lắc lư, hắt xì phấn hoa.
       this.setPose('sit'); this.face('open'); yield* this.wait(1);
@@ -1325,7 +1356,7 @@ class Cat {
       yield* this.wait(.4); this.goal.paw = 1; node.userData.bump?.(.8); yield* this.wait(.3); this.goal.paw = 0;
       this.setPose('sit'); this.face('blink'); this.jigV.z -= .8; yield* this.wait(.5); // hắt xì
       this.face('happy'); yield* this.wait(1);
-    } else if (id === 'clothesline' && (kind === 'clothesline-flags' || kind === 'clothesline-modern')) {
+    } else if (id === 'clothesline' && kind === 'clothesline-flags') {
       // Dây cờ: nhảy chồm khều lá cờ thấp, cả dây cờ rung phần phật.
       for (let i = 0; i < 2; i++) {
         this.setPose('crouch'); this.face('focus'); yield* this.wait(.5);
@@ -1381,6 +1412,14 @@ class Cat {
       this.goal.paw = 1; node.userData.tug?.(1.5);
       yield* this.jumpTo(this.x, 0, this.z); this.goal.paw = 0;
       this.setPose('sit'); this.face('happy'); this.tailSpeed = 1.6; yield* this.wait(1.2);
+    } else if (id === 'stream' && kind === 'stream-bridge') {
+      // Cầu suối: nhảy lên đỉnh cầu, ngồi nhìn lá trôi dưới chân.
+      const top = local(...node.userData.top);
+      yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
+      yield* this.turnTo(this.heading + Math.PI / 2, 3);
+      this.setPose('sit'); this.face('focus'); this.lookGoal = -.6;
+      yield* this.wait(rand(3, 5)); this.lookGoal = 0;
+      this.setPose('loaf'); this.face('half'); yield* this.sleep(rand(3, 5));
     } else if (id === 'stream') {
       // Suối: rình bên bờ, đợi chiếc lá trôi ngang qua thì khều — nước bắn tung, giũ chân.
       yield* this.turnTo(this.facing(center.x, center.z));
@@ -1399,6 +1438,13 @@ class Cat {
       for (let i = 0; i < 4; i++) { this.goal.paw = i % 2; yield* this.wait(.12); } // giũ chân
       this.goal.paw = 0; this.tailSpeed = 1.6;
       yield* this.groom();
+    } else if (id === 'swingtree' && kind === 'swingtree-treehouse') {
+      // Nhà cây: leo thang lên sàn, ngồi trước cửa ngắm vườn rồi ngủ trong nhà cây.
+      for (const [x, y, z] of node.userData.steps) { const p = local(x, y, z); yield* this.jumpTo(p.x, p.y, p.z); yield* this.wait(.2); }
+      this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); yield* this.lookAround(rand(3, 5));
+      this.setPose('loaf'); this.contact = { spread: .4 }; yield* this.sleep(rand(4, 8));
     } else if (id === 'swingtree') {
       // Xích đu: nhảy lên ván đu (đu đưa mạnh), nằm đu theo gió.
       const seat = local(...node.userData.seat);
@@ -1409,6 +1455,13 @@ class Cat {
       yield* this.wait(1.5); this.face('half');
       yield* this.sleep(rand(5, 9));
       this.kick(node, .6); // đạp nhảy xuống: xích đu đung đưa tiếp
+    } else if (id === 'slide' && kind === 'slide-dome') {
+      // Khung leo mái vòm: leo từng thanh lên chóp, ngồi ngắm vườn rồi nằm nghỉ trên đỉnh.
+      for (const [x, y, z] of node.userData.steps) { const p = local(x, y, z); yield* this.jumpTo(p.x, p.y, p.z); yield* this.wait(.25); }
+      this.surface = id;
+      yield* this.turnTo(this.facingHome());
+      this.setPose('sit'); this.face('happy'); yield* this.lookAround(rand(2, 4));
+      this.setPose('loaf'); this.face('blink'); this.contact = { spread: .35 }; yield* this.sleep(rand(3, 6));
     } else if (id === 'slide' && kind === 'slide-seesaw') {
       // Bập bênh: nhảy lên đầu đang vểnh cao -> bập bênh lật xuống, mèo đi theo tấm ván; bật dậy chạy vòng.
       const side = node.userData.highEnd(), plank = node.userData.plank;
@@ -1457,7 +1510,7 @@ class Cat {
       yield* this.jumpTo(top.x, top.y, top.z); this.surface = id;
       yield* this.turnTo(this.facingHome());
       this.setPose('sit');
-      if (kind === 'stump-pink') this.contact = { spread: .35, sag: .3 }; // pouf mềm lún dưới mông
+      if (kind === 'stump-hay') this.contact = { spread: .35, sag: .3 }; // rơm mềm lún dưới mông
       yield* this.lookAround(rand(3, 5));
     } else if (id === 'catnip') {
       this.goal.lean = .8; this.face('focus');
@@ -1591,7 +1644,7 @@ class Cat {
       yield* this.jumpTo(seat.x, seat.y, seat.z); this.surface = id;
       yield* this.turnTo(this.heading + Math.PI, 3);
       this.setPose('loaf'); this.face('blink');
-      this.contact = { spread: .55 };
+      this.contact = { spread: kind === 'bench-log' ? .4 : .55, sag: kind === 'bench-log' ? .25 : 0 }; // nằm ôm khúc gỗ tròn: võng nhẹ hai bên
       yield* this.sleep(rand(5, 9));
     }
   }
@@ -2429,8 +2482,7 @@ class Cat {
     let changed = ropes.length > 0 || !!trough || this.wasHeld;
     for (let k = 0; k < 7; k++) if (Math.abs(now[k] - sig[k]) > 1e-4) { changed = true; sig[k] = now[k]; }
     this.wasHeld = ropes.length > 0 || !!trough; // vừa rời dây / võng: uốn lại một lần nữa cho về dáng thường
-    const skipBody = !changed, skipDecals = skipBody && Math.abs(this.look - (this.decalLook ?? NaN)) < 1e-4;
-    this.decalLook = this.look;
+    const skipBody = !changed, skipDecals = skipBody;
     if (!skipBody) for (let i = 0; i < arr.length; i += 3) {
       this.deform(base[i], base[i + 1], base[i + 2], v);
       if (ropes.length) dentByRopes(v, ropes);
@@ -2439,12 +2491,12 @@ class Cat {
     }
     if (!skipBody) { out.needsUpdate = true; body.geometry.boundingSphere = null; } // tính lại khối bao để raycast (bấm vào mèo) đúng hình mới
     // Mặt / mắt: dán lên mặt trước bo tròn rồi uốn cùng công thức với đỉnh thân -> luôn khít với thân.
-    // Mắt liếc (this.look) = trượt dọc bề mặt, không phải dời cả tấm ra khỏi thân.
+    // Mặt luôn nằm chính giữa mặt trước thân: KHÔNG trượt theo hướng liếc (this.look). Lỗi cũ: trượt ±3 cm, mèo hay đứng yên giữa lúc
+    // liếc nên cả mặt (mắt + miệng) trông dán lệch trái / phải. Hướng nhìn đã thể hiện bằng xoay thân (roller) + vành tai.
     for (const decal of [rig.eyes]) {
       const flat = decal.userData.flat, lift = decal.userData.lift, attr = decal.geometry.attributes.position, a = attr.array;
-      const shift = decal === rig.eyes ? this.look * .03 : 0;
       if (!skipDecals) for (let i = 0; i < a.length; i += 3) {
-        const x = flat[i] + shift, y = flat[i + 1];
+        const x = flat[i], y = flat[i + 1];
         this.deform(x, y, frontSurface(x, y) + lift, v, lift);
         if (trough) holdInTrough(v, trough, lift);
         a[i] = v.x; a[i + 1] = v.y; a[i + 2] = v.z;
@@ -2623,7 +2675,6 @@ class Cat {
     if (rig.eyesMat.map !== eyesTex) { rig.eyesMat.map = eyesTex; rig.eyesMat.needsUpdate = true; }
     // jelly() nhân scale.y của lớp biểu cảm theo thân đang co: đặt lại 1 mỗi frame, không thì mặt bị bóp dần tới mất
     rig.eyes.scale.y = 1;
-    // mắt liếc ngang (this.look): cộng trong jelly() cùng với độ lắc của thân
 
     // ---- Tai: giật bằng xung lò xo, cụp khi tiếp đất, dỏng khi tập trung, cụp khi bực ----
     this.nextEar -= dt;
@@ -2759,7 +2810,7 @@ class Cat {
 // ---------- Cả đàn: chọn hành vi, vật cản, đồ chơi rơi/lăn ----------
 // Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
 // Hammock variants that hang from a beam and swing like a pendulum (not a cloth sling).
-const hangsFromBeam = kind => kind === 'hammock-basket' || kind === 'hammock-modern';
+const hangsFromBeam = kind => kind === 'hammock-tire' || kind === 'hammock-basket';
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 const LIVING_TOYS = { catbed: 1.6, armchair: 1.3, cattree: 1.4, shelf: .9, table: 1.1, yarn: 1.3, plant: .8, tank: 1.4, lamp: .9 };
 const BEDROOM_TOYS = { bed: 1.7, desk: 1.3, chair: 1, bedside: 1, closet: .8, catsteps: 1.3, plushie: 1.1, laundry: 1.4, mirror: .9 };
@@ -2769,7 +2820,9 @@ const KITCHEN_TOYS = { fridge: .9, stove: 1.2, sink: 1.1, pantry: .8, dining: 1.
 const BATHROOM_TOYS = {};
 // Sân sau (bể bơi + vườn rau): chưa có tương tác mèo với đồ.
 const BACKYARD_TOYS = {};
-const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS, backyard: BACKYARD_TOYS, backyard2: BACKYARD_TOYS };
+// Trường mẫu giáo: chưa có tương tác mèo với đồ.
+const KINDER_TOYS = {};
+const ZONE_TOYS = { garden: GARDEN_TOYS, living: LIVING_TOYS, bedroom: BEDROOM_TOYS, kitchen: KITCHEN_TOYS, bathroom: BATHROOM_TOYS, garden2: GARDEN2_TOYS, backyard: BACKYARD_TOYS, backyard2: BACKYARD_TOYS, kinder: KINDER_TOYS, kinder2: KINDER_TOYS };
 // Tương tác nhiều mèo với một món (xem stareDown / squeezeIn / watchTogether / copycat):
 const RESTS = ['catbed', 'armchair', 'bed', 'chair', 'kchair', 'bench', 'hammock', 'stove', 'lamp', 'lantern']; // chỗ nằm ấm: tranh chỗ
 const SQUEEZE = ['catbed']; // ổ đủ rộng để chen hai con
@@ -2830,7 +2883,7 @@ export function createCatLife(ctx) {
       let best = null, bestD = Infinity;
       const consider = p => { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < bestD) { best = p; bestD = d; } };
       for (const zone of world.zones()) { const h = zoneHome(zone); consider(boxNearest(x, z, h.x - ROOM, h.x + ROOM, h.z - ROOM, h.z + ROOM)); }
-      for (const p of PASSES) if (world.zones().includes(p.a) && world.zones().includes(p.b)) consider(boxNearest(x, z, ...p.box));
+      for (const p of PASSES) if (world.zones().includes(p.a) && world.zones().includes(p.b)) for (const box of p.boxes) consider(boxNearest(x, z, ...box));
       return best;
     },
     // Cửa sổ vòm phòng khách theo toạ độ khu nhà.

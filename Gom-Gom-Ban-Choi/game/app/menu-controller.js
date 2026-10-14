@@ -252,7 +252,7 @@ function setGuide(on, nearSlot = null) {
   if (on) applyRoom(getDeco());
   room3d?.holdCat(GUIDE_CAT, on, nearSlot);
 }
-const applyRoom = shown => room3d?.apply(withGuide(shown), { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), kitchen: isZoneOpen('kitchen'), bathroom: isZoneOpen('bathroom'), backyard: isZoneOpen('backyard'), gardenExpand: isGardenExpanded() });
+const applyRoom = shown => room3d?.apply(withGuide(shown), { living: isZoneOpen('living'), bedroom: isZoneOpen('bedroom'), kitchen: isZoneOpen('kitchen'), bathroom: isZoneOpen('bathroom'), backyard: isZoneOpen('backyard'), kinder: isZoneOpen('kinder'), gardenExpand: isGardenExpanded() });
 function mountRoom(tab) {
   if (!room3d) return;
   if (tab !== 'deco') return room3d.stop();
@@ -1080,7 +1080,49 @@ function renderZoneSwitch() {
     button.hidden = !open || built === total;
   });
   $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
+  fitZoneSwitch();
   renderAreaNext();
+}
+// Hàng chọn khu ở Deco: hiện tối đa 3 khu, khu mở sau đó vuốt ngang để xem; tự cuộn tới khu đang chọn.
+// Lúc Deco còn ẩn thì chưa đo được nút: đo lại khi hàng chọn khu hiện ra / đổi cỡ.
+new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
+// PC: giữ chuột trái rồi kéo để cuộn ngang hàng chọn khu (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm chọn khu.
+{
+  const bar = $('deco-zone');
+  let drag = null;
+  bar.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    drag = { x: event.clientX, left: bar.scrollLeft, moved: false };
+  });
+  window.addEventListener('pointermove', event => {
+    if (!drag) return;
+    const dx = event.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; bar.style.scrollBehavior = 'auto'; bar.style.scrollSnapType = 'none'; bar.classList.add('dragging'); }
+    if (drag.moved) bar.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener('pointerup', () => {
+    if (!drag) return;
+    if (drag.moved) {
+      // chặn cú click ngay sau khi thả chuột (nếu có); gỡ ngay sau đó để không nuốt cú bấm thật kế tiếp
+      const eat = event => { event.stopPropagation(); event.preventDefault(); };
+      bar.addEventListener('click', eat, { capture: true, once: true });
+      setTimeout(() => bar.removeEventListener('click', eat, { capture: true }), 0);
+    }
+    bar.style.scrollBehavior = bar.style.scrollSnapType = '';
+    bar.classList.remove('dragging');
+    drag = null;
+  });
+}
+function fitZoneSwitch() {
+  const ZONE_SWITCH_MAX = 3, bar = $('deco-zone'), shown = [...bar.children].filter(button => !button.hidden);
+  bar.style.maxWidth = '';
+  if (bar.hidden || shown.length <= ZONE_SWITCH_MAX || !shown[0].offsetWidth) return;
+  const style = getComputedStyle(bar), gap = parseFloat(style.columnGap) || 0;
+  const width = shown.slice(0, ZONE_SWITCH_MAX).reduce((sum, button) => sum + button.offsetWidth, 0) + gap * (ZONE_SWITCH_MAX - 1)
+    + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+  bar.style.maxWidth = `min(${Math.ceil(width)}px, calc(100% - 24px))`;
+  const on = shown.find(button => button.classList.contains('on'));
+  if (on) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
 }
 
 // ===== Mở khu: thẻ "khu kế tiếp" ở Deco + bảng mở khu (track 3 bước kiểu Idle Theme Park: đủ màn → tiêu xu vào decor → khánh thành) =====
@@ -1294,7 +1336,7 @@ function runQC() {
   const report = room3d.qc(map3d?.scene ? { map: map3d.scene } : {});
   // Popup xem trước ở Shop: dựng thử từng món (mọi khu mở), soi như popup — còn bị che / quay mặt sau là lỗi.
   for (const entry of CATALOG.filter(e => e.cat === 'furniture')) {
-    room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, bathroom: true, backyard: true, gardenExpand: true });
+    room3d.apply({ ...previewDeco(getDeco(), entry), zone: entry.zone }, { living: true, bedroom: true, kitchen: true, bathroom: true, backyard: true, kinder: true, gardenExpand: true });
     room3d.qcPreview(entry.id).forEach(what => report.push({ level: 'error', zone: entry.zone, what: `preview: ${what}` }));
   }
   applyRoom(getDeco());

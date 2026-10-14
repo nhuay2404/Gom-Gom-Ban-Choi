@@ -6,7 +6,7 @@
 // bowls = các chén ăn / uống.
 import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
-import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X } from './room-layout.mjs';
+import { ROOM_HALF, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U } from './room-layout.mjs';
 import { TOON, toonMat } from './toon.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
@@ -129,21 +129,6 @@ function finishCart(node, mug) {
 // Chén ăn: thân gốm + đồ ăn / nước nhô lên trên miệng chén.
 const bowl = (color, x, z, y = .02) => group(at(cyl(.15, .1, .09, color), 0, .045, 0), at(ring(.15, .012, color), 0, .09, 0).rotateX(Math.PI / 2)).translateX(x).translateZ(z).translateY(y);
 
-// Trái tim (mặt trước +z): hai cầu + nón úp, ép dẹt theo z.
-const heart = (r, color) => squash(group(at(ball(r, color), -.55 * r, 0, 0), at(ball(r, color), .55 * r, 0, 0),
-  at(cone(r * 1.12, r * 1.5, color, 12), 0, -.75 * r, 0).rotateZ(Math.PI)), 1, 1, .45);
-// Viền lượn sóng (scallop): hàng hạt tròn dẹt từ điểm a tới điểm b / quanh một vòng tròn bán kính radius.
-const scallops = ([x0, y0, z0], [x1, y1, z1], color, r = .03) => {
-  const n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / (r * 2.2)));
-  return Array.from({ length: n + 1 }, (_, k) => squash(at(ball(r, color), x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n, z0 + (z1 - z0) * k / n), 1, .75, 1));
-};
-const ringScallops = (radius, y, color, r = .035) => {
-  const n = Math.round(TAU * radius / (r * 2.2));
-  return Array.from({ length: n }, (_, k) => squash(at(ball(r, color), Math.cos(k / n * TAU) * radius, y, Math.sin(k / n * TAU) * radius), 1, .75, 1));
-};
-// Dải LED phát sáng: món nào dùng phải khai userData.lightSource = true.
-const led = (w, h, d, color) => box(w, h, d, glow(color, color, 1.2));
-
 export const KITCHEN_BUILD = {
   // ===== Tủ lạnh =====
   fridge() {
@@ -156,36 +141,42 @@ export const KITCHEN_BUILD = {
     f.userData.seat = [0, 1.83, 0];
     return f;
   },
-  // Hồng: tủ lạnh bo tròn hồng pastel, tay nắm vàng, nơ trên cửa, viền lượn sóng giữa hai cửa, nam châm trái tim.
   'fridge-retro'() {
-    const body = '#ffc2d4', door = '#ffe0e9', gold = '#f2c14e', rose = '#ff8fb6';
-    const bow = group(squash(at(ball(.06, rose), -.065, 0, 0), 1, .7, .6), squash(at(ball(.06, rose), .065, 0, 0), 1, .7, .6), at(ball(.032, gold), 0, 0, 0));
-    bow.position.set(.22, 1.58, .425);
-    const f = group(...fridgeFeet(rose),
+    const body = '#ffc9d5', door = '#ffd9e2', chr = chrome();
+    const f = group(...fridgeFeet('#e0a0b0'),
       at(rbox(.86, 1.66, .72, .16, body), 0, .92, 0),
       at(rbox(.78, .5, .04, .02, door), 0, 1.4, .375), at(rbox(.78, 1.04, .04, .02, door), 0, .64, .375),
-      at(rbox(.035, .26, .05, .016, gold), -.3, 1.4, .42), at(rbox(.035, .6, .05, .016, gold), -.3, .85, .42),
-      ...scallops([-.36, 1.14, .4], [.36, 1.14, .4], rose, .022),
-      bow, at(heart(.04, rose), .2, 1.0, .405), at(ball(.03, '#e6d4ff'), .26, .86, .4), at(heart(.03, gold), .1, .8, .405));
+      at(rbox(.035, .26, .05, .016, chr), -.3, 1.4, .42), at(rbox(.035, .6, .05, .016, chr), -.3, .85, .42),
+      at(rbox(.16, .05, .012, .005, chr), .1, 1.57, .401), at(ball(.03, '#e8617f'), .3, 1.1, .4), at(ball(.03, '#7fc45a'), .22, .98, .4));
     f.userData.seat = [0, 1.78, 0];
     return f;
   },
-  // Hiện đại: tủ lạnh hai cánh đen nhám, tay nắm thép, màn hình cyan, dải LED giữa hai cánh + chân ngăn kéo.
   'fridge-steel'() {
-    const panel = '#3a3d43', bar = '#c8ccd2';
-    const f = group(...fridgeFeet('#1f2125'),
-      at(rbox(.9, 1.74, .74, .04, '#26282c'), 0, .95, 0),
-      at(rbox(.43, 1.06, .03, .015, panel), -.222, 1.27, .385), at(rbox(.43, 1.06, .03, .015, panel), .222, 1.27, .385),
-      at(rbox(.88, .52, .03, .015, panel), 0, .47, .385),
-      at(rbox(.025, .5, .04, .012, bar), -.04, 1.3, .42), at(rbox(.025, .5, .04, .012, bar), .04, 1.3, .42), at(rbox(.5, .03, .04, .012, bar), 0, .64, .42),
-      at(rbox(.22, .12, .02, .01, '#111316'), .222, 1.0, .41), at(box(.17, .07, .01, glow('#0a1a2a', '#3fe0ff', 1)), .222, 1.0, .431),
-      at(led(.012, 1.0, .012, '#3fe0ff'), 0, 1.27, .41), at(led(.84, .012, .012, '#b07cff'), 0, .2, .412));
+    const dark = '#2b2e33';
+    const f = group(...fridgeFeet('#6b7078'),
+      at(rbox(.9, 1.74, .74, .04, steel()), 0, .95, 0),
+      at(rbox(.43, 1.06, .03, .015, steel()), -.222, 1.27, .385), at(rbox(.43, 1.06, .03, .015, steel()), .222, 1.27, .385),
+      at(rbox(.88, .52, .03, .015, steel()), 0, .47, .385),
+      at(rbox(.025, .5, .04, .012, dark), -.04, 1.3, .42), at(rbox(.025, .5, .04, .012, dark), .04, 1.3, .42), at(rbox(.5, .03, .04, .012, dark), 0, .64, .42),
+      at(rbox(.2, .09, .02, .01, '#1a1c20'), .222, 1.0, .41), at(box(.15, .04, .01, glow('#1a2a3a', '#7fd0ff', .9)), .222, 1.0, .422));
     f.userData.seat = [0, 1.85, 0];
-    f.userData.lightSource = true;
     return f;
   },
 
+  // ===== Bếp nấu =====
   stove() {
+    const body = '#fff4e0', dark = '#3a3f4a', chr = chrome();
+    const pot = group(at(cyl(.15, .14, .16, '#e8617f'), 0, .08, 0), at(cyl(.155, .155, .02, '#d9485f'), 0, .17, 0), at(ball(.03, '#fffaf0'), 0, .2, 0),
+      ...[-1, 1].map(s => at(rbox(.07, .03, .04, .012, dark), s * .17, .12, 0)));
+    pot.position.set(-.22, .92, -.12);
+    const stove = group(at(rbox(.84, .08, .62, .02, '#c8c2b8'), 0, .04, 0), at(rbox(.9, .78, .7, .04, body), 0, .47, 0), at(rbox(.92, .05, .72, .02, '#e3ddd1'), 0, .895, 0),
+      ...burners(dark, .935), pot, kettle('#8fc9f2', .22, .92, -.12),
+      at(rbox(.74, .5, .03, .015, dark), 0, .45, .365), at(box(.52, .28, .012, '#9fb7c9'), 0, .47, .39), at(rbox(.62, .03, .04, .015, chr), 0, .64, .395),
+      ...[-.3, -.1, .1, .3].map(x => at(cyl(.03, .03, .03, '#fffaf0', 14), x, .8, .365).rotateX(Math.PI / 2)));
+    stove.userData.seat = [0, .96, .2];
+    return stove;
+  },
+  'stove-wood'() {
     const iron = '#2f3238', chr = chrome();
     const k = group(at(cyl(.09, .12, .12, '#d98a55'), 0, .06, 0), squash(at(ball(.09, '#d98a55'), 0, .13, 0), 1, .8, 1), at(cyl(.014, .02, .12, '#d98a55', 8), .11, .14, 0).rotateZ(-.9));
     k.position.set(-.22, .91, -.05);
@@ -197,43 +188,36 @@ export const KITCHEN_BUILD = {
     stove.userData.seat = [.15, .93, .12];
     return stove;
   },
-  // Hồng: bếp ga hồng pastel, mặt kem, viền lượn sóng, núm vàng, đồng hồ trên tấm chắn, nồi kem + ấm lilac.
   'stove-red'() {
-    const pink = '#ffb3c8', cream = '#fff6f8', gold = '#f2c14e', rose = '#ff8fb6', dark = '#3a3d43';
-    const pot = group(at(cyl(.15, .14, .14, cream), 0, .07, 0), at(cyl(.155, .155, .02, rose), 0, .15, 0), at(ball(.03, gold), 0, .18, 0));
-    pot.position.set(-.22, .93, .16);
-    const stove = group(at(rbox(.84, .08, .62, .02, rose), 0, .04, 0), at(rbox(.9, .8, .7, .1, pink), 0, .48, 0), at(rbox(.94, .05, .74, .02, cream), 0, .905, 0),
-      ...scallops([-.44, .875, .37], [.44, .875, .37], cream, .025),
-      at(rbox(.94, .2, .06, .03, pink), 0, 1.05, -.32), ...scallops([-.44, 1.155, -.32], [.44, 1.155, -.32], cream, .025),
-      at(cyl(.06, .06, .03, cream, 20), 0, 1.05, -.27).rotateX(Math.PI / 2),
+    const red = '#e8483a', dark = '#26282c', chr = chrome();
+    const pan = group(at(cyl(.17, .15, .05, dark), 0, .025, 0), at(rbox(.22, .03, .04, .012, dark), .27, .03, 0));
+    pan.position.set(-.22, .93, .16);
+    const stove = group(at(rbox(.84, .08, .62, .02, '#9a2e24'), 0, .04, 0), at(rbox(.9, .8, .7, .1, red), 0, .48, 0), at(rbox(.94, .05, .74, .02, chr), 0, .905, 0),
+      at(rbox(.94, .2, .06, .03, red), 0, 1.05, -.32), at(cyl(.06, .06, .03, '#fffaf0', 20), 0, 1.05, -.27).rotateX(Math.PI / 2),
       at(box(.006, .045, .008, dark), 0, 1.07, -.255), at(box(.035, .006, .008, dark), .012, 1.05, -.255),
-      ...burners(dark, .945), pot, kettle('#e6d4ff', .22, .93, -.12),
-      at(rbox(.74, .46, .03, .015, '#ffe0e9'), 0, .45, .365), at(box(.5, .26, .012, '#c9a7b6'), 0, .46, .392), at(rbox(.66, .03, .04, .015, gold), 0, .66, .395),
-      at(heart(.035, rose), 0, .27, .395),
-      ...[-.3, -.1, .1, .3].map(x => at(cyl(.03, .03, .03, gold, 14), x, .78, .365).rotateX(Math.PI / 2)));
+      ...burners(dark, .945), pan, kettle('#ffd66b', .22, .93, -.12),
+      at(rbox(.74, .46, .03, .015, dark), 0, .45, .365), at(box(.5, .26, .012, '#6a7078'), 0, .46, .39), at(rbox(.66, .03, .04, .015, chr), 0, .66, .395),
+      ...[-.3, -.1, .1, .3].map(x => at(cyl(.03, .03, .03, chr, 14), x, .78, .365).rotateX(Math.PI / 2)));
     stove.userData.seat = [.22, .96, .2];
     return stove;
   },
-  // Hiện đại: bếp từ đen, mặt kính đen với vòng LED (cyan / tím đang nấu, xám đang tắt), màn hình cảm ứng, LED chân bếp.
-  'stove-modern'() {
-    const body = '#26282c', black = '#1a1c20';
-    const pot = group(at(cyl(.13, .12, .12, steel()), 0, .06, 0), at(cyl(.135, .135, .015, black), 0, .127, 0), at(rbox(.06, .025, .03, .012, black), 0, .145, 0));
-    pot.position.set(-.22, .93, .16);
-    const zone = (x, z, color) => at(ring(.11, .006, color ? glow(color, color, 1.2) : mat('#3a3d43')), x, .937, z).rotateX(Math.PI / 2);
-    const stove = group(at(rbox(.84, .06, .6, .02, '#1f2125'), 0, .03, 0), at(rbox(.9, .86, .68, .03, body), 0, .47, 0),
-      at(rbox(.92, .03, .72, .012, '#111316'), 0, .915, 0),
-      zone(-.22, .16, '#3fe0ff'), zone(.22, -.12, '#b07cff'), zone(-.22, -.12), zone(.22, .16),
-      pot, kettle(black, .22, .93, -.12),
-      at(rbox(.78, .5, .03, .015, black), 0, .42, .355), at(box(.62, .3, .012, '#3a3d43'), 0, .43, .381),
-      at(rbox(.66, .025, .04, .012, '#c8ccd2'), 0, .72, .39),
-      at(rbox(.3, .06, .02, .01, '#111316'), 0, .8, .35), at(box(.24, .035, .008, glow('#0a1a2a', '#3fe0ff', 1)), 0, .8, .369),
-      at(led(.8, .012, .012, '#3fe0ff'), 0, .085, .352));
-    stove.userData.seat = [.2, .93, .18];
-    stove.userData.lightSource = true;
-    return stove;
-  },
 
+  // ===== Quầy bếp chữ L: bồn rửa dưới cửa sổ + dãy quầy chạy dọc tường sau tới góc rồi quặt xuống dọc tường phải =====
   sink() {
+    const sink = group(...counterL({ body: '#fff4e0', top: '#d9d2c4', kick: '#c8c2b8', door: '#fff9ec', knob: '#e8617f' }),
+      at(rbox(.56, .03, .4, .015, '#9fb0bf'), -.25, .915, .03), at(rbox(.46, .012, .3, .006, '#6f8190'), -.25, .934, .03),
+      tapBase(chrome(), -.25, -.22).translateY(.9),
+      at(cyl(.03, .03, .14, '#7fc45a'), -.68, .97, -.18), at(rbox(.08, .03, .05, .012, '#ffd66b'), -.66, .915, .1),
+      at(cyl(.06, .05, .1, '#e98b5a'), .65, .95, -.22), at(ball(.065, '#6fbf4a'), .65, 1.04, -.22),
+      at(rbox(.3, .17, .2, .04, '#e8617f'), 1.2, .985, -.15), at(box(.2, .012, .012, '#c8ccd2'), 1.2, 1.075, -.15),
+      ...[1.75, 2.0, 2.25].map((x, k) => at(cyl(.08, .08, .2 - k * .03, ['#ffd66b', '#bfe3a0', '#f3c2cc'][k], 16), x, .9 + (.2 - k * .03) / 2, -.22)),
+      group(at(cyl(.15, .09, .07, '#fffaf0'), 0, .035, 0), at(ball(.055, '#ff6b4a'), -.04, .1, 0), at(ball(.055, '#ffd23f'), .05, .1, .03)).translateX(3.1).translateY(.9).translateZ(1.0),
+      at(cyl(.045, .04, .09, '#8fc9f2', 12), 3.0, .945, 1.9), at(rbox(.3, .02, .2, .01, '#c98a55'), 3.1, .91, 1.5));
+    sink.userData.seat = [.4, .92, .08];
+    sink.userData.tap = [-.25, 1.2, -.12];
+    return sink;
+  },
+  'sink-farm'() {
     const chr = chrome();
     const neck = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, 0, 0], [0, .3, 0], [0, .42, .06], [0, .38, .15], [0, .3, .17]].map(p => new THREE.Vector3(...p))), 16, .013, 6), chr);
     neck.position.set(-.25, .9, -.2);
@@ -252,26 +236,8 @@ export const KITCHEN_BUILD = {
     sink.userData.tap = [-.25, 1.25, -.1];
     return sink;
   },
-  // Hồng: tủ hồng pastel, mặt kem, viền lượn sóng dưới mép quầy, vòi vàng, hộp bánh có trái tim, hũ pastel nắp vàng.
-  'sink-pink'() {
-    const pink = '#ffb3c8', rose = '#ff8fb6', cream = '#fff6f8', gold = '#f2c14e', legX = L_END - .7;
-    const sink = group(...counterL({ body: '#ffe0e9', top: cream, kick: pink, door: '#ffc2d4', knob: gold, backsplash: true }),
-      ...scallops([-.76, .84, .36], [legX - .02, .84, .36], pink), ...scallops([legX - .01, .84, .38], [legX - .01, .84, LEG_Z - .03], pink),
-      at(rbox(.56, .03, .4, .015, '#ffc2d4'), -.25, .915, .03), at(rbox(.46, .012, .3, .006, '#ffe0e9'), -.25, .934, .03),
-      tapBase(mat(gold, { metalness: .6, roughness: .35 }), -.25, -.22).translateY(.9),
-      at(cyl(.03, .03, .14, rose), -.68, .97, -.18), at(rbox(.08, .03, .05, .012, gold), -.66, .915, .1),
-      at(cyl(.06, .05, .1, cream), .65, .95, -.22), at(ball(.065, rose), .65, 1.04, -.22),
-      at(rbox(.3, .17, .2, .04, rose), 1.2, .985, -.15), at(box(.2, .012, .012, gold), 1.2, 1.075, -.15), at(heart(.035, cream), 1.2, .99, -.04),
-      ...[1.75, 2.0, 2.25].flatMap((x, k) => { const h = .2 - k * .03; return [at(cyl(.08, .08, h, ['#ffc2d4', '#e6d4ff', '#ffe0e9'][k], 16), x, .9 + h / 2, -.22), at(cyl(.085, .085, .02, gold, 16), x, .91 + h, -.22)]; }),
-      group(at(cyl(.15, .09, .07, cream), 0, .035, 0), at(ball(.055, '#ff6b8a'), -.04, .1, 0), at(ball(.055, '#ffc2a0'), .05, .1, .03)).translateX(3.1).translateY(.9).translateZ(1.0),
-      at(cyl(.045, .04, .09, '#e6d4ff', 12), 3.0, .945, 1.9), at(rbox(.3, .02, .2, .01, pink), 3.1, .91, 1.5));
-    sink.userData.seat = [.4, .92, .08];
-    sink.userData.tap = [-.25, 1.2, -.12];
-    return sink;
-  },
-  // Hiện đại: quầy thép hai hộc, máy pha cà phê đen, dải LED cyan dưới mép quầy.
   'sink-steel'() {
-    const dark = '#6f7680', chr = chrome(), legX = L_END - .7;
+    const dark = '#6f7680', chr = chrome();
     const neck = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, 0, 0], [0, .32, 0], [0, .42, .05], [.0, .4, .14]].map(p => new THREE.Vector3(...p))), 14, .014, 6), chr);
     neck.position.set(-.33, .9, -.22);
     const sink = group(...counterL({ body: steel(), top: steel(), kick: '#6b7078', door: steel(), knob: '#3a3f4a', backsplash: true }),
@@ -282,11 +248,9 @@ export const KITCHEN_BUILD = {
       at(cyl(.035, .03, .08, '#8fc9f2', 12), .66, .97, .12), at(cyl(.03, .03, .1, '#ffd66b', 12), .3, .98, .12),
       at(rbox(.3, .34, .3, .05, '#26282c'), 1.5, 1.07, -.15), at(rbox(.3, .02, .1, .008, '#3a3f4a'), 1.5, .91, .1), at(cyl(.045, .04, .08, '#fffaf0', 12), 1.5, .95, .1),
       at(rbox(.16, .26, .1, .04, '#3a3f4a'), 2.2, 1.03, -.2), at(rbox(.4, .04, .28, .015, '#9aa0a8'), 2.55, .915, -.1),
-      at(rbox(.5, .03, .32, .012, '#9aa0a8'), 3.1, .915, 1.2), ...[0, 1, 2].map(k => at(cyl(.1, .1, .02, '#fffaf0', 20), 3.1, .94 + k * .02, 1.2)),
-      at(led(legX + .76, .012, .012, '#3fe0ff'), (legX - .76) / 2, .84, .345), at(led(.012, .012, LEG_Z - .37, '#3fe0ff'), legX + .005, .84, (LEG_Z + .35) / 2));
+      at(rbox(.5, .03, .32, .012, '#9aa0a8'), 3.1, .915, 1.2), ...[0, 1, 2].map(k => at(cyl(.1, .1, .02, '#fffaf0', 20), 3.1, .94 + k * .02, 1.2)));
     sink.userData.seat = [.14, .92, .1];
     sink.userData.tap = [-.33, 1.28, -.15];
-    sink.userData.lightSource = true;
     return sink;
   },
 
@@ -301,37 +265,47 @@ export const KITCHEN_BUILD = {
     pantry.userData.seat = [.25, 2.03, 0];
     return pantry;
   },
-  // Hồng: tủ bát hồng, giá đĩa phía trên, viền lượn sóng ở mũ tủ + mặt tủ dưới, trái tim trên cửa, núm vàng.
+  'pantry-rack'() {
+    const wood = '#d9a36a', post = '#8a6a45';
+    const shelves = [.1, .55, 1.0, 1.45, 1.9].map(y => at(rbox(.96, .03, .44, .012, wood), 0, y, 0));
+    const basket = (x, y, fruit) => [at(cyl(.15, .12, .14, '#e9c58f'), x, y + .07, 0), ...[[-.05, 0], [.06, .02], [0, -.06]].map(([dx, dz]) => at(ball(.06, fruit), x + dx, y + .17, dz))];
+    const rack = group(...[[-.46, -.2], [.46, -.2], [-.46, .2], [.46, .2]].map(([x, z]) => at(cyl(.02, .02, 1.92, post, 8), x, .96, z)), ...shelves,
+      ...basket(-.25, .115, '#ff6b4a'), ...basket(.28, .565, '#ffd23f'),
+      ...jar('#ffd66b', '#e8617f', -.3, 1.015), ...jar('#bfe3a0', '#fffaf0', -.15, 1.015, .05, .05, .16), ...jar('#f3c2cc', '#7fc45a', -.02, 1.015, -.1),
+      squash(at(ball(.2, '#fffaf0'), .3, 1.1, .05), 1, .6, .8), at(rbox(.3, .2, .22, .04, '#e6c79a'), -.25, 1.57, 0), at(rbox(.26, .16, .2, .04, '#8fc9f2'), .25, 1.55, 0),
+      at(rbox(.34, .06, .12, .02, '#e8617f'), .0, .15, .1));
+    rack.userData.seat = [0, 1.93, 0];
+    return rack;
+  },
   'pantry-hutch'() {
-    const pink = '#ffc2d4', cream = '#fff6f8', rose = '#ff8fb6', gold = '#f2c14e';
-    const plate = (x, y) => group(at(cyl(.12, .12, .02, '#ffffff', 24), 0, 0, 0).rotateX(Math.PI / 2), at(cyl(.08, .08, .03, rose, 20), 0, 0, 0).rotateX(Math.PI / 2)).translateX(x).translateY(y).translateZ(-.06);
-    const hutch = group(at(rbox(1.0, .9, .5, .04, pink), 0, .47, 0), at(rbox(1.06, .04, .54, .02, cream), 0, .94, 0),
-      ...scallops([-.5, .91, .275], [.5, .91, .275], rose, .022),
-      ...[-1, 1].flatMap(s => [at(rbox(.44, .7, .03, .015, '#ffe0e9'), s * .245, .5, .265), at(ball(.025, gold), s * .06, .62, .29), at(heart(.05, rose), s * .245, .52, .29),
-        at(rbox(.04, 1, .3, .015, pink), s * .48, 1.46, -.1)]),
-      at(box(.92, 1, .03, '#ffb3c8'), 0, 1.46, -.2), at(rbox(.92, .03, .3, .012, cream), 0, 1.2, -.08), at(rbox(.92, .03, .3, .012, cream), 0, 1.6, -.08),
-      at(rbox(1.04, .06, .36, .03, cream), 0, 1.98, -.08), ...scallops([-.5, 1.94, .1], [.5, 1.94, .1], rose, .025),
+    const blue = '#8fc9f2', cream = '#fff4e0';
+    const plate = (x, y) => group(at(cyl(.12, .12, .02, '#ffffff', 24), 0, 0, 0).rotateX(Math.PI / 2), at(cyl(.08, .08, .03, blue, 20), 0, 0, 0).rotateX(Math.PI / 2)).translateX(x).translateY(y).translateZ(-.06);
+    const hutch = group(at(rbox(1.0, .9, .5, .04, blue), 0, .47, 0), at(rbox(1.06, .04, .54, .02, cream), 0, .94, 0),
+      ...[-1, 1].flatMap(s => [at(rbox(.44, .7, .03, .015, '#a9d9f9'), s * .245, .5, .265), at(ball(.025, '#ffffff'), s * .06, .62, .29), at(rbox(.04, 1, .3, .015, blue), s * .48, 1.46, -.1)]),
+      at(box(.92, 1, .03, '#6fb3e6'), 0, 1.46, -.2), at(rbox(.92, .03, .3, .012, cream), 0, 1.2, -.08), at(rbox(.92, .03, .3, .012, cream), 0, 1.6, -.08),
+      at(rbox(1.04, .06, .36, .03, cream), 0, 1.98, -.08),
       plate(-.3, 1.34), plate(0, 1.34), plate(.3, 1.34),
-      ...[-.3, 0, .3].map((x, k) => at(cyl(.035, .03, .08, k % 2 ? '#e6d4ff' : gold, 12), x, 1.655, -.1)),
-      ...[-.3, .3].map(x => at(cyl(.03, .03, .08, '#e6d4ff', 12), x, 1.255, .0)));
+      ...[-.3, 0, .3].map((x, k) => at(cyl(.035, .03, .08, k % 2 ? '#e8617f' : '#ffd66b', 12), x, 1.655, -.1)),
+      ...[-.3, .3].map(x => at(cyl(.03, .03, .08, '#7fc45a', 12), x, 1.255, .0)));
     hutch.userData.seat = [.2, 2.01, -.05];
     return hutch;
   },
-  // Hiện đại: tủ thông minh đen nhám, cửa trên kính khói, màn hình cảm ứng, dải LED cyan giữa hai cánh.
-  'pantry-modern'() {
-    const body = '#26282c', panel = '#3a3d43', bar = '#c8ccd2';
-    const pantry = group(at(rbox(.96, .06, .46, .02, '#1f2125'), 0, .03, 0), at(rbox(1.0, 1.9, .5, .03, body), 0, .98, 0), at(rbox(1.04, .05, .54, .02, '#1f2125'), 0, 1.955, 0),
-      ...[-1, 1].flatMap(s => [at(rbox(.47, .9, .03, .015, panel), s * .245, 1.45, .265), at(box(.4, .8, .012, glass('#6f8190', .5)), s * .245, 1.45, .292),
-        at(rbox(.47, .85, .03, .015, panel), s * .245, .5, .265), at(rbox(.025, .4, .04, .012, bar), s * .04, .6, .3)]),
-      at(led(.012, .9, .012, '#3fe0ff'), 0, 1.45, .29),
-      at(rbox(.16, .22, .02, .008, '#111316'), .3, 1.2, .309), at(box(.12, .16, .006, glow('#0a1a2a', '#3fe0ff', 1)), .3, 1.2, .328),
-      at(rbox(.14, .2, .14, .03, '#3a3d43'), -.3, 2.08, 0));
-    pantry.userData.seat = [.25, 1.98, 0];
-    pantry.userData.lightSource = true;
-    return pantry;
-  },
 
+  // ===== Bàn ăn =====
   dining() {
+    const cloth = mat('#ffffff', { map: gingham(), roughness: .95 });
+    const mug = cup('#e8617f', .3, .755, .25);
+    const flowers = [[-.02, '#ff8fb8'], [.02, '#ffd23f'], [0, '#fffaf0']].map(([dx, color], k) => group(at(cyl(.006, .006, .14, '#5fa83e', 6), dx, .09, 0), at(ball(.04, color), dx, .17 + k * .02, 0)));
+    const table = group(at(cyl(.4, .4, .05, '#c98a55'), 0, .025, 0), at(cyl(.09, .12, .66, '#c98a55', 16), 0, .38, 0), at(cyl(.74, .76, .1, '#f3c2cc'), 0, .665, 0), at(cyl(.76, .76, .04, cloth), 0, .735, 0),
+      group(at(cyl(.15, .09, .07, '#fffaf0'), 0, .035, 0), at(ball(.055, '#ff6b4a'), -.04, .1, 0), at(ball(.055, '#ff6b4a'), .05, .1, .03), at(ball(.055, '#ffd23f'), 0, .12, -.05)).translateX(-.28).translateY(.755).translateZ(-.2),
+      group(at(cyl(.045, .04, .14, '#8fc9f2', 12), 0, .07, 0), ...flowers).translateX(.32).translateY(.755).translateZ(-.3),
+      mug);
+    table.userData.mug = mug;
+    table.userData.seat = [-.3, .76, .3];
+    table.userData.top = .755;
+    return table;
+  },
+  'dining-square'() {
     const wood = '#e9c58f', dark = '#c98a55';
     const mug = cup('#3b8fe0', .42, .78, 0);
     const setting = x => [at(cyl(.11, .1, .015, '#fffaf0', 20), x, .7875, .28), at(box(.015, .01, .15, '#c8ccd2'), x - .16, .785, .28), at(box(.015, .01, .15, '#c8ccd2'), x + .16, .785, .28)];
@@ -345,37 +319,18 @@ export const KITCHEN_BUILD = {
     table.userData.top = .78;
     return table;
   },
-  // Hồng: bàn tròn chân trụ, khăn ca-rô hồng, diềm lượn sóng, nơ trái tim, bánh kem trên đĩa chân cao, bình hoa lilac.
-  'dining-pink'() {
-    const cloth = mat('#fff0f4', { map: gingham(), roughness: .95 }), gold = '#f2c14e', cream = '#fff6f8', rose = '#ff8fb6';
-    const mug = cup(rose, .3, .755, .25);
-    const flowers = [[-.02, rose], [.02, '#e6d4ff'], [0, cream]].map(([dx, color], k) => group(at(cyl(.006, .006, .14, '#5fa83e', 6), dx, .09, 0), at(ball(.04, color), dx, .17 + k * .02, 0)));
-    const cake = group(at(cyl(.02, .03, .08, gold, 10), 0, .04, 0), at(cyl(.1, .1, .015, gold, 20), 0, .0875, 0), at(cyl(.08, .08, .08, '#ffc2d4', 20), 0, .135, 0),
-      ...ringScallops(.075, .177, cream, .018), at(ball(.025, '#e8486a'), 0, .2, 0)).translateX(-.28).translateY(.755).translateZ(-.2);
-    const table = group(at(cyl(.4, .4, .05, cream), 0, .025, 0), at(ring(.4, .012, gold), 0, .05, 0).rotateX(Math.PI / 2), at(cyl(.09, .12, .66, '#ffc2d4', 16), 0, .38, 0),
-      at(cyl(.74, .76, .1, '#ffb3c8'), 0, .665, 0), ...ringScallops(.76, .615, cream, .04), at(cyl(.76, .76, .04, cloth), 0, .735, 0),
-      at(heart(.05, rose), 0, .665, .78), cake,
-      group(at(cyl(.045, .04, .14, '#e6d4ff', 12), 0, .07, 0), ...flowers).translateX(.32).translateY(.755).translateZ(-.3),
-      mug);
+  'dining-low'() {
+    const mug = cup('#8fc9f2', .2, .41, .12);
+    const teapot = group(squash(at(ball(.09, '#fffaf0'), 0, .077, 0), 1, .85, 1), at(ball(.025, '#e8617f'), 0, .165, 0),
+      at(cyl(.012, .018, .1, '#fffaf0', 8), .12, .11, 0).rotateZ(-.8), at(ring(.05, .01, '#fffaf0'), -.1, .1, 0));
+    teapot.position.set(-.1, .41, -.08);
+    const table = group(...[[-.3, -.3], [.3, -.3], [-.3, .3], [.3, .3]].map(([x, z]) => at(cyl(.03, .025, .35, '#9a6a45', 10), x, .175, z)),
+      at(cyl(.62, .62, .05, '#c98a55'), 0, .385, 0), at(ring(.3, .012, '#e8617f'), 0, .412, 0).rotateX(Math.PI / 2),
+      at(rbox(.52, .08, .52, .035, '#e8617f'), -.82, .04, 0), at(rbox(.52, .08, .52, .035, '#8fc9f2'), .82, .04, 0),
+      teapot, at(cyl(.04, .035, .08, '#fffaf0', 12), -.3, .45, .18), mug);
     table.userData.mug = mug;
-    table.userData.seat = [-.3, .76, .3];
-    table.userData.top = .755;
-    return table;
-  },
-  // Hiện đại: mặt kính trên khung đen, dải LED cyan / magenta dưới mép khung, bát chanh đen, bình hoa trắng.
-  'dining-modern'() {
-    const black = '#1f2125';
-    const mug = cup('#f5f8fb', .3, .755, .25);
-    const table = group(...[[-.55, -.35], [.55, -.35], [-.55, .35], [.55, .35]].map(([x, z]) => at(rbox(.05, .69, .05, .02, black), x, .345, z)),
-      at(rbox(1.16, .04, .76, .015, black), 0, .7, 0), at(rbox(1.36, .03, .96, .012, glass('#bfe3f2', .45)), 0, .74, 0),
-      at(led(1.08, .012, .012, '#3fe0ff'), 0, .7, .392), at(led(1.08, .012, .012, '#ff4fd8'), 0, .7, -.392),
-      at(cyl(.13, .08, .06, '#26282c', 20), -.28, .785, -.2), ...[[-.04, 0], [.05, .03], [0, -.05]].map(([dx, dz]) => at(ball(.05, '#ffe066'), -.28 + dx, .83, -.2 + dz)),
-      at(cyl(.035, .045, .22, '#f5f8fb', 14), .32, .865, -.3), ...[-.02, .02].map((dx, k) => group(at(cyl(.005, .005, .14, '#5fa83e', 6), 0, 0, 0), at(ball(.03, '#f5f8fb'), 0, .07, 0)).translateX(.32 + dx).translateY(1.02 + k * .03).translateZ(-.3)),
-      mug);
-    table.userData.mug = mug;
-    table.userData.seat = [-.3, .755, .3];
-    table.userData.top = .755;
-    table.userData.lightSource = true;
+    table.userData.seat = [-.2, .43, .2];
+    table.userData.top = .41;
     return table;
   },
 
@@ -386,21 +341,17 @@ export const KITCHEN_BUILD = {
     set.userData.approach = [-1.95, 0, 0];
     return set;
   },
-  // Hiện đại: ghế bar đen, vòng gác chân là dải LED cyan.
   'kchair-stool'() {
-    const stool = () => group(...legs4(.12, .12, .6, '#1f2125', .02), at(cyl(.2, .2, .06, '#26282c', 24), 0, .63, 0),
-      at(ring(.17, .01, glow('#3fe0ff', '#3fe0ff', 1.2)), 0, .25, 0).rotateX(Math.PI / 2));
-    const set = around(stool);
+    const stool = (seat, leg) => group(...legs4(.12, .12, .6, leg, .02), at(cyl(.2, .2, .06, seat, 24), 0, .63, 0), at(ring(.17, .01, leg), 0, .25, 0).rotateX(Math.PI / 2));
+    const set = around(() => stool('#e8617f', '#3a3f4a'));
     set.userData.seat = [-1.35, .67, 0];
     set.userData.approach = [-1.95, 0, 0];
-    set.userData.lightSource = true;
     return set;
   },
-  // Hồng: ghế dài khung kem đệm hồng, gối trái tim; hai đôn hồng viền lượn sóng.
   'kchair-bench'() {
-    const bench = () => group(...legs4(.58, .15, .38, '#fff6f8', .035), at(rbox(1.3, .06, .4, .025, '#fff6f8'), 0, .41, 0), at(rbox(1.2, .1, .34, .045, '#ffb3c8'), 0, .49, 0),
-      at(heart(.11, '#ff8fb6'), -.4, .66, -.08), at(heart(.1, '#e6d4ff'), .35, .64, -.1));
-    const pouf = () => group(at(cyl(.25, .25, .34, '#ffc2d4', 24), 0, .17, 0), at(cyl(.2, .2, .02, '#ffe0e9', 20), 0, .34, 0), ...ringScallops(.25, .03, '#fff6f8', .03));
+    const bench = () => group(...legs4(.58, .15, .38, '#c98a55', .035), at(rbox(1.3, .06, .4, .025, '#c98a55'), 0, .41, 0), at(rbox(1.2, .1, .34, .045, '#8fc9f2'), 0, .49, 0),
+      squash(at(ball(.13, '#ffd66b'), -.4, .62, -.05), 1, .8, .6), squash(at(ball(.12, '#e8617f'), .35, .61, -.07), 1, .8, .6));
+    const pouf = () => group(at(cyl(.25, .25, .34, '#ffd66b', 24), 0, .17, 0), at(cyl(.2, .2, .02, '#ffe6ae', 20), 0, .34, 0));
     const place = (node, x, z) => { node.position.set(x, 0, z); node.rotation.y = Math.atan2(-x, -z); return node; };
     const set = group(place(bench(), 0, -1.3), place(bench(), 0, 1.3), place(pouf(), -1.35, 0), place(pouf(), 1.35, 0));
     set.userData.seat = [-1.35, .37, 0];
@@ -426,35 +377,8 @@ export const KITCHEN_BUILD = {
     plant.userData.leaves = leaves;
     return plant;
   },
-  // Hồng: hồng môn (anthurium) — mo hoa hồng hình trái tim có nhụy vàng, lá xanh bóng, chậu hồng chấm bi viền vàng.
-  'kplant-pink'() {
-    const leaves = group(), tones = ['#3f8a3a', '#4f9a3a', '#5fae46'];
-    leaves.position.y = .34;
-    for (let i = 0; i < 9; i++) {
-      const flower = i % 2 === 1, a = i * 2.4, L = flower ? .5 + (i % 3) * .06 : .3 + (i % 3) * .08, tilt = flower ? .3 + (i % 3) * .1 : .55 + (i % 4) * .12, pivot = group();
-      pivot.rotation.y = a;
-      const tip = new THREE.Vector3(0, Math.cos(tilt) * L, Math.sin(tilt) * L);
-      const stalk = at(cyl(.008, .01, L, '#5a9a3e', 6), 0, tip.y / 2, tip.z / 2);
-      stalk.rotation.x = tilt;
-      if (flower) {
-        const spathe = group(heart(.065, i % 4 === 1 ? '#ff8fb6' : '#ffb3c8'), at(cone(.014, .1, '#f2c14e', 8), 0, .02, .05).rotateX(1.1));
-        spathe.position.set(0, tip.y + .05, tip.z + .02); spathe.rotation.x = -.5;
-        pivot.add(stalk, spathe);
-      } else {
-        const leaf = squash(at(ball(.13, tones[i % 3]), 0, tip.y + .02, tip.z + .05), 1, .16, 1.35);
-        leaf.rotation.x = tilt * .6;
-        pivot.add(stalk, leaf);
-      }
-      leaves.add(pivot);
-    }
-    const dots = Array.from({ length: 8 }, (_, k) => at(ball(.022, '#fff6f8'), Math.cos(k / 8 * TAU) * .2, k % 2 ? .1 : .2, Math.sin(k / 8 * TAU) * .2));
-    const plant = group(at(cyl(.22, .17, .32, '#ffc2d4'), 0, .16, 0), ...dots, at(cyl(.235, .235, .04, '#f2c14e'), 0, .32, 0), at(cyl(.2, .2, .02, '#5a3a22'), 0, .335, 0), leaves);
-    plant.userData.leaves = leaves;
-    return plant;
-  },
-  // Hiện đại: cây sung lá to trong chậu đen, đèn grow-light tím treo trên cần đen cắm trong chậu.
   'kplant-fig'() {
-    const leaves = group(), tones = ['#3f8a3a', '#4f9a3a', '#5fae46'], black = '#1f2125';
+    const leaves = group(), tones = ['#3f8a3a', '#4f9a3a', '#5fae46'];
     for (let i = 0; i < 12; i++) {
       const a = i * 2.4, h = 1.0 + (i % 4) * .14, r = .1 + (i % 3) * .06, pivot = group();
       pivot.rotation.y = a;
@@ -463,16 +387,47 @@ export const KITCHEN_BUILD = {
       pivot.add(leaf);
       leaves.add(pivot);
     }
-    const plant = group(at(cyl(.27, .21, .4, '#26282c'), 0, .2, 0), at(cyl(.28, .28, .04, '#3a3d43'), 0, .4, 0), at(cyl(.25, .25, .02, '#5a3a22'), 0, .415, 0),
-      at(cyl(.035, .045, 1.0, '#8a6a45', 10), 0, .92, 0), leaves,
-      at(cyl(.012, .012, 1.5, black, 8), .18, 1.17, -.16), at(box(.22, .02, .02, black), .08, 1.92, -.16),
-      at(rbox(.34, .03, .1, .012, black), -.04, 1.92, -.16), at(led(.3, .01, .06, '#b07cff'), -.04, 1.895, -.16));
+    const plant = group(at(cyl(.27, .21, .4, '#fffaf0'), 0, .2, 0), at(cyl(.28, .28, .04, '#e8e2d4'), 0, .4, 0), at(cyl(.25, .25, .02, '#5a3a22'), 0, .415, 0),
+      at(cyl(.035, .045, 1.0, '#8a6a45', 10), 0, .92, 0), leaves);
     plant.userData.leaves = leaves;
-    plant.userData.lightSource = true;
+    return plant;
+  },
+  'kplant-herbs'() {
+    const herbs = group();
+    [['#6fbf4a', -.3], ['#5fae46', -.15], ['#8fd46a', 0], ['#4f9a3a', .15], ['#7fc45a', .3]].forEach(([tone, x], k) => {
+      herbs.add(at(cyl(.06, .05, .1, k % 2 ? '#e98b5a' : '#fffaf0', 12), x, .38, 0), at(ball(.075, tone), x, .5, 0), at(ball(.05, tone), x + .03, .56, .02));
+    });
+    const can = group(at(cyl(.06, .07, .1, '#8fc9f2', 12), 0, .05, 0), at(cyl(.012, .012, .1, '#8fc9f2', 6), .09, .1, 0).rotateZ(-.9));
+    can.position.set(.55, 0, .1);
+    const plant = group(...legs4(.34, .1, .3, '#c98a55', .03), at(rbox(.84, .06, .3, .025, '#d9a36a'), 0, .31, 0), at(rbox(.84, .05, .3, .02, '#c98a55'), 0, .08, 0), herbs, can);
+    plant.userData.leaves = herbs;
     return plant;
   },
 
+  // ===== Khay ăn của mèo: chén thức ăn + chén nước (mèo tới ăn / uống) =====
   catfood() {
+    const food = bowl('#fffaf0', -.22, .02), water = bowl('#8fc9f2', .22, .02);
+    food.add(squash(at(ball(.13, '#b06a3a'), 0, .105, 0), 1, .45, 1));
+    water.add(at(cyl(.12, .12, .012, '#cfeaff', 20), 0, .1, 0));
+    const station = group(at(rbox(.9, .02, .55, .01, '#f4a3b6'), 0, .01, 0), food, water,
+      at(cyl(.05, .05, .1, '#e8617f', 14), 0, .07, -.2), at(cyl(.052, .052, .03, '#fffaf0', 14), 0, .07, -.2),
+      ...[[-.3, .2], [-.16, .24], [-.04, .2]].map(([x, z]) => at(cyl(.025, .025, .004, '#fffaf0', 10), x, .022, z)));
+    station.userData.bowls = [[-.22, .13, .02], [.22, .13, .02]];
+    return station;
+  },
+  'catfood-feeder'() {
+    const hopper = group(at(rbox(.34, .1, .34, .04, '#f5f8fb'), 0, .07, 0), at(cyl(.14, .14, .4, glass('#cfe3f5', .45)), 0, .32, 0), at(cyl(.15, .15, .04, '#e8617f'), 0, .54, 0),
+      ...[[-.05, .2], [.06, .26], [0, .34], [-.06, .4], [.05, .15]].map(([dx, y], k) => squash(at(ball(.04, '#b06a3a'), dx, y, k % 2 ? .03 : -.03), 1, .7, 1)));
+    hopper.position.set(-.22, .0, -.08);
+    const jug = group(at(rbox(.34, .1, .34, .04, '#f5f8fb'), 0, .07, 0), at(cyl(.13, .13, .36, glass('#9fd0f0', .5)), 0, .3, 0), at(cyl(.14, .14, .04, '#8fc9f2'), 0, .5, 0));
+    jug.position.set(.22, .0, -.08);
+    const food = bowl('#fffaf0', -.22, .2, .04), water = bowl('#8fc9f2', .22, .2, .04);
+    food.scale.setScalar(.85); water.scale.setScalar(.85);
+    const station = group(at(rbox(.92, .04, .66, .018, '#f5f8fb'), 0, .02, 0), hopper, jug, food, water);
+    station.userData.bowls = [[-.22, .13, .2], [.22, .13, .2]];
+    return station;
+  },
+  'catfood-stand'() {
     const wood = '#d9a36a', food = bowl('#e8617f', -.24, 0, .26), water = bowl('#8fc9f2', .24, 0, .26);
     const stand = group(...legs4(.4, .15, .2, '#9a6a45', .03), at(rbox(.95, .06, .4, .025, wood), 0, .23, 0), at(rbox(.95, .08, .04, .018, '#e9c58f'), 0, .17, .19),
       ...[-.28, 0, .28].map(x => at(cyl(.03, .03, .012, '#fffaf0', 10), x, .17, .216).rotateX(Math.PI / 2)), food, water,
@@ -480,125 +435,37 @@ export const KITCHEN_BUILD = {
     stand.userData.bowls = [[-.24, .38, 0], [.24, .38, 0]];
     return stand;
   },
-  // Hồng: thảm hồng viền lượn sóng, chén hồng + chén kem, hũ bánh thưởng lilac nắp vàng có trái tim.
-  'catfood-pink'() {
-    const rose = '#ff8fb6', food = bowl('#ffb3c8', -.22, .02), water = bowl('#fff6f8', .22, .02);
-    food.add(squash(at(ball(.13, '#b06a3a'), 0, .105, 0), 1, .45, 1));
-    water.add(at(cyl(.12, .12, .012, '#cfeaff', 20), 0, .1, 0));
-    const station = group(at(rbox(.9, .02, .55, .01, '#ffc2d4'), 0, .01, 0), ...scallops([-.44, .018, .28], [.44, .018, .28], rose, .025), ...scallops([-.44, .018, -.28], [.44, .018, -.28], rose, .025),
-      food, water,
-      at(cyl(.05, .05, .1, '#e6d4ff', 14), 0, .07, -.2), at(cyl(.052, .052, .03, '#f2c14e', 14), 0, .135, -.2), at(heart(.025, rose), 0, .07, -.145),
-      ...[[-.3, .2], [-.16, .24], [-.04, .2]].map(([x, z]) => at(cyl(.025, .025, .004, rose, 10), x, .022, z)));
-    station.userData.bowls = [[-.22, .13, .02], [.22, .13, .02]];
-    return station;
-  },
-  // Hiện đại: máy cho ăn tự động — bình kính trên đế trắng, vòng LED cyan quanh đế, màn hình nhỏ.
-  'catfood-feeder'() {
-    const ledRing = () => at(ring(.15, .008, glow('#3fe0ff', '#3fe0ff', 1.2)), 0, .127, 0).rotateX(Math.PI / 2);
-    const hopper = group(at(rbox(.34, .1, .34, .04, '#f5f8fb'), 0, .07, 0), at(cyl(.14, .14, .4, glass('#cfe3f5', .45)), 0, .32, 0), at(cyl(.15, .15, .04, '#26282c'), 0, .54, 0),
-      ...[[-.05, .2], [.06, .26], [0, .34], [-.06, .4], [.05, .15]].map(([dx, y], k) => squash(at(ball(.04, '#b06a3a'), dx, y, k % 2 ? .03 : -.03), 1, .7, 1)),
-      ledRing(), at(led(.1, .03, .008, '#3fe0ff'), 0, .07, .179));
-    hopper.position.set(-.22, .0, -.08);
-    const jug = group(at(rbox(.34, .1, .34, .04, '#f5f8fb'), 0, .07, 0), at(cyl(.13, .13, .36, glass('#9fd0f0', .5)), 0, .3, 0), at(cyl(.14, .14, .04, '#26282c'), 0, .5, 0), ledRing());
-    jug.position.set(.22, .0, -.08);
-    const food = bowl('#fffaf0', -.22, .2, .04), water = bowl('#8fc9f2', .22, .2, .04);
-    food.scale.setScalar(.85); water.scale.setScalar(.85);
-    const station = group(at(rbox(.92, .04, .66, .018, '#f5f8fb'), 0, .02, 0), hopper, jug, food, water);
-    station.userData.bowls = [[-.22, .13, .2], [.22, .13, .2]];
-    station.userData.lightSource = true;
-    return station;
-  },
 
   // ===== Xe đẩy =====
-  // Gỗ: xe trà gỗ, ấm trà kem, cốc xanh sage, hộp + bánh ở tầng dưới.
   cart() {
     const mug = cup('#e8617f', .1, .795, .05);
     const teapot = group(squash(at(ball(.09, '#fffaf0'), 0, .077, 0), 1, .85, 1), at(ball(.025, '#e8617f'), 0, .165, 0), at(cyl(.012, .018, .1, '#fffaf0', 8), .12, .11, 0).rotateZ(-.8), at(ring(.05, .01, '#fffaf0'), -.1, .1, 0));
     teapot.position.set(.3, .795, .05);
     const cart = group(...cartFrame('#ffd66b', '#c8ccd2'), teapot, mug,
-      at(rbox(.3, .06, .22, .02, '#e8617f'), -.2, .26, 0), at(rbox(.26, .06, .2, .02, '#3b8fe0'), -.2, .32, 0), at(cyl(.07, .06, .1, '#fffaf0', 14), .2, .28, 0), at(cyl(.1, .1, .02, '#f3c2cc', 20), .22, .34, 0), squash(at(ball(.07, '#ffe6ae'), .22, .38, 0), 1, .7, 1));
+      at(rbox(.3, .06, .22, .02, '#e8617f'), -.2, .26, 0), at(rbox(.26, .06, .2, .02, '#3b8fe0'), -.2, .32, 0), at(cyl(.07, .06, .1, '#fffaf0', 14), .2, .28, 0), at(cyl(.1, .1, .02, '#f3c2cc', 20), .22, .39, 0), squash(at(ball(.07, '#ffe6ae'), .22, .43, 0), 1, .7, 1));
     return finishCart(cart, mug);
   },
-  // Hồng: xe cà phê khay hồng nhạt, cột vàng, máy pha hồng, nơ trên tay đẩy.
+  'cart-produce'() {
+    const mug = at(ball(.06, '#ff6b4a'), -.3, .855, .1);
+    mug.userData.home = mug.position.clone();
+    const crate = (x, y, color, fruit, n) => group(at(box(.44, .02, .34, '#c98a55'), 0, .01, 0), ...[-1, 1].map(s => at(box(.44, .12, .02, '#d9a36a'), 0, .07, s * .16)), ...[-1, 1].map(s => at(box(.02, .12, .34, '#d9a36a'), s * .21, .07, 0)),
+      ...Array.from({ length: n }, (_, k) => at(ball(.055, fruit), -.15 + (k % 4) * .1, .11, -.07 + Math.floor(k / 4) * .14))).translateX(x).translateY(y);
+    const cart = group(...cartFrame('#8fd4c4', '#9a6a45'), mug, crate(.17, .795, '#c98a55', '#ff6b4a', 8),
+      at(cyl(.12, .1, .12, '#e9c58f'), -.27, .29, 0), ...[[-.31, 0], [-.27, .03], [-.23, -.02]].map(([x, z], k) => at(cone(.025, .16, '#ff9f43', 8), x, .42, z).rotateZ((k - 1) * .35)),
+      crate(.17, .23, '#7fc45a', '#7fc45a', 8));
+    return finishCart(cart, mug);
+  },
   'cart-coffee'() {
-    const rose = '#ff8fb6', gold = '#f2c14e';
-    const mug = cup('#fff6f8', -.3, .795, .12);
-    const machine = group(at(rbox(.34, .3, .3, .05, '#ffb3c8'), 0, .15, 0), at(rbox(.36, .04, .32, .015, '#fff6f8'), 0, .32, 0), at(cyl(.06, .06, .1, '#fff6f8', 14), 0, .39, -.05),
-      at(rbox(.12, .05, .1, .02, '#3a3d43'), -.06, .2, .17), at(rbox(.12, .05, .1, .02, '#3a3d43'), .06, .2, .17), at(ball(.025, gold), 0, .27, .16), at(rbox(.3, .02, .1, .01, gold), 0, .03, .18));
+    const mug = cup('#fffaf0', -.3, .795, .12);
+    const machine = group(at(rbox(.34, .3, .3, .05, '#e8617f'), 0, .15, 0), at(rbox(.36, .04, .32, .015, chrome()), 0, .32, 0), at(cyl(.06, .06, .1, '#fffaf0', 14), 0, .39, -.05),
+      at(rbox(.12, .05, .1, .02, '#26282c'), -.06, .2, .17), at(rbox(.12, .05, .1, .02, '#26282c'), .06, .2, .17), at(ball(.025, '#ffd66b'), 0, .27, .16), at(rbox(.3, .02, .1, .01, '#3a3f4a'), 0, .03, .18));
     machine.position.set(.22, .795, -.02);
-    const bow = group(squash(at(ball(.05, rose), -.055, 0, 0), 1, .7, .6), squash(at(ball(.05, rose), .055, 0, 0), 1, .7, .6), at(ball(.026, gold), 0, 0, 0));
-    bow.position.set(0, .98, -.2);
-    const cart = group(...cartFrame('#ffe0e9', gold), machine, mug, bow,
-      at(cyl(.07, .07, .2, glass('#ffc2d4', .55)), -.25, .325, 0), at(cyl(.075, .075, .03, gold), -.25, .44, 0), at(cyl(.045, .04, .14, '#fff6f8', 14), .05, .29, .04),
-      ...[0, 1, 2].map(k => at(cyl(.04, .035, .06, k % 2 ? rose : '#e6d4ff', 12), .22 + k * .02, .26 + k * .06, -.05)));
-    return finishCart(cart, mug);
-  },
-  // Hiện đại: xe bar khung đen, chai rượu + bình lắc thép, dải LED cyan / magenta dưới mép hai khay.
-  'cart-modern'() {
-    const mug = cup('#f5f8fb', .1, .795, .05);
-    const bottle = (x, z, color) => [at(cyl(.04, .04, .2, color, 12), x, .895, z), at(cyl(.015, .02, .07, color, 8), x, 1.03, z), at(cyl(.018, .018, .02, '#c8ccd2', 8), x, 1.075, z)];
-    const cart = group(...cartFrame('#3a3d43', '#1f2125'), mug,
-      ...bottle(.32, -.12, '#26282c'), ...bottle(.2, -.15, '#3a5a4a'),
-      at(cyl(.035, .03, .16, steel(), 12), .34, .875, .1), at(cyl(.025, .035, .03, steel(), 12), .34, .97, .1),
-      at(cyl(.1, .09, .14, steel(), 18), -.2, .3, 0), ...[.12, .26].map(x => at(cyl(.035, .03, .08, glass('#cfe3f5', .5), 12), x, .27, .05)),
-      at(led(.74, .012, .012, '#3fe0ff'), 0, .755, .236), at(led(.74, .012, .012, '#ff4fd8'), 0, .19, .236));
-    cart.userData.lightSource = true;
+    const cart = group(...cartFrame('#fff4e0', '#3a3f4a'), machine, mug,
+      at(cyl(.07, .07, .2, glass('#d9a36a', .55)), -.25, .325, 0), at(cyl(.075, .075, .03, '#3a3f4a'), -.25, .44, 0), at(cyl(.045, .04, .14, '#fffaf0', 14), .05, .29, .04),
+      ...[0, 1, 2].map(k => at(cyl(.04, .035, .06, k % 2 ? '#e8617f' : '#8fc9f2', 12), .22 + k * .02, .26 + k * .06, -.05)));
     return finishCart(cart, mug);
   },
 
-  // ===== Kệ bánh (tường trái, cạnh cửa sang phòng khách): rộng .94, sâu .46, nóc cao ~1.32 — mèo nhảy lên nóc (seat) =====
-  // Gốc: kệ bốn tầng khung xanh dương, mặt kệ vàng, nóc cam: giỏ trái cây + nồi đỏ tầng dưới, bánh mì + lọ tầng giữa,
-  // chồng đĩa + cốc tầng trên, chậu rau thơm trên nóc.
-  bakerack() {
-    const post = '#3b8fe0', shelf = '#ffd66b';
-    const loaf = (x, y, color) => squash(at(ball(.09, color), x, y, 0), 1.5, .65, 1);
-    const fruit = [[-.29, '#e8463a'], [-.2, '#ffa53a'], [-.11, '#7fc45a'], [-.24, '#ffd23f'], [-.15, '#e8463a']];
-    const rack = group(...[[-.43, -.18], [.43, -.18], [-.43, .18], [.43, .18]].flatMap(([x, z]) => [at(cyl(.022, .022, 1.3, post, 10), x, .65, z), at(ball(.03, '#e8617f'), x, .03, z)]),
-      ...[.12, .5, .9].map(y => at(rbox(.92, .035, .42, .015, shelf), 0, y, 0)), at(rbox(.96, .04, .46, .02, '#ff6b4a'), 0, 1.3, 0),
-      ...[-1, 1].map(s => at(ball(.03, '#e8617f'), s * .45, 1.35, .2)),
-      at(cyl(.17, .13, .12, '#e0a050'), -.2, .2, 0), at(ring(.17, .012, '#c98a55'), -.2, .26, 0).rotateX(Math.PI / 2),
-      ...fruit.map(([x, color], k) => at(ball(.05, color), x, k < 3 ? .28 : .32, k < 3 ? -.03 : .04)),
-      at(cyl(.13, .12, .14, '#e8617f'), .22, .21, 0), at(cyl(.135, .135, .025, '#e8617f'), .22, .29, 0), at(ball(.025, '#fffaf0'), .22, .315, 0),
-      loaf(-.27, .57, '#e0a050'), loaf(-.02, .57, '#d08a40'), ...jar('#ffd66b', '#e8617f', .22, .5175), ...jar('#bfe3a0', '#3b8fe0', .36, .5175, 0, .05, .16),
-      ...[0, 1, 2].map(k => at(cyl(.13, .12, .02, ['#fffaf0', '#8fc9f2', '#fffaf0'][k], 20), -.2, .93 + k * .025, 0)),
-      ...[[.12, '#3b8fe0'], [.27, '#7fc45a']].map(([x, color]) => at(cyl(.045, .04, .09, color, 14), x, .9625, .05)),
-      at(cyl(.08, .065, .12, '#c9693d'), -.3, 1.38, -.05), ...[[-.33, 0], [-.27, .02], [-.3, -.04]].map(([x, dz], k) => at(ball(.05, k % 2 ? '#5fae46' : '#6fbf4a'), x, 1.46 + k * .02, -.05 + dz)));
-    rack.userData.seat = [.15, 1.32, 0];
-    return rack;
-  },
-  // Hồng: kệ khung hồng, mặt kem viền lượn sóng, núm vàng: bánh kem trên chân đế + hộp quà, cupcake, macaron trên giá hai tầng, tim trên nóc.
-  'bakerack-pink'() {
-    const pink = '#ffc2d4', rose = '#ff8fb6', cream = '#fff6f8', gold = '#f2c14e';
-    const cupcake = (x, liner, frost) => [at(cyl(.045, .035, .06, liner, 12), x, .5475, 0), squash(at(ball(.05, frost), x, .59, 0), 1, .75, 1), at(ball(.014, '#e8463a'), x, .635, 0)];
-    const macarons = (y, r) => ['#e6d4ff', '#bfe3a0', '#ffb3c8', '#ffe39a'].map((color, k) => squash(at(ball(.032, color), .2 + Math.cos(k / 4 * TAU) * r, y, Math.sin(k / 4 * TAU) * r), 1, .55, 1));
-    const rack = group(...[[-.43, -.18], [.43, -.18], [-.43, .18], [.43, .18]].flatMap(([x, z]) => [at(cyl(.022, .022, 1.3, rose, 10), x, .65, z), at(ball(.03, gold), x, .03, z)]),
-      ...[.12, .5, .9].flatMap(y => [at(rbox(.92, .035, .42, .015, cream), 0, y, 0), ...scallops([-.44, y - .035, .215], [.44, y - .035, .215], '#ffb3c8', .03)]),
-      at(rbox(.96, .04, .46, .02, pink), 0, 1.3, 0), ...scallops([-.46, 1.265, .235], [.46, 1.265, .235], rose, .03),
-      ...[-1, 1].map(s => at(ball(.032, gold), s * .45, 1.35, .2)), at(heart(.07, rose), .3, 1.43, -.17), at(ball(.02, gold), .3, 1.49, -.15),
-      at(cyl(.07, .09, .02, gold, 16), -.2, .1475, 0), at(cyl(.02, .02, .1, gold, 8), -.2, .2075, 0), at(cyl(.16, .16, .02, cream, 24), -.2, .2675, 0),
-      at(cyl(.12, .12, .1, '#ffb3c8', 24), -.2, .3275, 0), at(cyl(.125, .125, .025, cream, 24), -.2, .39, 0), ...ringScallops(.11, .405, rose, .018), at(ball(.025, '#e8463a'), -.2, .43, 0),
-      at(rbox(.2, .16, .18, .02, '#ff8fb6'), .22, .2175, 0), at(box(.04, .162, .182, gold), .22, .2175, 0), squash(at(ball(.035, gold), .22, .31, 0), 1.4, .7, 1),
-      ...cupcake(-.32, rose, cream), ...cupcake(-.14, '#e6d4ff', '#ffb3c8'), ...cupcake(.04, gold, cream), ...jar('#ffb3c8', gold, .3, .5175),
-      at(cyl(.015, .015, .26, gold, 8), .2, 1.05, 0), at(cyl(.13, .13, .015, cream, 20), .2, .945, 0), at(cyl(.09, .09, .015, cream, 20), .2, 1.08, 0),
-      ...macarons(.97, .08), ...macarons(1.1, .05),
-      at(cyl(.06, .05, .1, cream, 14), -.25, .9675, 0), at(ring(.03, .008, rose), -.18, .975, 0), at(heart(.025, rose), -.25, .97, .062));
-    rack.userData.seat = [-.15, 1.32, 0];
-    return rack;
-  },
-  // Hiện đại: tháp lò nướng âm tủ đen nhám — hai lò cửa kính hắt cam, tay nắm thép, màn hình cảm ứng cyan, dải LED cyan hai bên + magenta dưới nóc.
-  'bakerack-modern'() {
-    const body = '#26282c', panel = '#3a3d43', black = '#1f2125';
-    const oven = y => [at(rbox(.72, .4, .03, .012, panel), 0, y, .24), at(box(.54, .2, .012, glow('#3a2418', '#ff9a4a', .7)), 0, y - .03, .267),
-      at(rbox(.5, .025, .04, .012, '#c8ccd2'), 0, y + .14, .275)];
-    const tower = group(at(rbox(.86, .06, .42, .02, black), 0, .03, 0), at(rbox(.9, 1.24, .45, .03, body), 0, .68, 0), at(rbox(.94, .04, .48, .02, black), 0, 1.32, 0),
-      ...oven(.96), ...oven(.5), at(rbox(.72, .14, .03, .012, panel), 0, .17, .24), at(rbox(.3, .02, .03, .01, '#c8ccd2'), 0, .2, .265),
-      at(rbox(.22, .06, .02, .008, '#111316'), .2, 1.235, .235), at(box(.18, .035, .006, glow('#0a1a2a', '#3fe0ff', 1)), .2, 1.235, .256),
-      ...[-.25, -.12].map(x => at(cyl(.022, .022, .03, steel(), 12), x, 1.235, .24).rotateX(Math.PI / 2)),
-      ...[-1, 1].map(s => at(led(.012, 1.1, .012, '#3fe0ff'), s * .405, .7, .232)), at(led(.86, .012, .012, '#ff4fd8'), 0, 1.285, .236));
-    tower.userData.seat = [0, 1.34, 0];
-    tower.userData.lightSource = true;
-    return tower;
-  },
 };
 
 // ---------- Trang trí cố định trên tường bếp (u = trục ngang của tường, +z = mặt hướng vào phòng) ----------
@@ -642,11 +509,9 @@ export function decorateKitchenWall(i, wall) {
     sign.position.set(-1.9, 2.15, -.175); sign.rotation.y = Math.PI;
     wall.add(at(rbox(1.1, .35, .06, .02, onWall('#c98a55')), -1.9, 2.15, -.14), sign,
       ...[-.4, .4].map(dx => at(box(.04, .12, .04, onWall('#9a6a45')), -1.9 + dx, 2.4, -.12)));
-    const win = 1.3;
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(.7, .8), new THREE.MeshBasicMaterial({ color: '#cfeaff', transparent: true, userData: { nightDim: true, wallKeep: true } }));
-    glass.position.set(win, 1.85, -.175); glass.rotation.y = Math.PI;
-    wall.add(at(box(.9, 1.0, .06, onWall('#fff4e0')), win, 1.85, -.13), glass,
-      ...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.13)),
+    // Cửa sổ thật (khoét lỗ: deco-room.mjs windows, KITCHEN_FRONT_WINDOW_U): ở đây chỉ thêm cánh cửa chớp hai bên + hộp hoa dưới bậu.
+    const win = KITCHEN_FRONT_WINDOW_U;
+    wall.add(...[-1, 1].map(s => at(box(.3, 1.0, .04, onWall('#7fc4a8')), win + s * .6, 1.85, -.14)),
       at(rbox(.9, .14, .2, .04, onWall('#c98a55')), win, 1.3, -.2),
       ...[-.3, -.1, .1, .3].flatMap((dx, k) => [at(ball(.06, onWall(['#ff8fb8', '#ffd23f', '#fffaf0', '#ff6b4a'][k])), win + dx, 1.42, -.2), at(ball(.04, onWall('#5fae46')), win + dx + .03, 1.36, -.26)]));
     const lantern = u => [at(box(.03, .03, .2, onWall('#3a3f4a')), u, 2.5, -.2), at(cyl(.07, .07, .16, mat('#ffe9a8', { transparent: true, emissive: '#ffcf6a', emissiveIntensity: .7 }), 12), u, 2.32, -.3),
@@ -697,3 +562,56 @@ export function kitchenDecor() {
   bin.position.set(-3.6, 0, 3.5);
   return mergeStatic(group(doormat, runner, bin));
 }
+
+// ---------- Món thêm sau (bakerack): mỗi chỗ chỉ có món gốc ----------
+
+Object.assign(KITCHEN_BUILD, {
+  // ===== Kệ bánh (tường trái, cạnh cửa sang phòng khách): rộng .94, sâu .46, nóc cao ~1.32 — mèo nhảy lên nóc (seat) =====
+  // Gốc: kệ bốn tầng khung xanh dương, mặt kệ vàng, nóc cam: giỏ trái cây + nồi đỏ tầng dưới, bánh mì + lọ tầng giữa,
+  // chồng đĩa + cốc tầng trên, chậu rau thơm trên nóc.
+  bakerack() {
+    const post = '#3b8fe0', shelf = '#ffd66b';
+    const loaf = (x, y, color) => squash(at(ball(.09, color), x, y, 0), 1.5, .65, 1);
+    const fruit = [[-.29, '#e8463a'], [-.2, '#ffa53a'], [-.11, '#7fc45a'], [-.24, '#ffd23f'], [-.15, '#e8463a']];
+    const rack = group(...[[-.43, -.18], [.43, -.18], [-.43, .18], [.43, .18]].flatMap(([x, z]) => [at(cyl(.022, .022, 1.3, post, 10), x, .65, z), at(ball(.03, '#e8617f'), x, .03, z)]),
+      ...[.12, .5, .9].map(y => at(rbox(.92, .035, .42, .015, shelf), 0, y, 0)), at(rbox(.96, .04, .46, .02, '#ff6b4a'), 0, 1.3, 0),
+      ...[-1, 1].map(s => at(ball(.03, '#e8617f'), s * .45, 1.35, .2)),
+      at(cyl(.17, .13, .12, '#e0a050'), -.2, .2, 0), at(ring(.17, .012, '#c98a55'), -.2, .26, 0).rotateX(Math.PI / 2),
+      ...fruit.map(([x, color], k) => at(ball(.05, color), x, k < 3 ? .28 : .32, k < 3 ? -.03 : .04)),
+      at(cyl(.13, .12, .14, '#e8617f'), .22, .21, 0), at(cyl(.135, .135, .025, '#e8617f'), .22, .29, 0), at(ball(.025, '#fffaf0'), .22, .315, 0),
+      loaf(-.27, .57, '#e0a050'), loaf(-.02, .57, '#d08a40'), ...jar('#ffd66b', '#e8617f', .22, .5175), ...jar('#bfe3a0', '#3b8fe0', .36, .5175, 0, .05, .16),
+      ...[0, 1, 2].map(k => at(cyl(.13, .12, .02, ['#fffaf0', '#8fc9f2', '#fffaf0'][k], 20), -.2, .93 + k * .025, 0)),
+      ...[[.12, '#3b8fe0'], [.27, '#7fc45a']].map(([x, color]) => at(cyl(.045, .04, .09, color, 14), x, .9625, .05)),
+      at(cyl(.08, .065, .12, '#c9693d'), -.3, 1.38, -.05), ...[[-.33, 0], [-.27, .02], [-.3, -.04]].map(([x, dz], k) => at(ball(.05, k % 2 ? '#5fae46' : '#6fbf4a'), x, 1.46 + k * .02, -.05 + dz)));
+    rack.userData.seat = [.15, 1.32, 0];
+    return rack;
+  },
+  // Kệ bánh mì gỗ: ba tầng nghiêng có giỏ mây đựng bánh mì que, bánh tròn, croissant; nóc phẳng cho mèo nằm (seat).
+  'bakerack-bread'() {
+    const wood = '#c98a55', dark = '#9a6a45';
+    const basket = (x, y) => group(at(rbox(.36, .12, .3, .04, '#d9a35a'), x, y + .06, 0), at(box(.37, .02, .31, '#b8803e'), x, y + .1, 0));
+    const baguette = (x, y, z, a) => { const b = squash(at(cyl(.035, .035, .34, '#e0a050', 10), x, y, z), 1, 1, 1); b.rotation.set(0, 0, Math.PI / 2 - a); return b; };
+    const rack = group(...[-1, 1].map(s => at(rbox(.05, 1.3, .42, .02, dark), s * .45, .65, 0)), at(rbox(.96, .04, .46, .02, wood), 0, 1.3, 0),
+      ...[.1, .5, .9].map(y => at(rbox(.86, .035, .4, .015, wood), 0, y, 0)), at(rbox(.86, .9, .02, .01, '#f3d5a8'), 0, .58, -.2),
+      basket(-.22, .12), basket(.22, .12), basket(-.22, .52), basket(.22, .52),
+      baguette(-.26, .32, -.05, .3), baguette(-.18, .33, .05, .25), squash(at(ball(.1, '#d08a40'), .22, .28, 0), 1.3, .7, 1),
+      ...[-.08, .08].map(dx => squash(at(ball(.07, '#e9b464'), -.22 + dx, .67, 0), 1.6, .6, .9)), squash(at(ball(.11, '#c47a30'), .22, .68, 0), 1.2, .75, 1.1),
+      at(cyl(.13, .12, .02, '#fffaf0', 20), -.2, .93, 0), at(cyl(.1, .1, .07, '#ff8fb8', 18), -.2, .975, 0), at(ball(.02, '#e5483a'), -.2, 1.02, 0),
+      at(rbox(.22, .16, .14, .04, '#8fc9f2'), .22, .995, 0), at(rbox(.24, .02, .16, .01, '#fffaf0'), .22, 1.085, 0));
+    rack.userData.seat = [.15, 1.32, 0];
+    return rack;
+  },
+  // Kệ thùng gỗ xếp chồng: ba thùng táo gỗ chồng lên nhau làm kệ, đựng hũ mứt, rổ trứng, chậu thảo mộc; nóc thùng cho mèo nằm.
+  'bakerack-crates'() {
+    const crate = (y, h, color) => group(at(rbox(.92, .04, .42, .015, color), 0, y + .02, 0), ...[-1, 1].map(s => at(rbox(.04, h, .42, .015, color), s * .44, y + h / 2, 0)),
+      at(rbox(.92, h, .03, .012, color), 0, y + h / 2, -.195), ...[.3, .7].map(f => at(box(.92, .05, .02, color), 0, y + h * f, .2)));
+    const rack = group(crate(0, .42, '#c9955e'), crate(.43, .42, '#b9854a'), crate(.86, .42, '#c9955e'), at(rbox(.94, .04, .44, .02, '#9a6a45'), 0, 1.3, 0),
+      ...jar('#ff8fb8', '#e8617f', -.28, .04), ...jar('#ffd66b', '#3b8fe0', -.12, .04, 0, .055, .17),
+      at(rbox(.3, .1, .22, .04, '#e9c58f'), .22, .09, 0), ...[-.08, 0, .08].map(dx => squash(at(ball(.04, '#fff6e6'), .22 + dx, .16, 0), 1, 1.25, 1)),
+      ...[-.25, -.05, .2].map((x, k) => group(at(cyl(.07, .06, .12, '#e98b5a', 12), x, .53, 0), at(ball(.07 + k * .01, k % 2 ? '#5fae46' : '#7fc45a'), x, .65, 0))),
+      at(cyl(.12, .1, .14, '#e0a050'), -.18, 1.0, 0), ...[[-.22, '#e8463a'], [-.14, '#ffa53a'], [-.18, '#7fc45a']].map(([x, c], k) => at(ball(.05, c), x, 1.1 + (k > 1 ? .04 : 0), k > 1 ? .03 : 0)),
+      at(cyl(.08, .065, .12, '#c9693d'), .25, .96, 0), at(ball(.09, '#6fbf4a'), .25, 1.08, 0));
+    rack.userData.seat = [.1, 1.32, 0];
+    return rack;
+  },
+});

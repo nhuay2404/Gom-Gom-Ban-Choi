@@ -10,10 +10,10 @@ import { join } from 'node:path';
 const cfg = Object.fromEntries(EDITABLE.map(name => [name, ECO[name]]));
 const always = Array(100).fill(1);
 
-test('mô phỏng economy: người thắng mọi màn mở đủ 6 khu đúng mốc màn; kết quả lặp lại theo seed', () => {
+test('mô phỏng economy: người thắng mọi màn mở đủ 7 khu đúng mốc màn; kết quả lặp lại theo seed', () => {
   const run = simulatePlayer(cfg, PROFILES[1], always, { seed: 3 });
   assert.equal(run.cleared, 100);
-  assert.deepEqual(run.events.map(e => e.area), ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard']);
+  assert.deepEqual(run.events.map(e => e.area), ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder']);
   for (const e of run.events) assert.ok(e.level >= cfg.AREA_UNLOCK[e.area].level);
   assert.deepEqual(simulatePlayer(cfg, PROFILES[0], Array(100).fill(.5), { seed: 9 }), simulatePlayer(cfg, PROFILES[0], Array(100).fill(.5), { seed: 9 }));
 });
@@ -53,7 +53,7 @@ test('lưu economy từ editor: ghi lại đúng số mặc định, file giữ 
 
 test('kết luận kinh tế: khu không mở được thì trừ nặng và gợi ý giá thấp hơn; không vấn đề thì Cân bằng', async () => {
   const { economyVerdict } = await import('./economy-verdict.mjs');
-  const cfg = { AREA_UNLOCK: { kitchen: { level: 40, cost: 1200 } }, REWARD_STEP: 2, IDLE_RATE: .05 };
+  const cfg = { AREA_UNLOCK: { kitchen: { level: 40, cost: 1200 } }, REWARD_GROWTH: .1, IDLE_RATE: .05 };
   const area = (opened, short = 0) => ({ area: 'kitchen', opened, short });
   const avg = (areas, extra = {}) => ({ profile: { name: 'Trung bình' }, areas, owned: 5, shopSize: 10, wallet: 100, idleShare: .1, ...extra });
   const ok = economyVerdict({ off: [], avg: avg([area(1)]), others: [], cfg });
@@ -86,15 +86,18 @@ test('kết luận chung 4 kiểu: vấn đề chung (mọi kiểu thiếu nhi�
   assert.ok(bad.lines.some(l => l.includes('dư nhiều xu')));
 });
 
-test('mô phỏng economy: thời gian chơi = số lượt thật sự dùng (thắng / thua) × giây / lượt; tính theo loại màn; mốc mua đủ đồ mặc định', () => {
-  const one = { ...PROFILES[1], spm: 5 };
-  const levelInfo = Array.from({ length: 10 }, (_, i) => ({ moves: 12, movesUsedWin: 8, movesUsedLoss: 12, tier: i === 9 ? 'boss' : 'normal' }));
+test('mô phỏng economy: thời gian chơi = giây thật sự chơi (thắng / thua) theo nhịp chơi; tính theo loại màn; mốc mua đủ đồ mặc định', () => {
+  const one = { ...PROFILES[1], pace: 'mid' };
+  const levelInfo = Array.from({ length: 10 }, (_, i) => ({ moves: 12, movesUsedWin: 8, movesUsedLoss: 12, secWin: { mid: 40, weak: 60 }, secLoss: { mid: 70, weak: 99 }, tier: i === 9 ? 'boss' : 'normal' }));
   const run = simulatePlayer(cfg, one, always, { seed: 1, levels: 10, levelInfo });
-  assert.equal(run.playSec, 10 * 8 * 5, 'thắng mọi ván: 10 ván, mỗi ván 8 lượt × 5 giây');
+  assert.equal(run.playSec, 10 * 40, 'thắng mọi ván: 10 ván × 40 giây (nhịp mid)');
+  assert.equal(simulatePlayer(cfg, { ...one, pace: 'weak' }, always, { seed: 1, levels: 10, levelInfo }).playSec, 10 * 60, 'nhịp weak lấy secWin.weak');
   const half = simulatePlayer(cfg, one, Array(10).fill(.5), { seed: 4, levels: 10, levelInfo });
-  assert.ok(half.playSec > run.playSec, 'có ván thua (12 lượt) thì lâu hơn');
+  assert.ok(half.playSec > run.playSec, 'có ván thua (70 giây) thì lâu hơn');
+  const noSec = simulatePlayer(cfg, one, always, { seed: 1, levels: 10, levelInfo: levelInfo.map(({ secWin, secLoss, ...rest }) => rest) });
+  assert.equal(noSec.playSec, 10 * 8 * 5, 'thiếu số giây: số lượt × 5 giây');
   const r = simulateProfile(cfg, one, always, { runs: 2, levels: 10, levelInfo });
-  assert.ok(Math.abs(r.minPerLevel - 8 * 5 / 60) < 1e-9);
+  assert.ok(Math.abs(r.minPerLevel - 40 / 60) < 1e-9);
   assert.ok(r.tierMin.boss != null && r.tierMin.normal != null);
   const full = simulateProfile(cfg, one, always, { runs: 2, levels: 100, maxDays: 400 });
   assert.equal(full.fullBase.rate, 1, 'người trung bình mua đủ mọi món mặc định');

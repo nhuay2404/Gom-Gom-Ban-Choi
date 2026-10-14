@@ -93,72 +93,10 @@ function washerBody(body, trim, y = 0) {
 const tray = (color, sand = '#efdcb0') => [at(rbox(.62, .14, .46, .04, color), 0, .07, 0), at(box(.54, .02, .38, sand), 0, .145, 0)];
 const scoop = color => group(at(rbox(.12, .015, .1, .006, color), 0, 0, 0), at(cyl(.008, .008, .16, color, 6), 0, .01, .12).rotateX(Math.PI / 2));
 
-// Vật liệu phát sáng (dải LED, màn hình, nước có đèn): món dùng nó phải khai userData.lightSource.
-const glow = (color, emissive = color, intensity = 1) => mat(color, { emissive, emissiveIntensity: intensity });
-const lit = node => { node.userData.lightSource = true; return node; };
-// Trái tim nhỏ (mặt trước +z): hai cầu + khối vuông xoay 45°, dẹt theo z.
-const heart = (s, color) => squash(group(at(ball(s * .55, color), -s * .38, s * .18, 0), at(ball(s * .55, color), s * .38, s * .18, 0),
-  at(box(s * .78, s * .78, s * .78, color), 0, -s * .22, 0).rotateZ(Math.PI / 4)), 1, 1, .45);
-// Chậu cây nhỏ (gỗ + lá xanh) đặt trên mặt phẳng ở độ cao y.
-const pottedPlant = (x, y, z, s = 1) => group(at(cyl(.05 * s, .04 * s, .08 * s, '#e9c58f', 12), x, y + .04 * s, z),
-  at(ball(.065 * s, '#7fb069'), x, y + .11 * s, z), at(ball(.045 * s, '#5fae46'), x + .03 * s, y + .15 * s, z + .01 * s));
-
-// ---------- Kệ đứng áp tường trước (rộng .92, sâu .42, nóc y 1.24): khung 2 vách + 3 tầng + tấm lưng; nóc trống cho mèo ngồi ----------
-const SHELF_Y = [.08, .46, .84]; // tâm 3 tấm tầng (dày .04): mặt trên .10 / .48 / .86
-function shelfFrame(side, board, back) {
-  return [...[-1, 1].map(s => at(rbox(.04, 1.2, .4, .015, side), s * .43, .6, 0)),
-    ...SHELF_Y.map(y => at(rbox(.82, .04, .37, .015, board), 0, y, .015)),
-    at(rbox(.92, .04, .42, .015, side), 0, 1.22, 0), // nóc
-    at(rbox(.82, 1.16, .03, .012, back), 0, .62, -.185)];
-}
-// Khăn cuộn: trụ nằm, mặt tròn quay ra trước.
-const roll = (r, len, color) => at(cyl(r, r, len, color), 0, 0, 0).rotateX(Math.PI / 2);
-const rolls = (colors, x0, y) => [at(roll(.07, .26, colors[0]), x0, y + .07, 0), at(roll(.07, .26, colors[1]), x0 + .15, y + .07, 0),
-  at(roll(.07, .26, colors[2]), x0 + .075, y + .2, 0)];
-const shelfBottles = (colors, cap, x0, y) => colors.flatMap((c, k) => [at(cyl(.04, .045, .18, c, 12), x0 + k * .12, y + .09, 0), at(cyl(.016, .02, .04, cap, 8), x0 + k * .12, y + .2, 0)]);
-const rubberDuck = (x, y, z, color = '#ffd23f') => group(squash(at(ball(.07, color), x, y + .056, z), 1.2, .8, 1), at(ball(.045, color), x + .05, y + .12, z),
-  at(cone(.02, .05, '#ff8a3d', 8), x + .1, y + .12, z).rotateZ(-Math.PI / 2));
-const SHELF_SEAT = [0, 1.28, .03]; // mặt đệm trên nóc
-
 export const BATHROOM_BUILD = {
-  // Kệ đứng màu tươi: vách xanh, tầng vàng; khăn cuộn + giỏ cam tầng dưới, lọ dầu gội + vịt cao su tầng giữa, chậu cây + xà phòng tầng trên, đệm đỏ trên nóc.
-  bathshelf() {
-    const g = group(...shelfFrame('#5bb8e8', '#ffd66b', '#fffaf0'),
-      ...rolls(['#ff8fb8', '#ffffff', '#b48ee8'], -.3, .1), at(rbox(.26, .18, .26, .04, '#e98b5a'), .22, .19, 0),
-      ...shelfBottles(['#ff8fb8', '#8fc9f2', '#bfe3a0'], '#ffffff', -.3, .48), rubberDuck(.18, .48, 0),
-      pottedPlant(-.2, .86, 0, 1.3), at(rbox(.14, .05, .09, .02, '#e8617f'), .2, .885, 0), at(rbox(.12, .05, .08, .02, '#7fc45a'), .2, .935, 0),
-      at(rbox(.42, .04, .3, .015, '#e8617f'), 0, 1.26, .03));
-    g.userData.seat = SHELF_SEAT;
-    return g;
-  },
-  // Hồng: khung hồng, tầng trắng hồng, diềm bi hồng dưới mép tầng, núm + trái tim vàng trên nóc, đệm hồng đậm.
-  'bathshelf-pink'() {
-    const gold = mat('#f2c14e');
-    const g = group(...shelfFrame('#ffb3c8', '#fff6f8', '#ffe0e9'),
-      ...[...SHELF_Y, 1.22].flatMap(y => Array.from({ length: 9 }, (_, k) => at(ball(.025, '#ff8fb6'), -.4 + k * .1, y - .035, .2))),
-      ...[-1, 1].map(s => at(ball(.035, gold), s * .43, 1.275, -.15)), at(heart(.18, gold), 0, 1.375, -.15),
-      ...rolls(['#ffc2d4', '#fff6f8', '#e6d4ff'], -.3, .1), at(heart(.14, '#ff8fb6'), .22, .21, 0),
-      ...shelfBottles(['#ffc2d4', '#e6d4ff', '#ff8fb6'], '#f2c14e', -.3, .48), rubberDuck(.18, .48, 0, '#fff1a8'),
-      pottedPlant(-.2, .86, 0, 1.3), at(rbox(.14, .05, .09, .02, '#ffb3c8'), .2, .885, 0),
-      at(rbox(.42, .04, .3, .015, '#ff8fb6'), 0, 1.26, .03));
-    g.userData.seat = SHELF_SEAT;
-    return g;
-  },
-  // Hiện đại: tủ đen nhám, nửa trên cửa gương viền LED cyan, ngăn dưới để mở (khăn xám, lọ đen) có LED tím hắt xuống, LED magenta mép nóc.
-  'bathshelf-modern'() {
-    const dark = '#26282c', black = '#1f2125', cyan = glow('#3fe0ff');
-    const g = group(...shelfFrame(dark, '#3a3d43', black),
-      at(rbox(.82, .6, .03, .012, black), 0, .83, .2), at(rbox(.72, .5, .01, .005, '#dff3f8'), 0, .83, .227),
-      ...[-1, 1].flatMap(s => [at(box(.015, .5, .015, cyan), s * .375, .83, .222), at(box(.75, .015, .015, cyan), 0, .83 + s * .265, .222)]),
-      at(box(.8, .012, .012, glow('#b07cff')), 0, .44, .19),
-      ...rolls(['#c8ccd2', '#3a3d43', '#c8ccd2'], -.3, .1), ...shelfBottles([black, '#3a3d43'], '#c8ccd2', .12, .1),
-      at(box(.9, .012, .012, glow('#ff4fd8')), 0, 1.21, .215),
-      at(rbox(.42, .04, .3, .015, '#3a3d43'), 0, 1.26, .03));
-    g.userData.seat = SHELF_SEAT;
-    return lit(g);
-  },
-
-  toilet() { return toiletBase({ body: '#ffffff', seat: '#c98a55', lid: '#b9824f', tank: '#fffaf0', button: mat('#c98a55') }); },
+  // ===== Bồn cầu =====
+  toilet() { return toiletBase({ body: '#ffffff', seat: '#f5f8fb', lid: '#ffffff' }); },
+  'toilet-wood'() { return toiletBase({ body: '#ffffff', seat: '#c98a55', lid: '#b9824f', tank: '#fffaf0', button: mat('#c98a55') }); },
   'toilet-kitty'() {
     const t = toiletBase({ body: '#ffd9e2', seat: '#ffc9d5', lid: '#ffb3c4', tank: '#ffd9e2', button: mat('#e8617f') });
     // Tai mèo trên nắp két + dấu chân trên nắp ngồi.
@@ -166,73 +104,49 @@ export const BATHROOM_BUILD = {
       at(cyl(.05, .05, .012, '#ffffff', 16), 0, .555, .1), ...[-.06, 0, .06].map(x => at(cyl(.018, .018, .012, '#ffffff', 10), x, .555, .02)));
     return t;
   },
-  // Hiện đại: bồn cầu thông minh liền khối trắng, nắp đen nhám, hộp điều khiển phía sau, đèn ngủ LED cyan dưới bệ.
-  'toilet-modern'() {
-    const white = '#f5f8fb', dark = '#26282c';
-    const t = group(at(rbox(.36, .36, .5, .08, white), 0, .18, 0),
-      at(rbox(.46, .16, .62, .07, white), 0, .43, .04),
-      at(rbox(.44, .04, .5, .02, dark), 0, .53, .09),
-      at(rbox(.46, .3, .22, .06, white), 0, .66, -.27),
-      at(rbox(.4, .02, .16, .01, dark), 0, .82, -.27),
-      ...[-.08, 0, .08].map(x => at(cyl(.014, .014, .01, glow('#3fe0ff'), 10), x, .835, -.27)),
-      at(box(.38, .015, .015, glow('#3fe0ff')), 0, .34, .3),
-      ...[-1, 1].map(s => at(box(.015, .015, .4, glow('#3fe0ff')), s * .19, .34, .04)));
-    t.userData.seat = [0, .55, .07];
-    return lit(t);
-  },
 
+  // ===== Bồn rửa mặt (áp tường trái) =====
   vanity() {
+    const body = '#bfe8d6', chr = chrome();
+    return group(at(box(.84, .04, .44, '#8fa89c'), 0, .02, 0), at(rbox(.9, .78, .5, .04, body), 0, .43, 0),
+      at(rbox(.96, .05, .56, .02, '#fffaf0'), 0, .845, 0), at(cyl(.2, .15, .06, '#ffffff'), 0, .9, .02),
+      ...[-.22, .22].flatMap(x => [at(rbox(.4, .6, .03, .014, '#cdeee0'), x, .43, .265), at(ball(.022, chr), x - Math.sign(x) * .15, .55, .285)]),
+      tap(chr), mirror(.66, .78, '#fffaf0'));
+  },
+  'vanity-pedestal'() {
+    const chr = chrome();
+    return group(at(cyl(.09, .14, .78, '#ffffff'), 0, .39, -.02), at(cyl(.27, .15, .16, '#ffffff'), 0, .8, 0),
+      at(ring(.27, .025, '#f5f8fb'), 0, .88, 0).rotateX(Math.PI / 2), tap(chr, -.2, .86),
+      at(cyl(.32, .32, .04, '#c98a55', 32), 0, 1.62, -.22).rotateX(Math.PI / 2), at(cyl(.27, .27, .02, '#dff3f8', 32), 0, 1.62, -.19).rotateX(Math.PI / 2));
+  },
+  'vanity-wood'() {
     const wood = '#c98a55', dark = '#9a6a45', chr = mat('#2b2f3a', { metalness: .5, roughness: .4 });
     return group(...[-.38, .38].flatMap(x => [-.18, .18].map(z => at(cyl(.025, .02, .2, dark, 8), x, .1, z))),
       at(rbox(.9, .6, .5, .04, wood), 0, .5, 0), at(rbox(.96, .05, .56, .02, '#e9c58f'), 0, .825, 0),
       ...[.38, .62].map(y => at(rbox(.8, .2, .03, .012, '#d9a36a'), 0, y, .265)), ...[.38, .62].map(y => at(rbox(.16, .025, .03, .01, dark), 0, y, .29)),
       squash(at(ball(.19, '#ffffff'), 0, .9, .02), 1, .45, 1), tap(chr, -.18, .85), mirror(.6, .8, dark));
   },
-  // Hồng: chậu đứng chân cột hồng, vòi vàng, gương tròn viền lượn sóng + nơ vàng.
-  'vanity-pedestal'() {
-    const gold = mat('#f2c14e'), pink = '#ffb3c8';
-    return group(at(cyl(.09, .14, .78, '#ffe0e9'), 0, .39, -.02), at(cyl(.27, .15, .16, '#fff6f8'), 0, .8, 0),
-      at(ring(.27, .025, '#ffc2d4'), 0, .88, 0).rotateX(Math.PI / 2), tap(gold, -.2, .86),
-      at(cyl(.32, .32, .04, pink, 32), 0, 1.62, -.22).rotateX(Math.PI / 2), at(cyl(.27, .27, .02, '#dff3f8', 32), 0, 1.62, -.19).rotateX(Math.PI / 2),
-      ...Array.from({ length: 14 }, (_, k) => { const a = k / 14 * Math.PI * 2; return at(ball(.045, pink), Math.cos(a) * .33, 1.62 + Math.sin(a) * .33, -.22); }),
-      at(heart(.12, '#f2c14e'), 0, 2.02, -.2));
-  },
-  // Hiện đại: tủ đen nhám không tay nắm, đèn hắt LED dưới chân, chậu đặt nổi trắng, vòi vuông đen, gương chữ nhật có quầng LED phía sau.
-  'vanity-modern'() {
-    const dark = '#26282c', black = '#1f2125';
-    return lit(group(at(box(.8, .1, .4, black), 0, .05, -.03),
-      at(rbox(.92, .66, .5, .03, dark), 0, .43, 0),
-      at(box(.84, .015, .015, glow('#3fe0ff')), 0, .09, .21),
-      at(box(.86, .012, .02, '#3a3d43'), 0, .43, .255),
-      at(rbox(.96, .05, .54, .02, '#3a3d43'), 0, .785, 0),
-      at(rbox(.42, .12, .32, .05, '#f5f8fb'), 0, .87, .03),
-      at(box(.03, .22, .03, black), 0, .92, -.17), at(box(.03, .03, .12, black), 0, 1.02, -.12),
-      at(rbox(.66, .82, .02, .01, glow('#3fe0ff')), 0, 1.62, -.235),
-      at(rbox(.6, .76, .03, .012, '#dff3f8'), 0, 1.62, -.2)));
-  },
 
+  // ===== Bồn tắm (dọc tường sau) =====
   bathtub() {
+    const body = '#fffaf0', chr = chrome();
+    return group(...[[-.62, .26], [.62, .26], [-.62, -.26], [.62, -.26]].flatMap(([x, z]) => [at(ball(.06, '#ffd66b'), x, .06, z), at(cyl(.035, .03, .12, '#ffd66b', 10), x, .15, z)]),
+      at(rbox(1.6, .45, .75, .2, body), 0, .375, 0), ...tubRim(body), water(), tubTap(chr));
+  },
+  'bathtub-wood'() {
     const wood = '#d9a36a', band = '#8a5a33';
     return group(at(rbox(1.6, .6, .75, .08, wood), 0, .3, 0), at(box(1.62, .04, .77, band), 0, .15, 0), at(box(1.62, .04, .77, band), 0, .48, 0),
       ...tubRim('#c98a55'), water('#a8e0f0'), tubTap(mat('#9a6a45')),
       at(rbox(.36, .3, .3, .04, wood), 1.05, .15, .1)); // bậc gỗ bên cạnh
   },
-  // Hồng: bồn chân thú hồng, chân vàng, nước bọt xà phòng, vịt vàng, trái tim vàng trước thân.
   'bathtub-bubble'() {
-    const body = '#ffc2d4', gold = '#f2c14e';
+    const body = '#d4e9ff', chr = chrome(), foam = '#ffffff';
     const duck = group(squash(at(ball(.07, '#ffd23f'), 0, 0, 0), 1.2, .8, 1), at(ball(.045, '#ffd23f'), .05, .06, 0), at(cone(.02, .05, '#ff8a3d', 8), .1, .06, 0).rotateZ(-Math.PI / 2));
     duck.position.set(.3, .67, .05);
-    return group(...[[-.62, .26], [.62, .26], [-.62, -.26], [.62, -.26]].flatMap(([x, z]) => [at(ball(.06, gold), x, .06, z), at(cyl(.035, .03, .12, gold, 10), x, .15, z)]),
-      at(rbox(1.6, .45, .75, .2, body), 0, .375, 0), ...tubRim('#fff6f8'), water('#ffe0e9'),
-      ...[[-.45, .05, .09], [-.2, -.12, .11], [.05, .12, .08], [-.6, -.1, .07], [.55, -.12, .08], [.2, -.05, .06]].map(([x, z, r], k) => squash(at(ball(r, k % 2 ? '#ffffff' : '#e6d4ff'), x, .64, z), 1, .7, 1)),
-      duck, tubTap(mat(gold)), at(heart(.16, gold), 0, .4, .39));
-  },
-  // Hiện đại: bồn chữ nhật trắng cạnh thẳng trên đế đen, đèn hắt LED dưới đế, nước có đèn LED cyan, vòi đen.
-  'bathtub-modern'() {
-    return lit(group(at(box(1.5, .08, .65, '#26282c'), 0, .04, 0),
-      at(box(1.46, .015, .015, glow('#3fe0ff')), 0, .07, .335),
-      at(rbox(1.6, .52, .75, .06, '#f5f8fb'), 0, .34, 0), ...tubRim('#e9edf1'),
-      at(box(1.44, .03, .6, glow('#9fefff', '#3fe0ff', .6)), 0, .615, 0), tubTap(mat('#1f2125'))));
+    return group(...[[-.62, .26], [.62, .26], [-.62, -.26], [.62, -.26]].map(([x, z]) => at(cyl(.07, .05, .15, '#c8ccd2', 10), x, .075, z)),
+      at(rbox(1.6, .45, .75, .2, body), 0, .375, 0), ...tubRim(body), water(),
+      ...[[-.45, .05, .09], [-.2, -.12, .11], [.05, .12, .08], [-.6, -.1, .07], [.55, -.12, .08], [.2, -.05, .06]].map(([x, z, r]) => squash(at(ball(r, foam), x, .64, z), 1, .7, 1)),
+      duck, tubTap(chr));
   },
 
   // ===== Buồng tắm đứng (góc sau-trái) =====
@@ -242,15 +156,12 @@ export const BATHROOM_BUILD = {
       at(cyl(.012, .012, 1.08, chr, 8), 0, 1.98, .53).rotateZ(Math.PI / 2), at(cyl(.012, .012, 1.08, chr, 8), .53, 1.98, 0).rotateX(Math.PI / 2),
       at(cyl(.014, .014, 1.9, chr, 8), .53, 1.03, .53), ...showerHead(chr));
   },
-  // Hiện đại: khung đen, kính, sen mưa vuông có đèn LED dưới mặt sen, viền LED dưới chân vách.
   'shower-rain'() {
     const black = mat('#2b2f3a', { metalness: .4, roughness: .5 }), chr = chrome();
     const frame = [at(box(1.1, .03, .03, black), 0, 1.98, .53), at(box(.03, .03, 1.1, black), .53, 1.98, 0), at(box(.03, 1.9, .03, black), .53, 1.03, .53),
       at(box(.03, 1.9, .03, black), -.53, 1.03, .53), at(box(.03, 1.9, .03, black), .53, 1.03, -.53), at(box(.03, .03, 1.1, black), .53, .1, 0), at(box(1.1, .03, .03, black), 0, .1, .53)];
-    return lit(group(...showerTray('#5c6068'), at(glassPane(1.06, 1.86, .02), 0, 1.03, .53), at(glassPane(.02, 1.86, 1.06), .53, 1.03, 0), ...frame,
-      ...showerHead(chr, 2.05, true), at(rbox(.24, .01, .24, .005, glow('#3fe0ff')), -.38, 2.025, -.24),
-      at(box(1.06, .015, .015, glow('#3fe0ff')), 0, .125, .53), at(box(.015, .015, 1.06, glow('#3fe0ff')), .53, .125, 0),
-      at(rbox(.3, .06, .14, .03, '#3a3d43'), -.35, .5, -.47)));
+    return group(...showerTray('#5c6068'), at(glassPane(1.06, 1.86, .02), 0, 1.03, .53), at(glassPane(.02, 1.86, 1.06), .53, 1.03, 0), ...frame,
+      ...showerHead(chr, 2.05, true), at(rbox(.3, .06, .14, .03, '#e9c58f'), -.35, .5, -.47)); // kệ gỗ nhỏ trên tường trong buồng tắm
   },
   'shower-curtain'() {
     const chr = chrome(), rodY = 2.02;
@@ -273,13 +184,21 @@ export const BATHROOM_BUILD = {
   // ===== Máy giặt (áp tường phải) =====
   washer() { return group(...washerBody('#f5f8fb', '#c8ccd2'), at(rbox(.3, .12, .22, .04, '#8fc9f2'), -.1, .92, -.05)); }, // rổ đồ trên nóc
   'washer-retro'() { return group(...washerBody('#ffc9d5', '#fffaf0'), at(cyl(.1, .1, .14, '#ffd66b', 16), .12, .93, 0)); },
-  // Hiện đại: máy giặt + máy sấy chồng, mỗi máy một màn hình LED trên bảng nút.
   'washer-stack'() {
-    return lit(group(...washerBody('#c8ccd2', '#5c6068'), ...washerBody('#dfe3e8', '#5c6068', .86),
-      ...[0, .86].map(y => at(rbox(.16, .06, .01, .005, glow('#3fe0ff')), .05, y + .76, .33))));
+    const g = group(...washerBody('#c8ccd2', '#5c6068'), ...washerBody('#dfe3e8', '#5c6068', .86));
+    return g;
   },
 
+  // ===== Giá khăn (tường phải) =====
   towel() {
+    const wood = '#c98a55';
+    const g = group(...[-.42, .42].map(x => at(rbox(.05, .05, .14, .02, wood), x, 1.15, -.13)), at(cyl(.02, .02, .9, wood, 10), 0, 1.15, -.07).rotateZ(Math.PI / 2),
+      at(towelCloth(.36, .6, '#ffd66b', '#ffffff'), -.2, .86, -.04), at(towelCloth(.32, .5, '#8fc9f2', '#ffffff'), .2, .91, -.04),
+      ...[-.3, 0, .3].map(x => at(rbox(.04, .08, .08, .015, wood), x, 1.55, -.16)), at(towelCloth(.18, .28, '#ff8fb8', '#ffffff'), .3, 1.42, -.1));
+    g.userData.wallMounted = true;
+    return g;
+  },
+  'towel-ladder'() {
     const wood = '#d9a36a', tilt = .2;
     const ladder = group(...[-.24, .24].map(x => at(cyl(.022, .022, 1.7, wood, 8), x, .85, 0)), ...[.35, .7, 1.05, 1.4].map(y => at(cyl(.016, .016, .48, wood, 8), 0, y, 0).rotateZ(Math.PI / 2)),
       at(towelCloth(.38, .5, '#fffaf0', '#8fc9f2'), 0, .5, .03), at(towelCloth(.3, .44, '#b48ee8', '#ffffff'), 0, 1.22, .03));
@@ -287,50 +206,40 @@ export const BATHROOM_BUILD = {
     ladder.position.z = .2; // chân thang đứng trước, đỉnh tựa tường
     return group(ladder);
   },
-  // Hồng: thanh vàng trên giá hồng treo tường, khăn hồng / trắng / lilac, trái tim trên thanh.
-  'towel-pink'() {
-    const pink = '#ffb3c8';
-    const g = group(...[-.42, .42].map(x => at(rbox(.05, .05, .14, .02, pink), x, 1.15, -.13)), at(cyl(.02, .02, .9, '#f2c14e', 10), 0, 1.15, -.07).rotateZ(Math.PI / 2),
-      at(towelCloth(.36, .6, '#ffc2d4', '#ffffff'), -.2, .86, -.04), at(towelCloth(.32, .5, '#e6d4ff', '#ffffff'), .2, .91, -.04),
-      ...[-.3, 0, .3].map(x => at(rbox(.04, .08, .08, .015, pink), x, 1.55, -.16)), at(towelCloth(.18, .28, '#ff8fb6', '#fff6f8'), .3, 1.42, -.1),
-      at(heart(.1, '#ff8fb6'), 0, 1.3, -.12));
-    g.userData.wallMounted = true;
-    return g;
-  },
-  // Hiện đại: giá sưởi thép, hộp điều khiển có màn hình LED, thanh LED trên đỉnh.
   'towel-heated'() {
     const chr = chrome();
     const g = group(...[-.25, .25].map(x => at(cyl(.022, .022, 1.0, chr, 10), x, .85, -.12)), ...[.42, .6, .78, .96, 1.14, 1.3].map(y => at(cyl(.014, .014, .5, chr, 8), 0, y, -.12).rotateZ(Math.PI / 2)),
-      ...[-.25, .25].map(x => at(rbox(.06, .06, .1, .02, chr), x, 1.28, -.2)), at(towelCloth(.4, .5, '#5c6068', '#e8617f'), 0, .95, -.08),
-      at(rbox(.12, .1, .05, .02, '#26282c'), 0, .3, -.12), at(box(.07, .03, .006, glow('#3fe0ff')), 0, .31, -.087),
-      at(box(.52, .012, .012, glow('#3fe0ff')), 0, 1.36, -.12));
+      ...[-.25, .25].map(x => at(rbox(.06, .06, .1, .02, chr), x, 1.28, -.2)), at(towelCloth(.4, .5, '#5c6068', '#e8617f'), 0, .95, -.08));
     g.userData.wallMounted = true;
-    return lit(g);
+    return g;
   },
 
-  litter() {
+  // ===== Khay cát của mèo =====
+  litter() { return group(...tray('#f4a3b6'), at(scoop('#e8617f'), .2, .16, .05), at(rbox(.36, .02, .24, .01, '#ffd9e2'), 0, .01, .38)); },
+  'litter-hood'() {
+    const body = '#b48ee8';
+    const dome = squash(at(mesh(new THREE.SphereGeometry(.32, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), body), 0, .14, 0), 1, .9, .75);
+    return group(...tray(body), dome, at(cyl(.12, .12, .02, '#3a2f4a', 24), 0, .26, .245).rotateX(Math.PI / 2 - .4),
+      at(ring(.12, .02, '#e6dcff'), 0, .26, .255).rotateX(-.4), at(cyl(.03, .03, .05, '#e6dcff', 12), 0, .44, 0));
+  },
+  'litter-cabinet'() {
     const wood = '#e9c58f', dark = '#9a6a45';
     return group(at(rbox(.8, .62, .5, .04, wood), 0, .31, 0), at(rbox(.84, .04, .54, .02, '#d9a36a'), 0, .64, 0),
       at(cyl(.13, .13, .02, '#3a2f2a', 24), -.18, .26, .255).rotateX(Math.PI / 2), at(rbox(.3, .44, .03, .012, '#f3d5a8'), .2, .31, .265),
       at(ball(.02, dark), .1, .31, .29), at(cyl(.07, .055, .1, '#e98b5a', 14), .25, .71, 0), at(ball(.09, '#6fbf4a'), .25, .82, 0));
   },
-  // Hồng: khay có mái vòm hồng, tai mèo trên mái, chấm bi trắng trước khay.
-  'litter-hood'() {
-    const body = '#ffc2d4';
-    const dome = squash(at(mesh(new THREE.SphereGeometry(.32, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), body), 0, .14, 0), 1, .9, .75);
-    return group(...tray(body), dome, at(cyl(.12, .12, .02, '#7a4a5e', 24), 0, .26, .245).rotateX(Math.PI / 2 - .4),
-      at(ring(.12, .02, '#fff6f8'), 0, .26, .255).rotateX(-.4), at(cyl(.03, .03, .05, '#f2c14e', 12), 0, .44, 0),
-      ...[-1, 1].map(s => at(cone(.06, .1, '#ffb3c8', 4), s * .15, .42, 0).rotateY(Math.PI / 4)),
-      ...[-.2, 0, .2].map(x => squash(at(ball(.025, '#fff6f8'), x, .07, .232), 1, 1, .4)));
-  },
-  // Hiện đại: khay tự dọn hình cầu trắng trên đế đen, cửa tròn tối, vòng LED quanh đế + đèn trạng thái trên đỉnh.
-  'litter-modern'() {
-    return lit(group(at(cyl(.3, .32, .1, '#26282c', 32), 0, .05, 0), at(ball(.3, '#f5f8fb'), 0, .36, 0),
-      at(cyl(.15, .15, .02, '#1f2125', 28), 0, .36, .31).rotateX(Math.PI / 2), at(ring(.15, .02, '#3a3d43'), 0, .36, .29),
-      at(ring(.31, .012, glow('#3fe0ff')), 0, .1, 0).rotateX(Math.PI / 2), at(cyl(.04, .04, .01, glow('#b07cff'), 12), 0, .663, 0)));
-  },
 
+  // ===== Bồn sục lớn giữa phòng =====
   jacuzzi() {
+    const shell = '#cfe9f2', chr = chrome();
+    const j = group(at(cyl(.98, 1.02, .52, shell, 40), 0, .26, 0), at(ring(.93, .07, '#f5f8fb'), 0, .55, 0).rotateX(Math.PI / 2),
+      at(cyl(.87, .87, .03, '#5cc8ec', 40), 0, .54, 0), ...bubbles(.86, .57),
+      ...[0, 1, 2, 3].map(k => at(cyl(.035, .035, .03, chr, 12), Math.cos(k * Math.PI / 2 + .8) * .9, .6, Math.sin(k * Math.PI / 2 + .8) * .9)),
+      ...step(.8, '#dfe8ee', 1.2));
+    j.userData.seat = [0, .62, -.9];
+    return j;
+  },
+  'jacuzzi-cedar'() {
     const wood = '#9a6a45', band = '#5c3d26';
     // Bồn gỗ tuyết tùng tám cạnh, đai sắt, bậc gỗ.
     const j = group(at(cyl(1.0, 1.0, .62, wood, 8), 0, .31, 0), at(cyl(1.02, 1.02, .05, band, 8), 0, .16, 0), at(cyl(1.02, 1.02, .05, band, 8), 0, .48, 0),
@@ -339,29 +248,17 @@ export const BATHROOM_BUILD = {
     j.userData.seat = [0, .66, -.9];
     return j;
   },
-  // Hồng: bồn tròn hồng, vành kem, diềm bi hồng quanh thân, vòi sục vàng, bậc hồng nhạt.
-  'jacuzzi-pink'() {
-    const shell = '#ffc2d4', gold = mat('#f2c14e');
-    const j = group(at(cyl(.98, 1.02, .52, shell, 40), 0, .26, 0), at(ring(.93, .07, '#fff6f8'), 0, .55, 0).rotateX(Math.PI / 2),
-      at(cyl(.87, .87, .03, '#ffe0e9', 40), 0, .54, 0), ...bubbles(.86, .57),
-      ...[0, 1, 2, 3].map(k => at(cyl(.035, .035, .03, gold, 12), Math.cos(k * Math.PI / 2 + .8) * .9, .6, Math.sin(k * Math.PI / 2 + .8) * .9)),
-      ...Array.from({ length: 18 }, (_, k) => { const a = k / 18 * Math.PI * 2; return at(ball(.05, '#ff8fb6'), Math.cos(a) * 1.0, .42, Math.sin(a) * 1.0); }),
-      ...step(.8, '#ffe0e9', 1.2));
+  'jacuzzi-mosaic'() {
+    const tile = '#5fb8d8', rim = '#f5f8fb', chr = chrome();
+    // Bể vuông bo góc ốp gạch mosaic (ô vuông nhỏ trên thành), tay vịn chrome hai bên bậc.
+    // Thành bồn là khung 4 thanh (không phải tấm đặc) để thấy mặt nước bên trong.
+    const j = group(at(rbox(1.9, .5, 1.9, .08, tile), 0, .25, 0),
+      ...[-.91, .91].flatMap(s => [at(box(1.98, .07, .16, rim), 0, .535, s), at(box(.16, .07, 1.66, rim), s, .535, 0)]),
+      at(rbox(1.66, .03, 1.66, .012, '#7fd6f0'), 0, .53, 0), ...bubbles(.8, .56),
+      ...[-.6, -.2, .2, .6].flatMap(x => [.12, .32].map(y => at(box(.14, .14, .02, '#8fd0e8'), x, y, .96))),
+      ...step(.8, '#c8e8f2', 1.22), ...[-.45, .45].map(x => at(ring(.22, .02, chr), x, .62, .95)));
     j.userData.seat = [0, .62, -.9];
     return j;
-  },
-  // Hiện đại: bể vuông đen nhám, vành trắng, nước có đèn LED cyan, viền LED quanh chân bể và mép bậc.
-  'jacuzzi-mosaic'() {
-    const rim = '#f5f8fb', chr = chrome(), led = glow('#3fe0ff');
-    // Thành bồn là khung 4 thanh (không phải tấm đặc) để thấy mặt nước bên trong.
-    const j = group(at(rbox(1.9, .5, 1.9, .08, '#26282c'), 0, .25, 0),
-      ...[-.91, .91].flatMap(s => [at(box(1.98, .07, .16, rim), 0, .535, s), at(box(.16, .07, 1.66, rim), s, .535, 0)]),
-      at(rbox(1.66, .03, 1.66, .012, glow('#9fefff', '#3fe0ff', .6)), 0, .53, 0), ...bubbles(.8, .56),
-      ...[-1, 1].flatMap(s => [at(box(1.9, .015, .015, led), 0, .06, s * .955), at(box(.015, .015, 1.9, led), s * .955, .06, 0)]),
-      ...step(.8, '#3a3d43', 1.22), at(box(.8, .012, .012, glow('#ff4fd8')), 0, .175, 1.39), at(box(.64, .012, .012, glow('#ff4fd8')), 0, .335, 1.255),
-      ...[-.45, .45].map(x => at(ring(.22, .02, chr), x, .62, .95)));
-    j.userData.seat = [0, .62, -.9];
-    return lit(j);
   },
 
   // ===== Thảm trước bồn tắm =====
@@ -369,30 +266,14 @@ export const BATHROOM_BUILD = {
     return group(at(rbox(1.1, .03, .6, .012, '#8fc9f2'), 0, .015, 0), ...[-.3, 0, .3].map(x => at(box(.1, .036, .5, '#ffffff'), x, .018, 0)));
   },
   'bathmat-fluffy'() {
-    return flatMat(group(squash(at(cyl(.55, .55, .04, '#ffe0e9', 40), 0, .02, 0), 1, 1, .7),
-      ...Array.from({ length: 12 }, (_, k) => { const a = k / 12 * Math.PI * 2; return squash(at(ball(.07, '#ffb3c8'), Math.cos(a) * .52, .03, Math.sin(a) * .36), 1, .5, 1); }),
-      flatHeart()));
+    return group(squash(at(cyl(.55, .55, .04, '#fff4f6', 40), 0, .02, 0), 1, 1, .7),
+      ...Array.from({ length: 12 }, (_, k) => { const a = k / 12 * Math.PI * 2; return squash(at(ball(.07, '#ffe0e6'), Math.cos(a) * .52, .03, Math.sin(a) * .36), 1, .5, 1); }));
   },
-  // Hiện đại: thảm đen bo góc, viền LED cyan quanh mép.
-  'bathmat-modern'() {
-    const led = glow('#3fe0ff');
-    return lit(flatMat(group(at(rbox(1.1, .03, .6, .012, '#3a3d43'), 0, .015, 0),
-      ...[-1, 1].flatMap(s => [at(box(.98, .01, .015, led), 0, .035, s * .24), at(box(.015, .01, .48, led), s * .49, .035, 0)]))));
+  'bathmat-duck'() {
+    return group(squash(at(cyl(.42, .42, .03, '#ffd66b', 36), -.12, .015, 0), 1, 1, .75), at(cyl(.2, .2, .032, '#ffd66b', 28), .38, .016, -.12),
+      at(cyl(.035, .035, .036, '#3a2f2a', 12), .42, .018, -.18), squash(at(cyl(.08, .08, .034, '#ff8a3d', 3), .6, .017, -.1), 1, 1, .7));
   },
 };
-
-// Trái tim nằm phẳng trên mặt thảm (dẹt theo trục z cục bộ = trục đứng sau khi lật).
-function flatHeart() {
-  const h = heart(.2, '#ff8fb6');
-  h.scale.z = .12;
-  h.rotation.x = -Math.PI / 2;
-  return at(h, 0, .045, 0);
-}
-// Thảm sát sàn: không viền toon, không đổ bóng.
-function flatMat(g) {
-  g.traverse(node => { node.castShadow = false; node.userData.noOutline = true; });
-  return g;
-}
 
 // ---------- Bồn sục lớn giữa phòng (đường kính ~2 m): thành bồn, mặt nước sủi bọt, bậc lên xuống phía trước ----------
 // Mặt nước nằm thấp hơn mép thành (thấy được lòng bồn); bọt khí là các cầu dẹt nổi trên mặt nước.
@@ -461,3 +342,59 @@ export function bathroomDecor() {
   doormat.traverse(node => { node.castShadow = false; node.userData.noOutline = true; });
   return mergeStatic(group(doormat, bin, plant));
 }
+
+// ---------- Món thêm sau (bathshelf): mỗi chỗ chỉ có món gốc ----------
+// ---------- Kệ đứng áp tường trước (rộng .92, sâu .42, nóc y 1.24): khung 2 vách + 3 tầng + tấm lưng; nóc trống cho mèo ngồi ----------
+const SHELF_Y = [.08, .46, .84];
+function shelfFrame(side, board, back) {
+  return [...[-1, 1].map(s => at(rbox(.04, 1.2, .4, .015, side), s * .43, .6, 0)),
+    ...SHELF_Y.map(y => at(rbox(.82, .04, .37, .015, board), 0, y, .015)),
+    at(rbox(.92, .04, .42, .015, side), 0, 1.22, 0), // nóc
+    at(rbox(.82, 1.16, .03, .012, back), 0, .62, -.185)];
+}
+// Khăn cuộn: trụ nằm, mặt tròn quay ra trước.
+const roll = (r, len, color) => at(cyl(r, r, len, color), 0, 0, 0).rotateX(Math.PI / 2);
+const rolls = (colors, x0, y) => [at(roll(.07, .26, colors[0]), x0, y + .07, 0), at(roll(.07, .26, colors[1]), x0 + .15, y + .07, 0),
+  at(roll(.07, .26, colors[2]), x0 + .075, y + .2, 0)];
+const shelfBottles = (colors, cap, x0, y) => colors.flatMap((c, k) => [at(cyl(.04, .045, .18, c, 12), x0 + k * .12, y + .09, 0), at(cyl(.016, .02, .04, cap, 8), x0 + k * .12, y + .2, 0)]);
+const rubberDuck = (x, y, z, color = '#ffd23f') => group(squash(at(ball(.07, color), x, y + .056, z), 1.2, .8, 1), at(ball(.045, color), x + .05, y + .12, z),
+  at(cone(.02, .05, '#ff8a3d', 8), x + .1, y + .12, z).rotateZ(-Math.PI / 2));
+// Chậu cây nhỏ (gỗ + lá xanh) đặt trên mặt phẳng ở độ cao y.
+const pottedPlant = (x, y, z, s = 1) => group(at(cyl(.05 * s, .04 * s, .08 * s, '#e9c58f', 12), x, y + .04 * s, z),
+  at(ball(.065 * s, '#7fb069'), x, y + .11 * s, z), at(ball(.045 * s, '#5fae46'), x + .03 * s, y + .15 * s, z + .01 * s));
+const SHELF_SEAT = [0, 1.28, .03];
+Object.assign(BATHROOM_BUILD, {
+  // Kệ đứng màu tươi: vách xanh, tầng vàng; khăn cuộn + giỏ cam tầng dưới, lọ dầu gội + vịt cao su tầng giữa, chậu cây + xà phòng tầng trên, đệm đỏ trên nóc.
+  bathshelf() {
+    const g = group(...shelfFrame('#5bb8e8', '#ffd66b', '#fffaf0'),
+      ...rolls(['#ff8fb8', '#ffffff', '#b48ee8'], -.3, .1), at(rbox(.26, .18, .26, .04, '#e98b5a'), .22, .19, 0),
+      ...shelfBottles(['#ff8fb8', '#8fc9f2', '#bfe3a0'], '#ffffff', -.3, .48), rubberDuck(.18, .48, 0),
+      pottedPlant(-.2, .86, 0, 1.3), at(rbox(.14, .05, .09, .02, '#e8617f'), .2, .885, 0), at(rbox(.12, .05, .08, .02, '#7fc45a'), .2, .935, 0),
+      at(rbox(.42, .04, .3, .015, '#e8617f'), 0, 1.26, .03));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+  // Kệ thang gỗ: hai thanh đứng như thang, ba tầng gỗ, khăn vắt trên thanh ngang, giỏ mây + chai sữa tắm; nóc phẳng cho mèo nằm.
+  'bathshelf-ladder'() {
+    const wood = '#c98a55';
+    const g = group(...[-1, 1].flatMap(s => [at(rbox(.05, 1.22, .05, .02, wood), s * .43, .61, -.15), at(rbox(.05, 1.22, .05, .02, wood), s * .43, .61, .15)]),
+      ...[.12, .5, .88].map(y => at(rbox(.86, .04, .36, .015, '#e9c58f'), 0, y, 0)), at(rbox(.92, .04, .4, .015, wood), 0, 1.24, 0),
+      at(cyl(.016, .016, .86, wood, 8), 0, .34, .2).rotateZ(Math.PI / 2), at(rbox(.36, .26, .03, .012, '#8fc9f2'), -.12, .23, .225), at(box(.36, .03, .034, '#ffffff'), -.12, .14, .225),
+      at(rbox(.3, .16, .24, .05, '#d9a35a'), .2, .22, -.02), ...rolls(['#ffffff', '#ffd66b', '#7fc45a'], -.32, .52),
+      ...shelfBottles(['#ffd66b', '#ff8fb8'], '#ffffff', .12, .52), pottedPlant(.22, .9, 0, 1.3), at(rbox(.2, .06, .14, .025, '#ffffff'), -.2, .93, 0),
+      rubberDuck(-.2, .96, 0, '#ff8fb8'));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+  // Kệ ô vuông trắng 2 × 3 ô, mỗi ô một giỏ vải màu (vàng, xanh, hồng), nóc đặt bình hoa nhỏ + khăn cuộn.
+  'bathshelf-baskets'() {
+    const ROW = [.03, .43, .83], COL = [-.29, 0, .29], colors = ['#ffd66b', '#8fc9f2', '#ff8fb8', '#bfe3a0', '#b48ee8', '#ffb347'];
+    const g = group(...[-1, 1].map(s => at(rbox(.04, 1.22, .4, .015, '#fffaf0'), s * .45, .61, 0)), ...[-1, 1].map(s => at(rbox(.03, 1.18, .4, .012, '#fffaf0'), s * .145, .61, 0)),
+      ...ROW.map(y => at(rbox(.88, .04, .4, .015, '#fffaf0'), 0, y + .02, 0)), at(rbox(.92, .04, .42, .015, '#fffaf0'), 0, 1.24, 0),
+      at(rbox(.88, 1.2, .03, .012, '#f3e9da'), 0, .62, -.185));
+    ROW.slice(0, 2).forEach((y, r) => COL.forEach((x, c) => g.add(at(rbox(.24, .26, .3, .04, colors[r * 3 + c]), x, y + .17, .02), at(rbox(.08, .03, .02, .01, '#fffaf0'), x, y + .26, .175))));
+    g.add(...rolls(['#ffffff', '#8fc9f2', '#ffd66b'], -.3, .84), at(cyl(.06, .07, .2, '#8fc9f2', 14), .2, .96, 0), ...[-.03, .03].map(dx => at(ball(.05, '#ff8fb8'), .2 + dx, 1.1, 0)));
+    g.userData.seat = SHELF_SEAT;
+    return g;
+  },
+});

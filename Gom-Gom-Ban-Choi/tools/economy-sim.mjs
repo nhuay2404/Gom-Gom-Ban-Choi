@@ -13,31 +13,33 @@ import { mulberry32 } from './bot.mjs';
 import { idlePerHour } from '../game/gameplay/idle.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
-export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_BOSS_MULT', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
+export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
 
 const CAT_LOCKS = CATALOG.filter(e => e.cat === 'cats').map(e => e.lock ?? 0);
 export const catsAt = cleared => Math.min(MAX_ROOM_CATS, CAT_LOCKS.filter(lock => lock <= cleared).length);
 
 export const PROFILES = [
-  // spm: giây cho mỗi lượt (đặt một thẻ), giống nhịp chơi của profile ở tab Độ khó cả game (Cơ bản 5, Cao thủ 3, Người yếu 7).
-  { id: 'casual', name: 'Chơi ít (casual)', attempts: 6, skill: 1, buy: 'base', claims: 1, spm: 7 },
-  { id: 'average', name: 'Trung bình', attempts: 12, skill: 1.5, buy: 'base', claims: 2, spm: 5 },
-  { id: 'collector', name: 'Thích sưu tầm (mua mọi kiểu)', attempts: 12, skill: 1.5, buy: 'all', claims: 2, spm: 5 },
-  { id: 'hardcore', name: 'Chơi nhiều', attempts: 30, skill: 2.5, buy: 'base', claims: 3, spm: 3 },
+  // pace: nhịp chơi 'weak' / 'mid' / 'good' (bot.mjs PACES, như bảng thời gian chơi ở Level Editor): giây mỗi ván lấy từ baseline.json.
+  { id: 'casual', name: 'Chơi ít (casual)', attempts: 6, skill: 1, buy: 'base', claims: 1, pace: 'weak' },
+  { id: 'average', name: 'Trung bình', attempts: 12, skill: 1.5, buy: 'base', claims: 2, pace: 'mid' },
+  { id: 'collector', name: 'Thích sưu tầm (mua mọi kiểu)', attempts: 12, skill: 1.5, buy: 'all', claims: 2, pace: 'mid' },
+  { id: 'hardcore', name: 'Chơi nhiều', attempts: 30, skill: 2.5, buy: 'base', claims: 3, pace: 'good' },
 ];
 
-// cfg: { START_COINS, REWARD_BASE, REWARD_STEP, REWARD_BOSS_MULT, ZONE_PRICE_MULT, AREA_UNLOCK }
+// cfg: { START_COINS, REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, ZONE_PRICE_MULT, AREA_UNLOCK }
 // winRates: mảng tỉ lệ thắng theo màn (chỉ số 0); màn ngoài mảng dùng trung bình 10 màn cuối.
-// levelInfo: mỗi màn { moves, movesUsedWin, movesUsedLoss, tier } (tools/baseline.json): thời gian một ván = số lượt bot THẬT SỰ dùng
-//   (ván thắng thường xong sớm, ván thua dùng hết lượt / kẹt) × spm giây; màn khó thua nhiều -> nhiều ván dài. Thiếu số liệu thì dùng hết lượt.
+// levelInfo: mỗi màn { moves, movesUsedWin, movesUsedLoss, secWin, secLoss, tier } (tools/baseline.json): thời gian một ván = giây chơi
+//   trung bình của ván thắng / thua theo nhịp `profile.pace` (secWin[pace], bot đo từng lượt: xem bot.mjs turnShape); màn khó thua nhiều ->
+//   nhiều ván dài. Thiếu số giây thì số lượt dùng (thiếu nữa thì hết lượt) × FALLBACK_SPM.
 // Sau khi hết màn mà chưa mua đủ đồ mặc định: người ảo vẫn mở game nhận xu tự sinh + mua đồ mỗi ngày (không chơi màn) tới khi đủ / hết maxDays.
+const FALLBACK_SPM = 5;
 const BASE_IDS = CATALOG.filter(e => e.cat === 'furniture' && !e.slot && e.basePrice > 0).map(e => e.id);
 export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100, maxDays = 200, levelInfo = [] } = {}) {
   const rng = mulberry32(seed);
   const infoTail = levelInfo.slice(-10), tailOf = key => { const list = infoTail.map(i => i[key] ?? i.moves).filter(v => v != null); return list.length ? list.reduce((t, v) => t + v, 0) / list.length : 20; };
-  const fallback = { moves: tailOf('moves'), movesUsedWin: tailOf('movesUsedWin'), movesUsedLoss: tailOf('movesUsedLoss'), tier: 'normal' };
+  const pace = profile.pace ?? 'mid', secTail = key => { const list = infoTail.map(i => i[key]?.[pace]).filter(v => v != null); return list.length ? list.reduce((t, v) => t + v, 0) / list.length : null; };
+  const fallback = { moves: tailOf('moves'), movesUsedWin: tailOf('movesUsedWin'), movesUsedLoss: tailOf('movesUsedLoss'), secWin: { [pace]: secTail('secWin') }, secLoss: { [pace]: secTail('secLoss') }, tier: 'normal' };
   const info = level => levelInfo[level] ?? fallback;
-  const spm = profile.spm ?? 5;
   const tail = winRates.slice(-10), tailAvg = tail.reduce((a, b) => a + b, 0) / (tail.length || 1);
   const winP = level => Math.max(.03, 1 - (1 - (winRates[level] ?? tailAvg)) ** profile.skill);
   const shop = CATALOG.filter(e => e.cat !== 'cats' && e.basePrice > 0 && (profile.buy === 'all' || (e.cat === 'furniture' && !e.slot)))
@@ -60,7 +62,7 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
       }
       if (cleared < levels) {
         const level = info(cleared), win = rng() < winP(cleared), tier = level.tier || 'normal';
-        const sec = (win ? level.movesUsedWin ?? level.moves : level.movesUsedLoss ?? level.moves) * spm;
+        const sec = (win ? level.secWin : level.secLoss)?.[pace] ?? (win ? level.movesUsedWin ?? level.moves : level.movesUsedLoss ?? level.moves) * FALLBACK_SPM;
         playSec += sec; tierSec[tier] = (tierSec[tier] ?? 0) + sec;
         if (win) {
           const coins = rewardFor(cleared, cfg);
