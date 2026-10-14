@@ -28,7 +28,7 @@ const THEMES = {
   10: { title: 'Moon Garden', words: ['Moon Path', 'Glow Worms', 'Night Blooms', 'Lantern Row', 'Owl Watch', 'Dream Meadow', 'Firefly Field', 'Midnight Maze', 'Comet Trail', 'Moon Fortress'] },
 };
 const SHAPE_POOL = { normal: ['plain6', 'square7', 'octagon', 'diamond', 'hexagon', 'triangle', 'heart'], hard: ['square7', 'hexagon', 'heart', 'cross', 'octagon'], chill: ['plain6', 'heart', 'diamond', 'octagon'], boss: ['cross', 'ring', 'square8'] };
-const MECHS = ['crate', 'metal', 'cage'];
+const MECHS = ['crate', 'metal', 'cage', 'grass'];
 
 // Tỉ lệ thắng chuẩn của bot giỏi theo tier (cùng công thức tools/level-editor/editor.mjs tierGoal, chương sau khó hơn chút).
 function tierGoal(tier, index) {
@@ -41,7 +41,7 @@ function tierGoal(tier, index) {
 
 function pickMechs(tier, pos, rng) {
   const count = { normal: pos <= 1 ? 1 : 2 + (pos >= 7 && rng() < 0.4 ? 1 : 0), hard: 3, chill: rng() < 0.5 ? 1 : 0, boss: 4 }[tier];
-  const pool = tier === 'chill' ? ['crate'] : MECHS.slice();
+  const pool = tier === 'chill' ? ['grass', 'crate'] : MECHS.slice();
   const out = [];
   while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
   return out;

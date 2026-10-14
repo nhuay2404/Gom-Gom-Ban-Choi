@@ -21,10 +21,11 @@ const COLORS = { O: '#f3a35a', G: '#9aa0a6', W: '#ffffff', K: '#33302c', S: '#ea
 // Ảnh mèo thật của game (cat-art.mjs) cho ô mèo trên bàn + cọ. Đường dẫn ảnh trong art tính từ game/, editor ở tools/level-editor/.
 const CAT_ART = Object.fromEntries(Object.entries(catMarkup).map(([group, svg]) => [group, svg.replaceAll('href="ui/', 'href="../../game/ui/')]));
 const catArt = letter => CAT_ART[LETTERS[letter]] ?? letter;
-const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS)];
-const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại' };
+// '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn.
+const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS), '~', '≈'];
+const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ' };
 const NOISES = [{ noise: 1, label: 'Bot giỏi' }, { noise: 30, label: 'Trung bình' }, { noise: 90, label: 'Người yếu' }];
-const ELEMENT_LABEL = { moves: 'Lượt chật', colors: 'Nhiều màu', crate: 'Thùng gỗ', wall: 'Kim loại', board: 'Bàn rộng/hình', cage: 'Chuồng' };
+const ELEMENT_LABEL = { moves: 'Lượt chật', colors: 'Nhiều màu', crate: 'Thùng gỗ', wall: 'Kim loại', board: 'Bàn rộng/hình', cage: 'Chuồng', grass: 'Cỏ' };
 
 let edits = {};
 try { edits = JSON.parse(localStorage.getItem(STORE)) ?? {}; } catch { edits = {}; }
@@ -97,7 +98,7 @@ $('levelList').addEventListener('click', event => {
 // ---------- Form ----------
 const FIELDS = [
   { key: 'tier', label: 'Tier', type: 'select', options: ['normal', 'hard', 'chill', 'boss'] },
-  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage'] },
+  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage', 'grass'] },
   { key: 'moves', label: 'Lượt', type: 'number' },
   { key: 'target', label: 'Mục tiêu điểm', type: 'number' },
   { key: 'cats', label: 'Giống mèo (OGWKST)' },
@@ -144,12 +145,14 @@ $('form').addEventListener('change', event => {
 });
 
 // ---------- Bàn ----------
-function boardHtml(rows, interactive = false) {
-  const { W } = boardSize(rows);
+function boardHtml(rows, interactive = false, grass = null) {
+  const { W } = boardSize(rows), grassCells = grass ? grass.join('') : '';
   const cells = [...rows.join('')].map((ch, index) => {
     const up = ch.toUpperCase(), cat = LETTERS[up];
     const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : '';
-    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
+    const grassy = grassCells[index] === '~';
+    const style = `${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
+    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
   }).join('');
   return `<div class="board" style="grid-template-columns:repeat(${W},auto)">${cells}</div>`;
 }
@@ -157,19 +160,35 @@ function renderBoard() {
   const rows = level().board, { W, H } = boardSize(rows);
   $('bw').value = W; $('bh').value = H;
   $('boardInfo').textContent = `${W}×${H} · ${playableCells(rows)} ô chơi`;
-  $('board').innerHTML = boardHtml(rows, true);
+  $('board').innerHTML = boardHtml(rows, true, level().grass);
   $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''} ${LETTERS[b] ? 'cat-brush' : ''}"
-    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
+    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
+}
+// Lớp cỏ: chỉ nằm dưới ô trống / mèo; không còn ô cỏ nào thì bỏ hẳn trường grass.
+function withGrass(board, grass) {
+  const { W } = boardSize(board), cells = board.join('');
+  const flat = [...(grass ? grass.join('') : '.'.repeat(cells.length))].map((ch, k) => (ch === '~' && !'XM#'.includes(cells[k]) ? '~' : '.'));
+  if (!flat.includes('~')) return undefined;
+  return board.map((_, r) => flat.slice(r * W, r * W + W).join(''));
 }
 function paint(index, cage) {
   const rows = level().board, { W } = boardSize(rows), flat = [...rows.join('')];
+  if (brush === '~' || brush === '≈') {
+    const grass = [...(level().grass ? level().grass.join('') : '.'.repeat(flat.length))];
+    if (grass[index] === (brush === '~' ? '~' : '.')) return;
+    grass[index] = brush === '~' ? '~' : '.';
+    const next = withGrass(rows, rows.map((_, r) => grass.slice(r * W, r * W + W).join('')));
+    if (JSON.stringify(next) === JSON.stringify(level().grass)) return;
+    update({ grass: next });
+    return;
+  }
   let ch = brush;
   if (cage && LETTERS[flat[index].toUpperCase()]) ch = flat[index] === flat[index].toUpperCase() ? flat[index].toLowerCase() : flat[index].toUpperCase();
   if (flat[index] === ch) return;
   flat[index] = ch;
   const board = [];
   for (let r = 0; r < flat.length / W; r++) board.push(flat.slice(r * W, r * W + W).join(''));
-  update({ board });
+  update({ board, grass: withGrass(board, level().grass) });
 }
 $('palette').addEventListener('click', event => { const b = event.target.closest('[data-b]'); if (b) { brush = b.dataset.b; renderBoard(); } });
 $('board').addEventListener('mousedown', event => { const c = event.target.closest('[data-c]'); if (!c) return; painting = !event.shiftKey; paint(Number(c.dataset.c), event.shiftKey); });
@@ -179,7 +198,8 @@ $('btnResize').onclick = () => {
   const W = Math.max(4, Math.min(9, Number($('bw').value))), H = Math.max(4, Math.min(9, Number($('bh').value)));
   const old = level().board;
   const board = Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => old[r]?.[c] ?? '.').join(''));
-  update({ board });
+  const grass = level().grass && Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => level().grass[r]?.[c] ?? '.').join(''));
+  update({ board, grass: withGrass(board, grass) });
 };
 $('btnClear').onclick = () => update({ board: level().board.map(row => row.replace(/[A-Za-z]/g, ch => (ch === 'X' || ch === 'M' ? ch : '.'))) });
 
@@ -247,7 +267,7 @@ function renderDDA() {
 
   $('variants').innerHTML = variants().map(v => `<div class="variant ${v.base ? 'base' : ''}">
     <div><b>${v.label}</b></div>
-    <div class="mini">${boardHtml(v.level.board, false)}</div>
+    <div class="mini">${boardHtml(v.level.board, false, v.level.grass)}</div>
     <div class="muted">${v.shift && !v.moved ? 'chưa có bố trí đo sẵn (npm run cat-layouts) · ' : v.moved ? `${v.moved} ô đổi · ` : ''}${v.ease} cặp cạnh nhau · assist ${v.level.assist ?? 0.3} · thẻ ${['single', 'domino', 'triple'].map(k => (v.level.shapes || { single: 6, domino: 5, triple: 1 })[k]).join('/')}</div></div>`).join('');
 }
 // Mỗi mức DDA (shift âm = dễ hơn): bố trí mèo lần đầu vào màn + hàng thẻ. Bàn, vật cản, lượt luôn đúng thiết kế.
@@ -367,6 +387,7 @@ try { curveCache = JSON.parse(localStorage.getItem(CURVE_STORE)) ?? {}; } catch 
 const shown = new Set(EV_PROFILES.map(p => p.id));
 const hashText = text => [...text].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7).toString(36);
 const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${JSON.stringify(p.pace)}:${runs}`;
+const grassOf = l => (l.grass ? [...l.grass.join('')].filter(ch => ch === '~').length : 0);
 const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
 const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).length;
 
@@ -374,7 +395,7 @@ const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]
 function difficultyEV(l, stats, p) {
   const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
   const timeMin = attempts * stats.secAvg / 60;
-  const goalMatches = l.target / 30 + cagesOf(l);
+  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l);
   const clamp01 = v => Math.max(0, Math.min(1, v));
   const parts = {
     time: clamp01(timeMin / EV_SCALE.timeMin),
@@ -478,8 +499,8 @@ function toCode(l) {
   const head = [`name: ${q(l.name)}`, l.feature !== undefined && `feature: ${q(l.feature)}`, `tier: ${q(l.tier || 'normal')}`, l.introduces && `introduces: ${q(l.introduces)}`].filter(Boolean);
   const play = [`moves: ${l.moves}`, `target: ${l.target}`, `cats: ${q(l.cats)}`, l.assist !== undefined && `assist: ${l.assist}`,
     l.shapes && `shapes: { single: ${l.shapes.single}, domino: ${l.shapes.domino}, triple: ${l.shapes.triple} }`, l.expand && `expand: ${q(l.expand)}`].filter(Boolean);
-  const lines = [`  {`, `    ${head.join(', ')},`, `    ${play.join(', ')},`, `    board: [${l.board.map(q).join(', ')}],`, `    deck: [${(l.deck || []).map(q).join(', ')}],`];
-  const known = new Set(['name', 'feature', 'tier', 'introduces', 'moves', 'target', 'cats', 'assist', 'shapes', 'expand', 'board', 'deck']);
+  const lines = [`  {`, `    ${head.join(', ')},`, `    ${play.join(', ')},`, `    board: [${l.board.map(q).join(', ')}],`, ...(l.grass ? [`    grass: [${l.grass.map(q).join(', ')}],`] : []), `    deck: [${(l.deck || []).map(q).join(', ')}],`];
+  const known = new Set(['name', 'feature', 'tier', 'introduces', 'moves', 'target', 'cats', 'assist', 'shapes', 'expand', 'board', 'grass', 'deck']);
   for (const [k, v] of Object.entries(l)) if (!known.has(k) && v !== undefined) lines.push(`    ${k}: ${JSON.stringify(v)},`);
   return [...lines, `  },`].join('\n');
 }
