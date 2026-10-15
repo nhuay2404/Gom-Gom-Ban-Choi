@@ -298,7 +298,7 @@ async function drainMoves() {
   finaleFast = false;
   await Promise.all([...pendingMerges]);
   if (!state.moves && !state.board.some(object => object?.group && !object.cage)) return;
-  effectBanner('Bonus Time!', 0);
+  const banner = bonusBanner();
   playSound('reward');
   await wait(finaleFast ? FINALE_FAST_MS : 550);
   for (let turn = game.finaleTurn(state); turn.ok; turn = game.finaleTurn(state)) {
@@ -322,6 +322,25 @@ async function drainMoves() {
     await wait(finaleFast || reduceMotion.matches ? FINALE_FAST_MS : FINALE_MS + (turn.effect.effects.length ? 120 : 0));
   }
   await Promise.all([...pendingMerges]);
+  banner.end();
+}
+// Chữ "Bonus Time!" ở lại suốt lúc xả lượt (sọc cầu vồng chạy lặp, CSS .bonus-banner) + thanh điểm sọc cầu vồng (body.bonus-time).
+function bonusBanner() {
+  const board = $('board').getBoundingClientRect(), pop = document.createElement('span');
+  pop.className = 'bonus-banner';
+  // Hai lớp chữ chồng nhau: lớp dưới viền dày một màu, lớp trên chữ cầu vồng không viền (viền gọn bên ngoài nét chữ).
+  pop.innerHTML = '<span class="bonus-outline">Bonus Time!</span><span class="bonus-fill">Bonus Time!</span>';
+  pop.style.left = `${board.left + board.width / 2}px`;
+  pop.style.top = `${board.top - 26}px`; // trên mép bàn, không đè lời khen (praise-pop ở 12% bàn)
+  document.body.append(pop);
+  document.body.classList.add('bonus-time');
+  pop.animate([{ scale: .3, opacity: 0 }, { scale: 1.2, opacity: 1, offset: .6 }, { scale: 1, opacity: 1 }], { duration: 380, easing: 'ease-out' });
+  return {
+    end() {
+      document.body.classList.remove('bonus-time');
+      pop.animate([{ opacity: 1 }, { opacity: 0, scale: .8 }], { duration: 250, fill: 'forwards' }).finished.then(() => pop.remove());
+    },
+  };
 }
 $('board').addEventListener('pointerdown', () => { if (state.outcome?.win && state.animating) finaleFast = true; });
 
