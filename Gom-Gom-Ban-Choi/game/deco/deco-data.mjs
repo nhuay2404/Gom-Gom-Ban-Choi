@@ -7,13 +7,13 @@ export const { MAX_ROOM_CATS } = ECONOMY;
 
 // Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
 export const ZONES = {
-  garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
-  living: { name: 'Living room', unlockAfter: AREA_UNLOCK.living.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  bedroom: { name: 'Bedroom', unlockAfter: AREA_UNLOCK.bedroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Cats' } },
-  backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
-  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Cats' } },
+  garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
+  living: { name: 'Living room', unlockAfter: AREA_UNLOCK.living.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  bedroom: { name: 'Bedroom', unlockAfter: AREA_UNLOCK.bedroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
+  backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
+  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 // Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
@@ -229,6 +229,13 @@ export const CATALOG = [
   { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', breed: 'tabby' },
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', breed: 'siamese' },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', breed: 'tuxedo' },
+  // Chó: cùng mục 'cats' (thú cưng), cùng luật nhận thưởng ở Map (stage 3 + 4: màn 4, 7, 10 của stage)
+  { id: 'dog-shiba', cat: 'cats', name: 'Shiba dog', breed: 'shiba' },
+  { id: 'dog-golden', cat: 'cats', name: 'Golden dog', breed: 'golden' },
+  { id: 'dog-pug', cat: 'cats', name: 'Pug dog', breed: 'pug' },
+  { id: 'dog-dalmatian', cat: 'cats', name: 'Dalmatian dog', breed: 'dalmatian' },
+  { id: 'dog-malamute', cat: 'cats', name: 'Malamute dog', breed: 'malamute' },
+  { id: 'dog-rottweiler', cat: 'cats', name: 'Rottweiler dog', breed: 'rottweiler' },
 ];
 // Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
 // Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
@@ -576,10 +583,9 @@ export function applyAction(deco, entry, unlockedLevel) {
   if (status === 'poor') return { error: 'Not enough coins' };
   if (entry.cat === 'cats') {
     if (status === 'using') {
-      if (deco.cats.length <= 1) return { error: 'Keep at least one cat' };
+      if (deco.cats.length <= 1) return { error: 'Keep at least one pet' };
       return { ...deco, cats: deco.cats.filter(breed => breed !== entry.breed) };
     }
-    if (deco.cats.length >= MAX_ROOM_CATS) return { error: `Up to ${MAX_ROOM_CATS} cats` };
     return { ...deco, cats: [...deco.cats, entry.breed] };
   }
   const zone = zoneState(deco, entry.zone);
@@ -590,6 +596,18 @@ export function applyAction(deco, entry, unlockedLevel) {
   // Đặt vào thì thay món khác đang ở cùng chỗ.
   const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...withoutSlot(zone.placed, entry), entry.id];
   return withZone(next, entry.zone, { placed });
+}
+
+// Dev (nút Unlock): có sẵn MỌI món mặc định (món gốc của từng chỗ đặt) ở mọi khu; chỗ nào còn trống thì đặt món gốc vào, chỗ đang đặt kiểu khác thì giữ.
+export function ownAllBase(deco) {
+  let next = deco;
+  for (const entry of CATALOG.filter(isBase)) {
+    const zone = zoneState(next, entry.zone);
+    if (!zone) continue;
+    const taken = zone.placed.some(id => slotOf(itemById(id) ?? entry) === slotOf(entry));
+    next = withZone(next, entry.zone, { owned: zone.owned.includes(entry.id) ? zone.owned : [...zone.owned, entry.id], placed: taken ? zone.placed : [...zone.placed, entry.id] });
+  }
+  return next;
 }
 
 // Món đã có (đã mua, hoặc miễn phí) — chưa tính đang đặt hay không.

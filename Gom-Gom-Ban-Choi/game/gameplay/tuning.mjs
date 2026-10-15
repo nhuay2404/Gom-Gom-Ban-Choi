@@ -43,7 +43,7 @@ export const DRAG = remote('DRAG', {
 export const LOW_MOVES = remote('LOW_MOVES', { MSG_AT: 3, CATS_AT: 2, WARN_RATIO: .3 });
 
 // Kinh tế (xu thưởng, giá booster, giá đồ ...): sửa ở gameplay/economy.mjs — ở đây chỉ gom lại cho code cũ dùng.
-export const ECONOMY = { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, MAX_ROOM_CATS: 6 };
+export const ECONOMY = { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, MAX_ROOM_CATS: Infinity };
 
 // Mèo 3D trong phòng
 export const CAT_BODY = remote('CAT_BODY', { W: .6, H: .55, D: .62, LEG: .1 });

@@ -12,6 +12,10 @@ người chơi mở lại game là nhận số mới, **không cần build / ph�
   - [`game/gameplay/tuning.mjs`](../game/gameplay/tuning.mjs) — nhóm **Gameplay tuning**: `BOARD`, `HOLD`, `CAGE`, `TIMING`, `DRAG`,
     `LOW_MOVES`, `CAT_BODY`, `CAT_MOTION`, `ADAPTIVE`
 - Lúc mở game, [`game/app/main.js`](../game/app/main.js) tải config từ Firebase (chờ tối đa 2,5 s) **rồi mới nạp game**.
+  - Không dùng Firebase JS SDK: [`game/app/remote-config.js`](../game/app/remote-config.js) gọi thẳng REST API
+    `firebaseremoteconfig.googleapis.com/v1/projects/<messagingSenderId>/namespaces/firebase:fetch?key=<apiKey>` bằng `fetch`,
+    nên chạy được cả khi mở file HTML trên điện thoại (`file://`, SDK hỏng ở đó).
+  - **Đừng giới hạn API key theo domain (HTTP referrer)** trong Google Cloud: bản `file://` không có domain nên sẽ bị chặn.
   - Tải được: dùng số trên Firebase và lưu lại trong máy.
   - Mạng chậm / mất mạng: dùng bản đã lưu lần trước; chưa từng tải được thì dùng số mặc định trong code.
 - Tham số kiểu JSON (object) chỉ cần chứa phần muốn đổi: vd. `BOOSTER_PRICE` = `{"hammer": 50}` thì `swap`, `moves` giữ mặc định.

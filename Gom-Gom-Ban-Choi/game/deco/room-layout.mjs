@@ -22,6 +22,12 @@ export const ROAD_NEAR = ROOM_HALF + .3;
 // 'kinder2' (nửa phải) chỉ là ô đi lại của mèo. Cổng trước vườn + cổng trường cùng ở x = KINDER_GATE_X (giữa ghế dài và đèn lồng của vườn);
 // mèo đi bộ qua đường ở vạch sang đường (kinder-scene.mjs kinderDecor).
 export const KINDER_GATE_X = -.3;
+// Vườn hoa (quà khi đã mở hết mọi khu, flower-scene.mjs): mảnh vuông bên trái vườn, trước phòng ngủ. Ô đi lại của mèo (ZONE_OFFSET.flower, cổng FLOWER_GATE_Z) nhưng không phải khu Deco (không có trong ZONES / chỗ đặt đồ);
+// nằm trong khung khu nhà nên cây cỏ ngoài đồng (meadow) không mọc đè lên.
+export const FLOWER_OFFSET = [-(ROOM_HALF * 2 + .4), 0];
+// Cổng nhỏ vườn <-> vườn hoa (mèo đi qua): trên rào trái của vườn = rào phải của vườn hoa, ở z (toạ độ khu nhà) = FLOWER_GATE_Z
+// (giữa ao và ghế dài của vườn; trong vườn hoa: giữa bãi sao nhái và xe đạp).
+export const FLOWER_GATE_Z = 2;
 // Mốc z các dải đường (toạ độ khu nhà): mép nền vườn, vỉa hè gần (s0..s1), lề, mặt đường (c1..r1), lề, vỉa hè xa (c2..s2). Mặt vỉa hè ở y SIDEWALK_Y.
 const S0 = ROAD_NEAR + ROAD.gap;
 export const ROAD_Z = { verge: ROOM_HALF + .01, s0: S0, s1: S0 + ROAD.sidewalk, c1: S0 + ROAD.sidewalk + ROAD.curb, r1: S0 + ROAD.sidewalk + ROAD.curb + ROAD.road,
@@ -44,7 +50,7 @@ export const KINDER_DOOR = { x: 8.4, w: 1.1, h: 1.9 };
 // Tâm khu: mép gần mảnh đất (z0 = -ROOM_HALF - .2) cách vỉa hè xa .12.
 export const KINDER_Z = ROAD_NEAR + ROAD_BAND + .12 + ROOM_HALF + .2;
 export const ZONE_OFFSET = { garden: [0, 0], living: [0, -ZONE_STEP], bedroom: [-ZONE_STEP, -ZONE_STEP], kitchen: [ZONE_STEP, -ZONE_STEP], bathroom: [-ZONE_STEP, -2 * ZONE_STEP], garden2: [GARDEN_EXT_X, 0],
-  backyard: [0, -2 * ZONE_STEP], backyard2: [ZONE_STEP, -2 * ZONE_STEP], kinder: [0, KINDER_Z], kinder2: [ZONE_STEP, KINDER_Z] };
+  backyard: [0, -2 * ZONE_STEP], backyard2: [ZONE_STEP, -2 * ZONE_STEP], kinder: [0, KINDER_Z], kinder2: [ZONE_STEP, KINDER_Z], flower: FLOWER_OFFSET };
 // Sân sau (bể bơi + vườn rau): MỘT khu Deco hình chữ nhật phía sau phòng khách + bếp, bên phải phòng tắm (cửa trên tường phải phòng tắm).
 // Giống vườn mở rộng: 'backyard2' (sau bếp) chỉ là ô đi lại nội bộ của mèo; đồ đặt theo toạ độ khu 'backyard' (tâm sau phòng khách),
 // nửa trái là vườn rau, nửa phải (x ≈ BACKYARD_EXT_X) là bể bơi. Mặt trong hàng rào: backyardBounds().
@@ -85,6 +91,7 @@ export const LINKS = [
   // via: điểm đi qua giữa hai cổng (toạ độ khu nhà, theo chiều a -> b): xuống vỉa hè, đi bộ thẳng qua vạch sang đường, lên vỉa hè xa
   { a: 'garden', b: 'kinder', at: KINDER_GATE_X, w: 1, via: [[KINDER_GATE_X, ROAD_Z.s0 + .25], [KINDER_GATE_X, ROAD_Z.s2 - .45]] },
   { a: 'kinder', b: 'kinder2', at: KINDER_Z, w: ROOM_HALF * 2, open: true },
+  { a: 'garden', b: 'flower', at: FLOWER_GATE_Z, w: 1 },
 ];
 
 // ---------- Đồi nhỏ ở phần vườn mở rộng ----------
@@ -134,9 +141,9 @@ export const PLACES = {
   // trường mẫu giáo (toạ độ khu kinder: x -4.2 .. 12.6, z -4.2 .. 4.2; mép -z giáp vỉa hè, cổng x = KINDER_GATE_X). Lớp học (nửa phải, sau,
   // kinder-scene.mjs CLASSROOM x 4.7..12.3, z -3.85..0.3): bảng giữa tường sau, piano góc sau-phải, hai cụm bàn (kép), hai tủ ngăn áp hai vách (kép).
   // Sân chơi: tháp cầu trượt góc sau-trái, xích đu trước-trái, thú nhún (kép) giữa, hố cát trước, đu quay + ghế băng (kép) trước lớp.
-  // Món kép xoay 0 (vật cản phụ OBSTACLE_EXTRA không xoay theo món).
+  // Món kép xoay 0 (vật cản phụ OBSTACLE_EXTRA không xoay theo món); riêng ghế băng xoay π (vật cản đối xứng nên vẫn đúng): lưng tựa ra rào trước, mặt nhìn vào sân / lớp.
   kboard: [8.4, -3.79, 0], kpiano: [11.0, -3.45, 0], kdesk: [8.4, -1.4, 0], kcubby: [8.4, -1.6, 0],
-  kplayset: [-2.4, -2.4, 0], kswing: [-2.5, 1.7, 0], kspring: [.6, .6, 0], ksandpit: [2.7, 2.7, 0], kmerry: [5.6, 2.3, 0], kbench: [9.7, 2.9, 0],
+  kplayset: [-2.4, -2.4, 0], kswing: [-2.5, 1.7, 0], kspring: [.6, .6, 0], ksandpit: [2.7, 2.7, 0], kmerry: [5.6, 2.3, 0], kbench: [9.7, 2.9, Math.PI],
   // bếp (cửa sang phòng khách ở tường trái z = -.6, cửa sổ tường sau x = .55 ngay trên bồn rửa): tủ lạnh góc sau-trái, bếp nấu cạnh
   // tủ lạnh, bồn rửa dưới cửa sổ, quầy chữ L (bồn rửa + dãy quầy dọc tường sau rồi tường phải),
   // tủ chén tường phải phía trước, bàn ăn giữa phòng, bốn ghế quanh bàn (gốc model = tâm bàn), chậu cây giữa tường trước, khay ăn của mèo góc trước-trái,

@@ -6,14 +6,14 @@ import { LEVELS } from '../gameplay/levels.mjs';
 import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../gameplay/progression.mjs';
 import { BOOSTERS } from '../gameplay/tuning.mjs';
 import { TUTORIAL_TOP_UP, COIN_PACKS, STARTER_PACK, AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { idlePending, idleFull, tickIdle, claimIdle } from '../gameplay/idle.mjs';
+import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../gameplay/idle.mjs';
 import { playSound, playMeow, soundOn, setSound, setMusic } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
-import { ZONES, ZONE_IDS, CATALOG, MAX_ROOM_CATS, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
-  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, AREA_NAMES, areaOpen, areaState, nextArea, unlockArea } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
+  isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, AREA_NAMES, AREA_ORDER, areaOpen, areaState, nextArea, unlockArea, ownAllBase } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
 import * as ob from './onboarding.js';
-import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag, devMoney } from './shared.js';
+import { $, reduceMotion, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag, devMoney, pieceSkin, setPieceSkin, dogSkinOpen } from './shared.js';
 
 // Luồng màn chơi (startLevel, mapTier): main.js nối vào lúc khởi động.
 let play = null;
@@ -136,7 +136,8 @@ function refreshClaimDot() {
 }
 // Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
 // Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
-const CAT_RARITY = { orange: 'Common', gray: 'Common', white: 'Common', tabby: 'Rare', siamese: 'Epic', tuxedo: 'Legendary' };
+const CAT_RARITY = { orange: 'Common', gray: 'Common', white: 'Common', tabby: 'Rare', siamese: 'Epic', tuxedo: 'Legendary',
+  shiba: 'Rare', golden: 'Rare', pug: 'Epic', dalmatian: 'Epic', malamute: 'Legendary', rottweiler: 'Legendary' };
 // `keep`: sắp có màn thưởng kế tiếp nên giữ nền khi đóng (không mờ ra); `chained`: màn kế của một cặp, hiện luôn không mờ vào.
 function showCatReward(breed, onClaimed, { keep = false, chained = false } = {}) {
   const rarity = CAT_RARITY[breed] || 'Rare', name = categories[breed].name;
@@ -185,6 +186,9 @@ async function showMap3d() {
 // Home hub chính là bản đồ màn (showTab('home') cũng dẫn tới đây).
 export function showMap() {
   hideMenus();
+  // Vừa chơi tới màn 30: bộ chó mở, tự đổi sang chó + báo một lần
+  if (dogSkinOpen() && !readText(SAVE_KEYS.skin)) { setPieceSkin('dogs'); showToast('New! Dog pieces unlocked. Switch sets anytime with the button on the left.'); }
+  renderSkinButton();
   decoNew = new Set();
   markTab('home');
   refreshWallet();
@@ -264,13 +268,32 @@ function mountRoom(tab) {
 const DECO_VIEW = {
   zoomFit: .82,
   insets() {
-    const room = $('deco-room').getBoundingClientRect();
-    return { top: $('deco').querySelector('.wallet-hud').getBoundingClientRect().bottom - room.top, bottom: room.bottom - $('deco').querySelector('.deco-dock').getBoundingClientRect().top };
+    // ví / dock đang ẩn (nút ngắm nhà khoá UI: display none, khung 0 × 0) thì không che gì; không thì cả màn bị tính là "bị che",
+    // zoom tụt về ~0 khi đổi cỡ cửa sổ lúc đang khoá UI (lỗi cảnh biến thành nền trời + mép đất)
+    const room = $('deco-room').getBoundingClientRect(), shown = el => el.getClientRects().length > 0;
+    const wallet = $('deco').querySelector('.wallet-hud'), dock = $('deco').querySelector('.deco-dock');
+    return { top: shown(wallet) ? wallet.getBoundingClientRect().bottom - room.top : 0, bottom: shown(dock) ? room.bottom - dock.getBoundingClientRect().top : 0 };
   },
 };
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
 $('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
 // Gói khởi đầu nằm đầu tab Shop; Shop còn khoá (onboarding) thì chỉ báo.
+// Nút đổi bộ quân trên bàn (mèo <-> chó), chỉ hiện khi đã mở bộ chó (màn 30). Hình + chữ theo bộ đang dùng.
+function renderSkinButton() {
+  const button = $('home-skin'), skin = pieceSkin();
+  button.hidden = !dogSkinOpen();
+  if (button.hidden) return;
+  button.querySelector('.fh-skin-art').innerHTML = catMarkup[skin === 'dogs' ? 'shiba' : 'orange'];
+  button.querySelector('span').textContent = skin === 'dogs' ? 'Dogs' : 'Cats';
+}
+$('home-skin').onclick = () => {
+  const next = pieceSkin() === 'dogs' ? 'cats' : 'dogs';
+  setPieceSkin(next);
+  renderSkinButton();
+  playSound('pick');
+  showToast(next === 'dogs' ? 'Board pieces: Dogs!' : 'Board pieces: Cats!');
+};
+renderSkinButton();
 $('home-starter').onclick = () => {
   if (!ob.tabOpen('shop')) { showToast('The Shop opens soon. Keep playing!'); return; }
   playSound('pick'); setShopPage('store'); switchTab('shop');
@@ -636,7 +659,7 @@ function renderDecoPop() {
   const deco = getDeco(), unlocked = decoUnlockedLevel(), names = ZONES[decoPop.zone].cats;
   const options = decoPopOptions(deco);
   const using = options.find(entry => itemStatus(deco, entry, unlocked) === 'using');
-  const title = { cats: `Cats · ${deco.cats.length}/${MAX_ROOM_CATS}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
+  const title = { cats: `Pets · ${deco.cats.length}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
   $('deco-pop-title').textContent = title;
   $('deco-pop-items').replaceChildren(...options.map(entry => {
     const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
@@ -795,7 +818,7 @@ function placeIdleCoin() {
   for (const [breed, button] of Object.entries(idleButtons)) if (!deco.cats.includes(breed)) button.hidden = true;
   for (const breed of deco.cats) {
     const amount = idlePending(deco, idleCleared, now, breed);
-    const at = amount > 0 && !decoLocked && !decoPop ? room3d?.screenRectOfCat(breed) : null;
+    const at = amount > 0 && !decoLocked && !decoPop ? room3d?.screenOfCatHead(breed) : null;
     if (!at && !idleButtons[breed]) continue;
     const button = idleButton(breed);
     button.hidden = !at;
@@ -805,21 +828,41 @@ function placeIdleCoin() {
       button.querySelector('b').textContent = amount;
       button.classList.toggle('full', idleFull(deco, idleCleared, now, breed));
     }
-    button.style.transform = `translate3d(${Math.round((at.left + at.right) / 2)}px, ${Math.round(at.top)}px, 0)`;
+    button.style.transform = `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0)`;
   }
 }
+// Chạm bong bóng của BẤT KỲ con nào = nhận xu của TẤT CẢ mèo trong nhà một lượt (mỗi bong bóng đang hiện nổ một đợt xu).
 document.addEventListener('click', event => {
-  const button = event.target.closest('.idle-coin[data-breed]');
-  if (!button) return;
-  const { deco, amount } = claimIdle(getDeco(), levelsCleared(), Date.now(), button.dataset.breed);
-  if (!amount) return;
-  shopBurst(button);
+  if (!event.target.closest('.idle-coin[data-breed]')) return;
+  let deco = getDeco(), total = 0;
+  const now = Date.now(), cleared = levelsCleared(), claimedBreeds = [];
+  for (const breed of deco.cats) {
+    const claimed = claimIdle(deco, cleared, now, breed);
+    if (!claimed.amount) continue;
+    deco = claimed.deco;
+    total += claimed.amount;
+    claimedBreeds.push([breed, claimed.amount]);
+    const button = idleButtons[breed];
+    if (button) button.dataset.amount = '';
+  }
+  if (!total) return;
+  const before = getDeco().coins;
   setDeco(deco);
-  button.dataset.amount = '';
-  refreshWallet();
   playSound('reward');
-  showToast(`+${amount} coins!`);
+  showToast(`+${total} coins!`);
   renderDeco();
+  // Xu 3D bay từ từng con mèo vào thanh xu (deco-room.mjs flyCoins); số trên thanh giữ giá trị cũ tới khi xu chạm,
+  // dự phòng 2.5 s nếu cảnh 3D không chạy.
+  const pill = $('deco-coins').closest('.fh-coins'), box = pill.getBoundingClientRect(), target = { x: box.left + box.width * .22, y: box.top + box.height / 2 };
+  $('deco-coins').textContent = before.toLocaleString('en-US');
+  // Số xu 3D theo số xu nhận được so với trần tích của một con (idleCap): đầy trần = 12 đồng, ít thì ít, tối thiểu 1.
+  const cap = Math.max(1, idleCap(cleared)), coinsFor = amount => Math.max(1, Math.min(12, Math.ceil(amount / cap * 12)));
+  const flights = claimedBreeds.map(([breed, amount]) => room3d?.flyCoins(breed, target, coinsFor(amount), () => {
+    pill.classList.remove('coin-hit'); void pill.offsetWidth; pill.classList.add('coin-hit');
+    playSound('fill', 5);
+  }) ?? Promise.resolve());
+  Promise.all(flights).then(refreshWallet);
+  setTimeout(refreshWallet, 2500);
 });
 
 // Ghim "NEW" bám theo món mỗi khung hình (room3d.onFrame); món đang mở bảng đổi thì ẩn ghim.
@@ -1220,7 +1263,8 @@ function buyArea(area) {
   renderDeco();
   room3d?.openFx(area);
   playSound('reward');
-  showToast(`${AREA_NAMES[area]} is open!`);
+  // Mở xong khu cuối cùng: quà vườn hoa (deco-room.mjs bloom) mọc lên bên trái vườn
+  showToast(AREA_ORDER.every(id => areaOpen(next, id)) ? `${AREA_NAMES[area]} is open! Gift: a Flower garden is blooming next to your garden!` : `${AREA_NAMES[area]} is open!`);
 }
 document.addEventListener('click', event => {
   const button = event.target.closest('#deco-zone button');
@@ -1357,10 +1401,10 @@ $('dev-unlock').onclick = () => {
   saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
   ob.setStage('done');
   writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
-  setDeco({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) });
+  setDeco(ownAllBase({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) })); // + có sẵn mọi món mặc định
   playSound('reward');
   showTab('home');
-  showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · ${DEV_COINS.toLocaleString('en-US')} coins`);
+  showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · all default furniture owned · ${DEV_COINS.toLocaleString('en-US')} coins`);
 };
 const renderDevMoney = () => $('dev-money').setAttribute('aria-pressed', devMoney());
 renderDevMoney();

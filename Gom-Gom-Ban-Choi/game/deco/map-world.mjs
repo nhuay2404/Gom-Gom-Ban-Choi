@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
 import { roundedBox, mergeStatic } from './mesh-detail.mjs';
-import { catModel, setCatFace } from './room-cats.mjs';
+import { catModel, setCatFace, poseTail } from './room-cats.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.
@@ -1731,6 +1731,7 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
       const legSwing = running ? e : 0;
       rig?.legs.forEach((leg, i) => { leg.hip.rotation.x = Math.sin(step + (i === 0 || i === 3 ? 0 : Math.PI)) * .9 * legSwing; });
       rig?.tail.forEach((joint, i) => { joint.rotation.y = Math.sin(t * (resting ? 14 : 9) - i) * (resting ? .6 : .3); });
+      if (rig) poseTail(rig);
       rig?.ears.forEach((ear, i) => { ear.rotation.z = (i ? 1 : -1) * -.18 + Math.sin(t * 12 + i * 2) * (resting ? .22 : .06); });
       // Mặt: ngạc nhiên -> cười hí mắt khi chạy (thỉnh thoảng mở to mắt) -> sung sướng khi nhún nhảy.
       if (rig) setCatFace(rig, breed, t <= 1.1 ? 'focus' : resting ? (rest < .35 ? 'focus' : 'happy') : (Math.floor(t * 1.2) % 3 === 2 ? 'open' : 'happy'), 'open');

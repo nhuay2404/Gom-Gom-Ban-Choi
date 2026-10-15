@@ -29,17 +29,18 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const round2 = x => Math.round(x * 100) / 100;
 
 // ---------- Element và nhãn độ khó (chỉ để hiển thị, tính trên bản thiết kế) ----------
-export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board', 'cage'];
+export const ELEMENTS = ['moves', 'colors', 'crate', 'wall', 'board', 'cage', 'grass'];
 export function levelElements(level) {
   const cells = level.board.join('');
   return {
-    moves: level.target / level.moves >= A.TIGHT_PPM,
+    moves: !level.grass && level.target / level.moves >= A.TIGHT_PPM,
     colors: level.cats.length >= A.MANY_COLORS,
     crate: cells.includes('X'),
     wall: cells.includes('M'),
     board: !isPlainSquare(level.board),
     cage: /[a-z]/.test(cells),
     // Cỏ: mục tiêu dọn cỏ thay cho điểm, làm màn khó hơn.
+    grass: !!level.grass?.join('').includes('~'),
   };
 }
 export const elementCount = level => Object.values(levelElements(level)).filter(Boolean).length;

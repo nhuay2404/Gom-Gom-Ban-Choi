@@ -319,6 +319,7 @@ export const KITCHEN_BUILD = {
     table.userData.top = .78;
     return table;
   },
+  // bàn thấp: không kèm đệm ngồi riêng (chỗ ghế quanh bàn đã có ghế / đệm, kèm thêm là thừa chỗ ngồi chồng nhau)
   'dining-low'() {
     const mug = cup('#8fc9f2', .2, .41, .12);
     const teapot = group(squash(at(ball(.09, '#fffaf0'), 0, .077, 0), 1, .85, 1), at(ball(.025, '#e8617f'), 0, .165, 0),
@@ -326,7 +327,6 @@ export const KITCHEN_BUILD = {
     teapot.position.set(-.1, .41, -.08);
     const table = group(...[[-.3, -.3], [.3, -.3], [-.3, .3], [.3, .3]].map(([x, z]) => at(cyl(.03, .025, .35, '#9a6a45', 10), x, .175, z)),
       at(cyl(.62, .62, .05, '#c98a55'), 0, .385, 0), at(ring(.3, .012, '#e8617f'), 0, .412, 0).rotateX(Math.PI / 2),
-      at(rbox(.52, .08, .52, .035, '#e8617f'), -.82, .04, 0), at(rbox(.52, .08, .52, .035, '#8fc9f2'), .82, .04, 0),
       teapot, at(cyl(.04, .035, .08, '#fffaf0', 12), -.3, .45, .18), mug);
     table.userData.mug = mug;
     table.userData.seat = [-.2, .43, .2];
@@ -527,9 +527,24 @@ export function decorateKitchenWall(i, wall) {
     });
     wall.add(at(cyl(.08, .06, .13, onWall('#e98b5a'), 14), u + .3, shelfY + .09, .24), at(ball(.09, onWall('#6fbf4a')), u + .3, shelfY + .2, .24));
     for (let k = 0; k < 6; k++) wall.add(at(ball(.035, onWall(k % 2 ? '#6fbf4a' : '#5fae46')), u + .4 + Math.sin(k) * .02, shelfY - .06 - k * .08, .3));
-    wall.add(at(box(.9, .06, .04, onWall('#c98a55')), 1.3, 1.75, .15), ...[-.3, 0, .3].map(dx => at(ball(.025, onWall('#e8617f')), 1.3 + dx, 1.7, .2)));
-    wall.add(at(rbox(.34, .5, .012, .005, onWall('#e8617f')), 1.0, 1.4, .2), at(box(.34, .06, .016, onWall('#fffaf0')), 1.0, 1.52, .2),
-      at(rbox(.24, .36, .012, .005, onWall('#8fc9f2')), 1.55, 1.48, .2), at(box(.24, .05, .016, onWall('#fffaf0')), 1.55, 1.58, .2));
+    // Giá móc tạp dề: thanh gỗ có 3 móc, hai cái tạp dề treo bằng dây cổ (yếm + thân + dây buộc eo + túi). Đặt giữa cửa sổ thật
+    // (KITCHEN_FRONT_WINDOW_U 1.3, rộng .7) và tranh ở u 3.1 — trước đây giá nằm đè lên cửa sổ, tạp dề che kính.
+    const ua = 2.3, hookY = 1.8;
+    wall.add(at(rbox(.9, .07, .05, .02, onWall('#c98a55')), ua, hookY, .14));
+    for (const dx of [-.3, 0, .3]) wall.add(at(cyl(.012, .012, .07, onWall('#9a6a45'), 6), ua + dx, hookY - .01, .2).rotateX(Math.PI / 2), at(ball(.022, onWall('#e8617f')), ua + dx, hookY - .01, .235));
+    const apron = (x, color, accent, scale) => {
+      const a = group(), s = scale;
+      // dây cổ: hai sợi xiên từ móc xuống hai mép yếm
+      for (const side of [-1, 1]) { const strap = at(box(.012 * s, .2 * s, .008, onWall(accent)), side * .045 * s, -.09 * s, 0); strap.rotation.z = side * .38; a.add(strap); }
+      a.add(at(rbox(.2 * s, .17 * s, .014, .006, onWall(color)), 0, -.27 * s, 0),
+        at(rbox(.34 * s, .36 * s, .014, .006, onWall(color)), 0, -.53 * s, 0),
+        at(box(.36 * s, .035 * s, .02, onWall(accent)), 0, -.36 * s, .004),
+        at(rbox(.14 * s, .1 * s, .01, .004, onWall(accent)), .05 * s, -.55 * s, .012),
+        ...[-1, 1].map(side => at(box(.02 * s, .14 * s, .01, onWall(accent)), side * .19 * s, -.42 * s, .006).rotateZ(side * .25)));
+      a.position.set(x, hookY - .03, .22);
+      return a;
+    };
+    wall.add(apron(ua - .3, '#e8617f', '#fffaf0', 1), apron(ua + .3, '#8fc9f2', '#fffaf0', .82));
     wall.add(wallFrame(.6, .44, '#e0b36a', '#c9e8b0', -.3, 1.9), wallFrame(.4, .5, '#fff4e0', '#ffd9c4', 3.1, 1.85), wallFrame(.36, .36, '#c98a55', '#bfe6ff', -3.2, 2.0));
   }
   if (i === 2) {

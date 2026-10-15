@@ -199,7 +199,7 @@
     <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, gameplay/idle.mjs) -->
     <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
     <button id="area-next" class="area-next" hidden></button>
-    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b></button>
+    <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b><i class="idle-spark s1"></i><i class="idle-spark s2"></i><i class="idle-spark s3"></i><i class="idle-spark s4"></i><i class="idle-spark s5"></i><i class="idle-spark s6"></i></button>
     <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
@@ -273,6 +273,8 @@
       <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
       <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
       <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
+      <!-- Bộ quân trên bàn (mèo / chó): hiện khi chơi tới màn 30 (shared.js DOG_SKIN_LEVEL); chạm để đổi bộ -->
+      <button id="home-skin" class="fh-btn fh-feedback fh-skin" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
       <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>

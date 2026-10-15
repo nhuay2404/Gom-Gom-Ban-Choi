@@ -44,7 +44,8 @@ export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 //   xu / giờ của một con = xu thưởng của màn đang chơi × IDLE_RATE · mỗi con tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
 //   Nhiều mèo = nhiều xu (tối đa MAX_ROOM_CATS con trong nhà). Giữ tổng nhỏ (~5–15% xu cả game của người chơi trung bình, đủ 6 mèo)
 //   để không thay gói xu / không làm người chơi bớt chơi màn.
-export const IDLE_RATE = remote('IDLE_RATE', 0.44);
+//   0.015 (trước 0.44): mô phỏng economy-sim cho xu idle chiếm ~12% tổng xu (trung bình), 14% (casual), 7% (chơi nhiều); 0.44 là ~80%.
+export const IDLE_RATE = remote('IDLE_RATE', 0.015);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 
@@ -279,5 +280,12 @@ export const DECO = remote('DECO', {
   'cat-tabby':           { price: 0, lock: 14 },      // Calico cat
   'cat-siamese':         { price: 0, lock: 17 },      // Siamese cat
   'cat-tuxedo':          { price: 0, lock: 20 },      // Tuxedo cat
+  // --- Chó (như mèo; stage 3 + 4: màn 4, 7, 10 của stage) ---
+  'dog-shiba':           { price: 0, lock: 24 },      // Shiba dog
+  'dog-golden':          { price: 0, lock: 27 },      // Golden dog
+  'dog-pug':             { price: 0, lock: 30 },      // Pug dog
+  'dog-dalmatian':       { price: 0, lock: 34 },      // Dalmatian dog
+  'dog-malamute':        { price: 0, lock: 37 },      // Malamute dog
+  'dog-rottweiler':      { price: 0, lock: 40 },      // Rottweiler dog
 
 });

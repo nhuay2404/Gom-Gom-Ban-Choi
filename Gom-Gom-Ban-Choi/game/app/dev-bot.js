@@ -24,7 +24,7 @@ export async function startBot(profileId) {
     // Thua (hết lượt / kẹt) thì để bảng kết quả hiện một chút rồi chơi lại màn; thắng thì dừng ở bảng kết quả.
     if (s?.over && !s.outcome?.win) { await wait(2200); if (botApi.state() === s) { attempts++; console.info(`[dev-bot] thua, chơi lại lần ${attempts + 1}`); botApi.retry(); } continue; }
     if (!s || s.over || s.animating || document.getElementById('map')?.hidden === false) continue;
-    const pick = bot.pickMove({ board: s.board, W: s.W, H: s.H, active: s.active, hold: s.hold, next: upcoming(s), useHold: profile.useHold && s.holdOn, noise: profile.noise, lookahead: profile.lookahead });
+    const pick = bot.pickMove({ board: s.board, W: s.W, H: s.H, active: s.active, hold: s.hold, next: upcoming(s), useHold: profile.useHold && s.holdOn, noise: profile.noise, lookahead: profile.lookahead, grass: s.grass });
     if (!pick) continue;
     if (pick.hold) { botApi.hold(); await wait(STEP_MS); }
     for (let i = 0; i < pick.rot; i++) { botApi.rotate(); await wait(380); }

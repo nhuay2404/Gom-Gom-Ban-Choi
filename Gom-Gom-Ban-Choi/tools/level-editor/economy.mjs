@@ -335,7 +335,7 @@ function openFlowPop(g) {
   const body = {
     start: () => ['Xu ban đầu', key('Xu có sẵn khi vào game', 'START_COINS', 10)],
     win: () => ['Thắng màn', key('Xu màn 1', 'REWARD_BASE', 10) + key('Xu tăng thêm mỗi màn', 'REWARD_STEP', 5) + key('Tăng bước mỗi cụm 10 màn', 'REWARD_GROWTH', .01)],
-    idle: () => ['Mèo tự sinh', key('Tỉ lệ idle (× xu màn / giờ)', 'IDLE_RATE', .01) + key('Giờ tích tối đa', 'IDLE_CAP_HOURS', 1) + key('Bắt đầu từ màn', 'IDLE_FROM_LEVEL', 1)],
+    idle: () => ['Mèo tự sinh', key('Tỉ lệ idle (× xu màn / giờ)', 'IDLE_RATE', .001) + key('Giờ tích tối đa', 'IDLE_CAP_HOURS', 1) + key('Bắt đầu từ màn', 'IDLE_FROM_LEVEL', 1)],
     pool: () => ['Ví xu', '<p class="hint" style="margin:0">Ví = xu vào − xu ra. Sửa các nút Nguồn / Cổng / Chỗ tiêu để đổi dòng chảy.</p>'],
     gate: () => [`Mở ${name}`, num('Màn mốc', `data-area="${area}" data-field="level"`, cfg.AREA_UNLOCK[area].level) + num('Giá mở khu (xu)', `data-area="${area}" data-field="cost"`, cfg.AREA_UNLOCK[area].cost, 50)],
     sink: () => [`Đồ ${name}`, num('Nhân giá đồ của khu', `data-mult="${area}"`, cfg.ZONE_PRICE_MULT[area] ?? 1, .05) + `<p class="hint" style="margin:0">Giá từng món sửa ở tab Cân bằng xu (bảng giá).</p>`],
