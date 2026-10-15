@@ -454,15 +454,13 @@ function noticeDeco() {
 }
 
 function renderDeco() {
-  const deco = getDeco(), unlocked = decoUnlockedLevel(), fresh = freshKeys(deco, deco.zone), freshIds = new Set(deco.fresh || []);
+  const deco = getDeco(), unlocked = decoUnlockedLevel(), fresh = freshKeys(deco, deco.zone);
   renderAreaNext(); // mua đồ (ở thẻ, bảng đổi món, Shop) đẩy thanh "tiêu xu vào decor" của khu kế tiếp
   startIdle();
   room3d?.setHighlights(decoLocked ? new Set() : fresh);
-  $('deco-kinds').classList.toggle('off', decoTab === 'cats');
-  $('deco-kinds').querySelectorAll('[data-key]').forEach(button => {
-    button.querySelector('span').textContent = button.dataset.key === 'furniture' ? 'Furniture' : ZONES[deco.zone].cats[button.dataset.key];
-    button.classList.toggle('on', decoTab === button.dataset.key);
-    button.setAttribute('aria-selected', decoTab === button.dataset.key);
+  $('deco').querySelectorAll('.deco-side [data-key]').forEach(button => {
+    button.querySelector('span').textContent = ZONES[deco.zone].cats[button.dataset.key];
+    button.classList.toggle('on', decoPop?.key === button.dataset.key);
   });
   // Ghim "NEW" trên các món có đồ mới thay được (chỉ đồ đạc; tường / sàn mới báo bằng toast ở Shop)
   $('deco-pins').replaceChildren(...[...fresh].filter(key => key !== 'walls' && key !== 'floors').map(slot => {
@@ -473,94 +471,42 @@ function renderDeco() {
     return pin;
   }));
   const cards = $('deco-cards');
-  // Một hàng thẻ theo tab + chip đang chọn (stripEntries); món gốc chưa xây xếp đầu hàng, xây rồi thì thẻ biến mất.
-  const entries = stripEntries(deco), todo = entries.filter(isBaseEntry);
-  cards.hidden = !entries.length;
+  // Món đã xây thì thẻ biến mất (đổi kiểu: chạm món trong cảnh). Xây hết: ẩn cả hàng thẻ, hàng chọn khu tụt xuống sát thanh tab.
+  const todo = decoBases(deco.zone).filter(base => !isOwned(deco, base));
+  cards.hidden = !todo.length;
   // Cập nhật thẻ tại chỗ (giữ nguyên phần tử + ảnh thumbnail đã giải mã): dựng lại cả hàng mỗi lần chạm thẻ thì trình duyệt
   // phải giải mã lại hàng chục ảnh PNG + vẽ lại, đúng khung hình camera bắt đầu lướt -> giật.
   const existing = new Map([...cards.children].map(card => [card.dataset.id, card]));
-  const next = entries.map(entry => {
-    const base = isBaseEntry(entry), shop = !base && entry.cat !== 'cats' && !isOwned(deco, entry);
-    const status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
-    const picked = base ? decoPick === entry : popPreview === entry;
-    let card = existing.get(entry.id);
+  const next = todo.map(base => {
+    const status = itemStatus(deco, base, unlocked), picked = decoPick === base;
+    let card = existing.get(base.id);
     if (!card) {
       card = document.createElement('button');
-      card.dataset.id = entry.id;
+      card.dataset.id = base.id;
       card.setAttribute('role', 'listitem');
     }
-    const className = `deco-card ${status}${picked ? ' picked' : ''}${decoNew.has(entry.id) || (!base && freshIds.has(entry.id)) ? ' is-new' : ''}`;
+    const className = `deco-card ${status}${picked ? ' picked' : ''}${decoNew.has(base.id) ? ' is-new' : ''}`;
     if (card.className !== className) card.className = className;
-    const buyable = status === 'buy' && picked;
-    const art = thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">${entry.cat === 'cats' ? 'Claim' : `Lv ${entry.lock}`}</em>`
-      : buyable ? `<em class="deco-card-price act" data-act="buy">Buy ${coin(entry.price)}</em>`
-      : status === 'using' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'In home' : '✓ In use'}</em>`
-      : status === 'owned' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'Add' : 'Use'}</em>`
-      : `<em class="deco-card-price">${coin(entry.price)}</em>`;
-    if (card.artHtml !== art) { card.artHtml = art; card.innerHTML = `<span class="deco-card-art">${art}</span><span class="deco-card-name">${entry.name}</span>${foot}`; }
+    const art = thumbOf(base), foot = status === 'locked' ? `<em class="deco-card-price lock">Lv ${base.lock}</em>`
+      : picked && status === 'buy' ? `<em class="deco-card-price act" data-act="buy">Buy ${coin(base.price)}</em>`
+      : `<em class="deco-card-price">${coin(base.price)}</em>`;
+    if (card.artHtml !== art) { card.artHtml = art; card.innerHTML = `<span class="deco-card-art">${art}</span><span class="deco-card-name">${base.name}</span>${foot}`; }
     else if (card.footHtml !== foot) card.lastElementChild.outerHTML = foot;
     card.footHtml = foot;
     return card;
   });
   if (next.length !== cards.children.length || next.some((card, i) => cards.children[i] !== card)) cards.replaceChildren(...next);
-  updateCardsFade();
   // Chuẩn bị trước lúc rảnh: model các thẻ xem thử được + ảnh các kiểu trong bảng đổi món của khu (không thì lần đầu chạm
   // phải dựng / chụp ngay trong khung hình, camera đứng hình lúc đang lướt).
   room3d?.prewarm(todo.filter(base => itemStatus(deco, base, unlocked) !== 'locked'));
   warmDecoThumbs(deco.zone);
-  // Đổi khu / tab / chip: về đầu hàng thẻ
-  const stripKey = `${deco.zone}/${decoTab}`;
-  if (lastCardZone !== stripKey) { lastCardZone = stripKey; cards.scrollLeft = 0; updateCardsFade(); }
+  // Đổi khu: về đầu hàng thẻ
+  if (lastCardZone !== deco.zone) { lastCardZone = deco.zone; cards.scrollLeft = 0; }
   renderDecoPop();
 }
-// Tab đang chọn ở khay đáy: 'cats' (mèo trong nhà) hoặc chip loại đồ của khu: 'furniture' | 'walls' | 'floors'.
-let decoTab = 'furniture';
-const isBaseEntry = entry => entry.cat === 'furniture' && !entry.slot;
-function stripEntries(deco) {
-  const zone = deco.zone;
-  if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats');
-  if (decoTab === 'walls' || decoTab === 'floors') return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
-  const bases = decoBases(zone).filter(base => !isOwned(deco, base));
-  const variants = shopCatalog(zone).filter(entry => entry.cat === 'furniture' && decoVisible(entry) && isOwned(deco, itemById(entry.slot)));
-  return [...bases, ...variants];
-}
-// Thẻ bị cắt ở mép nào thì mép đó có dải mờ phủ lên (CSS .deco-cards-wrap.more-left / .more-right)
-// Chỉ hiện khi đã kéo qua (đứng yên ở đầu hàng thì không có dải mờ).
-function updateCardsFade() {
-  const cards = $('deco-cards'), wrap = $('deco-cards-wrap'), moved = cards.scrollLeft > 4;
-  wrap.classList.toggle('more-left', moved);
-  wrap.classList.toggle('more-right', moved && cards.scrollLeft + cards.clientWidth < cards.scrollWidth - 4);
-}
-// Thu gọn khay: chỉ còn hàng tab
-$('deco-collapse').addEventListener('click', () => {
-  playSound('pick');
-  const tray = document.querySelector('.deco-tray'), collapsed = tray.classList.toggle('collapsed');
-  $('deco-collapse').setAttribute('aria-expanded', !collapsed);
-  $('deco-collapse').setAttribute('aria-label', collapsed ? 'Expand item bar' : 'Collapse item bar');
-  $('deco-collapse').title = collapsed ? 'Expand' : 'Collapse';
-});
-$('deco-cards').addEventListener('scroll', updateCardsFade, { passive: true });
-function clearPreview() {
-  if (!popPreview) return;
-  popPreview = null;
-  applyRoom(getDeco());
-}
-$('deco-kinds').addEventListener('click', event => {
-  const key = event.target.closest('[data-key]')?.dataset.key;
-  if (!key || key === decoTab) return;
-  playSound('pick');
-  decoTab = key;
-  decoPick = null;
-  closeDecoPop(false);
-  clearPreview();
-  applyRoom(getDeco());
-  renderDeco();
-});
 $('deco-cards').addEventListener('click', event => {
   const card = event.target.closest('.deco-card'), base = itemById(card?.dataset.id);
   if (!base) return;
-  if (!isBaseEntry(base)) { decoPick = null; return chooseOption(base, !!event.target.closest('[data-act="buy"]')); }
-  clearPreview();
   if (!ob.buildOpen()) return showToast(BUILD_LOCKED);
   if (event.target.closest('[data-act="buy"]')) return buildBase(base);
   playSound('pick');
@@ -697,11 +643,6 @@ $('deco-pop-items').addEventListener('scroll', updatePopSwipeHint, { passive: tr
 $('deco-pop-items').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.deco-opt')?.dataset.id);
   if (!entry || !decoPop) return;
-  chooseOption(entry, !!event.target.closest('.deco-opt-price'));
-});
-// Chọn một kiểu (mèo / kiểu khác của món / tường / sàn): dùng chung cho thẻ ở khay đáy và bảng đổi món trong cảnh.
-// buyTap = chạm đúng nút giá của kiểu đang xem thử.
-function chooseOption(entry, buyTap) {
   if (!ob.buildOpen() && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
   const deco = getDeco(), unlocked = decoUnlockedLevel(), status = itemStatus(deco, entry, unlocked);
   if (entry.cat === 'cats') {
@@ -713,7 +654,7 @@ function chooseOption(entry, buyTap) {
     // Kiểu chưa có: chạm lần đầu = xem thử trong phòng (chưa trừ xu); ưng thì chạm vào nút giá để mua + đặt luôn.
     // Chạm lại chính món đang xem = thôi xem. Không chuyển sang Shop.
     const fxKey = entry.cat === 'furniture' ? slotOf(entry) : entry.cat;
-    if (popPreview === entry && buyTap) {
+    if (popPreview === entry && event.target.closest('.deco-opt-price')) {
       const bought = buyToStock(deco, entry, unlocked);
       if (bought.error) return showToast(bought.error === 'Not enough coins' ? `Need ${entry.price - deco.coins} more coins` : bought.error);
       const placed = useItem(bought, entry);
@@ -724,7 +665,8 @@ function chooseOption(entry, buyTap) {
       if (!room3d) buildFlatRooms();
       applyRoom(getDeco());
       room3d?.fx(fxKey, 'buy'); // pháo giấy + vòng sáng khi mua
-      return renderDeco();
+      renderDeco();
+      return renderDecoPop();
     }
     const status = shopStatus(deco, entry, unlocked);
     if (status === 'locked') return showToast(`Unlocks at level ${entry.lock}`);
@@ -735,12 +677,12 @@ function chooseOption(entry, buyTap) {
     applyRoom(previewDeco(getDeco(), popPreview));
     if (popPreview) room3d?.fx(fxKey, 'preview'); // lấp lánh khi xem thử
     if (popPreview && status === 'poor') showToast(`Need ${entry.price - deco.coins} more coins`);
-    return renderDeco();
+    return renderDecoPop();
   } else {
     const wasPreviewing = !!popPreview;
     popPreview = null;
     // Chạm món đang dùng khi đang xem thử món khác = thôi xem, phòng trở về như cũ.
-    if (status === 'using') { if (wasPreviewing) { applyRoom(getDeco()); renderDeco(); } return; }
+    if (status === 'using') { if (wasPreviewing) { applyRoom(getDeco()); renderDecoPop(); } return; }
     const next = useItem(deco, entry);
     if (next.error) return showToast(next.error);
     setDeco(next);
@@ -750,9 +692,9 @@ function chooseOption(entry, buyTap) {
   applyRoom(getDeco());
   if (entry.cat !== 'cats') room3d?.fx(entry.cat === 'furniture' ? slotOf(entry) : entry.cat, 'swap'); // làn khói + lấp lánh khi đổi kiểu
   renderDeco();
-}
+});
 // Không có nút đóng: chạm ra ngoài bảng là đóng. Chạm trong cảnh 3D do onScenePick lo (chạm món khác = đổi sang bảng của
-// món đó).
+// món đó); nút cột trái tự bật / tắt bảng của nó.
 document.addEventListener('pointerdown', event => {
   if (!decoPop || event.target.closest('#deco-pop, .deco-side, .room-canvas')) return;
   closeDecoPop();
@@ -774,6 +716,15 @@ function setDecoLock(on) {
   renderAreaNext(); // chế độ xem: ẩn cả mảnh đất mờ + bong bóng giá
 }
 $('deco-lock').onclick = () => { playSound('pick'); setDecoLock(!decoLocked); };
+// Cột trái (mèo / tường / sàn): bảng mở ngay bên phải nút, đuôi chỉ vào nút; chạm lại nút đang mở = đóng.
+$('deco').querySelector('.deco-side').addEventListener('click', event => {
+  const button = event.target.closest('[data-key]');
+  if (!button) return;
+  playSound('pick');
+  if (decoPop?.key === button.dataset.key) return closeDecoPop();
+  const rect = button.getBoundingClientRect();
+  openDecoPop({ zone: getDeco().zone, key: button.dataset.key, x: rect.right, y: rect.top + rect.height / 2, side: true });
+});
 // Bảng đổi món luôn nằm PHÍA TRÊN món (bám theo món mỗi khung hình khi camera trượt / xoay / zoom — room3d.onFrame), đuôi chỉ xuống món.
 // Phía trên không đủ chỗ (món ở sát mép trên) thì trượt camera cho món tụt xuống tới khi vừa. Bảng mở từ cột nút trái thì nằm
 // bên phải nút.
@@ -905,14 +856,12 @@ function runDecoTour() {
   const plan = readText(SAVE_KEYS.decoTour) !== 'done' && guidedTourPlan();
   setDecoLock(false);
   closeDecoPop(false);
-  decoTab = 'furniture';
-  clearPreview();
   // Như hướng dẫn Garden: mèo cam ngồi trong vườn, mọi lời hướng dẫn là bong bóng thoại mọc từ nó (speaker); mèo khuất (Shop) thì bóng thường.
   const say = steps => steps.map(step => (step.text ? { speaker: guideRect, ...step } : step));
   const done = () => { setGuide(false); tourDone(); };
   const fencesStep = {
-    target: () => $('deco-kinds'),
-    text: () => `${names().walls} and ${names().floors} come in other styles too. Tap a type here, preview a style, then buy it.`,
+    target: () => [...$('deco').querySelectorAll('.deco-side [data-key="walls"], .deco-side [data-key="floors"]')],
+    text: () => `${names().walls} and ${names().floors} come in other styles too. Buy them in the Shop, then pick one here.`,
     before: () => closeDecoPop(false),
   };
   const shopTab = { target: () => $('tabbar').querySelector('[data-tab="shop"]'), before: () => closeDecoPop(false) };
@@ -1161,35 +1110,28 @@ const devAllZones = () => DEV_MODE && readText(DEV_ZONES_KEY) === 'on';
 const isZoneOpen = zone => areaOpen(getDeco(), zone) || devAllZones();
 const isGardenExpanded = () => areaOpen(getDeco(), 'garden2') || devAllZones();
 const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
-// Hàng tab ở khay đáy: nút mèo + mỗi khu đã mở một nút biểu tượng; khu đang chọn xanh lá, kèm số món đã xây / tổng.
-// Biểu tượng tab là mặt nạ ảnh (ui/deco/img/tab-*.png tách từ Figma, deco.css `.zi`), tô màu theo trạng thái; khu chưa có trong thiết kế dùng hình đặc cùng kiểu.
-const zoneIcon = zone => `<i class="zi" data-z="${zone}"></i>`;
 function renderZoneSwitch() {
-  const current = getDeco().zone;
-  document.querySelectorAll('#deco-zone button').forEach(button => {
-    if (button.dataset.kind === 'cats') {
-      button.classList.toggle('on', decoTab === 'cats');
-      button.setAttribute('aria-selected', decoTab === 'cats');
-      return;
-    }
-    const zone = button.dataset.zone, open = isZoneOpen(zone), on = zone === current && decoTab !== 'cats';
-    button.classList.toggle('on', on);
-    button.setAttribute('aria-selected', on);
-    button.setAttribute('aria-label', ZONES[zone].name);
-    button.title = ZONES[zone].name;
+  document.querySelectorAll('.zone-switch button').forEach(button => {
+    const zone = button.dataset.zone, open = isZoneOpen(zone);
+    button.classList.toggle('on', zone === getDeco().zone);
+    button.classList.toggle('locked', !open);
+    button.setAttribute('aria-selected', zone === getDeco().zone);
     const [built, total] = open ? builtCount(getDeco(), zone) : [0, 0];
-    button.innerHTML = `${zoneIcon(zone)}${on ? `<small>${built}/${total}</small>` : ''}`;
-    // Khu chưa mở khoá (chưa trả xu mở khu): chưa hiện.
-    button.hidden = !open;
+    button.innerHTML = open ? `${ZONES[zone].name} <small>${built}/${total}</small>` : ZONES[zone].name;
+    // Khu chưa mở khoá: chưa hiện (mở khi người chơi tới stage của khu đó). Khu đã xây hết mọi chỗ: ẩn khỏi hàng chọn khu
+    // (vẫn tới được bằng cách kéo cảnh / chạm đồ trong khu đó).
+    button.hidden = !open || built === total;
   });
+  $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
   fitZoneSwitch();
   renderAreaNext();
 }
 // Hàng chọn khu ở Deco: hiện tối đa 3 khu, khu mở sau đó vuốt ngang để xem; tự cuộn tới khu đang chọn.
 // Lúc Deco còn ẩn thì chưa đo được nút: đo lại khi hàng chọn khu hiện ra / đổi cỡ.
 new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
-// PC: giữ chuột trái rồi kéo để cuộn ngang hàng tab khu và hàng thẻ (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm.
-function dragScroll(bar) {
+// PC: giữ chuột trái rồi kéo để cuộn ngang hàng chọn khu (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm chọn khu.
+{
+  const bar = $('deco-zone');
   let drag = null;
   bar.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -1214,14 +1156,16 @@ function dragScroll(bar) {
     drag = null;
   });
 }
-dragScroll($('deco-zone'));
-dragScroll($('deco-cards'));
 function fitZoneSwitch() {
-  const bar = $('deco-zone'), on = [...bar.children].find(button => !button.hidden && button.classList.contains('on'));
-  // Chỉ cuộn khi khu đang chọn nằm ngoài khung nhìn; còn lại giữ sát trái như thiết kế
-  if (!on || !on.offsetWidth) return;
-  const left = on.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft;
-  if (left < bar.scrollLeft || left + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = left - 12;
+  const ZONE_SWITCH_MAX = 3, bar = $('deco-zone'), shown = [...bar.children].filter(button => !button.hidden);
+  bar.style.maxWidth = '';
+  if (bar.hidden || shown.length <= ZONE_SWITCH_MAX || !shown[0].offsetWidth) return;
+  const style = getComputedStyle(bar), gap = parseFloat(style.columnGap) || 0;
+  const width = shown.slice(0, ZONE_SWITCH_MAX).reduce((sum, button) => sum + button.offsetWidth, 0) + gap * (ZONE_SWITCH_MAX - 1)
+    + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+  bar.style.maxWidth = `min(${Math.ceil(width)}px, calc(100% - 24px))`;
+  const on = shown.find(button => button.classList.contains('on'));
+  if (on) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
 }
 
 // ===== Mở khu: thẻ "khu kế tiếp" ở Deco + bảng mở khu (track 3 bước kiểu Idle Theme Park: đủ màn → tiêu xu vào decor → khánh thành) =====
@@ -1281,22 +1225,13 @@ function buyArea(area) {
   showToast(AREA_ORDER.every(id => areaOpen(next, id)) ? `${AREA_NAMES[area]} is open! Gift: a Flower garden is blooming next to your garden!` : `${AREA_NAMES[area]} is open!`);
 }
 document.addEventListener('click', event => {
-  const button = event.target.closest('#deco-zone button');
+  const button = event.target.closest('.zone-switch button');
   if (!button) return;
   const zone = button.dataset.zone;
-  if (button.dataset.kind === 'cats') {
-    if (decoTab === 'cats') return;
-    playSound('pick');
-    decoTab = 'cats';
-  } else {
-    if (!isZoneOpen(zone)) return;
-    if (zone === getDeco().zone && decoTab !== 'cats') return;
-    playSound('pick');
-    if (decoTab === 'cats') decoTab = 'furniture';
-    if (zone !== getDeco().zone) setDeco({ ...getDeco(), zone });
-  }
+  if (!isZoneOpen(zone)) return;
+  if (zone === getDeco().zone) return;
+  setDeco({ ...getDeco(), zone });
   decoPick = null;
-  clearPreview();
   closeDecoPop(false);
   renderZoneSwitch();
   renderDeco();
