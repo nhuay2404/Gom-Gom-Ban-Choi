@@ -1,18 +1,18 @@
-// Sinh bố trí mèo đặt sẵn cho DDA (game/gameplay/levels/cat-layouts.mjs). Chạy: npm run cat-layouts [-- tên màn hoặc số màn ...]
+// Sinh bố trí mèo đặt sẵn cho DDA (game/data/cat-layouts.mjs). Chạy: npm run cat-layouts [-- tên màn hoặc số màn ...]
 // DDA không đổi thiết kế (bàn, vật cản, chuồng, lượt): chỉ được xê dịch vài con mèo tự do. Độ khó của một bố trí không đoán
 // được bằng công thức (dời mèo còn ảnh hưởng phá thùng, mở chuồng, chỗ trống) nên ĐO bằng bot "trung bình" trên cùng bộ seed
 // với bố trí thiết kế, rồi chỉ giữ bố trí lệch nhẹ đúng khoảng của từng mức (BANDS, điểm % tỉ lệ thắng):
 //   -2 dễ hơn rõ · -1 dễ hơn chút · 0 khác chỗ mà độ khó như thiết kế (cho người chơi chán) · +1 khó hơn chút · +2 khó hơn rõ.
 // Mỗi mức giữ tối đa KEEP bố trí để người chơi gặp lại màn không thấy y hệt. Hàng thẻ (tuneDealer) cộng thêm lúc chơi.
 import { writeFileSync } from 'node:fs';
-import { LEVELS } from '../../game/gameplay/levels/levels.mjs';
-import { isAdaptive, nudgeCats, mulberry32, hashOf } from '../../game/gameplay/adaptive.mjs';
-import { holdUnlocked } from '../../game/gameplay/tuning.mjs';
+import { LEVELS } from '../../game/data/levels.mjs';
+import { isAdaptive, nudgeCats, mulberry32, hashOf } from '../../game/core/adaptive.mjs';
+import { holdUnlocked } from '../../game/data/tuning.mjs';
 import { play } from './bot.mjs';
 
 const BANDS = { '-2': [6, 14], '-1': [2, 7], 0: [-2, 2], 1: [-7, -2], 2: [-14, -6] };
 const NOISE = 30, CANDIDATES = 40, SCREEN = 60, RUNS = 200, KEEP = 3, MAX_MOVES = 3;
-const FILE = new URL('../../game/gameplay/levels/cat-layouts.mjs', import.meta.url);
+const FILE = new URL('../../game/data/cat-layouts.mjs', import.meta.url);
 
 const only = process.argv.slice(2);
 const pick = (level, i) => !only.length || only.includes(String(i + 1)) || only.includes(level.name);
@@ -67,4 +67,4 @@ LEVELS.forEach((base, i) => {
 });
 
 console.log(`
-Đã ghi game/gameplay/levels/cat-layouts.mjs (${save()} màn)`);
+Đã ghi game/data/cat-layouts.mjs (${save()} màn)`);

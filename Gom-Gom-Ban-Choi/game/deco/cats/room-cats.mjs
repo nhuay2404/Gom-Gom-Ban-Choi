@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { roundedBox } from '../render/mesh-detail.mjs';
 import { categories, catExpressionSrc, catBodyPlacement, catExprBox, SLEEP_FACE } from '../../ui/cat-art.mjs';
 import { OBSTACLE_RADIUS, OBSTACLE_EXTRA, WINDOW, ZONE_OFFSET, LINKS } from '../room-layout.mjs';
-import { CAT_BODY, CAT_MOTION } from '../../gameplay/tuning.mjs';
+import { CAT_BODY, CAT_MOTION } from '../../data/tuning.mjs';
 import { TOON, toonMat, markOutlineUnit } from '../render/toon.mjs';
 import { expressionOf, settleExpression } from './cat-face.mjs';
 import { spring } from './spring.mjs';

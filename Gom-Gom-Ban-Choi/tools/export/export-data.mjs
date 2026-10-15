@@ -10,13 +10,14 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LEVELS, LETTERS, parseCard } from '../../game/gameplay/levels/levels.mjs';
-import { MATCH_SIZE, clusterPoints } from '../../game/gameplay/scoring.mjs';
+import { LEVELS, LETTERS } from '../../game/data/levels.mjs';
+import { parseCard } from '../../game/core/level-rules.mjs';
+import { MATCH_SIZE, clusterPoints } from '../../game/core/scoring.mjs';
 import { categories } from '../../game/ui/cat-art.mjs';
 import { CATALOG, ZONES } from '../../game/deco/deco-data.mjs';
 import { PLACES, OBSTACLE_RADIUS, WINDOW, ROOM_HALF, WALL_H, facingOf } from '../../game/deco/room-layout.mjs';
-import * as tuning from '../../game/gameplay/tuning.mjs';
-import { levelTier, levelMechanics } from '../../game/gameplay/progression.mjs';
+import * as tuning from '../../game/data/tuning.mjs';
+import { levelTier, levelMechanics } from '../../game/core/progression.mjs';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'export', 'data');
 mkdirSync(OUT, { recursive: true });

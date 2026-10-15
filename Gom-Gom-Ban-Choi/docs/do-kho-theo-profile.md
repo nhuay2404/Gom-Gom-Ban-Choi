@@ -1,13 +1,13 @@
 # Gom Gom Rotate — Độ khó theo profile người chơi
 
-Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/gameplay/adaptive.mjs` (luật), `game/app/play-controller.js` (thu metric, hiện nhãn), `game/gameplay/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
+Mục tiêu: màn sắp tới khó hay dễ tuỳ theo người chơi đang chơi thế nào. Người đang thắng liên tục thì được thử thách hơn; người đang thua liên tục thì được thả lỏng trước khi bỏ game. Đã tích hợp ngày 01/10/2026: `game/core/adaptive.mjs` (luật), `game/app/play-controller.js` (thu metric, hiện nhãn), `game/core/adaptive.test.mjs` (test). Mục 8 ghi những chỗ bản cài khác thiết kế ban đầu.
 
 > **Cập nhật 09/10/2026 — DDA bản 2 (thay cho phần bật/tắt element bên dưới).**
 > - DDA **không** đụng vào thiết kế màn: hình bàn, thùng, kim loại, ô ngoài bàn, chuồng, giống mèo, mục tiêu và **số lượt** giữ đúng `levels.mjs`.
 >   Không còn "+lượt" khi thua; không còn bật/tắt element. Nhãn Easy / Medium / Hard vẫn tính từ element của thiết kế, chỉ để hiển thị.
 > - DDA chỉ chỉnh hai thứ, theo mức `shift` -2 … +2 (âm = dễ hơn) do profile quyết định (mục 2–4 vẫn đúng):
 >   1. **Bố trí mèo đặt sẵn** lúc vào màn lần đầu: thiết kế xê dịch 1–3 con mèo. Các bố trí được bot "trung bình" đo trước
->      (`npm run cat-layouts` -> `game/gameplay/levels/cat-layouts.mjs`), mỗi mức chỉ lệch vài điểm % tỉ lệ thắng: -2 +6…+14 · -1 +2…+7 ·
+>      (`npm run cat-layouts` -> `game/data/cat-layouts.mjs`), mỗi mức chỉ lệch vài điểm % tỉ lệ thắng: -2 +6…+14 · -1 +2…+7 ·
 >      0 (người chơi chán: khác chỗ, độ khó như cũ) ±2 · +1 −2…−7 · +2 −6…−14. **Thua rồi chơi lại thì giữ nguyên bố trí** (lưu trong lần thử).
 >   2. **Hàng thẻ**: assist ±0.05 mỗi mức (tối đa ±0.15), thêm thẻ đôi khi dễ hơn / thẻ đơn ở mức +2; chơi lại sau khi thua vì
 >      hết chỗ / hết lượt thì thêm thẻ đôi / assist. Đây là phần duy nhất đổi giữa các lần chơi lại.
@@ -207,7 +207,7 @@ function nextLevelPlan(history, levelIndex) {
 }
 ```
 
-Chỗ tích hợp dự kiến khi duyệt xong: module mới `game/gameplay/adaptive.mjs` (thuần logic, test được bằng Node), save key mới `gomgom-rotate-profile-v1` trong `save.mjs`, `createSession` nhận bản biến thể thay vì `LEVELS[i]`, và `play-controller.js` gửi thêm `thinkMs` / `idleMs` / `resultDwellMs` (đã có sẵn timer AFK).
+Chỗ tích hợp dự kiến khi duyệt xong: module mới `game/core/adaptive.mjs` (thuần logic, test được bằng Node), save key mới `gomgom-rotate-profile-v1` trong `save.mjs`, `createSession` nhận bản biến thể thay vì `LEVELS[i]`, và `play-controller.js` gửi thêm `thinkMs` / `idleMs` / `resultDwellMs` (đã có sẵn timer AFK).
 
 ## 7. Các quyết định đã chốt khi tích hợp
 
@@ -610,8 +610,8 @@ Bot 200 ván, trước → sau: Steel Nap 96% → 92% · Iron & Oak 60% → 49% 
 
 Trước đây crate/wall chỉ có hai trạng thái: giữ nguyên hoặc xoá hết. Giờ mỗi màn có các **bản bố trí sinh sẵn offline**:
 
-- `game/gameplay/levels/layout-score.mjs`: chấm độ khó một bố trí: chỗ đặt thẻ 3 ô, vùng trống lớn nhất, nút thắt, thùng khó phá (≤ 1 ô trống sát bên), vật cản chặn đầu cặp mèo sẵn.
-- `tools/levels/generate-layouts.mjs`: mỗi màn, mỗi mức sinh ~300 ứng viên (giữ hình bàn `#` và mèo sẵn, không tạo cụm gom sẵn, không thêm loại vật cản trước màn giới thiệu nó), xếp hạng bằng điểm bố trí, cho bot "trung bình" chơi thử 12 bản đầu, giữ bản lệch tỉ lệ thắng gần mục tiêu nhất; mức nào phá thứ tự dễ → khó thì bỏ. Kết quả ghi vào `game/gameplay/levels/level-layouts.mjs` (sửa tay được; chạy lại sẽ ghi đè). Mất ~7 phút.
+- `game/core/layout-score.mjs`: chấm độ khó một bố trí: chỗ đặt thẻ 3 ô, vùng trống lớn nhất, nút thắt, thùng khó phá (≤ 1 ô trống sát bên), vật cản chặn đầu cặp mèo sẵn.
+- `tools/levels/generate-layouts.mjs`: mỗi màn, mỗi mức sinh ~300 ứng viên (giữ hình bàn `#` và mèo sẵn, không tạo cụm gom sẵn, không thêm loại vật cản trước màn giới thiệu nó), xếp hạng bằng điểm bố trí, cho bot "trung bình" chơi thử 12 bản đầu, giữ bản lệch tỉ lệ thắng gần mục tiêu nhất; mức nào phá thứ tự dễ → khó thì bỏ. Kết quả ghi vào `game/data/level-layouts.mjs` (sửa tay được; chạy lại sẽ ghi đè). Mất ~7 phút.
 
 | Mức | Crate | Wall | Mục tiêu tỉ lệ thắng (so với gốc) | Dùng cho profile |
 |---|---|---|---|---|

@@ -6,11 +6,13 @@
 //   --no-effects tắt hiệu ứng cụm to / gom đôi (cluster-effects.mjs) để so sánh
 // Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
-import { LEVELS, parseBoard, parseCard, boardSize } from '../../game/gameplay/levels/levels.mjs';
-import { holdUnlocked } from '../../game/gameplay/tuning.mjs';
-import { playableCells } from '../../game/gameplay/levels/board-shapes.mjs';
-import { clearMatches } from '../../game/gameplay/board-rules.mjs';
-import { MATCH_SIZE } from '../../game/gameplay/scoring.mjs';
+import { LEVELS } from '../../game/data/levels.mjs';
+import { parseBoard, parseCard } from '../../game/core/level-rules.mjs';
+import { boardSize } from '../../game/core/board-shapes.mjs';
+import { holdUnlocked } from '../../game/data/tuning.mjs';
+import { playableCells } from '../../game/core/board-shapes.mjs';
+import { clearMatches } from '../../game/core/board-rules.mjs';
+import { MATCH_SIZE } from '../../game/core/scoring.mjs';
 import { play, PACES } from './bot.mjs';
 import { writeFileSync } from 'node:fs';
 
@@ -51,7 +53,7 @@ if (BASELINE) { writeFileSync(new URL('./baseline.json', import.meta.url), `${JS
 // --dda: tỉ lệ thắng của bot ở từng mức DDA (adaptive.mjs variantFor: xếp lại mèo đặt sẵn + chỉnh hàng thẻ, giữ nguyên
 // thiết kế bàn và số lượt). Mức dễ hơn phải thắng nhiều hơn; dòng nào đảo thứ tự thì gắn "!" để xem lại.
 if (process.argv.includes('--dda')) {
-  const { variantFor, isAdaptive, SHIFT_MIN, SHIFT_MAX } = await import('../../game/gameplay/adaptive.mjs');
+  const { variantFor, isAdaptive, SHIFT_MIN, SHIFT_MAX } = await import('../../game/core/adaptive.mjs');
   console.log('\nĐộ khó thích ứng: tỉ lệ thắng theo mức shift (âm = dễ hơn, 0 = thiết kế)');
   LEVELS.forEach((base, i) => {
     if (!isAdaptive(base)) return;

@@ -5,7 +5,7 @@
 
 // Kích thước bàn tuỳ màn (levels.mjs, board-shapes.mjs); W/H ở đây là bàn chuẩn 6×6 dùng làm mặc định.
 import { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, BOOSTER_PRICE, BOOSTER_START_STOCK, BOOSTER_UNLOCK_LEVEL, BOOSTER_EXTRA_MOVES } from './economy.mjs';
-import { remote } from './remote-config.mjs';
+import { remote } from '../core/remote-config.mjs';
 
 export const BOARD = remote('BOARD', { W: 6, H: 6, PREVIEW_COUNT: 1 });
 
@@ -42,7 +42,7 @@ export const DRAG = remote('DRAG', {
 // Cảnh báo sắp hết lượt
 export const LOW_MOVES = remote('LOW_MOVES', { MSG_AT: 3, CATS_AT: 2, WARN_RATIO: .3 });
 
-// Kinh tế (xu thưởng, giá booster, giá đồ ...): sửa ở gameplay/economy.mjs — ở đây chỉ gom lại cho code cũ dùng.
+// Kinh tế (xu thưởng, giá booster, giá đồ ...): sửa ở data/economy.mjs — ở đây chỉ gom lại cho code cũ dùng.
 export const ECONOMY = { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, MAX_ROOM_CATS: Infinity };
 
 // Mèo 3D trong phòng
@@ -65,7 +65,7 @@ export const BOOSTERS = {
   UNLOCK_LEVEL: BOOSTER_UNLOCK_LEVEL,
   START_STOCK: BOOSTER_START_STOCK,
   EXTRA_MOVES: BOOSTER_EXTRA_MOVES,
-  PRICE: BOOSTER_PRICE, // giá: gameplay/economy.mjs
+  PRICE: BOOSTER_PRICE, // giá: data/economy.mjs
 };
 // Đổi thẻ: số lượt liên tiếp được thẻ có lợi nhất (thẻ đang bóc + TURNS - 1 thẻ sau), session.mjs luckyCard.
 export const LUCKY = remote('LUCKY', { TURNS: 3 });

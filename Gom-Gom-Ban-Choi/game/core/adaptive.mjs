@@ -15,13 +15,14 @@
 // Vòng đời: startVisit lúc mở game -> planLevel trước mỗi lần vào màn (đọc lịch sử -> profile -> bố trí + hàng thẻ)
 // -> recordAttempt khi màn kết thúc (thắng, thua, bỏ ngang; lưu cả bố trí đã chơi) -> noteDwell khi rời bảng kết quả.
 // Màn có tutorial luôn chơi đúng thiết kế.
-import { LEVELS, parseBoard, DEFAULT_SHAPES, DEFAULT_ASSIST } from './levels/levels.mjs';
+import { LEVELS } from '../data/levels.mjs';
+import { parseBoard, DEFAULT_SHAPES, DEFAULT_ASSIST } from './level-rules.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
-import { ADAPTIVE } from './tuning.mjs';
-import { boardSize, isPlainSquare } from './levels/board-shapes.mjs';
+import { ADAPTIVE } from '../data/tuning.mjs';
+import { boardSize, isPlainSquare } from './board-shapes.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
-import { CAT_LAYOUTS } from './levels/cat-layouts.mjs';
+import { CAT_LAYOUTS } from '../data/cat-layouts.mjs';
 
 const A = ADAPTIVE;
 const DAY_MS = 24 * 60 * 60 * 1000;

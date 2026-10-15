@@ -240,7 +240,7 @@
           <li><b>Lưỡng lự / nản</b>: nghĩ mỗi lượt &gt; 1.5× mức thường của chính mình (<code>IDLE_RATIO</code>), hoặc AFK &gt; 25% thời gian màn (<code>IDLE_SHARE</code>); đứng ở bảng kết quả &gt; 8 s (<code>DWELL_MS</code>) cũng tính là nản.</li>
           <li><b>Người mong manh</b>: từng bỏ ngang trong 10 lần chơi gần nhất (<code>FRAGILE_WINDOW</code>): hạ độ khó sớm hơn, không giữ độ khó khi thua sát nút.</li>
         </ul>
-        <p class="muted">Ngưỡng nằm ở <code>ADAPTIVE</code> trong game/gameplay/tuning.mjs (chỉnh được qua Firebase). Các hàng ở bảng trên là lịch sử giả dựng để thử từng nhánh luật
+        <p class="muted">Ngưỡng nằm ở <code>ADAPTIVE</code> trong game/data/tuning.mjs (chỉnh được qua Firebase). Các hàng ở bảng trên là lịch sử giả dựng để thử từng nhánh luật
           (vd. "Sát nút" = 2 lần thua ở màn này, mỗi lần 90% điểm), không phải người chơi thật. Khác với "profile" của curve EV (bot với tay nghề khác nhau)
           và người ảo ở tab 💰 Economy (lượt/ngày, tay nghề, cách mua) — hai nơi đó không nhận diện người chơi.</p>
       </details>
@@ -307,7 +307,7 @@
 
   <h3>💾 Lưu (thanh trên cùng)</h3>
   <ul>
-    <li><b>Tự lưu</b> (mặc định bật): mỗi thay đổi được ghi thẳng vào <code>game/gameplay/levels/levels.mjs</code> sau khoảng 1 giây. Tải lại game là chơi được bản mới.</li>
+    <li><b>Tự lưu</b> (mặc định bật): mỗi thay đổi được ghi thẳng vào <code>game/data/levels.mjs</code> sau khoảng 1 giây. Tải lại game là chơi được bản mới.</li>
     <li>Tắt tự lưu thì bấm <b>💾 Lưu vào game</b> khi muốn ghi. Màn đang có lỗi (dòng ⚠ dưới bàn) sẽ <b>không</b> được lưu, sửa hết lỗi trước.</li>
     <li>Chú thích <code>//</code> trong khối màn và đoạn tutorial (nếu không đổi) được giữ nguyên.</li>
     <li><b>↶ Hoàn tác màn này</b>: trả màn về bản đã lưu gần nhất. Muốn quay lại hẳn bản cũ thì dùng git.</li>
@@ -331,7 +331,7 @@
     <li><b>Idle trong game</b>: mèo kiếm xu theo giờ, bong bóng xu hiện trên đầu con mèo đầu tiên ở Deco, chạm để nhận. Thẻ “Xu từ idle” cho biết idle chiếm bao nhiêu % tổng xu (nên 5–15%).</li>
     <li><b>Cột phải = kết quả, tự tính lại khi sửa</b>: ③ từng lô 10 màn có đủ xu mua món chính không (xanh 85–115% là vừa) · ④ người chơi ảo: mở từng khu ngày nào, ở màn nào, bao nhiêu % phải chờ tiêu xu, cuối game dư bao nhiêu xu, kèm biểu đồ xu trong ví.</li>
     <li><b>Tuỳ chỉnh người chơi ảo</b> (khung gập ở ④): số ván / ngày, tay nghề, cách mua, số lần nhận idle / ngày của từng kiểu. Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo thật.</li>
-    <li><b>💾 Lưu vào game</b> ghi số vào <code>game/gameplay/economy.mjs</code>; <b>↶ Hoàn tác</b> lấy lại số đang có trong game. Lưu xong chạy <code>npm run economy</code> và <code>npm run firebase:template</code>.</li>
+    <li><b>💾 Lưu vào game</b> ghi số vào <code>game/data/economy.mjs</code>; <b>↶ Hoàn tác</b> lấy lại số đang có trong game. Lưu xong chạy <code>npm run economy</code> và <code>npm run firebase:template</code>.</li>
   </ul>
 </dialog>
 <script type="module" src="./editor.mjs"></script>

@@ -1,8 +1,8 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
-import { ECONOMY } from '../gameplay/tuning.mjs';
-import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
+import { ECONOMY } from '../data/tuning.mjs';
+import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../data/economy.mjs';
+import { SAVE_KEYS, readJSON, writeJSON } from '../core/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
 // Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
@@ -49,7 +49,7 @@ export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
   return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
 }
 
-// Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
+// Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở data/economy.mjs (bảng DECO), áp vào cuối danh mục.
 export const CATALOG = [
   // --- Vườn ---
   { id: 'flowers', zone: 'garden', cat: 'furniture', name: 'Flower bed', color: '#ff9fb6' },

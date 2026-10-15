@@ -1,12 +1,12 @@
-// Báo cáo kinh tế theo stage: chạy `npm run economy` sau khi sửa game/gameplay/economy.mjs.
+// Báo cáo kinh tế theo stage: chạy `npm run economy` sau khi sửa game/data/economy.mjs.
 // In bảng ra màn hình và ghi docs/economy-report.md. Mỗi stage = 10 màn:
 //   - Xu nhận trong stage (thắng mỗi màn một lần; stage 1 cộng thêm START_COINS)
 //   - Đồ trang trí MỞ trong stage (theo khu mở + lock) và tổng giá: món gốc / kiểu khác / tường-sàn
 //   - Luỹ kế: tổng xu đã nhận so với tổng giá mọi món đã mở tới hết stage đó (đủ mua bao nhiêu %)
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { START_COINS, BOOSTER_PRICE, COIN_PACKS, AREA_UNLOCK } from '../../game/gameplay/economy.mjs';
-import { levelReward } from '../../game/gameplay/progression.mjs';
-import { LEVELS } from '../../game/gameplay/levels/levels.mjs';
+import { START_COINS, BOOSTER_PRICE, COIN_PACKS, AREA_UNLOCK } from '../../game/data/economy.mjs';
+import { levelReward } from '../../game/core/progression.mjs';
+import { LEVELS } from '../../game/data/levels.mjs';
 import { CATALOG, ZONES, GARDEN_EXPANSION, AREA_ORDER } from '../../game/deco/deco-data.mjs';
 
 const STAGE = 10, stages = Math.ceil(LEVELS.length / STAGE);
@@ -43,7 +43,7 @@ const table = [
 ];
 const md = `# Báo cáo kinh tế (tự sinh — đừng sửa tay)
 
-Sinh bởi \`npm run economy\` từ [game/gameplay/economy.mjs](../game/gameplay/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
+Sinh bởi \`npm run economy\` từ [game/data/economy.mjs](../game/data/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
 
 - **Xu nhận**: tổng xu thưởng khi thắng lần đầu mọi màn trong stage${START_COINS ? ` (stage 1 gồm ${fmt(START_COINS)} xu ban đầu)` : ''}.
 - **Giá mở khu kế**: số xu trả để mua khu có mốc màn trong stage (economy.mjs AREA_UNLOCK.cost). Không cộng vào tổng giá đồ.

@@ -10,17 +10,17 @@ chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API
 
 | Lớp | File | Sang Cocos |
 |---|---|---|
-| **Lõi (chép)** | `game/gameplay/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
-| | `game/gameplay/scoring.mjs` | Điểm theo cỡ cụm |
-| | `game/gameplay/levels/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
-| | `game/gameplay/levels/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
-| | `game/gameplay/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
-| | `game/gameplay/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
-| | `game/gameplay/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
-| | `game/gameplay/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
+| **Lõi (chép)** | `game/core/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
+| | `game/core/scoring.mjs` | Điểm theo cỡ cụm |
+| | `game/data/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
+| | `game/core/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
+| | `game/core/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
+| | `game/core/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
+| | `game/core/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
+| | `game/core/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
 | | `game/deco/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
-| | `game/gameplay/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
-| | `game/gameplay/tuning.mjs` | Mọi hằng số cảm giác chơi |
+| | `game/core/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
+| | `game/data/tuning.mjs` | Mọi hằng số cảm giác chơi |
 | | `game/deco/room-layout.mjs` | Chỗ đặt đồ, bán kính vật cản, cửa sổ |
 | | `game/ui/cat-art.mjs`, `game/ui/board-art.mjs` | Art SVG dạng chuỗi (xuất ra PNG bằng tool) |
 | **Giao diện 2D (làm lại)** | `game/app/play-controller.js` (màn chơi), `game/app/menu-controller.js` (menu), `game/app/shared.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |

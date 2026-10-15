@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as ECO from '../../game/gameplay/economy.mjs';
+import * as ECO from '../../game/data/economy.mjs';
 import { simulatePlayer, simulateProfile, PROFILES } from './economy-sim.mjs';
 import { saveEconomy, EDITABLE } from './economy-save.mjs';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -31,7 +31,7 @@ test('mô phỏng economy: mốc tiêu xu không với tới thì khu không m�
 });
 
 test('lưu economy từ editor: ghi lại đúng số mặc định, file giữ nguyên phần khác; tên lạ bị từ chối', async () => {
-  const before = readFileSync(new URL('../../game/gameplay/economy.mjs', import.meta.url), 'utf8');
+  const before = readFileSync(new URL('../../game/data/economy.mjs', import.meta.url), 'utf8');
   const file = join(tmpdir(), `economy-${process.pid}.mjs`);
   writeFileSync(file, before);
   try {

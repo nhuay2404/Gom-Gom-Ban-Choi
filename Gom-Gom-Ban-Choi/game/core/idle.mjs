@@ -6,9 +6,9 @@
 //   - Giờ máy lùi lại (chỉnh giờ): bắt đầu tích lại từ bây giờ, không cộng gì.
 //   - Save cũ (idleAt là một số, chung cả nhà): mọi con trong nhà tích tiếp từ mốc đó.
 // cfg: mặc định là số trong game; tab Kinh tế của Level Editor truyền bộ số đang sửa (cùng công thức).
-import { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL } from './economy.mjs';
+import { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL } from '../data/economy.mjs';
 import { rewardFor } from './progression.mjs';
-import { ECONOMY } from './tuning.mjs';
+import { ECONOMY } from '../data/tuning.mjs';
 
 const HOUR = 3600 * 1000;
 const GAME = { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL, ...ECONOMY };

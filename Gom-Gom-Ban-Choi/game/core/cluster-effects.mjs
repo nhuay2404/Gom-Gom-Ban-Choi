@@ -6,7 +6,7 @@
 // Gom đôi (2+ cụm): 3+3 → leap (mèo vồ 1 lớp vật cản gần nhất; bàn không còn vật cản thì xoá 2 mèo lẻ) · 4+4 → 2 pounce + yarn · 5+ & 5+ → 2 yarn + herd màu đông nhất · lệch cỡ → hiệu ứng cụm to.
 // Điểm cả lượt nhân DOUBLE_MULT khi gom đôi (session.mjs).
 import { mergeTarget } from './board-rules.mjs';
-import { EFFECTS } from './tuning.mjs';
+import { EFFECTS } from '../data/tuning.mjs';
 
 const kindOf = size => (size >= 7 ? 'herd' : size === 6 ? 'cross' : size === 5 ? 'yarn' : size === 4 ? 'pounce' : null);
 const ring = (cells, W, H) => {

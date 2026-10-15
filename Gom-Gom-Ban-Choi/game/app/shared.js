@@ -1,11 +1,11 @@
 // Phần dùng chung của hai luồng điều khiển (play-controller.js, menu-controller.js): DOM helper, toast, ví xu, kho booster.
-import { loadProgress, earnedCoins, levelsCleared } from '../gameplay/progression.mjs';
-import { BOOSTERS } from '../gameplay/tuning.mjs';
-import { START_COINS } from '../gameplay/economy.mjs';
-import { loadBoosters, saveBoosters, buyBooster } from '../gameplay/boosters.mjs';
+import { loadProgress, earnedCoins, levelsCleared } from '../core/progression.mjs';
+import { BOOSTERS } from '../data/tuning.mjs';
+import { START_COINS } from '../data/economy.mjs';
+import { loadBoosters, saveBoosters, buyBooster } from '../core/boosters.mjs';
 import { loadDeco, saveDeco } from '../deco/deco-data.mjs';
 import { playSound } from '../ui/sound.mjs';
-import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
+import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 
 export const $ = id => document.getElementById(id);
 export const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');

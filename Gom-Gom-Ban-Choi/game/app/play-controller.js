@@ -1,22 +1,22 @@
 // ===== Luồng điều khiển MÀN CHƠI (gameplay) =====
 // Một ván từ lúc vào màn tới bảng kết quả: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, sắp hết lượt,
-// tutorial, bảng vào màn, kết quả và metric cho độ khó thích ứng. Luật nằm ở gameplay/session.mjs; file này gọi luật rồi vẽ.
+// tutorial, bảng vào màn, kết quả và metric cho độ khó thích ứng. Luật nằm ở core/session.mjs; file này gọi luật rồi vẽ.
 // Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở main.js).
-import { mergeTarget, placementIndices } from '../gameplay/board-rules.mjs';
-import { clusterPoints, turnPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
+import { mergeTarget, placementIndices } from '../core/board-rules.mjs';
+import { clusterPoints, turnPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS, skinGroup } from '../ui/cat-art.mjs';
-import { LEVELS } from '../gameplay/levels/levels.mjs';
-import * as game from '../gameplay/session.mjs';
-import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
-import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS, LUCKY } from '../gameplay/tuning.mjs';
-import { COMEBACK_GIFT_MOVES } from '../gameplay/economy.mjs';
-import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
+import { LEVELS } from '../data/levels.mjs';
+import * as game from '../core/session.mjs';
+import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../core/progression.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS, LUCKY } from '../data/tuning.mjs';
+import { COMEBACK_GIFT_MOVES } from '../data/economy.mjs';
+import { spendBooster, boostersUnlocked } from '../core/boosters.mjs';
 import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG, GRASS_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
 import * as ob from './onboarding.js';
 import { playSound, playMeow, playMeowChorus } from '../ui/sound.mjs';
-import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
+import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../core/adaptive.mjs';
 import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
-import { AREA_UNLOCK } from '../gameplay/economy.mjs';
+import { AREA_UNLOCK } from '../data/economy.mjs';
 import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, pieceSkin } from './shared.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
@@ -345,7 +345,7 @@ function bonusBanner() {
 }
 $('board').addEventListener('pointerdown', () => { if (state.outcome?.win && state.animating) finaleFast = true; });
 
-// ---------- Hiệu ứng cụm to / gom đôi (gameplay/cluster-effects.mjs) ----------
+// ---------- Hiệu ứng cụm to / gom đôi (core/cluster-effects.mjs) ----------
 // Mỗi hiệu ứng: khựng nhẹ (bàn phóng to 1 nhịp) + rung theo bậc, ô trúng loé sáng + văng mảnh, chữ tên hiệu ứng, điểm thưởng bật ra ở tâm.
 const EFFECT_FX = {
   pounce: { label: 'Pounce!', shake: 3, bits: 'grass-bit' },

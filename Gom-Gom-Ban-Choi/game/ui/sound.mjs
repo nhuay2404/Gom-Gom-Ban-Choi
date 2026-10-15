@@ -25,7 +25,7 @@
 //   (mèo buồn ngủ khi AFK: im lặng)
 //   Nhạc nền: assets/sfx/bgm.mp3, lặp bỏ đoạn im lặng cuối file (BGM / startMusic ở cuối file). Độ to mọi file: bảng LEVEL.
 // Trình duyệt chỉ cho phát tiếng sau lần chạm đầu tiên; bật/tắt được và lưu lại trong máy.
-import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
+import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 let ctx = null, out = null, echo = null;
 let enabled = readText(SAVE_KEYS.sound) !== 'off';
 

@@ -2,13 +2,13 @@
 // Home hub = bản đồ màn (ví, liveops), Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
 // và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở main.js).
 import { categories, catMarkup, addArt as addCatArt } from '../ui/cat-art.mjs';
-import { LEVELS } from '../gameplay/levels/levels.mjs';
-import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../gameplay/progression.mjs';
-import { BOOSTERS } from '../gameplay/tuning.mjs';
-import { TUTORIAL_TOP_UP, COIN_PACKS, STARTER_PACK, AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../gameplay/idle.mjs';
+import { LEVELS } from '../data/levels.mjs';
+import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../core/progression.mjs';
+import { BOOSTERS } from '../data/tuning.mjs';
+import { TUTORIAL_TOP_UP, COIN_PACKS, STARTER_PACK, AREA_UNLOCK } from '../data/economy.mjs';
+import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../core/idle.mjs';
 import { playSound, playMeow, soundOn, setSound, setMusic } from '../ui/sound.mjs';
-import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
+import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, claimCat, isCatClaimed, catRewardsAt,
   isOwned, catalogFor, slotOf, shopCatalog, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, AREA_NAMES, AREA_ORDER, areaOpen, areaState, nextArea, unlockArea, ownAllBase } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from './deco-tour.js';
@@ -756,7 +756,7 @@ function placeDecoPop() {
   pop.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
 }
 
-// ---------- Xu tự sinh (idle, gameplay/idle.mjs): mỗi con mèo trong nhà có bong bóng xu riêng bám trên đầu, chạm để nhận ----------
+// ---------- Xu tự sinh (idle, core/idle.mjs): mỗi con mèo trong nhà có bong bóng xu riêng bám trên đầu, chạm để nhận ----------
 // Số màn đã thắng đọc một lần mỗi lần vẽ Deco (không đọc save mỗi khung hình).
 let idleCleared = 0;
 function startIdle() {
@@ -958,7 +958,7 @@ export async function runOnboarding() {
 }
 
 // ---------- Shop: 2 tab — "Shop" (gói khởi đầu, booster, gói xu) và "Decoration" (chỉ đồ trang trí) ----------
-// Gói xu + gói khởi đầu: số xu / giá lấy từ gameplay/economy.mjs (COIN_PACKS, STARTER_PACK).
+// Gói xu + gói khởi đầu: số xu / giá lấy từ data/economy.mjs (COIN_PACKS, STARTER_PACK).
 document.querySelector('.coin-list').innerHTML = COIN_PACKS.map(pack =>
   `<button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>${pack.coins.toLocaleString('en-US')}</b><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
 document.querySelector('.shop-starter').setAttribute('aria-label', `Starter pack: coins, a cozy rug and 5 boosters, $${STARTER_PACK.usd.toFixed(2)} (coming soon)`);

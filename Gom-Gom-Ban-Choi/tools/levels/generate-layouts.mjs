@@ -1,4 +1,4 @@
-// Sinh offline các bản bố trí crate/wall theo mức độ khó cho từng màn, ghi vào game/gameplay/levels/level-layouts.mjs.
+// Sinh offline các bản bố trí crate/wall theo mức độ khó cho từng màn, ghi vào game/data/level-layouts.mjs.
 // Chạy: node tools/levels/generate-layouts.mjs [số ván bot mỗi ứng viên, mặc định 80] [--from=21] [--to=40]
 //   --from/--to: chỉ sinh các màn trong khoảng (1-based); các màn khác giữ nguyên bản cũ trong level-layouts.mjs.
 //   Chạy cả 40 màn lâu (~15 phút), nên chia khoảng và chạy song song.
@@ -8,16 +8,17 @@
 //   0b  đổi chỗ    giữ số lượng, dời ≥ nửa số vật cản  +1 hiểm      crate C+1..C+2, wall W..W+1
 //   +2  rất hiểm   crate C+2..C+3, wall W+1..W+2
 // Không bao giờ: đặt lên mèo sẵn hay ô ngoài bàn '#', tạo cụm gom sẵn, thêm loại vật cản trước màn giới thiệu nó.
-// Với mỗi mức: sinh ~300 ứng viên, xếp hạng bằng layoutScore (game/gameplay/levels/layout-score.mjs), cho bot "trung bình" chơi thử
+// Với mỗi mức: sinh ~300 ứng viên, xếp hạng bằng layoutScore (game/core/layout-score.mjs), cho bot "trung bình" chơi thử
 // các ứng viên đứng đầu, giữ bản có tỉ lệ thắng lệch so với bản gốc gần mục tiêu nhất (TARGET_DELTA).
 // Cuối cùng kiểm tra thứ tự: −2 ≥ −1 ≥ gốc ≥ +1 ≥ +2 (sai số 3 điểm); mức nào phá thứ tự thì bỏ.
 import { writeFileSync } from 'node:fs';
-import { LEVELS, parseBoard } from '../../game/gameplay/levels/levels.mjs';
-import { clearMatches } from '../../game/gameplay/board-rules.mjs';
-import { MATCH_SIZE } from '../../game/gameplay/scoring.mjs';
-import { boardSize } from '../../game/gameplay/levels/board-shapes.mjs';
-import { isAdaptive } from '../../game/gameplay/adaptive.mjs';
-import { layoutScore } from '../../game/gameplay/levels/layout-score.mjs';
+import { LEVELS } from '../../game/data/levels.mjs';
+import { parseBoard } from '../../game/core/level-rules.mjs';
+import { clearMatches } from '../../game/core/board-rules.mjs';
+import { MATCH_SIZE } from '../../game/core/scoring.mjs';
+import { boardSize } from '../../game/core/board-shapes.mjs';
+import { isAdaptive } from '../../game/core/adaptive.mjs';
+import { layoutScore } from '../../game/core/layout-score.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
 const RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 80);
@@ -68,7 +69,7 @@ const winRate = (level, salt) => Array.from({ length: RUNS }, (_, r) => play(lev
 
 const arg = name => Number(process.argv.find(a => a.startsWith(`--${name}=`))?.split('=')[1]);
 const FROM = arg('from') || 1, TO = arg('to') || LEVELS.length;
-const { LAYOUTS: previous } = await import('../../game/gameplay/levels/level-layouts.mjs');
+const { LAYOUTS: previous } = await import('../../game/data/level-layouts.mjs');
 // Giữ bản cũ của các màn ngoài khoảng (và chỉ của màn còn tồn tại).
 const out = Object.fromEntries(Object.entries(previous).filter(([name]) => { const i = LEVELS.findIndex(l => l.name === name); return i >= 0 && (i + 1 < FROM || i + 1 > TO); }));
 LEVELS.forEach((level, index) => {
@@ -122,5 +123,5 @@ const header = `// SINH TỰ ĐỘNG bởi tools/levels/generate-layouts.mjs (bo
 //   '-2' thoáng · '-1' nhẹ · '0b' đổi chỗ vật cản (giữ số lượng) · '+1' hiểm · '+2' rất hiểm. Mức nào không có = dùng cách cũ.
 // adaptive.mjs chọn mức theo profile người chơi.
 `;
-writeFileSync(new URL('../../game/gameplay/levels/level-layouts.mjs', import.meta.url), `${header}export const LAYOUTS = ${JSON.stringify(out, null, 2)};\n`);
-console.log('\nĐã ghi game/gameplay/levels/level-layouts.mjs');
+writeFileSync(new URL('../../game/data/level-layouts.mjs', import.meta.url), `${header}export const LAYOUTS = ${JSON.stringify(out, null, 2)};\n`);
+console.log('\nĐã ghi game/data/level-layouts.mjs');

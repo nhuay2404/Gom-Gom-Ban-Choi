@@ -7,10 +7,10 @@
 // mà chưa đủ xu thì để dành (không mua đồ) cho tới khi mở được khu.
 // Idle: mỗi ngày chia lượt chơi thành `claims` phiên; đầu mỗi phiên nhận xu idle của min(24 / claims, trần) giờ (idle.mjs).
 // Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo số liệu thật.
-import { rewardFor } from '../../game/gameplay/progression.mjs';
+import { rewardFor } from '../../game/core/progression.mjs';
 import { CATALOG, AREA_ORDER, MAX_ROOM_CATS, areaState, unlockArea, zonePrice } from '../../game/deco/deco-data.mjs';
 import { mulberry32 } from '../levels/bot.mjs';
-import { idlePerHour } from '../../game/gameplay/idle.mjs';
+import { idlePerHour } from '../../game/core/idle.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
 export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];

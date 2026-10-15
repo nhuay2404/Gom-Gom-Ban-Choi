@@ -6,10 +6,10 @@ người chơi mở lại game là nhận số mới, **không cần build / ph�
 ## Cách hoạt động
 
 - Mỗi hằng số trong code khai bằng `remote('TÊN', mặc định)` ↔ một **tham số cùng TÊN** trên Firebase.
-  - [`game/gameplay/economy.mjs`](../game/gameplay/economy.mjs) — nhóm **Economy**: `START_COINS`, `REWARD_BASE`, `REWARD_STEP`, `REWARD_GROWTH`, `REWARD_JITTER`,
+  - [`game/data/economy.mjs`](../game/data/economy.mjs) — nhóm **Economy**: `START_COINS`, `REWARD_BASE`, `REWARD_STEP`, `REWARD_GROWTH`, `REWARD_JITTER`,
     `TUTORIAL_TOP_UP`, `COMEBACK_GIFT_MOVES`, `COIN_PACKS`, `STARTER_PACK`, `BOOSTER_PRICE`, `BOOSTER_START_STOCK`,
     `BOOSTER_UNLOCK_LEVEL`, `BOOSTER_EXTRA_MOVES`, `DECO`
-  - [`game/gameplay/tuning.mjs`](../game/gameplay/tuning.mjs) — nhóm **Gameplay tuning**: `BOARD`, `HOLD`, `CAGE`, `TIMING`, `DRAG`,
+  - [`game/data/tuning.mjs`](../game/data/tuning.mjs) — nhóm **Gameplay tuning**: `BOARD`, `HOLD`, `CAGE`, `TIMING`, `DRAG`,
     `LOW_MOVES`, `CAT_BODY`, `CAT_MOTION`, `ADAPTIVE`
 - Lúc mở game, [`game/app/main.js`](../game/app/main.js) tải config từ Firebase (chờ tối đa 2,5 s) **rồi mới nạp game**.
   - Không dùng Firebase JS SDK: [`game/app/remote-config.js`](../game/app/remote-config.js) gọi thẳng REST API
@@ -59,4 +59,4 @@ số đang chạy về code, rồi mới deploy). Bình thường chỉ sửa tr
 2. Code dùng `TEN_MOI` như hằng số bình thường.
 3. `npm run firebase:template` (xem lại template) → đẩy lên theo lưu ý ở trên, hoặc tạo tay tham số cùng tên trên console.
 
-Chưa đưa lên Firebase: dữ liệu màn chơi (`game/gameplay/levels/levels.mjs`) và vị trí đồ trong cảnh 3D — có thể thêm theo cách trên nếu cần.
+Chưa đưa lên Firebase: dữ liệu màn chơi (`game/data/levels.mjs`) và vị trí đồ trong cảnh 3D — có thể thêm theo cách trên nếu cần.

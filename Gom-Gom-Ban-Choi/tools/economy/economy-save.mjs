@@ -1,9 +1,9 @@
-// Level Editor (tab Economy) lưu thẳng số mặc định vào game/gameplay/economy.mjs (máy chủ dev gọi: server.mjs và
+// Level Editor (tab Economy) lưu thẳng số mặc định vào game/data/economy.mjs (máy chủ dev gọi: server.mjs và
 // tools/levels/level-editor.mjs, POST /api/save-economy { values: { TÊN: giá trị } }).
 // Chỉ thay phần giá trị trong `remote('TÊN', <giá trị>)` của các TÊN cho phép; chú thích và phần còn lại của file giữ nguyên.
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const FILE = new URL('../../game/gameplay/economy.mjs', import.meta.url);
+const FILE = new URL('../../game/data/economy.mjs', import.meta.url);
 import { EDITABLE } from './economy-sim.mjs';
 export { EDITABLE };
 

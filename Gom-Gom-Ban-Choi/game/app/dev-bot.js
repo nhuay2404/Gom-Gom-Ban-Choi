@@ -14,7 +14,7 @@ export async function startBot(profileId) {
   const profile = PROFILES[profileId] || PROFILES.mid;
   let bot;
   try { bot = await import('../../tools/levels/bot.mjs'); } catch { console.warn('[dev-bot] không nạp được tools/levels/bot.mjs: chạy game bằng máy chủ của Level Editor (npm run editor)'); return; }
-  const { upcoming } = await import('../gameplay/session.mjs');
+  const { upcoming } = await import('../core/session.mjs');
   let last = null, attempts = 0;
   for (;;) {
     await wait(STEP_MS);

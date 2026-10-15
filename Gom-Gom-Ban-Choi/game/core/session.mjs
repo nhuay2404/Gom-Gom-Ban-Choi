@@ -4,8 +4,10 @@
 import { clearMatches, connectedGroup, removeClusters, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, turnPoints, clusterPoints, POINTS_PER_CRATE } from './scoring.mjs';
 import { categories } from '../ui/cat-art.mjs';
-import { LEVELS, LETTERS, SHAPES, DEFAULT_SHAPES, parseBoard, makeDealer, starsFor, boardSize, parseGrass, grassCount } from './levels/levels.mjs';
-import { BOARD, LUCKY, EFFECTS, holdUnlocked } from './tuning.mjs';
+import { LEVELS, LETTERS, SHAPES } from '../data/levels.mjs';
+import { DEFAULT_SHAPES, parseBoard, makeDealer, starsFor, parseGrass, grassCount } from './level-rules.mjs';
+import { boardSize } from './board-shapes.mjs';
+import { BOARD, LUCKY, EFFECTS, holdUnlocked } from '../data/tuning.mjs';
 import { clusterEffects } from './cluster-effects.mjs';
 
 const { PREVIEW_COUNT } = BOARD;

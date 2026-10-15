@@ -10,11 +10,11 @@
 //    3. CÁCH ĐỌC BẢNG DECO — price / lock
 //
 //  Quy ước: "màn" đánh số từ 1 như người chơi thấy. 1 stage = 10 màn (stage 1 = màn 1–10, stage 2 = màn 11–20 ...).
-//  File này chỉ chứa DỮ LIỆU (không có logic) để dễ sửa; code đọc nó ở gameplay/tuning.mjs và deco/deco-data.mjs.
+//  File này chỉ chứa DỮ LIỆU (không có logic) để dễ sửa; code đọc nó ở data/tuning.mjs và deco/deco-data.mjs.
 //  Mỗi hằng số khai bằng remote('TÊN', mặc định): số ở đây là MẶC ĐỊNH; trên Firebase Remote Config có tham số cùng TÊN
 //  thì game dùng số trên Firebase (xem docs/firebase.md). Đổi mặc định ở đây xong thì `npm run firebase:template` để cập nhật template.
 // ===================================================================================================================
-import { remote } from './remote-config.mjs';
+import { remote } from '../core/remote-config.mjs';
 
 // -------------------------------------------------------------------------------------------------------------------
 // 1. NGUỒN XU (SOURCE)
@@ -40,7 +40,7 @@ export const TUTORIAL_TOP_UP = remote('TUTORIAL_TOP_UP', true);
 // Quà an ủi: người chơi sắp bỏ game (thua liên tục) thì lần thắng kế tiếp được tặng bấy nhiêu booster +lượt.
 export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 
-// Xu tự sinh (idle): MỖI con mèo trong nhà kiếm xu theo giờ, bong bóng xu trên đầu từng con ở Deco, chạm để nhận (gameplay/idle.mjs).
+// Xu tự sinh (idle): MỖI con mèo trong nhà kiếm xu theo giờ, bong bóng xu trên đầu từng con ở Deco, chạm để nhận (core/idle.mjs).
 //   xu / giờ của một con = xu thưởng của màn đang chơi × IDLE_RATE · mỗi con tích tối đa IDLE_CAP_HOURS giờ (đầy thì ngừng) · mở khi thắng màn IDLE_FROM_LEVEL.
 //   Nhiều mèo = nhiều xu (tối đa MAX_ROOM_CATS con trong nhà). Giữ tổng nhỏ (~5–15% xu cả game của người chơi trung bình, đủ 6 mèo)
 //   để không thay gói xu / không làm người chơi bớt chơi màn.

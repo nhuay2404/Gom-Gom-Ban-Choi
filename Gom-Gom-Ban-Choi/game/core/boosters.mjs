@@ -1,6 +1,6 @@
 // Kho booster của người chơi (thuần logic): số lượng từng loại, dùng một cái, mua bằng xu.
 // Luật booster trong ván (đập ô, đổi thẻ, thêm lượt) nằm ở session.mjs.
-import { BOOSTERS } from './tuning.mjs';
+import { BOOSTERS } from '../data/tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
 
 export const BOOSTER_IDS = ['hammer', 'swap', 'moves'];

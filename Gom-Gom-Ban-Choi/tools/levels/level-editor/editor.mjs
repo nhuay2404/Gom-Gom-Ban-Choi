@@ -1,13 +1,15 @@
 // Level Editor có DDA: sửa màn, xem ngay DDA (adaptive.mjs) sẽ biến màn đó thành gì cho từng kiểu người chơi,
 // và chạy bot (tools/levels/bot.mjs, trong Web Worker) để đo tỉ lệ thắng của mọi biến thể. Dùng đúng code game, không chép logic.
-// Màn đã sửa lưu ở localStorage của trình duyệt; muốn đưa vào game thì copy khối "Xuất" dán vào game/gameplay/levels/levels.mjs.
-import { LEVELS, LETTERS, parseBoard, parseCard, boardSize } from '../../../game/gameplay/levels/levels.mjs';
+// Màn đã sửa lưu ở localStorage của trình duyệt; muốn đưa vào game thì copy khối "Xuất" dán vào game/data/levels.mjs.
+import { LEVELS, LETTERS } from '../../../game/data/levels.mjs';
+import { parseBoard, parseCard } from '../../../game/core/level-rules.mjs';
+import { boardSize } from '../../../game/core/board-shapes.mjs';
 import { play, PACES } from '../bot.mjs';
-import { levelElements, elementCount, difficultyOf, variantFor, planLevel, SHIFT_MIN, SHIFT_MAX, layoutEase, isAdaptive, ELEMENTS, MAX_ELEMENTS } from '../../../game/gameplay/adaptive.mjs';
-import { clearMatches } from '../../../game/gameplay/board-rules.mjs';
-import { MATCH_SIZE } from '../../../game/gameplay/scoring.mjs';
-import { holdUnlocked, ADAPTIVE } from '../../../game/gameplay/tuning.mjs';
-import { playableCells } from '../../../game/gameplay/levels/board-shapes.mjs';
+import { levelElements, elementCount, difficultyOf, variantFor, planLevel, SHIFT_MIN, SHIFT_MAX, layoutEase, isAdaptive, ELEMENTS, MAX_ELEMENTS } from '../../../game/core/adaptive.mjs';
+import { clearMatches } from '../../../game/core/board-rules.mjs';
+import { MATCH_SIZE } from '../../../game/core/scoring.mjs';
+import { holdUnlocked, ADAPTIVE } from '../../../game/data/tuning.mjs';
+import { playableCells } from '../../../game/core/board-shapes.mjs';
 import { catMarkup } from '../../../game/ui/cat-art.mjs';
 
 const $ = id => document.getElementById(id);
@@ -43,7 +45,7 @@ function persist() {
   try { localStorage.setItem(STORE, JSON.stringify(edits)); } catch { /* chế độ riêng tư: chỉ giữ trong phiên */ }
 }
 
-// ---------- Lưu vào game (POST /api/save-level -> tools/levels/level-save.mjs ghi game/gameplay/levels/levels.mjs) ----------
+// ---------- Lưu vào game (POST /api/save-level -> tools/levels/level-save.mjs ghi game/data/levels.mjs) ----------
 const saveTimers = {};
 function scheduleSave(index) {
   if (!$('autoSave').checked) return;

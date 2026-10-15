@@ -1,4 +1,4 @@
-// Sinh thêm màn cho game (chạy một lần, rồi chép thẳng vào game/gameplay/levels/levels.mjs như màn 21–50).
+// Sinh thêm màn cho game (chạy một lần, rồi chép thẳng vào game/data/levels.mjs như màn 21–50).
 // Chạy: node tools/levels/generate-levels.mjs [từ màn] [tới màn]   (mặc định 51 100)
 //
 // Theo nhịp tier của levels.mjs: mỗi chương 10 màn — x1–x4 normal · x5 hard · x6 chill (nghỉ) · x7–x9 normal · x0 boss.
@@ -8,14 +8,15 @@
 // đúng chuẩn tier (cùng bảng với Level Editor): normal 95% -> 70% trong chương · hard ~33% · nghỉ 96% · boss ~22%.
 // Cùng tham số luôn ra cùng màn (seed theo số màn).
 import { readFileSync, writeFileSync } from 'node:fs';
-import { parseBoard, LETTERS } from '../../game/gameplay/levels/levels.mjs';
-import { SHAPES } from '../../game/gameplay/levels/board-shapes.mjs';
-import { clearMatches } from '../../game/gameplay/board-rules.mjs';
-import { MATCH_SIZE } from '../../game/gameplay/scoring.mjs';
+import { LETTERS } from '../../game/data/levels.mjs';
+import { parseBoard } from '../../game/core/level-rules.mjs';
+import { SHAPES } from '../../game/core/board-shapes.mjs';
+import { clearMatches } from '../../game/core/board-rules.mjs';
+import { MATCH_SIZE } from '../../game/core/scoring.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
 const FROM = Number(process.argv[2] ?? 51), TO = Number(process.argv[3] ?? 100);
-const FILE = new URL('../../game/gameplay/levels/levels.mjs', import.meta.url);
+const FILE = new URL('../../game/data/levels.mjs', import.meta.url);
 const RUNS = 120;
 
 const TIERS = ['normal', 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'];
@@ -191,4 +192,4 @@ for (let k = blocks.length - 1; k >= 0; k--) {
 }
 if (fresh.length) lines.splice(lines.findIndex((l, i) => i > start && l.startsWith('];')), 0, ...fresh.join('\n').split('\n'));
 writeFileSync(FILE, lines.join(eol));
-console.log(`\nĐã thêm ${blocks.length} màn (${FROM}–${TO}) vào game/gameplay/levels/levels.mjs`);
+console.log(`\nĐã thêm ${blocks.length} màn (${FROM}–${TO}) vào game/data/levels.mjs`);

@@ -1,6 +1,6 @@
 # Economy Gom Gom — tổng quan và đánh giá cân bằng
 
-Viết ngày 2026-10-12, theo số trong `game/gameplay/economy.mjs` tại thời điểm đó. Số chi tiết theo từng lô 10 màn:
+Viết ngày 2026-10-12, theo số trong `game/data/economy.mjs` tại thời điểm đó. Số chi tiết theo từng lô 10 màn:
 `docs/economy-report.md` (`npm run economy`). Chỉnh số + mô phỏng trực quan: Level Editor → tab **💰 Kinh tế**.
 
 ---

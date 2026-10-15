@@ -6,12 +6,13 @@
 // want(id) trả về true nếu người chơi có (hoặc chịu mua) booster đó; kho và xu do bên gọi quản lý.
 // `trace` = mảng (tuỳ chọn): mỗi lượt đẩy vào { placed (bàn sau khi đặt, trước khi gom), board (sau khi gom), cells (ô vừa đặt), cleared,
 //   card, hold (có dùng Gửi tạm), points, score, movesLeft, boosts } để Level Editor phát lại ván chơi.
-import { parseBoard, makeDealer, starsFor, boardSize, parseGrass } from '../../game/gameplay/levels/levels.mjs';
-import { BOOSTERS, EFFECTS } from '../../game/gameplay/tuning.mjs';
-import { clusterEffects } from '../../game/gameplay/cluster-effects.mjs';
-import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../../game/gameplay/board-rules.mjs';
-import { openingCard } from '../../game/gameplay/session.mjs';
-import { MATCH_SIZE, turnPoints } from '../../game/gameplay/scoring.mjs';
+import { parseBoard, makeDealer, starsFor, parseGrass } from '../../game/core/level-rules.mjs';
+import { boardSize } from '../../game/core/board-shapes.mjs';
+import { BOOSTERS, EFFECTS } from '../../game/data/tuning.mjs';
+import { clusterEffects } from '../../game/core/cluster-effects.mjs';
+import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../../game/core/board-rules.mjs';
+import { openingCard } from '../../game/core/session.mjs';
+import { MATCH_SIZE, turnPoints } from '../../game/core/scoring.mjs';
 
 export function mulberry32(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };

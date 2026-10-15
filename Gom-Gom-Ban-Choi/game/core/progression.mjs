@@ -1,6 +1,6 @@
 // Tiến độ người chơi (thuần logic): sao từng màn, mở khoá màn, xu thưởng khi thắng, cấp độ khó của màn.
-import { LEVELS } from './levels/levels.mjs';
-import { ECONOMY } from './tuning.mjs';
+import { LEVELS } from '../data/levels.mjs';
+import { ECONOMY } from '../data/tuning.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
 
 export function loadProgress() {

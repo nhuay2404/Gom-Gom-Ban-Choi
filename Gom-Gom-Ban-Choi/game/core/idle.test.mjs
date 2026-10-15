@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { idleOpen, idlePerHour, idleCap, idlePending, idleFull, tickIdle, claimIdle } from './idle.mjs';
-import { IDLE_FROM_LEVEL, IDLE_CAP_HOURS, IDLE_RATE } from './economy.mjs';
+import { IDLE_FROM_LEVEL, IDLE_CAP_HOURS, IDLE_RATE } from '../data/economy.mjs';
 import { levelReward } from './progression.mjs';
 
 const HOUR = 3600 * 1000, T = Date.UTC(2026, 9, 1), at = IDLE_FROM_LEVEL;

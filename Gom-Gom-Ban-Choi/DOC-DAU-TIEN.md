@@ -65,18 +65,20 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `ui/cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
 | `ui/board-art.mjs` | Hình SVG thùng gỗ / tấm kim loại trên bàn |
 | `ui/sound.mjs` | Âm thanh |
-| **`gameplay/`** | **Luật và dữ liệu chơi (thuần logic, có test)** |
-| `gameplay/levels/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
-| `gameplay/board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |
-| `gameplay/session.mjs`, `scoring.mjs`, `board-shapes.mjs` | Một ván chơi, tính điểm theo cỡ cụm, hình bàn |
-| `gameplay/adaptive.mjs`, `cat-layouts.mjs` (sinh bằng `npm run cat-layouts`) | Độ khó thích ứng theo profile người chơi: chỉ xếp lại mèo đặt sẵn + chỉnh hàng thẻ, không đổi thiết kế / số lượt |
-| `gameplay/progression.mjs`, `boosters.mjs`, `tuning.mjs`, `save.mjs` | Sao / mở màn, booster, hằng số cảm giác chơi, lưu trữ |
-| `gameplay/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
+| **`core/`** | **Luật chơi thuần logic (không đụng DOM / Three.js, có test)** — sang Unity thành class C# thường |
+| `core/session.mjs` | Một ván chơi: bóc thẻ, xoay, Hold, đặt, gom, hiệu ứng cụm to, booster, xả lượt khi thắng, thắng / thua |
+| `core/board-rules.mjs`, `cluster-effects.mjs`, `scoring.mjs` | Luật bàn (đặt thẻ, gom cụm, thùng / chuồng), hiệu ứng cụm 4/5/6/7+ và gom đôi, điểm |
+| `core/level-rules.mjs`, `board-shapes.mjs` | Đọc dữ liệu màn (bàn, cỏ, thẻ viết gọn), bộ chia thẻ, sao; hình bàn |
+| `core/adaptive.mjs`, `progression.mjs`, `boosters.mjs`, `idle.mjs`, `save.mjs`, `remote-config.mjs` | Độ khó thích ứng, tiến độ, kho booster, xu tự sinh, lưu trữ, config từ xa |
+| **`data/`** | **Dữ liệu chơi** — sang Unity thành ScriptableObject / JSON (`npm run export:data`) |
+| `data/levels.mjs`, `level-layouts.mjs`, `cat-layouts.mjs` | 100 màn; bố trí theo độ khó thích ứng (sinh bằng tool) |
+| `data/tuning.mjs`, `economy.mjs` | Hằng số cảm giác chơi; kinh tế (xu, giá) — chỉnh được từ Firebase Remote Config |
+| `core/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
 | **`deco/`** | **Cảnh 3D Home / Deco** (phòng, vườn, mèo 3D, QC model, danh mục đồ) |
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 
-Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/gameplay/levels/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
+Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/core/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 

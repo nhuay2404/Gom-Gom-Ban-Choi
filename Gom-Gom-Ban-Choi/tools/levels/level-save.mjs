@@ -1,10 +1,10 @@
-// Level Editor lưu thẳng vào game/gameplay/levels/levels.mjs (máy chủ dev gọi: server.mjs và tools/levels/level-editor.mjs, POST /api/save-level).
+// Level Editor lưu thẳng vào game/data/levels.mjs (máy chủ dev gọi: server.mjs và tools/levels/level-editor.mjs, POST /api/save-level).
 // Thay khối `  { ... },` thứ `index` trong mảng LEVELS bằng `code` do editor sinh, giữ lại:
 //   - các dòng chú thích `    // ...` của khối cũ (đặt lên đầu khối mới)
 //   - đoạn `tutorial: [...]` của khối cũ nếu editor báo tutorial không đổi (giữ tham chiếu SHAPES.* thay vì mảng số).
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const FILE = new URL('../../game/gameplay/levels/levels.mjs', import.meta.url);
+const FILE = new URL('../../game/data/levels.mjs', import.meta.url);
 
 function blocks(lines) {
   const start = lines.findIndex(line => line.startsWith('export const LEVELS = ['));

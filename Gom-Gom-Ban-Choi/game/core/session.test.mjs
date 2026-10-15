@@ -3,11 +3,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as game from './session.mjs';
-import { LEVELS, parseBoard, parseCard, boardSize } from './levels/levels.mjs';
+import { LEVELS } from '../data/levels.mjs';
+import { parseBoard, parseCard } from './level-rules.mjs';
+import { boardSize } from './board-shapes.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE, POINTS_PER_CRATE } from './scoring.mjs';
 import { recordWin, unlockedCount, levelReward, earnedCoins, levelTier, levelMechanics } from './progression.mjs';
-import { HOLD } from './tuning.mjs';
+import { HOLD } from '../data/tuning.mjs';
 
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 
@@ -206,7 +208,7 @@ test('booster: búa đập sạch 3×3 (mèo, chuồng, thùng, kim loại), đi
 
 test('booster: kho mặc định, dùng, mua bằng xu', async () => {
   const { loadBoosters, spendBooster, buyBooster, boostersUnlocked } = await import('./boosters.mjs');
-  const { BOOSTERS } = await import('./tuning.mjs');
+  const { BOOSTERS } = await import('../data/tuning.mjs');
   const stock = loadBoosters();
   assert.deepEqual(stock, { hammer: BOOSTERS.START_STOCK, swap: BOOSTERS.START_STOCK, moves: BOOSTERS.START_STOCK });
   assert.equal(spendBooster({ ...stock, hammer: 0 }, 'hammer'), null);
@@ -218,7 +220,7 @@ test('booster: kho mặc định, dùng, mua bằng xu', async () => {
 });
 
 test('chuồng mèo: không gom được, gom sát bên một lần là bẻ khóa và thả mèo; búa mở chuồng ngay', async () => {
-  const { CAGE } = await import('./tuning.mjs');
+  const { CAGE } = await import('../data/tuning.mjs');
   assert.equal(CAGE.LOCKS, 1);
   // Hàng: [cam][cam][ ][cam-trong-chuồng] — đặt cam vào ô trống: chỉ 3 con ngoài chuồng được gom, chuồng vỡ ngay (1 khóa).
   const s = game.createSession(2, { rng: seeded(9) });

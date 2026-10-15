@@ -1,12 +1,12 @@
 // Level Editor — tab Economy: sửa công thức xu mỗi màn, mốc mở khu, hệ số giá khu; xem cân bằng theo stage ngay khi sửa;
-// chạy mô phỏng người ảo (tools/economy/economy-sim.mjs); lưu thẳng vào game/gameplay/economy.mjs (POST /api/save-economy).
+// chạy mô phỏng người ảo (tools/economy/economy-sim.mjs); lưu thẳng vào game/data/economy.mjs (POST /api/save-economy).
 // Dùng đúng code game (rewardFor, zonePrice, areaState...), chỉ truyền bộ số đang sửa.
-import * as ECO from '../../../game/gameplay/economy.mjs';
-import { rewardFor } from '../../../game/gameplay/progression.mjs';
+import * as ECO from '../../../game/data/economy.mjs';
+import { rewardFor } from '../../../game/core/progression.mjs';
 import { CATALOG, AREA_ORDER, AREA_NAMES, zonePrice } from '../../../game/deco/deco-data.mjs';
 import { EDITABLE, PROFILES, simulateProfile } from '../../economy/economy-sim.mjs';
 import { economyVerdict, profileVerdict, profilesSummary } from '../../economy/economy-verdict.mjs';
-import { idlePerHour, idleCap } from '../../../game/gameplay/idle.mjs';
+import { idlePerHour, idleCap } from '../../../game/core/idle.mjs';
 import { runFlow } from '../../economy/economy-flow.mjs';
 
 const $ = id => document.getElementById(id);

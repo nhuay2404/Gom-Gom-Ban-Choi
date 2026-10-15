@@ -7,7 +7,7 @@ chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-dat
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
 
 **Kinh tế** (xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
-`game/gameplay/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
+`game/data/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
 **Config từ xa (Firebase Remote Config)**: mọi hằng số trong `economy.mjs` / `tuning.mjs` khai bằng `remote('TÊN', mặc định)` và được
 ghi đè bởi tham số cùng tên trên Firebase (`docs/firebase.md`). `app/main.js` tải config trước rồi mới nạp game (`app/start.js`).
 Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên không trùng.
@@ -18,7 +18,8 @@ Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên kh�
 |---|---|---|
 | `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
 | `game/assets/` | TOÀN BỘ ảnh + âm thanh (`img/<nhóm>/`, `sfx/`), danh sách + nơi dùng ở `assets/README.md`. Thêm ảnh / tiếng mới đặt ở đây, không đặt trong `ui/` | `UI:` |
-| `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
+| `game/core/` | Luật chơi thuần logic (không đụng DOM / Three.js): ván chơi `session.mjs`, luật bàn, hiệu ứng cụm, điểm, đọc màn `level-rules.mjs`, hình bàn, độ khó thích ứng, tiến độ, booster, lưu trữ `save.mjs` (+ test). Sang Unity: class C# thường | `Gameplay:` |
+| `game/data/` | Dữ liệu chơi: 100 màn `levels.mjs` (+ bố trí sinh bằng tool), hằng số `tuning.mjs`, kinh tế `economy.mjs`. Sang Unity: ScriptableObject / JSON (`npm run export:data`) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
 | `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
@@ -28,11 +29,11 @@ Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên kh�
 | `tools/`, `docs/` | Công cụ (`levels/` bot + editor, `economy/`, `export/`, `ui-studio/`, `ads/`), tài liệu | `Tools:` / `Docs:` |
 
 - Mỗi commit chỉ chạm một nhóm khi có thể: sửa giao diện → chỉ `game/ui/` (+ `index.html` nếu đổi khung);
-  cân bằng / luật → `game/gameplay/` (+ `tools/levels/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
+  cân bằng / luật → `game/core/` + `game/data/` (+ `tools/levels/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
 - Hai luồng không import nhau: `app/start.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
   đổi màn hình thì gọi `menus.showTab / showMap / hideMenus / menuOpen`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
   Thêm hàm cho bên kia gọi: `export` ở file mình và ghi vào danh sách này. Trạng thái cả hai cùng đọc / ghi (xu, booster) đặt ở `shared.js`.
-- Module mới: logic thuần đặt ở `gameplay/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `gameplay/` không import từ `ui/` hay `deco/`
+- Module mới: logic thuần đặt ở `core/`, dữ liệu (số, bảng) ở `data/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `core/` và `data/` không import từ `ui/` hay `deco/`
   (ngoại lệ hiện có: `session.mjs` lấy danh sách loại mèo `categories` từ `ui/cat-art.mjs`).
 
 ## Quy trình bắt buộc sau khi thêm / sửa model 3D hoặc đổi chỗ đặt đồ

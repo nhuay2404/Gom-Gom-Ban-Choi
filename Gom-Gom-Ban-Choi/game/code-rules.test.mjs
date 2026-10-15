@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const dir = new URL('.', import.meta.url);
-// Quét cả thư mục con (ui/, gameplay/, deco/); tên file kèm thư mục, vd. 'deco/qc.mjs'.
+// Quét cả thư mục con (ui/, core/, data/, deco/); tên file kèm thư mục, vd. 'deco/qc.mjs'.
 const sources = fs.readdirSync(dir, { recursive: true }).map(f => f.split('\\').join('/'))
   .filter(f => /\.(mjs|js)$/.test(f) && !f.endsWith('.test.mjs'));
 
