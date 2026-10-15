@@ -2,7 +2,7 @@
 // - play-controller.js: luồng MÀN CHƠI (gameplay trong một ván, bảng vào màn, kết quả).
 // - menu-controller.js: luồng MENU (Map, Home / Deco / Shop, cài đặt, dev).
 // Phần dùng chung (ví xu, kho booster, toast): shared.js.
-import * as play from './play-controller.js';
+import * as play from '../play/play-controller.js';
 import * as menus from './menu-controller.js';
 import { loadProgress, unlockedCount } from '../core/progression.mjs';
 import * as ob from './onboarding.js';

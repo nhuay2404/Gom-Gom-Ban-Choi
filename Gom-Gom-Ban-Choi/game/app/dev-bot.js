@@ -1,6 +1,6 @@
 // Bot tự chơi trong game thật (chỉ dev; Level Editor mở game với ?level=N&bot=weak|mid|good): xem bot chơi từng nước ngay trên giao diện.
 // Dùng bộ não của tools/levels/bot.mjs (nạp động: game chạy từ máy chủ không phục vụ thư mục tools/ thì bot tắt, game vẫn chạy bình thường).
-import { botApi } from './play-controller.js';
+import { botApi } from '../play/play-controller.js';
 
 const PROFILES = {
   weak: { noise: 90, useHold: true }, mid: { noise: 30, useHold: true }, good: { noise: 1, useHold: true, lookahead: true },
