@@ -134,12 +134,6 @@
           <span class="settings-name">Feedback survey<small>Tell us what you think!</small></span>
           <svg class="chev" viewBox="0 0 24 24"><use href="#i-chevron"/></svg>
         </a>
-        <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></span><span class="settings-name with-note">Ambient<small>Deco only</small></span>
-          <div id="ambient-toggle" class="daynight" role="group" aria-label="Ambient: day, afternoon or night">
-            <button type="button" data-ambient="day" aria-pressed="true" aria-label="Day"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
-            <button type="button" data-ambient="dusk" aria-pressed="false" aria-label="Afternoon"><svg viewBox="0 0 24 24"><use href="#i-sunset"/></svg></button>
-            <button type="button" data-ambient="night" aria-pressed="false" aria-label="Night"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
-          </div></div>
         <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg></span><span class="settings-name">Sound</span>
           <button id="home-sound" class="switch sound-toggle" aria-pressed="true"><b></b></button></div>
         <div class="settings-item"><span class="settings-ico"><svg viewBox="0 0 24 24"><use href="#i-music"/></svg></span><span class="settings-name">Music</span>
@@ -165,6 +159,8 @@
       <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
+    <!-- Ambient (ngày / chiều / đêm): một nút, chạm để đổi vòng; nằm dưới nút cài đặt, trên nút ngắm nhà (menu-controller.js applyAmbient) -->
+    <button id="ambient-toggle" class="deco-ambient" data-ambient="day" aria-label="Ambient: Day" title="Day"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
     <div class="deco-side">
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
       <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>

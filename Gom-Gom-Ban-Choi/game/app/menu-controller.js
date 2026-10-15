@@ -1380,18 +1380,19 @@ renderSoundButtons();
 const AMBIENTS = { off: 'day', dusk: 'dusk', on: 'night' };
 let ambient = AMBIENTS[readText(SAVE_KEYS.night)] || 'day';
 function applyAmbient() {
-  document.querySelectorAll('#ambient-toggle [data-ambient]').forEach(button => button.setAttribute('aria-pressed', button.dataset.ambient === ambient));
-  $('ambient-toggle').title = ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  const label = ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  $('ambient-toggle').dataset.ambient = ambient;
+  $('ambient-toggle').title = label;
+  $('ambient-toggle').setAttribute('aria-label', `Ambient: ${label}`);
+  $('ambient-toggle').querySelector('use').setAttribute('href', ambient === 'dusk' ? '#i-sunset' : ambient === 'night' ? '#i-moon' : '#i-sun');
   $('deco-room').classList.toggle('night', ambient === 'night');
   $('deco-room').classList.toggle('dusk', ambient === 'dusk');
   $('deco').classList.toggle('night', ambient === 'night'); // nền trời đêm của màn Deco (ui-portrait.css)
   $('deco').classList.toggle('dusk', ambient === 'dusk'); // nền trời chiều
   room3d?.setAmbient(ambient);
 }
-$('ambient-toggle').addEventListener('click', event => {
-  const button = event.target.closest('[data-ambient]');
-  if (!button || button.dataset.ambient === ambient) return;
-  ambient = button.dataset.ambient;
+$('ambient-toggle').addEventListener('click', () => {
+  ambient = { day: 'dusk', dusk: 'night', night: 'day' }[ambient];
   writeText(SAVE_KEYS.night, ambient === 'night' ? 'on' : ambient === 'dusk' ? 'dusk' : 'off');
   playSound('pick');
   applyAmbient();
