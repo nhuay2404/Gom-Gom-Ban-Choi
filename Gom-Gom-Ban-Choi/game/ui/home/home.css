@@ -52,7 +52,6 @@
 .fh-coins b{left:calc(56 * var(--u));width:calc(56 * var(--u))}
 .fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./img/pill-gems.png')}
 .fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
-.fh-energy{left:calc(243 * var(--u));top:calc(58 * var(--u));width:calc(145 * var(--u));height:calc(48 * var(--u));background-image:url('./img/pill-energy.png')}
 /* Cột trái: Daily, Starter Pack */
 .fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
 .fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-starter.png')}

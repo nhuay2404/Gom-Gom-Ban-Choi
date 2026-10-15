@@ -1,0 +1,506 @@
+ffconcat version 1.0
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000000.jpg'
+duration 0.01425
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000001.jpg'
+duration 0.01711
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000002.jpg'
+duration 0.01953
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000003.jpg'
+duration 0.00239
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000004.jpg'
+duration 0.01599
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000005.jpg'
+duration 0.01594
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000006.jpg'
+duration 0.01892
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000007.jpg'
+duration 0.01489
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000008.jpg'
+duration 0.01653
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000009.jpg'
+duration 0.01648
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000010.jpg'
+duration 0.01772
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000011.jpg'
+duration 0.01610
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000012.jpg'
+duration 0.01622
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000013.jpg'
+duration 0.01828
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000014.jpg'
+duration 0.01529
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000015.jpg'
+duration 0.01660
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000016.jpg'
+duration 0.01650
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000017.jpg'
+duration 0.01650
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000018.jpg'
+duration 0.01680
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000019.jpg'
+duration 0.01674
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000020.jpg'
+duration 0.01647
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000021.jpg'
+duration 0.01677
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000022.jpg'
+duration 0.01676
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000023.jpg'
+duration 0.01668
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000024.jpg'
+duration 0.01687
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000025.jpg'
+duration 0.01660
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000026.jpg'
+duration 0.01950
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000027.jpg'
+duration 0.01465
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000028.jpg'
+duration 0.01693
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000029.jpg'
+duration 0.01620
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000030.jpg'
+duration 0.01638
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000031.jpg'
+duration 0.01688
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000032.jpg'
+duration 0.01702
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000033.jpg'
+duration 0.01665
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000034.jpg'
+duration 0.01728
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000035.jpg'
+duration 0.01605
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000036.jpg'
+duration 0.01765
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000037.jpg'
+duration 0.01634
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000038.jpg'
+duration 0.01635
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000039.jpg'
+duration 0.01626
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000040.jpg'
+duration 0.01683
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000041.jpg'
+duration 0.01655
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000042.jpg'
+duration 0.01634
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000043.jpg'
+duration 0.01771
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000044.jpg'
+duration 0.01556
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000045.jpg'
+duration 0.01716
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000046.jpg'
+duration 0.01685
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000047.jpg'
+duration 0.01629
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000048.jpg'
+duration 0.01668
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000049.jpg'
+duration 0.01609
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000050.jpg'
+duration 0.01706
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000051.jpg'
+duration 0.01651
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000052.jpg'
+duration 0.01684
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000053.jpg'
+duration 0.01657
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000054.jpg'
+duration 0.01635
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000055.jpg'
+duration 0.01654
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000056.jpg'
+duration 0.01720
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000057.jpg'
+duration 0.01649
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000058.jpg'
+duration 0.01690
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000059.jpg'
+duration 0.01626
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000060.jpg'
+duration 0.02005
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000061.jpg'
+duration 0.01908
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000062.jpg'
+duration 0.01435
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000063.jpg'
+duration 0.01413
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000064.jpg'
+duration 0.01578
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000065.jpg'
+duration 0.03004
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000066.jpg'
+duration 0.00624
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000067.jpg'
+duration 0.01424
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000068.jpg'
+duration 0.02033
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000069.jpg'
+duration 0.02512
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000070.jpg'
+duration 0.00534
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000071.jpg'
+duration 0.01548
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000072.jpg'
+duration 0.01637
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000073.jpg'
+duration 0.01687
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000074.jpg'
+duration 0.01980
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000075.jpg'
+duration 0.01804
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000076.jpg'
+duration 0.01257
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000077.jpg'
+duration 0.01640
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000078.jpg'
+duration 0.01807
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000079.jpg'
+duration 0.01530
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000080.jpg'
+duration 0.02060
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000081.jpg'
+duration 0.01268
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000082.jpg'
+duration 0.01661
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000083.jpg'
+duration 0.01653
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000084.jpg'
+duration 0.01695
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000085.jpg'
+duration 0.01686
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000086.jpg'
+duration 0.02013
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000087.jpg'
+duration 0.01302
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000088.jpg'
+duration 0.01699
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000089.jpg'
+duration 0.01648
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000090.jpg'
+duration 0.01689
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000091.jpg'
+duration 0.01640
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000092.jpg'
+duration 0.02033
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000093.jpg'
+duration 0.01339
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000094.jpg'
+duration 0.01630
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000095.jpg'
+duration 0.02946
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000096.jpg'
+duration 0.00541
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000097.jpg'
+duration 0.01522
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000098.jpg'
+duration 0.01656
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000099.jpg'
+duration 0.02418
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000100.jpg'
+duration 0.01258
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000101.jpg'
+duration 0.01442
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000102.jpg'
+duration 0.01957
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000103.jpg'
+duration 0.01280
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000104.jpg'
+duration 0.01818
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000105.jpg'
+duration 0.01507
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000106.jpg'
+duration 0.01999
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000107.jpg'
+duration 0.02690
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000108.jpg'
+duration 0.00500
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000109.jpg'
+duration 0.01476
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000110.jpg'
+duration 0.01662
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000111.jpg'
+duration 0.01721
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000112.jpg'
+duration 0.01618
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000113.jpg'
+duration 0.01648
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000114.jpg'
+duration 0.02018
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000115.jpg'
+duration 0.01353
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000116.jpg'
+duration 0.01648
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000117.jpg'
+duration 0.01677
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000118.jpg'
+duration 0.01844
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000119.jpg'
+duration 0.01485
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000120.jpg'
+duration 0.02107
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000121.jpg'
+duration 0.02585
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000122.jpg'
+duration 0.00514
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000123.jpg'
+duration 0.01432
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000124.jpg'
+duration 0.02067
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000125.jpg'
+duration 0.02247
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000126.jpg'
+duration 0.01118
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000127.jpg'
+duration 0.01353
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000128.jpg'
+duration 0.01954
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000129.jpg'
+duration 0.01849
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000130.jpg'
+duration 0.01153
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000131.jpg'
+duration 0.01756
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000132.jpg'
+duration 0.01755
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000133.jpg'
+duration 0.01479
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000134.jpg'
+duration 0.01996
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000135.jpg'
+duration 0.02753
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000136.jpg'
+duration 0.00562
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000137.jpg'
+duration 0.01390
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000138.jpg'
+duration 0.01963
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000139.jpg'
+duration 0.02273
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000140.jpg'
+duration 0.00773
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000141.jpg'
+duration 0.01714
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000142.jpg'
+duration 0.01539
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000143.jpg'
+duration 0.01742
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000144.jpg'
+duration 0.01666
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000145.jpg'
+duration 0.01650
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000146.jpg'
+duration 0.01819
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000147.jpg'
+duration 0.02841
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000148.jpg'
+duration 0.00563
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000149.jpg'
+duration 0.01563
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000150.jpg'
+duration 0.01949
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000151.jpg'
+duration 0.02538
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000152.jpg'
+duration 0.00514
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000153.jpg'
+duration 0.01524
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000154.jpg'
+duration 0.02085
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000155.jpg'
+duration 0.01304
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000156.jpg'
+duration 0.02021
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000157.jpg'
+duration 0.01327
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000158.jpg'
+duration 0.02085
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000159.jpg'
+duration 0.01210
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000160.jpg'
+duration 0.02044
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000161.jpg'
+duration 0.01476
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000162.jpg'
+duration 0.01548
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000163.jpg'
+duration 0.01613
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000164.jpg'
+duration 0.01817
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000165.jpg'
+duration 0.01532
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000166.jpg'
+duration 0.01683
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000167.jpg'
+duration 0.01693
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000168.jpg'
+duration 0.01635
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000169.jpg'
+duration 0.01643
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000170.jpg'
+duration 0.01734
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000171.jpg'
+duration 0.01734
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000172.jpg'
+duration 0.01619
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000173.jpg'
+duration 0.01618
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000174.jpg'
+duration 0.01672
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000175.jpg'
+duration 0.01661
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000176.jpg'
+duration 0.01668
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000177.jpg'
+duration 0.01694
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000178.jpg'
+duration 0.01687
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000179.jpg'
+duration 0.01620
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000180.jpg'
+duration 0.01665
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000181.jpg'
+duration 0.01673
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000182.jpg'
+duration 0.01688
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000183.jpg'
+duration 0.01664
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000184.jpg'
+duration 0.01670
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000185.jpg'
+duration 0.01655
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000186.jpg'
+duration 0.01665
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000187.jpg'
+duration 0.01693
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000188.jpg'
+duration 0.01604
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000189.jpg'
+duration 0.01696
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000190.jpg'
+duration 0.01690
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000191.jpg'
+duration 0.01645
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000192.jpg'
+duration 0.01682
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000193.jpg'
+duration 0.01681
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000194.jpg'
+duration 0.01648
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000195.jpg'
+duration 0.01672
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000196.jpg'
+duration 0.01691
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000197.jpg'
+duration 0.01654
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000198.jpg'
+duration 0.01631
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000199.jpg'
+duration 0.01682
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000200.jpg'
+duration 0.01645
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000201.jpg'
+duration 0.01680
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000202.jpg'
+duration 0.01689
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000203.jpg'
+duration 0.01691
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000204.jpg'
+duration 0.01644
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000205.jpg'
+duration 0.01723
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000206.jpg'
+duration 0.01581
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000207.jpg'
+duration 0.01669
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000208.jpg'
+duration 0.01680
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000209.jpg'
+duration 0.01652
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000210.jpg'
+duration 0.01687
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000211.jpg'
+duration 0.01696
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000212.jpg'
+duration 0.01617
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000213.jpg'
+duration 0.01682
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000214.jpg'
+duration 0.01717
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000215.jpg'
+duration 0.01616
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000216.jpg'
+duration 0.01692
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000217.jpg'
+duration 0.01655
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000218.jpg'
+duration 0.01708
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000219.jpg'
+duration 0.01655
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000220.jpg'
+duration 0.01644
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000221.jpg'
+duration 0.01695
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000222.jpg'
+duration 0.01646
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000223.jpg'
+duration 0.01678
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000224.jpg'
+duration 0.01664
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000225.jpg'
+duration 0.01639
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000226.jpg'
+duration 0.01698
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000227.jpg'
+duration 0.01619
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000228.jpg'
+duration 0.01706
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000229.jpg'
+duration 0.01670
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000230.jpg'
+duration 0.01799
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000231.jpg'
+duration 0.01712
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000232.jpg'
+duration 0.01642
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000233.jpg'
+duration 0.01652
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000234.jpg'
+duration 0.01609
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000235.jpg'
+duration 0.01740
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000236.jpg'
+duration 0.01565
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000237.jpg'
+duration 0.01643
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000238.jpg'
+duration 0.01666
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000239.jpg'
+duration 0.01641
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000240.jpg'
+duration 0.01806
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000241.jpg'
+duration 0.01611
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000242.jpg'
+duration 0.01662
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000243.jpg'
+duration 0.01627
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000244.jpg'
+duration 0.01634
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000245.jpg'
+duration 0.01673
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000246.jpg'
+duration 0.01680
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000247.jpg'
+duration 0.01682
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000248.jpg'
+duration 0.01631
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000249.jpg'
+duration 0.01665
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000250.jpg'
+duration 0.01680
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000251.jpg'
+duration 0.01667
+file 'C:/Users/CPU13403/OneDrive - VNG Group JSC/Documents/GitHub/Gom-Gom-Ban-Choi/Gom-Gom-Ban-Choi/ads-out/upg/frames-end/f000251.jpg'

@@ -227,6 +227,26 @@ function blockHang(group) {
       ${paw(24)}${paw(58)}
     </g>`;
 }
+// Viền nâu quanh mèo 2D cho đồng bộ với mèo 3D ở Deco (cùng màu mực MAP_INK '#5b2e1c' của toon.mjs, nét đều, chỉ ở mép ngoài):
+// nở hình bóng (alpha) của thân + thân dưới lúc nhấc ra CAT_INK_R đơn vị khung 100 × 106, tô nâu rồi đặt sau ảnh gốc.
+// Bán kính tính theo khung SVG nên viền to nhỏ theo cỡ mèo. Filter khai một lần cho cả trang.
+// Nở bằng nhòe Gauss + cắt ngưỡng mềm (alpha nhòe .05 → .15 thành 0 → 1; mép thẳng: ngưỡng .05 nằm cách mép 1.645σ), KHÔNG dùng
+// feMorphology: nó nở theo ô vuông pixel nên đường xéo (tai) ra bậc thang răng cưa (lỗi cũ). Cách này cho viền tròn góc, mép mượt.
+// Ảnh thân có mép bán trong suốt (khử răng cưa; ảnh tam thể đục ~95% cả thân): nâu sau lưng lộ qua thành vệt tối như inner shadow,
+// làm mèo xỉn. Nên đẩy alpha thân ×2 (a ≥ .5 thành đục hẳn); không đẩy mạnh hơn: mép ảnh mất khử răng cưa, lại thành răng cưa.
+const CAT_INK = '#5b2e1c', CAT_INK_R = 1.6;
+if (typeof document !== 'undefined' && !document.getElementById('cat-ink')) {
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  defs.setAttribute('aria-hidden', 'true');
+  defs.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+  defs.innerHTML = `<filter id="cat-ink" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <feComponentTransfer in="SourceGraphic" result="solid"><feFuncA type="linear" slope="2"/></feComponentTransfer>
+    <feGaussianBlur in="SourceAlpha" stdDeviation="${(CAT_INK_R / 1.645).toFixed(3)}"/>
+    <feComponentTransfer result="grown"><feFuncA type="linear" slope="10" intercept="-.5"/></feComponentTransfer>
+    <feFlood flood-color="${CAT_INK}"/><feComposite in2="grown" operator="in" result="ink"/>
+    <feMerge><feMergeNode in="ink"/><feMergeNode in="solid"/></feMerge></filter>`;
+  (document.body || document.documentElement).append(defs);
+}
 function bitmapCatSvg(group, hang) {
   const face = mood => mood === 'sleep'
     ? `<g transform="translate(${CAT_EXPR_BOX.x.toFixed(2)} ${CAT_EXPR_BOX.y.toFixed(2)}) scale(${(CAT_EXPR_BOX.size / 100).toFixed(4)})">${SLEEP_FACE}</g>`
@@ -237,8 +257,8 @@ function bitmapCatSvg(group, hang) {
     `<path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#fff" stroke-width="6.5"/><path class="z${i + 1}" d="M${x} ${y} h${w} l-${w} ${w * 1.1} h${w}" stroke="#5b6fc4" stroke-width="3.2"/>`).join('')}</g>`;
   // Tên nhóm giữ như cũ để luật CSS cũ dùng lại được: calm-idle = calm, calm-focus = cute (thẻ đang cầm), annoyed = angry, joy = happy.
   return `<svg class="cat mood-${categories[group].mood} bitmap" viewBox="0 0 100 106" aria-hidden="true">
-    ${hang}
-    <image class="body" href="${bitmap(group, 'body')}" ${bodyBox(group)}/>
+    <g class="ink" filter="url(#cat-ink)">${hang}
+    <image class="body" href="${bitmap(group, 'body')}" ${bodyBox(group)}/></g>
     <g class="calm calm-idle">${face('calm')}</g>
     <g class="calm calm-focus">${face('cute')}</g>
     <g class="annoyed">${face('angry')}</g>
