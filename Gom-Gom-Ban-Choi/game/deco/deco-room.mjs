@@ -664,6 +664,9 @@ function buildItem(entry) {
   node.userData.itemId = entry.id;
   return markOutlineUnit(node);
 }
+// Cho tools/export-models.mjs: id mọi model đồ deco (cả phương án thay thế) + dựng một món theo id.
+export const modelIds = () => Object.keys(BUILD);
+export const buildModel = id => buildItem({ id });
 
 // ---------- Sàn: vân gỗ / thảm / gạch vẽ bằng canvas ----------
 function floorTexture(entry) {

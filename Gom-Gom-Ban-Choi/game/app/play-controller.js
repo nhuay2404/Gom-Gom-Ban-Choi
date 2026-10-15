@@ -1031,8 +1031,15 @@ function renderBoard() {
     board.replaceChildren(...(shaped ? [underlay] : []), ...cells);
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
+  // Ô cỏ liền nhau: chuỗi các cạnh giáp ô cỏ khác ('n' 'e' 's' 'w'), '-' = cỏ đứng riêng, '' = không có cỏ (đổi khi ô bên cạnh hết cỏ -> vẽ lại).
+  const hasGrass = (row, col) => row >= 0 && row < H && col >= 0 && col < W && !!state.grass?.[row * W + col];
+  const grassJoins = index => {
+    const row = Math.floor(index / W), col = index % W;
+    if (!hasGrass(row, col)) return '';
+    return (hasGrass(row - 1, col) ? 'n' : '') + (hasGrass(row, col + 1) ? 'e' : '') + (hasGrass(row + 1, col) ? 's' : '') + (hasGrass(row, col - 1) ? 'w' : '') || '-';
+  };
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    const object = state.board[index] || null, grass = !!state.grass?.[index];
+    const object = state.board[index] || null, grass = grassJoins(index);
     if (cell.renderedObject === object && cell.renderedGrass === grass) return;
     cell.renderedObject = object;
     cell.renderedGrass = grass;
@@ -1055,7 +1062,12 @@ function renderBoard() {
     cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}${grass ? ' grass' : ''}`;
     cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty${grass ? ', on grass' : ''}`
       : object.cage ? `Caged ${look(object.group).name}. Match next to it to break the lock` : `${object.name}${grass ? ', on grass' : ''}, locked`);
-    if (grass) { cell.insertAdjacentHTML('afterbegin', GRASS_SVG); cell.firstElementChild.style.backgroundPosition = `${(index * 37) % 100}% ${(index * 61) % 100}%`; }
+    if (grass) {
+      cell.insertAdjacentHTML('afterbegin', GRASS_SVG);
+      const tile = cell.firstElementChild;
+      for (const side of grass.replace('-', '')) tile.classList.add(`j-${side}`);
+      tile.style.cssText = `--col:${index % W};--row:${Math.floor(index / W)}`;
+    }
     if (!object) return;
     cell.style.setProperty('--group-color', look(object.group).color);
     addArt(cell, object);

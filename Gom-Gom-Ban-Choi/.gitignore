@@ -3,3 +3,6 @@ export/
 
 # File HTML gộp để test trên điện thoại: tạo lại bằng `npm run build:html`.
 dist/
+
+# Sinh bằng npm run export:models (~70 MB)
+game/assets/models/models.json

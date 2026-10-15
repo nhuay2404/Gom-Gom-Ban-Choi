@@ -20,6 +20,7 @@
     "export:data": "node tools/export-data.mjs",
     "export:art": "node tools/export-art.mjs",
     "export:sounds": "node tools/export-sounds.mjs",
+    "export:models": "node tools/export-models.mjs",
     "export": "node tools/export-data.mjs && node tools/export-art.mjs && node tools/export-sounds.mjs"
   },
   "engines": { "node": ">=20" }

@@ -493,9 +493,22 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 /* Bãi cỏ (session.mjs: s.grass): ô cỏ vuông (board-art.mjs GRASS_SVG) nằm dưới mèo / trên ô trống, to hơn ô ~10% để mèo đứng
    đè lên vẫn thấy viền cỏ. Mèo trên cỏ giữ nguyên màu. Gom mèo trên cỏ là dọn cỏ: vài lá cỏ văng ra. */
 .cell.grass{position:relative;background:none!important;box-shadow:none}
-.cell.grass .grass-tile{position:absolute;inset:-5%;width:110%;height:110%;z-index:0;pointer-events:none;box-sizing:border-box;border-radius:22%;
-  background:#8fcd5e url('../../assets/img/map/grass-bg.jpg') 0 0/420% auto;border:calc(var(--c) * .035) solid #3d7327;
+/* Ô cỏ cạnh nhau nối liền thành một bãi (play-controller grassJoins -> lớp j-n / j-e / j-s / j-w): cạnh giáp ô cỏ khác không viền, không bo,
+   trải qua khe giữa hai ô; hoa văn neo theo vị trí ô trên bàn (--col / --row, bước --pitch) nên liền mạch qua các ô. */
+.board{--pitch:calc((var(--bw, 100%) - 2 * var(--pad, 0px) + var(--gap, 6px)) / var(--cols, 6))}
+.cell.grass .grass-tile{--ov:calc((var(--pitch) - var(--gap, 6px)) * .05);--l:var(--ov);--r:var(--ov);--t:var(--ov);--b:var(--ov);
+  position:absolute;inset:calc(-1 * var(--t)) calc(-1 * var(--r)) calc(-1 * var(--b)) calc(-1 * var(--l));z-index:0;pointer-events:none;box-sizing:border-box;border-radius:22%;
+  /* Hoa văn cỏ mới cắt: sọc chéo hai tông, mỗi ô 2 cặp sọc, neo theo vị trí ô nên sọc chạy liền qua cả bãi */
+  background:repeating-linear-gradient(135deg,#a3da6f 0 calc(var(--pitch) * .177),#8ccb5b 0 calc(var(--pitch) * .354)) calc(var(--l) - var(--col, 0) * var(--pitch)) calc(var(--t) - var(--row, 0) * var(--pitch)) / var(--pitch) var(--pitch);
+  background-origin:border-box;border:calc(var(--c) * .035) solid #3d7327;
   box-shadow:inset 0 calc(var(--c) * -.07) 0 #4f8a3270,inset 0 calc(var(--c) * .05) 0 #d6f2b066,0 calc(var(--c) * .05) 0 #3d7327}
+.cell.grass .grass-tile.j-n{--t:calc(var(--gap, 6px) * .5 + 1px);border-top-width:0;border-top-left-radius:0;border-top-right-radius:0}
+.cell.grass .grass-tile.j-s{--b:calc(var(--gap, 6px) * .5 + 1px);border-bottom-width:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.cell.grass .grass-tile.j-e{--r:calc(var(--gap, 6px) * .5 + 1px);border-right-width:0;border-top-right-radius:0;border-bottom-right-radius:0}
+.cell.grass .grass-tile.j-w{--l:calc(var(--gap, 6px) * .5 + 1px);border-left-width:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.cell.grass .grass-tile.j-n{box-shadow:inset 0 calc(var(--c) * -.07) 0 #4f8a3270,0 calc(var(--c) * .05) 0 #3d7327}
+.cell.grass .grass-tile.j-s{box-shadow:inset 0 calc(var(--c) * .05) 0 #d6f2b066}
+.cell.grass .grass-tile.j-n.j-s{box-shadow:none}
 .cell.grass > :not(.grass-tile){position:relative;z-index:1}
 /* Lồng trên ô cỏ: giữ absolute phủ lên mèo (quy tắc trên làm lồng thành relative, cao 0 → lồng / ổ khoá biến mất) */
 .cell.grass.caged > .cage-bars{position:absolute;z-index:2}
