@@ -5,7 +5,7 @@ import { categories, addArt as addCatArt, skinGroup } from '../ui/cat-art.mjs';
 import { BOARD, TIMING } from '../data/tuning.mjs';
 import { $, pieceSkin } from '../app/shared.js';
 
-// Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
+// Luồng menu (menu/menu-controller.js: showTab, hideMenus, menuOpen, runOnboarding, sceneReady): start.js nối vào lúc khởi động.
 export let menus = null;
 
 export function connectMenus(menuController) { menus = menuController; }
