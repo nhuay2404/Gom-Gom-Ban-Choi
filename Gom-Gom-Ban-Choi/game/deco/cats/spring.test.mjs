@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { spring } from './spring.mjs';
 
-// Mọi lò xo đang dùng trong room-cats.mjs (k, zeta), kể cả lò xo tư thế ở tuning.mjs.
+// Mọi lò xo đang dùng trong mèo 3D (cat-brain.mjs, room-cats.mjs: k, zeta), kể cả lò xo tư thế ở tuning.mjs.
 const SPRINGS = [[900, 1], [380, .28], [320, .55], [150, .2], [150, .85], [140, .8], [120, .35], [90, .5], [45, .28], [18, .9]];
 
 test('lò xo ổn định ở mọi tốc độ khung hình (lỗi cũ: mí mắt nổ tới 1e164, mắt mèo nháy mỗi frame ở 30 fps)', () => {
@@ -25,8 +25,8 @@ test('chớp mắt ở 30 fps: mí khép rồi mở lại đúng một lần, kh
   assert.equal(crossings, 2);
 });
 
-test('room-cats.mjs không tự viết lại lò xo (dùng spring.mjs)', () => {
-  const src = fs.readFileSync(new URL('./room-cats.mjs', import.meta.url), 'utf8');
-  assert.ok(!/function spring\(/.test(src));
-  assert.ok(src.includes("from './spring.mjs'"));
+test('mèo 3D (cat-brain / cat-rig / room-cats) không tự viết lại lò xo (dùng spring.mjs)', () => {
+  const read = file => fs.readFileSync(new URL(file, import.meta.url), 'utf8');
+  for (const file of ['./cat-brain.mjs', './cat-rig.mjs', './room-cats.mjs']) assert.ok(!/function spring\(/.test(read(file)), file);
+  assert.ok(read('./cat-brain.mjs').includes("from './spring.mjs'"));
 });

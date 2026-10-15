@@ -1,11 +1,11 @@
-// Test nguyên tắc biểu cảm mèo 3D (cat-face.mjs + mọi chỗ gọi face() trong room-cats.mjs). Chạy: npm test
+// Test nguyên tắc biểu cảm mèo 3D (cat-face.mjs + mọi chỗ gọi face() trong não mèo cat-brain.mjs / đàn mèo room-cats.mjs). Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { FACE, EYES, MOUTHS, HOLD, expressionOf, settleExpression } from './cat-face.mjs';
 import { CAT_EXPRESSIONS } from '../../ui/cat-art.mjs';
 
-const source = fs.readFileSync(new URL('./room-cats.mjs', import.meta.url), 'utf8').split(/\r?\n/);
+const source = ['./cat-brain.mjs', './room-cats.mjs'].flatMap(file => fs.readFileSync(new URL(file, import.meta.url), 'utf8').split(/\r?\n/));
 
 // Mọi lời gọi `.face(...)` kèm tên hàm bao ngoài (hành vi). Dòng có nhiều lời gọi thì tách từng cái.
 function faceCalls() {

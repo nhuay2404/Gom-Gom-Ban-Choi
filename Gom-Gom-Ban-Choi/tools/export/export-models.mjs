@@ -19,7 +19,7 @@ try {
   await sleep(4000);
   const json = await b.eval(`(async () => {
     const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js');
-    const room = await import('./deco/deco-room.mjs'), cats = await import('./deco/cats/room-cats.mjs');
+    const room = await import('./deco/deco-room.mjs'), cats = await import('./deco/cats/cat-rig.mjs');
     const { CATALOG } = await import('./deco/deco-data.mjs'), { catGroups } = await import('./ui/cat-art.mjs');
     const exporter = new GLTFExporter(), models = {}, failed = [];
     const add = async (id, info, make) => {
