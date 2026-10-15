@@ -4,7 +4,7 @@
 import { clearMatches, connectedGroup, removeClusters, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, turnPoints, clusterPoints, POINTS_PER_CRATE } from './scoring.mjs';
 import { categories } from '../ui/cat-art.mjs';
-import { LEVELS, LETTERS, SHAPES, DEFAULT_SHAPES, parseBoard, makeDealer, starsFor, boardSize, parseGrass, grassCount } from './levels.mjs';
+import { LEVELS, LETTERS, SHAPES, DEFAULT_SHAPES, parseBoard, makeDealer, starsFor, boardSize, parseGrass, grassCount } from './levels/levels.mjs';
 import { BOARD, LUCKY, EFFECTS, holdUnlocked } from './tuning.mjs';
 import { clusterEffects } from './cluster-effects.mjs';
 

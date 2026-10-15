@@ -209,7 +209,7 @@ export const CATALOG = [
   { id: 'tfloor-checker', zone: 'bathroom', cat: 'floors', name: 'Checkerboard', color: '#f4f1ea' },
   { id: 'tfloor-teak', zone: 'bathroom', cat: 'floors', name: 'Teak', color: '#b9824f' },
   { id: 'tfloor-slate-tiles', zone: 'bathroom', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
-  // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
+  // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden-expanded.mjs), đặt ở phần vườn mới nới ra.
   { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', color: '#f3d5a8' },
   { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', color: '#ffd23f' },
   { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', color: '#8fc9f2' },
@@ -238,7 +238,7 @@ export const CATALOG = [
   { id: 'dog-rottweiler', cat: 'cats', name: 'Rottweiler dog', breed: 'rottweiler' },
 ];
 // Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
-// Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
+// Model riêng (BUILD[id] trong deco-room.mjs / garden.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
 // nên mèo vẫn chơi được như cũ (ví dụ đài phun nước vẫn có cá để rình, tủ đầu giường vẫn có bình hoa để đẩy rơi).
 // Mỗi slot chỉ đặt được một món: đặt món khác thì nó thay chỗ món đang ở đó.
 const VARIANTS = [

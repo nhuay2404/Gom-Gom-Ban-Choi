@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';
 import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds, backyardBounds, kinderBounds } from './room-layout.mjs';
-import { geometryNotes, withoutMerging } from './mesh-detail.mjs';
+import { geometryNotes, withoutMerging } from './render/mesh-detail.mjs';
 
 const DECAL_GAP = .004;          // tấm phẳng phải cách mặt khối phía sau ít nhất 4 mm
 const FENCE_GAP = .11;           // mặt trong của rào dày nhất (hàng rào cây .32, tường đá .3) cách khung vườn .11

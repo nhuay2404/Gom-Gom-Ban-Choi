@@ -2,7 +2,7 @@
 // Web dùng localStorage. Khi port sang Cocos chỉ cần gọi setStorageBackend(sys.localStorage) lúc khởi động
 // (cùng API getItem/setItem/removeItem), key và định dạng giữ nguyên nên đọc được save của bản web.
 //
-// Cấu trúc save (xem docs/PORTING.md):
+// Cấu trúc save (xem docs/porting.md):
 //   progress  { stars: number[] }            sao tốt nhất từng màn (chỉ số 0 = màn 1), 0/undefined = chưa qua
 //   deco      { coins, cats[], zone, zones: { garden|living: { owned[], placed[], wall, floor } } }
 //   sound     'on' | 'off'

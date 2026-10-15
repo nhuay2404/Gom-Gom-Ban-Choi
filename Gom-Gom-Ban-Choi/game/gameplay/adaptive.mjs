@@ -3,7 +3,7 @@
 // Luật cứng: DDA KHÔNG đụng vào thiết kế màn — hình bàn, vật cản (thùng, kim loại, ô ngoài bàn), chuồng, số lượt, mục tiêu,
 // giống mèo giữ đúng như levels.mjs. DDA chỉ được chỉnh hai thứ, và chỉnh nhẹ để người chơi không nhận ra:
 //   1. Bố trí mèo đặt sẵn lúc vào màn (pickCatLayout): thiết kế xê dịch vài con mèo tự do, giữ đúng số mèo mỗi giống. Các bố trí
-//      cho từng mức được bot đo trước (tools/generate-cat-layouts.mjs -> cat-layouts.mjs): mỗi mức chỉ lệch vài điểm % tỉ lệ thắng
+//      cho từng mức được bot đo trước (tools/levels/generate-cat-layouts.mjs -> cat-layouts.mjs): mỗi mức chỉ lệch vài điểm % tỉ lệ thắng
 //      so với thiết kế. Thua rồi chơi lại thì GIỮ NGUYÊN bố trí của lần trước (đọc từ lịch sử).
 //   2. Hàng thẻ (tuneDealer): tỉ lệ thẻ đơn / đôi / 3 ô và assist (xác suất thẻ ra màu đang có trên bàn), lệch tối đa
 //      A.ASSIST_SPAN so với thiết kế. Chơi lại chỉ còn chỉnh được phần này.
@@ -15,13 +15,13 @@
 // Vòng đời: startVisit lúc mở game -> planLevel trước mỗi lần vào màn (đọc lịch sử -> profile -> bố trí + hàng thẻ)
 // -> recordAttempt khi màn kết thúc (thắng, thua, bỏ ngang; lưu cả bố trí đã chơi) -> noteDwell khi rời bảng kết quả.
 // Màn có tutorial luôn chơi đúng thiết kế.
-import { LEVELS, parseBoard, DEFAULT_SHAPES, DEFAULT_ASSIST } from './levels.mjs';
+import { LEVELS, parseBoard, DEFAULT_SHAPES, DEFAULT_ASSIST } from './levels/levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
 import { ADAPTIVE } from './tuning.mjs';
-import { boardSize, isPlainSquare } from './board-shapes.mjs';
+import { boardSize, isPlainSquare } from './levels/board-shapes.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from './save.mjs';
-import { CAT_LAYOUTS } from './cat-layouts.mjs';
+import { CAT_LAYOUTS } from './levels/cat-layouts.mjs';
 
 const A = ADAPTIVE;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -62,7 +62,7 @@ const catBag = rows => [...rows.join('')].filter(isFreeCat).sort().join('');
 export const sameDesign = (a, b) => a.length === b.length && a[0].length === b[0].length && designOf(a) === designOf(b) && catBag(a) === catBag(b);
 
 // Số cặp mèo cùng màu nằm cạnh nhau (chỉ để xem trong editor; KHÔNG dùng để chọn bố trí: dời mèo còn ảnh hưởng phá thùng,
-// mở chuồng, chỗ trống... nên độ khó thật chỉ đo được bằng bot — xem tools/generate-cat-layouts.mjs).
+// mở chuồng, chỗ trống... nên độ khó thật chỉ đo được bằng bot — xem tools/levels/generate-cat-layouts.mjs).
 export function layoutEase(rows) {
   const { W, H } = boardSize(rows), cells = rows.join('');
   let pairs = 0;
@@ -89,7 +89,7 @@ export function playableLayout(rows) {
 }
 
 // Một bố trí ứng viên: bố trí thiết kế xê dịch 1..maxMoves con mèo (dời sang ô trống, hoặc đổi chỗ hai con khác giống).
-// Nhìn vẫn giống thiết kế. Trả về null nếu không ra bố trí hợp lệ khác thiết kế. Dùng cho tools/generate-cat-layouts.mjs.
+// Nhìn vẫn giống thiết kế. Trả về null nếu không ra bố trí hợp lệ khác thiết kế. Dùng cho tools/levels/generate-cat-layouts.mjs.
 export function nudgeCats(rows, rng, maxMoves = 3) {
   const { W } = boardSize(rows), flat = [...rows.join('')];
   const slots = flat.map((ch, i) => (isFreeCell(ch) ? i : -1)).filter(i => i >= 0);

@@ -70,7 +70,7 @@ export const BOOSTERS = {
 // Đổi thẻ: số lượt liên tiếp được thẻ có lợi nhất (thẻ đang bóc + TURNS - 1 thẻ sau), session.mjs luckyCard.
 export const LUCKY = remote('LUCKY', { TURNS: 3 });
 
-// Độ khó thích ứng theo profile người chơi (adaptive.mjs, tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md).
+// Độ khó thích ứng theo profile người chơi (adaptive.mjs, docs/do-kho-theo-profile.md).
 export const ADAPTIVE = remote('ADAPTIVE', {
   // Nhãn độ khó (chỉ hiển thị, tính trên bản thiết kế — DDA không đổi lượt / màu / bàn):
   TIGHT_PPM: 18,          // điểm cần mỗi lượt (target / moves) từ mức này trở lên thì element "moves" bật

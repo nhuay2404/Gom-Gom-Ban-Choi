@@ -38,9 +38,9 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `server.mjs` | Máy chủ tĩnh tối giản, chỉ dùng Node.js, không phụ thuộc thư viện nào |
 | `Choi-Gom-Gom.bat` | Trình chạy cho Windows |
 | `Choi-Gom-Gom.command` | Trình chạy cho macOS |
-| `tools/simulate-levels.mjs` | Bot chơi thử mọi màn để cân độ khó: `node tools/simulate-levels.mjs [số ván] [--sweep] [--no-effects]` |
-| `tai-lieu/4-Thiet-ke-10-man-Rotate.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
-| `tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md` | Độ khó thích ứng theo profile người chơi (DDA) |
+| `tools/levels/simulate-levels.mjs` | Bot chơi thử mọi màn để cân độ khó: `node tools/levels/simulate-levels.mjs [số ván] [--sweep] [--no-effects]` |
+| `docs/thiet-ke-10-man-dau.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
+| `docs/do-kho-theo-profile.md` | Độ khó thích ứng theo profile người chơi (DDA) |
 
 ### Bên trong `game/`
 
@@ -66,7 +66,7 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `ui/board-art.mjs` | Hình SVG thùng gỗ / tấm kim loại trên bàn |
 | `ui/sound.mjs` | Âm thanh |
 | **`gameplay/`** | **Luật và dữ liệu chơi (thuần logic, có test)** |
-| `gameplay/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
+| `gameplay/levels/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
 | `gameplay/board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |
 | `gameplay/session.mjs`, `scoring.mjs`, `board-shapes.mjs` | Một ván chơi, tính điểm theo cỡ cụm, hình bàn |
 | `gameplay/adaptive.mjs`, `cat-layouts.mjs` (sinh bằng `npm run cat-layouts`) | Độ khó thích ứng theo profile người chơi: chỉ xếp lại mèo đặt sẵn + chỉnh hàng thẻ, không đổi thiết kế / số lượt |
@@ -76,11 +76,11 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 
-Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/gameplay/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
+Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/gameplay/levels/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 
-Có 100 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `tai-lieu/4-Thiet-ke-10-man-Rotate.md`.
+Có 100 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `docs/thiet-ke-10-man-dau.md`.
 
 Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
 

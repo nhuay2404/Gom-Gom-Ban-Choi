@@ -12,7 +12,7 @@
 //  Quy ước: "màn" đánh số từ 1 như người chơi thấy. 1 stage = 10 màn (stage 1 = màn 1–10, stage 2 = màn 11–20 ...).
 //  File này chỉ chứa DỮ LIỆU (không có logic) để dễ sửa; code đọc nó ở gameplay/tuning.mjs và deco/deco-data.mjs.
 //  Mỗi hằng số khai bằng remote('TÊN', mặc định): số ở đây là MẶC ĐỊNH; trên Firebase Remote Config có tham số cùng TÊN
-//  thì game dùng số trên Firebase (xem docs/FIREBASE.md). Đổi mặc định ở đây xong thì `npm run firebase:template` để cập nhật template.
+//  thì game dùng số trên Firebase (xem docs/firebase.md). Đổi mặc định ở đây xong thì `npm run firebase:template` để cập nhật template.
 // ===================================================================================================================
 import { remote } from './remote-config.mjs';
 

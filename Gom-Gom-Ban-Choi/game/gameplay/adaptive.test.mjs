@@ -2,12 +2,12 @@
 // chơi lại giữ bố trí; thẻ đầu luôn gom được. Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LEVELS, parseBoard, boardSize } from './levels.mjs';
+import { LEVELS, parseBoard, boardSize } from './levels/levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE } from './scoring.mjs';
 import { ADAPTIVE } from './tuning.mjs';
 import { createSession, matchesSomewhere, openingCard } from './session.mjs';
-import { CAT_LAYOUTS } from './cat-layouts.mjs';
+import { CAT_LAYOUTS } from './levels/cat-layouts.mjs';
 import {
   elementCount, difficultyOf, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip,
   pickCatLayout, nudgeCats, playableLayout, sameDesign, variantFor, mulberry32, SHIFT_MIN, SHIFT_MAX,

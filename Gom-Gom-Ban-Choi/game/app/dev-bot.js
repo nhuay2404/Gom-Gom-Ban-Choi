@@ -1,5 +1,5 @@
 // Bot tự chơi trong game thật (chỉ dev; Level Editor mở game với ?level=N&bot=weak|mid|good): xem bot chơi từng nước ngay trên giao diện.
-// Dùng bộ não của tools/bot.mjs (nạp động: game chạy từ máy chủ không phục vụ thư mục tools/ thì bot tắt, game vẫn chạy bình thường).
+// Dùng bộ não của tools/levels/bot.mjs (nạp động: game chạy từ máy chủ không phục vụ thư mục tools/ thì bot tắt, game vẫn chạy bình thường).
 import { botApi } from './play-controller.js';
 
 const PROFILES = {
@@ -13,7 +13,7 @@ export async function startBot(profileId) {
   document.getElementById('dev-panel')?.style.setProperty('display', 'none', 'important');
   const profile = PROFILES[profileId] || PROFILES.mid;
   let bot;
-  try { bot = await import('../../tools/bot.mjs'); } catch { console.warn('[dev-bot] không nạp được tools/bot.mjs: chạy game bằng máy chủ của Level Editor (npm run editor)'); return; }
+  try { bot = await import('../../tools/levels/bot.mjs'); } catch { console.warn('[dev-bot] không nạp được tools/levels/bot.mjs: chạy game bằng máy chủ của Level Editor (npm run editor)'); return; }
   const { upcoming } = await import('../gameplay/session.mjs');
   let last = null, attempts = 0;
   for (;;) {

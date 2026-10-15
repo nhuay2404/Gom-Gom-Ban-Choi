@@ -160,7 +160,7 @@ function afkFaces(cat, group, ink) {
 //   cute   = thỉnh thoảng đổi khi rảnh, thẻ đang cầm   sleepy = lim dim trước khi ngủ (AFK)
 //   sleep  = ngủ say (AFK lâu; nhóm vector trong Figma nên vẽ bằng SVG, xem SLEEP_FACE)
 //   angry  = bị nhấc / kéo, bị chạm (hoặc rê chuột) quá nhiều      chew = dạng khác của bực khi bị chạm quá nhiều; sắp hết lượt
-// Đường dẫn viết nguyên văn (không ghép chuỗi) để tools/build-single-html.mjs nhúng được ảnh vào bản HTML một file.
+// Đường dẫn viết nguyên văn (không ghép chuỗi) để tools/export/build-single-html.mjs nhúng được ảnh vào bản HTML một file.
 const CAT_IMAGES = {
   orange: { body: 'assets/img/cats/orange-body.png', calm: 'assets/img/cats/orange-calm.png', happy: 'assets/img/cats/orange-happy.png', cute: 'assets/img/cats/orange-cute.png', sleepy: 'assets/img/cats/orange-sleepy.png', angry: 'assets/img/cats/orange-angry.png', chew: 'assets/img/cats/orange-chew.png' },
   gray: { body: 'assets/img/cats/gray-body.png', calm: 'assets/img/cats/gray-calm.png', happy: 'assets/img/cats/gray-happy.png', cute: 'assets/img/cats/gray-cute.png', sleepy: 'assets/img/cats/gray-sleepy.png', angry: 'assets/img/cats/gray-angry.png', chew: 'assets/img/cats/gray-chew.png' },
@@ -176,7 +176,7 @@ const CAT_IMAGES = {
   golden: { body: 'assets/img/dogs/golden-body.png', calm: 'assets/img/dogs/golden-calm.png', happy: 'assets/img/dogs/golden-happy.png', cute: 'assets/img/dogs/golden-cute.png', sleepy: 'assets/img/dogs/golden-sleepy.png', sleep: 'assets/img/dogs/golden-sleep.png', angry: 'assets/img/dogs/golden-angry.png', chew: 'assets/img/dogs/golden-chew.png' },
   malamute: { body: 'assets/img/dogs/malamute-body.png', calm: 'assets/img/dogs/malamute-calm.png', happy: 'assets/img/dogs/malamute-happy.png', cute: 'assets/img/dogs/malamute-cute.png', sleepy: 'assets/img/dogs/malamute-sleepy.png', sleep: 'assets/img/dogs/malamute-sleep.png', angry: 'assets/img/dogs/malamute-angry.png', chew: 'assets/img/dogs/malamute-chew.png' },
 };
-// Đường dẫn tính từ thư mục game/ (không phải trang đang mở): trang khác nạp module này (Level Editor ở tools/level-editor/) vẫn đúng ảnh.
+// Đường dẫn tính từ thư mục game/ (không phải trang đang mở): trang khác nạp module này (Level Editor ở tools/levels/level-editor/) vẫn đúng ảnh.
 // Bản HTML một file đã thay đường dẫn bằng data URI: giữ nguyên.
 const GAME_DIR = new URL('../', import.meta.url);
 for (const set of Object.values(CAT_IMAGES)) for (const mood in set) if (!set[mood].startsWith('data:')) set[mood] = new URL(set[mood], GAME_DIR).href;

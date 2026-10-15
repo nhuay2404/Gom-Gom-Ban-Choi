@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as game from './session.mjs';
-import { LEVELS, parseBoard, parseCard, boardSize } from './levels.mjs';
+import { LEVELS, parseBoard, parseCard, boardSize } from './levels/levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE, POINTS_PER_CRATE } from './scoring.mjs';
 import { recordWin, unlockedCount, levelReward, earnedCoins, levelTier, levelMechanics } from './progression.mjs';

@@ -44,7 +44,7 @@ test('khối bo góc chỉ tạo qua roundedBox() (tự chặn bán kính bo)', 
 
 // Viền toon không được giật khi kéo / xoay / pinch camera (CLAUDE.md, mục "Viền không được giật"): giữ các điểm chốt trong shader.
 test('outline-rules: viền mảnh theo từng mảnh lưới và nét trong chuyển mượt theo 3 x 3 pixel ID', () => {
-  const toon = fs.readFileSync(new URL('deco/toon.mjs', dir), 'utf8');
+  const toon = fs.readFileSync(new URL('deco/render/toon.mjs', dir), 'utf8');
   // 1. bề dày nét bị chặn theo outlineThin của đỉnh (không phải hộp bao cả mesh)
   assert.match(toon, /attribute float outlineThin;/, 'thiếu thuộc tính outlineThin');
   assert.match(toon, /w = min\(w, max\(outlineThin \* thinScale \/ pixelWorld/, 'nét không bị chặn theo bề ngang thật của bộ phận');
@@ -62,7 +62,7 @@ test('outline-rules: viền mảnh theo từng mảnh lưới và nét trong chu
 });
 
 test('outline-rules: kết cấu căn phòng / vườn không có viền (isStructure bỏ pickSurface / structure)', () => {
-  const toon = fs.readFileSync(new URL('deco/toon.mjs', dir), 'utf8');
+  const toon = fs.readFileSync(new URL('deco/render/toon.mjs', dir), 'utf8');
   assert.ok(toon.includes('n.userData.pickSurface || n.userData.structure'), 'isStructure phải bỏ cả pickSurface lẫn structure');
   assert.ok(toon.includes('if (isStructure(node))'),'addOutlines phải bỏ qua kết cấu');
   const room = fs.readFileSync(new URL('deco/deco-room.mjs', dir), 'utf8');

@@ -2,9 +2,9 @@
 // Lướt lên = trống lăn về phía trước, màn xa cong dần qua đường chân trời. Mỗi màn là khối đầu mèo nổi trên bệ tròn.
 // Chỉ vẽ: dữ liệu màn / tiến độ do menu-controller.js truyền vào qua render(); chạm màn thì gọi onPick(index).
 import * as THREE from 'three';
-import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
-import { roundedBox, mergeStatic } from './mesh-detail.mjs';
-import { catModel, setCatFace, poseTail } from './room-cats.mjs';
+import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './render/toon.mjs';
+import { roundedBox, mergeStatic } from './render/mesh-detail.mjs';
+import { catModel, setCatFace, poseTail } from './cats/room-cats.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.

@@ -2,7 +2,7 @@
 // Home hub = bản đồ màn (ví, liveops), Deco / Shop (thanh tab, phòng 3D, mua / đặt đồ, chọn khu), cài đặt (âm thanh, ngày / đêm, hướng dẫn)
 // và nút dev. Vào màn chơi thì gọi qua `play` (play-controller.js, nối ở main.js).
 import { categories, catMarkup, addArt as addCatArt } from '../ui/cat-art.mjs';
-import { LEVELS } from '../gameplay/levels.mjs';
+import { LEVELS } from '../gameplay/levels/levels.mjs';
 import { loadProgress, saveProgress, unlockedCount, levelsCleared as clearedCount, levelTier } from '../gameplay/progression.mjs';
 import { BOOSTERS } from '../gameplay/tuning.mjs';
 import { TUTORIAL_TOP_UP, COIN_PACKS, STARTER_PACK, AREA_UNLOCK } from '../gameplay/economy.mjs';
@@ -1404,11 +1404,11 @@ addEventListener('ui-studio:state', event => {
   $('dev-studio').setAttribute('aria-pressed', event.detail.shown);
 });
 $('dev-studio').onclick = () => dispatchEvent(new Event('ui-studio:toggle'));
-// Level Editor (tools/level-editor/): mở toàn màn hình trong iframe. Bản HTML một file (file://) không có máy chủ phục vụ /tools.
+// Level Editor (tools/levels/level-editor/): mở toàn màn hình trong iframe. Bản HTML một file (file://) không có máy chủ phục vụ /tools.
 $('dev-editor').hidden = location.protocol === 'file:';
 $('dev-editor').onclick = () => {
   const frame = $('dev-editor-frame');
-  if (!frame.src) frame.src = '/tools/level-editor/';
+  if (!frame.src) frame.src = '/tools/levels/level-editor/';
   $('dev-editor-overlay').hidden = false;
 };
 $('dev-editor-close').onclick = () => { $('dev-editor-overlay').hidden = true; };

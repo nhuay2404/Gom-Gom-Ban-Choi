@@ -1,5 +1,5 @@
 // Art vật cản trên bàn chơi (SVG thuần chuỗi, không đụng giao diện) — dùng cho bàn chơi, bảng vào màn,
-// và công cụ xuất asset (tools/export-art.mjs) khi port sang Cocos.
+// và công cụ xuất asset (tools/export/export-art.mjs) khi port sang Cocos.
 
 // Thùng gỗ: ô chặn không đặt mèo lên được, vỡ khi gom mèo sát bên (luật ở board-rules.mjs).
 export const CRATE_SVG = `<svg class="crate" viewBox="0 0 100 100" aria-hidden="true">

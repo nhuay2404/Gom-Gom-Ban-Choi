@@ -5,7 +5,7 @@
 import { mergeTarget, placementIndices } from '../gameplay/board-rules.mjs';
 import { clusterPoints, turnPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS, skinGroup } from '../ui/cat-art.mjs';
-import { LEVELS } from '../gameplay/levels.mjs';
+import { LEVELS } from '../gameplay/levels/levels.mjs';
 import * as game from '../gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
 import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS, LUCKY } from '../gameplay/tuning.mjs';

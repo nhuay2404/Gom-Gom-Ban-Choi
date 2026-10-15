@@ -1,5 +1,5 @@
 // UI Studio (trình duyệt): tự nạp cùng thanh nút dev (main.js), bật / tắt bằng nút "Studio" ở đó; ?studio mở sẵn.
-// Máy chủ: tools/ui-studio.mjs. Hướng dẫn cho artist: docs/UI-STUDIO.md.
+// Máy chủ: tools/ui-studio/ui-studio.mjs. Hướng dẫn cho artist: docs/ui-studio.md.
 // Chữ trên bảng viết bằng tiếng Anh, thao tác theo thói quen Photoshop:
 //  - Select (V) hoặc Alt + click để chọn phần tử ("layer"), Shift + click chọn thêm. Ctrl + G liên kết nhiều layer: chọn một là chọn
 //    cả nhóm (chỉ nhớ trong trình duyệt, KHÔNG đổi cấu trúc HTML / code). Ctrl + Shift + G bỏ liên kết.
@@ -9,7 +9,7 @@
 //  - Bảng thuộc tính: các khối CSS đang áp vào phần tử; di chuột lên tên thuộc tính / ô giá trị / nút để xem giải thích (PROP_HELP).
 //  - File đổi ngoài game (artist sửa CSS / xuất ảnh đè lên game/ui/...): CSS và ảnh thay tại chỗ; .js / .mjs / .html thì tải lại trang.
 //  - Save (Ctrl + S) ghi thẳng vào đúng file CSS trong game/ui/ (rồi commit bằng GitHub Desktop như bình thường).
-import { cssRules, declarations, norm } from '/tools/ui-studio-css.mjs';
+import { cssRules, declarations, norm } from '/tools/ui-studio/ui-studio-css.mjs';
 
 const IMAGE_RE = /\.(png|jpe?g|webp|gif|svg)$/i;
 const FRAME_UNITS = 393;
