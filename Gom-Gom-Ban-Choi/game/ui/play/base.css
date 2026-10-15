@@ -533,3 +533,14 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 .bonus-fill{position:absolute;inset:0;-webkit-background-clip:text;background-clip:text;color:transparent}
 body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 -2px 0 #0002}
 @media(prefers-reduced-motion:reduce){.bonus-fill,body.bonus-time .fg-score .progress-fill{animation:none}}
+/* Đủ điểm lần đầu mà còn mục tiêu (play-controller.js nudgeGoals): icon mục tiêu lắc, ô mục tiêu trên bàn sáng tới nước đi kế tiếp */
+.fg-goal-icon.goal-shake{animation:goal-shake .5s ease-in-out 3;transform-origin:50% 80%}
+@keyframes goal-shake{0%,100%{rotate:0deg;scale:1}20%{rotate:-16deg;scale:1.15}45%{rotate:13deg;scale:1.15}70%{rotate:-8deg}85%{rotate:4deg}}
+/* Lồng dựng đứng trong 3D che mất mặt ô: quầng sáng vàng nằm trên mặt ô + song lồng tự phát sáng, cùng nhịp nhấp nháy */
+.board .cell.goal-hint{position:relative}
+.board .cell.goal-hint::after{content:'';position:absolute;inset:-3px;border-radius:24%;pointer-events:none;transform:translateZ(1px);
+  background:#ffe36e66;box-shadow:0 0 0 4px #ffd23f,0 0 22px 10px #ffd23fcc;animation:goal-hint 1s ease-in-out infinite}
+.board .cell.goal-hint .cage-bars{animation:goal-hint-bars 1s ease-in-out infinite}
+@keyframes goal-hint{50%{opacity:.45}}
+@keyframes goal-hint-bars{0%,100%{filter:brightness(1.25) drop-shadow(0 0 4px #ffd23f) drop-shadow(0 0 10px #ffd23f)}50%{filter:drop-shadow(0 0 2px #ffd23f)}}
+@media(prefers-reduced-motion:reduce){.board .cell.goal-hint::after,.board .cell.goal-hint .cage-bars{animation:none}}

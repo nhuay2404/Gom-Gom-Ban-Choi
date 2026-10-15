@@ -261,6 +261,7 @@ function placeAt(anchor) {
   if (turn.error === 'tutorial') return render('Drag onto the glowing cell!', true);
   if (turn.error) return render(turn.error, true);
   if (!turn.ok) return;
+  state.goalHint = false; // ô mục tiêu chỉ sáng tới nước đi kế tiếp
   const placedAt = now();
   track.thinks.push(placedAt - track.last);
   track.last = placedAt;
@@ -865,6 +866,7 @@ function finishTurn(turn) {
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
   const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
   const effectText = turn.effect?.effects.length ? ` ${turn.effect.effects.map(fx => EFFECT_FX[fx.kind].label).join(' ')}` : '';
+  if (!turn.win) nudgeGoals();
   const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
   const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${effectText}${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
@@ -1060,18 +1062,13 @@ function render(message = '', error = false) {
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('level-title').dataset.digits = String(state.levelIndex + 1).length; // số 2 chữ số: chữ nhỏ lại cho lọt giữa hai lá trên badge
   $('moves').textContent = state.moves;
-  // Màn có cỏ: ô Goal = số ô cỏ còn lại; màn có lồng: số mèo còn bị nhốt. Hiện cạnh ô Move.
-  const cages = state.board.filter(object => object?.cage).length;
-  const hasGoal = !!(state.grassTotal || state.hasCages);
-  $('goal-box').hidden = !hasGoal;
-  $('goal-box').closest('.fg-panel').classList.toggle('has-goal', hasGoal);
-  $('goal-count').textContent = state.grassTotal ? game.grassLeft(state) : cages;
-  $('goal-count2').textContent = cages; // màn có cả cỏ lẫn lồng: ô thứ hai đếm mèo còn bị nhốt
+  renderGoals();
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
   $('message').textContent = message;
   $('message').classList.toggle('error', error);
   renderBoard();
+  paintGoalHint();
   renderCards();
   $('active-card').disabled = state.over;
   document.querySelector('.card-rotator').classList.toggle('can-rotate', !state.over && state.active.items.length > 1);
@@ -1087,6 +1084,53 @@ function render(message = '', error = false) {
 
 // Ô bàn được giữ cố định; chỉ ô nào đổi mèo mới dựng lại. Không xoá/dựng lại cả 36 ô mỗi lần vẽ
 // nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
+// Ô Goal cạnh ô Move: mỗi mục tiêu còn lại một ô (cỏ / mèo trong lồng). Mục tiêu nào xong thì biến mất; hết mục tiêu thì ẩn
+// cả ô Goal (ô Move về chỗ của màn không có mục tiêu).
+const GOAL_KINDS = {
+  grass: { icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
+  cage: { icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
+};
+const goalsLeft = () => Object.keys(GOAL_KINDS).filter(kind => (kind === 'grass' ? state.grassTotal : state.hasCages) && GOAL_KINDS[kind].left() > 0);
+function renderGoals() {
+  const goals = goalsLeft();
+  $('goal-box').hidden = !goals.length;
+  $('goal-box').closest('.fg-panel').classList.toggle('has-goal', goals.length > 0);
+  $('goal-box').classList.toggle('two', goals.length > 1);
+  [['goal-icon', 'goal-count'], ['goal-icon2', 'goal-count2']].forEach(([iconId, countId], k) => {
+    const kind = goals[k], icon = $(iconId);
+    icon.hidden = $(countId).hidden = !kind;
+    if (!kind) return;
+    if (icon.dataset.kind !== kind) { icon.innerHTML = GOAL_KINDS[kind].icon(); icon.dataset.kind = kind; }
+    $(countId).textContent = GOAL_KINDS[kind].left();
+  });
+  $('goal-box').setAttribute('aria-label', `${goals.map(kind => GOAL_KINDS[kind].label).join(' and ')} left`);
+}
+// Lần đầu đủ điểm mà còn mục tiêu: lúc thanh điểm vừa đầy (điểm bay vào xong), icon mục tiêu lắc và các ô mục tiêu trên bàn
+// sáng lên (state.goalHint) tới nước đi kế tiếp — đã đi nước khác trước lúc đó thì không bật sáng nữa.
+function nudgeGoals() {
+  if (state.goalNudged || state.score < state.level.target || !goalsLeft().length) return;
+  state.goalNudged = true;
+  const session = state, moves = state.moves;
+  scoreSettled().then(() => {
+    if (state !== session || state.over) return;
+    if (state.moves === moves) { state.goalHint = true; paintGoalHint(); }
+    if (reduceMotion.matches) return;
+    ['goal-icon', 'goal-icon2'].forEach(id => {
+      const icon = $(id);
+      if (icon.hidden) return;
+      icon.classList.remove('goal-shake');
+      void icon.offsetWidth;
+      icon.classList.add('goal-shake');
+      icon.addEventListener('animationend', () => icon.classList.remove('goal-shake'), { once: true });
+    });
+  });
+}
+function paintGoalHint() {
+  $('board').querySelectorAll(':scope > .cell').forEach((cell, index) => {
+    cell.classList.toggle('goal-hint', !!state.goalHint && (!!state.board[index]?.cage || !!state.grass?.[index]));
+  });
+}
+
 function renderBoard() {
   const board = $('board');
   // Dựng lại lưới khi đổi cỡ hoặc hình bàn (ô ngoài bàn cố định suốt ván).
@@ -1235,12 +1279,6 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   state = Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false });
   ({ W, H } = state);
   state.hasCages = state.board.some(object => object?.cage);
-  $('goal-icon').innerHTML = state.grassTotal ? GRASS_ICON_SVG : CAGE_ICON_SVG;
-  const bothGoals = !!(state.grassTotal && state.hasCages);
-  $('goal-icon2').innerHTML = CAGE_ICON_SVG;
-  $('goal-icon2').hidden = $('goal-count2').hidden = !bothGoals;
-  $('goal-box').classList.toggle('two', bothGoals);
-  $('goal-box').setAttribute('aria-label', bothGoals ? 'Grass tiles and caged cats left' : state.grassTotal ? 'Grass tiles left' : 'Caged cats left');
   hammerArmed = false;
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -1297,7 +1335,6 @@ $('active-card').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); rotateActive(); }
 };
 // Gửi tạm bằng cách kéo thẻ thả vào ô; bàn phím vẫn dùng Enter/Space để không mất khả năng truy cập.
-$('goal-icon').innerHTML = CAGE_ICON_SVG;
 $('hold').onkeydown = event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); holdActive(); }
 };
@@ -1420,6 +1457,7 @@ function smashAt(cell) {
   if (!cell || state.over || state.animating) return;
   const index = Number(cell.dataset.index), turn = game.smash(state, index);
   if (!turn.ok) return render(turn.error || '', !!turn.error);
+  state.goalHint = false;
   useBooster('hammer');
   hammerArmed = false;
   clearSmashArea();
@@ -1454,6 +1492,7 @@ function smashAt(cell) {
       return celebrateWin(message);
     }).then(() => endLevel(true));
   }
+  nudgeGoals(); // búa cũng có thể đẩy điểm qua mục tiêu lần đầu
   render(`Smash! +${turn.points} points.`);
 }
 // Búa đang giơ: rê / chạm giữ trên bàn thì sáng vùng 3×3 sẽ bị đập.
