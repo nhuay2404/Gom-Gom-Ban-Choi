@@ -81,6 +81,11 @@ export function clearMatches(board, width, height, size = 4) {
     cluster.forEach(i => seen.add(i));
     if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); clusters.push(cluster); }
   });
+  return removeClusters(board, width, height, clusters, groups);
+}
+// Xoá các cụm cho trước (luật gom: thùng sát cụm vỡ, chuồng sát cụm mất một khóa). Dùng cho clearMatches và xả lượt (gom từng cụm).
+export function removeClusters(board, width, height, clusters, groups) {
+  const cleared = clusters.flat();
   if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [] };
   const nextBoard = board.slice(), broken = new Set(), hit = new Set();
   cleared.forEach(index => {

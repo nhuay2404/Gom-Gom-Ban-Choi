@@ -70,7 +70,7 @@
       <div class="fg-panel">
         <span id="level-title" class="fg-level">Level 1</span>
         <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play-controller.js render) -->
-        <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong></div>
+        <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong><span id="goal-icon2" class="fg-goal-icon" hidden></span><strong id="goal-count2" hidden>0</strong></div>
         <div class="moves-box fg-moves" aria-label="Moves left"><span class="fg-moves-label">Move</span><strong id="moves">20</strong></div>
         <div class="progress fg-score" role="img" aria-label="Score progress">
           <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
@@ -86,8 +86,8 @@
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
     <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để mua bằng xu -->
     <section id="booster-bar" class="booster-bar" aria-label="Boosters" hidden>
-      <button class="boost" data-boost="hammer" aria-label="Hammer: smash one cat or crate" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
-      <button class="boost" data-boost="swap" aria-label="New card: swap the current card for a new one" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="hammer" aria-label="Hammer: smash everything in a 3×3 area" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="swap" aria-label="New card: get the best card for the next 3 turns" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
       <button class="boost" data-boost="moves" aria-label="Extra moves" title="Extra moves"><strong class="boost-plus">+3</strong><b class="boost-count"></b></button>
     </section>
     <section class="dock draw-area" aria-label="Cards">

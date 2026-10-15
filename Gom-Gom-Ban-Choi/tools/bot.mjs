@@ -7,7 +7,8 @@
 // `trace` = mảng (tuỳ chọn): mỗi lượt đẩy vào { placed (bàn sau khi đặt, trước khi gom), board (sau khi gom), cells (ô vừa đặt), cleared,
 //   card, hold (có dùng Gửi tạm), points, score, movesLeft, boosts } để Level Editor phát lại ván chơi.
 import { parseBoard, makeDealer, starsFor, boardSize, parseGrass } from '../game/gameplay/levels.mjs';
-import { BOOSTERS } from '../game/gameplay/tuning.mjs';
+import { BOOSTERS, EFFECTS } from '../game/gameplay/tuning.mjs';
+import { clusterEffects } from '../game/gameplay/cluster-effects.mjs';
 import { clearMatches, placementIndices, rotateOffsets, connectedGroup } from '../game/gameplay/board-rules.mjs';
 import { openingCard } from '../game/gameplay/session.mjs';
 import { MATCH_SIZE, turnPoints } from '../game/gameplay/scoring.mjs';
@@ -122,7 +123,7 @@ const turnCost = (pace, t) => pace.look + pace.think * t.bits + pace.drag + pace
 // Chơi một ván. Trả về { win, reason ('moves' | 'stuck'), score, stars, movesUsed, sec, boostUse, preBoostRatio }.
 // pace: một nhịp ({ look, … }) -> sec là số giây; hoặc bảng nhiều nhịp ({ weak: {…}, … }) -> sec là { weak: giây, … } (cùng một ván).
 // lookahead = nhìn trước 1 nước với thẻ đã biết (người chơi giỏi); mặc định tắt để các tool cũ (baseline, sinh màn) giữ kết quả.
-export function play(level, seed, { noise = 1, hold: useHold = true, boost = null, trace = null, lookahead = false, pace = null } = {}) {
+export function play(level, seed, { noise = 1, hold: useHold = true, boost = null, trace = null, lookahead = false, pace = null, effects = true } = {}) {
   const rng = mulberry32(seed), deal = makeDealer(level, rng), { W, H } = boardSize(level.board);
   const grass = parseGrass(level), grassTotal = grass ? grass.filter(Boolean).length : 0;
   // Tiến độ tới mục tiêu (0..1+): điểm / mục tiêu; màn có cỏ lấy phần kém hơn giữa điểm và phần cỏ đã phá (phải đủ cả hai).
@@ -158,10 +159,13 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
       if (many) for (const id in pace) sec[id] += turnCost(pace[id], shape); else sec += turnCost(pace, shape);
     }
     if (pick.option.card !== active) pick.option.after();
-    score += pick.move.points;
-    board = pick.move.match.board;
-    moves--;
     if (grass) pick.move.match.cleared.forEach(index => { grass[index] = false; });
+    // Hiệu ứng cụm to / gom đôi như session.mjs (bot không chủ động săn hiệu ứng, chỉ hưởng khi trúng).
+    const fx = effects ? clusterEffects(pick.move.match, pick.move.indices, W, H, grass) : null;
+    score += fx ? Math.round((pick.move.points + fx.points) * (fx.double ? EFFECTS.DOUBLE_MULT : 1)) : pick.move.points;
+    board = fx ? fx.board : pick.move.match.board;
+    if (fx?.grass) fx.grass.forEach((g, i) => { grass[i] = g; });
+    moves--;
     trace?.push({ placed: pick.move.placed, board, cells: pick.move.indices, cleared: pick.move.match.cleared, card: pick.option.card, hold: pick.option.card !== active,
       points: pick.move.points, score, movesLeft: moves, boosts: { ...boostUse }, grass: grass && grass.slice() });
     if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });

@@ -3,12 +3,12 @@
 // tutorial, bảng vào màn, kết quả và metric cho độ khó thích ứng. Luật nằm ở gameplay/session.mjs; file này gọi luật rồi vẽ.
 // Không đụng Home / Deco / Shop / Map: cần chuyển màn hình thì gọi qua `menus` (menu-controller.js, nối ở main.js).
 import { mergeTarget, placementIndices } from '../gameplay/board-rules.mjs';
-import { clusterPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
+import { clusterPoints, turnPoints, POINTS_PER_CRATE } from '../gameplay/scoring.mjs';
 import { categories, catMarkup, addArt as addCatArt, LOW_MOVE_MOODS, skinGroup } from '../ui/cat-art.mjs';
 import { LEVELS } from '../gameplay/levels.mjs';
 import * as game from '../gameplay/session.mjs';
 import { loadProgress, saveProgress, levelsCleared as clearedCount, recordWin, levelTier } from '../gameplay/progression.mjs';
-import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS } from '../gameplay/tuning.mjs';
+import { BOARD, TIMING, DRAG, LOW_MOVES, BOOSTERS, LUCKY } from '../gameplay/tuning.mjs';
 import { COMEBACK_GIFT_MOVES } from '../gameplay/economy.mjs';
 import { spendBooster, boostersUnlocked } from '../gameplay/boosters.mjs';
 import { CRATE_SVG, METAL_SVG, cageSvg, CAGE_ICON_SVG, GRASS_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
@@ -17,7 +17,7 @@ import { playSound, playMeow, playMeowChorus } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, planLevel, recordAttempt, noteDwell, elementCount, difficultyOf, boosterTip } from '../gameplay/adaptive.mjs';
 import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
 import { AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, showToast, pieceSkin } from './shared.js';
+import { $, reduceMotion, getDeco, setDeco, getBoosters, storeBoosters, buyOne, priceTag, BOOSTER_NAMES, pieceSkin } from './shared.js';
 
 // Luồng menu (showTab, showMap, hideMenus, menuOpen): main.js nối vào lúc khởi động.
 let menus = null;
@@ -265,8 +265,13 @@ function placeAt(anchor) {
   track.thinks.push(placedAt - track.last);
   track.last = placedAt;
   // Chỉ gom (xóa cụm 3+) mới có điểm; đặt thẻ thôi thì không.
+  animateTurn(turn);
+  finishTurn(turn);
+}
+// Anim một lượt đặt thẻ đã chốt state (gom, thùng, chuồng, cỏ, khen, hiệu ứng). Dùng cho lượt người chơi và lượt xả sau khi thắng.
+function animateTurn(turn) {
   const { result, match } = turn;
-  if (!match.cleared.length || reduceMotion.matches) return finishTurn(turn);
+  if (!match.cleared.length || reduceMotion.matches) return;
   // State được chốt ngay (cụm biến mất, điểm cộng, rút thẻ mới) để người chơi đặt tiếp liền.
   // Anim gom chạy trên các "bóng mèo" phủ đúng chỗ cũ, không chặn thao tác.
   const merges = match.clusters.map(cluster => ({ cluster, target: mergeTarget(cluster, result.indices, W) }));
@@ -278,9 +283,129 @@ function placeAt(anchor) {
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   flyGrass(turn.cleaned, DROP_MS + LIFT_MS + MERGE_MS * .7);
   celebrateMatch(merges, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  playEffects(turn, DROP_MS + LIFT_MS + MERGE_MS + 120);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
-  finishTurn(turn);
+}
+
+// Xả lượt sau khi thắng (session.finaleTurn): bàn mọc "câu đố" cho đủ số lượt còn lại, AI tự chọn thẻ + đặt, mỗi lượt gom một
+// cụm → đúng hết lượt là sạch mèo; hết lượt mà còn mèo thì chơi tiếp (lượt thưởng) tới sạch. Nhịp nhanh; chạm bàn thì nhanh hơn nữa.
+// Sao đã chốt lúc thắng, chỉ điểm tăng thêm.
+const FINALE_MS = 280, FINALE_FAST_MS = 110, FINALE_SPAWN_MS = 420;
+let finaleFast = false;
+async function drainMoves() {
+  state.animating = true;
+  finaleFast = false;
+  await Promise.all([...pendingMerges]);
+  if (!state.moves && !state.board.some(object => object?.group && !object.cage)) return;
+  effectBanner('Bonus Time!', 0);
+  playSound('reward');
+  await wait(finaleFast ? FINALE_FAST_MS : 550);
+  for (let turn = game.finaleTurn(state); turn.ok; turn = game.finaleTurn(state)) {
+    if (turn.spawned.length) {
+      // Mèo câu đố mọc lên trước (bàn tạm vẽ ở trạng thái vừa mọc), rồi mới tới lượt AI đặt thẻ.
+      const final = state.board, moves = state.moves;
+      state.board = turn.spawnBoard;
+      state.moves = moves + (turn.extra ? 0 : 1); // ô Move chưa trừ lượt này lúc mèo đang mọc
+      state.justPlaced = new Set(turn.spawned);
+      render(`${turn.spawned.length} cats pop in!`);
+      state.moves = moves;
+      if (!reduceMotion.matches) turn.spawned.forEach((index, i) => setTimeout(() => { const cell = cellEl(index); if (cell) spawnPuff(cell); }, i * 15));
+      playSound('fill', 8);
+      await wait(finaleFast ? FINALE_FAST_MS : FINALE_SPAWN_MS);
+      state.board = final;
+    }
+    state.justPlaced = new Set(turn.result.indices.filter(index => turn.match.board[index]));
+    animateTurn(turn);
+    playSound('merge', turn.match.cleared.length);
+    render(`${turn.extra ? 'Bonus clear' : 'Bonus'}! +${turn.gained} points.`);
+    await wait(finaleFast || reduceMotion.matches ? FINALE_FAST_MS : FINALE_MS + (turn.effect.effects.length ? 120 : 0));
+  }
+  await Promise.all([...pendingMerges]);
+}
+$('board').addEventListener('pointerdown', () => { if (state.outcome?.win && state.animating) finaleFast = true; });
+
+// ---------- Hiệu ứng cụm to / gom đôi (gameplay/cluster-effects.mjs) ----------
+// Mỗi hiệu ứng: khựng nhẹ (bàn phóng to 1 nhịp) + rung theo bậc, ô trúng loé sáng + văng mảnh, chữ tên hiệu ứng, điểm thưởng bật ra ở tâm.
+const EFFECT_FX = {
+  pounce: { label: 'Pounce!', shake: 3, bits: 'grass-bit' },
+  yarn: { label: 'Yarn Boom!', shake: 6, bits: 'yarn-bit' },
+  cross: { label: 'Claw Cross!', shake: 8, bits: 'yarn-bit' },
+  herd: { label: 'Call the Herd!', shake: 12, bits: 'yarn-bit' },
+  leap: { label: 'Kitty Leap!', shake: 4, bits: 'grass-bit' },
+};
+function playEffects(turn, delay) {
+  const effect = turn.effect;
+  if (!effect || (!effect.effects.length && !effect.double)) return;
+  pendingFlights++; // điểm thưởng của hiệu ứng / gom đôi giữ thanh điểm tới khi bật ra
+  const bonus = turn.gained - turnPoints(turn.match);
+  effect.effects.forEach((fx, n) => setTimeout(() => {
+    const style = EFFECT_FX[fx.kind], layer = fxLayer();
+    if (fx.kind === 'leap') leapPaws(layer, fx);
+    playSound(fx.kind === 'pounce' ? 'crateBreak' : 'merge', fx.kind === 'herd' ? 7 : fx.kind === 'cross' ? 6 : 5);
+    if (fx.kind === 'herd') playMeowChorus(state.board.filter(o => o?.group).map(o => o.group));
+    const land = fx.kind === 'leap' ? 440 : 0; // mèo vồ: ô đích nổ lúc dấu chân đáp
+    fx.cells.forEach((index, i) => {
+      const cell = cellEl(index);
+      if (!cell) return;
+      const flash = document.createElement('span');
+      flash.className = `fx-flash fx-${fx.kind}`;
+      flash.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px;animation-delay:${land + i * 18}ms`;
+      layer.append(flash);
+      setTimeout(() => flash.remove(), 700 + land + i * 18);
+      const debris = effect.blasted.includes(index) || effect.broken.includes(index) || effect.cleaned.includes(index);
+      if (debris) setTimeout(() => { flyBits(layer, cell, style.bits, 5); spawnPuff(cell); }, land);
+    });
+    shakeBoard(style.shake);
+    effectBanner(style.label, n);
+  }, delay + n * 260));
+  const last = delay + Math.max(0, effect.effects.length - 1) * 260 + 200;
+  setTimeout(() => {
+    if (effect.double && !effect.effects.length) effectBanner('Double!', 0);
+    const center = cellEl(effect.effects[0]?.center ?? turn.result.indices[0]);
+    if (center && bonus > 0) showMergeScore(center, bonus, 0, effect.double ? 'm7' : 'm6'); else releaseScoreSlot();
+  }, last);
+}
+// Mèo vồ: dấu chân mèo nhảy vòng cung từ ô vừa đặt tới từng ô đích (ô đích loé sáng cùng lúc chân đáp).
+function leapPaws(layer, fx) {
+  const from = cellEl(fx.center);
+  if (!from) return;
+  fx.cells.forEach(index => {
+    const to = cellEl(index);
+    if (!to) return;
+    const paw = document.createElement('span');
+    paw.className = 'leap-paw';
+    paw.style.cssText = `left:${from.offsetLeft + from.offsetWidth / 2}px;top:${from.offsetTop + from.offsetHeight / 2}px`;
+    layer.append(paw);
+    const dx = to.offsetLeft - from.offsetLeft, dy = to.offsetTop - from.offsetTop;
+    paw.animate([
+      { transform: 'translate(-50%, -50%) scale(.4)', opacity: 0 },
+      { transform: `translate(calc(-50% + ${dx / 2}px), calc(-50% + ${dy / 2 - 40}px)) scale(1.3)`, opacity: 1, offset: .5 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1)`, opacity: 1, offset: .85 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.6)`, opacity: 0 },
+    ], { duration: 520, easing: 'ease-in-out', fill: 'both' }).finished.then(() => paw.remove());
+  });
+}
+function shakeBoard(px) {
+  if (reduceMotion.matches) return;
+  // Rung bằng translate / scale riêng: cộng dồn với transform nghiêng 3D của bàn, không ghi đè nó.
+  const k = [0, 1, -1, .6, -.6, .3, 0].map(f => ({ translate: `${f * px}px ${-f * px * .5}px`, scale: `${f ? 1 + px / 400 : 1}` }));
+  $('board').animate(k, { duration: 260 + px * 15, easing: 'ease-out' });
+  if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(px * 6); // trình duyệt chặn rung khi chưa chạm màn hình
+}
+function effectBanner(text, n) {
+  const board = $('board').getBoundingClientRect(), pop = document.createElement('span');
+  pop.className = 'effect-banner';
+  pop.textContent = text;
+  pop.style.left = `${board.left + board.width / 2}px`;
+  pop.style.top = `${board.top + board.height * (.45 + n * .1)}px`;
+  document.body.append(pop);
+  pop.animate([
+    { transform: 'translate(-50%, -50%) scale(.3) rotate(-8deg)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1.25) rotate(3deg)', opacity: 1, offset: .2 },
+    { transform: 'translate(-50%, -50%) scale(1) rotate(0)', opacity: 1, offset: .7 },
+    { transform: 'translate(-50%, -80%) scale(.9)', opacity: 0 },
+  ], { duration: 1000, easing: 'ease-out', fill: 'both' }).finished.then(() => pop.remove());
 }
 
 // Cỏ vừa bị phá: vài đốm cỏ văng ra từ ô (ô đã được vẽ lại sạch).
@@ -460,80 +585,18 @@ async function animateMerges(ghosts, merges) {
   ghosts.forEach(ghost => ghost.remove());
 }
 
-// Thắng: chờ các anim gom còn dở xong, rồi mọi mèo còn lại bị nhấc bổng và bay vút lên, bàn trống trơn.
-// Bàn trống sau khi thắng: giữ ô ngoài bàn ('#') để lưới không bị dựng lại thành hình chữ nhật giữa anim.
+// Thắng (sau khi xả lượt đã dọn sạch mèo): chờ anim gom + điểm bay xong, ẩn UI chơi, thùng còn lại vỡ, bàn trống trơn.
+// Bàn trống sau khi thắng: giữ ô ngoài bàn ('#') để lưới không bị dựng lại thành hình chữ nhật.
 const emptiedBoard = () => state.board.map(cell => (cell?.void ? cell : null));
 async function celebrateWin(message) {
   state.animating = true;
   await Promise.all([...pendingMerges]);
-  await scoreSettled(); // lượt gom cuối: đợi điểm bay hết vào thanh + thanh chạy đầy tới nóc rồi mèo mới bay lên
+  await scoreSettled(); // lượt gom cuối: đợi điểm bay hết vào thanh + thanh chạy đầy tới nóc
   document.body.classList.add('level-over'); // thanh điểm vừa đầy: ẩn ngay UI chơi (xem endLevel)
-  const occupied = state.board.map((object, index) => object?.group ? index : null).filter(index => index !== null);
   breakCrates(state.board.map((object, index) => object?.block && !object.metal ? index : null).filter(index => index !== null), WIN_PAUSE_MS);
-  if (!reduceMotion.matches && occupied.length) {
-    await wait(WIN_PAUSE_MS); // để người chơi thấy lần gom cuối + thông báo thắng trước
-    // Chỉ bóng mèo bay đi; ô grid được trả về ô trống ngay nên bàn luôn nguyên vẹn.
-    const ghostMap = spawnGhosts(occupied, state.board), ghosts = [...ghostMap.values()];
-    const rowOf = new Map([...ghostMap].map(([index, ghost]) => [ghost, Math.floor(index / W)]));
-    state.board = emptiedBoard();
-    render(message);
-    $('board').classList.add('busy', 'flying');
-    // Pha 1: sóng từ hàng trên xuống, từng hàng lần lượt bị nhấc bổng và bay vọt lên rồi lơ lửng.
-    const RISE = 46, WAVE_MS = 90;
-    await Promise.all(ghosts.map(ghost => {
-      const delay = rowOf.get(ghost) * WAVE_MS;
-      ghost.classList.add('lifted');
-      ghost.style.setProperty('--lift-delay', `${delay}ms`);
-      return ghost.animate([
-        { translate: '0 0' },
-        { translate: `0 ${-RISE * 1.25}px`, offset: .65 },
-        { translate: `0 ${-RISE}px` },
-      ], { duration: 460, delay, easing: 'cubic-bezier(.3, 1.2, .5, 1)', fill: 'forwards' }).finished.catch(() => {});
-    }));
-    await wait(80); // cả bàn lơ lửng một nhịp rồi mới chụm lại
-    // Pha 2: mọi mèo cùng lúc bay vào tâm board, giữ nguyên hình dạng (không co giãn). Thân dưới lủng lẳng
-    // chuyển động theo quán tính như con lắc: lấy đà thì thân lệch về phía tâm, lao đi thì thân bị kéo lùi lại,
-    // tới nơi phanh gấp thì thân văng tới trước. Tới tâm các mèo chồng lên nhau, co lại và hợp nhất thành một chớp sáng.
-    const cx = $('board').offsetWidth / 2, cy = $('board').offsetHeight / 2, FLY_MS = 640;
-    const far = Math.max(1, ...ghosts.map(ghost => Math.abs(cx - ghost.offsetLeft - ghost.offsetWidth / 2)));
-    setTimeout(() => spawnFusion(cx, cy), FLY_MS * .86);
-    await Promise.all(ghosts.flatMap(ghost => {
-      const dx = cx - ghost.offsetLeft - ghost.offsetWidth / 2, dy = cy - ghost.offsetTop - ghost.offsetHeight / 2 + RISE; // tính từ chỗ đang lơ lửng
-      const at = (k, scale = 1) => `translate(${dx * k}px, ${dy * k}px) scale(${scale})`;
-      const fly = ghost.animate([
-        { transform: at(0), opacity: 1, easing: 'cubic-bezier(.3, 0, .5, 1)' },
-        { transform: at(-.06), opacity: 1, offset: .25, easing: 'cubic-bezier(.55, 0, .85, .45)' },
-        { transform: at(.9, .8), opacity: 1, offset: .78, easing: 'cubic-bezier(.2, .6, .4, 1)' },
-        { transform: at(1, .62), opacity: 1, offset: .88 },
-        { transform: at(1, .35), opacity: 0 },
-      ], { duration: FLY_MS, fill: 'forwards' });
-      // Con lắc: góc lệch tỉ lệ khoảng bay ngang, dấu ngược chiều gia tốc.
-      const hang = ghost.querySelector('.cat .hang'), swing = 26 * (0.35 + 0.65 * Math.abs(dx) / far) * Math.sign(dx || 1);
-      const body = hang?.animate([
-        { rotate: '0deg' },
-        { rotate: `${swing * .5}deg`, offset: .22 },
-        { rotate: `${-swing}deg`, offset: .55 },
-        { rotate: `${-swing * .8}deg`, offset: .76 },
-        { rotate: `${swing * .9}deg`, offset: .88 },
-        { rotate: `${-swing * .3}deg` },
-      ], { duration: FLY_MS, easing: 'ease-in-out', fill: 'forwards' });
-      return [fly.finished.catch(() => {}), body?.finished.catch(() => {})];
-    }));
-    ghosts.forEach(ghost => ghost.remove());
-    $('board').classList.remove('busy', 'flying');
-  }
   state.animating = false;
   state.board = emptiedBoard();
   render(message);
-}
-// Chớp sáng hợp nhất ở tâm board khi mọi mèo chụm lại.
-function spawnFusion(x, y) {
-  const flash = document.createElement('span');
-  flash.className = 'win-fusion';
-  flash.style.left = `${x}px`;
-  flash.style.top = `${y}px`;
-  fxLayer().append(flash);
-  flash.addEventListener('animationend', () => flash.remove());
 }
 // Điểm cộng: số "+N" bật to ở chỗ gom (nảy quá cỡ rồi về), rồi vỡ thành các đốm sao vàng bay vòng cung vào đầu thanh điểm.
 // Thanh điểm / số điểm chỉ tăng khi đốm cuối cùng tới nơi (shownScore), đốm đầu tới thì thanh nảy + loé sáng.
@@ -782,14 +845,18 @@ function finishTurn(turn) {
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
   const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
   const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
+  const effectText = turn.effect?.effects.length ? ` ${turn.effect.effects.map(fx => EFFECT_FX[fx.kind].label).join(' ')}` : '';
   const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${effectText}${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
-    const message = `You win with ${state.score} points! ✨`;
-    render(message);
-    return celebrateWin(message).then(() => endLevel(true));
+    render(`You win with ${state.score} points! ✨`);
+    return drainMoves().then(() => {
+      const message = `You win with ${state.score} points! ✨`;
+      render(message);
+      return celebrateWin(message);
+    }).then(() => endLevel(true));
   }
   if (turn.lose && !turn.stuck) return endLevel(false, state.outcome.reason);
   // Màn bảo đảm thắng (session.mjs): hết lượt thì được tặng lượt thay vì thua.
@@ -980,6 +1047,7 @@ function render(message = '', error = false) {
   $('goal-box').hidden = !hasGoal;
   $('goal-box').closest('.fg-panel').classList.toggle('has-goal', hasGoal);
   $('goal-count').textContent = state.grassTotal ? game.grassLeft(state) : cages;
+  $('goal-count2').textContent = cages; // màn có cả cỏ lẫn lồng: ô thứ hai đếm mèo còn bị nhốt
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));
   $('message').textContent = message;
@@ -1149,7 +1217,11 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   ({ W, H } = state);
   state.hasCages = state.board.some(object => object?.cage);
   $('goal-icon').innerHTML = state.grassTotal ? GRASS_ICON_SVG : CAGE_ICON_SVG;
-  $('goal-box').setAttribute('aria-label', state.grassTotal ? 'Grass tiles left' : 'Caged cats left');
+  const bothGoals = !!(state.grassTotal && state.hasCages);
+  $('goal-icon2').innerHTML = CAGE_ICON_SVG;
+  $('goal-icon2').hidden = $('goal-count2').hidden = !bothGoals;
+  $('goal-box').classList.toggle('two', bothGoals);
+  $('goal-box').setAttribute('aria-label', bothGoals ? 'Grass tiles and caged cats left' : state.grassTotal ? 'Grass tiles left' : 'Caged cats left');
   hammerArmed = false;
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -1300,10 +1372,10 @@ $('booster-bar').addEventListener('click', event => {
   if (!button || button.disabled || state.over || state.animating) return;
   const id = button.dataset.boost;
   if (id === 'hammer') {
-    if (hammerArmed) { hammerArmed = false; return render(); }
+    if (hammerArmed) { hammerArmed = false; clearSmashArea(); return render(); }
     if (!haveBooster(id)) return renderBoosters();
     hammerArmed = true;
-    return render('Tap a cat or a crate to smash it.');
+    return render('Tap the board to smash a 3×3 area.');
   }
   if (!haveBooster(id)) return renderBoosters();
   hammerArmed = false;
@@ -1311,7 +1383,7 @@ $('booster-bar').addEventListener('click', event => {
     useBooster(id);
     playSound('draw');
     state.preview = null;
-    render('Here is a new card!');
+    render(`Lucky cards! The best card for the next ${LUCKY.TURNS} turns.`);
   }
   // Tỉ lệ điểm trước lần +lượt đầu tiên (chỉ để thống kê; adaptive.mjs không dùng booster để xét thắng/thua).
   if (id === 'moves') track.preBoostRatio ??= +(state.score / state.level.target).toFixed(3);
@@ -1322,34 +1394,62 @@ $('booster-bar').addEventListener('click', event => {
     if (!reduceMotion.matches) document.querySelector('.moves-box').animate([{ scale: 1 }, { scale: 1.25 }, { scale: 1 }], { duration: 420, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   }
 });
-addEventListener('keydown', event => { if (event.key === 'Escape' && hammerArmed) { hammerArmed = false; render(); } });
+addEventListener('keydown', event => { if (event.key === 'Escape' && hammerArmed) { hammerArmed = false; clearSmashArea(); render(); } });
 
-// Búa: mèo co lại xoay tròn rồi biến mất trong khói; thùng thì vỡ như khi gom.
+// Búa: đập sạch vùng 3×3 — mèo co lại xoay tròn rồi biến mất, thùng / kim loại / chuồng vỡ văng mảnh; điểm bật ra ở ô chạm.
 function smashAt(cell) {
   if (!cell || state.over || state.animating) return;
   const index = Number(cell.dataset.index), turn = game.smash(state, index);
   if (!turn.ok) return render(turn.error || '', !!turn.error);
   useBooster('hammer');
   hammerArmed = false;
+  clearSmashArea();
   playSound('smash');
-  if (turn.object.block) breakCrates([index], 0);
-  else if (turn.freed) rattleCages({ caged: [], freed: [index] }, 0);
-  else if (!reduceMotion.matches) {
-    const ghost = cell.cloneNode(true);
-    ghost.classList.add('smash-ghost');
-    ghost.style.cssText += `;left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
-    fxLayer().append(ghost);
-    ghost.animate([{ scale: 1, rotate: '0deg', opacity: 1 }, { scale: 1.15, rotate: '-12deg', opacity: 1, offset: .25 }, { scale: 0, rotate: '200deg', opacity: 0 }],
-      { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
-    spawnPuff(cell);
+  const crates = turn.removed.filter(({ object }) => object.block && !object.metal).map(({ index: i }) => i);
+  breakCrates(crates, 0);
+  if (!reduceMotion.matches) {
+    const layer = fxLayer();
+    turn.removed.forEach(({ index: i, object }) => {
+      const target = cellEl(i);
+      if (!target || (object.block && !object.metal)) return; // thùng: breakCrates lo
+      if (object.metal || object.cage) { flyBits(layer, target, object.cage ? 'cage-bar' : 'grass-bit', 6); spawnPuff(target); return; }
+      const ghost = target.cloneNode(true);
+      ghost.classList.add('smash-ghost');
+      ghost.style.cssText += `;left:${target.offsetLeft}px;top:${target.offsetTop}px;width:${target.offsetWidth}px;height:${target.offsetHeight}px`;
+      layer.append(ghost);
+      ghost.animate([{ scale: 1, rotate: '0deg', opacity: 1 }, { scale: 1.15, rotate: '-12deg', opacity: 1, offset: .25 }, { scale: 0, rotate: '200deg', opacity: 0 }],
+        { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
+      spawnPuff(target);
+    });
+    turn.cleaned.forEach(i => { const target = cellEl(i); if (target) flyBits(layer, target, 'grass-bit', 5); });
+    shakeBoard(8);
   }
+  pendingFlights++;
+  const at = cellEl(index);
+  if (at && turn.points) showMergeScore(at, turn.points, 120, turn.points >= 60 ? 'm6' : 'm4'); else releaseScoreSlot();
   if (turn.win) {
-    const message = `You win with ${state.score} points! ✨`;
-    render(message);
-    return celebrateWin(message).then(() => endLevel(true));
+    render(`You win with ${state.score} points! ✨`);
+    return drainMoves().then(() => {
+      const message = `You win with ${state.score} points! ✨`;
+      render(message);
+      return celebrateWin(message);
+    }).then(() => endLevel(true));
   }
-  render(turn.object.block ? 'Crate smashed!' : turn.freed ? `The ${look(turn.object.group).name} is free!` : `Bye, ${look(turn.object.group).name}!`);
+  render(`Smash! +${turn.points} points.`);
 }
+// Búa đang giơ: rê / chạm giữ trên bàn thì sáng vùng 3×3 sẽ bị đập.
+function clearSmashArea() { document.querySelectorAll('#board .cell.smash-area').forEach(node => node.classList.remove('smash-area')); }
+$('board').addEventListener('pointermove', event => {
+  if (!hammerArmed) return;
+  const cell = event.target.closest('.cell');
+  if (!cell || cell.classList.contains('smash-center')) return;
+  clearSmashArea();
+  document.querySelectorAll('#board .cell.smash-center').forEach(node => node.classList.remove('smash-center'));
+  const index = Number(cell.dataset.index), r = Math.floor(index / W), c = index % W;
+  cell.classList.add('smash-center');
+  for (let y = r - 1; y <= r + 1; y++) for (let x = c - 1; x <= c + 1; x++) if (y >= 0 && y < H && x >= 0 && x < W) cellEl(y * W + x)?.classList.add('smash-area');
+});
+$('board').addEventListener('pointerleave', () => { clearSmashArea(); document.querySelectorAll('#board .cell.smash-center').forEach(node => node.classList.remove('smash-center')); });
 
 // AFK: 5 giây không thao tác thì mọi con mèo buồn ngủ (body.afk).
 // Game mobile: chỉ tính là "có chơi" khi ngón tay chạm màn hình (nhấn, kéo, nhả). Rê chuột không tính.

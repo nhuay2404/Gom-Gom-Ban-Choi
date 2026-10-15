@@ -281,3 +281,9 @@ body.card-holding,body.card-holding *{touch-action:none}
 /* Confetti khi gom (play-controller.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
 .confetti{position:fixed;z-index:60;width:13px;height:18px;border-radius:2px;pointer-events:none;box-shadow:0 1px 0 #0002;will-change:transform,opacity}
 .confetti.ribbon{width:8px;height:28px;border-radius:4px}
+/* Màn có cả cỏ lẫn lồng: hai mục tiêu cạnh nhau trong ô Goal, thu nhỏ cho vừa */
+.fg-panel .fg-goal [hidden]{display:none}
+.fg-panel .fg-goal.two{gap:calc(2 * var(--u))}
+.fg-panel .fg-goal.two .fg-goal-icon{width:calc(22 * var(--u));height:calc(22 * var(--u))}
+.fg-panel .fg-goal.two strong{font-size:calc(22 * var(--u))}
+.fg-panel .fg-goal.two strong:not([hidden])+.fg-goal-icon{margin-left:calc(4 * var(--u))}

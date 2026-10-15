@@ -25,7 +25,7 @@ export const TIMING = remote('TIMING', {
   DROP_MS: 220,        // mèo vừa đặt rơi xuống ô
   LIFT_MS: 160,        // mèo bị nhấc bổng trước khi gom (ngắn: gom diễn ra ~.25s sau khi mèo đáp)
   MERGE_MS: 220,       // cả cụm trượt vào điểm tụ
-  WIN_PAUSE_MS: 450,   // dừng một nhịp trước màn bay khi thắng
+  WIN_PAUSE_MS: 450,   // thắng: dừng một nhịp rồi các thùng còn lại mới vỡ
   AFK_MS: 5000,        // không chạm màn hình bấy lâu thì mèo buồn ngủ (biểu cảm sleepy)
   AFK_SLEEP_MS: 6000,  // buồn ngủ thêm bấy lâu nữa thì ngủ say (biểu cảm sleep + zzz)
   CARRY_HOLD_MS: 350,  // giữ mèo trong phòng bấy lâu thì nhấc lên
@@ -67,6 +67,8 @@ export const BOOSTERS = {
   EXTRA_MOVES: BOOSTER_EXTRA_MOVES,
   PRICE: BOOSTER_PRICE, // giá: gameplay/economy.mjs
 };
+// Đổi thẻ: số lượt liên tiếp được thẻ có lợi nhất (thẻ đang bóc + TURNS - 1 thẻ sau), session.mjs luckyCard.
+export const LUCKY = remote('LUCKY', { TURNS: 3 });
 
 // Độ khó thích ứng theo profile người chơi (adaptive.mjs, tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md).
 export const ADAPTIVE = remote('ADAPTIVE', {
@@ -94,3 +96,6 @@ export const ADAPTIVE = remote('ADAPTIVE', {
   MOVES_AFTER: 2,         // thua vì hết lượt bấy nhiêu lần ở màn này -> thêm assist + một thẻ to
   CROWDED_BLOCKS: 6,      // bàn có từ bấy nhiêu ô vật cản = màn chật: thẻ to thêm vào là thẻ đôi thay vì thẻ 3 ô (đỡ kẹt)
 });
+
+// Hiệu ứng gom cụm to / gom đôi (cluster-effects.mjs). CAP = trần điểm hiệu ứng mỗi loại; DOUBLE_MULT nhân điểm cả lượt khi gom 2+ cụm.
+export const EFFECTS = remote('EFFECTS', { CAP: { yarn: 60, cross: 80, herd: 100 }, DOUBLE_MULT: 1.5 });

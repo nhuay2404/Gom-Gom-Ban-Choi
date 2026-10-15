@@ -3,6 +3,7 @@
 //   --dda       tỉ lệ thắng của từng bản biến thể theo số element (độ khó thích ứng, adaptive.mjs)
 //   --baseline  ghi kết quả vào tools/baseline.json (mốc để đối chiếu sau khi port sang Cocos)
 //   --json      in kết quả dạng JSON
+//   --no-effects tắt hiệu ứng cụm to / gom đôi (cluster-effects.mjs) để so sánh
 // Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).
 // Bot chỉ nhìn 1 nước nên yếu hơn người chơi thật một chút: tỉ lệ thắng của bot là cận dưới.
 import { LEVELS, parseBoard, parseCard, boardSize } from '../game/gameplay/levels.mjs';
@@ -14,7 +15,7 @@ import { play, PACES } from './bot.mjs';
 import { writeFileSync } from 'node:fs';
 
 const RUNS = Number(process.argv.slice(2).find(arg => /^\d+$/.test(arg)) ?? 400);
-const JSON_OUT = process.argv.includes('--json'), BASELINE = process.argv.includes('--baseline');
+const NO_FX = process.argv.includes('--no-effects'), JSON_OUT = process.argv.includes('--json'), BASELINE = process.argv.includes('--baseline');
 
 // Kiểm tra dữ liệu màn: bàn không có sẵn cụm gom được, ô tutorial hợp lệ.
 function validate(level, n) {
@@ -31,7 +32,7 @@ log(`Mô phỏng ${RUNS} ván mỗi màn\n`);
 log('Màn | Tên              | Bàn         | Lượt | Mục tiêu | Thắng | Kẹt  | ★ TB | Điểm TB');
 LEVELS.forEach((level, i) => {
   validate(level, i + 1);
-  const results = Array.from({ length: RUNS }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i), pace: PACES }));
+  const results = Array.from({ length: RUNS }, (_, run) => play(level, (i + 1) * 100000 + run, { hold: holdUnlocked(i), pace: PACES, effects: !NO_FX }));
   const wins = results.filter(r => r.win), stuck = results.filter(r => r.reason === 'stuck').length;
   const stars = wins.length ? wins.reduce((s, r) => s + r.stars, 0) / wins.length : 0;
   const avg = results.reduce((s, r) => s + r.score, 0) / RUNS;

@@ -7,7 +7,7 @@ import { LEVELS, parseBoard, parseCard, boardSize } from './levels.mjs';
 import { clearMatches } from './board-rules.mjs';
 import { MATCH_SIZE, POINTS_PER_CRATE } from './scoring.mjs';
 import { recordWin, unlockedCount, levelReward, earnedCoins, levelTier, levelMechanics } from './progression.mjs';
-import { ECONOMY, HOLD } from './tuning.mjs';
+import { HOLD } from './tuning.mjs';
 
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 
@@ -176,21 +176,30 @@ test('tiến độ: giữ sao tốt nhất, xu chỉ ra ở lần thắng đầu
   assert.equal(earnedCoins(record.progress), levelReward(0));
 });
 
-test('booster: búa đập mèo/thùng, không đập kim loại/ô trống; đổi thẻ giữ thẻ sắp tới; thêm lượt', () => {
+test('booster: búa đập sạch 3×3 (mèo, chuồng, thùng, kim loại), điểm như gom; đổi thẻ cho 3 thẻ có lợi nhất, giữ thẻ sắp tới; thêm lượt', () => {
   const s = game.createSession(5, { rng: seeded(7) });
-  const crate = s.board.findIndex(o => o?.block && !o.metal);
-  assert.ok(crate >= 0, 'màn 6 có thùng');
-  assert.ok(game.smash(s, crate).ok);
-  assert.equal(s.board[crate], null);
-  const empty = s.board.findIndex(o => !o);
-  assert.equal(game.smash(s, empty).ok, false);
-  s.board[empty] = { block: true, metal: true };
-  assert.equal(game.smash(s, empty).ok, false);
-  assert.ok(s.board[empty].metal);
+  s.grass = null; s.W = 6; s.H = 6; // bàn thử 6×6 (màn 6 có thể khác cỡ)
+  s.board = parseBoard(['OO....', 'XM....', '......', '......', '......', '......']);
+  s.board[2] = { group: 'white', locked: true, cage: 1 };
+  s.board[6 * 6 - 1] = { block: true, metal: true, void: true };
+  const score = s.score, hit = game.smash(s, 1);
+  assert.ok(hit.ok);
+  assert.deepEqual([0, 1, 2, 6, 7, 8].map(i => s.board[i]), Array(6).fill(null));
+  assert.equal(hit.points, 20 + 10 * 3); // 2 mèo cam = cụm 2 (20) + thùng + kim loại + chuồng
+  assert.equal(s.score, score + hit.points);
+  assert.equal(game.smash(s, 30).ok, false, 'vùng trống thì không đập');
+  assert.equal(game.smash(s, 35).ok, false, 'ô ngoài bàn không đập');
 
+  // Đổi thẻ: thẻ mới gom được ngay; 2 thẻ bóc sau cũng là thẻ may mắn; thẻ "sắp tới" giữ nguyên rồi ra sau.
+  s.board = parseBoard(['OO....', '......', '......', '......', '.GG...', '......']);
   const next = game.upcoming(s)[0], moves = s.moves;
   assert.ok(game.swapCard(s).ok);
+  assert.ok(game.matchesSomewhere(s.board, s.W, s.H, s.active));
+  assert.equal(s.lucky, 2);
   assert.equal(game.upcoming(s)[0], next);
+  game.drawCard(s); game.drawCard(s);
+  assert.equal(s.lucky, 0);
+  assert.equal(game.drawCard(s), next);
   assert.ok(game.addMoves(s, 3).ok);
   assert.equal(s.moves, moves + 3);
 });
@@ -221,14 +230,13 @@ test('chuồng mèo: không gom được, gom sát bên một lần là bẻ kh�
   assert.deepEqual(turn.match.freed, [3]);
   assert.equal(s.board[3].group, 'orange');
   assert.ok(!s.board[3].cage);
-  // Không đặt thẻ lên chuồng được; búa mở chuồng.
+  // Không đặt thẻ lên chuồng được; búa đập luôn cả mèo trong chuồng.
   s.board[20] = { group: 'white', locked: true, cage: 1 };
   s.active = { offsets: [[0, 0]], items: [{ group: 'white', name: 'White cat' }] };
   assert.equal(game.place(s, 20).ok, false);
   const smashed = game.smash(s, 20);
-  assert.ok(smashed.ok && smashed.freed);
-  assert.equal(s.board[20].group, 'white');
-  assert.ok(!s.board[20].cage);
+  assert.ok(smashed.ok);
+  assert.equal(s.board[20], null);
 });
 
 test('màn có chuồng: đủ điểm mà còn mèo bị nhốt thì chưa thắng; bẻ hết khóa mới qua màn', () => {
@@ -241,7 +249,7 @@ test('màn có chuồng: đủ điểm mà còn mèo bị nhốt thì chưa th�
   assert.ok(s.score >= 1);
   assert.equal(turn.win, false);
   assert.equal(s.over, false);
-  const smashed = game.smash(s, 20); // búa mở nốt chuồng cuối: thắng ngay
+  const smashed = game.smash(s, 20); // búa đập nốt chuồng cuối: thắng ngay
   assert.ok(smashed.win);
   assert.equal(s.outcome.win, true);
 });
@@ -274,4 +282,28 @@ test('cỏ: cùng cỡ bàn, chỉ nằm dưới mèo / ô trống; gom trên c�
   const plain = staged(3);
   assert.equal(plain.grass, null);
   assert.ok(!game.goalReached(plain));
+});
+
+test('xả lượt: còn N lượt thì bàn mọc câu đố, AI giải đúng N lượt là sạch mèo; hết lượt mà còn mèo thì chơi tiếp tới sạch', () => {
+  const run = (rows, moves, seed) => {
+    const s = game.createSession(5, { rng: seeded(seed) });
+    s.grass = null; s.W = 6; s.H = 6;
+    s.board = parseBoard(rows);
+    s.outcome = { win: true, stars: 2 }; s.over = true; s.moves = moves;
+    let turns = 0, extra = 0;
+    for (let turn = game.finaleTurn(s); turn.ok; turn = game.finaleTurn(s)) { turns++; if (turn.extra) extra++; assert.ok(turn.gained > 0); assert.ok(turns < 100); }
+    assert.ok(!s.board.some(o => o?.group && !o.cage), 'sạch mèo');
+    assert.equal(s.outcome.stars, 2);
+    return { turns, extra, moves: s.moves };
+  };
+  assert.equal(game.finaleTurn({ ...game.createSession(5), outcome: null }).ok, false, 'chưa thắng thì không xả');
+  for (const seed of [1, 2, 3]) {
+    const few = run(['O.....', '......', '..G...', '......', '....W.', '......'], 12, seed);
+    assert.deepEqual([few.turns, few.extra, few.moves], [12, 0, 0], 'bàn ít mèo: mọc thêm, đúng 12 lượt');
+    const many = run(['O.O.O.', '......', 'G.G.G.', '......', 'W.W.W.', '......'], 1, seed);
+    assert.equal(many.moves, 0);
+    assert.ok(many.extra >= 1, 'hết lượt vẫn chơi tiếp tới sạch');
+  }
+  const tight = run(['MMMMMM', 'MMMMMM', 'MM..MM', 'MMMMMM', 'MMMMMM', 'MMMMMM'], 5, 1);
+  assert.deepEqual([tight.turns, tight.moves], [5, 0], 'bàn kín vật cản chỉ còn 2 ô: vẫn xả đủ lượt (mèo lẻ tự nổ)');
 });
