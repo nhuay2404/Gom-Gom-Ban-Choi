@@ -68,7 +68,7 @@
 .result-round:active,.result-wide:active{translate:0 calc(2 * var(--u))}
 /* ---------- Bảng kết quả theo Figma: thắng (Group 33, frame 73:616) / thua (frame 73:680) ----------
    Mọi mảnh là ảnh cắt từ Figma (assets/img/result/, đúng vùng hiển thị trong Figma, 3×), đặt đúng toạ độ trong khung 304.6 × 403
-   (khung = ảnh panel). Số liệu (level, điểm, xu) vẫn do play-controller.js ghi vào phần tử cũ, nằm trên rãnh đã xoá số của ảnh. */
+   (khung = ảnh panel). Số liệu (level, điểm, xu) vẫn do play/result.js ghi vào phần tử cũ, nằm trên rãnh đã xoá số của ảnh. */
 .result-dialog{width:calc(304.6 * var(--u));height:calc(403 * var(--u));max-width:none;padding:0;border:0;border-radius:0;box-shadow:none;
   background:url('../../assets/img/result/panel.png') center/100% 100% no-repeat;margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}
 .result-dialog>*{position:absolute;margin:0}
@@ -126,7 +126,7 @@
 /* ===== Bảng kết quả hiện ra kiểu hoạt hình (thay anim cũ bị giật):
    - Giật vì: nền mờ (backdrop-filter blur) phải tính lại mỗi khung hình trong lúc bảng phóng to, và ảnh Figma 3× (panel ~850 KB)
      chỉ giải mã lúc bảng mở lần đầu -> rơi khung. Sửa: bỏ blur (chỉ phủ màu, mờ dần riêng), ảnh giải mã sẵn lúc vào game
-     (play-controller.js, preloadResultArt), anim chỉ dùng scale / translate / opacity (GPU) + will-change.
+     (play/result.js, preloadResultArt), anim chỉ dùng scale / translate / opacity (GPU) + will-change.
    - Kiểu cartoon: bảng bật lên có nén-giãn (squash & stretch) rồi nảy về; sau đó lần lượt sao bật ra, tiêu đề rơi xuống nảy,
      mèo thò đầu lên, nút bật ra. */
 .result-dialog::backdrop{-webkit-backdrop-filter:none;backdrop-filter:none;background:#2b1a1099}

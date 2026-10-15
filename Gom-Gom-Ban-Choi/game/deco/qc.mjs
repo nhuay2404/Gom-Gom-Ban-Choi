@@ -17,7 +17,7 @@
 //             (gradient phủ mất các nấc sáng), mặt lồi lõm nhỏ (pháp tuyến gồ ghề -> nấc sáng vỡ thành đốm loang: lỗi bụi góc vườn),
 //             toon "mượt" (smooth) dùng ngoài địa hình. Ngoại lệ có chủ đích: userData.toonOk = 'lý do' trên mesh / tổ tiên
 //   preview : popup xem trước ở Shop còn bị che sau khi đã ẩn vật chắn (chạy trong cảnh thật: deco-room.mjs qcPreview,
-//             menu-controller.js runQC gọi cho từng món, mọi khu mở)
+//             menu/dev-tools.js runQC gọi cho từng món, mọi khu mở)
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';

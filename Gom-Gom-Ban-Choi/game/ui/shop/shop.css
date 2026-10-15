@@ -110,7 +110,7 @@
 .screen.shop[data-page="store"]>.shop-deco{display:none}
 .screen.shop[data-page="deco"]>:not(.wallet-hud):not(.shop-pages):not(.shop-deco){display:none}
 .screen.shop[data-page="deco"] .shop-deco-title{display:none} /* tên tab đã là Decoration */
-/* Mua ở Shop thành công: chấm màu + sao bung ra từ thẻ, thẻ nảy nhẹ (menu-controller.js shopBurst) */
+/* Mua ở Shop thành công: chấm màu + sao bung ra từ thẻ, thẻ nảy nhẹ (menu/shop.js shopBurst) */
 .shop-burst{position:fixed;z-index:120;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);pointer-events:none;
   animation:shop-burst .7s cubic-bezier(.2,.8,.3,1) both}
 .shop-burst.star{width:auto;height:auto;margin:-10px 0 0 -7px;background:none;color:#ffd23f;font-size:18px;line-height:1;text-shadow:0 0 6px #fff6c8}

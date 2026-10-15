@@ -642,7 +642,7 @@ for (const id of ['bedside', 'desk', 'desk-study', 'fridge-steel', 'stove-wood',
 }
 
 // Dựng một món trong danh mục. Phương án thay thế có model riêng (BUILD[id]) nhưng giữ khuôn khổ và các móc
-// cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem room-cats.mjs useFurniture.
+// cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem cat-brain.mjs useFurniture.
 // Món đồ không có bộ phận nào cử động riêng (mèo / hiệu ứng không giữ tham chiếu tới khối con): gộp khối cùng màu.
 const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox', 'armchair', 'bench', 'slide',
   'bed', 'bed-canopy', 'bedrug', 'bedrug-cloud', 'desk', 'desk-study', 'chair-beanbag', 'closet', 'closet-dresser', 'plushie', 'plushie-dino', 'laundry', 'catsteps-bridge',
@@ -1869,7 +1869,7 @@ export function createRoom() {
     zoneCenter(zoneId, fxBase).setY(0); // đổi tường / sàn: hiệu ứng rộng giữa khu
     decoFx.burst(kind, fxBase, 1.2, 5);
   }
-  // Mở khu mới (menu-controller.js buyArea): pháo giấy phủ cả mảnh đất vừa mở.
+  // Mở khu mới (menu/areas.js buyArea): pháo giấy phủ cả mảnh đất vừa mở.
   function openFx(zone) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || !ZONE_OFFSET[zone]) return;
     decoFx.burst('open', fxBase.set(ZONE_OFFSET[zone][0], 0, ZONE_OFFSET[zone][1]), 2.5, HALF * 2);
@@ -2059,7 +2059,7 @@ export function createRoom() {
     const rect = renderer.domElement.getBoundingClientRect();
     return { x: rect.left + (catTop.x + 1) / 2 * rect.width, y: rect.top + (1 - catTop.y) / 2 * rect.height };
   }
-  // Khu kế tiếp chưa mở: mảnh đất mờ (nền nhạt trong suốt + viền nét đứt) đúng chỗ khu đó sẽ mở. menu-controller.js đặt chấm than
+  // Khu kế tiếp chưa mở: mảnh đất mờ (nền nhạt trong suốt + viền nét đứt) đúng chỗ khu đó sẽ mở. menu/areas.js đặt chấm than
   // vàng lên trên (screenOfGhost) — chạm chấm than mới hiện điều kiện mở. Chỉ hiện ở Deco; không chặn chạm, không viền, không bóng.
   // Mảnh đất phủ đúng khung của khu: ô vuông 8 × 8 (phòng, vườn mở rộng), sân sau là hình chữ nhật dài (zoneRect).
   const ghost = new THREE.Group();
@@ -2208,7 +2208,7 @@ export function createRoom() {
     if (event.type === 'pointerup' && down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
-      if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
+      if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (cat-brain.mjs pet)
         onCatEvent?.('pet');
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
         if (mood !== 'sleepy') playMeow(cat.breed, mood === 'grumpy' ? 'grumpy' : 'call');

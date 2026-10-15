@@ -1,6 +1,6 @@
 // Bố cục phòng mèo (thuần dữ liệu, không đụng Three.js): chỗ đặt từng món, bán kính vật cản, cửa sổ.
 // Dùng chung cho cảnh 3D (deco-room.mjs, garden.mjs) và não mèo (room-cats.mjs).
-// Khi port sang Cocos: model đặt đúng [x, z, xoay]; +z của mỗi món hướng vào giữa phòng.
+// Khi port sang Unity: model đặt đúng [x, z, xoay]; +z của mỗi món hướng vào giữa phòng.
 
 export const ROOM_HALF = 4;   // sàn 8 × 8 m, tâm ở gốc toạ độ
 export const WALL_H = 3;

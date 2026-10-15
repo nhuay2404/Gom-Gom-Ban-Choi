@@ -69,7 +69,7 @@
       <!-- Bảng HUD theo Figma (image 107, đã bỏ ô Goal + 3 sao): badge Level, ô Move rộng, thanh điểm (điểm / mục tiêu) -->
       <div class="fg-panel">
         <span id="level-title" class="fg-level">Level 1</span>
-        <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play-controller.js render) -->
+        <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play/hud.js render) -->
         <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong><span id="goal-icon2" class="fg-goal-icon" hidden></span><strong id="goal-count2" hidden>0</strong></div>
         <div class="moves-box fg-moves" aria-label="Moves left"><span class="fg-moves-label">Move</span><strong id="moves">20</strong></div>
         <div class="progress fg-score" role="img" aria-label="Score progress">
@@ -112,7 +112,7 @@
 <!-- Cài đặt (Figma: frame Home 73:590): popup giữa màn hình, nền tối mờ; nút bánh răng ở Home mở (aria-controls).
        Day / Night + Sound (tiếng hiệu ứng) dùng logic cũ; Music bật / tắt nhạc nền (riêng với Sound); Haptic / Notifications là lựa chọn
        được nhớ (Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev không nằm ở đây: cột nút vuông #dev-panel ở góc trái. -->
-  <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu-controller.js markTab bật / tắt) -->
+  <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu/settings.js markTab bật / tắt) -->
   <div id="hub-settings" class="settings hub-settings" hidden>
     <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
   </div>
@@ -123,7 +123,7 @@
         <button class="settings-close" aria-label="Close settings"><svg viewBox="0 0 24 24"><use href="#i-close"/></svg></button>
       </header>
       <div class="settings-body">
-        <!-- Chỉ hiện khi mở từ màn chơi: rời màn / chơi lại (hỏi lại trước, play-controller.js) -->
+        <!-- Chỉ hiện khi mở từ màn chơi: rời màn / chơi lại (hỏi lại trước, play/result.js confirmQuit) -->
         <div class="settings-links settings-ingame">
           <button id="open-map" class="settings-link"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
           <button id="restart" class="settings-link"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg><span>Restart</span></button>
@@ -188,11 +188,11 @@
     </div>
     <!-- Ghim "NEW" nổi trên món có đồ mới mua (Shop) thay được -->
     <div id="deco-pins" class="deco-pins" aria-hidden="true"></div>
-    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, core/idle.mjs) -->
-    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
+    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu/idle-coins.js placeIdleCoin, core/idle.mjs) -->
+    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu/areas.js renderAreaNext) -->
     <button id="area-next" class="area-next" hidden></button>
     <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b><i class="idle-spark s1"></i><i class="idle-spark s2"></i><i class="idle-spark s3"></i><i class="idle-spark s4"></i><i class="idle-spark s5"></i><i class="idle-spark s6"></i></button>
-    <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
+    <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu/deco-panel.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
       <div id="deco-pop-scroll" class="deco-pop-scroll"><div id="deco-pop-items" class="deco-pop-items"></div></div>
@@ -201,7 +201,7 @@
   </section>
 
   <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, banner gói khởi đầu, thẻ booster kem viền nâu,
-       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu-controller.js điền). -->
+       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu/shop.js điền). -->
   <!-- Shop chia 2 tab (data-page): "Shop" = gói khởi đầu, booster, gói xu / tiền thật; "Decoration" = chỉ đồ trang trí. -->
   <section id="shop" class="screen shop" data-page="store" hidden>
     <div class="wallet-hud">
@@ -292,7 +292,7 @@
   </div>
   <!-- Bảng kết quả theo Figma (frame Gameplay 73:616 thắng / 73:680 thua): mèo ló đầu trên khung (vui / khóc), thắng có 3 sao +
        tia sáng, thua có trái tim vỡ; tiêu đề, "Level N cleared / failed", ô điểm + xu thưởng; nút tròn Home / chơi lại, nút dài
-       Next (xanh) hoặc Retry (hồng). play-controller.js endLevel() điền số và bật / tắt theo thắng / thua. -->
+       Next (xanh) hoặc Retry (hồng). play/result.js endLevel() điền số và bật / tắt theo thắng / thua. -->
   <dialog id="result-dialog" class="level-dialog result-dialog">
     <div class="result-peek" aria-hidden="true">
       <span class="result-bush l"></span><span class="result-bush r"></span>
@@ -341,7 +341,7 @@
       <button id="dev-reset-ok" class="pill-button">Reset</button>
     </div>
   </dialog>
-  <!-- Shop: xem thử món trang trí đặt trong cảnh Deco trước khi mua; nút giá ở dưới = xác nhận mua (menu-controller.js) -->
+  <!-- Shop: xem thử món trang trí đặt trong cảnh Deco trước khi mua; nút giá ở dưới = xác nhận mua (menu/shop.js) -->
   <dialog id="shop-preview" class="shop-preview">
     <div class="shop-preview-head">
       <h2 id="shop-preview-name">Item</h2>
@@ -361,10 +361,10 @@
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make 2 matches next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
+    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make a match next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes everything in a 3×3 area, New card gives you the best card for the next 3 turns, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
   <!-- Nút cho game dev / tester: cột nút vuông thô ở góc trái. Chỉ hiện khi chạy localhost, URL có ?dev, hoặc bản HTML dev
-       (menu-controller.js bỏ hidden). Không đặt trong Settings. -->
+       (menu/dev-tools.js bỏ hidden). Không đặt trong Settings. -->
   <div id="dev-panel" class="dev-panel dev-only" hidden>
     <button id="dev-toggle" class="dev-btn dev-toggle" title="Ẩn / hiện nút dev">DEV</button>
     <div class="dev-buttons">

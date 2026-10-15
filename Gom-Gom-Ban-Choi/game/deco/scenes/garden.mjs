@@ -351,7 +351,7 @@ export const GARDEN_BUILD = {
   },
   hammock() {
     const wood = '#9a6a45';
-    // Vải võng: vẫn là CylinderGeometry hở nửa ống (room-cats.mjs findTrough/holdInTrough đọc parameters để mèo nằm bó
+    // Vải võng: vẫn là CylinderGeometry hở nửa ống (cat-rig.mjs findTrough/holdInTrough đọc parameters để mèo nằm bó
     // theo lòng vải), nhưng uốn lại đỉnh: giữa giữ nguyên bán kính, hai đầu túm dần về điểm buộc dây -> dáng võng mềm
     // như vải bị kéo căng, không còn là ống cứng. Hệ toạ độ của ống: y = dọc võng, z+ = hướng lên (sau khi xoay).
     const LEN = 1.4, R = .34, RADIAL = 32, ROWS = 28;

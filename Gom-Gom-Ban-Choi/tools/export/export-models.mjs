@@ -1,5 +1,5 @@
 // Xuất mọi model 3D của game (đồ deco gồm cả phương án thay thế + mèo / chó 3D) ra MỘT file JSON, mỗi model một mục glTF 2.0 riêng
-// (buffer + texture nhúng base64) để tái dùng ngoài game (Cocos, Blender: lưu một mục ra file .gltf là mở được).
+// (buffer + texture nhúng base64) để tái dùng ngoài game (Unity qua glTFast, Blender: lưu một mục ra file .gltf là mở được).
 // Model dựng bằng code Three.js nên phải dựng trong trình duyệt: cần game đang chạy (npm start) + Chrome.
 // Chạy: npm run export:models   ->   game/assets/models/models.json (~70 MB, không commit: .gitignore; tạo lại khi đổi model)
 //   { "version": 1, "models": { "<id>": { "kind": "deco" | "pet", "name", "zone", "gltf": {...} } } }

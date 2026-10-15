@@ -1,4 +1,4 @@
-// Xuất art của game ra file SVG độc lập (chuẩn XML) để đưa vào Cocos (đổi sang PNG / sprite atlas ở bước sau).
+// Xuất art của game ra file SVG độc lập (chuẩn XML) để đưa vào Unity (đổi sang PNG / Sprite Atlas ở bước sau).
 // Chạy: npm run export:art   ->   export/art/...
 //
 //   cats/<giống>/<trạng thái>.svg     mèo trên bàn chơi 2D, 200 × 212 px (khung 100 × 106 của art; lifted 200 × 280)
@@ -78,7 +78,7 @@ save('board/crate.svg', clean(CRATE_SVG, 200, 200), [200, 200]);
 save('board/metal.svg', clean(METAL_SVG, 200, 200), [200, 200]);
 
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({
-  note: 'SVG xuất từ art của game. Đổi sang PNG @2x rồi đóng Auto Atlas trong Cocos. Mặt mèo 3D (bụng, mũi, miệng, má) vẽ bằng canvas trong room-cats.mjs (faceTexture) — cần nướng thành texture riêng.',
+  note: 'SVG xuất từ art của game. Đổi sang PNG @2x rồi gom Sprite Atlas trong Unity. Mặt mèo 3D (bụng, mũi, miệng, má) vẽ bằng canvas trong deco/cats/cat-rig.mjs — cần nướng thành texture riêng.',
   files,
 }, null, 2));
 console.log(`Đã xuất ${files.length} file vào ${OUT}`);

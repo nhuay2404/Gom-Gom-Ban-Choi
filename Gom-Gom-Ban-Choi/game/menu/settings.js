@@ -67,7 +67,7 @@ document.querySelectorAll('.settings-close').forEach(button => { button.onclick 
 
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeAllSettings(); });
 
-// Home / Restart trong popup: đóng popup trước, play-controller.js hỏi lại rồi rời / chơi lại màn
+// Home / Restart trong popup: đóng popup trước, play/result.js hỏi lại rồi rời / chơi lại màn
 ['open-map', 'restart'].forEach(id => $(id).addEventListener('click', () => closeAllSettings()));
 
 function renderSoundButtons() {

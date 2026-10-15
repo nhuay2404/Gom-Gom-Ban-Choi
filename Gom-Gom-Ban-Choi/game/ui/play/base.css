@@ -186,7 +186,7 @@ dialog p{color:#8a6440}
 .cell.merge-ghost .cat .calm,.cell.merge-ghost .cat .annoyed,.cell.merge-ghost .cat .blush,.cell.merge-ghost.lifted .cat .calm,.cell.merge-ghost.lifted .cat .annoyed,.cell.merge-ghost.lifted .cat .blush{display:none}
 @media(prefers-reduced-motion:no-preference){.merge-ghost.lifted .cat .joy g:last-child{animation:joy-twinkle .45s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}}
 @keyframes joy-twinkle{to{transform:scale(1.35) rotate(18deg);opacity:.7}}
-/* Có cụm vừa gom: các mèo CÒN LẠI trên bàn chỉ đổi sang mặt vui, không nhảy / lắc (play-controller.js cheerNeighbors) */
+/* Có cụm vừa gom: các mèo CÒN LẠI trên bàn chỉ đổi sang mặt vui, không nhảy / lắc (play/match-fx.js cheerNeighbors) */
 .cell.cheered .cat,.cell.cheered .cat.bitmap{animation:none!important}
 /* Kéo thẻ: bỏ anim tự lắc; JS mô phỏng vật lý (thân nghiêng theo vận tốc, chân/đuôi đung đưa như con lắc) */
 .drag-ghost .cat{animation:none;transform-origin:50% 8%}
@@ -509,7 +509,7 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 /* Lồng trên ô cỏ: giữ absolute phủ lên mèo (quy tắc trên làm lồng thành relative, cao 0 → lồng / ổ khoá biến mất) */
 .cell.grass.caged > .cage-bars{position:absolute;z-index:2}
 .grass-bit{position:absolute;z-index:5;width:6px;height:14px;border-radius:50% 50% 2px 2px;background:#84c556;box-shadow:inset 0 0 0 1.5px #3d7327;pointer-events:none}
-/* Hiệu ứng cụm to / gom đôi (play-controller.js: playEffects) */
+/* Hiệu ứng cụm to / gom đôi (play/match-fx.js: playEffects) */
 .yarn-bit{position:absolute;z-index:5;width:10px;height:10px;border-radius:50%;background:#ff8fb1;box-shadow:inset 0 0 0 2px #d4537b;pointer-events:none}
 .fx-flash{position:absolute;z-index:4;border-radius:22%;pointer-events:none;opacity:0;animation:fx-flash .55s ease-out both}
 .fx-pounce{background:radial-gradient(circle,#fff8 0,#ffd93d99 60%,transparent 75%)}
@@ -533,7 +533,7 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 .bonus-fill{position:absolute;inset:0;-webkit-background-clip:text;background-clip:text;color:transparent}
 body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 -2px 0 #0002}
 @media(prefers-reduced-motion:reduce){.bonus-fill,body.bonus-time .fg-score .progress-fill{animation:none}}
-/* Đủ điểm lần đầu mà còn mục tiêu (play-controller.js nudgeGoals): icon mục tiêu lắc, ô mục tiêu trên bàn sáng tới nước đi kế tiếp */
+/* Đủ điểm lần đầu mà còn mục tiêu (play/hud.js nudgeGoals): icon mục tiêu lắc, ô mục tiêu trên bàn sáng tới nước đi kế tiếp */
 .fg-goal-icon.goal-shake{animation:goal-shake .5s ease-in-out 3;transform-origin:50% 80%}
 @keyframes goal-shake{0%,100%{rotate:0deg;scale:1}20%{rotate:-16deg;scale:1.15}45%{rotate:13deg;scale:1.15}70%{rotate:-8deg}85%{rotate:4deg}}
 /* Lồng dựng đứng trong 3D che mất mặt ô: quầng sáng vàng nằm trên mặt ô + song lồng tự phát sáng, cùng nhịp nhấp nháy */

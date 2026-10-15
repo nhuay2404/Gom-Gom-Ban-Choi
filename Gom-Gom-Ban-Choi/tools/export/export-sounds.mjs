@@ -1,7 +1,7 @@
-// Tổng hợp âm thanh của game ra file WAV (16-bit mono 44.1 kHz) để dùng trong Cocos (AudioSource).
+// Tổng hợp âm thanh của game ra file WAV (16-bit mono 44.1 kHz) để dùng trong Unity (AudioSource).
 // Chạy: npm run export:sounds   ->   export/audio/*.wav
 // Tiếng giống hệt sound.mjs: nốt sine, cách nhau 85 ms, mỗi nốt vào 12 ms rồi tắt dần tới 220 ms.
-// Web phát ở gain 0.065; file xuất ra được chuẩn hoá lên 0.9 cho sạch nhiễu, nên trong Cocos đặt
+// Web phát ở gain 0.065; file xuất ra được chuẩn hoá lên 0.9 cho sạch nhiễu, nên trong Unity đặt
 // volume ≈ 0.072 (= 0.065 / 0.9) để nghe to đúng như bản web (ghi trong export/audio/manifest.json).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

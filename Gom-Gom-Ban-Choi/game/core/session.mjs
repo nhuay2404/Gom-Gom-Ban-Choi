@@ -1,5 +1,5 @@
 // Một ván chơi (thuần logic, không đụng giao diện): bóc thẻ, xoay, gửi tạm, đặt, gom, thắng/thua, tutorial.
-// Giao diện (main.js trên web, component Cocos sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
+// Giao diện (game/play/ trên web, component Unity sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
 import { clearMatches, connectedGroup, removeClusters, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
 import { MATCH_SIZE, turnPoints, clusterPoints, POINTS_PER_CRATE } from './scoring.mjs';

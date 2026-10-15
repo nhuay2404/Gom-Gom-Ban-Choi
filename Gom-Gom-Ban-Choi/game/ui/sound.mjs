@@ -238,7 +238,7 @@ export function playMeowChorus(breeds) {
 // Không cắt file: mỗi vòng phát từ BGM.start, vòng sau bắt đầu đúng sau BGM.loop giây (bỏ khoảng im lặng); đuôi vang của vòng trước
 // vẫn ngân chồng sang đầu vòng sau nên chỗ nối liền mạch. Bật / tắt riêng bằng công tắc Music (Settings), độc lập với Sound (tiếng hiệu ứng);
 // tự bật từ lần chạm đầu tiên (trình duyệt chặn tự phát).
-const MUSIC_KEY = 'gomgom-rotate-pref-music'; // cùng khoá với công tắc Music (menu-controller.js prefOn)
+const MUSIC_KEY = 'gomgom-rotate-pref-music'; // cùng khoá với công tắc Music (menu/settings.js prefOn)
 let musicEnabled = readText(MUSIC_KEY) !== 'off';
 const BGM = { url: 'assets/sfx/bgm.mp3', start: .01, loop: 30.46, fadeIn: 2.5 };
 let bgmBuffer = null, bgmGain = null, bgmTimer = 0, bgmNext = 0, bgmLoading = false, bgmSources = [];

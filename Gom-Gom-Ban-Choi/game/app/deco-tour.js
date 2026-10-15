@@ -1,5 +1,5 @@
 // ===== Hướng dẫn Deco: làm mờ màn hình, khoét sáng từng khu vực + bong bóng lời thoại =====
-// Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu-controller.js khai báo.
+// Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu/tours.js khai báo (runDecoTour).
 // Một bước: { target: () => Element | {left, top, width, height} | mảng các thứ đó | null, text: chuỗi | () => chuỗi,
 //   next?: nhãn nút (mặc định "Next"), before?: async () => void (chạy trước khi hiện bước), after?: () => void (khi qua bước),
 //   until?: () => boolean, bubble?: 'above' | 'below' | 'speech', gesture?: 'drag' | 'pinch' | 'twist' }.

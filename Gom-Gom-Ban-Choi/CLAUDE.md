@@ -2,9 +2,9 @@
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
-`game/deco/scenes/garden.mjs`, `game/deco/scenes/bedroom.mjs`, `game/deco/scenes/kitchen.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/scenes/bathroom.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/scenes/garden-expanded.mjs` (phần vườn mở rộng), `game/deco/scenes/backyard.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/scenes/kindergarten.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); não mèo: `game/deco/cats/room-cats.mjs` (bảng biểu cảm: `game/deco/cats/cat-face.mjs`);
+`game/deco/scenes/garden.mjs`, `game/deco/scenes/bedroom.mjs`, `game/deco/scenes/kitchen.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/scenes/bathroom.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/scenes/garden-expanded.mjs` (phần vườn mở rộng), `game/deco/scenes/backyard.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/scenes/kindergarten.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); mèo 3D ở `game/deco/cats/`: não một con `cat-brain.mjs`, cả đàn `room-cats.mjs`, khung `cat-rig.mjs` (bảng biểu cảm: `cat-face.mjs`);
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
-Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
+Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `game/menu/map-view.js`.
 
 **Kinh tế** (xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
 `game/data/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
@@ -21,17 +21,17 @@ Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên kh�
 | `game/core/` | Luật chơi thuần logic (không đụng DOM / Three.js): ván chơi `session.mjs`, luật bàn, hiệu ứng cụm, điểm, đọc màn `level-rules.mjs`, hình bàn, độ khó thích ứng, tiến độ, booster, lưu trữ `save.mjs` (+ test). Sang Unity: class C# thường | `Gameplay:` |
 | `game/data/` | Dữ liệu chơi: 100 màn `levels.mjs` (+ bố trí sinh bằng tool), hằng số `tuning.mjs`, kinh tế `economy.mjs`. Sang Unity: ScriptableObject / JSON (`npm run export:data`) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
-| `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
-| `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
-| `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/app/` | Điều khiển ứng dụng (xem 3 dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
+| `game/play/` | Luồng **màn chơi**, mỗi file một component (sang Unity: MonoBehaviour cùng tên): `play-controller.js` (điều phối: vào màn, đặt thẻ, kết thúc lượt), `context.js` (ván đang chơi; chỉ `setSession` gán), `cards.js`, `card-drag.js`, `board-view.js`, `match-fx.js`, `score-bar.js`, `hud.js` (render chung, ô Goal), `finale.js` (Bonus Time), `booster-bar.js`, `afk.js`, `tutorial.js`, `result.js` (kết quả + metric độ khó) | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
+| `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong `menu/tours.js` | `UI:` |
+| `game/menu/` | Luồng **menu**, mỗi file một màn hình: `menu-controller.js` (mặt tiền: API cho màn chơi + gọi `start…()` của từng module theo thứ tự sau khi mọi module đã nạp — các module import vòng tròn nên KHÔNG chạy lệnh chạm module khác ngay lúc nạp), `map-view.js`, `tabs.js`, `room.js` (phòng 3D), `deco-panel.js`, `idle-coins.js`, `tours.js`, `shop.js`, `areas.js`, `settings.js`, `dev-tools.js` | `UI:` (đụng cảnh 3D thì `Deco:`) |
+| `game/app/` | `deco-tour.js` (dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
 | `tools/`, `docs/` | Công cụ (`levels/` bot + editor, `economy/`, `export/`, `ui-studio/`, `ads/`), tài liệu | `Tools:` / `Docs:` |
 
 - Mỗi commit chỉ chạm một nhóm khi có thể: sửa giao diện → chỉ `game/ui/` (+ `index.html` nếu đổi khung);
   cân bằng / luật → `game/core/` + `game/data/` (+ `tools/levels/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
 - Hai luồng không import nhau: `app/start.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
-  đổi màn hình thì gọi `menus.showTab / showMap / hideMenus / menuOpen`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
+  đổi màn hình thì gọi `menus.showTab / hideMenus / menuOpen / runOnboarding`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
   Thêm hàm cho bên kia gọi: `export` ở file mình và ghi vào danh sách này. Trạng thái cả hai cùng đọc / ghi (xu, booster) đặt ở `shared.js`.
 - Module mới: logic thuần đặt ở `core/`, dữ liệu (số, bảng) ở `data/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `core/` và `data/` không import từ `ui/` hay `deco/`
   (ngoại lệ hiện có: `session.mjs` lấy danh sách loại mèo `categories` từ `ui/cat-art.mjs`).
@@ -172,7 +172,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Hành vi đi tới chỗ bạn: tới nơi mới làm (kiểm khoảng cách sau `walkTo`, có thể hết giờ / kẹt), bạn đã thôi thì bỏ — không "ngắm chung"
   từ phòng bên. Bạn đang ngắm thì nán lại chờ (`stayUntil`).
 - Tương tác nhiều mèo (stareDown / squeezeIn / joinCampfire / watchTogether / ambush / tag / copycat) và tình huống (commotion: đồ rơi,
-  spreadZoomies, furnitureChanged(fresh): món mới) nằm trong room-cats.mjs; mỗi kiểu nhiều-mèo-một-món chỉ một con làm cùng lúc.
+  spreadZoomies, furnitureChanged(fresh): món mới) nằm trong `cats/cat-brain.mjs` (một con) / `cats/room-cats.mjs` (cả đàn); khung 3D ở `cats/cat-rig.mjs`; mỗi kiểu nhiều-mèo-một-món chỉ một con làm cùng lúc.
 
 **Biểu cảm mèo 3D** (bảng nguồn duy nhất: `game/deco/cats/cat-face.mjs`; test: `cat-face.test.mjs`)
 - Mặt đổi theo **nguyên nhân**, không ngẫu nhiên. `face(eyes)` chỉ nhận 8 giá trị, mỗi giá trị = đúng một mặt Figma:

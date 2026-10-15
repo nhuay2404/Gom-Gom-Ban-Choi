@@ -33,6 +33,6 @@ body{font-family:var(--ui-font)}
 .screen:not(.home){padding-bottom:calc(var(--u) * 146 + env(safe-area-inset-bottom))}
 /* Chừa dưới theo vị trí mới của thanh điều hướng (cao 64u, cách đáy 16u) */
 .screen,.screen:not(.home){padding-bottom:calc(var(--u) * 92 + env(safe-area-inset-bottom))}
-/* Chấm đỏ báo còn mèo chưa nhận ở tab Home (menu-controller.js refreshClaimDot) */
+/* Chấm đỏ báo còn mèo chưa nhận ở tab Home (menu/map-view.js refreshClaimDot) */
 .tab{position:relative}
 .tab.has-dot::after{content:'';position:absolute;top:5px;left:calc(50% + 6px);width:11px;height:11px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #fffaf0}

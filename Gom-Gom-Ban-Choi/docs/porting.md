@@ -1,55 +1,78 @@
-# Chuyển Gom Gom Rotate sang Cocos Creator
+# Chuyển Gom Gom Rotate sang Unity
 
 Sổ tay cho lúc port. Bản web hiện tại là **bản mẫu tham chiếu**: luật, dữ liệu, cảm giác chơi đều lấy từ đây.
-Kế hoạch tổng thể (9 giai đoạn, ước lượng, rủi ro) nằm ở artifact "Gom Gom sang Cocos".
+Code web đã chia thư mục + file theo đúng ranh giới component Unity: mỗi file ghi ở dòng đầu "Sang Unity: …".
 
-## 1. Bản đồ module
+## 1. Bản đồ thư mục → Unity
 
-Code chia 3 lớp. Lớp **lõi** không đụng DOM, trình duyệt hay Three.js: chép thẳng sang TypeScript (`assets/scripts/core/`),
-chạy và test được bằng Node. Hai lớp còn lại làm lại bằng API Cocos, nhưng **giữ nguyên hành vi** mô tả ở dưới.
+Ba lớp. **Lõi + dữ liệu** không đụng DOM, trình duyệt hay Three.js: dịch thẳng sang C# (class thường, không MonoBehaviour),
+test được bằng NUnit (Edit Mode). **Giao diện 2D** và **3D** làm lại bằng API Unity nhưng **giữ nguyên hành vi** mô tả ở dưới.
 
-| Lớp | File | Sang Cocos |
+| Thư mục web | Nội dung | Sang Unity |
 |---|---|---|
-| **Lõi (chép)** | `game/core/board-rules.mjs` | Đặt thẻ, xoay, gom cụm, thùng vỡ / kim loại không vỡ |
-| | `game/core/scoring.mjs` | Điểm theo cỡ cụm |
-| | `game/data/levels.mjs` | 20 màn + bộ chia thẻ + mốc sao |
-| | `game/core/board-shapes.mjs` | Hình bàn (6×6 tới 8×8, `#` = ngoài bàn): khuôn tim, tam giác, kim cương...; thu về 6×6 / mở rộng cho độ khó thích ứng |
-| | `game/core/session.mjs` | **Một ván chơi**: bóc thẻ, xoay, Hold (mở từ màn `HOLD.UNLOCK_LEVEL` = 11), đặt, thắng/thua, tutorial, booster. Cỡ bàn ở `s.W`, `s.H` |
-| | `game/core/progression.mjs` | Sao, mở khoá màn, xu thưởng, tier, cơ chế trên bàn |
-| | `game/core/boosters.mjs` | Kho booster (búa, đổi thẻ, +3 lượt): mở từ màn 3, dùng, mua bằng xu |
-| | `game/core/adaptive.mjs` | **Độ khó thích ứng**: profile người chơi -> bản màn đã bật/tắt element (moves, màu, crate, wall, board); màn có tutorial giữ bản gốc |
-| | `game/deco/deco-data.mjs` | Khu vườn / phòng khách, danh mục đồ, mua / đặt / gỡ |
-| | `game/core/save.mjs` | Lưu trữ duy nhất (đổi backend sang `sys.localStorage`) |
-| | `game/data/tuning.mjs` | Mọi hằng số cảm giác chơi |
-| | `game/deco/room-layout.mjs` | Chỗ đặt đồ, bán kính vật cản, cửa sổ |
-| | `game/ui/cat-art.mjs`, `game/ui/board-art.mjs` | Art SVG dạng chuỗi (xuất ra PNG bằng tool) |
-| **Giao diện 2D (làm lại)** | `game/app/play-controller.js` (màn chơi), `game/app/menu-controller.js` (menu), `game/app/shared.js`, `index.html`, `*.css` | Prefab UI, kéo thả, tween, tutorial overlay |
-| **3D (làm lại)** | `game/deco/deco-room.mjs`, `garden.mjs` | Model glTF, camera xoay, tường tự mờ |
-| | `game/deco/cats/room-cats.mjs` | Não mèo (generator) + lò xo chuyển động: **~70% chép được**, khung xương làm lại thành prefab |
-| **Âm thanh** | `game/ui/sound.mjs` | File WAV xuất sẵn + `AudioSource` |
+| `game/core/` | Luật thuần: `session` (một ván), `board-rules`, `cluster-effects`, `scoring`, `level-rules`, `board-shapes`, `adaptive`, `progression`, `boosters`, `idle`, `save`, `remote-config` | `Assets/Scripts/Core/` — namespace `GomGom.Core`, class C# thuần (+ test NUnit dịch từ `*.test.mjs`) |
+| `game/data/` | `levels` (100 màn), `level-layouts` / `cat-layouts` (sinh bằng tool), `tuning`, `economy` | `ScriptableObject` hoặc JSON xuất bằng `npm run export:data` → `TextAsset` |
+| `game/play/` | Màn chơi, mỗi file một component (bảng mục 2) | `Assets/Scripts/Play/` — MonoBehaviour trên scene Play |
+| `game/menu/` | Menu ngoài màn chơi, mỗi file một màn hình (bảng mục 3) | `Assets/Scripts/Menu/` — MonoBehaviour / UI Toolkit |
+| `game/deco/` | Cảnh 3D: `deco-room` (phòng + camera), `scenes/` (từng khu), `render/` (toon, viền, sprite), `cats/` (mèo), `map-world` (bản đồ màn 3D), `room-layout` (chỗ đặt), `deco-data` (danh mục + mua / đặt) | Scene / prefab; `room-layout` + `deco-data` là dữ liệu + luật thuần → `Core` / `ScriptableObject` |
+| `game/ui/` | CSS theo hub, art SVG mèo / ô bàn (`cat-art`, `board-art`), âm thanh (`sound`) | Sprite / atlas (xuất bằng `export:art`), `AudioSource` (WAV từ `export:sounds`) |
+| `game/app/` | Điểm vào: tải Remote Config (`main`, `remote-config`), nối hai luồng (`start`), ví xu + kho booster dùng chung (`shared`), onboarding, hướng dẫn Deco | Bootstrap scene + `GameServices` (singleton nhẹ) |
 
-Quy tắc khi port: **giao diện chỉ gọi lõi rồi vẽ theo kết quả**, không tự sửa luật (như `play-controller.js` đang làm với `session.mjs`).
+Quy tắc khi port: **giao diện chỉ gọi lõi rồi vẽ theo kết quả**, không tự sửa luật (như `play/` đang làm với `core/session.mjs`).
+Biến dùng chung chỉ một module được gán (vd. `play/context.js setSession`); module khác chỉ đọc → sang Unity là property `private set`.
 
-## 2. Hợp đồng của `session.mjs`
+## 2. Màn chơi (`game/play/`)
+
+| File | Việc | Component Unity |
+|---|---|---|
+| `play-controller.js` | Điều phối: vào màn (`startLevel` / `newGame`), đặt thẻ (`placeAt`), kết thúc lượt (`finishTurn`) | `PlayController` |
+| `context.js` | Ván đang chơi (`state`, cỡ bàn W × H), skin quân, tiện ích | `PlaySession` |
+| `cards.js` | Thẻ đang bóc, xoay + mũi tên gợi ý, ô Hold, thẻ kế tiếp | `CardDock` |
+| `card-drag.js` | Kéo thẻ lên bàn (bóng kéo nghiêng theo tay, ô neo gần nhất, thả vào Hold, ngón thứ hai = xoay) | `CardDragController` (IBeginDrag / IDrag / IEndDrag) |
+| `board-view.js` | Vẽ bàn theo hình, xem trước chỗ thả, vuốt mèo (tim, mèo bực) | `BoardView` + prefab `CellView` |
+| `match-fx.js` | Anim gom, hiệu ứng cụm to, lời khen, pháo hoa, confetti | `MatchFx` (DOTween + ParticleSystem) |
+| `score-bar.js` | Số "+N" bật ra rồi bay vào thanh điểm | `ScoreBar` |
+| `hud.js` | `render()` chung, ô Goal (ẩn mục tiêu xong; lắc + làm sáng ô khi đủ điểm mà còn mục tiêu), sắp hết lượt | `Hud` (`Refresh()`) |
+| `finale.js` | Bonus Time (xả lượt) + kết màn | `FinaleController` (coroutine) |
+| `booster-bar.js` | Búa 3×3, đổi thẻ may mắn, +lượt | `BoosterBar` |
+| `afk.js`, `tutorial.js`, `result.js` | Mèo ngủ khi không chạm; hướng dẫn trong màn; bảng kết quả + metric độ khó + hỏi rời màn | `AfkWatcher`, `TutorialOverlay`, `ResultPanel` + `PlayMetrics` |
+
+## 3. Menu (`game/menu/`)
+
+`menu-controller.js` là mặt tiền (API cho màn chơi: `showTab`, `hideMenus`, `menuOpen`, `runOnboarding`, `sceneReady`) và gọi
+`startTabs / startRoom / startSettings / startDevTools` theo thứ tự cố định sau khi mọi module đã nạp — sang Unity chính là `Start()`
+của từng component. Các file: `map-view` (bản đồ màn, nhận mèo thưởng) → `MapScreen`; `tabs` (thanh Home / Deco / Shop, nút Play) →
+`TabBar` + `ScreenRouter`; `room` (phòng 3D dùng chung) → `RoomHost`; `deco-panel` (thẻ chỗ đặt, bảng đổi món) → `DecoPanel`;
+`idle-coins` → `IdleCoinView`; `tours` (hướng dẫn Deco + onboarding) → `TourController`; `shop` → `ShopScreen`;
+`areas` (chuyển khu, mở khu) → `AreaSwitcher` + `AreaUnlockPanel`; `settings` → `SettingsPanel`; `dev-tools` → không port.
+
+## 4. Hợp đồng của `core/session.mjs`
 
 ```js
-const s = createSession(levelIndex, { rng })   // rng có seed để test / đối chiếu
+const s = createSession(levelIndex, { rng, level })   // rng có seed để test / đối chiếu; level = bản đã chỉnh độ khó (adaptive)
 rotate(s)        -> { ok, error?: 'tutorial', tutorialAdvanced }
 hold(s)          -> { ok, error?, swapped, tutorialAdvanced, stuck }
-place(s, anchor) -> { ok, error?, result, match, gained, tutorialAdvanced, win, lose, stuck, fit }
-continueTutorial(s)                             // bước info: bấm Tiếp tục
-tutorialStep(s), tutorialAllows(s, action, anchor), upcoming(s), canPlaceAnywhere(s, card)
+place(s, anchor) -> { ok, error?, result, match, effect, gained, cleaned, tutorialAdvanced, win, lose, stuck, fit }
+smash(s, index)  -> { ok, error?, cells, removed, cleaned, points, win? }     // búa: đập sạch 3×3, điểm như gom
+swapCard(s)      -> { ok }                                                    // đổi thẻ: LUCKY.TURNS thẻ có lợi nhất
+addMoves(s, n)   -> { ok }
+finaleTurn(s)    -> { ok, spawned, spawnBoard, result, match, effect, gained, extra, popped }   // xả lượt sau khi thắng
+continueTutorial(s); tutorialStep(s); tutorialAllows(s, action, anchor); upcoming(s); canPlaceAnywhere(s, card); goalReached(s)
 ```
 
-- `anchor` = ô góc trên-trái của hình thẻ (0–35, hàng × 6 + cột).
-- `result.board` là bàn **sau khi đặt, trước khi gom**; `match.board` là bàn **sau khi gom** (đã là `s.board`).
-  Giao diện dùng `result` + `match.clusters` để diễn anim gom (mèo nhấc bổng -> trượt về điểm tụ `mergeTarget`).
-- Kết thúc ván: `s.over = true`, `s.outcome = { win, reason, stars }` (`reason`: `'Out of moves!'` / `'No room left!'`).
+- `anchor` = ô góc trên-trái của hình thẻ (hàng × W + cột).
+- `result.board` là bàn **sau khi đặt, trước khi gom**; `match.board` là bàn **sau khi gom**; `effect.board` (= `s.board`) là bàn
+  **sau hiệu ứng cụm to**. Giao diện dùng `result` + `match.clusters` diễn anim gom, rồi `effect.effects` diễn hiệu ứng.
+- Hiệu ứng (`core/cluster-effects.mjs`): cụm 4 Pounce (phá 1 lớp vật cản quanh cụm), 5 Yarn Boom (3×3), 6 Claw Cross (hàng + cột),
+  7+ Call the Herd (gom cả màu); gom đôi ×1.5 điểm, 3+3 Kitty Leap. Trần điểm + hệ số ở `data/tuning.mjs` `EFFECTS`.
+- Thắng khi **đủ điểm + hết lồng + hết cỏ** (`goalReached`). Xả lượt: gọi `finaleTurn` tới khi `ok = false`; còn N lượt thì bàn mọc
+  "câu đố" để đúng N lượt là sạch mèo, hết lượt mà còn mèo thì chơi thêm lượt thưởng (`extra`). Sao chốt lúc thắng.
+- Kết thúc ván: `s.over = true`, `s.outcome = { win, reason, stars }`.
 - Thẻ: `{ offsets: [[row, col], ...], items: [{ group, name }] }`. Xoay = 90° thuận chiều rồi chuẩn hoá về gốc.
 
-## 3. Tutorial
+## 5. Tutorial
 
-Bước trong `levels.mjs` (`tutorial: [...]`), luật ở `session.mjs`, phần vẽ ở `play-controller.js`:
+Bước khai ở `data/levels.mjs` (`tutorial: [...]`), luật ở `core/session.mjs`, phần vẽ ở `play/tutorial.js`:
 
 | Bước | Người chơi phải | Giao diện hiển thị |
 |---|---|---|
@@ -59,92 +82,60 @@ Bước trong `levels.mjs` (`tutorial: [...]`), luật ở `session.mjs`, phần
 | `tapHold` | chạm ô Hold | khoét sáng ô Hold, bàn tay nhấn |
 | `info` | đọc, bấm Continue | bong bóng giữa màn, chặn chạm |
 
-Tiến trình hiện tại: tutorial ở màn 1–2; màn 5 (thùng gỗ) và 8 (kim loại) chỉ có bong bóng giới thiệu.
 Sau bước `drag` chờ ~700 ms, các bước khác ~250 ms rồi mới hiện bước kế (để người chơi kịp thấy kết quả).
 
-## 4. Lưu trữ (`save.mjs`)
+## 6. Lưu trữ (`core/save.mjs`)
 
-| Key | Nội dung |
-|---|---|
-| `gomgom-rotate-progress-v1` | `{ stars: number[] }` — sao tốt nhất từng màn (chỉ số 0 = màn 1) |
-| `gomgom-rotate-deco-v1` | `{ coins, cats[], zone, zones: { garden, living: { owned[], placed[], wall, floor } } }` |
-| `gomgom-rotate-sound` | `'on'` / `'off'` |
-| `gomgom-rotate-profile-v1` | `{ attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }` — lịch sử các lần thử (thắng/thua, tỉ lệ điểm, thời gian nghĩ, idle, bỏ ngang, đứng ở bảng kết quả) cho `adaptive.mjs` |
-| `gomgom-rotate-boosters-v1` | `{ hammer, swap, moves }` — số booster đang có; chưa có save = `BOOSTERS.START_STOCK` mỗi loại (luật ở `session.smash/swapCard/addMoves`, kho ở `boosters.mjs`) |
+Mọi key ở `SAVE_KEYS`: `progress` (sao từng màn), `deco` (xu, mèo, khu, đồ đã mua / đặt), `boosters`, `profile` (lịch sử các lần
+thử cho `adaptive`), `onboarding`, `decoTour`, `sound`, `night`, `skin`. Trong Unity: một `IStorage` (PlayerPrefs hoặc file JSON)
+cắm vào thay `defaultBackend()`; giữ nguyên key để đọc được save của bản web nếu cần. `deco-data.loadDeco` tự chuyển save cũ.
 
-Trong Cocos: `setStorageBackend(sys.localStorage)` lúc khởi động. Giữ nguyên key để đọc được save của bản web nếu cần.
-`deco-data.loadDeco` tự chuyển save cũ (trước khi có vườn) và hoàn xu đồ phòng khách.
-
-## 5. Xuất dữ liệu và asset
+## 7. Xuất dữ liệu và asset
 
 ```bash
-npm run export        # = export:data + export:art + export:sounds  ->  export/ (không commit, tạo lại lúc nào cũng được)
+npm run export          # = export:data + export:art + export:sounds  ->  export/ (không commit, tạo lại lúc nào cũng được)
+npm run export:models   # mọi model 3D (đồ Deco + mèo / chó) ra game/assets/models/models.json (glTF từng model)
 ```
 
-| Lệnh | Ra | Dùng trong Cocos |
+| Lệnh | Ra | Dùng trong Unity |
 |---|---|---|
-| `export:data` | `export/data/*.json`: levels, cards, scoring, cats, deco, room, tuning | đọc thẳng làm JsonAsset |
-| `export:art` | `export/art/cats/<giống>/<trạng thái>.svg` (10 trạng thái × 6 giống), `cats3d/<giống>/eyes-*.svg`, `board/crate.svg`, `board/metal.svg` | đổi PNG @2x (resvg / Inkscape) rồi Auto Atlas |
-| `export:sounds` | `export/audio/*.wav` + `manifest.json` (volume gợi ý ≈ 0.072, lúc nào phát tiếng nào) | `AudioClip` |
+| `export:data` | `export/data/*.json`: levels, cards, scoring, cats, deco, room, tuning | `TextAsset` → `JsonUtility` / ScriptableObject |
+| `export:art` | `export/art/…` SVG mèo (trạng thái × giống), ô bàn | đổi PNG @2x rồi Sprite Atlas |
+| `export:sounds` | `export/audio/*.wav` + `manifest.json` | `AudioClip` |
+| `export:models` | glTF từng model | import glTF (glTFast), làm prefab |
 
-Chưa có tool: **mặt mèo 3D** (bụng, mũi, miệng, má) đang vẽ bằng canvas trong `room-cats.mjs` → `faceTexture()`;
-**model đồ đạc** đang dựng bằng code trong `deco-room.mjs` → `BUILD` và `garden.mjs` → `GARDEN_BUILD`
-(mỗi hàm là đặc tả kích thước + màu cho artist làm lại trong Blender; ảnh thumbnail Deco chụp từ chính các model này).
+Số màn trên bản đồ là **font** (bảng 10 chữ số), không phải ảnh từng màn → Unity dùng TextMeshPro. Chữ chỉ dùng 1–2 chỗ
+(banner Level Complete, Failed) mới làm ảnh.
 
-## 6. Đối chiếu sau khi port
+## 8. Đối chiếu sau khi port
 
-1. `npm test` — 36 test (luật bàn chơi, session, 20 màn + chạy lại tutorial, tiến độ, Deco). Chuyển sang Vitest/TS, phải qua hết.
-2. `tools/levels/baseline.json` — tỉ lệ thắng của bot trên 20 màn, 400 ván/màn, seed cố định. Bản Cocos chạy cùng bot + cùng seed
-   phải lệch **không quá ±2%** mỗi màn. Đổi màn thì chạy lại `npm run baseline`.
-3. Chơi tay 20 màn so với bản web: số lượt, điểm, sao, tutorial, cảnh báo sắp hết lượt, AFK.
+1. `npm test` — 118 test (luật bàn, hiệu ứng cụm, session + xả lượt, 100 màn + chạy lại tutorial, tiến độ, độ khó thích ứng,
+   Deco, mèo 3D, kinh tế). Dịch sang NUnit, phải qua hết.
+2. `tools/levels/baseline.json` — tỉ lệ thắng của bot trên 100 màn, 400 ván / màn, seed cố định (`npm run baseline`). Bản Unity chạy
+   cùng bot + cùng seed phải lệch **không quá ±2%** mỗi màn.
+3. Chơi tay so với bản web: số lượt, điểm, sao, hiệu ứng cụm, booster, Bonus Time, tutorial, cảnh báo sắp hết lượt, AFK.
 
-## 7. Cảm giác chơi cần giữ (số trong `tuning.mjs`)
+## 9. Cảm giác chơi cần giữ (số trong `data/tuning.mjs`)
 
-- **Gom mèo**: mèo vừa đặt rơi (340 ms) → cụm bị nhấc bổng lộ bụng + chân sau đung đưa (560 ms, lệch nhịp 50 ms/con)
-  → trượt về điểm tụ và nhỏ dần (420 ms); điểm nổi lên. State đã chốt ngay nên người chơi đặt tiếp được trong lúc anim chạy.
-- **Kéo thẻ**: chạm (< 5 px) = xoay; kéo = bóng thẻ phóng to ×1.6 khi xa bàn, co về cỡ ô trong 110 px quanh bàn;
-  thân mèo bị xách gáy nghiêng theo vận tốc, chân sau + đuôi là con lắc.
-- **Sắp hết lượt**: ô Moves cam khi còn ≤ 30% lượt, đỏ + đập nhịp khi ≤ 3 lượt; thông báo ở 3 lượt cuối; mèo mặt buồn/lo ở 2 lượt cuối.
-- **AFK 5 giây** không chạm: mọi mèo buồn ngủ (bàn chơi) / ngủ tại chỗ (phòng).
-- **Bảng vào màn** theo `tier`: chill (xanh bạc hà), normal, hard (cam, trượt nảy), boss (đỏ sẫm, rung, nút Play đỏ);
-  icon thùng/kim loại nếu bàn có, gắn NEW ở màn giới thiệu cơ chế.
+- **Gom mèo**: mèo vừa đặt rơi → cụm bị nhấc bổng lộ bụng + chân sau đung đưa → trượt về điểm tụ và nhỏ dần; điểm nổi lên.
+  State đã chốt ngay nên người chơi đặt tiếp được trong lúc anim chạy.
+- **Kéo thẻ**: chạm (< 5 px) = xoay; kéo = bóng thẻ phóng to khi xa bàn, co về cỡ ô quanh bàn; thân mèo nghiêng theo vận tốc.
+- **Sắp hết lượt**: ô Moves cam khi còn ≤ 30% lượt, đỏ + đập nhịp khi ≤ 3 lượt; mèo mặt buồn / lo ở 2 lượt cuối.
+- **Bonus Time**: chữ + thanh điểm dải cầu vồng chạy lặp; mỗi lượt xả ~0,3 s, chạm bàn thì nhanh hơn.
+- **AFK 5 giây** không chạm: mèo buồn ngủ (bàn chơi) / ngủ tại chỗ (phòng).
 
-## 8. Phòng 3D
+## 10. Phòng 3D + mèo
 
-- Phòng 8 × 8 m (ROOM_HALF = 4), tâm ở gốc. Camera phối cảnh FOV 34°, nhìn vào (0, 0.8, 0), khoảng cách 12–24 (9–18 × ROOM_HALF / 3), góc cực 0.45–1.22 rad,
-  tự xoay 0.7 ở Home (dừng 2.5 s khi người chơi chạm). Home luôn mở ở góc (7.9, 7.1, 7.9).
-  Khung dọc: `zoom = min(1, aspect / 1.05)` để phòng không bị cắt hai bên.
-- **Tường tự mờ** (phòng khách): tường có pháp tuyến hướng vào trong `n`; camera ở `c` thì tường mờ đi khi `c · n < -3 + 0.2`.
-  Hàng rào vườn thấp nên không mờ.
-- Đồ đặt theo `room-layout.mjs` (`PLACES`: x, z, xoay; +z của món hướng vào giữa phòng). Chọn một món trong Deco thì camera quay về phía món đó.
+- Phòng 8 × 8 m (ROOM_HALF = 4), mỗi khu lệch `ZONE_OFFSET` (`deco/room-layout.mjs`). Camera phối cảnh FOV 34°; tường tự mờ khi
+  camera ở phía ngoài. Đồ đặt theo `PLACES` (x, z, xoay; +z của món là mặt trước). Toon + viền: quy tắc ở `CLAUDE.md`.
+- **Mèo** (`deco/cats/`): `cat-rig.mjs` = khung (root → hopper → roller (chân) → pivot → thân bo tròn, mặt dán mặt trước, 2 tai,
+  đuôi nhiều đốt) → prefab; `cat-brain.mjs` = não generator, `yield` = chờ frame sau, ngắt được bất cứ lúc nào → coroutine,
+  port gần nguyên; `room-cats.mjs` = cả đàn (đồ chơi từng khu, chọn hành vi theo trọng số, tương tác nhiều mèo) → `CatHerd`;
+  `cat-nav.mjs` = đường đi giữa các khu qua cửa / lối → NavMesh + NavMeshLink. Mọi tư thế là lò xo tắt dần (`spring.mjs`);
+  mặt theo bảng `cat-face.mjs` (8 mặt, chống nháy ≥ 0,45 s).
+- Người chơi: chạm nhanh = cưng (mặt vui, tim bay); giữ 0,35 s = nhấc lên, kéo, thả.
 
-## 9. Mèo trong phòng (`room-cats.mjs`)
+## 11. Việc còn mở / lưu ý
 
-**Khung xương** (prefab): `root` (vị trí + hướng) → `hopper` (nảy, nhún) → `roller` (lăn nghiêng; **chân gắn ở đây**)
-→ `pivot` (chúi/ngửa quanh mép sau-dưới thân) → khối thân bo tròn 0.6 × 0.54 × 0.62, mặt + mắt dán mặt trước, 2 tai, đuôi 5 đốt.
-Khớp chân luôn đặt đúng đáy thân ngay phía trên nó (tính từ tổng độ chúi) nên không bao giờ hở; trên sàn thì độ dài chân vừa chạm đất.
-
-**Chuyển động**: mọi tư thế là lò xo tắt dần `[độ cứng, tỉ lệ tắt]` (`CAT_MOTION.POSE_SPRING`); hướng hiển thị bám hướng logic
-bằng lò xo; bước chân theo quãng đường (sải 0.34 m đi, 0.78 m chạy); đuôi mỗi đốt một lò xo, văng ngược khi quay / nhảy;
-nhảy = hạ người lấy đà → vươn người → parabol → nhún khi tiếp đất.
-
-**Não**: mỗi con một generator, `yield` = chờ frame sau; ngắt được bất cứ lúc nào (cưng, AFK, dời đồ, bị nhấc).
-Chọn hành vi theo trọng số, không lặp lại hành vi vừa làm:
-
-| Hành vi | Trọng số | Ghi chú |
-|---|---|---|
-| đi dạo · ngồi nhìn quanh · liếm lông · vươn vai + ngáp · chạy loạn · ngủ gục | 3 · 1.4 · 1.2 · 0.5 · 0.35 · 0.7 | mọi khu |
-| ngắm cửa sổ · lăn thảm | 0.8 · 0.6 | phòng khách (cửa sổ bị ghế che thì nhảy lên lưng ghế) |
-| rình vồ bướm | 1.1 | vườn |
-| dùng đồ | 0.7–1.6 tuỳ món | mỗi món một kịch bản (nệm: xoay vòng rồi cuộn ngủ; bàn: đẩy cốc rơi; ao: khều nước...) |
-| cụng mũi · rượt đuổi · liếm lông nhau | 1 · 0.6 · 0.5 | cần một con khác đang rảnh |
-
-Người chơi: chạm nhanh = cưng (mặt vui, nảy 2 nhịp, tim bay); giữ 0.35 s = nhấc lên, kéo, thả (mèo rơi xuống chỗ trống gần nhất).
-Mèo không lồng vào nhau (cách tâm ≥ 0.64) và không lấn vào đồ (cách mép ≥ 0.27).
-
-## 10. Việc còn mở / lưu ý
-
-- Bản web tải Three.js 0.170 từ CDN; Cocos không cần.
-- Console web có lỗi `THREE.Object3D.add: object not an instance of THREE.Object3D` vài lần mỗi lần tải trang; không ảnh hưởng gameplay,
-  chưa tìm ra nguồn (không xảy ra khi dựng phòng, dựng thumbnail hay chơi màn).
-- Shop (tiền thật) mới là khung giao diện.
+- Bản web tải Three.js từ CDN; Unity không cần.
+- Shop (tiền thật) mới là khung giao diện; quảng cáo là mô phỏng.

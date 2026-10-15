@@ -1,5 +1,5 @@
 // Lưu trữ dữ liệu người chơi: MỘT chỗ duy nhất đọc/ghi, mọi module khác đi qua đây.
-// Web dùng localStorage. Khi port sang Cocos chỉ cần gọi setStorageBackend(sys.localStorage) lúc khởi động
+// Web dùng localStorage. Khi port sang Unity: thay backend bằng PlayerPrefs / file JSON (setStorageBackend) lúc khởi động
 // (cùng API getItem/setItem/removeItem), key và định dạng giữ nguyên nên đọc được save của bản web.
 //
 // Cấu trúc save (xem docs/porting.md):

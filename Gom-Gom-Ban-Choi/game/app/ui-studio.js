@@ -1404,7 +1404,7 @@ window.addEventListener('keydown', event => {
 }, true);
 window.addEventListener('beforeunload', event => { if (pending.size) { event.preventDefault(); event.returnValue = ''; } });
 
-// Bật / tắt cả studio từ nút "Studio" ở thanh nút dev (menu-controller.js): hai bên chỉ nói chuyện qua sự kiện của window.
+// Bật / tắt cả studio từ nút "Studio" ở thanh nút dev (menu/dev-tools.js): hai bên chỉ nói chuyện qua sự kiện của window.
 // Tắt thì ẩn hết (bảng, icon, khung, lưới) và không bắt click / phím; sửa chưa lưu vẫn giữ. Chỉ nối máy chủ khi bật lần đầu.
 let connected = false;
 function setShown(shown) {

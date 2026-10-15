@@ -88,7 +88,7 @@
 .screen.deco>.zone-switch{align-self:flex-start;margin-left:calc(max(0px, (100% - var(--frame-w)) / 2) + 6 * var(--u) - 6px);margin-right:0}
 .screen.deco>.zone-switch button{padding:0 10px}
 /* ===== Deco kiểu "xây chỗ" (như Monopoly Go): cảnh 3D phủ cả màn; dưới đáy là hàng chọn khu + MỘT hàng thẻ món vuốt ngang
-   (nằm ngay trên thanh tab). Bảng đổi món nổi cạnh món vừa chạm, đuôi chỉ vào món (vị trí do menu-controller.js đặt). ===== */
+   (nằm ngay trên thanh tab). Bảng đổi món nổi cạnh món vừa chạm, đuôi chỉ vào món (vị trí do menu/deco-panel.js đặt). ===== */
 .screen.deco,.screen.deco:not(.home){padding:0;gap:0;overflow:hidden}
 .screen.deco>.room.deco-view,.screen.deco>.room.deco-view.is-3d{position:absolute;inset:0;z-index:0;width:auto;height:auto;max-height:none;margin:0;border:0;
   -webkit-mask-image:none;mask-image:none}
@@ -123,7 +123,7 @@ body.deco-locked .hub-settings{opacity:.5}
   pointer-events:none}
 .deco-dock>*{pointer-events:auto}
 .deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px);scroll-snap-type:x proximity;scroll-behavior:smooth}
-.deco-dock .zone-switch button{scroll-snap-align:start} /* tối đa 3 khu (menu-controller.js fitZoneSwitch), còn lại vuốt ngang */
+.deco-dock .zone-switch button{scroll-snap-align:start} /* tối đa 3 khu (menu/areas.js fitZoneSwitch), còn lại vuốt ngang */
 .deco-dock .zone-switch button{min-height:36px;padding:0 12px}
 .zone-switch button small{margin-left:3px;font-size:11px;opacity:.8}
 .deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:none; /* hàng thẻ món dài hết bề ngang màn hình (không cắt theo khung UI) */overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
@@ -143,7 +143,7 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-card-price.act{background:linear-gradient(#93df82,#5fbe57);border-color:#2f7d3a;color:#fff;box-shadow:0 2px 0 #2f7d3a}
 .deco-card.poor .deco-card-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
 .deco-card.locked{opacity:.7}
-/* Món vừa mở khoá + đủ xu (menu-controller.js noticeDeco): nhãn NEW ở góc trên thẻ */
+/* Món vừa mở khoá + đủ xu (menu/deco-panel.js noticeDeco): nhãn NEW ở góc trên thẻ */
 .deco-card.is-new::before{content:"NEW";position:absolute;z-index:1;top:4px;left:50%;translate:-50% 0;padding:1px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;font-size:10px;font-weight:900;line-height:1.3;box-shadow:0 2px 0 #0002}
 @media(prefers-reduced-motion:no-preference){.deco-card.is-new::before{animation:deco-pin-bob 1s ease-in-out infinite alternate}}
 .deco-card.locked .thumb{filter:grayscale(.8)}
@@ -207,7 +207,7 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-pop-tail{position:absolute;left:var(--tail,50%);bottom:-10px;width:16px;height:16px;translate:-50% 0;rotate:45deg;background:#fffdf6;
   border-right:3px solid #73392a;border-bottom:3px solid #73392a}
 .deco-pop[data-side="below"] .deco-pop-tail{bottom:auto;top:-10px;border:0;border-left:3px solid #73392a;border-top:3px solid #73392a}
-/* Ghim "NEW" trên món có đồ mới thay được (bám theo món, menu-controller.js placeDecoPins) */
+/* Ghim "NEW" trên món có đồ mới thay được (bám theo món, menu/deco-panel.js placeDecoPins) */
 .deco-pins{position:absolute;inset:0;z-index:5;width:auto;pointer-events:none}
 .deco-pin{position:absolute;left:0;top:0;will-change:transform}
 .deco-pin[hidden]{display:none}
@@ -227,8 +227,8 @@ body.deco-locked .hub-settings{opacity:.5}
 /* Onboarding trước phần Decoration (tutorial Garden): nút trang trí vẫn hiện nhưng mờ, xám, không bấm được */
 body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"],.deco-help){opacity:.45;filter:grayscale(.7);pointer-events:none}
 body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
-/* ===== Mở khu bằng xu: bong bóng giá trên mảnh đất mờ của khu kế tiếp (menu-controller.js renderAreaNext) ===== */
-/* Chấm than vàng trên mảnh đất mờ của khu kế tiếp (room3d.setGhost); chạm mở bảng điều kiện. Vị trí do menu-controller.js placeAreaMarker đặt. */
+/* ===== Mở khu bằng xu: bong bóng giá trên mảnh đất mờ của khu kế tiếp (menu/areas.js renderAreaNext) ===== */
+/* Chấm than vàng trên mảnh đất mờ của khu kế tiếp (room3d.setGhost); chạm mở bảng điều kiện. Vị trí do menu/areas.js placeAreaMarker đặt. */
 .screen>.area-next{width:auto}
 /* Chỉ có dấu "!" (không nền tròn): chữ vàng viền nâu + quầng trắng để đọc được trên cỏ / sàn. */
 /* Bong bóng giá: viên kem viền nâu + đuôi nhọn chỉ xuống mảnh đất; đủ điều kiện thì viền xanh. translate -50%/-100% để đuôi chạm điểm neo. */
@@ -241,7 +241,7 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .area-next b .ico-coin{width:18px;height:18px;margin-right:4px;vertical-align:-3px}
 .area-next small{font-size:11px;color:#a0705a}
 .area-next[data-state=ready] b{border-color:#2f7d3a;background:#e9f9df}
-/* Thiếu xu: nháy đỏ + rung ngang (menu-controller.js thêm .deny) */
+/* Thiếu xu: nháy đỏ + rung ngang (menu/areas.js thêm .deny) */
 .area-next.deny b{animation:area-deny .5s ease-out}
 @keyframes area-deny{0%,100%{box-shadow:0 3px 0 #73392a66,0 0 0 0 #ff3b3b00}30%{border-color:#d93030;background:#ffe1dc;box-shadow:0 3px 0 #73392a66,0 0 0 10px #ff3b3b55;
   transform:translateX(-4px)}55%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
@@ -249,7 +249,7 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 @keyframes area-bob{to{translate:0 -6px}}
 @media(prefers-reduced-motion:no-preference){.area-next{animation:area-bob .8s ease-in-out infinite alternate}.area-next[data-state=ready]{animation-duration:.45s}}
 
-/* ===== Xu tự sinh (idle): bong bóng xu trên đầu mèo (index.html #idle-coin, menu-controller.js placeIdleCoin) ===== */
+/* ===== Xu tự sinh (idle): bong bóng xu trên đầu mèo (index.html #idle-coin, menu/idle-coins.js placeIdleCoin) ===== */
 /* .screen>* đặt width:min(420px,100%): bong bóng phải tự co theo nội dung */
 .screen>.idle-coin{width:auto}
 .idle-coin{position:absolute;left:0;top:0;z-index:4;will-change:transform;display:flex;align-items:center;gap:5px;min-height:40px;padding:4px 14px 4px 6px;

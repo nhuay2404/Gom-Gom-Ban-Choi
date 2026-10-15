@@ -1,7 +1,7 @@
 // Mô phỏng mọi màn bằng bot tham lam (xét mọi hướng xoay, mọi ô, có dùng Gửi tạm) để cân độ khó.
 // Chạy: node tools/levels/simulate-levels.mjs [số ván mỗi màn] [--sweep] [--dda] [--json] [--baseline]
 //   --dda       tỉ lệ thắng của từng bản biến thể theo số element (độ khó thích ứng, adaptive.mjs)
-//   --baseline  ghi kết quả vào tools/levels/baseline.json (mốc để đối chiếu sau khi port sang Cocos)
+//   --baseline  ghi kết quả vào tools/levels/baseline.json (mốc để đối chiếu sau khi port sang Unity)
 //   --json      in kết quả dạng JSON
 //   --no-effects tắt hiệu ứng cụm to / gom đôi (cluster-effects.mjs) để so sánh
 // Cùng seed luôn ra cùng kết quả (bộ chia thẻ và bot đều dùng số ngẫu nhiên có seed).

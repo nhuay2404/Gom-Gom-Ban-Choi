@@ -1,5 +1,5 @@
 // Test luật một ván (session.mjs) + dữ liệu 40 màn + tiến độ. Chạy: npm test
-// Khi port sang Cocos: chuyển nguyên file này sang TS, chạy trên core/ mới — qua hết là luật khớp bản web.
+// Khi port sang Unity: dịch file này sang NUnit, chạy trên Core C# — qua hết là luật khớp bản web.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as game from './session.mjs';

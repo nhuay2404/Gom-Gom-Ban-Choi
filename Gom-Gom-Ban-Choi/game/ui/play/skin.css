@@ -196,13 +196,13 @@ body.card-holding,body.card-holding *{touch-action:none}
 /* Đốm điểm vừa bay tới: thanh loé sáng */
 .fg-score.gain .progress-track{animation:score-gain .5s ease-out}
 @keyframes score-gain{0%{filter:brightness(1)}30%{filter:brightness(1.45) drop-shadow(0 0 calc(4 * var(--u)) #ffe27a)}100%{filter:brightness(1)}}
-/* Số điểm cộng: to, chữ tròn vàng viền nâu dày, bóng đổ; nảy bằng Web Animations (play-controller.js showMergeScore) */
+/* Số điểm cộng: to, chữ tròn vàng viền nâu dày, bóng đổ; nảy bằng Web Animations (play/score-bar.js showMergeScore) */
 .score-pop{position:fixed;z-index:60;pointer-events:none;font-family:var(--display);font-size:52px;font-weight:800;line-height:1;letter-spacing:0;
   color:#ffe46b;-webkit-text-stroke:9px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 3px 0 #7a3a1288) drop-shadow(0 0 10px #fff3b0);white-space:nowrap}
 /* Đốm sao vàng bay vào thanh điểm */
 .score-orb{position:fixed;z-index:60;width:16px;height:16px;pointer-events:none;border-radius:50%;
   background:radial-gradient(circle at 38% 35%,#fffbe0 0 22%,#ffd84a 45%,#f5a623 75%);box-shadow:0 0 10px 3px #ffe27acc}
-/* Màu theo loại điểm (play-controller.js SCORE_TIERS): thùng = gỗ nâu nhạt · gom 3 = vàng · 4 = xanh lá · 5 = xanh dương ·
+/* Màu theo loại điểm (play/score-bar.js SCORE_TIERS): thùng = gỗ nâu nhạt · gom 3 = vàng · 4 = xanh lá · 5 = xanh dương ·
    6 = hồng tím · 7+ = cầu vồng (chữ to nhất, rung nhẹ, toả vòng sáng). Đốm bay cùng màu với chữ. */
 .score-pop.t-crate{font-size:40px;color:#f3c98b;-webkit-text-stroke-color:#5a3216;filter:drop-shadow(0 3px 0 #5a321688)}
 .score-pop.t-m3{font-size:50px}
@@ -250,7 +250,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .board-shape{filter:drop-shadow(var(--line) 0 0 #73392a) drop-shadow(calc(var(--line) * -1) 0 0 #73392a) drop-shadow(0 var(--line) 0 #73392a)
   drop-shadow(0 calc(var(--line) * -1) 0 #73392a) drop-shadow(0 var(--lip) 0 #73392a)}
 .cell{background:#f3dfb4;box-shadow:inset 0 calc(var(--c) * .06) 0 #e2c48c,inset 0 0 0 1px #ead29f}
-/* Xen kẽ hai tông theo hàng + cột (data-alt do play-controller.js đặt) */
+/* Xen kẽ hai tông theo hàng + cột (data-alt do play/board-view.js đặt) */
 .cell[data-alt="1"]{background:#f8e9c8}
 .cell.block,.cell.locked,.cell.void{background:none!important;box-shadow:none}
 /* Mèo / thùng: bóng cứng màu nâu nhạt ngay dưới chân thay cho bóng mờ */
@@ -263,7 +263,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .cell.preview-invalid{background:#f6c6b8!important;box-shadow:inset 0 0 0 var(--line) #c2493a}
 /* Mèo to ra trong ô bàn (ảnh mèo có viền trong suốt quanh thân) để các chú mèo nhìn sát nhau hơn; thẻ xoay / thẻ kéo giữ cỡ gốc để còn căn giữa */
 .cell.locked .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.3)}
-/* Lời khen khi gom (play-controller.js celebrateMatch): chữ tròn to viền dày, luôn NGHIÊNG (góc ngẫu nhiên trái / phải, xoay bằng
+/* Lời khen khi gom (play/match-fx.js celebrateMatch): chữ tròn to viền dày, luôn NGHIÊNG (góc ngẫu nhiên trái / phải, xoay bằng
    Web Animations); bậc càng cao chữ càng to, màu càng rực: p1 vàng · p2 xanh lá · p3 xanh dương · p4 hồng · p5 cầu vồng */
 .praise-pop{position:fixed;z-index:61;pointer-events:none;font-family:var(--display);font-size:40px;font-weight:800;line-height:1;white-space:nowrap;
   color:#ffe46b;-webkit-text-stroke:8px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 4px 0 #7a3a1299) drop-shadow(0 0 12px #fff3b0)}
@@ -278,7 +278,7 @@ body.card-holding,body.card-holding *{touch-action:none}
   background:radial-gradient(circle,#fff 0 18%,var(--fw) 40%,transparent 70%)}
 .firework-spark{position:fixed;z-index:59;width:9px;height:9px;border-radius:50%;pointer-events:none;background:var(--fw);box-shadow:0 0 8px 2px var(--fw)}
 
-/* Confetti khi gom (play-controller.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
+/* Confetti khi gom (play/match-fx.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
 .confetti{position:fixed;z-index:60;width:13px;height:18px;border-radius:2px;pointer-events:none;box-shadow:0 1px 0 #0002;will-change:transform,opacity}
 .confetti.ribbon{width:8px;height:28px;border-radius:4px}
 /* Màn có cả cỏ lẫn lồng: hai mục tiêu cạnh nhau trong ô Goal, thu nhỏ cho vừa */

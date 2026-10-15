@@ -122,7 +122,7 @@ $('board').addEventListener('pointerdown', event => {
 });
 
 // Chạm (hoặc rê chuột vào) dồn dập trong PET_ANNOY.WINDOW: từ CHEW lần thì mèo bực (biểu cảm chew), từ ANGRY lần thì nổi giận (angry)
-// một lúc, trong lúc giận chạm vào không vui lên. Cùng nhịp với mèo 3D ở Deco (room-cats.mjs PET_ANNOY).
+// một lúc, trong lúc giận chạm vào không vui lên. Cùng nhịp với mèo 3D ở Deco (cat-brain.mjs PET_ANNOY).
 const PET_ANNOY = { WINDOW: 3000, CHEW: 4, ANGRY: 6, MOOD_MS: 2200 };
 
 function annoyCat(cell) {

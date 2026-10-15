@@ -1,6 +1,6 @@
 // Mọi hằng số chỉnh cảm giác chơi ở một chỗ (thuần dữ liệu, không đụng giao diện).
 // Mỗi nhóm khai bằng remote('TÊN', mặc định): chỉnh được từ Firebase Remote Config (tham số cùng TÊN, xem remote-config.mjs).
-// Khi port sang Cocos: chép nguyên file này (hoặc dùng export/data/tuning.json) để cảm giác giống hệt bản web.
+// Khi port sang Unity: chép nguyên file này (hoặc dùng export/data/tuning.json) để cảm giác giống hệt bản web.
 // Thời gian tính bằng mili giây; kích thước 3D tính bằng mét của phòng (phòng 6 × 6).
 
 // Kích thước bàn tuỳ màn (levels.mjs, board-shapes.mjs); W/H ở đây là bàn chuẩn 6×6 dùng làm mặc định.

@@ -250,7 +250,7 @@ const takes = {
       rec?.mark('win');
       h.caption('Earn coins! 🪙', { top: 8 });
       await sleep(1900);
-      // Màn nhận mèo mới: dựng lại đúng DOM / CSS / mèo 3D của showCatReward (menu-controller.js), vì nút Claim trên bản đồ là sprite WebGL
+      // Màn nhận mèo mới: dựng lại đúng DOM / CSS / mèo 3D của showCatReward (menu/map-view.js), vì nút Claim trên bản đồ là sprite WebGL
       rec?.mark('pop');
       h.caption('Unlock new cats! 😻', { top: 8 });
       await b.eval(`(async () => {

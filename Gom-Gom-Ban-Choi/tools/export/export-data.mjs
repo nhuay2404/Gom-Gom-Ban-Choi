@@ -1,4 +1,4 @@
-// Xuất dữ liệu game ra JSON (thuần dữ liệu) để Cocos đọc thẳng, không phải chép tay.
+// Xuất dữ liệu game ra JSON (thuần dữ liệu) để Unity đọc thẳng (TextAsset), không phải chép tay.
 // Chạy: npm run export:data   ->   export/data/*.json
 //   levels.json    20 màn: bàn, lượt, mục tiêu, giống mèo, thẻ kịch bản, tutorial, tier, cơ chế mới
 //   cards.json     cách viết thẻ + hình (offsets) + tỉ lệ hình mặc định của bộ chia

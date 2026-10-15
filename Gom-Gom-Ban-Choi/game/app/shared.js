@@ -1,4 +1,4 @@
-// Phần dùng chung của hai luồng điều khiển (play-controller.js, menu-controller.js): DOM helper, toast, ví xu, kho booster.
+// Phần dùng chung của hai luồng điều khiển (game/play/, game/menu/): DOM helper, toast, ví xu, kho booster.
 import { loadProgress, earnedCoins, levelsCleared } from '../core/progression.mjs';
 import { BOOSTERS } from '../data/tuning.mjs';
 import { START_COINS } from '../data/economy.mjs';

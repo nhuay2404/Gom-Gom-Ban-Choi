@@ -1,5 +1,5 @@
 // Art vật cản trên bàn chơi (SVG thuần chuỗi, không đụng giao diện) — dùng cho bàn chơi, bảng vào màn,
-// và công cụ xuất asset (tools/export/export-art.mjs) khi port sang Cocos.
+// và công cụ xuất asset (tools/export/export-art.mjs) khi port sang Unity.
 
 // Thùng gỗ: ô chặn không đặt mèo lên được, vỡ khi gom mèo sát bên (luật ở board-rules.mjs).
 export const CRATE_SVG = `<svg class="crate" viewBox="0 0 100 100" aria-hidden="true">
@@ -60,7 +60,7 @@ const GRASS_BODY = `
   </g>
   <path d="M16 8H84" stroke="#d4f2ae" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>`;
 // Ô cỏ trên bàn: texture cỏ vẽ tay (assets/img/map/grass-bg.jpg) nhuộm đậm, liền qua các ô cỏ cạnh nhau, viền + chân xanh đậm (ui/play/base.css .grass-tile);
-// mỗi ô một chỗ cắt khác nhau (play-controller.js đặt background-position theo số ô) nên bãi cỏ không lặp đều.
+// mỗi ô một chỗ cắt khác nhau (play/board-view.js đặt background-position theo số ô) nên bãi cỏ không lặp đều.
 export const GRASS_SVG = `<span class="grass-tile" aria-hidden="true"></span>`;
 // Icon cho ô Goal.
 export const GRASS_ICON_SVG = `<svg viewBox="0 0 100 100" aria-hidden="true">${GRASS_BODY.replaceAll('grass-face', 'grass-face-icon').replaceAll('grass-in', 'grass-in-icon')}</svg>`;

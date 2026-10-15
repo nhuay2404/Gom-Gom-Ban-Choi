@@ -49,10 +49,10 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | File | Nội dung |
 |---|---|
 | `index.html` | Trang game: thanh điểm, bàn chơi, thẻ đang bóc, ô gửi tạm, thẻ sắp tới, hộp hướng dẫn |
-| `app/main.js` | Điểm vào: nối hai luồng điều khiển bên dưới rồi mở game vào Home |
-| `app/menu-controller.js` | Luồng menu: bản đồ màn, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt (âm thanh, ngày / đêm), nút dev |
+| `app/main.js`, `app/start.js` | Điểm vào: tải config Firebase, nối hai luồng điều khiển bên dưới rồi mở game vào Home |
 | `app/shared.js` | Dùng chung cho hai luồng: ví xu, kho booster, toast |
-| `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, xả lượt thưởng khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
+| **`play/`** | **Luồng màn chơi**, mỗi file một component: `play-controller.js` (điều phối), `cards.js` / `card-drag.js` (thẻ, kéo thả, Hold), `board-view.js`, `match-fx.js` (anim gom, hiệu ứng nổ), `score-bar.js`, `hud.js` (ô Goal, lượt), `finale.js` (Bonus Time), `booster-bar.js`, `tutorial.js`, `afk.js`, `result.js` |
+| **`menu/`** | **Luồng menu**, mỗi file một màn hình: `map-view.js` (bản đồ màn), `tabs.js`, `room.js` (phòng 3D), `deco-panel.js`, `shop.js`, `areas.js` (mở khu), `settings.js`, `tours.js`, `idle-coins.js`, `dev-tools.js`; `menu-controller.js` là mặt tiền |
 | `favicon.svg` | Icon tab trình duyệt |
 | **`ui/`** | **Thiết kế giao diện 2D** |
 | `ui/shared/` | Dùng chung các hub: `base.css` (biến màu, khung màn hình, toast), `nav.css` (thanh tab), `wallet.css` (hàng ví), `settings.css`, `loading.css`, `tutorial.css`; ảnh `img/` (mèo `cats/`, tay hướng dẫn `tutorial/`, `farm-pop/`: nền hồng, mũi tên xoay, sprite trang trí) |
@@ -74,7 +74,7 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `data/levels.mjs`, `level-layouts.mjs`, `cat-layouts.mjs` | 100 màn; bố trí theo độ khó thích ứng (sinh bằng tool) |
 | `data/tuning.mjs`, `economy.mjs` | Hằng số cảm giác chơi; kinh tế (xu, giá) — chỉnh được từ Firebase Remote Config |
 | `core/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
-| **`deco/`** | **Cảnh 3D Home / Deco** (phòng, vườn, mèo 3D, QC model, danh mục đồ) |
+| **`deco/`** | **Cảnh 3D Home / Deco**: `deco-room.mjs` (phòng + camera), `scenes/` (từng khu), `cats/` (mèo 3D: khung `cat-rig`, não `cat-brain`, cả đàn `room-cats`), `render/` (toon, viền), `map-world.mjs` (bản đồ màn 3D), QC model, danh mục đồ |
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 

@@ -1,6 +1,6 @@
 // Bản đồ saga 3D: con đường nằm trên một "trống cỏ" khổng lồ (hình trụ nằm ngang) như thế giới cuộn của Animal Crossing.
 // Lướt lên = trống lăn về phía trước, màn xa cong dần qua đường chân trời. Mỗi màn là khối đầu mèo nổi trên bệ tròn.
-// Chỉ vẽ: dữ liệu màn / tiến độ do menu-controller.js truyền vào qua render(); chạm màn thì gọi onPick(index).
+// Chỉ vẽ: dữ liệu màn / tiến độ do menu/map-view.js truyền vào qua render(); chạm màn thì gọi onPick(index).
 import * as THREE from 'three';
 import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './render/toon.mjs';
 import { roundedBox, mergeStatic } from './render/mesh-detail.mjs';
