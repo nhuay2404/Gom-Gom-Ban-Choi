@@ -2,7 +2,7 @@
 // Bên trình duyệt: game/app/ui-studio.js (mở game với ?studio). server.mjs gọi handleStudio() cho mọi request.
 //   GET  /__studio/events               SSE: báo file trong game/ đổi (CSS / ảnh: thay tại chỗ, .js/.mjs/.html: tải lại trang)
 //   POST /__studio/css                  {file, selector, index, props: {tên: giá trị | ''}} -> sửa đúng khối CSS đó trong file
-//   POST /__studio/upload?path=ui/...   thân request = ảnh -> ghi đè / thêm ảnh trong game/ui/
+//   POST /__studio/upload?path=ui/...   thân request = ảnh -> ghi đè / thêm ảnh trong game/ui/ hoặc game/assets/
 // Mọi lệnh GHI chỉ nhận từ chính máy này (loopback); điện thoại trong mạng LAN (npm run studio) chỉ xem + nhận cập nhật.
 // File CSS xin kèm ?studio=... thì mọi url(ảnh) bên trong được gắn ?v=<giờ sửa ảnh>, để thay ảnh xong trình duyệt nạp ảnh mới.
 import { watch, readFileSync, writeFileSync, statSync, existsSync } from 'node:fs';
@@ -12,6 +12,7 @@ import { patchCss } from './ui-studio-css.mjs';
 
 const GAME = resolve(fileURLToPath(new URL('../game', import.meta.url)));
 const UI = join(GAME, 'ui');
+const ASSETS = join(GAME, 'assets');
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
 const clients = new Set();
 let watching = false;
@@ -83,7 +84,7 @@ export function handleStudio(req, res, url = new URL(req.url, 'http://x')) {
         json(res, 200, { ok: true, changed: after !== before });
       } else if (route === 'upload') {
         const target = resolve(GAME, url.searchParams.get('path') || '');
-        if (!inside(UI, target) || !IMAGE_EXT.has(extname(target).toLowerCase())) throw new Error('Only images (.png .jpg .webp .gif .svg) inside game/ui/ can be written');
+        if (!(inside(UI, target) || inside(ASSETS, target)) || !IMAGE_EXT.has(extname(target).toLowerCase())) throw new Error('Only images (.png .jpg .webp .gif .svg) inside game/ui/ or game/assets/ can be written');
         if (!existsSync(dirname(target))) throw new Error('Folder does not exist: ' + relative(GAME, dirname(target)));
         const body = await readBody(req);
         if (!body.length) throw new Error('Empty file');

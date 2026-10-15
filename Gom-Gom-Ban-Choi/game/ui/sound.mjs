@@ -1,7 +1,7 @@
 // Âm thanh Gom Gom: tổng hợp bằng Web Audio (bản HTML một file vẫn có tiếng, không tốn tải).
 // Định hướng: trong trẻo + dễ thương cho người chơi casual — chuông nhỏ (sine + bội âm cao nhẹ), bong bóng "póp" (sine trượt cao độ),
 // thang ngũ cung C (C D E G A) nên nốt nào chồng lên nhau cũng thuận tai; không tiếng gắt (không square / không méo), âm lượng nhỏ.
-// Tiếng mèo: file thu sẵn người dùng chọn (ui/shared/sfx/cat1-8.mp3, playMeow); không tự tổng hợp tiếng mèo (đã thử, không ưng).
+// Tiếng mèo: file thu sẵn người dùng chọn (assets/sfx/cat1-8.mp3, playMeow); không tự tổng hợp tiếng mèo (đã thử, không ưng).
 //
 //   Giao diện / thao tác
 //   pick     chạm nút, chọn            bong bóng "póp" nhỏ đi lên
@@ -15,7 +15,7 @@
 //   Thưởng
 //   merge    gom mèo: chuỗi chuông ngũ cung dài dần theo cỡ cụm (size); cụm ≥ 5 thêm lấp lánh
 //   reward   nhận xu / mua đồ          "ting-ting" đồng xu
-//   complete thắng màn                 file thu sẵn ui/result/sfx/victory.mp3 (CLIPS; fanfare tổng hợp khi chưa tải xong)
+//   complete thắng màn                 file thu sẵn assets/sfx/victory.mp3 (CLIPS; fanfare tổng hợp khi chưa tải xong)
 //   lose     thua màn                  "uầy uầy" ba nốt trượt xuống, nốt cuối rung + chuông trầm
 //   Mèo (không phải tiếng mèo)
 //   pet      vuốt mèo                  hai nốt chuông ngọt đi lên
@@ -23,7 +23,7 @@
 //   catLift  nhấc mèo 3D ở Deco        bong bóng đi lên       mew  thả mèo ở Deco: "bộp" mềm
 //   worried  vừa sắp hết lượt          hai nốt chuông đi xuống, nhỏ
 //   (mèo buồn ngủ khi AFK: im lặng)
-//   Nhạc nền: ui/shared/sfx/bgm.mp3, lặp bỏ đoạn im lặng cuối file (BGM / startMusic ở cuối file). Độ to mọi file: bảng LEVEL.
+//   Nhạc nền: assets/sfx/bgm.mp3, lặp bỏ đoạn im lặng cuối file (BGM / startMusic ở cuối file). Độ to mọi file: bảng LEVEL.
 // Trình duyệt chỉ cho phát tiếng sau lần chạm đầu tiên; bật/tắt được và lưu lại trong máy.
 import { SAVE_KEYS, readText, writeText } from '../gameplay/save.mjs';
 let ctx = null, out = null, echo = null;
@@ -107,7 +107,7 @@ const SOUNDS = {
   place: t => { pop(300, 150, t, { vol: .26, dur: .11 }); noise(t, .05, { vol: .05, freq: 900, q: 2 }); bell(PENTA[0], t + .01, { vol: .06, decay: .25 }); },
   invalid: t => { pop(330, 250, t, { vol: .14, dur: .12, type: 'triangle' }); pop(290, 220, t + .13, { vol: .12, dur: .14, type: 'triangle' }); },
   draw: t => { noise(t, .16, { vol: .07, freq: 700, to: 3000, q: 1.5 }); bell(PENTA[4], t + .1, { vol: .08, decay: .3 }); },
-  // Thùng gỗ vỡ: dùng file ui/play/sfx/crate-break.mp3 (CLIPS); đây là tiếng dự phòng lúc chưa tải xong.
+  // Thùng gỗ vỡ: dùng file assets/sfx/crate-break.mp3 (CLIPS); đây là tiếng dự phòng lúc chưa tải xong.
   crateBreak: t => { noise(t, .09, { vol: .2, freq: 700, to: 350, q: 2.5, attack: .002 }); pop(240, 100, t, { vol: .22, dur: .12 }); },
   smash: t => { noise(t, .07, { vol: .22, freq: 600, to: 400, q: 3, attack: .002 }); pop(260, 110, t, { vol: .28, dur: .12 });
     arpeggio([PENTA[5], PENTA[7], PENTA[8]], t + .09, .05, { vol: .06, decay: .25 }); },
@@ -144,13 +144,13 @@ const SOUNDS = {
 };
 
 // Tiếng thu sẵn (file mp3, ghi đè tiếng tổng hợp cùng tên khi đã tải xong; chưa tải xong thì dùng tiếng tổng hợp).
-// Bản HTML một file: build-single-html.mjs nhúng đường dẫn ui/<hub>/sfx/*.mp3 thành data URI.
+// Bản HTML một file: build-single-html.mjs nhúng đường dẫn assets/sfx/*.mp3 thành data URI.
 const CLIPS = {
-  complete: 'ui/result/sfx/victory.mp3',
-  crateBreak: 'ui/play/sfx/crate-break.mp3',
+  complete: 'assets/sfx/victory.mp3',
+  crateBreak: 'assets/sfx/crate-break.mp3',
   // Tiếng mèo thu sẵn (gán ở VOICE / playMeow bên dưới)
-  cat1: 'ui/shared/sfx/cat1.mp3', cat2: 'ui/shared/sfx/cat2.mp3', cat3: 'ui/shared/sfx/cat3.mp3', cat4: 'ui/shared/sfx/cat4.mp3',
-  cat5: 'ui/shared/sfx/cat5.mp3', cat6: 'ui/shared/sfx/cat6.mp3', cat7: 'ui/shared/sfx/cat7.mp3', cat8: 'ui/shared/sfx/cat8.mp3',
+  cat1: 'assets/sfx/cat1.mp3', cat2: 'assets/sfx/cat2.mp3', cat3: 'assets/sfx/cat3.mp3', cat4: 'assets/sfx/cat4.mp3',
+  cat5: 'assets/sfx/cat5.mp3', cat6: 'assets/sfx/cat6.mp3', cat7: 'assets/sfx/cat7.mp3', cat8: 'assets/sfx/cat8.mp3',
 }, clipBuffers = {}, CLIP_FADE = .45;
 // Cân bằng âm lượng: mỗi file tự đo độ to (RMS phần có tiếng) lúc giải mã rồi phát ở đúng LEVEL (độ to đích, cùng thang với
 // chuông tổng hợp ~.04), nên file thu to / nhỏ khác nhau (thùng vỡ gốc nhỏ hơn tiếng mèo ~5 lần) vẫn ra đều tai.
@@ -240,7 +240,7 @@ export function playMeowChorus(breeds) {
 // tự bật từ lần chạm đầu tiên (trình duyệt chặn tự phát).
 const MUSIC_KEY = 'gomgom-rotate-pref-music'; // cùng khoá với công tắc Music (menu-controller.js prefOn)
 let musicEnabled = readText(MUSIC_KEY) !== 'off';
-const BGM = { url: 'ui/shared/sfx/bgm.mp3', start: .01, loop: 30.46, fadeIn: 2.5 };
+const BGM = { url: 'assets/sfx/bgm.mp3', start: .01, loop: 30.46, fadeIn: 2.5 };
 let bgmBuffer = null, bgmGain = null, bgmTimer = 0, bgmNext = 0, bgmLoading = false, bgmSources = [];
 const bgmLevel = () => Math.min(1, LEVEL.bgm / (clipRms.bgm || .19));
 function startMusic() {

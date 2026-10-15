@@ -1476,7 +1476,7 @@ function animateHand(step, holes) {
   if (hand.hidden) return;
   // Kéo dùng ảnh tay "giữ" (có tia), chạm dùng ảnh tay "nhấn" (có sóng).
   // đường dẫn viết đủ (không ghép chuỗi) để build:html nhúng được ảnh
-  $('tutorial-hand-img').src = step.type === 'drag' || step.type === 'hold' ? './ui/shared/img/tutorial/hand-drag.png' : './ui/shared/img/tutorial/hand-tap.png';
+  $('tutorial-hand-img').src = step.type === 'drag' || step.type === 'hold' ? './assets/img/tutorial/hand-drag.png' : './assets/img/tutorial/hand-tap.png';
   const center = b => [b.left + b.width / 2, b.top + b.height / 2];
   const [x0, y0] = center(holes[0]);
   const at = (x, y, scale) => `translate(${x}px, ${y}px) scale(${scale})`;
@@ -1651,7 +1651,7 @@ $('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showT
   const keep = [];
   const load = () => names.forEach(name => {
     const img = new Image();
-    img.src = `./ui/result/img/${name}.png`;
+    img.src = `./assets/img/result/${name}.png`;
     img.decode?.().catch(() => {});
     keep.push(img); // giữ tham chiếu để ảnh đã giải mã không bị dọn
   });

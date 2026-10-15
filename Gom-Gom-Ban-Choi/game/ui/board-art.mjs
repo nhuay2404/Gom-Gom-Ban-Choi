@@ -59,7 +59,7 @@ const GRASS_BODY = `
     <path d="M20 40l3-9 3 7 3-8 2 10z"/><path d="M66 30l3-9 3 7 3-8 2 10z"/><path d="M44 72l3-9 3 7 3-8 2 10z"/><path d="M74 70l2-7 3 5 2-6 2 8z"/>
   </g>
   <path d="M16 8H84" stroke="#d4f2ae" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>`;
-// Ô cỏ trên bàn: texture cỏ vẽ tay (ui/map/img/grass-bg.jpg, cùng ảnh nền bản đồ) cắt một mảng nhỏ, viền + chân xanh đậm (ui/play/base.css .grass-tile);
+// Ô cỏ trên bàn: texture cỏ vẽ tay (assets/img/map/grass-bg.jpg, cùng ảnh nền bản đồ) cắt một mảng nhỏ, viền + chân xanh đậm (ui/play/base.css .grass-tile);
 // mỗi ô một chỗ cắt khác nhau (play-controller.js đặt background-position theo số ô) nên bãi cỏ không lặp đều.
 export const GRASS_SVG = `<span class="grass-tile" aria-hidden="true"></span>`;
 // Icon cho ô Goal.

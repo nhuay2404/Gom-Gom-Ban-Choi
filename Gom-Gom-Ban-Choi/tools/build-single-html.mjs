@@ -37,10 +37,10 @@ const js = execSync(
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
   // Ảnh / tiếng JS tham chiếu theo đường dẫn (vd. mèo cam bitmap trong ui/cat-art.mjs, tiếng thắng trong ui/sound.mjs): nhúng thẳng thành data URI.
-  .replace(/(["'])(ui\/[a-z]+\/(?:img|sfx)\/[^"']+\.(?:png|jpe?g|webp|mp3))\1/g, (_, q, file) => q + dataUri(file) + q)
-  // Ảnh trong chuỗi HTML dựng bằng JS (vd. <img src="./ui/shop/img/coin-stack.png">): cũng nhúng thành data URI.
+  .replace(/(["'])(assets\/(?:img|sfx)\/[^"']+\.(?:png|jpe?g|webp|mp3))\1/g, (_, q, file) => q + dataUri(file) + q)
+  // Ảnh trong chuỗi HTML dựng bằng JS (vd. <img src="./assets/img/shop/coin-stack.png">): cũng nhúng thành data URI.
   // (đường dẫn ghép động như `${s}.png` thì bỏ qua: không biết trước file nào)
-  .replace(/\.\/(ui\/[a-z]+\/(?:img|sfx)\/[^"'`)\s]+\.(?:png|jpe?g|webp|mp3))/g, (all, file) => (file.includes('${') ? all : dataUri(file)));
+  .replace(/\.\/(assets\/(?:img|sfx)\/[^"'`)\s]+\.(?:png|jpe?g|webp|mp3))/g, (all, file) => (file.includes('${') ? all : dataUri(file)));
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).

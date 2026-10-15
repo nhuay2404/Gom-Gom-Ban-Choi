@@ -17,7 +17,7 @@
 .map-foot{display:none}
 .map-list{padding-bottom:calc(var(--u) * 146)}
 /* ===== Map theo Figma (file UI, frame "Map" 23:495): nền cỏ, đường kẹo viền nâu, nút đầu mèo + 3 sao ===== */
-.map{--map-ink:#5b2e1c;background:#bfe4a0 url('./img/grass-bg.jpg') 50% 0/cover no-repeat}
+.map{--map-ink:#5b2e1c;background:#bfe4a0 url('../../assets/img/map/grass-bg.jpg') 50% 0/cover no-repeat}
 .map-head{background:linear-gradient(#c6f6ff,#c6f6ff00);padding-bottom:40px}
 .map-head h2{visibility:hidden}
 .road-edge{stroke:var(--map-ink);stroke-width:46}
@@ -55,7 +55,7 @@
 .map-canvas:active{cursor:grabbing}
 .map-list{padding-bottom:calc(var(--u) * 96)}
 /* Map 3D: trời mây giống Home (cảnh 3D vẽ trong suốt phía trên) */
-.map.is-3d{background:#8ed4fc url('../home/img/sky-bg.jpg') 50% 0/cover no-repeat}
+.map.is-3d{background:#8ed4fc url('../../assets/img/home/sky-bg.jpg') 50% 0/cover no-repeat}
 /* Màn nhận mèo từ Map ("You got"): nền hoàng hôn cam-hồng-mận, tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim". */
 .cat-reward{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;cursor:pointer;
   background:radial-gradient(circle at 50% 44%,#ffd98a 0,#f6956b 26%,#d9506f 52%,#7a2550 78%,#3d1230 100%);color:#fff;font-family:"Baloo 2",Nunito,sans-serif;text-align:center;animation:cr-in .3s ease-out both}

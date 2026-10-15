@@ -114,7 +114,7 @@ const tap = (b, sel, { ms = 420 } = {}) => b.eval(`(async () => {
   const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false;
   el.scrollIntoView({ inline: 'center', block: 'nearest' }); await new Promise(r => setTimeout(r, 120));
   const r = el.getBoundingClientRect(); let h = document.getElementById('ad-hand');
-  if (!h) { h = document.createElement('img'); h.id = 'ad-hand'; h.src = 'ui/shared/img/tutorial/hand-tap.png'; document.body.append(h); }
+  if (!h) { h = document.createElement('img'); h.id = 'ad-hand'; h.src = 'assets/img/tutorial/hand-tap.png'; document.body.append(h); }
   const W = 62, H = 77, tx = r.left + r.width / 2 - W * .3, ty = r.top + r.height / 2 - H * .86, sx = tx + 46, sy = ty + 90;
   const a = h.animate([
     { transform: 'translate(' + sx + 'px,' + sy + 'px) scale(1)', opacity: 0, offset: 0 },
@@ -135,7 +135,7 @@ const tap = (b, sel, { ms = 420 } = {}) => b.eval(`(async () => {
 const sweep = (b, breeds) => b.eval(`(async () => {
   const breeds = ${JSON.stringify(breeds)};
   let h = document.getElementById('ad-hand');
-  if (!h) { h = document.createElement('img'); h.id = 'ad-hand'; h.src = 'ui/shared/img/tutorial/hand-tap.png'; document.body.append(h); }
+  if (!h) { h = document.createElement('img'); h.id = 'ad-hand'; h.src = 'assets/img/tutorial/hand-tap.png'; document.body.append(h); }
   h.getAnimations().forEach(a => a.cancel());
   const W = 62, H = 77, find = c => document.querySelector('.idle-coin[data-breed=' + c + ']:not([hidden])');
   const at = c => { const e = find(c); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2 - W * .3, y: r.top + r.height / 2 - H * .86, e, r }; };

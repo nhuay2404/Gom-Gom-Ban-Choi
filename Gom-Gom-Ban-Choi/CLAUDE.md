@@ -16,7 +16,8 @@ Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên kh�
 
 | Thư mục | Nội dung | Tiền tố commit |
 |---|---|---|
-| `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS + ảnh `img/` riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial, mèo `img/cats`), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
+| `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
+| `game/assets/` | TOÀN BỘ ảnh + âm thanh (`img/<nhóm>/`, `sfx/`), danh sách + nơi dùng ở `assets/README.md`. Thêm ảnh / tiếng mới đặt ở đây, không đặt trong `ui/` | `UI:` |
 | `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
 | `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
@@ -256,7 +257,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## Khác
-- UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
+- UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS trong `game/ui/` / ảnh trong `game/assets/` và game tự cập nhật,
   hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
   định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.

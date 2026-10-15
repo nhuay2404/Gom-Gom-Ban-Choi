@@ -960,7 +960,7 @@ export async function runOnboarding() {
 // ---------- Shop: 2 tab — "Shop" (gói khởi đầu, booster, gói xu) và "Decoration" (chỉ đồ trang trí) ----------
 // Gói xu + gói khởi đầu: số xu / giá lấy từ gameplay/economy.mjs (COIN_PACKS, STARTER_PACK).
 document.querySelector('.coin-list').innerHTML = COIN_PACKS.map(pack =>
-  `<button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>${pack.coins.toLocaleString('en-US')}</b><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
+  `<button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>${pack.coins.toLocaleString('en-US')}</b><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
 document.querySelector('.shop-starter').setAttribute('aria-label', `Starter pack: coins, a cozy rug and 5 boosters, $${STARTER_PACK.usd.toFixed(2)} (coming soon)`);
 function setShopPage(page) {
   $('shop').dataset.page = page;

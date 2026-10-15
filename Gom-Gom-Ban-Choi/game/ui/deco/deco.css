@@ -67,7 +67,7 @@
 .room.is-3d.dusk,.room.is-3d.dusk[data-zone="garden"]{background:#f0a37a}
 .room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
 .screen.deco{overflow-x:hidden}
-.deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('../play/img/deco-panel.png') 90 fill / 28px stretch}
+.deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('../../assets/img/play/deco-panel.png') 90 fill / 28px stretch}
 .deco-panel .chips{padding:0 10px 2px;scrollbar-width:none}
 /* Deco: header + chọn khu + cảnh 3D đứng yên; chỉ danh sách đồ cuộn bên trong khung kem (cảnh 3D không đè lên đồ). */
 .screen.deco{overflow:hidden;gap:10px}
@@ -255,7 +255,7 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .idle-coin{position:absolute;left:0;top:0;z-index:4;will-change:transform;display:flex;align-items:center;gap:5px;min-height:40px;padding:4px 14px 4px 6px;
   border-radius:999px;border:2px solid #fff;background:#fff;color:#7a4a12;font-weight:900;font-size:17px;box-shadow:0 3px 0 #73392a40;margin:-48px 0 0;translate:-50% 0}
 .idle-coin[hidden]{display:none}
-.idle-coin .ico-coin{width:32px;height:32px;box-shadow:none;background:url('../shop/img/coin.png') center/contain no-repeat}
+.idle-coin .ico-coin{width:32px;height:32px;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
 .idle-coin::after{content:"";position:absolute;left:50%;bottom:-7px;translate:-50% 0;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
 .idle-coin.full{background:#fff;border-color:#ffb02e}
 /* Đốm sáng lấp lánh quanh bong bóng (6 ngôi sao bốn cánh nằm rìa bong bóng, mỗi cái một cỡ / nhịp / độ trễ); bong bóng đầy xu thì lấp lánh nhanh hơn */

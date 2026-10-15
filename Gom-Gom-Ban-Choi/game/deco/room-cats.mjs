@@ -82,7 +82,7 @@ function canvasTexture(key, draw, padX = 0) {
   texture.anisotropy = 4;
   return (textures[key] = texture);
 }
-// Thân + tai + mặt 3D dựng theo ảnh mèo 2D trong Figma (ui/shared/img/cats/<giống>-body.png + <giống>-<biểu cảm>.png).
+// Thân + tai + mặt 3D dựng theo ảnh mèo 2D trong Figma (assets/img/cats/<giống>-body.png + <giống>-<biểu cảm>.png).
 // Màu lấy mẫu từ ảnh Figma (cùng bộ với HANG_COLORS trong cat-art.mjs); thân 3D cũng dùng các màu này (catLook).
 // Số đo ảnh thân từng giống (px, đo từ kênh alpha; mỗi ảnh một cao khác nhau): h = cao ảnh; mặt trước khối thân nằm trong x0..x1 ×
 // top..bottom (đáy gồm cả dải vát); apex = chóp tai trái; ear = [mép ngoài, mép trong] chân tai trái ở hàng top - 2.

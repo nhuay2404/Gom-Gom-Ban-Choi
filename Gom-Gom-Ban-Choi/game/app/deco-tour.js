@@ -62,7 +62,7 @@ export function startDecoTour(steps, onDone) {
   const gesture = layer.querySelector('.deco-tour-gesture');
   let tappable = false;
   // Đường dẫn ĐẦY ĐỦ (không ghép `${tên}.png`): build:html chỉ nhúng ảnh có đường dẫn viết sẵn, ghép động thì bản xuất ra mất ảnh.
-  const GESTURES = { drag: './ui/shared/img/tutorial/hand-drag.png', pinch: './ui/shared/img/tutorial/gesture-pinch.png', twist: './ui/shared/img/tutorial/gesture-rotate.png', tap: './ui/shared/img/tutorial/hand-tap.png' };
+  const GESTURES = { drag: './assets/img/tutorial/hand-drag.png', pinch: './assets/img/tutorial/gesture-pinch.png', twist: './assets/img/tutorial/gesture-rotate.png', tap: './assets/img/tutorial/hand-tap.png' };
   // Bàn tay minh hoạ cử chỉ lặp lại giữa chỗ sáng: kéo = lướt ngang, chụm = co / giãn, xoay = đứng yên.
   const drawGesture = (kind, rect) => {
     gesture.hidden = !kind || !rect;

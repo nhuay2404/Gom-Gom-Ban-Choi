@@ -1,6 +1,6 @@
 /* ===== Màn loading: nền dấu chân của Shop, logo "Gom Gom / Rotate", 3 dấu chân nhảy lần lượt, thanh kẹo xanh chạy sọc ===== */
 .loading-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;
-  background:#9fdcff url('../shop/img/bg.jpg') 50% 0/cover no-repeat;transition:opacity .45s ease,visibility .45s;font-family:var(--display)}
+  background:#9fdcff url('../../assets/img/shop/bg.jpg') 50% 0/cover no-repeat;transition:opacity .45s ease,visibility .45s;font-family:var(--display)}
 .loading-screen.done{opacity:0;visibility:hidden;pointer-events:none}
 .loading-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:6px;animation:loading-pop .6s cubic-bezier(.3,1.6,.5,1) both}
 .loading-logo b{font-size:clamp(52px,16vw,72px);font-weight:800;line-height:.95;color:#fff;-webkit-text-stroke:10px #6b2416;paint-order:stroke fill;

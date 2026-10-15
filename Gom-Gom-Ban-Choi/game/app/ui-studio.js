@@ -1010,7 +1010,7 @@ function withAlpha(hex, old) {
 // ---------- Ảnh ----------
 function imagesOf(el) {
   const out = new Set();
-  const add = url => { const p = pathOf(url); if (p.startsWith('ui/') && IMAGE_RE.test(p)) out.add(p); };
+  const add = url => { const p = pathOf(url); if ((p.startsWith('ui/') || p.startsWith('assets/')) && IMAGE_RE.test(p)) out.add(p); };
   if (el instanceof HTMLImageElement) add(el.currentSrc || el.src);
   for (const pseudo of [null, '::before', '::after']) {
     const bg = getComputedStyle(el, pseudo).backgroundImage;
