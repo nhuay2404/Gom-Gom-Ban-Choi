@@ -53,12 +53,12 @@
 .fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./img/pill-gems.png')}
 .fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
 /* Cột trái: Daily, Starter Pack */
-.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(121 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
+.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(114.99 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
 .fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-starter.png')}
 /* Feedback: dưới Starter Pack, vẽ bằng CSS theo kiểu hai nút ảnh Figma (ô kem bo góc viền nâu, icon + chữ nâu đậm); mở form góp ý.
    Cỡ = phần ô nhìn thấy trong ảnh Daily / Starter (ảnh 60u có lề trong suốt + chỗ cho chấm "!": ô thật ~53 × 55u, lùi vào ~4u),
    cách Starter đúng bằng khoảng Daily → Starter (~8.5u). */
-.fh-feedback{left:calc(21 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(253.5 * var(--u));width:calc(53 * var(--u));height:calc(55 * var(--u));box-sizing:border-box;
+.fh-feedback{left:calc(323.37 * var(--u) + var(--gutter) - env(safe-area-inset-right));top:calc(117.99 * var(--u));width:calc(53 * var(--u));height:calc(55 * var(--u));box-sizing:border-box;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));text-decoration:none;
   background:linear-gradient(#fffaf0,#fbe9cf)!important;border:calc(2.8 * var(--u)) solid #6b3329!important;border-radius:calc(12 * var(--u));
   box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff,0 calc(2.5 * var(--u)) 0 #6b332955}
@@ -66,7 +66,7 @@
 .fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
 .fh-feedback:active{translate:0 calc(2 * var(--u))}
 /* Nút đổi bộ quân (mèo / chó): cùng kiểu nút Feedback, ngay dưới; ảnh là quân mèo / chó thu nhỏ */
-.fh-skin{top:calc(317 * var(--u));padding:0;font:inherit;cursor:pointer}
+.fh-skin{top:calc(190.65 * var(--u));padding:0;font:inherit;cursor:pointer}
 .fh-skin[hidden]{display:none}
 .fh-skin-art{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u))}
 .fh-skin-art svg{width:100%;height:100%;overflow:visible}

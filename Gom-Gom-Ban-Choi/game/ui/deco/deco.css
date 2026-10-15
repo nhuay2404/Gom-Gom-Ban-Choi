@@ -94,7 +94,7 @@
   -webkit-mask-image:none;mask-image:none}
 .screen.deco>.wallet-hud{position:absolute;z-index:6;top:calc(18 * var(--u) + env(safe-area-inset-top));left:env(safe-area-inset-left);margin-left:0;translate:none}
 /* Nút mèo: cột trái, cùng toạ độ cột nút ở Home */
-.deco-side{position:absolute;z-index:6;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(17 * var(--u) + env(safe-area-inset-left));width:auto;
+.deco-side{position:absolute;z-index:6;top:calc(83 * var(--u) + env(safe-area-inset-top));left:auto;right:calc(13 * var(--u) + env(safe-area-inset-right));width:auto;
   display:flex;flex-direction:column;gap:calc(8 * var(--u))}
 .deco-side button{display:flex;flex-direction:column;align-items:center;justify-content:center;width:calc(58 * var(--u));height:calc(58 * var(--u));min-height:0;padding:0;
   border:calc(3 * var(--u)) solid #73392a;border-radius:calc(16 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6,0 calc(3 * var(--u)) 0 #73392a44;
@@ -140,12 +140,16 @@ body.deco-locked .hub-settings{opacity:.5}
 .zi[data-z="garden"]{--m:url('./img/tab-tree.png');width:calc(16 * var(--u));height:calc(19 * var(--u))}
 .zi[data-z="living"]{--m:url('./img/tab-sofa.png');width:calc(22 * var(--u));height:calc(17 * var(--u))}
 .zi[data-z="bedroom"]{--m:url('./img/tab-bed.png');width:calc(24 * var(--u));height:calc(17 * var(--u))}
-/* Khu chưa có trong thiết kế: hình đặc cùng kiểu (chảo, bồn tắm, hồ bơi, trường) */
-.zi[data-z="kitchen"]{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='14' r='7'/%3E%3Crect x='14' y='9.5' width='10' height='4' rx='2' transform='rotate(-25 14 11.5)'/%3E%3C/svg%3E");width:calc(21 * var(--u));height:calc(19 * var(--u))}
-.zi[data-z="bathroom"]{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2 11h20v2a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6zM5 9V6a3 3 0 0 1 6 0v1H9V6a1 1 0 0 0-2 0v3z'/%3E%3C/svg%3E");width:calc(22 * var(--u))}
-.zi[data-z="backyard"]{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2 15c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2v4c-2.5 0-2.5 2-5 2s-2.5-2-5-2-2.5 2-5 2-2.5-2-5-2zM7 4a2.5 2.5 0 0 1 5 0v8H9.5V4a0 0 0 0 0-2.5 0zM14 4a2.5 2.5 0 0 1 5 0v8h-2.5V4a0 0 0 0 0-2.5 0z'/%3E%3C/svg%3E");width:calc(22 * var(--u))}
-.zi[data-z="kinder"]{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2l11 6v2H1V8zM3 11h18v10H3zM10 15h4v6h-4z'/%3E%3C/svg%3E");width:calc(22 * var(--u))}
-.deco-collapse{flex:none;display:grid;place-items:center;width:calc(36 * var(--u));height:calc(36 * var(--u));min-height:0;padding:0;border-radius:calc(11 * var(--u));
+.zi[data-z="kitchen"]{--m:url('./img/tab-kitchen.png');width:calc(17 * var(--u));height:calc(18 * var(--u))}
+.zi[data-z="bathroom"]{--m:url('./img/tab-bathroom.png');width:calc(18 * var(--u));height:calc(18 * var(--u))}
+.zi[data-z="backyard"]{--m:url('./img/tab-backyard.png');width:calc(24 * var(--u));height:calc(17 * var(--u))}
+.zi[data-z="kinder"]{--m:url('./img/tab-kinder.png');width:calc(16 * var(--u));height:calc(19 * var(--u))}
+/* Chip thú cưng (Cats / Dogs): ảnh màu theo art direction (tách từ ảnh thiết kế) */
+.pi{flex:none;display:block;width:calc(18 * var(--u));height:calc(18 * var(--u));background:center / contain no-repeat;filter:saturate(.65) brightness(1.08);transition:filter .15s}
+.pi[data-p="cats"]{background-image:url('./img/chip-cats.png')}
+.pi[data-p="dogs"]{background-image:url('./img/chip-dogs.png');width:calc(22 * var(--u))}
+.deco-kinds button.on .pi{filter:none}
+.deco-kinds[hidden]{display:none}.deco-collapse{flex:none;display:grid;place-items:center;width:calc(36 * var(--u));height:calc(36 * var(--u));min-height:0;padding:0;border-radius:calc(11 * var(--u));
   border:calc(3 * var(--u)) solid #73392a;background:#fffdf6;color:#73392a;box-shadow:none}
 .deco-collapse svg{width:calc(20 * var(--u));height:calc(20 * var(--u));fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transition:rotate .2s}
 .deco-collapse:active{translate:0 calc(2 * var(--u))}

@@ -458,7 +458,12 @@ function renderDeco() {
   renderAreaNext(); // mua đồ (ở thẻ, bảng đổi món, Shop) đẩy thanh "tiêu xu vào decor" của khu kế tiếp
   startIdle();
   room3d?.setHighlights(decoLocked ? new Set() : fresh);
-  $('deco-kinds').classList.toggle('off', decoTab === 'cats');
+  $('deco-kinds').hidden = decoTab === 'cats';
+  $('deco-pets').hidden = decoTab !== 'cats';
+  $('deco-pets').querySelectorAll('[data-pet]').forEach(button => {
+    button.classList.toggle('on', decoPet === button.dataset.pet);
+    button.setAttribute('aria-selected', decoPet === button.dataset.pet);
+  });
   $('deco-kinds').querySelectorAll('[data-key]').forEach(button => {
     button.querySelector('span').textContent = button.dataset.key === 'furniture' ? 'Furniture' : ZONES[deco.zone].cats[button.dataset.key];
     button.classList.toggle('on', decoTab === button.dataset.key);
@@ -509,16 +514,18 @@ function renderDeco() {
   room3d?.prewarm(todo.filter(base => itemStatus(deco, base, unlocked) !== 'locked'));
   warmDecoThumbs(deco.zone);
   // Đổi khu / tab / chip: về đầu hàng thẻ
-  const stripKey = `${deco.zone}/${decoTab}`;
+  const stripKey = `${deco.zone}/${decoTab}/${decoPet}`;
   if (lastCardZone !== stripKey) { lastCardZone = stripKey; cards.scrollLeft = 0; updateCardsFade(); }
   renderDecoPop();
 }
 // Tab đang chọn ở khay đáy: 'cats' (mèo trong nhà) hoặc chip loại đồ của khu: 'furniture' | 'walls' | 'floors'.
 let decoTab = 'furniture';
+// Tab mèo chia hai nhóm: mèo / chó (id món chó bắt đầu bằng 'dog-')
+let decoPet = 'cats';
 const isBaseEntry = entry => entry.cat === 'furniture' && !entry.slot;
 function stripEntries(deco) {
   const zone = deco.zone;
-  if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats');
+  if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats' && entry.id.startsWith('dog-') === (decoPet === 'dogs'));
   if (decoTab === 'walls' || decoTab === 'floors') return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
   const bases = decoBases(zone).filter(base => !isOwned(deco, base));
   const variants = shopCatalog(zone).filter(entry => entry.cat === 'furniture' && decoVisible(entry) && isOwned(deco, itemById(entry.slot)));
@@ -554,6 +561,13 @@ $('deco-kinds').addEventListener('click', event => {
   closeDecoPop(false);
   clearPreview();
   applyRoom(getDeco());
+  renderDeco();
+});
+$('deco-pets').addEventListener('click', event => {
+  const pet = event.target.closest('[data-pet]')?.dataset.pet;
+  if (!pet || pet === decoPet) return;
+  playSound('pick');
+  decoPet = pet;
   renderDeco();
 });
 $('deco-cards').addEventListener('click', event => {
