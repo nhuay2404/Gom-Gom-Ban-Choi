@@ -2665,9 +2665,11 @@ class Cat {
     const base = rig.bodyBase, out = body.geometry.attributes.position, arr = out.array, v = JELLY.tmpV;
     // Dáng không đổi so với lần uốn trước (đứng yên, hoặc nằm bẹp ngủ yên một tư thế): bỏ qua vòng uốn ~3000 đỉnh.
     // Có dây / võng thì luôn uốn lại (dây, vải còn đung đưa).
-    const b = this.bend, f = this.soft, sig = this.shapeSig ||= new Float32Array(7);
+    // Lần uốn đầu luôn chạy: dáng ban đầu (toàn 0) trùng chữ ký rỗng, bỏ qua thì mặt kẹt phẳng trong thân tới khi mèo cử động
+    // (lỗi cũ: lần đầu vào Deco, mèo đứng yên lúc hướng dẫn nên không có mặt).
+    const b = this.bend, f = this.soft, first = !this.shapeSig, sig = this.shapeSig ||= new Float32Array(7);
     const now = [b.x, b.y, b.z, f.spread, f.sag, f.squeeze, f.front];
-    let changed = ropes.length > 0 || !!trough || this.wasHeld;
+    let changed = first || ropes.length > 0 || !!trough || this.wasHeld;
     for (let k = 0; k < 7; k++) if (Math.abs(now[k] - sig[k]) > 1e-4) { changed = true; sig[k] = now[k]; }
     this.wasHeld = ropes.length > 0 || !!trough; // vừa rời dây / võng: uốn lại một lần nữa cho về dáng thường
     const skipBody = !changed, skipDecals = skipBody;
