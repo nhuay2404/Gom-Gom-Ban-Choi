@@ -11,7 +11,7 @@ Mọi file ảnh / tiếng game dùng nằm ở đây (code và CSS chỉ tham c
 | `img/tutorial/` | Bàn tay hướng dẫn: `hand-tap`, `hand-drag`, cử chỉ `gesture-pinch`, `gesture-rotate` | `app/play-controller.js`, `app/deco-tour.js`, `index.html`, `tools/ads` |
 | `img/farm-pop/` | Nền hồng chung, sprite trang trí (+ mask), mũi tên xoay | `ui/shared/base.css`, `ui/play/base.css` |
 | `img/home/` | Pill xu / gem / năng lượng, nút daily / starter / settings / Play, nền trời | `ui/home/home.css`, `ui/map/map.css` |
-| `img/map/` | Texture cỏ `grass-bg.jpg` (bản đồ 2D) | `ui/map/map.css` |
+| `img/map/` | Texture cỏ `grass-bg.jpg` (bản đồ 2D + ô cỏ trên bàn) | `ui/map/map.css`, `ui/play/base.css` |
 | `img/play/` | HUD màn chơi: nền đồng cỏ, thanh điểm, huy hiệu Moves, khung dock / ô thẻ, booster (khung + hammer / swap / moves), khung panel Deco | `ui/play/skin.css`, `ui/deco/deco.css`, `index.html` |
 | `img/result/` | Bảng kết quả thắng / thua: panel, mèo ló, sao, tim, tiêu đề, các nút | `ui/result/result.css`, `app/play-controller.js` |
 | `img/shop/` | Đồng xu, chồng xu, gói starter, nền shop (cũng là nền loading) | `ui/shop/shop.css`, `ui/shared/loading.css`, `ui/*` (icon xu), `app/menu-controller.js` |
