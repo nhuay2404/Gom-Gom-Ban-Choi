@@ -174,20 +174,24 @@
          vuốt ngang (4.5 thẻ mỗi màn, thẻ bị cắt mờ dần). Thẻ: món chưa xây, kiểu khác của món, tường, sàn, hoặc mèo theo tab. -->
     <div class="deco-dock">
       <div class="deco-tray">
-        <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">
-          <button role="tab" data-kind="cats" aria-label="Cats" title="Cats">🐾</button>
-          <button role="tab" data-zone="garden">Garden</button>
-          <button role="tab" data-zone="living">Living room</button>
-          <button role="tab" data-zone="bedroom">Bedroom</button>
-          <button role="tab" data-zone="kitchen">Kitchen</button>
-          <button role="tab" data-zone="bathroom">Bathroom</button>
-          <button role="tab" data-zone="backyard">Backyard</button>
-          <button role="tab" data-zone="kinder">Kindergarten</button>
+        <div class="deco-top">
+          <div id="deco-zone" class="zone-switch" role="tablist" aria-label="Area">
+            <button role="tab" data-kind="cats" aria-label="Cats" title="Cats"><i class="zi" data-z="cats"></i></button>
+            <button role="tab" data-zone="garden">Garden</button>
+            <button role="tab" data-zone="living">Living room</button>
+            <button role="tab" data-zone="bedroom">Bedroom</button>
+            <button role="tab" data-zone="kitchen">Kitchen</button>
+            <button role="tab" data-zone="bathroom">Bathroom</button>
+            <button role="tab" data-zone="backyard">Backyard</button>
+            <button role="tab" data-zone="kinder">Kindergarten</button>
+          </div>
+          <!-- Thu gọn / mở khay: thu gọn thì chỉ còn hàng tab, ẩn chip + hàng thẻ -->
+          <button id="deco-collapse" class="deco-collapse" aria-expanded="true" aria-label="Collapse item bar" title="Collapse"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
         </div>
         <div id="deco-kinds" class="deco-kinds" role="tablist" aria-label="Item type">
-          <button role="tab" data-key="furniture">Furniture</button>
-          <button role="tab" data-key="walls">Walls</button>
-          <button role="tab" data-key="floors">Floors</button>
+          <button role="tab" data-key="furniture"><i class="ci"></i><span>Furniture</span></button>
+          <button role="tab" data-key="walls"><i class="ci"></i><span>Walls</span></button>
+          <button role="tab" data-key="floors"><i class="ci"></i><span>Floors</span></button>
         </div>
         <div id="deco-cards-wrap" class="deco-cards-wrap">
           <div id="deco-cards" class="deco-cards" role="list" aria-label="Items"></div>

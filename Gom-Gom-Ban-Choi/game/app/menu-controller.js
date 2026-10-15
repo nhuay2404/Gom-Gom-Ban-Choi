@@ -460,7 +460,7 @@ function renderDeco() {
   room3d?.setHighlights(decoLocked ? new Set() : fresh);
   $('deco-kinds').classList.toggle('off', decoTab === 'cats');
   $('deco-kinds').querySelectorAll('[data-key]').forEach(button => {
-    button.textContent = button.dataset.key === 'furniture' ? 'Furniture' : ZONES[deco.zone].cats[button.dataset.key];
+    button.querySelector('span').textContent = button.dataset.key === 'furniture' ? 'Furniture' : ZONES[deco.zone].cats[button.dataset.key];
     button.classList.toggle('on', decoTab === button.dataset.key);
     button.setAttribute('aria-selected', decoTab === button.dataset.key);
   });
@@ -525,11 +525,20 @@ function stripEntries(deco) {
   return [...bases, ...variants];
 }
 // Thẻ bị cắt ở mép nào thì mép đó có dải mờ phủ lên (CSS .deco-cards-wrap.more-left / .more-right)
+// Chỉ hiện khi đã kéo qua (đứng yên ở đầu hàng thì không có dải mờ).
 function updateCardsFade() {
-  const cards = $('deco-cards'), wrap = $('deco-cards-wrap');
-  wrap.classList.toggle('more-left', cards.scrollLeft > 4);
-  wrap.classList.toggle('more-right', cards.scrollLeft + cards.clientWidth < cards.scrollWidth - 4);
+  const cards = $('deco-cards'), wrap = $('deco-cards-wrap'), moved = cards.scrollLeft > 4;
+  wrap.classList.toggle('more-left', moved);
+  wrap.classList.toggle('more-right', moved && cards.scrollLeft + cards.clientWidth < cards.scrollWidth - 4);
 }
+// Thu gọn khay: chỉ còn hàng tab
+$('deco-collapse').addEventListener('click', () => {
+  playSound('pick');
+  const tray = document.querySelector('.deco-tray'), collapsed = tray.classList.toggle('collapsed');
+  $('deco-collapse').setAttribute('aria-expanded', !collapsed);
+  $('deco-collapse').setAttribute('aria-label', collapsed ? 'Expand item bar' : 'Collapse item bar');
+  $('deco-collapse').title = collapsed ? 'Expand' : 'Collapse';
+});
 $('deco-cards').addEventListener('scroll', updateCardsFade, { passive: true });
 function clearPreview() {
   if (!popPreview) return;
@@ -1153,7 +1162,8 @@ const isZoneOpen = zone => areaOpen(getDeco(), zone) || devAllZones();
 const isGardenExpanded = () => areaOpen(getDeco(), 'garden2') || devAllZones();
 const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
 // Hàng tab ở khay đáy: nút mèo + mỗi khu đã mở một nút biểu tượng; khu đang chọn xanh lá, kèm số món đã xây / tổng.
-const ZONE_ICON = { garden: '🌳', living: '🛋️', bedroom: '🛏️', kitchen: '🍳', bathroom: '🛁', backyard: '🏊', kinder: '🏫' };
+// Biểu tượng tab là mặt nạ ảnh (ui/deco/img/tab-*.png tách từ Figma, deco.css `.zi`), tô màu theo trạng thái; khu chưa có trong thiết kế dùng hình đặc cùng kiểu.
+const zoneIcon = zone => `<i class="zi" data-z="${zone}"></i>`;
 function renderZoneSwitch() {
   const current = getDeco().zone;
   document.querySelectorAll('#deco-zone button').forEach(button => {
@@ -1168,7 +1178,7 @@ function renderZoneSwitch() {
     button.setAttribute('aria-label', ZONES[zone].name);
     button.title = ZONES[zone].name;
     const [built, total] = open ? builtCount(getDeco(), zone) : [0, 0];
-    button.innerHTML = `${ZONE_ICON[zone]}${on ? `<small>${built}/${total}</small>` : ''}`;
+    button.innerHTML = `${zoneIcon(zone)}${on ? `<small>${built}/${total}</small>` : ''}`;
     // Khu chưa mở khoá (chưa trả xu mở khu): chưa hiện.
     button.hidden = !open;
   });
@@ -1178,9 +1188,8 @@ function renderZoneSwitch() {
 // Hàng chọn khu ở Deco: hiện tối đa 3 khu, khu mở sau đó vuốt ngang để xem; tự cuộn tới khu đang chọn.
 // Lúc Deco còn ẩn thì chưa đo được nút: đo lại khi hàng chọn khu hiện ra / đổi cỡ.
 new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
-// PC: giữ chuột trái rồi kéo để cuộn ngang hàng chọn khu (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm chọn khu.
-{
-  const bar = $('deco-zone');
+// PC: giữ chuột trái rồi kéo để cuộn ngang hàng tab khu và hàng thẻ (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm.
+function dragScroll(bar) {
   let drag = null;
   bar.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -1205,9 +1214,14 @@ new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
     drag = null;
   });
 }
+dragScroll($('deco-zone'));
+dragScroll($('deco-cards'));
 function fitZoneSwitch() {
   const bar = $('deco-zone'), on = [...bar.children].find(button => !button.hidden && button.classList.contains('on'));
-  if (on && on.offsetWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+  // Chỉ cuộn khi khu đang chọn nằm ngoài khung nhìn; còn lại giữ sát trái như thiết kế
+  if (!on || !on.offsetWidth) return;
+  const left = on.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft;
+  if (left < bar.scrollLeft || left + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = left - 12;
 }
 
 // ===== Mở khu: thẻ "khu kế tiếp" ở Deco + bảng mở khu (track 3 bước kiểu Idle Theme Park: đủ màn → tiêu xu vào decor → khánh thành) =====
