@@ -38,12 +38,9 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `server.mjs` | Máy chủ tĩnh tối giản, chỉ dùng Node.js, không phụ thuộc thư viện nào |
 | `Choi-Gom-Gom.bat` | Trình chạy cho Windows |
 | `Choi-Gom-Gom.command` | Trình chạy cho macOS |
-| `tools/simulate-levels.mjs` | Bot chơi thử 10 màn để cân độ khó: `node tools/simulate-levels.mjs [số ván] [--sweep]` |
+| `tools/simulate-levels.mjs` | Bot chơi thử mọi màn để cân độ khó: `node tools/simulate-levels.mjs [số ván] [--sweep] [--no-effects]` |
 | `tai-lieu/4-Thiet-ke-10-man-Rotate.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
-| `tai-lieu/1-Dac-ta-thiet-ke-va-trien-khai.*` | Đặc tả gameplay, UI, VFX, vật phẩm, progression. Có bản Markdown, Word và PDF |
-| `tai-lieu/2-He-thong-do-kho.md` | Cách hệ thống độ khó hoạt động: cơ chế, chỉ số, cổng kiểm tra, quy trình bảo trì, nhật ký quyết định |
-| `tai-lieu/3-Bao-cao-curve-20-man.md` | Số liệu 20 màn, sinh tự động từ dữ liệu đã đóng băng |
-| `tai-lieu/bieu-do/` | Sáu biểu đồ SVG đi kèm báo cáo |
+| `tai-lieu/5-Do-kho-theo-profile-nguoi-choi.md` | Độ khó thích ứng theo profile người chơi (DDA) |
 
 ### Bên trong `game/`
 
@@ -55,7 +52,7 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `app/main.js` | Điểm vào: nối hai luồng điều khiển bên dưới rồi mở game vào Home |
 | `app/menu-controller.js` | Luồng menu: bản đồ màn, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt (âm thanh, ngày / đêm), nút dev |
 | `app/shared.js` | Dùng chung cho hai luồng: ví xu, kho booster, toast |
-| `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
+| `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, xả lượt thưởng khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
 | `favicon.svg` | Icon tab trình duyệt |
 | **`ui/`** | **Thiết kế giao diện 2D** |
 | `ui/shared/` | Dùng chung các hub: `base.css` (biến màu, khung màn hình, toast), `nav.css` (thanh tab), `wallet.css` (hàng ví), `settings.css`, `loading.css`, `tutorial.css`; ảnh `img/` (mèo `cats/`, tay hướng dẫn `tutorial/`, `farm-pop/`: nền hồng, mũi tên xoay, sprite trang trí) |
@@ -83,24 +80,10 @@ Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cươ
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 
-Có 10 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `tai-lieu/4-Thiet-ke-10-man-Rotate.md`.
+Có 100 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `tai-lieu/4-Thiet-ke-10-man-Rotate.md`.
 
 Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
-
-## Luật chơi bản gốc (theo tài liệu thiết kế)
-
-Các tài liệu trong `tai-lieu/` mô tả bản Gom Gom gốc (mã nguồn ở thư mục `gomgom`), không phải bản Rotate trong `game/`. Tóm tắt bản gốc:
-
-Gom bốn thẻ cùng chủ đề nằm liền nhau trên một hàng ngang. Bàn có 4 cột và 5 hàng. Chỉ lấy được thẻ trên cùng mỗi cột nguồn. Cụm 2 đến 3 thẻ di chuyển nguyên khối. Mỗi lần chuyển thẻ tốn một lượt; thả sai không mất lượt.
-
-Không có bộ bài để gửi thẻ đi, nên **bàn kín mà chưa gom hết nhóm là ván kết thúc**. Luôn chừa chỗ: dọn xong một nhóm là mở lại cả khoảng trống đó.
-
-Có hai ô gửi tạm miễn phí, mỗi ô giữ một thẻ lẻ. Hoàn tác và gợi ý có số lần miễn phí theo từng màn; hết lượt miễn phí thì hoàn tác trả lại bàn nhưng không trả lượt, còn gợi ý tốn một lượt.
-
-Hành trình có 20 màn chia bốn chương. Màn 14 và 19 gắn nhãn Khó, màn 20 gắn nhãn Siêu khó. Sáu màn mẫu ở cuối danh sách chọn màn là bản thử nghiệm cũ, giữ lại để kiểm thử, không thuộc hành trình.
 
 ## Lưu ý
 
 Quảng cáo trong game là **mô phỏng cục bộ ba giây**, chưa nối SDK thật, không có giao dịch nào. Tiến độ chơi lưu trong trình duyệt của máy đó; đổi máy hoặc xoá dữ liệu trình duyệt là mất.
-
-Mã nguồn, bộ kiểm thử và các script hiệu chỉnh độ khó nằm ở thư mục `gomgom` bên cạnh, không đóng gói vào đây.

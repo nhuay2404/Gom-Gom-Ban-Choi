@@ -307,7 +307,6 @@ export function setSound(on) {
   if (on) playSound('merge', 3); // bật lên thì kêu một tiếng để biết
 }
 // Nhạc nền: bật / tắt riêng, không ảnh hưởng tiếng hiệu ứng.
-export const musicOn = () => musicEnabled;
 export function setMusic(on) {
   musicEnabled = on;
   writeText(MUSIC_KEY, on ? 'on' : 'off');

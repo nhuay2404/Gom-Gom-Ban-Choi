@@ -927,7 +927,6 @@ const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.value
 // ---------- Cảnh ----------
 // Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...).
 export const STAGE_SIZE = 10;
-export const stageOf = index => Math.floor(index / STAGE_SIZE);
 
 export function createMapWorld(container, { onPick, onClaim } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });

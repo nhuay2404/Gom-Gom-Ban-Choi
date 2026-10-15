@@ -184,18 +184,6 @@ async function startRecording(b, name) {
   };
 }
 
-// Kéo camera để điểm 3D (x, z) về (180, y) trên màn hình
-const centerOn = async (b, x, z, y = 330, iters = 3) => {
-  for (let i = 0; i < iters; i++) {
-    const p = await b.eval(`JSON.stringify(__scr(${x}, 0, ${z}))`).then(JSON.parse);
-    const dx = 180 - p.sx, dy = y - p.sy;
-    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-    const k = Math.min(1, 200 / Math.hypot(dx, dy));
-    await b.drag(180, 560, 180 + dx * k, 560 + dy * k, 420);
-    await sleep(350);
-  }
-};
-
 const takes = {
   // Xem thử bố cục Deco
   async look(b) {

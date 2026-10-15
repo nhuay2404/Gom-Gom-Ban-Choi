@@ -39,16 +39,6 @@ async function run(record) {
   const mark = kind => events.push({ t: +now().toFixed(2), kind });
   const ambient = a => b.eval(`document.querySelector('#ambient-toggle [data-ambient=${a}]')?.click()`);
   const openArea = () => { mark('unlock'); return b.eval(`document.getElementById('area-next').click()`); };
-  // Kéo camera để điểm 3D (toạ độ thế giới x, z) về giữa khung
-  const centerOn = async (x, z, iters = 2) => {
-    for (let i = 0; i < iters; i++) {
-      const p = await b.eval(`JSON.stringify(__scr(${x}, 0, ${z}))`).then(JSON.parse);
-      const dx = 180 - p.sx, dy = 340 - p.sy;
-      if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
-      const k = Math.min(1, 200 / Math.hypot(dx, dy));
-      await h.drag(50, 250, 50 + dx * k, 250 + dy * k, 420);
-    }
-  };
 
   // ================= 0–3: HOOK =================
   h.caption('This kitty has<br>NOTHING to do… 🥺', { top: 12, ms: 2700 });

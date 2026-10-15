@@ -47,7 +47,6 @@ const rectOf = target => {
   return { left, top, width: Math.max(...list.map(r => r.right)) - left, height: Math.max(...list.map(r => r.bottom)) - top };
 };
 
-export const decoTourActive = () => !!running;
 export const waitFor = (test, timeout = 4000) => new Promise(resolve => {
   const start = performance.now(), tick = () => (test() || performance.now() - start > timeout ? resolve() : setTimeout(tick, 60));
   tick();

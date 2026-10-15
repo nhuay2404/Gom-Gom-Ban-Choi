@@ -4,7 +4,7 @@
 // với bố trí thiết kế, rồi chỉ giữ bố trí lệch nhẹ đúng khoảng của từng mức (BANDS, điểm % tỉ lệ thắng):
 //   -2 dễ hơn rõ · -1 dễ hơn chút · 0 khác chỗ mà độ khó như thiết kế (cho người chơi chán) · +1 khó hơn chút · +2 khó hơn rõ.
 // Mỗi mức giữ tối đa KEEP bố trí để người chơi gặp lại màn không thấy y hệt. Hàng thẻ (tuneDealer) cộng thêm lúc chơi.
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { LEVELS } from '../game/gameplay/levels.mjs';
 import { isAdaptive, nudgeCats, mulberry32, hashOf } from '../game/gameplay/adaptive.mjs';
 import { holdUnlocked } from '../game/gameplay/tuning.mjs';

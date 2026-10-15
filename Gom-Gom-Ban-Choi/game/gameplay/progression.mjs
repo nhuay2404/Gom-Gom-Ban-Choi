@@ -12,7 +12,6 @@ export function saveProgress(progress) { writeJSON(SAVE_KEYS.progress, progress)
 // Màn mở tới: số màn đã qua + 1 (tối đa số màn có).
 export const unlockedCount = progress => Math.min(LEVELS.length, progress.stars.filter(Boolean).length + 1);
 export const levelsCleared = progress => progress.stars.filter(Boolean).length;
-export const totalStars = progress => progress.stars.reduce((sum, n) => sum + (n || 0), 0);
 
 // Xu thưởng của một màn (lần thắng đầu), tăng dần theo màn — công thức + hệ số ở economy.mjs.
 // rewardFor nhận hệ số rời để Level Editor (tab Economy) thử số khác mà vẫn dùng đúng công thức game.
