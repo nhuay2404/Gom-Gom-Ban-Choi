@@ -515,11 +515,37 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 .fx-pounce{background:radial-gradient(circle,#fff8 0,#ffd93d99 60%,transparent 75%)}
 .fx-yarn{background:radial-gradient(circle,#fff 0,#ff8fb1cc 55%,transparent 75%)}
 .fx-cross{background:radial-gradient(circle,#fff 0,#6bd8ffcc 55%,transparent 75%)}
+/* Claw Cross: 3 vệt cào chéo, quẹt từ trên-phải xuống dưới-trái (play/match-fx.js clawSlash) */
+.claw-slash{position:absolute;z-index:6;width:0;height:0;pointer-events:none;transform:translateZ(60px)}
+.claw-slash i{position:absolute;left:calc(var(--s) * -2.4);top:calc(var(--s) * -.17);width:calc(var(--s) * 4.8);height:calc(var(--s) * .34);
+    filter:drop-shadow(0 0 2px #0a5fae) drop-shadow(0 0 8px #1e9bff) drop-shadow(0 0 16px #6bd8ff);rotate:-38deg;transform-origin:100% 50%;scale:0 1;animation:claw-swipe .5s cubic-bezier(.2,.8,.3,1) both}
+.claw-slash i::before{content:"";position:absolute;inset:0;clip-path:polygon(0 50%,12% 20%,55% 0,100% 50%,55% 100%,12% 80%);
+  background:linear-gradient(90deg,#1e9bff00,#1e9bff 12%,#9fe2ff 30%,#fff 50%,#fff 66%,#9fe2ff 82%,#1e9bff 94%,#1e9bff00)}/* clip ở lớp con để quầng sáng (filter của i) không bị cắt */
+.claw-slash i:nth-child(1){translate:calc(var(--s) * -.2) calc(var(--s) * -.62)}
+.claw-slash i:nth-child(2){animation-delay:.07s}
+.claw-slash i:nth-child(3){translate:calc(var(--s) * .2) calc(var(--s) * .62);animation-delay:.14s}
+@keyframes claw-swipe{0%{scale:0 .6;opacity:1}40%{scale:1 1;opacity:1}75%{scale:1 1;opacity:1}100%{scale:1 .2;opacity:0}}
+/* Claw Cross: tia sáng từ ô tâm bắn tới từng mèo cùng màu (play/match-fx.js gatherTo): vươn dài ra trong .18s, sáng một nhịp rồi tắt */
+.claw-beam{position:absolute;z-index:6;height:14px;margin-top:-7px;pointer-events:none;transform-origin:0 50%;transform:translateZ(30px);
+  filter:drop-shadow(0 0 3px #3fb4ff) drop-shadow(0 0 9px #6bd8ffcc);animation:claw-beam-fade .4s ease-in var(--d, 0ms) both}
+/* thân tia: gốc mờ dần, đầu bo tròn; lõi trắng viền xanh; vươn dài ra trong .18s */
+.claw-beam::before{content:"";position:absolute;inset:3px 0;transform-origin:0 50%;border-radius:999px;box-shadow:inset 0 0 0 1.5px #8fdcffaa;
+  background:linear-gradient(90deg,#8fdcff00,#8fdcff 18%,#e6f8ff 55%,#fff);animation:claw-beam-grow .12s cubic-bezier(.3,.7,.4,1) var(--d, 0ms) both}
+/* đốm sáng chạy theo đầu tia rồi bừng lên lúc chạm mèo */
+.claw-beam::after{content:"";position:absolute;top:50%;left:0;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  background:radial-gradient(circle,#fff 35%,#bfefff 60%,#6bd8ff00 72%);animation:claw-beam-head .4s cubic-bezier(.3,.7,.4,1) var(--d, 0ms) both}
+@keyframes claw-beam-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes claw-beam-head{0%{left:0;scale:.6}30%{left:100%;scale:1}45%{left:100%;scale:1.8}100%{left:100%;scale:.4;opacity:0}}
+@keyframes claw-beam-fade{0%,40%{opacity:1}100%{opacity:0}}
+/* Call the Herd: vòng sáng toả ra cả bàn */
+.herd-wave{position:absolute;z-index:6;width:0;height:0;pointer-events:none;transform:translateZ(20px)}
+.herd-wave::before{content:"";position:absolute;left:calc(var(--s) * -.5);top:calc(var(--s) * -.5);width:var(--s);height:var(--s);border-radius:50%;
+  border:calc(var(--s) * .12) solid #e3c2ff;box-shadow:0 0 18px 6px #c77dff,inset 0 0 18px 6px #c77dff99;animation:herd-wave 1s ease-out both}
+@keyframes herd-wave{0%{scale:.2;opacity:1}70%{opacity:.8}100%{scale:12;opacity:0}}
+.solid-ghost{position:absolute;margin:0;pointer-events:none}
 .fx-herd{background:radial-gradient(circle,#fff 0,#c77dffcc 55%,transparent 75%)}
-.fx-leap{background:radial-gradient(circle,#fff 0,#f4868fcc 55%,transparent 75%)}
 @keyframes fx-flash{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1)}}
 .effect-banner{position:fixed;z-index:60;pointer-events:none;white-space:nowrap;font-size:32px;font-weight:900;line-height:1;color:#fff;-webkit-text-stroke:6px #7a3b8f;paint-order:stroke fill;text-shadow:0 4px 0 #4a1f5c}
-.leap-paw{position:absolute;z-index:6;width:26px;height:26px;pointer-events:none;background:radial-gradient(circle at 50% 70%,#f4868f 0 30%,transparent 31%),radial-gradient(circle at 22% 30%,#f4868f 0 13%,transparent 14%),radial-gradient(circle at 50% 18%,#f4868f 0 13%,transparent 14%),radial-gradient(circle at 78% 30%,#f4868f 0 13%,transparent 14%);filter:drop-shadow(0 2px 0 #6b2416)}
 /* Bonus Time (xả lượt khi thắng): chữ + thanh điểm dải cầu vồng chạy lặp. Dải chuyển màu mượt, màu đầu = màu cuối,
    ô lặp đúng 240px theo chiều ngang nên dời 240px là liền mạch, không thấy mối nối. */
 .bonus-fill,body.bonus-time .fg-score .progress-fill{
@@ -552,14 +578,39 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 .fat-cat{position:absolute;left:0;top:0;width:calc(200% + var(--gap, 6px));height:calc(200% + var(--gap, 6px));display:grid;place-items:center;pointer-events:none;
   border-radius:var(--rad, 12px);background:#f3dfb4;box-shadow:inset 0 calc(var(--c, 60px) * .06) 0 #e2c48c,inset 0 0 0 1px #ead29f}
 .cell.grass .fat-cat{background:none;box-shadow:none}
-.fat-cat>.cat{width:136%;height:136%;margin-top:-18%}/* ảnh mèo có lề trong: phóng to cho thân phủ kín khối 2×2 */
-.fat-cat:is(.sleep,.drowsy) .cat :is(.calm,.blush){opacity:0}/* như AFK: mặt ngủ / lim dim thay mặt thường, không chồng lên */
-.fat-cat.sleep .cat .afk-sleep,.fat-cat.drowsy .cat .afk-sleepy{opacity:1;translate:0 0}
-@media(prefers-reduced-motion:no-preference){.fat-cat.sleep .cat .afk-z path{animation:afk-z 2.2s ease-in-out infinite}
-  .fat-cat.sleep .cat .afk-z .z2{animation-delay:.7s}.fat-cat.sleep .cat .afk-z .z3{animation-delay:1.4s}}
-.fat-pips{position:absolute;top:-22%;left:50%;translate:-50% 0;display:flex;gap:5px;z-index:2;padding:3px 6px;border-radius:999px;background:#fff8e8;box-shadow:0 2px 0 #6b241640}
+.fat-bob{position:absolute;inset:-4%;transform-origin:50% 92%}
+.fat-bob>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.fat-bob>.fat-body{filter:drop-shadow(0 4px 2px #5a331640)}
+/* 3 mặt chồng nhau, chỉ mặt đúng data-mood hiện; đổi mặt mờ dần .22s */
+.fat-bob>.fat-face{opacity:0;transition:opacity .22s ease}
+.fat-bob[data-mood="sleep"]>.f-sleep,.fat-bob[data-mood="annoyed"]>.f-annoyed,.fat-bob[data-mood="happy"]>.f-happy{opacity:1}
+/* zzz: chỉ khi đang ngủ, ba chữ z nối nhau bay chéo lên phải rồi tan */
+.fat-zzz{position:absolute;right:2%;top:2%;width:0;height:0;pointer-events:none;opacity:0;transition:opacity .3s}
+.fat-cat:has(.fat-bob[data-mood="sleep"]) .fat-zzz{opacity:1}
+.fat-zzz i{position:absolute;left:0;top:0;font:900 italic 15px/1 'Baloo 2',sans-serif;color:#fff;-webkit-text-stroke:3px #c86a7c;paint-order:stroke;opacity:0}
+.fat-zzz i:nth-child(2){font-size:19px}.fat-zzz i:nth-child(3){font-size:24px}
+@media(prefers-reduced-motion:no-preference){
+  /* thở: phồng nhẹ theo chiều ngang, xẹp theo chiều dọc, chân đứng yên */
+  .fat-bob{animation:fat-breathe 2.8s ease-in-out infinite}
+  .fat-bob[data-mood="annoyed"]{animation:fat-huff .35s ease-in-out 3}
+  .fat-bob[data-mood="happy"]{animation:fat-bounce .45s ease-in-out infinite}
+  .fat-zzz i{animation:fat-z 2.4s ease-out infinite}
+  .fat-zzz i:nth-child(2){animation-delay:.8s}.fat-zzz i:nth-child(3){animation-delay:1.6s}}
+@media(prefers-reduced-motion:reduce){.fat-zzz i{opacity:1}.fat-zzz i:nth-child(2){translate:10px -14px}.fat-zzz i:nth-child(3){translate:22px -32px}}
+@keyframes fat-breathe{0%,100%{scale:1 1}50%{scale:1.025 .975}}
+@keyframes fat-huff{0%,100%{scale:1;rotate:0deg}30%{scale:1.05 .95;rotate:-2deg}70%{scale:.97 1.03;rotate:2deg}}
+@keyframes fat-bounce{0%,100%{translate:0 0}50%{translate:0 -6%}}
+@keyframes fat-z{0%{opacity:0;translate:0 0;scale:.5}20%{opacity:1}100%{opacity:0;translate:26px -40px;scale:1.1}}
+.fat-pips{position:absolute;top:-12%;left:50%;translate:-50% 0;display:flex;gap:5px;z-index:2;padding:3px 6px;border-radius:999px;background:#fff8e8;box-shadow:0 2px 0 #6b241640}
 .fat-pips i{width:11px;height:11px;border-radius:50%;background:#e9d7b5;box-shadow:inset 0 0 0 2px #6b241655}
 .fat-pips i.on{background:#ffcf3d;box-shadow:inset 0 0 0 2px #b47a12}
 .fat-cat.fat-poke{animation:fat-poke .55s cubic-bezier(.3,1.6,.5,1)}
 @keyframes fat-poke{0%{scale:1}25%{scale:1.08 .92}50%{scale:.95 1.06;rotate:-4deg}75%{rotate:3deg}100%{scale:1;rotate:0deg}}
 .fat-cat.fat-ghost{z-index:6}
+/* Phép thuật quanh mèo bị hiệu ứng nổ xoá (play/match-fx.js liftAway): đốm sáng bay vòng quanh thân + quầng tím mờ.
+   Đặt ở tầm cao của mèo đang bị nhấc (.lifted .cat translateZ 90px, dịch lên nửa thân). */
+.merge-ghost .magic{position:absolute;left:50%;top:15%;width:0;height:0;transform:translateZ(92px) rotateX(calc(var(--tilt, 0deg) * -1));transform-style:preserve-3d;pointer-events:none}
+.magic-halo{position:absolute;left:-80px;top:-80px;width:160px;height:160px;border-radius:50%;background:radial-gradient(closest-side,#d9b8ff99,#9fd8ff40 55%,transparent);animation:magic-halo .9s ease-out .1s both;translate:0 0 -4px}
+@keyframes magic-halo{0%{scale:.3;opacity:0}30%{scale:1;opacity:1}100%{scale:1.4;opacity:0}}
+.magic-orb{position:absolute;left:-6px;top:-6px;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,#fff 25%,var(--c) 60%,transparent 72%);
+  box-shadow:0 0 6px 2px var(--c),0 0 14px 4px color-mix(in srgb,var(--c) 50%,transparent)}

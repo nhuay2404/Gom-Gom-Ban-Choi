@@ -288,4 +288,9 @@ body.card-holding,body.card-holding *{touch-action:none}
 .fg-panel .fg-goal.two strong{font-size:calc(22 * var(--u))}
 .fg-panel .fg-goal.two strong:not([hidden])+.fg-goal-icon{margin-left:calc(4 * var(--u))}
 /* Ô Goal: mèo béo (mục tiêu "đánh thức mèo béo", play/hud.js GOAL_KINDS.fat) dùng chính hình mèo, thu nhỏ vừa ô icon */
-.fg-panel .fg-goal-icon .goal-fat,.fg-panel .fg-goal-icon .goal-fat .cat{display:block;width:100%;height:100%}
+.fg-panel .fg-goal-icon .goal-fat{position:relative;display:block;width:100%;height:100%}
+.fg-panel .fg-goal-icon .goal-fat .fat-bob{inset:0;animation:none}
+.fg-panel .fg-goal-icon .goal-fat .fat-zzz{display:none}
+/* Bàn nghiêng 3D (preserve-3d) bỏ qua z-index, lớp phẳng (cỏ tràn sang ô bên, thùng, mèo béo) vẽ sau trong DOM đè lên chân mèo đứng
+   chạm mặt bàn: nâng ô mèo khỏi mặt bàn vài px để mèo luôn nằm trên lớp phẳng. */
+.board > .cell.locked:not(.drop){transform:translateZ(4px)}

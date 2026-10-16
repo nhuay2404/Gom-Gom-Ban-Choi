@@ -7,6 +7,7 @@ Mọi file ảnh / tiếng game dùng nằm ở đây (code và CSS chỉ tham c
 | Thư mục | Nội dung | Dùng ở |
 |---|---|---|
 | `img/cats/` | 6 giống mèo (orange, gray, white, tuxedo, siamese, tabby): `<giống>-body.png` thân không mặt + 6 mặt `calm happy cute sleepy chew angry` (256 px, Figma) | `ui/cat-art.mjs` (bàn chơi), `deco/cats/room-cats.mjs` (mèo 3D) |
+| `img/cats/fat/` | Mèo béo 2×2: `body.png` thân + mặt `face-sleep` (mặc định) / `face-annoyed` (bị gom sát bên) / `face-happy` (đủ lần đánh thức, lăn đi), 384 px | `play/board-view.js` (paintFatCat), `play/match-fx.js` (animateFat), `play/hud.js` (icon Goal) |
 | `img/dogs/` | 6 giống chó (shiba, dalmatian, rottweiler, pug, golden, malamute), cùng khuôn mèo + mặt `sleep` | `ui/cat-art.mjs` (bộ chó từ màn 30) |
 | `img/tutorial/` | Bàn tay hướng dẫn: `hand-tap`, `hand-drag`, cử chỉ `gesture-pinch`, `gesture-rotate` | `play/tutorial.js`, `app/deco-tour.js`, `index.html`, `tools/ads` |
 | `img/farm-pop/` | Nền hồng chung, sprite trang trí (+ mask), mũi tên xoay | `ui/shared/base.css`, `ui/play/base.css` |
