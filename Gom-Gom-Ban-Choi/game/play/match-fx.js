@@ -3,12 +3,12 @@
 import { mergeTarget } from '../core/board-rules.mjs';
 import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { DRAG, EFFECTS } from '../data/tuning.mjs';
-import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC } from '../ui/board-art.mjs';
+import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot, scoreTier } from './score-bar.js';
-import { setFatMood, fatAnnoyedUntil, cageUp, uncage } from './board-view.js';
+import { setFatMood, fatAnnoyedUntil, cageUp, uncage, cageHeld } from './board-view.js';
 
 // Anim một lượt đặt thẻ đã chốt state (gom, thùng, chuồng, cỏ, khen, hiệu ứng). Dùng cho lượt người chơi và lượt xả sau khi thắng.
 export function animateTurn(turn) {
@@ -355,6 +355,8 @@ function flyGrass(cleaned, delay) {
 // Ô chuồng đã được vẽ lại theo trạng thái mới (bớt ổ khóa / hết chuồng), anim chạy chồng lên sau khi cụm gom xong.
 function rattleCages(match, delay) {
   if (reduceMotion.matches || (!match.caged?.length && !match.freed?.length)) return;
+  // Gọi trước khi vẽ lại bàn: ô được thả vẫn vẽ lồng đóng tới lúc anim mở.
+  match.freed.forEach(index => cageHeld.add(index));
   setTimeout(() => {
     const layer = fxLayer();
     match.caged.forEach(index => {
@@ -364,12 +366,7 @@ function rattleCages(match, delay) {
       cell.addEventListener('animationend', () => cell.classList.remove('cage-hit'), { once: true });
       flyBits(layer, cell, 'cage-lock', 1);
     });
-    match.freed.forEach(index => {
-      const cell = cellEl(index);
-      if (!cell) return;
-      flyBits(layer, cell, 'cage-lock', 1);
-      openCage(layer, cell);
-    });
+    match.freed.forEach(openCage);
   }, delay);
 }
 
@@ -390,6 +387,7 @@ export function flyBits(layer, cell, className, count) {
 // Nạp sẵn ảnh hộp mở / lồng mở để lúc đổi ảnh không bị trống một khung.
 new Image().src = CRATE_OPEN_SRC;
 new Image().src = CAGE_OPEN_SRC;
+new Image().src = CAGE_DOOR_SRC;
 // Bật mở mượt: nén xuống lấy đà, ảnh "mở" hiện dần chồng lên ảnh "đóng" trong lúc bật lên, giữ một nhịp, rồi bay nhẹ lên + mờ dần + khói.
 async function openUp(ghost, openSrc) {
   const shut = ghost.querySelector('img');
@@ -409,14 +407,62 @@ async function openUp(ghost, openSrc) {
   await ghost.animate([{ scale: 1, opacity: 1, translate: '0 0' }, { scale: .7, opacity: 0, translate: '0 -12%' }],
     { duration: 320, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {});
 }
-// Lồng bật cửa khi mèo được thả: bóng lồng đóng tại ô, mở cửa (openUp) rồi tan; mèo thật bên dưới đã ra khỏi lồng.
-function openCage(layer, cell) {
-  const ghost = document.createElement('span');
-  ghost.className = 'cage-ghost';
-  ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
-  ghost.innerHTML = `<img src="assets/img/board/cage.png" alt="">`;
-  layer.append(ghost);
-  openUp(ghost, CAGE_OPEN_SRC).then(() => ghost.remove());
+// Lồng mở khi con vật được thả. Ô thật vẫn vẽ lồng đóng (cageHeld) tới lúc này; anim chạy ngay trong khung .cage-box của ô
+// (thân lồng -> con vật -> khung trước -> cánh cửa; bàn là cảnh 3D nên lớp hiệu ứng riêng không xếp xen được).
+// Khung trước đổi sang bản cửa mở (đã bỏ cánh cửa) + cánh cửa tách riêng, rồi CÙNG LÚC:
+// - cánh cửa bung ra, rời khỏi lồng, xoay và rơi xuống, mờ dần;
+// - thân lồng + khung trước thu lại cùng nhau, mờ dần (ease-out: chuyển động ngay từ đầu);
+// - con vật bật to lên (được thả) rồi về đúng chỗ / cỡ thường của ô (đo thật: cuối anim khớp ô, rút khỏi khung không giật).
+const CAGE_OPEN_MS = 520;
+const PET_POP = 1.18;
+function openCage(index) {
+  const cell = cellEl(index);
+  const release = () => {
+    cageHeld.delete(index);
+    const now = cellEl(index);
+    if (!now?.querySelector('.cage-box') || state.board[index]?.cage) return;
+    // anim của con vật có fill: forwards -> phải huỷ trước khi rút ra, không thì nó giữ cỡ / chỗ cuối anim ở ô thường (lỗi cũ: to hơn con khác)
+    now.querySelectorAll('.cage-box > *').forEach(el => el.getAnimations().forEach(anim => anim.cancel()));
+    uncage(now);
+    now.classList.remove('caged', 'cage-opening');
+  };
+  const pet = cell?.querySelector('.cage-box > .cat');
+  if (!pet || state.board[index]?.cage) return release();
+  // Đo chỗ con vật khi ra khỏi lồng (rút ra, đo, cất lại trong cùng một khung hình nên không thấy chớp).
+  const caged = pet.getBoundingClientRect();
+  uncage(cell);
+  cell.classList.remove('caged');
+  const free = cell.querySelector(':scope > .cat').getBoundingClientRect();
+  cell.classList.add('caged', 'cage-opening');
+  cageUp(cell);
+  // Vừa được thả: mặt vui ngay từ lúc lồng bung, giữ thêm một nhịp sau khi ra khỏi lồng (.cheered: chỉ đổi mặt, không nhảy chồng lên anim thả).
+  clearTimeout(cell.petTimer);
+  cell.classList.remove('idle-cute', 'grumpy', 'grumpy-chew');
+  cell.classList.add('petted', 'cheered');
+  cell.petTimer = setTimeout(() => cell.classList.remove('petted', 'cheered'), CAGE_OPEN_MS + 1000);
+  const box = cell.querySelector('.cage-box'), boxRect = box.getBoundingClientRect();
+  const kx = box.offsetWidth / boxRect.width, ky = box.offsetHeight / boxRect.height;
+  const inBox = cell.querySelector('.cage-box > .cat'), front = cell.querySelector('.cage-front'), back = cell.querySelector('.cage-back');
+  front.src = CAGE_OPEN_SRC;
+  front.insertAdjacentHTML('afterend', `<img class="cage-door" src="${CAGE_DOOR_SRC}" alt="" draggable="false">`);
+  const door = cell.querySelector('.cage-door');
+  const dx = (free.left - caged.left) * kx, dy = (free.top - caged.top) * ky, k = free.width / caged.width;
+  const opts = { duration: CAGE_OPEN_MS, fill: 'forwards' };
+  // phóng quanh tâm con vật: bù phần dịch do transform-origin 0 0
+  const w = inBox.offsetWidth, h = inBox.offsetHeight, pop = k * PET_POP;
+  inBox.animate([
+    { translate: '0 0', scale: 1 },
+    { translate: `${dx * .5 - w * (pop - 1) / 2}px ${dy * .5 - h * (pop - 1) * .8}px`, scale: pop, offset: .4, easing: 'ease-in-out' },
+    { translate: `${dx}px ${dy}px`, scale: k },
+  ], { ...opts, easing: 'ease-out' });
+  door.animate([
+    { translate: '0 0', rotate: '0deg', opacity: 1, easing: 'ease-out' },
+    { translate: '-8% -6%', rotate: '-10deg', opacity: 1, offset: .25, easing: 'ease-in' },
+    { translate: '-14% 75%', rotate: '-35deg', opacity: 0 },
+  ], opts);
+  const shrink = [{ scale: 1, opacity: 1 }, { scale: .3, opacity: 0 }];
+  front.animate(shrink, { ...opts, easing: 'cubic-bezier(.2,.6,.35,1)' });
+  back.animate(shrink, { ...opts, easing: 'cubic-bezier(.2,.6,.35,1)' }).finished.then(release, release);
 }
 // Bóng hộp giữ nguyên chỗ cũ tới lúc gom xong, rung lên, bật nắp, giữ một nhịp rồi thu nhỏ biến mất + khói.
 export function breakCrates(indices, delay) {

@@ -11,11 +11,13 @@ export const METAL_SVG = '<img class="crate metal-block" src="assets/img/board/t
 
 // Lồng mèo (ảnh Figma): thân lồng nằm SAU mèo (thấy mèo bên trong), song sắt + ổ khoá đè TRƯỚC (gom sát bên là bẻ khoá, luật ở board-rules.mjs).
 // Một khung lồng dựng đứng phẳng chứa: thân lồng, (mèo được board-view.js cageUp chuyển vào giữa), song sắt — thứ tự trong khung là thứ tự DOM.
-// Lồng mở cửa: hiện một nhịp lúc mèo được thả (match-fx.js openCage).
+// Lớp trước khi cửa đã mở (cùng khung với cage-bars.png): dùng lúc mèo được thả (match-fx.js openCage).
 export function cageSvg() {
   return '<span class="cage-bars cage-box"><img class="cage-back" src="assets/img/board/cage-back.png" alt="" draggable="false"><img class="cage-front" src="assets/img/board/cage-bars.png" alt="" draggable="false"></span>';
 }
 export const CAGE_OPEN_SRC = 'assets/img/board/cage-open.png';
+// Cánh cửa lồng tách riêng (cắt từ bản cửa mở của Figma; cage-open.png là phần khung còn lại): rơi rời ra lúc mở lồng.
+export const CAGE_DOOR_SRC = 'assets/img/board/cage-door.png';
 // Icon chuồng cho bảng vào màn.
 export const CAGE_ICON_SVG = '<svg viewBox="0 0 256 234" aria-hidden="true"><image href="assets/img/board/cage.png" width="256" height="234"/></svg>';
 

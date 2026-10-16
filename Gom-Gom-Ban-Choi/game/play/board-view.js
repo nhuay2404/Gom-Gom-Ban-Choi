@@ -67,7 +67,8 @@ export function renderBoard() {
       cell.innerHTML = object.metal ? METAL_SVG : CRATE_SVG;
       return;
     }
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : ''}${grass ? ' grass' : ''}`;
+    const held = cageHeld.has(index) && object && !object.cage;
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : held ? ' caged' : ''}${grass ? ' grass' : ''}`;
     cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty${grass ? ', on grass' : ''}`
       : object.cage ? `Caged ${look(object.group).name}. Match next to it to break the lock` : `${object.name}${grass ? ', on grass' : ''}, locked`);
     if (grass) {
@@ -80,7 +81,7 @@ export function renderBoard() {
     if (!object) return;
     cell.style.setProperty('--group-color', look(object.group).color);
     addArt(cell, object);
-    if (object.cage) cageUp(cell);
+    if (object.cage || held) cageUp(cell);
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
       cell.classList.add('drop');
       cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
@@ -173,6 +174,8 @@ function petCat(cell) {
 
 // Lồng mèo: bàn là cảnh 3D (preserve-3d) nên z-index không xếp được mèo giữa thân lồng và song sắt; mèo được chuyển VÀO khung lồng
 // (dựng đứng, phẳng) nằm giữa hai lớp ảnh. uncage trả mèo ra ô rồi bỏ khung.
+// Ô vừa được thả khỏi lồng nhưng anim mở lồng chưa chạy (match-fx.js rattleCages): vẫn vẽ lồng đóng, không lộ con vật ra trước.
+export const cageHeld = new Set();
 export function cageUp(cell) {
   cell.insertAdjacentHTML('beforeend', cageSvg());
   const cat = cell.querySelector(':scope > .cat');
