@@ -221,6 +221,11 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   lúc chạy (tắt emissive / làm tối món không phải nguồn sáng) nhưng KHÔNG thay cho việc sửa model cho đúng.
 
 **Hiệu năng**
+- **Hoa / lá / tán cây dày (nhiều khối nhỏ lặp lại): dựng bằng lớp 2D, không dựng 3D** (người chơi yêu cầu, để giảm lag). Artist đưa tấm sprite
+  (lưới ô, nền trong suốt) → lưu `game/assets/img/deco/`, dùng `spriteSheet()` (`game/deco/render/sprite-sheet.mjs`): giữ khung 3D để ra dáng (gò lá, lõi
+  tán nhỏ, thân cây), rồi rải thật nhiều khóm sprite nhỏ chữ thập (`tuft`) theo đúng hình khối cũ (luống, mặt cầu). KHÔNG dùng một ảnh to cho cả bụi
+  / cây (người chơi bỏ: trông như tấm dán). Mép ngoài sprite không vượt khối cũ (QC va chạm với món bên cạnh). Mẫu: oải hương + cẩm tú cầu
+  (flower-garden.mjs), tán cây xích đu (garden-expanded.mjs `bigTree`).
 - Cầu / trụ dùng helper `ball()` / `cyl()` (số cạnh theo kích thước); nhiều khối nhỏ giống nhau dùng InstancedMesh;
   cụm trang trí tĩnh gộp bằng `mergeStatic()`.
 - `roundedBox()` tự chọn số nấc bo theo bán kính (≤ 2.5 cm: 1 nấc, ≤ 5 cm: 2 nấc): đừng ép lại 3 nấc cho góc bo nhỏ (hàng rào trắng từng

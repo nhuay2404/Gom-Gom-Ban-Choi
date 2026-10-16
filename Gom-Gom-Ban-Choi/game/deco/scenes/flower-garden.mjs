@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic, roundedBox } from '../render/mesh-detail.mjs';
 import { ROOM_HALF, FLOWER_GATE_Z } from '../room-layout.mjs';
 import { TOON, toonMat, FLOOR_OFFSET } from '../render/toon.mjs';
+import { spriteSheet } from '../render/sprite-sheet.mjs';
 
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
   : new THREE.MeshPhysicalMaterial({ color, roughness: .9, metalness: 0, ...extra });
@@ -29,10 +30,9 @@ const HALF = ROOM_HALF, GRASS = '#8fcf5e', SOIL = '#8a5a3c', SOIL_DARK = '#6e452
 export const FLOWER_GATE_W = 1.6;
 const PATH_X = .55;                                                          // nửa bề rộng lối chính
 const LAVENDER_X = [-1.15, -1.8, -2.45, -3.1], LAVENDER_Z = [-2.75, .25];      // luống oải hương (trái, sau)
-const LAVENDER_COLORS = [['#efd3f5', '#fbeefe'], ['#c99ae8', '#e2c6f5'], ['#9a63dc', '#bf96ee'], ['#7445c4', '#9a6ee0']]; // [bông, ngọn]
 const TULIP_BED = { x0: -3.6, x1: -.85, z0: .7, z1: 3.35 };                    // khung tulip (trái, trước)
 const TULIP_COLORS = ['#ff5b6e', '#ffd23f', '#ff9ec7', '#fff4ef', '#ff9a3c', '#b07ae8'];
-const HYDRANGEA = [[1.3, -2.25, '#7fa8f0'], [1.3, -1.1, '#a58be6'], [1.3, .05, '#f39ac7'], [1.35, 2.95, '#8fc3f5']]; // [x, z, màu] dọc lối, bên phải
+const HYDRANGEA = [[1.3, -2.25, 0], [1.3, -1.1, 1], [1.3, .05, 2], [1.35, 2.95, 0]]; // [x, z, hàng sprite: 0 xanh, 1 đỏ, 2 vàng] dọc lối, bên phải
 const COSMOS = { x0: 1.95, x1: 3.65, z0: -2.75, z1: .7 }, COSMOS_COLORS = ['#ff8fc0', '#e0559c', '#ffffff', '#ffd1e6', '#f7a8d8'];
 const SUNFLOWER_Z = -3.45, BIKE = [2.75, 3.15], BENCH_Z = -3.2, PINES = [[-3.7, -3.72, 1.05], [3.72, -3.7, .9]];
 
@@ -89,23 +89,26 @@ function grassTufts(free) {
   return instances(g, GRASS, items);
 }
 
-// ---------- Oải hương: gò lá tròn trên đất vun, bông hai tông (thân tím + ngọn nhạt) ----------
+// ---------- Oải hương: gò lá tròn trên đất vun, bông là ảnh 2D (tấm sprite 4 × 4: mỗi hàng một tông, đậm → hồng nhạt) ----------
+// Mỗi khóm = 2 tấm chữ thập (bản 3D cũ: ~1800 bông trứng, ~100 nghìn tam giác).
+const SPRITE_W = .34, SPRITE_H = .34;
 function lavenderRows() {
-  const g = group(), [z0, z1] = LAVENDER_Z, len = z1 - z0, spikes = [], tips = [];
+  const g = group(), [z0, z1] = LAVENDER_Z, len = z1 - z0, { quad, build } = spriteSheet('assets/img/deco/lavender.webp', 4, 4, 'oải hương');
   g.add(at(box(Math.abs(LAVENDER_X.at(-1) - LAVENDER_X[0]) + .75, .05, len + .35, SOIL_DARK), (LAVENDER_X[0] + LAVENDER_X.at(-1)) / 2, .005, (z0 + z1) / 2));
   LAVENDER_X.forEach((x, k) => {
     // Gò lá: viên nhộng nằm, ép dẹt, xanh xám như lá oải hương
     const mound = mesh(new THREE.CapsuleGeometry(.24, len - .4, 6, 12), '#6f9a5a');
     mound.rotation.x = Math.PI / 2; mound.scale.set(1, 1, .62); mound.position.set(x, .1, (z0 + z1) / 2);
     g.add(mound);
-    const [body, tip] = LAVENDER_COLORS[k];
-    for (let z = z0 + .08; z < z1 - .06; z += .065) for (const dx of [-.16, -.08, 0, .08, .16]) {
-      const h = .25 + rnd() * .1 - Math.abs(dx) * .6, px = x + dx + (rnd() - .5) * .04, pz = z + (rnd() - .5) * .04, lean = [(rnd() - .5) * .3, 0, dx * 1.6 + (rnd() - .5) * .2];
-      spikes.push({ p: [px, h, pz], r: lean, s: .85 + rnd() * .35, c: body });
-      tips.push({ p: [px + lean[2] * -.06, h + .07, pz + lean[0] * .06], r: lean, s: .7 + rnd() * .3, c: tip });
+    const row = 3 - k; // luống trước (k 0) nhạt nhất = hàng dưới cùng của tấm sprite
+    for (let z = z0 + .1; z < z1 - .08; z += .1) for (const dx of [-.11, 0, .11]) {
+      const s = .85 + rnd() * .3, px = x + dx + (rnd() - .5) * .04, pz = z + (rnd() - .5) * .05, yaw = rnd() * Math.PI, col = Math.floor(rnd() * 4);
+      const y = .12 - Math.abs(dx) * .4;
+      quad(px, y, pz, yaw, SPRITE_W * s, SPRITE_H * s, col, row);
+      quad(px, y, pz, yaw + Math.PI / 2, SPRITE_W * s, SPRITE_H * s, (col + 2) % 4, row);
     }
   });
-  g.add(instances(egg(.03, 2.4, 6, 5), '#fff', spikes), instances(egg(.022, 2, 6, 4), '#fff', tips));
+  g.add(build());
   return g;
 }
 
@@ -135,28 +138,28 @@ function tulipBed() {
   return g;
 }
 
-// ---------- Cẩm tú cầu: bụi lá to + chùm hoa tròn kết từ nhiều bông nhỏ (đặc sản Đà Lạt) ----------
+// ---------- Cẩm tú cầu (đặc sản Đà Lạt): ảnh 2D cả bụi lá + chùm hoa (tấm sprite 3 × 3: hàng xanh / đỏ / vàng, cột = 3 dáng) ----------
+// Như luống oải hương: gò lá 3D giữ nguyên, chùm hoa tròn ghép từ nhiều khóm sprite nhỏ (2 tấm chữ thập) rải trên mặt 4 chùm cầu.
+// Cả 4 bụi gộp một lưới, một lệnh vẽ (bản 3D cũ: ~460 khối cầu mỗi bụi).
 function hydrangeas() {
-  const g = group(), leaves = [], florets = [], heads = [];
-  for (const [x, z, color] of HYDRANGEA) {
+  const leaves = [], { quad, build } = spriteSheet('assets/img/deco/hydrangea.webp', 3, 3, 'cẩm tú cầu');
+  for (const [x, z, row] of HYDRANGEA) {
     for (let i = 0; i < 7; i++) {
       const a = i / 7 * Math.PI * 2;
       leaves.push({ p: [x + Math.cos(a) * .22, .16 + rnd() * .08, z + Math.sin(a) * .22], s: [1.1, .7, 1.1], c: rnd() < .5 ? LEAF : '#4f7f3a' });
     }
     leaves.push({ p: [x, .26, z], s: [1.4, .9, 1.4], c: LEAF });
-    const tint = new THREE.Color(color);
-    for (const [hx, hy, hz, hr] of [[x - .14, .5, z + .06, .15], [x + .15, .46, z - .05, .14], [x, .56, z - .12, .13], [x + .02, .48, z + .17, .12]]) {
-      heads.push({ p: [hx, hy, hz], s: hr * .92, c: '#' + tint.clone().multiplyScalar(.85).getHexString() }); // lõi chùm sẫm hơn
-      const n = 26;
-      for (let i = 0; i < n; i++) { // bông nhỏ rải đều trên mặt cầu (xoắn ốc Fibonacci), lệch sắc nhẹ
-        const y = 1 - (i + .5) / n * 1.6, r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
-        const shade = tint.clone().offsetHSL((rnd() - .5) * .04, 0, (rnd() - .5) * .1);
-        florets.push({ p: [hx + Math.cos(a) * r * hr, hy + y * hr, hz + Math.sin(a) * r * hr], s: .9 + rnd() * .2, c: '#' + shade.getHexString() });
+    for (const [hx, hy, hz, hr] of [[x - .14, .42, z + .06, .15], [x + .15, .38, z - .05, .14], [x, .48, z - .12, .13], [x + .02, .4, z + .17, .12]]) {
+      const n = 9;
+      for (let i = 0; i < n; i++) { // khóm rải đều nửa trên chùm cầu (xoắn ốc Fibonacci)
+        const y = 1 - (i + .5) / n, r = Math.sqrt(1 - y * y), a = i * 2.39996, s = (.2 + rnd() * .05) * (hr / .14);
+        const px = hx + Math.cos(a) * r * hr, py = hy + y * hr - s * .45, pz = hz + Math.sin(a) * r * hr, yaw = rnd() * Math.PI, col = Math.floor(rnd() * 3);
+        quad(px, py, pz, yaw, s * 1.26, s, col, row);
+        quad(px, py, pz, yaw + Math.PI / 2, s * 1.26, s, (col + 1) % 3, row);
       }
     }
   }
-  g.add(instances(new THREE.SphereGeometry(.17, 10, 8), LEAF, leaves), instances(new THREE.SphereGeometry(1, 12, 10), '#fff', heads), instances(new THREE.SphereGeometry(.045, 7, 5), '#fff', florets));
-  return g;
+  return group(instances(new THREE.SphereGeometry(.17, 10, 8), LEAF, leaves), build());
 }
 
 // ---------- Sao nhái (cosmos) + cúc hoạ mi: hoa 5 cánh trên cuống, cao thấp lệch nhau ----------
