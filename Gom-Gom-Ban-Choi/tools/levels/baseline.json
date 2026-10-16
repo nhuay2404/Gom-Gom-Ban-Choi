@@ -60,14 +60,14 @@
       "target": 170,
       "winRate": 0.9,
       "stuckRate": 0,
-      "avgStars": 1.93,
-      "avgScore": 182,
-      "movesUsedWin": 8,
+      "avgStars": 1.96,
+      "avgScore": 187,
+      "movesUsedWin": 7.8,
       "movesUsedLoss": 10,
       "secWin": {
-        "weak": 51.7,
-        "mid": 38.5,
-        "good": 26.7
+        "weak": 50.3,
+        "mid": 37.5,
+        "good": 26
       },
       "secLoss": {
         "weak": 69.3,
@@ -82,21 +82,21 @@
       "tier": "normal",
       "moves": 12,
       "target": 280,
-      "winRate": 0.88,
+      "winRate": 0.882,
       "stuckRate": 0,
-      "avgStars": 1.83,
-      "avgScore": 296,
-      "movesUsedWin": 9.8,
+      "avgStars": 1.98,
+      "avgScore": 301,
+      "movesUsedWin": 9.4,
       "movesUsedLoss": 12,
       "secWin": {
-        "weak": 60.1,
-        "mid": 45.1,
-        "good": 31.6
+        "weak": 57.5,
+        "mid": 43.2,
+        "good": 30.3
       },
       "secLoss": {
-        "weak": 77.2,
-        "mid": 57.6,
-        "good": 40
+        "weak": 77.1,
+        "mid": 57.5,
+        "good": 39.9
       }
     },
     {
@@ -108,14 +108,14 @@
       "target": 240,
       "winRate": 0.785,
       "stuckRate": 0,
-      "avgStars": 1.65,
-      "avgScore": 249,
+      "avgStars": 1.68,
+      "avgScore": 252,
       "movesUsedWin": 10.2,
       "movesUsedLoss": 12,
       "secWin": {
-        "weak": 67,
-        "mid": 49.8,
-        "good": 34.4
+        "weak": 66.4,
+        "mid": 49.4,
+        "good": 34.1
       },
       "secLoss": {
         "weak": 83.9,
@@ -130,19 +130,19 @@
       "tier": "normal",
       "moves": 14,
       "target": 320,
-      "winRate": 0.797,
+      "winRate": 0.805,
       "stuckRate": 0,
-      "avgStars": 1.73,
-      "avgScore": 328,
-      "movesUsedWin": 11.7,
+      "avgStars": 1.83,
+      "avgScore": 333,
+      "movesUsedWin": 11.4,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 76.5,
-        "mid": 57,
-        "good": 39.5
+        "weak": 74.4,
+        "mid": 55.4,
+        "good": 38.4
       },
       "secLoss": {
-        "weak": 96.9,
+        "weak": 96.8,
         "mid": 71.6,
         "good": 49.1
       }
@@ -154,20 +154,20 @@
       "tier": "hard",
       "moves": 12,
       "target": 360,
-      "winRate": 0.383,
+      "winRate": 0.422,
       "stuckRate": 0.013,
-      "avgStars": 1.39,
-      "avgScore": 332,
-      "movesUsedWin": 10.8,
-      "movesUsedLoss": 11.9,
+      "avgStars": 1.69,
+      "avgScore": 338,
+      "movesUsedWin": 10.1,
+      "movesUsedLoss": 11.8,
       "secWin": {
-        "weak": 64.5,
-        "mid": 48.6,
-        "good": 34
+        "weak": 60.5,
+        "mid": 45.5,
+        "good": 31.8
       },
       "secLoss": {
-        "weak": 73.6,
-        "mid": 55,
+        "weak": 73.4,
+        "mid": 54.9,
         "good": 38.2
       }
     },
@@ -180,14 +180,14 @@
       "target": 240,
       "winRate": 0.953,
       "stuckRate": 0,
-      "avgStars": 1.85,
-      "avgScore": 252,
-      "movesUsedWin": 14.4,
+      "avgStars": 1.96,
+      "avgScore": 254,
+      "movesUsedWin": 14.1,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 98.5,
-        "mid": 72.8,
-        "good": 49.9
+        "weak": 95.6,
+        "mid": 70.7,
+        "good": 48.5
       },
       "secLoss": {
         "weak": 130.4,
@@ -202,21 +202,21 @@
       "tier": "hard",
       "moves": 16,
       "target": 360,
-      "winRate": 0.378,
+      "winRate": 0.443,
       "stuckRate": 0,
-      "avgStars": 1.39,
-      "avgScore": 338,
-      "movesUsedWin": 14.6,
+      "avgStars": 1.74,
+      "avgScore": 344,
+      "movesUsedWin": 13.6,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 94.5,
-        "mid": 70.4,
-        "good": 48.7
+        "weak": 89.1,
+        "mid": 66.3,
+        "good": 45.8
       },
       "secLoss": {
-        "weak": 107.8,
-        "mid": 79.8,
-        "good": 54.8
+        "weak": 107.3,
+        "mid": 79.5,
+        "good": 54.6
       }
     },
     {
@@ -226,21 +226,21 @@
       "tier": "boss",
       "moves": 20,
       "target": 460,
-      "winRate": 0.142,
+      "winRate": 0.217,
       "stuckRate": 0.02,
-      "avgStars": 1.12,
-      "avgScore": 391,
-      "movesUsedWin": 18.9,
-      "movesUsedLoss": 19.7,
+      "avgStars": 1.38,
+      "avgScore": 398,
+      "movesUsedWin": 18,
+      "movesUsedLoss": 19.6,
       "secWin": {
-        "weak": 121.9,
-        "mid": 90.9,
-        "good": 62.9
+        "weak": 117.7,
+        "mid": 87.6,
+        "good": 60.4
       },
       "secLoss": {
-        "weak": 130.8,
-        "mid": 96.9,
-        "good": 66.6
+        "weak": 130.6,
+        "mid": 96.8,
+        "good": 66.5
       }
     },
     {
@@ -250,21 +250,21 @@
       "tier": "chill",
       "moves": 14,
       "target": 210,
-      "winRate": 0.915,
+      "winRate": 0.912,
       "stuckRate": 0,
       "avgStars": 2.35,
-      "avgScore": 239,
-      "movesUsedWin": 9.8,
+      "avgScore": 247,
+      "movesUsedWin": 9.7,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 67.6,
-        "mid": 50.3,
-        "good": 34.8
+        "weak": 67,
+        "mid": 49.9,
+        "good": 34.5
       },
       "secLoss": {
-        "weak": 99.8,
-        "mid": 74,
-        "good": 51
+        "weak": 99.7,
+        "mid": 73.9,
+        "good": 50.9
       }
     },
     {
@@ -276,14 +276,14 @@
       "target": 300,
       "winRate": 0.863,
       "stuckRate": 0,
-      "avgStars": 1.78,
-      "avgScore": 313,
-      "movesUsedWin": 12.5,
+      "avgStars": 1.9,
+      "avgScore": 318,
+      "movesUsedWin": 12,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 88.5,
-        "mid": 65.6,
-        "good": 45.1
+        "weak": 84.9,
+        "mid": 62.9,
+        "good": 43.3
       },
       "secLoss": {
         "weak": 113.1,
@@ -300,14 +300,14 @@
       "target": 280,
       "winRate": 0.777,
       "stuckRate": 0,
-      "avgStars": 1.69,
-      "avgScore": 289,
-      "movesUsedWin": 12.8,
+      "avgStars": 1.79,
+      "avgScore": 291,
+      "movesUsedWin": 12.5,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 87.6,
-        "mid": 65.2,
-        "good": 45.1
+        "weak": 85.2,
+        "mid": 63.5,
+        "good": 44
       },
       "secLoss": {
         "weak": 107.7,
@@ -322,19 +322,19 @@
       "tier": "normal",
       "moves": 16,
       "target": 330,
-      "winRate": 0.807,
+      "winRate": 0.81,
       "stuckRate": 0,
-      "avgStars": 1.66,
-      "avgScore": 337,
-      "movesUsedWin": 14,
+      "avgStars": 1.69,
+      "avgScore": 340,
+      "movesUsedWin": 13.8,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 98,
-        "mid": 72.8,
-        "good": 50.1
+        "weak": 97.1,
+        "mid": 72,
+        "good": 49.6
       },
       "secLoss": {
-        "weak": 120.6,
+        "weak": 120.5,
         "mid": 88.6,
         "good": 60.4
       }
@@ -346,20 +346,20 @@
       "tier": "hard",
       "moves": 18,
       "target": 370,
-      "winRate": 0.435,
+      "winRate": 0.448,
       "stuckRate": 0,
-      "avgStars": 1.26,
-      "avgScore": 376,
-      "movesUsedWin": 16.4,
+      "avgStars": 1.34,
+      "avgScore": 381,
+      "movesUsedWin": 16.1,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 120.9,
-        "mid": 89.2,
-        "good": 61.1
+        "weak": 119,
+        "mid": 87.8,
+        "good": 60.2
       },
       "secLoss": {
         "weak": 137.1,
-        "mid": 100.8,
+        "mid": 100.7,
         "good": 68.7
       }
     },
@@ -372,14 +372,14 @@
       "target": 280,
       "winRate": 0.975,
       "stuckRate": 0,
-      "avgStars": 1.91,
-      "avgScore": 294,
-      "movesUsedWin": 16.2,
+      "avgStars": 1.93,
+      "avgScore": 295,
+      "movesUsedWin": 16.1,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 120.8,
-        "mid": 88.9,
-        "good": 60.7
+        "weak": 120.3,
+        "mid": 88.6,
+        "good": 60.5
       },
       "secLoss": {
         "weak": 156.8,
@@ -394,21 +394,21 @@
       "tier": "normal",
       "moves": 23,
       "target": 350,
-      "winRate": 0.84,
+      "winRate": 0.83,
       "stuckRate": 0,
-      "avgStars": 2.61,
-      "avgScore": 415,
-      "movesUsedWin": 15.2,
+      "avgStars": 2.6,
+      "avgScore": 437,
+      "movesUsedWin": 14.6,
       "movesUsedLoss": 23,
       "secWin": {
-        "weak": 103.1,
-        "mid": 77,
-        "good": 53.5
+        "weak": 99.9,
+        "mid": 74.6,
+        "good": 51.8
       },
       "secLoss": {
-        "weak": 162.8,
-        "mid": 120.9,
-        "good": 83.5
+        "weak": 165.2,
+        "mid": 122.5,
+        "good": 84.4
       }
     },
     {
@@ -418,21 +418,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 320,
-      "winRate": 0.767,
+      "winRate": 0.757,
       "stuckRate": 0,
       "avgStars": 2.34,
-      "avgScore": 367,
-      "movesUsedWin": 13.8,
+      "avgScore": 379,
+      "movesUsedWin": 13.5,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 98.2,
-        "mid": 72.7,
-        "good": 50
+        "weak": 96.3,
+        "mid": 71.3,
+        "good": 49
       },
       "secLoss": {
-        "weak": 139.2,
-        "mid": 102.6,
-        "good": 70.2
+        "weak": 140.4,
+        "mid": 103.5,
+        "good": 70.7
       }
     },
     {
@@ -444,18 +444,18 @@
       "target": 300,
       "winRate": 0.608,
       "stuckRate": 0,
-      "avgStars": 1.27,
-      "avgScore": 296,
-      "movesUsedWin": 15.4,
+      "avgStars": 1.35,
+      "avgScore": 297,
+      "movesUsedWin": 15.2,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 111.8,
-        "mid": 82.6,
-        "good": 56.7
+        "weak": 109.9,
+        "mid": 81.3,
+        "good": 55.8
       },
       "secLoss": {
-        "weak": 130.3,
-        "mid": 95.7,
+        "weak": 130.4,
+        "mid": 95.8,
         "good": 65.2
       }
     },
@@ -466,21 +466,21 @@
       "tier": "boss",
       "moves": 22,
       "target": 460,
-      "winRate": 0.338,
+      "winRate": 0.355,
       "stuckRate": 0,
-      "avgStars": 1.2,
-      "avgScore": 441,
-      "movesUsedWin": 20.6,
+      "avgStars": 1.37,
+      "avgScore": 447,
+      "movesUsedWin": 20,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 142.5,
-        "mid": 105.8,
-        "good": 73
+        "weak": 139.2,
+        "mid": 103.3,
+        "good": 71.2
       },
       "secLoss": {
-        "weak": 157.4,
-        "mid": 116.3,
-        "good": 79.8
+        "weak": 157.1,
+        "mid": 116.1,
+        "good": 79.7
       }
     },
     {
@@ -490,21 +490,21 @@
       "tier": "chill",
       "moves": 24,
       "target": 360,
-      "winRate": 0.963,
+      "winRate": 0.97,
       "stuckRate": 0,
-      "avgStars": 2.79,
-      "avgScore": 409,
-      "movesUsedWin": 13.8,
+      "avgStars": 2.76,
+      "avgScore": 438,
+      "movesUsedWin": 13.7,
       "movesUsedLoss": 24,
       "secWin": {
-        "weak": 95.6,
-        "mid": 71.1,
+        "weak": 95.8,
+        "mid": 71.2,
         "good": 49.2
       },
       "secLoss": {
-        "weak": 177.1,
-        "mid": 130.7,
-        "good": 89.6
+        "weak": 176.5,
+        "mid": 130.3,
+        "good": 89.3
       }
     },
     {
@@ -516,14 +516,14 @@
       "target": 290,
       "winRate": 0.938,
       "stuckRate": 0,
-      "avgStars": 2.3,
-      "avgScore": 301,
-      "movesUsedWin": 10.7,
+      "avgStars": 2.46,
+      "avgScore": 310,
+      "movesUsedWin": 9.5,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 73,
-        "mid": 54.3,
-        "good": 37.6
+        "weak": 64.4,
+        "mid": 48,
+        "good": 33.3
       },
       "secLoss": {
         "weak": 108.6,
@@ -538,21 +538,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 380,
-      "winRate": 0.84,
+      "winRate": 0.85,
       "stuckRate": 0,
-      "avgStars": 1.64,
-      "avgScore": 389,
-      "movesUsedWin": 14.1,
+      "avgStars": 1.84,
+      "avgScore": 392,
+      "movesUsedWin": 13.5,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 95.8,
-        "mid": 71.5,
-        "good": 49.7
+        "weak": 91.3,
+        "mid": 68.2,
+        "good": 47.4
       },
       "secLoss": {
-        "weak": 124.9,
-        "mid": 92.4,
-        "good": 63.5
+        "weak": 124.5,
+        "mid": 92.1,
+        "good": 63.3
       }
     },
     {
@@ -562,21 +562,21 @@
       "tier": "normal",
       "moves": 22,
       "target": 370,
-      "winRate": 0.863,
+      "winRate": 0.848,
       "stuckRate": 0,
-      "avgStars": 1.97,
-      "avgScore": 398,
-      "movesUsedWin": 17.6,
+      "avgStars": 2.06,
+      "avgScore": 411,
+      "movesUsedWin": 17.1,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 125.5,
-        "mid": 93,
-        "good": 64.1
+        "weak": 122.3,
+        "mid": 90.6,
+        "good": 62.4
       },
       "secLoss": {
-        "weak": 162.8,
-        "mid": 120.1,
-        "good": 82.2
+        "weak": 163.6,
+        "mid": 120.6,
+        "good": 82.4
       }
     },
     {
@@ -586,21 +586,21 @@
       "tier": "hard",
       "moves": 20,
       "target": 420,
-      "winRate": 0.443,
+      "winRate": 0.372,
       "stuckRate": 0,
-      "avgStars": 1.69,
-      "avgScore": 455,
-      "movesUsedWin": 17,
+      "avgStars": 1.62,
+      "avgScore": 469,
+      "movesUsedWin": 17.2,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 124.1,
-        "mid": 91.8,
-        "good": 63
+        "weak": 125.9,
+        "mid": 93,
+        "good": 63.9
       },
       "secLoss": {
-        "weak": 149.8,
-        "mid": 110.5,
-        "good": 75.6
+        "weak": 150.5,
+        "mid": 110.9,
+        "good": 75.9
       }
     },
     {
@@ -612,14 +612,14 @@
       "target": 370,
       "winRate": 0.978,
       "stuckRate": 0,
-      "avgStars": 2.1,
-      "avgScore": 386,
-      "movesUsedWin": 15.6,
+      "avgStars": 2.26,
+      "avgScore": 389,
+      "movesUsedWin": 14.9,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 113.6,
-        "mid": 84,
-        "good": 57.6
+        "weak": 107.9,
+        "mid": 79.8,
+        "good": 54.8
       },
       "secLoss": {
         "weak": 156,
@@ -634,21 +634,21 @@
       "tier": "normal",
       "moves": 15,
       "target": 380,
-      "winRate": 0.685,
+      "winRate": 0.72,
       "stuckRate": 0,
-      "avgStars": 1.62,
-      "avgScore": 383,
-      "movesUsedWin": 13.1,
+      "avgStars": 1.88,
+      "avgScore": 387,
+      "movesUsedWin": 12.3,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 88.9,
-        "mid": 66.2,
-        "good": 45.9
+        "weak": 84,
+        "mid": 62.6,
+        "good": 43.4
       },
       "secLoss": {
-        "weak": 107.8,
-        "mid": 79.8,
-        "good": 54.8
+        "weak": 107.1,
+        "mid": 79.3,
+        "good": 54.6
       }
     },
     {
@@ -658,21 +658,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 410,
-      "winRate": 0.662,
+      "winRate": 0.68,
       "stuckRate": 0,
-      "avgStars": 1.42,
-      "avgScore": 412,
-      "movesUsedWin": 14.8,
+      "avgStars": 1.66,
+      "avgScore": 418,
+      "movesUsedWin": 14.1,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 102.1,
-        "mid": 76.1,
-        "good": 52.8
+        "weak": 97.4,
+        "mid": 72.5,
+        "good": 50.3
       },
       "secLoss": {
-        "weak": 124.4,
-        "mid": 92.1,
-        "good": 63.4
+        "weak": 124,
+        "mid": 91.8,
+        "good": 63.2
       }
     },
     {
@@ -682,21 +682,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 400,
-      "winRate": 0.662,
+      "winRate": 0.68,
       "stuckRate": 0,
-      "avgStars": 1.47,
-      "avgScore": 400,
-      "movesUsedWin": 15.7,
+      "avgStars": 1.76,
+      "avgScore": 403,
+      "movesUsedWin": 14.7,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 111.7,
-        "mid": 82.9,
-        "good": 57.2
+        "weak": 104.5,
+        "mid": 77.5,
+        "good": 53.4
       },
       "secLoss": {
-        "weak": 134.9,
-        "mid": 99.4,
-        "good": 68
+        "weak": 134.4,
+        "mid": 99.1,
+        "good": 67.8
       }
     },
     {
@@ -706,21 +706,21 @@
       "tier": "boss",
       "moves": 22,
       "target": 560,
-      "winRate": 0.26,
+      "winRate": 0.333,
       "stuckRate": 0,
-      "avgStars": 1.21,
-      "avgScore": 517,
-      "movesUsedWin": 20.7,
+      "avgStars": 1.41,
+      "avgScore": 524,
+      "movesUsedWin": 19.9,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 143.3,
-        "mid": 106.5,
-        "good": 73.6
+        "weak": 139.3,
+        "mid": 103.4,
+        "good": 71.3
       },
       "secLoss": {
-        "weak": 156.5,
-        "mid": 115.9,
-        "good": 79.8
+        "weak": 156.1,
+        "mid": 115.7,
+        "good": 79.7
       }
     },
     {
@@ -733,13 +733,13 @@
       "winRate": 0.995,
       "stuckRate": 0,
       "avgStars": 2.5,
-      "avgScore": 315,
-      "movesUsedWin": 9.3,
+      "avgScore": 318,
+      "movesUsedWin": 9.2,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 65.1,
-        "mid": 48.3,
-        "good": 33.4
+        "weak": 64.9,
+        "mid": 48.2,
+        "good": 33.3
       },
       "secLoss": {
         "weak": 110.3,
@@ -754,21 +754,21 @@
       "tier": "normal",
       "moves": 16,
       "target": 310,
-      "winRate": 0.912,
+      "winRate": 0.917,
       "stuckRate": 0,
-      "avgStars": 2.14,
-      "avgScore": 329,
-      "movesUsedWin": 12.4,
+      "avgStars": 2.36,
+      "avgScore": 330,
+      "movesUsedWin": 11.2,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 82.6,
-        "mid": 61.7,
-        "good": 42.8
+        "weak": 74.3,
+        "mid": 55.5,
+        "good": 38.6
       },
       "secLoss": {
-        "weak": 114,
-        "mid": 84.4,
-        "good": 58
+        "weak": 113.5,
+        "mid": 84.1,
+        "good": 57.9
       }
     },
     {
@@ -778,21 +778,21 @@
       "tier": "normal",
       "moves": 16,
       "target": 360,
-      "winRate": 0.882,
+      "winRate": 0.885,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 374,
-      "movesUsedWin": 12.8,
+      "avgStars": 2.21,
+      "avgScore": 377,
+      "movesUsedWin": 11.7,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 89.1,
-        "mid": 66.3,
-        "good": 45.8
+        "weak": 81.1,
+        "mid": 60.3,
+        "good": 41.7
       },
       "secLoss": {
-        "weak": 119.1,
-        "mid": 87.8,
-        "good": 60.1
+        "weak": 118.8,
+        "mid": 87.7,
+        "good": 60
       }
     },
     {
@@ -802,21 +802,21 @@
       "tier": "normal",
       "moves": 16,
       "target": 340,
-      "winRate": 0.87,
+      "winRate": 0.868,
       "stuckRate": 0,
-      "avgStars": 2.03,
-      "avgScore": 351,
-      "movesUsedWin": 12.6,
+      "avgStars": 2.15,
+      "avgScore": 361,
+      "movesUsedWin": 12.1,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 87.3,
-        "mid": 65,
-        "good": 45
+        "weak": 84.2,
+        "mid": 62.6,
+        "good": 43.3
       },
       "secLoss": {
-        "weak": 115.4,
-        "mid": 85.4,
-        "good": 58.7
+        "weak": 115.6,
+        "mid": 85.5,
+        "good": 58.8
       }
     },
     {
@@ -826,19 +826,19 @@
       "tier": "hard",
       "moves": 18,
       "target": 420,
-      "winRate": 0.343,
+      "winRate": 0.38,
       "stuckRate": 0,
-      "avgStars": 1.26,
-      "avgScore": 396,
-      "movesUsedWin": 16.6,
+      "avgStars": 1.47,
+      "avgScore": 400,
+      "movesUsedWin": 15.7,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 115.5,
-        "mid": 85.8,
-        "good": 59.3
+        "weak": 110.2,
+        "mid": 81.8,
+        "good": 56.5
       },
       "secLoss": {
-        "weak": 131.6,
+        "weak": 131.5,
         "mid": 97.2,
         "good": 66.7
       }
@@ -852,14 +852,14 @@
       "target": 370,
       "winRate": 0.968,
       "stuckRate": 0,
-      "avgStars": 2.04,
-      "avgScore": 384,
-      "movesUsedWin": 15.7,
+      "avgStars": 2.22,
+      "avgScore": 386,
+      "movesUsedWin": 14.6,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 113.4,
-        "mid": 83.9,
-        "good": 57.7
+        "weak": 104.9,
+        "mid": 77.6,
+        "good": 53.4
       },
       "secLoss": {
         "weak": 150.8,
@@ -874,21 +874,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 450,
-      "winRate": 0.682,
+      "winRate": 0.7,
       "stuckRate": 0,
-      "avgStars": 1.56,
-      "avgScore": 454,
-      "movesUsedWin": 14.4,
+      "avgStars": 1.85,
+      "avgScore": 455,
+      "movesUsedWin": 13.4,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 98.1,
-        "mid": 73.1,
-        "good": 50.8
+        "weak": 91.3,
+        "mid": 68.1,
+        "good": 47.2
       },
       "secLoss": {
-        "weak": 121.7,
-        "mid": 90.2,
-        "good": 62.1
+        "weak": 121.4,
+        "mid": 90,
+        "good": 62
       }
     },
     {
@@ -898,16 +898,16 @@
       "tier": "normal",
       "moves": 19,
       "target": 370,
-      "winRate": 0.748,
+      "winRate": 0.74,
       "stuckRate": 0,
-      "avgStars": 1.82,
-      "avgScore": 398,
-      "movesUsedWin": 15.5,
+      "avgStars": 1.96,
+      "avgScore": 409,
+      "movesUsedWin": 14.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 107.8,
-        "mid": 80.2,
-        "good": 55.5
+        "weak": 104.3,
+        "mid": 77.5,
+        "good": 53.6
       },
       "secLoss": {
         "weak": 139,
@@ -922,19 +922,19 @@
       "tier": "normal",
       "moves": 19,
       "target": 380,
-      "winRate": 0.72,
+      "winRate": 0.718,
       "stuckRate": 0,
-      "avgStars": 1.56,
-      "avgScore": 387,
-      "movesUsedWin": 16.4,
+      "avgStars": 1.72,
+      "avgScore": 392,
+      "movesUsedWin": 15.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 117.6,
-        "mid": 87.1,
-        "good": 59.9
+        "weak": 114.3,
+        "mid": 84.6,
+        "good": 58.2
       },
       "secLoss": {
-        "weak": 144.5,
+        "weak": 144.7,
         "mid": 106.4,
         "good": 72.6
       }
@@ -946,21 +946,21 @@
       "tier": "boss",
       "moves": 24,
       "target": 620,
-      "winRate": 0.253,
+      "winRate": 0.343,
       "stuckRate": 0,
-      "avgStars": 1.18,
-      "avgScore": 570,
-      "movesUsedWin": 22.7,
+      "avgStars": 1.43,
+      "avgScore": 579,
+      "movesUsedWin": 21.6,
       "movesUsedLoss": 24,
       "secWin": {
-        "weak": 157.1,
-        "mid": 116.7,
-        "good": 80.6
+        "weak": 151.2,
+        "mid": 112.2,
+        "good": 77.4
       },
       "secLoss": {
-        "weak": 171.1,
-        "mid": 126.7,
-        "good": 87.1
+        "weak": 171.3,
+        "mid": 126.8,
+        "good": 87.2
       }
     },
     {
@@ -972,14 +972,14 @@
       "target": 380,
       "winRate": 0.895,
       "stuckRate": 0,
-      "avgStars": 2.06,
-      "avgScore": 392,
-      "movesUsedWin": 11.6,
+      "avgStars": 2.22,
+      "avgScore": 395,
+      "movesUsedWin": 10.4,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 79.2,
-        "mid": 59.1,
-        "good": 41
+        "weak": 70.8,
+        "mid": 52.8,
+        "good": 36.7
       },
       "secLoss": {
         "weak": 110.1,
@@ -994,21 +994,21 @@
       "tier": "normal",
       "moves": 16,
       "target": 280,
-      "winRate": 0.93,
+      "winRate": 0.905,
       "stuckRate": 0,
-      "avgStars": 2.4,
-      "avgScore": 306,
-      "movesUsedWin": 11.3,
+      "avgStars": 2.42,
+      "avgScore": 320,
+      "movesUsedWin": 10.8,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 75.6,
-        "mid": 56.5,
-        "good": 39.3
+        "weak": 72.8,
+        "mid": 54.4,
+        "good": 37.8
       },
       "secLoss": {
-        "weak": 116,
-        "mid": 85.8,
-        "good": 59
+        "weak": 118.4,
+        "mid": 87.4,
+        "good": 59.9
       }
     },
     {
@@ -1021,13 +1021,13 @@
       "winRate": 0.88,
       "stuckRate": 0,
       "avgStars": 2.38,
-      "avgScore": 272,
-      "movesUsedWin": 11.7,
+      "avgScore": 274,
+      "movesUsedWin": 11.6,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 78.9,
-        "mid": 58.8,
-        "good": 40.7
+        "weak": 78.2,
+        "mid": 58.2,
+        "good": 40.4
       },
       "secLoss": {
         "weak": 113.5,
@@ -1044,14 +1044,14 @@
       "target": 500,
       "winRate": 0.835,
       "stuckRate": 0,
-      "avgStars": 1.62,
-      "avgScore": 511,
-      "movesUsedWin": 14.2,
+      "avgStars": 1.75,
+      "avgScore": 515,
+      "movesUsedWin": 13.6,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 97.4,
-        "mid": 72.6,
-        "good": 50.4
+        "weak": 93.3,
+        "mid": 69.6,
+        "good": 48.3
       },
       "secLoss": {
         "weak": 124.4,
@@ -1066,21 +1066,21 @@
       "tier": "hard",
       "moves": 19,
       "target": 470,
-      "winRate": 0.275,
+      "winRate": 0.282,
       "stuckRate": 0,
-      "avgStars": 1.29,
-      "avgScore": 447,
-      "movesUsedWin": 17.4,
+      "avgStars": 1.43,
+      "avgScore": 453,
+      "movesUsedWin": 16.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 116.4,
-        "mid": 86.9,
-        "good": 60.4
+        "weak": 114.1,
+        "mid": 85.1,
+        "good": 59.1
       },
       "secLoss": {
-        "weak": 134.4,
-        "mid": 99.7,
-        "good": 68.7
+        "weak": 134.5,
+        "mid": 99.8,
+        "good": 68.8
       }
     },
     {
@@ -1092,14 +1092,14 @@
       "target": 360,
       "winRate": 0.968,
       "stuckRate": 0,
-      "avgStars": 2.2,
-      "avgScore": 375,
-      "movesUsedWin": 15.1,
+      "avgStars": 2.35,
+      "avgScore": 379,
+      "movesUsedWin": 14.2,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 106.7,
-        "mid": 79.2,
-        "good": 54.6
+        "weak": 99.6,
+        "mid": 74,
+        "good": 51.1
       },
       "secLoss": {
         "weak": 150.6,
@@ -1114,21 +1114,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 430,
-      "winRate": 0.685,
+      "winRate": 0.715,
       "stuckRate": 0,
-      "avgStars": 1.49,
-      "avgScore": 431,
-      "movesUsedWin": 14.6,
+      "avgStars": 1.93,
+      "avgScore": 433,
+      "movesUsedWin": 13.1,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 97.8,
-        "mid": 73,
-        "good": 50.8
+        "weak": 87.7,
+        "mid": 65.5,
+        "good": 45.6
       },
       "secLoss": {
-        "weak": 120.7,
-        "mid": 89.5,
-        "good": 61.7
+        "weak": 120.2,
+        "mid": 89.1,
+        "good": 61.5
       }
     },
     {
@@ -1138,21 +1138,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 400,
-      "winRate": 0.695,
+      "winRate": 0.71,
       "stuckRate": 0,
-      "avgStars": 1.58,
-      "avgScore": 414,
-      "movesUsedWin": 15.4,
+      "avgStars": 1.83,
+      "avgScore": 424,
+      "movesUsedWin": 14.5,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 106.8,
-        "mid": 79.4,
-        "good": 54.9
+        "weak": 101.5,
+        "mid": 75.4,
+        "good": 52.1
       },
       "secLoss": {
-        "weak": 131.6,
-        "mid": 97.2,
-        "good": 66.8
+        "weak": 131.4,
+        "mid": 97.1,
+        "good": 66.7
       }
     },
     {
@@ -1162,21 +1162,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 430,
-      "winRate": 0.777,
+      "winRate": 0.813,
       "stuckRate": 0,
-      "avgStars": 1.67,
-      "avgScore": 437,
-      "movesUsedWin": 16,
+      "avgStars": 2.19,
+      "avgScore": 441,
+      "movesUsedWin": 13.8,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 110.6,
-        "mid": 82.4,
-        "good": 57.1
+        "weak": 95,
+        "mid": 70.8,
+        "good": 49.1
       },
       "secLoss": {
-        "weak": 138.6,
-        "mid": 102.5,
-        "good": 70.5
+        "weak": 137.2,
+        "mid": 101.6,
+        "good": 70
       }
     },
     {
@@ -1186,21 +1186,21 @@
       "tier": "boss",
       "moves": 24,
       "target": 650,
-      "winRate": 0.107,
+      "winRate": 0.198,
       "stuckRate": 0.003,
-      "avgStars": 1.19,
-      "avgScore": 565,
-      "movesUsedWin": 22.9,
+      "avgStars": 1.32,
+      "avgScore": 572,
+      "movesUsedWin": 22.2,
       "movesUsedLoss": 24,
       "secWin": {
-        "weak": 153.7,
-        "mid": 114.8,
-        "good": 79.7
+        "weak": 153.1,
+        "mid": 113.8,
+        "good": 78.7
       },
       "secLoss": {
         "weak": 168,
         "mid": 124.6,
-        "good": 85.9
+        "good": 85.8
       }
     },
     {
@@ -1212,14 +1212,14 @@
       "target": 320,
       "winRate": 0.943,
       "stuckRate": 0,
-      "avgStars": 2.23,
-      "avgScore": 338,
-      "movesUsedWin": 12.1,
+      "avgStars": 2.35,
+      "avgScore": 342,
+      "movesUsedWin": 11,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 82.5,
-        "mid": 61.4,
-        "good": 42.5
+        "weak": 75,
+        "mid": 55.9,
+        "good": 38.7
       },
       "secLoss": {
         "weak": 117.4,
@@ -1234,21 +1234,21 @@
       "tier": "normal",
       "moves": 31,
       "target": 480,
-      "winRate": 0.973,
+      "winRate": 0.945,
       "stuckRate": 0,
-      "avgStars": 1.98,
-      "avgScore": 505,
-      "movesUsedWin": 24.5,
+      "avgStars": 2.05,
+      "avgScore": 521,
+      "movesUsedWin": 23.9,
       "movesUsedLoss": 31,
       "secWin": {
-        "weak": 177.7,
-        "mid": 131.3,
-        "good": 90
+        "weak": 173.4,
+        "mid": 128.1,
+        "good": 87.8
       },
       "secLoss": {
-        "weak": 229.5,
-        "mid": 169,
-        "good": 115.5
+        "weak": 230.8,
+        "mid": 169.9,
+        "good": 116
       }
     },
     {
@@ -1258,21 +1258,21 @@
       "tier": "normal",
       "moves": 29,
       "target": 520,
-      "winRate": 0.873,
+      "winRate": 0.86,
       "stuckRate": 0,
-      "avgStars": 1.72,
-      "avgScore": 543,
-      "movesUsedWin": 24.2,
+      "avgStars": 2,
+      "avgScore": 561,
+      "movesUsedWin": 22.7,
       "movesUsedLoss": 29,
       "secWin": {
-        "weak": 175.1,
-        "mid": 129.5,
-        "good": 89
+        "weak": 165.4,
+        "mid": 122.3,
+        "good": 84
       },
       "secLoss": {
-        "weak": 216,
-        "mid": 159.3,
-        "good": 108.9
+        "weak": 216.8,
+        "mid": 159.8,
+        "good": 109.2
       }
     },
     {
@@ -1282,21 +1282,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 380,
-      "winRate": 0.835,
+      "winRate": 0.838,
       "stuckRate": 0,
-      "avgStars": 1.63,
-      "avgScore": 391,
-      "movesUsedWin": 14.2,
+      "avgStars": 1.77,
+      "avgScore": 396,
+      "movesUsedWin": 13.6,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 98,
-        "mid": 73,
-        "good": 50.5
+        "weak": 93.8,
+        "mid": 69.8,
+        "good": 48.3
       },
       "secLoss": {
-        "weak": 125.7,
-        "mid": 92.8,
-        "good": 63.6
+        "weak": 125.8,
+        "mid": 92.9,
+        "good": 63.7
       }
     },
     {
@@ -1306,20 +1306,20 @@
       "tier": "hard",
       "moves": 19,
       "target": 410,
-      "winRate": 0.307,
+      "winRate": 0.315,
       "stuckRate": 0,
-      "avgStars": 1.31,
-      "avgScore": 401,
-      "movesUsedWin": 17.2,
+      "avgStars": 1.48,
+      "avgScore": 419,
+      "movesUsedWin": 16.7,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 118.3,
-        "mid": 88.1,
-        "good": 61
+        "weak": 115.8,
+        "mid": 86.1,
+        "good": 59.6
       },
       "secLoss": {
         "weak": 136,
-        "mid": 100.7,
+        "mid": 100.6,
         "good": 69.2
       }
     },
@@ -1330,21 +1330,21 @@
       "tier": "chill",
       "moves": 15,
       "target": 250,
-      "winRate": 0.948,
+      "winRate": 0.945,
       "stuckRate": 0,
-      "avgStars": 2.32,
-      "avgScore": 276,
-      "movesUsedWin": 10.7,
+      "avgStars": 2.37,
+      "avgScore": 286,
+      "movesUsedWin": 10.3,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 74.1,
-        "mid": 55.1,
-        "good": 38.1
+        "weak": 71.9,
+        "mid": 53.4,
+        "good": 36.9
       },
       "secLoss": {
-        "weak": 113.8,
-        "mid": 83.7,
-        "good": 57.1
+        "weak": 114.7,
+        "mid": 84.2,
+        "good": 57.3
       }
     },
     {
@@ -1354,21 +1354,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 440,
-      "winRate": 0.695,
+      "winRate": 0.723,
       "stuckRate": 0,
-      "avgStars": 1.52,
-      "avgScore": 444,
-      "movesUsedWin": 15.6,
+      "avgStars": 1.92,
+      "avgScore": 450,
+      "movesUsedWin": 14,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 105.5,
-        "mid": 78.7,
-        "good": 54.7
+        "weak": 95,
+        "mid": 70.9,
+        "good": 49.2
       },
       "secLoss": {
-        "weak": 127.4,
-        "mid": 94.5,
-        "good": 65.2
+        "weak": 126.8,
+        "mid": 94.1,
+        "good": 64.9
       }
     },
     {
@@ -1378,21 +1378,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 410,
-      "winRate": 0.733,
+      "winRate": 0.752,
       "stuckRate": 0,
-      "avgStars": 1.46,
-      "avgScore": 416,
-      "movesUsedWin": 15.7,
+      "avgStars": 1.72,
+      "avgScore": 420,
+      "movesUsedWin": 14.8,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 107.6,
-        "mid": 80.1,
-        "good": 55.4
+        "weak": 101.4,
+        "mid": 75.4,
+        "good": 52.1
       },
       "secLoss": {
-        "weak": 131,
-        "mid": 96.8,
-        "good": 66.4
+        "weak": 130.6,
+        "mid": 96.6,
+        "good": 66.2
       }
     },
     {
@@ -1402,21 +1402,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 410,
-      "winRate": 0.823,
+      "winRate": 0.818,
       "stuckRate": 0,
-      "avgStars": 2.01,
-      "avgScore": 439,
-      "movesUsedWin": 14.7,
+      "avgStars": 2.17,
+      "avgScore": 459,
+      "movesUsedWin": 13.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 100.8,
-        "mid": 75.1,
-        "good": 52
+        "weak": 96.5,
+        "mid": 71.8,
+        "good": 49.6
       },
       "secLoss": {
-        "weak": 136.9,
-        "mid": 101.3,
-        "good": 69.7
+        "weak": 138.5,
+        "mid": 102.4,
+        "good": 70.3
       }
     },
     {
@@ -1426,21 +1426,21 @@
       "tier": "boss",
       "moves": 26,
       "target": 650,
-      "winRate": 0.217,
+      "winRate": 0.28,
       "stuckRate": 0,
-      "avgStars": 1.1,
-      "avgScore": 635,
-      "movesUsedWin": 24.4,
+      "avgStars": 1.3,
+      "avgScore": 665,
+      "movesUsedWin": 23.5,
       "movesUsedLoss": 26,
       "secWin": {
-        "weak": 169.5,
-        "mid": 126.1,
-        "good": 87.3
+        "weak": 166.8,
+        "mid": 123.8,
+        "good": 85.4
       },
       "secLoss": {
-        "weak": 185.7,
-        "mid": 137.6,
-        "good": 94.8
+        "weak": 186.5,
+        "mid": 138.1,
+        "good": 95.1
       }
     },
     {
@@ -1450,20 +1450,20 @@
       "tier": "normal",
       "moves": 16,
       "target": 250,
-      "winRate": 0.963,
+      "winRate": 0.955,
       "stuckRate": 0,
-      "avgStars": 2.73,
-      "avgScore": 276,
-      "movesUsedWin": 9.2,
+      "avgStars": 2.71,
+      "avgScore": 291,
+      "movesUsedWin": 9.1,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 62.9,
-        "mid": 46.9,
+        "weak": 63.2,
+        "mid": 47,
         "good": 32.5
       },
       "secLoss": {
-        "weak": 117.7,
-        "mid": 86.9,
+        "weak": 117.9,
+        "mid": 87,
         "good": 59.5
       }
     },
@@ -1474,21 +1474,21 @@
       "tier": "normal",
       "moves": 26,
       "target": 450,
-      "winRate": 0.882,
+      "winRate": 0.885,
       "stuckRate": 0,
-      "avgStars": 1.76,
-      "avgScore": 471,
-      "movesUsedWin": 21.4,
+      "avgStars": 2.08,
+      "avgScore": 484,
+      "movesUsedWin": 19.9,
       "movesUsedLoss": 26,
       "secWin": {
-        "weak": 155.3,
-        "mid": 114.8,
-        "good": 78.7
+        "weak": 145,
+        "mid": 107.1,
+        "good": 73.4
       },
       "secLoss": {
-        "weak": 194.7,
-        "mid": 143.3,
-        "good": 97.8
+        "weak": 194.3,
+        "mid": 143.1,
+        "good": 97.7
       }
     },
     {
@@ -1498,21 +1498,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 260,
-      "winRate": 0.915,
+      "winRate": 0.892,
       "stuckRate": 0,
-      "avgStars": 2.73,
-      "avgScore": 295,
-      "movesUsedWin": 9.2,
+      "avgStars": 2.75,
+      "avgScore": 304,
+      "movesUsedWin": 9.1,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 64.9,
-        "mid": 48.2,
-        "good": 33.2
+        "weak": 64,
+        "mid": 47.5,
+        "good": 32.8
       },
       "secLoss": {
-        "weak": 128.2,
-        "mid": 94.3,
-        "good": 64.3
+        "weak": 128.7,
+        "mid": 94.7,
+        "good": 64.5
       }
     },
     {
@@ -1522,21 +1522,21 @@
       "tier": "normal",
       "moves": 39,
       "target": 300,
-      "winRate": 0.907,
+      "winRate": 0.885,
       "stuckRate": 0,
-      "avgStars": 2.63,
-      "avgScore": 491,
-      "movesUsedWin": 23.4,
+      "avgStars": 2.58,
+      "avgScore": 531,
+      "movesUsedWin": 23.7,
       "movesUsedLoss": 39,
       "secWin": {
-        "weak": 170.4,
-        "mid": 125.8,
-        "good": 86.1
+        "weak": 173.8,
+        "mid": 128.3,
+        "good": 87.8
       },
       "secLoss": {
-        "weak": 289.9,
-        "mid": 213.4,
-        "good": 145.7
+        "weak": 291.4,
+        "mid": 214.4,
+        "good": 146.3
       }
     },
     {
@@ -1546,21 +1546,21 @@
       "tier": "hard",
       "moves": 20,
       "target": 470,
-      "winRate": 0.26,
+      "winRate": 0.333,
       "stuckRate": 0.003,
-      "avgStars": 1.23,
-      "avgScore": 432,
-      "movesUsedWin": 18.6,
+      "avgStars": 1.42,
+      "avgScore": 441,
+      "movesUsedWin": 17.8,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 127.8,
-        "mid": 95,
-        "good": 65.6
+        "weak": 124.8,
+        "mid": 92.5,
+        "good": 63.7
       },
       "secLoss": {
-        "weak": 142.9,
-        "mid": 105.6,
-        "good": 72.4
+        "weak": 142.7,
+        "mid": 105.5,
+        "good": 72.3
       }
     },
     {
@@ -1572,14 +1572,14 @@
       "target": 320,
       "winRate": 0.943,
       "stuckRate": 0,
-      "avgStars": 2.01,
-      "avgScore": 336,
-      "movesUsedWin": 11.8,
+      "avgStars": 2.03,
+      "avgScore": 339,
+      "movesUsedWin": 11.7,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 85.4,
-        "mid": 63.2,
-        "good": 43.4
+        "weak": 84.6,
+        "mid": 62.6,
+        "good": 43
       },
       "secLoss": {
         "weak": 118.8,
@@ -1594,21 +1594,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 420,
-      "winRate": 0.805,
+      "winRate": 0.818,
       "stuckRate": 0,
-      "avgStars": 1.6,
-      "avgScore": 428,
-      "movesUsedWin": 15.3,
+      "avgStars": 1.92,
+      "avgScore": 433,
+      "movesUsedWin": 14,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 106.3,
-        "mid": 79,
-        "good": 54.6
+        "weak": 98.2,
+        "mid": 73,
+        "good": 50.4
       },
       "secLoss": {
-        "weak": 131.5,
-        "mid": 97,
-        "good": 66.5
+        "weak": 131.3,
+        "mid": 96.9,
+        "good": 66.4
       }
     },
     {
@@ -1618,21 +1618,21 @@
       "tier": "normal",
       "moves": 18,
       "target": 400,
-      "winRate": 0.698,
+      "winRate": 0.733,
       "stuckRate": 0,
-      "avgStars": 1.38,
-      "avgScore": 401,
-      "movesUsedWin": 16,
+      "avgStars": 1.6,
+      "avgScore": 408,
+      "movesUsedWin": 15.2,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 114.4,
-        "mid": 84.7,
-        "good": 58.3
+        "weak": 109.1,
+        "mid": 80.7,
+        "good": 55.5
       },
       "secLoss": {
-        "weak": 133.7,
-        "mid": 98.5,
-        "good": 67.3
+        "weak": 132.8,
+        "mid": 97.9,
+        "good": 67
       }
     },
     {
@@ -1642,21 +1642,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 410,
-      "winRate": 0.762,
+      "winRate": 0.785,
       "stuckRate": 0,
-      "avgStars": 1.7,
-      "avgScore": 413,
-      "movesUsedWin": 15.8,
+      "avgStars": 2,
+      "avgScore": 424,
+      "movesUsedWin": 14.6,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 108.6,
-        "mid": 80.9,
-        "good": 56.1
+        "weak": 100.9,
+        "mid": 75.1,
+        "good": 52
       },
       "secLoss": {
-        "weak": 135.8,
-        "mid": 100.6,
-        "good": 69.3
+        "weak": 134.9,
+        "mid": 100,
+        "good": 68.9
       }
     },
     {
@@ -1666,21 +1666,21 @@
       "tier": "boss",
       "moves": 33,
       "target": 520,
-      "winRate": 0.233,
+      "winRate": 0.22,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 644,
-      "movesUsedWin": 26.5,
+      "avgStars": 2.05,
+      "avgScore": 663,
+      "movesUsedWin": 26.1,
       "movesUsedLoss": 33,
       "secWin": {
-        "weak": 193.6,
-        "mid": 143.1,
-        "good": 98.1
+        "weak": 191.1,
+        "mid": 141.2,
+        "good": 96.8
       },
       "secLoss": {
-        "weak": 248.3,
-        "mid": 182.6,
-        "good": 124.6
+        "weak": 248.5,
+        "mid": 182.8,
+        "good": 124.7
       }
     },
     {
@@ -1690,21 +1690,21 @@
       "tier": "normal",
       "moves": 35,
       "target": 600,
-      "winRate": 0.958,
+      "winRate": 0.968,
       "stuckRate": 0,
-      "avgStars": 1.83,
-      "avgScore": 620,
-      "movesUsedWin": 28.6,
+      "avgStars": 2.03,
+      "avgScore": 631,
+      "movesUsedWin": 27.2,
       "movesUsedLoss": 35,
       "secWin": {
-        "weak": 212.1,
-        "mid": 156.5,
-        "good": 107.1
+        "weak": 201.7,
+        "mid": 148.8,
+        "good": 101.8
       },
       "secLoss": {
-        "weak": 270.9,
-        "mid": 199,
-        "good": 135.5
+        "weak": 267.5,
+        "mid": 196.6,
+        "good": 134
       }
     },
     {
@@ -1714,21 +1714,21 @@
       "tier": "normal",
       "moves": 37,
       "target": 620,
-      "winRate": 0.93,
+      "winRate": 0.927,
       "stuckRate": 0,
-      "avgStars": 1.65,
-      "avgScore": 637,
-      "movesUsedWin": 31.4,
+      "avgStars": 1.84,
+      "avgScore": 647,
+      "movesUsedWin": 30,
       "movesUsedLoss": 37,
       "secWin": {
-        "weak": 228.3,
-        "mid": 168.5,
-        "good": 115.5
+        "weak": 219.2,
+        "mid": 161.8,
+        "good": 110.9
       },
       "secLoss": {
-        "weak": 276.7,
-        "mid": 203.6,
-        "good": 138.9
+        "weak": 275.5,
+        "mid": 202.8,
+        "good": 138.5
       }
     },
     {
@@ -1738,21 +1738,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 320,
-      "winRate": 0.873,
+      "winRate": 0.875,
       "stuckRate": 0,
-      "avgStars": 1.68,
-      "avgScore": 333,
-      "movesUsedWin": 14.1,
+      "avgStars": 1.75,
+      "avgScore": 336,
+      "movesUsedWin": 13.8,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 97.3,
-        "mid": 72.3,
-        "good": 49.9
+        "weak": 95.2,
+        "mid": 70.7,
+        "good": 48.8
       },
       "secLoss": {
-        "weak": 126.9,
-        "mid": 93.3,
-        "good": 63.6
+        "weak": 126.7,
+        "mid": 93.2,
+        "good": 63.5
       }
     },
     {
@@ -1762,21 +1762,21 @@
       "tier": "normal",
       "moves": 27,
       "target": 540,
-      "winRate": 0.875,
+      "winRate": 0.845,
       "stuckRate": 0,
-      "avgStars": 1.88,
-      "avgScore": 566,
-      "movesUsedWin": 21.6,
+      "avgStars": 2,
+      "avgScore": 598,
+      "movesUsedWin": 20.9,
       "movesUsedLoss": 27,
       "secWin": {
-        "weak": 155,
-        "mid": 114.9,
-        "good": 79.1
+        "weak": 150.9,
+        "mid": 111.8,
+        "good": 76.9
       },
       "secLoss": {
-        "weak": 201.3,
-        "mid": 148.5,
-        "good": 101.7
+        "weak": 202.4,
+        "mid": 149.2,
+        "good": 102
       }
     },
     {
@@ -1786,21 +1786,21 @@
       "tier": "hard",
       "moves": 20,
       "target": 510,
-      "winRate": 0.282,
+      "winRate": 0.415,
       "stuckRate": 0,
-      "avgStars": 1.26,
-      "avgScore": 473,
-      "movesUsedWin": 18.3,
+      "avgStars": 1.6,
+      "avgScore": 489,
+      "movesUsedWin": 17.2,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 129.3,
-        "mid": 95.9,
-        "good": 66.1
+        "weak": 122.8,
+        "mid": 90.9,
+        "good": 62.5
       },
       "secLoss": {
-        "weak": 144,
-        "mid": 106.6,
-        "good": 73.2
+        "weak": 144.5,
+        "mid": 106.8,
+        "good": 73.3
       }
     },
     {
@@ -1810,21 +1810,21 @@
       "tier": "chill",
       "moves": 15,
       "target": 270,
-      "winRate": 0.973,
+      "winRate": 0.975,
       "stuckRate": 0,
-      "avgStars": 2.31,
-      "avgScore": 286,
-      "movesUsedWin": 10.8,
+      "avgStars": 2.44,
+      "avgScore": 291,
+      "movesUsedWin": 9.8,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 75.6,
-        "mid": 56.1,
-        "good": 38.8
+        "weak": 68,
+        "mid": 50.6,
+        "good": 35
       },
       "secLoss": {
-        "weak": 115.2,
-        "mid": 84.6,
-        "good": 57.6
+        "weak": 113.6,
+        "mid": 83.6,
+        "good": 57
       }
     },
     {
@@ -1834,21 +1834,21 @@
       "tier": "normal",
       "moves": 28,
       "target": 540,
-      "winRate": 0.848,
+      "winRate": 0.83,
       "stuckRate": 0,
-      "avgStars": 1.63,
-      "avgScore": 560,
-      "movesUsedWin": 23.9,
+      "avgStars": 1.72,
+      "avgScore": 574,
+      "movesUsedWin": 23.4,
       "movesUsedLoss": 28,
       "secWin": {
-        "weak": 173.8,
-        "mid": 128.4,
-        "good": 88.2
+        "weak": 170.4,
+        "mid": 125.9,
+        "good": 86.4
       },
       "secLoss": {
-        "weak": 210.9,
-        "mid": 155.3,
-        "good": 106.1
+        "weak": 212.3,
+        "mid": 156.2,
+        "good": 106.6
       }
     },
     {
@@ -1858,16 +1858,16 @@
       "tier": "normal",
       "moves": 26,
       "target": 500,
-      "winRate": 0.76,
+      "winRate": 0.752,
       "stuckRate": 0,
-      "avgStars": 1.46,
-      "avgScore": 515,
-      "movesUsedWin": 22.7,
+      "avgStars": 1.54,
+      "avgScore": 526,
+      "movesUsedWin": 22.3,
       "movesUsedLoss": 26,
       "secWin": {
-        "weak": 163.4,
-        "mid": 120.9,
-        "good": 83.1
+        "weak": 161.1,
+        "mid": 119.1,
+        "good": 81.8
       },
       "secLoss": {
         "weak": 193.2,
@@ -1882,21 +1882,21 @@
       "tier": "normal",
       "moves": 29,
       "target": 570,
-      "winRate": 0.772,
+      "winRate": 0.743,
       "stuckRate": 0,
-      "avgStars": 1.71,
-      "avgScore": 602,
-      "movesUsedWin": 24.5,
+      "avgStars": 1.73,
+      "avgScore": 623,
+      "movesUsedWin": 24.4,
       "movesUsedLoss": 29,
       "secWin": {
-        "weak": 177.5,
-        "mid": 131.2,
-        "good": 90
+        "weak": 177.1,
+        "mid": 130.9,
+        "good": 89.8
       },
       "secLoss": {
-        "weak": 216.2,
-        "mid": 159.2,
-        "good": 108.8
+        "weak": 215.9,
+        "mid": 159,
+        "good": 108.6
       }
     },
     {
@@ -1906,21 +1906,21 @@
       "tier": "boss",
       "moves": 30,
       "target": 700,
-      "winRate": 0.205,
+      "winRate": 0.242,
       "stuckRate": 0,
-      "avgStars": 1.09,
-      "avgScore": 670,
-      "movesUsedWin": 28.7,
+      "avgStars": 1.28,
+      "avgScore": 687,
+      "movesUsedWin": 27.7,
       "movesUsedLoss": 30,
       "secWin": {
-        "weak": 205.6,
-        "mid": 152.2,
-        "good": 104.7
+        "weak": 200.9,
+        "mid": 148.5,
+        "good": 102
       },
       "secLoss": {
-        "weak": 219.9,
-        "mid": 162.4,
-        "good": 111.4
+        "weak": 220.4,
+        "mid": 162.8,
+        "good": 111.6
       }
     },
     {
@@ -1932,14 +1932,14 @@
       "target": 320,
       "winRate": 0.955,
       "stuckRate": 0,
-      "avgStars": 2.46,
-      "avgScore": 337,
-      "movesUsedWin": 11,
+      "avgStars": 2.64,
+      "avgScore": 343,
+      "movesUsedWin": 9.6,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 72,
-        "mid": 53.9,
-        "good": 37.7
+        "weak": 62.3,
+        "mid": 46.8,
+        "good": 32.7
       },
       "secLoss": {
         "weak": 115.3,
@@ -1954,20 +1954,20 @@
       "tier": "normal",
       "moves": 16,
       "target": 310,
-      "winRate": 0.91,
+      "winRate": 0.912,
       "stuckRate": 0,
-      "avgStars": 2.02,
-      "avgScore": 323,
-      "movesUsedWin": 12.9,
+      "avgStars": 2.04,
+      "avgScore": 327,
+      "movesUsedWin": 12.7,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 89.1,
-        "mid": 66.2,
-        "good": 45.7
+        "weak": 88,
+        "mid": 65.4,
+        "good": 45.1
       },
       "secLoss": {
-        "weak": 118.9,
-        "mid": 87.5,
+        "weak": 118.7,
+        "mid": 87.4,
         "good": 59.6
       }
     },
@@ -1978,21 +1978,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 380,
-      "winRate": 0.89,
+      "winRate": 0.895,
       "stuckRate": 0,
-      "avgStars": 1.82,
-      "avgScore": 392,
-      "movesUsedWin": 13.5,
+      "avgStars": 2.01,
+      "avgScore": 396,
+      "movesUsedWin": 12.6,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 93.6,
-        "mid": 69.6,
-        "good": 48.2
+        "weak": 86.8,
+        "mid": 64.7,
+        "good": 44.8
       },
       "secLoss": {
-        "weak": 126.9,
-        "mid": 93.6,
-        "good": 64.1
+        "weak": 126.2,
+        "mid": 93.2,
+        "good": 63.8
       }
     },
     {
@@ -2002,21 +2002,21 @@
       "tier": "normal",
       "moves": 26,
       "target": 200,
-      "winRate": 0.902,
+      "winRate": 0.895,
       "stuckRate": 0,
-      "avgStars": 2.67,
-      "avgScore": 336,
-      "movesUsedWin": 14.8,
+      "avgStars": 2.65,
+      "avgScore": 348,
+      "movesUsedWin": 15,
       "movesUsedLoss": 26,
       "secWin": {
-        "weak": 103.4,
-        "mid": 76.8,
-        "good": 53
+        "weak": 105.3,
+        "mid": 78.2,
+        "good": 53.9
       },
       "secLoss": {
-        "weak": 188.1,
-        "mid": 139,
-        "good": 95.3
+        "weak": 188.7,
+        "mid": 139.4,
+        "good": 95.6
       }
     },
     {
@@ -2026,21 +2026,21 @@
       "tier": "hard",
       "moves": 18,
       "target": 440,
-      "winRate": 0.28,
+      "winRate": 0.275,
       "stuckRate": 0,
-      "avgStars": 1.28,
-      "avgScore": 431,
-      "movesUsedWin": 16.3,
+      "avgStars": 1.46,
+      "avgScore": 456,
+      "movesUsedWin": 15.7,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 113.2,
-        "mid": 84.1,
-        "good": 58.1
+        "weak": 110.7,
+        "mid": 82.1,
+        "good": 56.6
       },
       "secLoss": {
-        "weak": 128.8,
-        "mid": 95.3,
-        "good": 65.5
+        "weak": 129.7,
+        "mid": 95.9,
+        "good": 65.8
       }
     },
     {
@@ -2050,21 +2050,21 @@
       "tier": "chill",
       "moves": 26,
       "target": 390,
-      "winRate": 0.988,
+      "winRate": 0.973,
       "stuckRate": 0,
-      "avgStars": 2.6,
-      "avgScore": 414,
-      "movesUsedWin": 17.1,
+      "avgStars": 2.63,
+      "avgScore": 435,
+      "movesUsedWin": 16.6,
       "movesUsedLoss": 26,
       "secWin": {
-        "weak": 123.7,
-        "mid": 91.6,
-        "good": 63.1
+        "weak": 120.6,
+        "mid": 89.2,
+        "good": 61.4
       },
       "secLoss": {
-        "weak": 192,
-        "mid": 141.5,
-        "good": 96.9
+        "weak": 200.7,
+        "mid": 147.5,
+        "good": 100.5
       }
     },
     {
@@ -2074,20 +2074,20 @@
       "tier": "normal",
       "moves": 22,
       "target": 450,
-      "winRate": 0.88,
+      "winRate": 0.882,
       "stuckRate": 0,
-      "avgStars": 1.93,
-      "avgScore": 470,
-      "movesUsedWin": 17.7,
+      "avgStars": 2.03,
+      "avgScore": 480,
+      "movesUsedWin": 17.2,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 130.1,
-        "mid": 96,
-        "good": 65.7
+        "weak": 126.5,
+        "mid": 93.3,
+        "good": 63.8
       },
       "secLoss": {
-        "weak": 168,
-        "mid": 123.3,
+        "weak": 168.1,
+        "mid": 123.4,
         "good": 84
       }
     },
@@ -2098,21 +2098,21 @@
       "tier": "normal",
       "moves": 27,
       "target": 500,
-      "winRate": 0.79,
+      "winRate": 0.745,
       "stuckRate": 0,
-      "avgStars": 1.54,
-      "avgScore": 522,
-      "movesUsedWin": 23.2,
+      "avgStars": 1.62,
+      "avgScore": 544,
+      "movesUsedWin": 22.7,
       "movesUsedLoss": 27,
       "secWin": {
-        "weak": 166.7,
-        "mid": 123.4,
-        "good": 84.9
+        "weak": 164,
+        "mid": 121.4,
+        "good": 83.4
       },
       "secLoss": {
-        "weak": 199.1,
-        "mid": 147,
-        "good": 100.7
+        "weak": 199.9,
+        "mid": 147.5,
+        "good": 101.1
       }
     },
     {
@@ -2122,21 +2122,21 @@
       "tier": "normal",
       "moves": 25,
       "target": 500,
-      "winRate": 0.72,
+      "winRate": 0.728,
       "stuckRate": 0,
-      "avgStars": 1.66,
-      "avgScore": 513,
-      "movesUsedWin": 21.5,
+      "avgStars": 1.88,
+      "avgScore": 533,
+      "movesUsedWin": 20.4,
       "movesUsedLoss": 25,
       "secWin": {
-        "weak": 152.3,
-        "mid": 112.9,
-        "good": 77.9
+        "weak": 145.7,
+        "mid": 107.9,
+        "good": 74.3
       },
       "secLoss": {
-        "weak": 181.6,
-        "mid": 134.2,
-        "good": 92.1
+        "weak": 182.7,
+        "mid": 135,
+        "good": 92.6
       }
     },
     {
@@ -2146,21 +2146,21 @@
       "tier": "boss",
       "moves": 32,
       "target": 740,
-      "winRate": 0.275,
+      "winRate": 0.292,
       "stuckRate": 0,
-      "avgStars": 1.34,
-      "avgScore": 748,
-      "movesUsedWin": 29.4,
+      "avgStars": 1.54,
+      "avgScore": 781,
+      "movesUsedWin": 28.2,
       "movesUsedLoss": 32,
       "secWin": {
-        "weak": 212.5,
-        "mid": 157.3,
-        "good": 108.2
+        "weak": 205.3,
+        "mid": 151.8,
+        "good": 104.4
       },
       "secLoss": {
-        "weak": 235.4,
-        "mid": 173.9,
-        "good": 119.3
+        "weak": 236.9,
+        "mid": 174.9,
+        "good": 119.8
       }
     },
     {
@@ -2170,21 +2170,21 @@
       "tier": "normal",
       "moves": 16,
       "target": 330,
-      "winRate": 0.955,
+      "winRate": 0.958,
       "stuckRate": 0,
-      "avgStars": 2.21,
-      "avgScore": 347,
-      "movesUsedWin": 12,
+      "avgStars": 2.36,
+      "avgScore": 349,
+      "movesUsedWin": 10.9,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 82.2,
-        "mid": 61.2,
-        "good": 42.4
+        "weak": 74.3,
+        "mid": 55.4,
+        "good": 38.4
       },
       "secLoss": {
-        "weak": 119.9,
-        "mid": 88.3,
-        "good": 60.3
+        "weak": 118.9,
+        "mid": 87.6,
+        "good": 59.9
       }
     },
     {
@@ -2194,21 +2194,21 @@
       "tier": "normal",
       "moves": 35,
       "target": 670,
-      "winRate": 0.917,
+      "winRate": 0.895,
       "stuckRate": 0,
-      "avgStars": 1.57,
-      "avgScore": 693,
-      "movesUsedWin": 30,
+      "avgStars": 1.74,
+      "avgScore": 707,
+      "movesUsedWin": 28.9,
       "movesUsedLoss": 35,
       "secWin": {
-        "weak": 217.9,
-        "mid": 161.2,
-        "good": 110.8
+        "weak": 210.4,
+        "mid": 155.6,
+        "good": 106.9
       },
       "secLoss": {
-        "weak": 263.9,
-        "mid": 194.3,
-        "good": 132.8
+        "weak": 263,
+        "mid": 193.7,
+        "good": 132.4
       }
     },
     {
@@ -2218,20 +2218,20 @@
       "tier": "normal",
       "moves": 38,
       "target": 660,
-      "winRate": 0.873,
+      "winRate": 0.882,
       "stuckRate": 0,
-      "avgStars": 1.51,
-      "avgScore": 678,
-      "movesUsedWin": 33.4,
+      "avgStars": 1.64,
+      "avgScore": 688,
+      "movesUsedWin": 32.3,
       "movesUsedLoss": 38,
       "secWin": {
-        "weak": 245.2,
-        "mid": 180.9,
-        "good": 123.9
+        "weak": 237.4,
+        "mid": 175.1,
+        "good": 119.9
       },
       "secLoss": {
-        "weak": 286.5,
-        "mid": 210.8,
+        "weak": 286.4,
+        "mid": 210.7,
         "good": 143.8
       }
     },
@@ -2242,21 +2242,21 @@
       "tier": "normal",
       "moves": 28,
       "target": 500,
-      "winRate": 0.86,
+      "winRate": 0.887,
       "stuckRate": 0,
-      "avgStars": 1.67,
-      "avgScore": 520,
-      "movesUsedWin": 23.6,
+      "avgStars": 1.96,
+      "avgScore": 534,
+      "movesUsedWin": 22.1,
       "movesUsedLoss": 28,
       "secWin": {
-        "weak": 170.9,
-        "mid": 126.4,
-        "good": 86.8
+        "weak": 160.2,
+        "mid": 118.4,
+        "good": 81.3
       },
       "secLoss": {
         "weak": 209.5,
-        "mid": 154.3,
-        "good": 105.4
+        "mid": 154.4,
+        "good": 105.5
       }
     },
     {
@@ -2266,21 +2266,21 @@
       "tier": "hard",
       "moves": 25,
       "target": 540,
-      "winRate": 0.355,
+      "winRate": 0.362,
       "stuckRate": 0,
-      "avgStars": 1.47,
-      "avgScore": 547,
-      "movesUsedWin": 22.5,
+      "avgStars": 1.52,
+      "avgScore": 565,
+      "movesUsedWin": 22.1,
       "movesUsedLoss": 25,
       "secWin": {
-        "weak": 160.1,
-        "mid": 118.6,
-        "good": 81.5
+        "weak": 159.2,
+        "mid": 117.7,
+        "good": 80.8
       },
       "secLoss": {
-        "weak": 184.5,
-        "mid": 136.1,
-        "good": 93.1
+        "weak": 184.4,
+        "mid": 136,
+        "good": 93
       }
     },
     {
@@ -2292,14 +2292,14 @@
       "target": 310,
       "winRate": 0.953,
       "stuckRate": 0,
-      "avgStars": 2.29,
-      "avgScore": 328,
-      "movesUsedWin": 10.8,
+      "avgStars": 2.37,
+      "avgScore": 332,
+      "movesUsedWin": 10.1,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 73,
-        "mid": 54.5,
-        "good": 37.9
+        "weak": 68,
+        "mid": 50.8,
+        "good": 35.3
       },
       "secLoss": {
         "weak": 111,
@@ -2314,21 +2314,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 430,
-      "winRate": 0.797,
+      "winRate": 0.805,
       "stuckRate": 0,
-      "avgStars": 1.54,
-      "avgScore": 441,
-      "movesUsedWin": 16.5,
+      "avgStars": 1.7,
+      "avgScore": 446,
+      "movesUsedWin": 15.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 119.3,
-        "mid": 88.1,
-        "good": 60.4
+        "weak": 114.8,
+        "mid": 84.8,
+        "good": 58.2
       },
       "secLoss": {
-        "weak": 142.6,
-        "mid": 104.9,
-        "good": 71.5
+        "weak": 142.9,
+        "mid": 105.1,
+        "good": 71.6
       }
     },
     {
@@ -2338,20 +2338,20 @@
       "tier": "normal",
       "moves": 18,
       "target": 350,
-      "winRate": 0.655,
+      "winRate": 0.65,
       "stuckRate": 0,
-      "avgStars": 1.47,
-      "avgScore": 357,
-      "movesUsedWin": 15.7,
+      "avgStars": 1.57,
+      "avgScore": 369,
+      "movesUsedWin": 15.4,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 109.9,
-        "mid": 81.5,
-        "good": 56.2
+        "weak": 108.3,
+        "mid": 80.3,
+        "good": 55.3
       },
       "secLoss": {
-        "weak": 132.4,
-        "mid": 97.5,
+        "weak": 132.2,
+        "mid": 97.4,
         "good": 66.6
       }
     },
@@ -2362,21 +2362,21 @@
       "tier": "normal",
       "moves": 19,
       "target": 460,
-      "winRate": 0.738,
+      "winRate": 0.797,
       "stuckRate": 0,
-      "avgStars": 1.53,
-      "avgScore": 465,
-      "movesUsedWin": 16.5,
+      "avgStars": 2,
+      "avgScore": 471,
+      "movesUsedWin": 14.7,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 116.7,
-        "mid": 86.6,
-        "good": 59.7
+        "weak": 104.7,
+        "mid": 77.6,
+        "good": 53.5
       },
       "secLoss": {
-        "weak": 139.3,
-        "mid": 102.9,
-        "good": 70.5
+        "weak": 138.2,
+        "mid": 102.1,
+        "good": 70.1
       }
     },
     {
@@ -2386,21 +2386,21 @@
       "tier": "boss",
       "moves": 29,
       "target": 720,
-      "winRate": 0.147,
+      "winRate": 0.233,
       "stuckRate": 0,
-      "avgStars": 1.22,
-      "avgScore": 682,
-      "movesUsedWin": 26.7,
+      "avgStars": 1.37,
+      "avgScore": 723,
+      "movesUsedWin": 26.1,
       "movesUsedLoss": 29,
       "secWin": {
-        "weak": 189.6,
+        "weak": 190,
         "mid": 140.6,
-        "good": 97
+        "good": 96.6
       },
       "secLoss": {
-        "weak": 211.4,
-        "mid": 156.3,
-        "good": 107.3
+        "weak": 211.9,
+        "mid": 156.6,
+        "good": 107.5
       }
     }
   ]
