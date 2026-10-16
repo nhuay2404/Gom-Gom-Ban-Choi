@@ -411,17 +411,51 @@ function snapLines() {
   }
   return { xs, ys };
 }
-function snapDelta(rect, dx, dy) {
-  if (!prefs.snap) return { dx, dy, guides: [] };
-  const { xs, ys } = snapLines();
-  const pick = (edges, lines) => {
-    let best = null;
-    for (const e of edges) for (const l of lines) { const d = l - e; if (Math.abs(d) <= SNAP_PX && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, l }; }
-    return best;
+// Smart guides kiểu Figma / Photoshop: lúc kéo, mép trái / tâm / mép phải (trên / giữa / dưới) của layer hút vào mép / tâm của các layer
+// khác đang hiện (kể cả layer cha) + khung / lưới khi bật Snap. Giữ Ctrl để kéo tự do. Đường gióng vẽ từ layer đang kéo tới layer được gióng.
+function guideTargets(moving) {
+  const out = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el === host || moving.some(m => m === el || m.contains(el))) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4 || (r.width > innerWidth * .95 && r.height > innerHeight * .95)) continue;
+    if (r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'contents' || Number(cs.opacity) === 0) continue;
+    out.push(r);
+    if (out.length > 800) break;
+  }
+  return out;
+}
+const xEdges = r => [r.left, r.left + r.width / 2, r.right];
+const yEdges = r => [r.top, r.top + r.height / 2, r.bottom];
+function snapDelta(rect, dx, dy, targets = [], free = false) {
+  if (free) return { dx, dy, guides: [] };
+  const vx = [], vy = [];
+  if (prefs.snap) {
+    const { xs, ys } = snapLines();
+    for (const at of xs) vx.push({ at });
+    for (const at of ys) vy.push({ at });
+  }
+  for (const t of targets) {
+    for (const at of xEdges(t)) vx.push({ at, t });
+    for (const at of yEdges(t)) vy.push({ at, t });
+  }
+  const best = (edges, lines) => {
+    let b = null;
+    for (const e of edges) for (const l of lines) { const d = l.at - e; if (Math.abs(d) <= SNAP_PX && (b === null || Math.abs(d) < Math.abs(b))) b = d; }
+    return b;
   };
-  const bx = pick([rect.left + dx, rect.left + rect.width / 2 + dx, rect.right + dx], xs);
-  const by = pick([rect.top + dy, rect.top + rect.height / 2 + dy, rect.bottom + dy], ys);
-  return { dx: dx + (bx?.d || 0), dy: dy + (by?.d || 0), guides: [bx && { x: bx.l }, by && { y: by.l }].filter(Boolean) };
+  const sx = best(xEdges(rect).map(v => v + dx), vx), sy = best(yEdges(rect).map(v => v + dy), vy);
+  if (sx !== null) dx += sx;
+  if (sy !== null) dy += sy;
+  const moved = { left: rect.left + dx, right: rect.right + dx, top: rect.top + dy, bottom: rect.bottom + dy, width: rect.width, height: rect.height };
+  // mọi đường trùng vị trí mới đều vẽ (như Figma: gióng cùng lúc nhiều layer), gộp đường trùng
+  const guides = new Map();
+  const add = g => { const k = [g.x ?? '', g.y ?? '', g.a, g.b].map(Math.round).join(); if (!guides.has(k)) guides.set(k, g); };
+  if (sx !== null) for (const l of vx) if (xEdges(moved).some(e => Math.abs(e - l.at) < .6)) add(l.t ? { x: l.at, a: Math.min(moved.top, l.t.top), b: Math.max(moved.bottom, l.t.bottom) } : { x: l.at, a: 0, b: innerHeight });
+  if (sy !== null) for (const l of vy) if (yEdges(moved).some(e => Math.abs(e - l.at) < .6)) add(l.t ? { y: l.at, a: Math.min(moved.left, l.t.left), b: Math.max(moved.right, l.t.right) } : { y: l.at, a: 0, b: innerWidth });
+  return { dx, dy, guides: [...guides.values()].slice(0, 16) };
 }
 
 // ---------- Dời vị trí ----------
@@ -478,7 +512,29 @@ function moveBy(el, dx, dy, step = .01) {
   }
   return moved;
 }
-const NOT_MOVABLE = 'This layer\'s position is set by game code (or a parent layout), so it cannot be moved from here. Try ⬆ Parent.';
+// Đổi cỡ (W / H trong mục Transform): sửa width / height đang thắng; chưa có thì thêm width: calc(N * var(--u)) vào khối của layer.
+function sizeAxis(el, name) {
+  const ref = matchedRules(el).find(r => r.rule.style.getPropertyValue(name));
+  if (!ref) return null;
+  const value = ref.rule.style.getPropertyValue(name).trim(), m = value.match(/-?\d*\.?\d+/);
+  return m ? { ref, name, value, m } : null;
+}
+function resizeTo(el, name, targetPx) {
+  let axis = sizeAxis(el, name);
+  if (!axis) {
+    const ref = editableRef(el);
+    if (!ref) return false;
+    setProp(ref, name, `calc(${round(el.getBoundingClientRect()[name] / unitPx(el.parentElement))} * var(--u))`);
+    axis = sizeAxis(el, name);
+    if (!axis) return false;
+  }
+  const scale = measure(el, axis, name);
+  if (!scale) return false;
+  const delta = targetPx - el.getBoundingClientRect()[name];
+  if (Math.abs(delta) > .05) setProp(axis.ref, name, withNumber(axis, round(parseFloat(axis.m[0]) + delta / scale)));
+  return true;
+}
+const NOT_MOVABLE ='This layer\'s position is set by game code (or a parent layout), so it cannot be moved from here. Try ⬆ Parent.';
 
 // ---------- Chọn, liên kết (group) ----------
 const primary = () => selection.at(-1) || null;
@@ -626,7 +682,7 @@ root.innerHTML = `<style>
   * { box-sizing: border-box; font: 12px/1.35 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
   canvas.grid { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; display: none; }
   .guide { position: fixed; background: #ff2fb4; pointer-events: none; }
-  .guide.x { top: 0; bottom: 0; width: 1px; } .guide.y { left: 0; right: 0; height: 1px; }
+  .guide.x { width: 1px; } .guide.y { height: 1px; }
   .box { position: fixed; border: 1.5px solid #2f8cff; background: rgba(47,140,255,.06); pointer-events: none; border-radius: 2px; display: none; }
   .box.sel { cursor: move; pointer-events: auto; }
   .box.sel.primary { border-width: 2px; background: rgba(47,140,255,.1); }
@@ -658,6 +714,12 @@ root.innerHTML = `<style>
   .gridset input[type=number] { text-align: center; padding: 2px 4px; }
   .gridset input[type=checkbox] { width: auto; accent-color: #2f8cff; }
   .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .tf { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; align-items: center; }
+  .tf label { display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 4px; }
+  .tf label b { color: #9aa0aa; font-weight: 600; text-align: center; }
+  .tf input { text-align: left; }
+  .tf button.icon { grid-column: 1 / -1; justify-self: end; margin-top: -2px; }
+  .group-title { margin: 2px 0 -2px; color: #9aa0aa; font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .04em; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #e04848; }
   .dot.on { background: #3fcf6a; }
   .sep { width: 1px; align-self: stretch; background: #3a3e47; margin: 0 3px; }
@@ -801,7 +863,7 @@ function buildBars() {
   sep(toolBar);
   tool(toolBar, 'grid', { icon: 'grid', title: 'Show layout grid  (Ctrl + \')', tip: 'Shows the layout grid over the 393 px design frame, like Figma: red = columns, blue = rows, thin lines = square grid. Pink lines = frame edges and center.', onClick: () => { prefs.grid = !prefs.grid; savePrefs(); syncBar(); } });
   tool(toolBar, 'gridSet', { text: '▾', cls: 'mini', title: 'Layout grid settings', tip: 'Set up columns, rows and the square grid (count, gutter, margin, size).', onClick: () => { showGridSettings = !showGridSettings; if (showGridSettings) prefs.grid = true; savePrefs(); render(); } });
-  tool(toolBar, 'snap', { icon: 'snap', title: 'Snap  (Ctrl + Shift + ;)', tip: 'While dragging, edges and centers stick to the frame edges / center and, when the grid is shown, to column, row and grid lines.', onClick: () => { prefs.snap = !prefs.snap; savePrefs(); syncBar(); } });
+  tool(toolBar, 'snap', { icon: 'snap', title: 'Snap  (Ctrl + Shift + ;)', tip: 'While dragging, edges and centers also stick to the frame edges / center and, when the grid is shown, to column, row and grid lines. Smart guides to other layers are always on (hold Ctrl to move freely).', onClick: () => { prefs.snap = !prefs.snap; savePrefs(); syncBar(); } });
   sep(toolBar);
   tool(toolBar, 'link', { icon: 'link', title: 'Link layers  (Ctrl + G)', tip: 'Groups the selected layers so clicking one selects all of them and they move together. Only remembered in this browser; it does not change the game files.', onClick: linkSelection });
   tool(toolBar, 'unlink', { icon: 'unlink', title: 'Unlink layers  (Ctrl + Shift + G)', tip: 'Removes the link from the selected layers.', onClick: unlinkSelection });
@@ -1116,6 +1178,77 @@ function layersSection(el) {
   out.push(s);
   return out;
 }
+// Mục Transform kiểu Figma: X / Y / W / H bằng px thiết kế (1 px = 1 px của khung Figma 393 px), gốc toạ độ = góc trên trái khung.
+// Nhiều layer: X / Y là của cả vùng chọn (dời cùng nhau), W / H của layer đang hiện thuộc tính.
+function transformSection(el) {
+  const s = section('Transform', 'Position and size in design pixels, like the Design panel in Figma: 1 px here = 1 px in the 393 px-wide Figma frame. X / Y are measured from the top-left corner of that frame.');
+  const grid = document.createElement('div');
+  grid.className = 'tf';
+  const multi = selection.length > 1;
+  const fields = {};
+  const box = () => {
+    const f = frame(), r = multi ? union(selection.map(x => x.getBoundingClientRect())) : el.getBoundingClientRect();
+    return { X: (r.left - f.left) / f.u, Y: r.top / f.u, W: r.width / f.u, H: r.height / f.u, u: f.u };
+  };
+  const refresh = () => { const b = box(); for (const k of Object.keys(fields)) if (root.activeElement !== fields[k]) fields[k].value = round(b[k], .1); };
+  let lock = false;
+  const apply = (key, value) => {
+    const b = box();
+    if (!Number.isFinite(value)) { refresh(); return; }
+    let ok = true;
+    act(`Set ${key}`, () => {
+      if (key === 'X' || key === 'Y') {
+        const d = (value - b[key]) * b.u;
+        for (const x of live()) if (!moveBy(x, key === 'X' ? d : 0, key === 'Y' ? d : 0)) ok = false;
+      } else {
+        const name = key === 'W' ? 'width' : 'height';
+        ok = resizeTo(el, name, value * b.u);
+        if (ok && lock) {
+          const other = key === 'W' ? 'H' : 'W';
+          ok = resizeTo(el, other === 'W' ? 'width' : 'height', b[other] * (value / b[key]) * b.u);
+        }
+      }
+    });
+    if (!ok) flash(key === 'X' || key === 'Y' ? NOT_MOVABLE : 'This layer\'s size is set by game code or by its content, so it cannot be resized from here. Try ⬆ Parent.');
+    refresh();
+    syncBar();
+  };
+  const help = {
+    X: ['X', 'Distance from the LEFT edge of the 393 px design frame to the left edge of the layer, in design px. Type a number, or use ↑ / ↓ (Shift = 10).', '24'],
+    Y: ['Y', 'Distance from the TOP of the screen to the top edge of the layer, in design px. Type a number, or use ↑ / ↓ (Shift = 10).', '120'],
+    W: ['W (width)', 'Width of the layer in design px. Changing it writes a width into the layer\'s style rule.', '160'],
+    H: ['H (height)', 'Height of the layer in design px. Changing it writes a height into the layer\'s style rule.', '48'],
+  };
+  for (const key of ['X', 'Y', 'W', 'H']) {
+    const label = document.createElement('label');
+    label.innerHTML = `<b>${key}</b><input type="number" step="1">`;
+    const input = fields[key] = label.querySelector('input');
+    setTip(label, help[key][0], help[key][1], help[key][2]);
+    if (multi && (key === 'W' || key === 'H')) { input.disabled = true; label.dataset.tip = 'Select a single layer to change its size.'; }
+    input.addEventListener('change', () => apply(key, parseFloat(input.value)));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { input.blur(); return; }
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      const step = (event.shiftKey ? 10 : event.altKey ? .1 : 1) * (event.key === 'ArrowUp' ? 1 : -1);
+      input.value = round((parseFloat(input.value) || 0) + step, .1);
+      apply(key, parseFloat(input.value));
+    });
+    grid.append(label);
+    if (key === 'H') {
+      const chain = document.createElement('button');
+      chain.className = 'icon';
+      chain.innerHTML = ICON.link;
+      setTip(chain, 'Constrain proportions', 'When on, changing W also changes H (and the other way round) so the layer keeps its shape.');
+      chain.onclick = () => { lock = !lock; chain.classList.toggle('on', lock); };
+      if (multi) chain.disabled = true;
+      grid.append(chain);
+    }
+  }
+  s.append(grid);
+  refresh();
+  return s;
+}
 function helpBlock() {
   const h = document.createElement('div');
   h.className = 'help';
@@ -1133,7 +1266,8 @@ function helpBlock() {
     <dt><kbd>Shift</kbd> + click</dt><dd>Add / remove a layer from the selection</dd>
     <dt><kbd>Esc</kbd> · <kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Stop selecting · deselect all</dd>
     <dt>Arrows</dt><dd>Nudge 1 design px (<kbd>Shift</kbd> = 10)</dd>
-    <dt>Drag blue box</dt><dd>Move the selected layers</dd>
+    <dt>Drag blue box</dt><dd>Move the selected layers. Pink smart guides appear when an edge or center lines up with another layer; hold <kbd>Ctrl</kbd> to move freely</dd>
+    <dt>Transform</dt><dd>Type X / Y / W / H in design px (↑ / ↓ = 1, <kbd>Shift</kbd> = 10)</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>Undo</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> · <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Redo</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>Save to files</dd>
@@ -1171,21 +1305,25 @@ async function render() {
   }
   const head = document.createElement('div');
   head.className = 'el';
-  const rect = el.getBoundingClientRect(), u = frame().u;
-  head.innerHTML = `<code></code><span class="hint"></span>`;
+  head.innerHTML = `<code></code>`;
   head.querySelector('code').textContent = label(el);
-  setTip(head.querySelector('.hint'), 'Size', 'Width × height in design pixels (screen pixels in brackets).').textContent =
-    `${round(rect.width / u, .1)}×${round(rect.height / u, .1)} (${Math.round(rect.width)}×${Math.round(rect.height)} px)`;
   const up = document.createElement('button');
   up.textContent = '⬆ Parent';
   setTip(up, 'Select parent', 'Selects the layer that contains this one, e.g. the whole button instead of its label.');
   up.onclick = () => { if (el.parentElement && el.parentElement !== document.body) select(el.parentElement); };
   head.append(up);
-  body.append(head, ...layersSection(el));
+  body.append(head, transformSection(el), ...layersSection(el));
   for (const path of imagesOf(el)) body.append(imageCard(path));
   const refs = matchedRules(el);
   const lists = await Promise.all(refs.map(sourceDecls));
   if (id !== renderId) return;
+  if (refs.length) {
+    const h = document.createElement('h4');
+    h.className = 'group-title';
+    h.textContent = 'Style rules (CSS)';
+    setTip(h, 'Style rules (CSS)', 'Every other setting of this layer (color, font, shadow, image…), straight from the CSS files. Transform above writes into these rules for you.');
+    body.append(h);
+  }
   if (!refs.length) body.insertAdjacentHTML('beforeend', '<div class="hint">No style rule in game/ui/ applies to this layer. Try ⬆ Parent.</div>');
   refs.forEach((ref, i) => {
     const card = document.createElement('div');
@@ -1283,11 +1421,14 @@ sels.addEventListener('pointermove', event => {
       });
     }, drag.token);
     drag.rect = union(selection.map(el => el.getBoundingClientRect()));
+    drag.targets = guideTargets(selection);
     if (!drag.items.some(it => it.axes.some(a => a.scale))) flash(NOT_MOVABLE);
   }
-  const snapped = snapDelta(drag.rect, dx, dy);
+  const snapped = snapDelta(drag.rect, dx, dy, drag.targets, event.ctrlKey || event.metaKey);
   dx = snapped.dx; dy = snapped.dy;
   showGuides(snapped.guides);
+  const f = frame();
+  drag.readout = `X ${round((drag.rect.left + dx - f.left) / f.u, .1)}   Y ${round((drag.rect.top + dy) / f.u, .1)}`;
   act(null, () => {
     for (const { axes } of drag.items) {
       for (const a of axes) {
@@ -1303,8 +1444,11 @@ function showGuides(list) {
   guides.innerHTML = '';
   for (const g of list) {
     const line = document.createElement('div');
-    line.className = 'guide ' + ('x' in g ? 'x' : 'y');
-    line.style['x' in g ? 'left' : 'top'] = ('x' in g ? g.x : g.y) + 'px';
+    const vertical = 'x' in g;
+    line.className = 'guide ' + (vertical ? 'x' : 'y');
+    Object.assign(line.style, vertical
+      ? { left: Math.round(g.x) + 'px', top: g.a + 'px', height: (g.b - g.a) + 'px' }
+      : { top: Math.round(g.y) + 'px', left: g.a + 'px', width: (g.b - g.a) + 'px' });
     guides.append(line);
   }
 }
@@ -1330,7 +1474,7 @@ function placeSelection() {
   selBoxes.forEach((b, i) => {
     const el = els[i], main = i === els.length - 1;
     b.classList.toggle('primary', main);
-    place(b, el, el && main ? label(el) : '');
+    place(b, el, el && main ? (drag?.readout || label(el)) : '');
   });
 }
 let gridKey = '';

@@ -40,8 +40,11 @@ cạnh nó. Icon hiện số chấm cam = số sửa chưa lưu. Vị trí bản
    **Layers** để chọn layer cha / con.
 2. Sửa giá trị là thấy ngay: ↑ / ↓ trong ô giá trị tăng giảm số (Shift ×10, Alt ×0.1), ô màu để chọn màu, **+ property** để thêm
    thuộc tính (có gợi ý), ✕ để xoá.
-3. Dời vị trí: **kéo khung xanh** hoặc **phím mũi tên** (1 px thiết kế, Shift = 10). Layer chưa có `left` / `top` thì studio tự thêm
-   `position: relative` + `left` / `top` vào khối CSS của nó.
+3. Vị trí / kích thước: mục **Transform** ở đầu bảng, giống panel Design của Figma: **X / Y / W / H** tính bằng px thiết kế
+   (1 px = 1 px của khung Figma 393 px; X đo từ mép trái khung, Y từ mép trên màn hình). Gõ số hoặc ↑ / ↓ (Shift = 10). Nút mắt xích
+   khoá tỉ lệ W : H. Hoặc **kéo khung xanh** / **phím mũi tên**: khi kéo có **đường gióng hồng** (smart guides) hút vào mép / tâm các
+   layer khác như Figma / Photoshop, thẻ trên khung hiện X / Y; giữ **Ctrl** để kéo tự do. Layer chưa có `left` / `top` / `width` /
+   `height` thì studio tự thêm vào khối CSS của nó.
 4. Thanh công cụ:
    - **Align** (6 nút): một layer thì căn theo khung cha, nhiều layer thì căn với nhau. **Distribute**: chia đều khoảng cách (≥ 3 layer).
    - **Grid** (Ctrl + ') bật / tắt layout grid kiểu Figma; nút **▾** cạnh nó mở cài đặt: **Columns** (đỏ) và **Rows** (xanh) có
