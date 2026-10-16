@@ -37,7 +37,9 @@ function movesFor(board, card, rng, noise, W, H, grass) {
     // Màn có cỏ: mỗi ô cỏ phá được đáng giá như một cú gom; đặt mèo lên cỏ (chuẩn bị gom) cũng được cộng.
     const cleaned = grass ? match.cleared.filter(index => grass[index]).length : 0;
     const onGrass = grass ? indices.filter(index => grass[index] && match.board[index]).length : 0;
-    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + rng() * noise;
+    // Màn có mèo béo: mỗi lần đánh thức đáng như một cú gom 3 (phải đánh thức hết mới thắng).
+    const wakes = (match.woke ?? []).length;
+    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + rng() * noise;
     out.push({ value, match, points, cleaned, indices, placed: next, rot, anchor });
   }
   return out;
@@ -160,7 +162,7 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
       if (many) for (const id in pace) sec[id] += turnCost(pace[id], shape); else sec += turnCost(pace, shape);
     }
     if (pick.option.card !== active) pick.option.after();
-    if (grass) pick.move.match.cleared.forEach(index => { grass[index] = false; });
+    if (grass) [...pick.move.match.cleared, ...(pick.move.match.rolled ?? []).flatMap(roll => roll.area)].forEach(index => { grass[index] = false; });
     // Hiệu ứng cụm to / gom đôi như session.mjs (bot không chủ động săn hiệu ứng, chỉ hưởng khi trúng).
     const fx = effects ? clusterEffects(pick.move.match, pick.move.indices, W, H, grass) : null;
     score += fx ? Math.round((pick.move.points + fx.points) * (fx.double ? EFFECTS.DOUBLE_MULT : 1)) : pick.move.points;
@@ -169,7 +171,7 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
     moves--;
     trace?.push({ placed: pick.move.placed, board, cells: pick.move.indices, cleared: pick.move.match.cleared, card: pick.option.card, hold: pick.option.card !== active,
       points: pick.move.points, score, movesLeft: moves, boosts: { ...boostUse }, grass: grass && grass.slice() });
-    if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage)) return done({ win: true, stars: starsFor(level, moves) });
+    if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage || cell?.fat)) return done({ win: true, stars: starsFor(level, moves) });
     active = draw();
     // Thẻ mới không vừa bàn: còn đường thoát nếu cất được vào Gửi tạm (ô trống, hoặc thẻ đang gửi vừa bàn).
     const escape = useHold && (!hold || fits(board, hold, W, H));

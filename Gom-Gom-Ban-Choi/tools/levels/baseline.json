@@ -725,26 +725,26 @@
     },
     {
       "level": 31,
-      "name": "Pillow Fort",
+      "name": "Sleepy Giant",
       "board": "7×7 49ô",
-      "tier": "normal",
-      "moves": 15,
-      "target": 350,
-      "winRate": 0.95,
+      "tier": "chill",
+      "moves": 14,
+      "target": 300,
+      "winRate": 0.995,
       "stuckRate": 0,
-      "avgStars": 2.14,
-      "avgScore": 365,
-      "movesUsedWin": 11.4,
-      "movesUsedLoss": 15,
+      "avgStars": 2.5,
+      "avgScore": 315,
+      "movesUsedWin": 9.3,
+      "movesUsedLoss": 14,
       "secWin": {
-        "weak": 77.5,
-        "mid": 57.8,
-        "good": 40.2
+        "weak": 65.1,
+        "mid": 48.3,
+        "good": 33.4
       },
       "secLoss": {
-        "weak": 112.5,
-        "mid": 83,
-        "good": 56.8
+        "weak": 110.3,
+        "mid": 80.9,
+        "good": 55
       }
     },
     {
