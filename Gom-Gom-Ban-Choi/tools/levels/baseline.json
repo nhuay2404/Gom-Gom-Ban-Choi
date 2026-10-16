@@ -84,14 +84,14 @@
       "target": 280,
       "winRate": 0.882,
       "stuckRate": 0,
-      "avgStars": 1.98,
-      "avgScore": 301,
+      "avgStars": 1.99,
+      "avgScore": 300,
       "movesUsedWin": 9.4,
       "movesUsedLoss": 12,
       "secWin": {
-        "weak": 57.5,
-        "mid": 43.2,
-        "good": 30.3
+        "weak": 57.3,
+        "mid": 43.1,
+        "good": 30.2
       },
       "secLoss": {
         "weak": 77.1,
@@ -137,7 +137,7 @@
       "movesUsedWin": 11.4,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 74.4,
+        "weak": 74.3,
         "mid": 55.4,
         "good": 38.4
       },
@@ -154,16 +154,16 @@
       "tier": "hard",
       "moves": 12,
       "target": 360,
-      "winRate": 0.422,
+      "winRate": 0.42,
       "stuckRate": 0.013,
-      "avgStars": 1.69,
-      "avgScore": 338,
+      "avgStars": 1.71,
+      "avgScore": 339,
       "movesUsedWin": 10.1,
       "movesUsedLoss": 11.8,
       "secWin": {
-        "weak": 60.5,
-        "mid": 45.5,
-        "good": 31.8
+        "weak": 60.1,
+        "mid": 45.2,
+        "good": 31.6
       },
       "secLoss": {
         "weak": 73.4,
@@ -226,16 +226,16 @@
       "tier": "boss",
       "moves": 20,
       "target": 460,
-      "winRate": 0.217,
+      "winRate": 0.215,
       "stuckRate": 0.02,
-      "avgStars": 1.38,
+      "avgStars": 1.4,
       "avgScore": 398,
       "movesUsedWin": 18,
       "movesUsedLoss": 19.6,
       "secWin": {
-        "weak": 117.7,
-        "mid": 87.6,
-        "good": 60.4
+        "weak": 117.3,
+        "mid": 87.3,
+        "good": 60.2
       },
       "secLoss": {
         "weak": 130.6,
@@ -252,13 +252,13 @@
       "target": 210,
       "winRate": 0.912,
       "stuckRate": 0,
-      "avgStars": 2.35,
+      "avgStars": 2.36,
       "avgScore": 247,
       "movesUsedWin": 9.7,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 67,
-        "mid": 49.9,
+        "weak": 66.9,
+        "mid": 49.8,
         "good": 34.5
       },
       "secLoss": {
@@ -306,8 +306,8 @@
       "movesUsedLoss": 15,
       "secWin": {
         "weak": 85.2,
-        "mid": 63.5,
-        "good": 44
+        "mid": 63.4,
+        "good": 43.9
       },
       "secLoss": {
         "weak": 107.7,
@@ -377,7 +377,7 @@
       "movesUsedWin": 16.1,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 120.3,
+        "weak": 120.4,
         "mid": 88.6,
         "good": 60.5
       },
@@ -394,21 +394,21 @@
       "tier": "normal",
       "moves": 23,
       "target": 350,
-      "winRate": 0.83,
+      "winRate": 0.843,
       "stuckRate": 0,
-      "avgStars": 2.6,
-      "avgScore": 437,
-      "movesUsedWin": 14.6,
+      "avgStars": 2.55,
+      "avgScore": 435,
+      "movesUsedWin": 14.9,
       "movesUsedLoss": 23,
       "secWin": {
-        "weak": 99.9,
-        "mid": 74.6,
-        "good": 51.8
+        "weak": 102.2,
+        "mid": 76.2,
+        "good": 52.9
       },
       "secLoss": {
-        "weak": 165.2,
-        "mid": 122.5,
-        "good": 84.4
+        "weak": 164.8,
+        "mid": 122.3,
+        "good": 84.3
       }
     },
     {
@@ -418,20 +418,20 @@
       "tier": "normal",
       "moves": 19,
       "target": 320,
-      "winRate": 0.757,
+      "winRate": 0.772,
       "stuckRate": 0,
-      "avgStars": 2.34,
-      "avgScore": 379,
-      "movesUsedWin": 13.5,
+      "avgStars": 2.31,
+      "avgScore": 378,
+      "movesUsedWin": 13.7,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 96.3,
-        "mid": 71.3,
-        "good": 49
+        "weak": 98.4,
+        "mid": 72.8,
+        "good": 50
       },
       "secLoss": {
-        "weak": 140.4,
-        "mid": 103.5,
+        "weak": 140.3,
+        "mid": 103.4,
         "good": 70.7
       }
     },
@@ -445,7 +445,7 @@
       "winRate": 0.608,
       "stuckRate": 0,
       "avgStars": 1.35,
-      "avgScore": 297,
+      "avgScore": 298,
       "movesUsedWin": 15.2,
       "movesUsedLoss": 17,
       "secWin": {
@@ -466,21 +466,21 @@
       "tier": "boss",
       "moves": 22,
       "target": 460,
-      "winRate": 0.355,
+      "winRate": 0.357,
       "stuckRate": 0,
-      "avgStars": 1.37,
+      "avgStars": 1.38,
       "avgScore": 447,
       "movesUsedWin": 20,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 139.2,
-        "mid": 103.3,
-        "good": 71.2
+        "weak": 139.1,
+        "mid": 103.2,
+        "good": 71.1
       },
       "secLoss": {
-        "weak": 157.1,
-        "mid": 116.1,
-        "good": 79.7
+        "weak": 157,
+        "mid": 116,
+        "good": 79.6
       }
     },
     {
@@ -490,21 +490,21 @@
       "tier": "chill",
       "moves": 24,
       "target": 360,
-      "winRate": 0.97,
+      "winRate": 0.973,
       "stuckRate": 0,
-      "avgStars": 2.76,
-      "avgScore": 438,
-      "movesUsedWin": 13.7,
+      "avgStars": 2.78,
+      "avgScore": 433,
+      "movesUsedWin": 13.4,
       "movesUsedLoss": 24,
       "secWin": {
-        "weak": 95.8,
-        "mid": 71.2,
-        "good": 49.2
+        "weak": 93.6,
+        "mid": 69.6,
+        "good": 48.2
       },
       "secLoss": {
-        "weak": 176.5,
-        "mid": 130.3,
-        "good": 89.3
+        "weak": 176,
+        "mid": 130,
+        "good": 89.1
       }
     },
     {
@@ -517,12 +517,12 @@
       "winRate": 0.938,
       "stuckRate": 0,
       "avgStars": 2.46,
-      "avgScore": 310,
+      "avgScore": 312,
       "movesUsedWin": 9.5,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 64.4,
-        "mid": 48,
+        "weak": 64.3,
+        "mid": 47.9,
         "good": 33.3
       },
       "secLoss": {
@@ -540,14 +540,14 @@
       "target": 380,
       "winRate": 0.85,
       "stuckRate": 0,
-      "avgStars": 1.84,
-      "avgScore": 392,
-      "movesUsedWin": 13.5,
+      "avgStars": 1.85,
+      "avgScore": 391,
+      "movesUsedWin": 13.4,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 91.3,
-        "mid": 68.2,
-        "good": 47.4
+        "weak": 90.8,
+        "mid": 67.8,
+        "good": 47.1
       },
       "secLoss": {
         "weak": 124.5,
@@ -562,21 +562,21 @@
       "tier": "normal",
       "moves": 22,
       "target": 370,
-      "winRate": 0.848,
+      "winRate": 0.858,
       "stuckRate": 0,
-      "avgStars": 2.06,
+      "avgStars": 1.95,
       "avgScore": 411,
-      "movesUsedWin": 17.1,
+      "movesUsedWin": 17.5,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 122.3,
-        "mid": 90.6,
-        "good": 62.4
+        "weak": 125.8,
+        "mid": 93.2,
+        "good": 64.1
       },
       "secLoss": {
-        "weak": 163.6,
-        "mid": 120.6,
-        "good": 82.4
+        "weak": 164.2,
+        "mid": 120.9,
+        "good": 82.6
       }
     },
     {
@@ -586,21 +586,21 @@
       "tier": "hard",
       "moves": 20,
       "target": 420,
-      "winRate": 0.372,
+      "winRate": 0.427,
       "stuckRate": 0,
-      "avgStars": 1.62,
-      "avgScore": 469,
-      "movesUsedWin": 17.2,
+      "avgStars": 1.82,
+      "avgScore": 463,
+      "movesUsedWin": 16.1,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 125.9,
-        "mid": 93,
-        "good": 63.9
+        "weak": 117.3,
+        "mid": 86.8,
+        "good": 59.7
       },
       "secLoss": {
-        "weak": 150.5,
-        "mid": 110.9,
-        "good": 75.9
+        "weak": 150.1,
+        "mid": 110.7,
+        "good": 75.7
       }
     },
     {
@@ -612,14 +612,14 @@
       "target": 370,
       "winRate": 0.978,
       "stuckRate": 0,
-      "avgStars": 2.26,
+      "avgStars": 2.25,
       "avgScore": 389,
       "movesUsedWin": 14.9,
       "movesUsedLoss": 20,
       "secWin": {
         "weak": 107.9,
-        "mid": 79.8,
-        "good": 54.8
+        "mid": 79.7,
+        "good": 54.7
       },
       "secLoss": {
         "weak": 156,
@@ -634,21 +634,21 @@
       "tier": "normal",
       "moves": 15,
       "target": 380,
-      "winRate": 0.72,
+      "winRate": 0.723,
       "stuckRate": 0,
       "avgStars": 1.88,
       "avgScore": 387,
       "movesUsedWin": 12.3,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 84,
-        "mid": 62.6,
-        "good": 43.4
+        "weak": 83.6,
+        "mid": 62.3,
+        "good": 43.2
       },
       "secLoss": {
-        "weak": 107.1,
-        "mid": 79.3,
-        "good": 54.6
+        "weak": 107,
+        "mid": 79.2,
+        "good": 54.5
       }
     },
     {
@@ -658,21 +658,21 @@
       "tier": "normal",
       "moves": 17,
       "target": 410,
-      "winRate": 0.68,
+      "winRate": 0.65,
       "stuckRate": 0,
-      "avgStars": 1.66,
-      "avgScore": 418,
-      "movesUsedWin": 14.1,
+      "avgStars": 1.57,
+      "avgScore": 415,
+      "movesUsedWin": 14.4,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 97.4,
-        "mid": 72.5,
-        "good": 50.3
+        "weak": 99.7,
+        "mid": 74.2,
+        "good": 51.5
       },
       "secLoss": {
-        "weak": 124,
-        "mid": 91.8,
-        "good": 63.2
+        "weak": 124.4,
+        "mid": 92,
+        "good": 63.3
       }
     },
     {
@@ -689,8 +689,8 @@
       "movesUsedWin": 14.7,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 104.5,
-        "mid": 77.5,
+        "weak": 104.4,
+        "mid": 77.4,
         "good": 53.4
       },
       "secLoss": {
@@ -706,20 +706,20 @@
       "tier": "boss",
       "moves": 22,
       "target": 560,
-      "winRate": 0.333,
+      "winRate": 0.31,
       "stuckRate": 0,
-      "avgStars": 1.41,
-      "avgScore": 524,
-      "movesUsedWin": 19.9,
+      "avgStars": 1.4,
+      "avgScore": 522,
+      "movesUsedWin": 19.8,
       "movesUsedLoss": 22,
       "secWin": {
-        "weak": 139.3,
-        "mid": 103.4,
-        "good": 71.3
+        "weak": 138.4,
+        "mid": 102.7,
+        "good": 70.9
       },
       "secLoss": {
-        "weak": 156.1,
-        "mid": 115.7,
+        "weak": 156.4,
+        "mid": 115.8,
         "good": 79.7
       }
     },
@@ -732,14 +732,14 @@
       "target": 300,
       "winRate": 0.995,
       "stuckRate": 0,
-      "avgStars": 2.5,
-      "avgScore": 318,
-      "movesUsedWin": 9.2,
+      "avgStars": 2.49,
+      "avgScore": 319,
+      "movesUsedWin": 9.3,
       "movesUsedLoss": 14,
       "secWin": {
-        "weak": 64.9,
-        "mid": 48.2,
-        "good": 33.3
+        "weak": 65.5,
+        "mid": 48.6,
+        "good": 33.6
       },
       "secLoss": {
         "weak": 110.3,
@@ -750,25 +750,25 @@
     {
       "level": 32,
       "name": "Blanket Fold",
-      "board": "8×7 38ô",
+      "board": "7×7 45ô",
       "tier": "normal",
       "moves": 16,
-      "target": 310,
-      "winRate": 0.917,
+      "target": 250,
+      "winRate": 0.932,
       "stuckRate": 0,
-      "avgStars": 2.36,
-      "avgScore": 330,
-      "movesUsedWin": 11.2,
+      "avgStars": 2.64,
+      "avgScore": 390,
+      "movesUsedWin": 9.3,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 74.3,
-        "mid": 55.5,
-        "good": 38.6
+        "weak": 62.6,
+        "mid": 46.7,
+        "good": 32.5
       },
       "secLoss": {
-        "weak": 113.5,
-        "mid": 84.1,
-        "good": 57.9
+        "weak": 113.6,
+        "mid": 84.2,
+        "good": 58
       }
     },
     {
@@ -776,311 +776,311 @@
       "name": "Night Lights",
       "board": "8×7 44ô",
       "tier": "normal",
-      "moves": 16,
-      "target": 360,
-      "winRate": 0.885,
+      "moves": 29,
+      "target": 435,
+      "winRate": 0.912,
       "stuckRate": 0,
-      "avgStars": 2.21,
-      "avgScore": 377,
-      "movesUsedWin": 11.7,
-      "movesUsedLoss": 16,
+      "avgStars": 2.55,
+      "avgScore": 520,
+      "movesUsedWin": 19.4,
+      "movesUsedLoss": 29,
       "secWin": {
-        "weak": 81.1,
-        "mid": 60.3,
-        "good": 41.7
+        "weak": 146.6,
+        "mid": 107.9,
+        "good": 73.7
       },
       "secLoss": {
-        "weak": 118.8,
-        "mid": 87.7,
-        "good": 60
+        "weak": 224.8,
+        "mid": 164.9,
+        "good": 112
       }
     },
     {
       "level": 34,
       "name": "Dream Cages",
-      "board": "7×7 45ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 16,
-      "target": 340,
-      "winRate": 0.868,
+      "moves": 21,
+      "target": 315,
+      "winRate": 0.853,
       "stuckRate": 0,
-      "avgStars": 2.15,
-      "avgScore": 361,
-      "movesUsedWin": 12.1,
-      "movesUsedLoss": 16,
+      "avgStars": 2.59,
+      "avgScore": 401,
+      "movesUsedWin": 13.3,
+      "movesUsedLoss": 21,
       "secWin": {
-        "weak": 84.2,
-        "mid": 62.6,
-        "good": 43.3
+        "weak": 98,
+        "mid": 72.3,
+        "good": 49.5
       },
       "secLoss": {
-        "weak": 115.6,
-        "mid": 85.5,
-        "good": 58.8
+        "weak": 162.3,
+        "mid": 118.9,
+        "good": 80.7
       }
     },
     {
       "level": 35,
       "name": "Moonlit Maze",
-      "board": "8×8 60ô",
+      "board": "7×7 45ô",
       "tier": "hard",
-      "moves": 18,
-      "target": 420,
-      "winRate": 0.38,
+      "moves": 20,
+      "target": 580,
+      "winRate": 0.385,
       "stuckRate": 0,
-      "avgStars": 1.47,
-      "avgScore": 400,
-      "movesUsedWin": 15.7,
-      "movesUsedLoss": 18,
+      "avgStars": 1.6,
+      "avgScore": 545,
+      "movesUsedWin": 17.4,
+      "movesUsedLoss": 20,
       "secWin": {
-        "weak": 110.2,
-        "mid": 81.8,
-        "good": 56.5
+        "weak": 126.5,
+        "mid": 93.4,
+        "good": 64
       },
       "secLoss": {
-        "weak": 131.5,
-        "mid": 97.2,
-        "good": 66.7
+        "weak": 148.8,
+        "mid": 109.6,
+        "good": 74.9
       }
     },
     {
       "level": 36,
       "name": "Nap Time",
-      "board": "7×7 37ô",
+      "board": "8×7 40ô",
       "tier": "chill",
-      "moves": 20,
-      "target": 370,
-      "winRate": 0.968,
+      "moves": 15,
+      "target": 320,
+      "winRate": 0.963,
       "stuckRate": 0,
-      "avgStars": 2.22,
-      "avgScore": 386,
-      "movesUsedWin": 14.6,
-      "movesUsedLoss": 20,
+      "avgStars": 2.38,
+      "avgScore": 340,
+      "movesUsedWin": 10,
+      "movesUsedLoss": 15,
       "secWin": {
-        "weak": 104.9,
-        "mid": 77.6,
-        "good": 53.4
+        "weak": 75.6,
+        "mid": 55.7,
+        "good": 38
       },
       "secLoss": {
-        "weak": 150.8,
-        "mid": 111,
-        "good": 75.8
+        "weak": 121.9,
+        "mid": 89.1,
+        "good": 60.3
       }
     },
     {
       "level": 37,
       "name": "Toy Pile",
-      "board": "8×7 40ô",
+      "board": "7×7 37ô",
       "tier": "normal",
-      "moves": 17,
-      "target": 450,
-      "winRate": 0.7,
-      "stuckRate": 0,
-      "avgStars": 1.85,
-      "avgScore": 455,
-      "movesUsedWin": 13.4,
-      "movesUsedLoss": 17,
+      "moves": 18,
+      "target": 280,
+      "winRate": 0.777,
+      "stuckRate": 0.003,
+      "avgStars": 2.3,
+      "avgScore": 399,
+      "movesUsedWin": 12.4,
+      "movesUsedLoss": 17.9,
       "secWin": {
-        "weak": 91.3,
-        "mid": 68.1,
-        "good": 47.2
+        "weak": 91.7,
+        "mid": 67.4,
+        "good": 45.9
       },
       "secLoss": {
-        "weak": 121.4,
-        "mid": 90,
-        "good": 62
+        "weak": 137.3,
+        "mid": 100.6,
+        "good": 68.1
       }
     },
     {
       "level": 38,
       "name": "Wardrobe",
-      "board": "8×8 64ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 19,
-      "target": 370,
-      "winRate": 0.74,
+      "moves": 41,
+      "target": 615,
+      "winRate": 0.775,
       "stuckRate": 0,
-      "avgStars": 1.96,
-      "avgScore": 409,
-      "movesUsedWin": 14.9,
-      "movesUsedLoss": 19,
+      "avgStars": 2.21,
+      "avgScore": 686,
+      "movesUsedWin": 30.4,
+      "movesUsedLoss": 41,
       "secWin": {
-        "weak": 104.3,
-        "mid": 77.5,
-        "good": 53.6
+        "weak": 225.1,
+        "mid": 165.7,
+        "good": 113
       },
       "secLoss": {
-        "weak": 139,
-        "mid": 102.7,
-        "good": 70.5
+        "weak": 306.7,
+        "mid": 225.4,
+        "good": 153.5
       }
     },
     {
       "level": 39,
       "name": "Last Gate",
-      "board": "8×8 64ô",
+      "board": "6×6 36ô",
       "tier": "normal",
       "moves": 19,
-      "target": 380,
-      "winRate": 0.718,
+      "target": 480,
+      "winRate": 0.715,
       "stuckRate": 0,
-      "avgStars": 1.72,
-      "avgScore": 392,
+      "avgStars": 1.69,
+      "avgScore": 484,
       "movesUsedWin": 15.9,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 114.3,
-        "mid": 84.6,
-        "good": 58.2
+        "weak": 119.5,
+        "mid": 87.9,
+        "good": 59.9
       },
       "secLoss": {
-        "weak": 144.7,
-        "mid": 106.4,
-        "good": 72.6
+        "weak": 147.7,
+        "mid": 108.2,
+        "good": 73.4
       }
     },
     {
       "level": 40,
       "name": "Bedroom Fortress",
-      "board": "8×8 48ô",
+      "board": "8×8 64ô",
       "tier": "boss",
-      "moves": 24,
-      "target": 620,
-      "winRate": 0.343,
+      "moves": 37,
+      "target": 555,
+      "winRate": 0.23,
       "stuckRate": 0,
-      "avgStars": 1.43,
-      "avgScore": 579,
-      "movesUsedWin": 21.6,
-      "movesUsedLoss": 24,
+      "avgStars": 1.57,
+      "avgScore": 923,
+      "movesUsedWin": 31.9,
+      "movesUsedLoss": 37,
       "secWin": {
-        "weak": 151.2,
-        "mid": 112.2,
-        "good": 77.4
+        "weak": 244.1,
+        "mid": 179.5,
+        "good": 122.5
       },
       "secLoss": {
-        "weak": 171.3,
-        "mid": 126.8,
-        "good": 87.2
+        "weak": 287.8,
+        "mid": 211.2,
+        "good": 143.7
       }
     },
     {
       "level": 41,
       "name": "Kitchen Door",
-      "board": "7×7 49ô",
+      "board": "7×7 45ô",
       "tier": "normal",
-      "moves": 15,
+      "moves": 16,
       "target": 380,
-      "winRate": 0.895,
+      "winRate": 0.958,
       "stuckRate": 0,
-      "avgStars": 2.22,
-      "avgScore": 395,
-      "movesUsedWin": 10.4,
-      "movesUsedLoss": 15,
+      "avgStars": 2.27,
+      "avgScore": 403,
+      "movesUsedWin": 11.1,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 70.8,
-        "mid": 52.8,
-        "good": 36.7
+        "weak": 79.4,
+        "mid": 58.9,
+        "good": 40.6
       },
       "secLoss": {
-        "weak": 110.1,
-        "mid": 81.3,
-        "good": 55.8
+        "weak": 123.3,
+        "mid": 90.4,
+        "good": 61.5
       }
     },
     {
       "level": 42,
       "name": "Cookie Tray",
-      "board": "8×7 44ô",
+      "board": "8×7 38ô",
       "tier": "normal",
       "moves": 16,
-      "target": 280,
-      "winRate": 0.905,
+      "target": 250,
+      "winRate": 0.863,
       "stuckRate": 0,
-      "avgStars": 2.42,
-      "avgScore": 320,
-      "movesUsedWin": 10.8,
+      "avgStars": 2.7,
+      "avgScore": 319,
+      "movesUsedWin": 9.7,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 72.8,
-        "mid": 54.4,
-        "good": 37.8
+        "weak": 69.8,
+        "mid": 51.6,
+        "good": 35.5
       },
       "secLoss": {
-        "weak": 118.4,
-        "mid": 87.4,
-        "good": 59.9
+        "weak": 122.4,
+        "mid": 89.9,
+        "good": 61.2
       }
     },
     {
       "level": 43,
       "name": "Fish Bowl",
-      "board": "7×7 37ô",
+      "board": "8×7 44ô",
       "tier": "normal",
-      "moves": 16,
-      "target": 250,
-      "winRate": 0.88,
+      "moves": 33,
+      "target": 495,
+      "winRate": 0.9,
       "stuckRate": 0,
-      "avgStars": 2.38,
-      "avgScore": 274,
-      "movesUsedWin": 11.6,
-      "movesUsedLoss": 16,
+      "avgStars": 2.34,
+      "avgScore": 553,
+      "movesUsedWin": 24,
+      "movesUsedLoss": 33,
       "secWin": {
-        "weak": 78.2,
-        "mid": 58.2,
-        "good": 40.4
+        "weak": 174,
+        "mid": 128.6,
+        "good": 88.2
       },
       "secLoss": {
-        "weak": 113.5,
-        "mid": 83.9,
-        "good": 57.6
+        "weak": 242.8,
+        "mid": 178.9,
+        "good": 122.4
       }
     },
     {
       "level": 44,
       "name": "Pantry",
-      "board": "8×8 64ô",
+      "board": "8×7 38ô",
       "tier": "normal",
       "moves": 17,
-      "target": 500,
-      "winRate": 0.835,
+      "target": 340,
+      "winRate": 0.877,
       "stuckRate": 0,
       "avgStars": 1.75,
-      "avgScore": 515,
+      "avgScore": 357,
       "movesUsedWin": 13.6,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 93.3,
-        "mid": 69.6,
-        "good": 48.3
+        "weak": 95.5,
+        "mid": 70.9,
+        "good": 48.9
       },
       "secLoss": {
-        "weak": 124.4,
-        "mid": 92,
-        "good": 63.2
+        "weak": 128.9,
+        "mid": 94.8,
+        "good": 64.6
       }
     },
     {
       "level": 45,
       "name": "Fridge Lock",
-      "board": "8×8 64ô",
+      "board": "8×8 48ô",
       "tier": "hard",
       "moves": 19,
-      "target": 470,
-      "winRate": 0.282,
+      "target": 285,
+      "winRate": 0.31,
       "stuckRate": 0,
-      "avgStars": 1.43,
-      "avgScore": 453,
-      "movesUsedWin": 16.9,
+      "avgStars": 1.84,
+      "avgScore": 471,
+      "movesUsedWin": 15.4,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 114.1,
-        "mid": 85.1,
-        "good": 59.1
+        "weak": 108.2,
+        "mid": 80.4,
+        "good": 55.5
       },
       "secLoss": {
-        "weak": 134.5,
-        "mid": 99.8,
-        "good": 68.8
+        "weak": 138.6,
+        "mid": 102.5,
+        "good": 70.4
       }
     },
     {
@@ -1088,239 +1088,239 @@
       "name": "Milk Break",
       "board": "8×7 40ô",
       "tier": "chill",
-      "moves": 20,
-      "target": 360,
-      "winRate": 0.968,
+      "moves": 15,
+      "target": 290,
+      "winRate": 0.95,
       "stuckRate": 0,
-      "avgStars": 2.35,
-      "avgScore": 379,
-      "movesUsedWin": 14.2,
-      "movesUsedLoss": 20,
+      "avgStars": 2.6,
+      "avgScore": 309,
+      "movesUsedWin": 8.7,
+      "movesUsedLoss": 15,
       "secWin": {
-        "weak": 99.6,
-        "mid": 74,
-        "good": 51.1
+        "weak": 61,
+        "mid": 45.3,
+        "good": 31.3
       },
       "secLoss": {
-        "weak": 150.6,
-        "mid": 110.9,
-        "good": 75.7
+        "weak": 110.9,
+        "mid": 81.7,
+        "good": 55.9
       }
     },
     {
       "level": 47,
       "name": "Spice Rack",
-      "board": "8×8 64ô",
+      "board": "7×7 49ô",
       "tier": "normal",
-      "moves": 17,
-      "target": 430,
-      "winRate": 0.715,
+      "moves": 23,
+      "target": 345,
+      "winRate": 0.813,
       "stuckRate": 0,
-      "avgStars": 1.93,
-      "avgScore": 433,
-      "movesUsedWin": 13.1,
-      "movesUsedLoss": 17,
+      "avgStars": 2.47,
+      "avgScore": 518,
+      "movesUsedWin": 15.5,
+      "movesUsedLoss": 23,
       "secWin": {
-        "weak": 87.7,
-        "mid": 65.5,
-        "good": 45.6
+        "weak": 111.2,
+        "mid": 82.4,
+        "good": 56.7
       },
       "secLoss": {
-        "weak": 120.2,
-        "mid": 89.1,
-        "good": 61.5
+        "weak": 172.5,
+        "mid": 127.2,
+        "good": 87
       }
     },
     {
       "level": 48,
       "name": "Oven Grill",
-      "board": "8×8 64ô",
+      "board": "7×7 37ô",
       "tier": "normal",
-      "moves": 18,
-      "target": 400,
-      "winRate": 0.71,
+      "moves": 23,
+      "target": 345,
+      "winRate": 0.757,
       "stuckRate": 0,
-      "avgStars": 1.83,
-      "avgScore": 424,
-      "movesUsedWin": 14.5,
-      "movesUsedLoss": 18,
+      "avgStars": 2.42,
+      "avgScore": 441,
+      "movesUsedWin": 16.4,
+      "movesUsedLoss": 23,
       "secWin": {
-        "weak": 101.5,
-        "mid": 75.4,
-        "good": 52.1
+        "weak": 122,
+        "mid": 89.9,
+        "good": 61.4
       },
       "secLoss": {
-        "weak": 131.4,
-        "mid": 97.1,
-        "good": 66.7
+        "weak": 176.4,
+        "mid": 129.5,
+        "good": 88.1
       }
     },
     {
       "level": 49,
       "name": "Sink Divide",
-      "board": "8×8 64ô",
+      "board": "6×6 36ô",
       "tier": "normal",
       "moves": 19,
-      "target": 430,
-      "winRate": 0.813,
+      "target": 460,
+      "winRate": 0.785,
       "stuckRate": 0,
-      "avgStars": 2.19,
-      "avgScore": 441,
-      "movesUsedWin": 13.8,
+      "avgStars": 1.86,
+      "avgScore": 475,
+      "movesUsedWin": 15.3,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 95,
-        "mid": 70.8,
-        "good": 49.1
+        "weak": 113.5,
+        "mid": 83.6,
+        "good": 57.1
       },
       "secLoss": {
-        "weak": 137.2,
-        "mid": 101.6,
-        "good": 70
+        "weak": 145.6,
+        "mid": 106.8,
+        "good": 72.7
       }
     },
     {
       "level": 50,
       "name": "Kitchen Fortress",
-      "board": "8×8 48ô",
+      "board": "8×8 64ô",
       "tier": "boss",
-      "moves": 24,
-      "target": 650,
-      "winRate": 0.198,
-      "stuckRate": 0.003,
-      "avgStars": 1.32,
-      "avgScore": 572,
-      "movesUsedWin": 22.2,
-      "movesUsedLoss": 24,
+      "moves": 30,
+      "target": 450,
+      "winRate": 0.217,
+      "stuckRate": 0,
+      "avgStars": 1.37,
+      "avgScore": 728,
+      "movesUsedWin": 26.8,
+      "movesUsedLoss": 30,
       "secWin": {
-        "weak": 153.1,
-        "mid": 113.8,
-        "good": 78.7
+        "weak": 194.4,
+        "mid": 143.9,
+        "good": 98.9
       },
       "secLoss": {
-        "weak": 168,
-        "mid": 124.6,
-        "good": 85.8
+        "weak": 219.9,
+        "mid": 162.5,
+        "good": 111.6
       }
     },
     {
       "level": 51,
       "name": "Dusty Trunk",
-      "board": "8×7 40ô",
+      "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 16,
-      "target": 320,
-      "winRate": 0.943,
+      "moves": 31,
+      "target": 465,
+      "winRate": 0.953,
       "stuckRate": 0,
-      "avgStars": 2.35,
-      "avgScore": 342,
-      "movesUsedWin": 11,
-      "movesUsedLoss": 16,
+      "avgStars": 2.51,
+      "avgScore": 503,
+      "movesUsedWin": 20.9,
+      "movesUsedLoss": 31,
       "secWin": {
-        "weak": 75,
-        "mid": 55.9,
-        "good": 38.7
+        "weak": 152.2,
+        "mid": 112.5,
+        "good": 77.1
       },
       "secLoss": {
-        "weak": 117.4,
-        "mid": 86.6,
-        "good": 59.3
+        "weak": 231.9,
+        "mid": 170.9,
+        "good": 116.8
       }
     },
     {
       "level": 52,
       "name": "Old Lamp",
-      "board": "6×6 36ô",
+      "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 31,
-      "target": 480,
-      "winRate": 0.945,
+      "moves": 20,
+      "target": 300,
+      "winRate": 0.922,
       "stuckRate": 0,
-      "avgStars": 2.05,
-      "avgScore": 521,
-      "movesUsedWin": 23.9,
-      "movesUsedLoss": 31,
+      "avgStars": 2.74,
+      "avgScore": 363,
+      "movesUsedWin": 12.2,
+      "movesUsedLoss": 20,
       "secWin": {
-        "weak": 173.4,
-        "mid": 128.1,
-        "good": 87.8
+        "weak": 85.3,
+        "mid": 63.3,
+        "good": 43.7
       },
       "secLoss": {
-        "weak": 230.8,
-        "mid": 169.9,
-        "good": 116
+        "weak": 148.1,
+        "mid": 109.2,
+        "good": 74.8
       }
     },
     {
       "level": 53,
       "name": "Hat Box",
-      "board": "7×7 45ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 29,
-      "target": 520,
-      "winRate": 0.86,
+      "moves": 24,
+      "target": 360,
+      "winRate": 0.863,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 561,
-      "movesUsedWin": 22.7,
-      "movesUsedLoss": 29,
+      "avgStars": 2.53,
+      "avgScore": 432,
+      "movesUsedWin": 16,
+      "movesUsedLoss": 24,
       "secWin": {
-        "weak": 165.4,
-        "mid": 122.3,
-        "good": 84
+        "weak": 120.9,
+        "mid": 88.9,
+        "good": 60.6
       },
       "secLoss": {
-        "weak": 216.8,
-        "mid": 159.8,
-        "good": 109.2
+        "weak": 185.9,
+        "mid": 136.3,
+        "good": 92.6
       }
     },
     {
       "level": 54,
       "name": "Rafters",
-      "board": "8×7 44ô",
+      "board": "7×7 45ô",
       "tier": "normal",
       "moves": 17,
-      "target": 380,
-      "winRate": 0.838,
+      "target": 410,
+      "winRate": 0.895,
       "stuckRate": 0,
-      "avgStars": 1.77,
-      "avgScore": 396,
+      "avgStars": 1.75,
+      "avgScore": 429,
       "movesUsedWin": 13.6,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 93.8,
-        "mid": 69.8,
-        "good": 48.3
+        "weak": 94.8,
+        "mid": 70.4,
+        "good": 48.7
       },
       "secLoss": {
-        "weak": 125.8,
-        "mid": 92.9,
-        "good": 63.7
+        "weak": 126.9,
+        "mid": 93.5,
+        "good": 63.9
       }
     },
     {
       "level": 55,
       "name": "Secret Map",
-      "board": "8×7 44ô",
+      "board": "8×8 48ô",
       "tier": "hard",
-      "moves": 19,
-      "target": 410,
-      "winRate": 0.315,
+      "moves": 20,
+      "target": 570,
+      "winRate": 0.313,
       "stuckRate": 0,
-      "avgStars": 1.48,
-      "avgScore": 419,
-      "movesUsedWin": 16.7,
-      "movesUsedLoss": 19,
+      "avgStars": 1.49,
+      "avgScore": 537,
+      "movesUsedWin": 17.6,
+      "movesUsedLoss": 20,
       "secWin": {
-        "weak": 115.8,
-        "mid": 86.1,
-        "good": 59.6
+        "weak": 132.6,
+        "mid": 97.5,
+        "good": 66.5
       },
       "secLoss": {
-        "weak": 136,
-        "mid": 100.6,
-        "good": 69.2
+        "weak": 155.3,
+        "mid": 113.8,
+        "good": 77.3
       }
     },
     {
@@ -1329,70 +1329,70 @@
       "board": "6×6 36ô",
       "tier": "chill",
       "moves": 15,
-      "target": 250,
-      "winRate": 0.945,
+      "target": 270,
+      "winRate": 0.963,
       "stuckRate": 0,
-      "avgStars": 2.37,
-      "avgScore": 286,
-      "movesUsedWin": 10.3,
+      "avgStars": 2.54,
+      "avgScore": 287,
+      "movesUsedWin": 9,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 71.9,
-        "mid": 53.4,
-        "good": 36.9
+        "weak": 62.9,
+        "mid": 46.7,
+        "good": 32.2
       },
       "secLoss": {
-        "weak": 114.7,
-        "mid": 84.2,
-        "good": 57.3
+        "weak": 113.3,
+        "mid": 83.3,
+        "good": 56.8
       }
     },
     {
       "level": 57,
       "name": "Toy Chest",
-      "board": "7×7 49ô",
+      "board": "6×6 36ô",
       "tier": "normal",
       "moves": 18,
-      "target": 440,
-      "winRate": 0.723,
+      "target": 430,
+      "winRate": 0.718,
       "stuckRate": 0,
-      "avgStars": 1.92,
-      "avgScore": 450,
-      "movesUsedWin": 14,
+      "avgStars": 1.54,
+      "avgScore": 436,
+      "movesUsedWin": 15.4,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 95,
-        "mid": 70.9,
-        "good": 49.2
+        "weak": 112,
+        "mid": 82.6,
+        "good": 56.4
       },
       "secLoss": {
-        "weak": 126.8,
-        "mid": 94.1,
-        "good": 64.9
+        "weak": 138.4,
+        "mid": 101.4,
+        "good": 68.8
       }
     },
     {
       "level": 58,
       "name": "Rocking Horse",
-      "board": "8×7 40ô",
+      "board": "6×6 36ô",
       "tier": "normal",
       "moves": 18,
-      "target": 410,
-      "winRate": 0.752,
+      "target": 440,
+      "winRate": 0.713,
       "stuckRate": 0,
-      "avgStars": 1.72,
-      "avgScore": 420,
-      "movesUsedWin": 14.8,
+      "avgStars": 1.59,
+      "avgScore": 443,
+      "movesUsedWin": 15.3,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 101.4,
-        "mid": 75.4,
-        "good": 52.1
+        "weak": 112,
+        "mid": 82.5,
+        "good": 56.4
       },
       "secLoss": {
-        "weak": 130.6,
-        "mid": 96.6,
-        "good": 66.2
+        "weak": 136.1,
+        "mid": 99.9,
+        "good": 67.8
       }
     },
     {
@@ -1400,71 +1400,71 @@
       "name": "Cobweb Corner",
       "board": "7×7 45ô",
       "tier": "normal",
-      "moves": 19,
-      "target": 410,
-      "winRate": 0.818,
+      "moves": 22,
+      "target": 330,
+      "winRate": 0.733,
       "stuckRate": 0,
-      "avgStars": 2.17,
-      "avgScore": 459,
-      "movesUsedWin": 13.9,
-      "movesUsedLoss": 19,
+      "avgStars": 2.34,
+      "avgScore": 477,
+      "movesUsedWin": 14.7,
+      "movesUsedLoss": 22,
       "secWin": {
-        "weak": 96.5,
-        "mid": 71.8,
-        "good": 49.6
+        "weak": 101.9,
+        "mid": 75.8,
+        "good": 52.3
       },
       "secLoss": {
-        "weak": 138.5,
-        "mid": 102.4,
-        "good": 70.3
+        "weak": 159.6,
+        "mid": 117.9,
+        "good": 80.9
       }
     },
     {
       "level": 60,
       "name": "Attic Fortress",
-      "board": "8×8 64ô",
+      "board": "8×8 48ô",
       "tier": "boss",
-      "moves": 26,
-      "target": 650,
-      "winRate": 0.28,
+      "moves": 24,
+      "target": 360,
+      "winRate": 0.18,
       "stuckRate": 0,
-      "avgStars": 1.3,
-      "avgScore": 665,
-      "movesUsedWin": 23.5,
-      "movesUsedLoss": 26,
+      "avgStars": 1.32,
+      "avgScore": 626,
+      "movesUsedWin": 22.1,
+      "movesUsedLoss": 24,
       "secWin": {
-        "weak": 166.8,
-        "mid": 123.8,
-        "good": 85.4
+        "weak": 162.6,
+        "mid": 119.8,
+        "good": 81.8
       },
       "secLoss": {
-        "weak": 186.5,
-        "mid": 138.1,
-        "good": 95.1
+        "weak": 182,
+        "mid": 133.6,
+        "good": 90.8
       }
     },
     {
       "level": 61,
       "name": "Flower Pots",
-      "board": "8×7 40ô",
+      "board": "8×7 38ô",
       "tier": "normal",
       "moves": 16,
-      "target": 250,
+      "target": 300,
       "winRate": 0.955,
       "stuckRate": 0,
-      "avgStars": 2.71,
-      "avgScore": 291,
-      "movesUsedWin": 9.1,
+      "avgStars": 2.2,
+      "avgScore": 320,
+      "movesUsedWin": 11.9,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 63.2,
-        "mid": 47,
-        "good": 32.5
+        "weak": 85.2,
+        "mid": 63.1,
+        "good": 43.3
       },
       "secLoss": {
-        "weak": 117.9,
-        "mid": 87,
-        "good": 59.5
+        "weak": 124.9,
+        "mid": 91.4,
+        "good": 61.9
       }
     },
     {
@@ -1472,23 +1472,23 @@
       "name": "Wind Chime",
       "board": "7×7 37ô",
       "tier": "normal",
-      "moves": 26,
-      "target": 450,
-      "winRate": 0.885,
+      "moves": 21,
+      "target": 315,
+      "winRate": 0.92,
       "stuckRate": 0,
-      "avgStars": 2.08,
-      "avgScore": 484,
-      "movesUsedWin": 19.9,
-      "movesUsedLoss": 26,
+      "avgStars": 2.41,
+      "avgScore": 358,
+      "movesUsedWin": 14,
+      "movesUsedLoss": 21,
       "secWin": {
-        "weak": 145,
-        "mid": 107.1,
-        "good": 73.4
+        "weak": 99.6,
+        "mid": 73.8,
+        "good": 50.8
       },
       "secLoss": {
-        "weak": 194.3,
-        "mid": 143.1,
-        "good": 97.7
+        "weak": 156.9,
+        "mid": 115.5,
+        "good": 78.9
       }
     },
     {
@@ -1496,47 +1496,47 @@
       "name": "Clothesline",
       "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 17,
-      "target": 260,
-      "winRate": 0.892,
+      "moves": 21,
+      "target": 315,
+      "winRate": 0.875,
       "stuckRate": 0,
-      "avgStars": 2.75,
-      "avgScore": 304,
-      "movesUsedWin": 9.1,
-      "movesUsedLoss": 17,
+      "avgStars": 2.36,
+      "avgScore": 444,
+      "movesUsedWin": 14.5,
+      "movesUsedLoss": 21,
       "secWin": {
-        "weak": 64,
-        "mid": 47.5,
-        "good": 32.8
+        "weak": 104.7,
+        "mid": 77.5,
+        "good": 53.3
       },
       "secLoss": {
-        "weak": 128.7,
-        "mid": 94.7,
-        "good": 64.5
+        "weak": 156.9,
+        "mid": 115.6,
+        "good": 79
       }
     },
     {
       "level": 64,
       "name": "Rain Drops",
-      "board": "8×7 38ô",
+      "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 39,
-      "target": 300,
-      "winRate": 0.885,
+      "moves": 22,
+      "target": 330,
+      "winRate": 0.873,
       "stuckRate": 0,
-      "avgStars": 2.58,
-      "avgScore": 531,
-      "movesUsedWin": 23.7,
-      "movesUsedLoss": 39,
+      "avgStars": 2.45,
+      "avgScore": 469,
+      "movesUsedWin": 15,
+      "movesUsedLoss": 22,
       "secWin": {
-        "weak": 173.8,
-        "mid": 128.3,
-        "good": 87.8
+        "weak": 110.5,
+        "mid": 81.5,
+        "good": 55.8
       },
       "secLoss": {
-        "weak": 291.4,
-        "mid": 214.4,
-        "good": 146.3
+        "weak": 167.8,
+        "mid": 123.3,
+        "good": 84
       }
     },
     {
@@ -1544,23 +1544,23 @@
       "name": "Tall Railing",
       "board": "8×7 40ô",
       "tier": "hard",
-      "moves": 20,
-      "target": 470,
-      "winRate": 0.333,
-      "stuckRate": 0.003,
-      "avgStars": 1.42,
-      "avgScore": 441,
-      "movesUsedWin": 17.8,
-      "movesUsedLoss": 20,
+      "moves": 17,
+      "target": 255,
+      "winRate": 0.4,
+      "stuckRate": 0.007,
+      "avgStars": 1.77,
+      "avgScore": 361,
+      "movesUsedWin": 13.6,
+      "movesUsedLoss": 16.9,
       "secWin": {
-        "weak": 124.8,
-        "mid": 92.5,
-        "good": 63.7
+        "weak": 93.9,
+        "mid": 69.7,
+        "good": 48
       },
       "secLoss": {
-        "weak": 142.7,
-        "mid": 105.5,
-        "good": 72.3
+        "weak": 120.6,
+        "mid": 89.1,
+        "good": 61.1
       }
     },
     {
@@ -1569,94 +1569,94 @@
       "board": "8×7 40ô",
       "tier": "chill",
       "moves": 15,
-      "target": 320,
-      "winRate": 0.943,
+      "target": 310,
+      "winRate": 0.978,
       "stuckRate": 0,
-      "avgStars": 2.03,
-      "avgScore": 339,
-      "movesUsedWin": 11.7,
+      "avgStars": 2.37,
+      "avgScore": 329,
+      "movesUsedWin": 10.3,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 84.6,
-        "mid": 62.6,
-        "good": 43
+        "weak": 76.4,
+        "mid": 56.3,
+        "good": 38.5
       },
       "secLoss": {
-        "weak": 118.8,
-        "mid": 86.9,
-        "good": 58.8
+        "weak": 123.4,
+        "mid": 89.8,
+        "good": 60.5
       }
     },
     {
       "level": 67,
       "name": "Bird Feeder",
-      "board": "7×7 45ô",
+      "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 18,
-      "target": 420,
-      "winRate": 0.818,
-      "stuckRate": 0,
-      "avgStars": 1.92,
-      "avgScore": 433,
-      "movesUsedWin": 14,
-      "movesUsedLoss": 18,
+      "moves": 35,
+      "target": 525,
+      "winRate": 0.813,
+      "stuckRate": 0.003,
+      "avgStars": 2.08,
+      "avgScore": 579,
+      "movesUsedWin": 27,
+      "movesUsedLoss": 34.7,
       "secWin": {
-        "weak": 98.2,
-        "mid": 73,
-        "good": 50.4
+        "weak": 194.3,
+        "mid": 143.6,
+        "good": 98.5
       },
       "secLoss": {
-        "weak": 131.3,
-        "mid": 96.9,
-        "good": 66.4
+        "weak": 252.3,
+        "mid": 186.1,
+        "good": 127.4
       }
     },
     {
       "level": 68,
       "name": "Ivy Wall",
-      "board": "8×7 44ô",
+      "board": "7×7 37ô",
       "tier": "normal",
       "moves": 18,
-      "target": 400,
-      "winRate": 0.733,
+      "target": 420,
+      "winRate": 0.693,
       "stuckRate": 0,
-      "avgStars": 1.6,
-      "avgScore": 408,
-      "movesUsedWin": 15.2,
+      "avgStars": 1.5,
+      "avgScore": 425,
+      "movesUsedWin": 15.6,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 109.1,
-        "mid": 80.7,
-        "good": 55.5
+        "weak": 115.4,
+        "mid": 85,
+        "good": 58.1
       },
       "secLoss": {
-        "weak": 132.8,
-        "mid": 97.9,
-        "good": 67
+        "weak": 140,
+        "mid": 102.5,
+        "good": 69.5
       }
     },
     {
       "level": 69,
       "name": "Night Breeze",
-      "board": "7×7 45ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 19,
-      "target": 410,
-      "winRate": 0.785,
+      "moves": 16,
+      "target": 240,
+      "winRate": 0.752,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 424,
-      "movesUsedWin": 14.6,
-      "movesUsedLoss": 19,
+      "avgStars": 2.27,
+      "avgScore": 361,
+      "movesUsedWin": 12,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 100.9,
-        "mid": 75.1,
-        "good": 52
+        "weak": 87.6,
+        "mid": 64.6,
+        "good": 44.2
       },
       "secLoss": {
-        "weak": 134.9,
-        "mid": 100,
-        "good": 68.9
+        "weak": 122.9,
+        "mid": 90.1,
+        "good": 61.2
       }
     },
     {
@@ -1664,119 +1664,119 @@
       "name": "Balcony Fortress",
       "board": "8×8 60ô",
       "tier": "boss",
-      "moves": 33,
-      "target": 520,
-      "winRate": 0.22,
+      "moves": 34,
+      "target": 510,
+      "winRate": 0.215,
       "stuckRate": 0,
-      "avgStars": 2.05,
-      "avgScore": 663,
-      "movesUsedWin": 26.1,
-      "movesUsedLoss": 33,
+      "avgStars": 1.36,
+      "avgScore": 813,
+      "movesUsedWin": 30.8,
+      "movesUsedLoss": 34,
       "secWin": {
-        "weak": 191.1,
-        "mid": 141.2,
-        "good": 96.8
+        "weak": 228.9,
+        "mid": 168.6,
+        "good": 115.3
       },
       "secLoss": {
-        "weak": 248.5,
-        "mid": 182.8,
-        "good": 124.7
+        "weak": 257,
+        "mid": 189,
+        "good": 128.8
       }
     },
     {
       "level": 71,
       "name": "Bubble Bath",
-      "board": "8×7 44ô",
+      "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 35,
-      "target": 600,
-      "winRate": 0.968,
+      "moves": 16,
+      "target": 290,
+      "winRate": 0.95,
       "stuckRate": 0,
-      "avgStars": 2.03,
-      "avgScore": 631,
-      "movesUsedWin": 27.2,
-      "movesUsedLoss": 35,
+      "avgStars": 2.32,
+      "avgScore": 312,
+      "movesUsedWin": 11.3,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 201.7,
-        "mid": 148.8,
-        "good": 101.8
+        "weak": 79.6,
+        "mid": 59.1,
+        "good": 40.8
       },
       "secLoss": {
-        "weak": 267.5,
-        "mid": 196.6,
-        "good": 134
+        "weak": 121.2,
+        "mid": 89.2,
+        "good": 60.8
       }
     },
     {
       "level": 72,
       "name": "Rubber Duck",
-      "board": "7×7 37ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 37,
-      "target": 620,
-      "winRate": 0.927,
+      "moves": 16,
+      "target": 280,
+      "winRate": 0.912,
       "stuckRate": 0,
-      "avgStars": 1.84,
-      "avgScore": 647,
-      "movesUsedWin": 30,
-      "movesUsedLoss": 37,
+      "avgStars": 2.22,
+      "avgScore": 294,
+      "movesUsedWin": 11.8,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 219.2,
-        "mid": 161.8,
-        "good": 110.9
+        "weak": 80.6,
+        "mid": 60.1,
+        "good": 41.6
       },
       "secLoss": {
-        "weak": 275.5,
-        "mid": 202.8,
-        "good": 138.5
+        "weak": 118.6,
+        "mid": 87.4,
+        "good": 59.8
       }
     },
     {
       "level": 73,
       "name": "Towel Rack",
-      "board": "8×7 38ô",
+      "board": "7×7 49ô",
       "tier": "normal",
       "moves": 17,
-      "target": 320,
-      "winRate": 0.875,
+      "target": 410,
+      "winRate": 0.825,
       "stuckRate": 0,
-      "avgStars": 1.75,
-      "avgScore": 336,
-      "movesUsedWin": 13.8,
+      "avgStars": 1.95,
+      "avgScore": 427,
+      "movesUsedWin": 13,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 95.2,
-        "mid": 70.7,
-        "good": 48.8
+        "weak": 88.2,
+        "mid": 65.8,
+        "good": 45.7
       },
       "secLoss": {
-        "weak": 126.7,
-        "mid": 93.2,
-        "good": 63.5
+        "weak": 121.2,
+        "mid": 89.9,
+        "good": 62
       }
     },
     {
       "level": 74,
       "name": "Soap Slide",
-      "board": "7×7 49ô",
+      "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 27,
-      "target": 540,
-      "winRate": 0.845,
+      "moves": 28,
+      "target": 420,
+      "winRate": 0.865,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 598,
-      "movesUsedWin": 20.9,
-      "movesUsedLoss": 27,
+      "avgStars": 2.39,
+      "avgScore": 496,
+      "movesUsedWin": 19.8,
+      "movesUsedLoss": 28,
       "secWin": {
-        "weak": 150.9,
-        "mid": 111.8,
-        "good": 76.9
+        "weak": 142.5,
+        "mid": 105.4,
+        "good": 72.4
       },
       "secLoss": {
-        "weak": 202.4,
-        "mid": 149.2,
-        "good": 102
+        "weak": 206.7,
+        "mid": 152.5,
+        "good": 104.3
       }
     },
     {
@@ -1785,22 +1785,22 @@
       "board": "8×8 48ô",
       "tier": "hard",
       "moves": 20,
-      "target": 510,
-      "winRate": 0.415,
+      "target": 300,
+      "winRate": 0.31,
       "stuckRate": 0,
-      "avgStars": 1.6,
-      "avgScore": 489,
-      "movesUsedWin": 17.2,
+      "avgStars": 1.85,
+      "avgScore": 479,
+      "movesUsedWin": 16.5,
       "movesUsedLoss": 20,
       "secWin": {
-        "weak": 122.8,
-        "mid": 90.9,
-        "good": 62.5
+        "weak": 116.6,
+        "mid": 86.4,
+        "good": 59.5
       },
       "secLoss": {
-        "weak": 144.5,
-        "mid": 106.8,
-        "good": 73.3
+        "weak": 145.2,
+        "mid": 107.3,
+        "good": 73.6
       }
     },
     {
@@ -1809,70 +1809,70 @@
       "board": "7×7 37ô",
       "tier": "chill",
       "moves": 15,
-      "target": 270,
-      "winRate": 0.975,
+      "target": 280,
+      "winRate": 0.927,
       "stuckRate": 0,
-      "avgStars": 2.44,
-      "avgScore": 291,
-      "movesUsedWin": 9.8,
+      "avgStars": 2.4,
+      "avgScore": 299,
+      "movesUsedWin": 10.1,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 68,
-        "mid": 50.6,
-        "good": 35
+        "weak": 70.3,
+        "mid": 52.2,
+        "good": 36.1
       },
       "secLoss": {
-        "weak": 113.6,
-        "mid": 83.6,
-        "good": 57
+        "weak": 109.7,
+        "mid": 81,
+        "good": 55.5
       }
     },
     {
       "level": 77,
       "name": "Tile Puzzle",
-      "board": "7×7 45ô",
+      "board": "8×7 44ô",
       "tier": "normal",
-      "moves": 28,
-      "target": 540,
-      "winRate": 0.83,
+      "moves": 25,
+      "target": 375,
+      "winRate": 0.81,
       "stuckRate": 0,
-      "avgStars": 1.72,
-      "avgScore": 574,
-      "movesUsedWin": 23.4,
-      "movesUsedLoss": 28,
+      "avgStars": 2.25,
+      "avgScore": 498,
+      "movesUsedWin": 18.5,
+      "movesUsedLoss": 25,
       "secWin": {
-        "weak": 170.4,
-        "mid": 125.9,
-        "good": 86.4
+        "weak": 136.9,
+        "mid": 101,
+        "good": 69.1
       },
       "secLoss": {
-        "weak": 212.3,
-        "mid": 156.2,
-        "good": 106.6
+        "weak": 190.4,
+        "mid": 139.9,
+        "good": 95.3
       }
     },
     {
       "level": 78,
       "name": "Drip Drop",
-      "board": "8×7 40ô",
+      "board": "7×7 49ô",
       "tier": "normal",
-      "moves": 26,
-      "target": 500,
-      "winRate": 0.752,
+      "moves": 22,
+      "target": 330,
+      "winRate": 0.713,
       "stuckRate": 0,
-      "avgStars": 1.54,
-      "avgScore": 526,
-      "movesUsedWin": 22.3,
-      "movesUsedLoss": 26,
+      "avgStars": 2.25,
+      "avgScore": 426,
+      "movesUsedWin": 16,
+      "movesUsedLoss": 22,
       "secWin": {
-        "weak": 161.1,
-        "mid": 119.1,
-        "good": 81.8
+        "weak": 111.4,
+        "mid": 82.8,
+        "good": 57.3
       },
       "secLoss": {
-        "weak": 193.2,
-        "mid": 142.4,
-        "good": 97.3
+        "weak": 157.7,
+        "mid": 116.7,
+        "good": 80.3
       }
     },
     {
@@ -1880,47 +1880,47 @@
       "name": "Shower Curtain",
       "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 29,
-      "target": 570,
-      "winRate": 0.743,
+      "moves": 19,
+      "target": 460,
+      "winRate": 0.665,
       "stuckRate": 0,
-      "avgStars": 1.73,
-      "avgScore": 623,
-      "movesUsedWin": 24.4,
-      "movesUsedLoss": 29,
+      "avgStars": 1.55,
+      "avgScore": 466,
+      "movesUsedWin": 16.3,
+      "movesUsedLoss": 19,
       "secWin": {
-        "weak": 177.1,
-        "mid": 130.9,
-        "good": 89.8
+        "weak": 120.3,
+        "mid": 88.7,
+        "good": 60.7
       },
       "secLoss": {
-        "weak": 215.9,
-        "mid": 159,
-        "good": 108.6
+        "weak": 146.7,
+        "mid": 107.6,
+        "good": 73
       }
     },
     {
       "level": 80,
       "name": "Bathroom Fortress",
-      "board": "8×8 60ô",
+      "board": "8×8 64ô",
       "tier": "boss",
-      "moves": 30,
-      "target": 700,
-      "winRate": 0.242,
+      "moves": 36,
+      "target": 540,
+      "winRate": 0.155,
       "stuckRate": 0,
-      "avgStars": 1.28,
-      "avgScore": 687,
-      "movesUsedWin": 27.7,
-      "movesUsedLoss": 30,
+      "avgStars": 1.61,
+      "avgScore": 913,
+      "movesUsedWin": 31.2,
+      "movesUsedLoss": 36,
       "secWin": {
-        "weak": 200.9,
-        "mid": 148.5,
-        "good": 102
+        "weak": 240.1,
+        "mid": 176.3,
+        "good": 119.9
       },
       "secLoss": {
-        "weak": 220.4,
-        "mid": 162.8,
-        "good": 111.6
+        "weak": 282.2,
+        "mid": 206.8,
+        "good": 140.4
       }
     },
     {
@@ -1929,94 +1929,94 @@
       "board": "7×7 45ô",
       "tier": "normal",
       "moves": 16,
-      "target": 320,
-      "winRate": 0.955,
+      "target": 330,
+      "winRate": 0.905,
       "stuckRate": 0,
-      "avgStars": 2.64,
-      "avgScore": 343,
-      "movesUsedWin": 9.6,
+      "avgStars": 2.35,
+      "avgScore": 351,
+      "movesUsedWin": 11.1,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 62.3,
-        "mid": 46.8,
-        "good": 32.7
+        "weak": 75.6,
+        "mid": 56.4,
+        "good": 39.1
       },
       "secLoss": {
-        "weak": 115.3,
-        "mid": 85.4,
-        "good": 58.8
+        "weak": 116.2,
+        "mid": 85.9,
+        "good": 59
       }
     },
     {
       "level": 82,
       "name": "Weather Vane",
-      "board": "6×6 36ô",
+      "board": "7×7 37ô",
       "tier": "normal",
-      "moves": 16,
-      "target": 310,
-      "winRate": 0.912,
+      "moves": 27,
+      "target": 405,
+      "winRate": 0.902,
       "stuckRate": 0,
-      "avgStars": 2.04,
-      "avgScore": 327,
-      "movesUsedWin": 12.7,
-      "movesUsedLoss": 16,
+      "avgStars": 2.16,
+      "avgScore": 469,
+      "movesUsedWin": 19.9,
+      "movesUsedLoss": 27,
       "secWin": {
-        "weak": 88,
-        "mid": 65.4,
-        "good": 45.1
+        "weak": 145.3,
+        "mid": 107.4,
+        "good": 73.6
       },
       "secLoss": {
-        "weak": 118.7,
-        "mid": 87.4,
-        "good": 59.6
+        "weak": 200.4,
+        "mid": 147.6,
+        "good": 100.9
       }
     },
     {
       "level": 83,
       "name": "Roof Tiles",
-      "board": "7×7 45ô",
+      "board": "8×7 40ô",
       "tier": "normal",
       "moves": 17,
-      "target": 380,
-      "winRate": 0.895,
+      "target": 300,
+      "winRate": 0.9,
       "stuckRate": 0,
-      "avgStars": 2.01,
-      "avgScore": 396,
-      "movesUsedWin": 12.6,
+      "avgStars": 1.6,
+      "avgScore": 318,
+      "movesUsedWin": 14.2,
       "movesUsedLoss": 17,
       "secWin": {
-        "weak": 86.8,
-        "mid": 64.7,
-        "good": 44.8
+        "weak": 98.5,
+        "mid": 73.2,
+        "good": 50.5
       },
       "secLoss": {
-        "weak": 126.2,
-        "mid": 93.2,
-        "good": 63.8
+        "weak": 126,
+        "mid": 92.7,
+        "good": 63.3
       }
     },
     {
       "level": 84,
       "name": "Pigeon Post",
-      "board": "8×7 38ô",
+      "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 26,
-      "target": 200,
-      "winRate": 0.895,
+      "moves": 17,
+      "target": 420,
+      "winRate": 0.83,
       "stuckRate": 0,
-      "avgStars": 2.65,
-      "avgScore": 348,
-      "movesUsedWin": 15,
-      "movesUsedLoss": 26,
+      "avgStars": 1.62,
+      "avgScore": 435,
+      "movesUsedWin": 14,
+      "movesUsedLoss": 17,
       "secWin": {
-        "weak": 105.3,
-        "mid": 78.2,
-        "good": 53.9
+        "weak": 102.8,
+        "mid": 75.9,
+        "good": 51.9
       },
       "secLoss": {
-        "weak": 188.7,
-        "mid": 139.4,
-        "good": 95.6
+        "weak": 132.8,
+        "mid": 97.3,
+        "good": 65.9
       }
     },
     {
@@ -2024,23 +2024,23 @@
       "name": "Gutter Run",
       "board": "8×7 40ô",
       "tier": "hard",
-      "moves": 18,
-      "target": 440,
-      "winRate": 0.275,
-      "stuckRate": 0,
-      "avgStars": 1.46,
-      "avgScore": 456,
-      "movesUsedWin": 15.7,
-      "movesUsedLoss": 18,
+      "moves": 20,
+      "target": 300,
+      "winRate": 0.302,
+      "stuckRate": 0.003,
+      "avgStars": 1.7,
+      "avgScore": 511,
+      "movesUsedWin": 16.9,
+      "movesUsedLoss": 20,
       "secWin": {
-        "weak": 110.7,
-        "mid": 82.1,
-        "good": 56.6
+        "weak": 124.4,
+        "mid": 91.7,
+        "good": 62.6
       },
       "secLoss": {
-        "weak": 129.7,
-        "mid": 95.9,
-        "good": 65.8
+        "weak": 148.9,
+        "mid": 109.5,
+        "good": 74.5
       }
     },
     {
@@ -2048,167 +2048,167 @@
       "name": "Sunset Nap",
       "board": "7×7 45ô",
       "tier": "chill",
-      "moves": 26,
-      "target": 390,
-      "winRate": 0.973,
+      "moves": 28,
+      "target": 420,
+      "winRate": 0.983,
       "stuckRate": 0,
-      "avgStars": 2.63,
-      "avgScore": 435,
-      "movesUsedWin": 16.6,
-      "movesUsedLoss": 26,
+      "avgStars": 2.67,
+      "avgScore": 455,
+      "movesUsedWin": 17.7,
+      "movesUsedLoss": 28,
       "secWin": {
-        "weak": 120.6,
-        "mid": 89.2,
-        "good": 61.4
+        "weak": 128.1,
+        "mid": 94.8,
+        "good": 65.1
       },
       "secLoss": {
-        "weak": 200.7,
-        "mid": 147.5,
-        "good": 100.5
+        "weak": 211.9,
+        "mid": 156.1,
+        "good": 106.7
       }
     },
     {
       "level": 87,
       "name": "Antenna Maze",
-      "board": "8×7 38ô",
+      "board": "7×7 45ô",
       "tier": "normal",
-      "moves": 22,
-      "target": 450,
-      "winRate": 0.882,
+      "moves": 27,
+      "target": 405,
+      "winRate": 0.767,
       "stuckRate": 0,
-      "avgStars": 2.03,
-      "avgScore": 480,
-      "movesUsedWin": 17.2,
-      "movesUsedLoss": 22,
+      "avgStars": 2.14,
+      "avgScore": 558,
+      "movesUsedWin": 20.2,
+      "movesUsedLoss": 27,
       "secWin": {
-        "weak": 126.5,
-        "mid": 93.3,
-        "good": 63.8
+        "weak": 149.7,
+        "mid": 110.3,
+        "good": 75.4
       },
       "secLoss": {
-        "weak": 168.1,
-        "mid": 123.4,
-        "good": 84
+        "weak": 206.1,
+        "mid": 151.4,
+        "good": 103.1
       }
     },
     {
       "level": 88,
       "name": "Skylight",
-      "board": "7×7 45ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 27,
-      "target": 500,
-      "winRate": 0.745,
+      "moves": 24,
+      "target": 360,
+      "winRate": 0.775,
       "stuckRate": 0,
-      "avgStars": 1.62,
-      "avgScore": 544,
-      "movesUsedWin": 22.7,
-      "movesUsedLoss": 27,
+      "avgStars": 2.31,
+      "avgScore": 456,
+      "movesUsedWin": 17.1,
+      "movesUsedLoss": 24,
       "secWin": {
-        "weak": 164,
-        "mid": 121.4,
-        "good": 83.4
+        "weak": 128.9,
+        "mid": 94.8,
+        "good": 64.6
       },
       "secLoss": {
-        "weak": 199.9,
-        "mid": 147.5,
-        "good": 101.1
+        "weak": 185.6,
+        "mid": 136,
+        "good": 92.4
       }
     },
     {
       "level": 89,
       "name": "Starry Gable",
-      "board": "7×7 49ô",
+      "board": "7×7 45ô",
       "tier": "normal",
-      "moves": 25,
-      "target": 500,
-      "winRate": 0.728,
+      "moves": 17,
+      "target": 255,
+      "winRate": 0.705,
       "stuckRate": 0,
-      "avgStars": 1.88,
-      "avgScore": 533,
-      "movesUsedWin": 20.4,
-      "movesUsedLoss": 25,
+      "avgStars": 2.11,
+      "avgScore": 442,
+      "movesUsedWin": 12.4,
+      "movesUsedLoss": 17,
       "secWin": {
-        "weak": 145.7,
-        "mid": 107.9,
-        "good": 74.3
+        "weak": 86.9,
+        "mid": 64.5,
+        "good": 44.5
       },
       "secLoss": {
-        "weak": 182.7,
-        "mid": 135,
-        "good": 92.6
+        "weak": 125.6,
+        "mid": 92.6,
+        "good": 63.4
       }
     },
     {
       "level": 90,
       "name": "Rooftop Fortress",
-      "board": "8×8 64ô",
+      "board": "8×8 48ô",
       "tier": "boss",
-      "moves": 32,
-      "target": 740,
-      "winRate": 0.292,
-      "stuckRate": 0,
-      "avgStars": 1.54,
-      "avgScore": 781,
-      "movesUsedWin": 28.2,
-      "movesUsedLoss": 32,
+      "moves": 29,
+      "target": 435,
+      "winRate": 0.237,
+      "stuckRate": 0.05,
+      "avgStars": 1.65,
+      "avgScore": 669,
+      "movesUsedWin": 24.6,
+      "movesUsedLoss": 28.2,
       "secWin": {
-        "weak": 205.3,
-        "mid": 151.8,
-        "good": 104.4
+        "weak": 186.2,
+        "mid": 136.8,
+        "good": 93
       },
       "secLoss": {
-        "weak": 236.9,
-        "mid": 174.9,
-        "good": 119.8
+        "weak": 213.3,
+        "mid": 156.4,
+        "good": 106.1
       }
     },
     {
       "level": 91,
       "name": "Moon Path",
-      "board": "8×7 40ô",
+      "board": "6×6 36ô",
       "tier": "normal",
       "moves": 16,
-      "target": 330,
-      "winRate": 0.958,
+      "target": 340,
+      "winRate": 0.965,
       "stuckRate": 0,
-      "avgStars": 2.36,
-      "avgScore": 349,
-      "movesUsedWin": 10.9,
+      "avgStars": 2.26,
+      "avgScore": 359,
+      "movesUsedWin": 11.7,
       "movesUsedLoss": 16,
       "secWin": {
-        "weak": 74.3,
-        "mid": 55.4,
-        "good": 38.4
+        "weak": 86.9,
+        "mid": 64,
+        "good": 43.7
       },
       "secLoss": {
-        "weak": 118.9,
-        "mid": 87.6,
-        "good": 59.9
+        "weak": 130.4,
+        "mid": 95.1,
+        "good": 64.1
       }
     },
     {
       "level": 92,
       "name": "Glow Worms",
-      "board": "7×7 49ô",
+      "board": "8×7 38ô",
       "tier": "normal",
-      "moves": 35,
-      "target": 670,
-      "winRate": 0.895,
+      "moves": 16,
+      "target": 290,
+      "winRate": 0.935,
       "stuckRate": 0,
-      "avgStars": 1.74,
-      "avgScore": 707,
-      "movesUsedWin": 28.9,
-      "movesUsedLoss": 35,
+      "avgStars": 2.26,
+      "avgScore": 309,
+      "movesUsedWin": 11.3,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 210.4,
-        "mid": 155.6,
-        "good": 106.9
+        "weak": 78.3,
+        "mid": 58.2,
+        "good": 40.2
       },
       "secLoss": {
-        "weak": 263,
-        "mid": 193.7,
-        "good": 132.4
+        "weak": 120.5,
+        "mid": 88.6,
+        "good": 60.3
       }
     },
     {
@@ -2216,23 +2216,23 @@
       "name": "Night Blooms",
       "board": "8×7 40ô",
       "tier": "normal",
-      "moves": 38,
-      "target": 660,
-      "winRate": 0.882,
+      "moves": 21,
+      "target": 315,
+      "winRate": 0.88,
       "stuckRate": 0,
-      "avgStars": 1.64,
-      "avgScore": 688,
-      "movesUsedWin": 32.3,
-      "movesUsedLoss": 38,
+      "avgStars": 2.33,
+      "avgScore": 371,
+      "movesUsedWin": 14.7,
+      "movesUsedLoss": 21,
       "secWin": {
-        "weak": 237.4,
-        "mid": 175.1,
-        "good": 119.9
+        "weak": 103.8,
+        "mid": 77,
+        "good": 53
       },
       "secLoss": {
-        "weak": 286.4,
-        "mid": 210.7,
-        "good": 143.8
+        "weak": 153,
+        "mid": 113,
+        "good": 77.4
       }
     },
     {
@@ -2240,47 +2240,47 @@
       "name": "Lantern Row",
       "board": "8×7 44ô",
       "tier": "normal",
-      "moves": 28,
-      "target": 500,
-      "winRate": 0.887,
+      "moves": 17,
+      "target": 390,
+      "winRate": 0.882,
       "stuckRate": 0,
-      "avgStars": 1.96,
-      "avgScore": 534,
-      "movesUsedWin": 22.1,
-      "movesUsedLoss": 28,
+      "avgStars": 1.65,
+      "avgScore": 407,
+      "movesUsedWin": 13.9,
+      "movesUsedLoss": 17,
       "secWin": {
-        "weak": 160.2,
-        "mid": 118.4,
-        "good": 81.3
+        "weak": 103.9,
+        "mid": 76.5,
+        "good": 52.3
       },
       "secLoss": {
-        "weak": 209.5,
-        "mid": 154.4,
-        "good": 105.5
+        "weak": 133.8,
+        "mid": 97.9,
+        "good": 66.4
       }
     },
     {
       "level": 95,
       "name": "Owl Watch",
-      "board": "8×7 40ô",
+      "board": "8×7 44ô",
       "tier": "hard",
-      "moves": 25,
-      "target": 540,
-      "winRate": 0.362,
+      "moves": 16,
+      "target": 240,
+      "winRate": 0.282,
       "stuckRate": 0,
-      "avgStars": 1.52,
-      "avgScore": 565,
-      "movesUsedWin": 22.1,
-      "movesUsedLoss": 25,
+      "avgStars": 1.64,
+      "avgScore": 406,
+      "movesUsedWin": 13.9,
+      "movesUsedLoss": 16,
       "secWin": {
-        "weak": 159.2,
-        "mid": 117.7,
-        "good": 80.8
+        "weak": 103.4,
+        "mid": 76.1,
+        "good": 52
       },
       "secLoss": {
-        "weak": 184.4,
-        "mid": 136,
-        "good": 93
+        "weak": 124.2,
+        "mid": 91,
+        "good": 61.6
       }
     },
     {
@@ -2289,94 +2289,94 @@
       "board": "7×7 45ô",
       "tier": "chill",
       "moves": 15,
-      "target": 310,
-      "winRate": 0.953,
+      "target": 340,
+      "winRate": 0.943,
       "stuckRate": 0,
-      "avgStars": 2.37,
-      "avgScore": 332,
+      "avgStars": 2.41,
+      "avgScore": 366,
       "movesUsedWin": 10.1,
       "movesUsedLoss": 15,
       "secWin": {
-        "weak": 68,
-        "mid": 50.8,
-        "good": 35.3
+        "weak": 73.7,
+        "mid": 54.5,
+        "good": 37.4
       },
       "secLoss": {
-        "weak": 111,
-        "mid": 81.9,
-        "good": 56.1
+        "weak": 118.2,
+        "mid": 86.5,
+        "good": 58.7
       }
     },
     {
       "level": 97,
       "name": "Firefly Field",
-      "board": "8×7 40ô",
+      "board": "8×7 44ô",
       "tier": "normal",
-      "moves": 19,
-      "target": 430,
-      "winRate": 0.805,
+      "moves": 17,
+      "target": 255,
+      "winRate": 0.682,
       "stuckRate": 0,
-      "avgStars": 1.7,
-      "avgScore": 446,
-      "movesUsedWin": 15.9,
-      "movesUsedLoss": 19,
+      "avgStars": 1.9,
+      "avgScore": 448,
+      "movesUsedWin": 13.1,
+      "movesUsedLoss": 17,
       "secWin": {
-        "weak": 114.8,
-        "mid": 84.8,
-        "good": 58.2
+        "weak": 94.4,
+        "mid": 69.8,
+        "good": 48
       },
       "secLoss": {
-        "weak": 142.9,
-        "mid": 105.1,
-        "good": 71.6
+        "weak": 127,
+        "mid": 93.5,
+        "good": 63.9
       }
     },
     {
       "level": 98,
       "name": "Midnight Maze",
-      "board": "7×7 37ô",
+      "board": "8×7 38ô",
       "tier": "normal",
       "moves": 18,
-      "target": 350,
-      "winRate": 0.65,
+      "target": 390,
+      "winRate": 0.775,
       "stuckRate": 0,
-      "avgStars": 1.57,
-      "avgScore": 369,
-      "movesUsedWin": 15.4,
+      "avgStars": 1.55,
+      "avgScore": 397,
+      "movesUsedWin": 15.2,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 108.3,
-        "mid": 80.3,
-        "good": 55.3
+        "weak": 112.4,
+        "mid": 82.7,
+        "good": 56.5
       },
       "secLoss": {
-        "weak": 132.2,
-        "mid": 97.4,
-        "good": 66.6
+        "weak": 140.6,
+        "mid": 102.8,
+        "good": 69.6
       }
     },
     {
       "level": 99,
       "name": "Comet Trail",
-      "board": "8×7 44ô",
+      "board": "7×7 45ô",
       "tier": "normal",
       "moves": 19,
-      "target": 460,
-      "winRate": 0.797,
+      "target": 500,
+      "winRate": 0.75,
       "stuckRate": 0,
-      "avgStars": 2,
-      "avgScore": 471,
-      "movesUsedWin": 14.7,
+      "avgStars": 1.73,
+      "avgScore": 508,
+      "movesUsedWin": 15.8,
       "movesUsedLoss": 19,
       "secWin": {
-        "weak": 104.7,
-        "mid": 77.6,
-        "good": 53.5
+        "weak": 113.9,
+        "mid": 84.2,
+        "good": 57.8
       },
       "secLoss": {
-        "weak": 138.2,
-        "mid": 102.1,
-        "good": 70.1
+        "weak": 143.9,
+        "mid": 105.8,
+        "good": 72
       }
     },
     {
@@ -2385,22 +2385,22 @@
       "board": "8×8 60ô",
       "tier": "boss",
       "moves": 29,
-      "target": 720,
-      "winRate": 0.233,
+      "target": 435,
+      "winRate": 0.14,
       "stuckRate": 0,
-      "avgStars": 1.37,
-      "avgScore": 723,
-      "movesUsedWin": 26.1,
+      "avgStars": 1.43,
+      "avgScore": 726,
+      "movesUsedWin": 25.9,
       "movesUsedLoss": 29,
       "secWin": {
-        "weak": 190,
-        "mid": 140.6,
-        "good": 96.6
+        "weak": 193.6,
+        "mid": 142.6,
+        "good": 97.5
       },
       "secLoss": {
-        "weak": 211.9,
-        "mid": 156.6,
-        "good": 107.5
+        "weak": 219.8,
+        "mid": 161.6,
+        "good": 110.1
       }
     }
   ]
