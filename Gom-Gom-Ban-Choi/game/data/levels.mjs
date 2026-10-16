@@ -244,10 +244,16 @@ export const LEVELS = [
   },
   // ===== Chương 4: phòng ngủ (mở sau màn 30) — bàn đông vật cản hơn, mục tiêu cao hơn =====
   {
-    name: 'Pillow Fort', feature: 'Crates everywhere', tier: 'normal',
-    moves: 15, target: 350, cats: 'OGWTSK', assist: 0.4,
-    board: ['.S.....', '.SOX..X', 'SX.KWX.', '...KX..', '....X..', 'S....OO', 'SGG....'],
-    deck: [],
+    // Giới thiệu mèo béo 2×2 (chữ số = số lần phải đánh thức, level-rules.mjs parseBoard): chỉ một con giữa bàn, không vật cản
+    // khác. Thẻ đầu là mèo cam, thả vào ô 16 thì gom 3 con cam sát mèo béo -> thấy ngay lần đánh thức đầu tiên.
+    name: 'Sleepy Giant', feature: 'NEW: wake up the big sleepy cat', tier: 'chill', introduces: 'fat',
+    moves: 14, target: 300, cats: 'OGWT', assist: 0.45,
+    board: ['..G....', '.......', 'OO.33..', '...33.W', '.G..T..', '...T..W', '.......'],
+    deck: ['O'],
+    tutorial: [
+      { type: 'info', text: 'Shh! A big cat is napping. Match next to it 3 times to wake it up!' },
+      { type: 'drag', anchor: 16 },
+    ],
   },
   {
     name: "Blanket Fold", feature: "Triangle board + cages", tier: 'normal',

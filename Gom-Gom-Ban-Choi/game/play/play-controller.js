@@ -81,6 +81,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   setSession(Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false }));
   state.hasCages = state.board.some(object => object?.cage);
+  state.hasFat = state.board.some(object => object?.fat);
   disarmHammer();
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -91,7 +92,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   document.querySelectorAll('.score-pop, .score-orb, .praise-pop, .firework-spark, .firework-flash').forEach(node => node.remove());
   fill.style.transition = 'none';
   const goal = state.grassTotal ? `Reach ${level.target} points and clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
-  render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}`);
+  render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}${state.hasFat ? ' Wake up the big sleepy cat too!' : ''}`);
   void fill.offsetWidth;
   fill.style.transition = '';
   renderTutorial();

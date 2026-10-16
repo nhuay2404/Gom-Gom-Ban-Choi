@@ -1,7 +1,7 @@
 // Anim + juice khi gom: bóng mèo nhấc lên chụm vào điểm tụ, thùng vỡ, lồng rung, cỏ văng, hiệu ứng cụm to (Pounce, Yarn Boom,
 // Claw Cross, Call the Herd, Kitty Leap), lời khen, pháo hoa, confetti. Sang Unity: MatchFx (MonoBehaviour, DOTween / ParticleSystem).
 import { mergeTarget } from '../core/board-rules.mjs';
-import { clusterPoints, turnPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
+import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { DRAG } from '../data/tuning.mjs';
 import { CRATE_SVG } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
@@ -24,9 +24,62 @@ export function animateTurn(turn) {
   rattleCages(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   flyGrass(turn.cleaned, DROP_MS + LIFT_MS + MERGE_MS * .7);
   celebrateMatch(merges, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  animateFat(match, DROP_MS + LIFT_MS + MERGE_MS * .7, { score: true });
   playEffects(turn, DROP_MS + LIFT_MS + MERGE_MS + 120);
+  animateFat(turn.effect, DROP_MS + LIFT_MS + MERGE_MS + 420); // điểm lăn do hiệu ứng đã nằm trong số thưởng của playEffects
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
+}
+
+// ---------- Mèo béo 2×2 (core/board-rules.mjs wakeFatCats) ----------
+// source = { woke, rolled } của lượt gom / hiệu ứng / búa. Gọi TRƯỚC khi vẽ lại bàn: mèo sắp lăn được sao thành bóng ngay (ô thật
+// biến mất ở lần vẽ tới), mèo chỉ bị đánh thức thì nhún lắc trên ô thật sau `delay` (đã vẽ lại, chấm tiến độ mới).
+// score: bật số điểm lăn ở chỗ mèo (lượt gom); điểm lăn do hiệu ứng nổ đã nằm trong số thưởng của playEffects.
+export function animateFat(source, delay, { score = false } = {}) {
+  if (!source || (!source.woke?.length && !source.rolled?.length)) return;
+  const rolling = new Set(source.rolled.map(roll => roll.id));
+  const ghosts = new Map();
+  if (!reduceMotion.matches) for (const roll of source.rolled) {
+    const art = cellEl(roll.id)?.querySelector('.fat-cat'), cell = cellEl(roll.id);
+    if (!art || !cell) continue;
+    const ghost = art.cloneNode(true);
+    ghost.classList.add('fat-ghost');
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${art.offsetWidth}px;height:${art.offsetHeight}px`;
+    fxLayer().append(ghost);
+    ghosts.set(roll.id, ghost);
+  }
+  if (score) holdScoreSlots(source.rolled.length);
+  setTimeout(() => {
+    for (const { id } of source.woke) {
+      if (rolling.has(id)) continue;
+      const art = cellEl(id)?.querySelector('.fat-cat');
+      if (!art || reduceMotion.matches) continue;
+      art.classList.remove('fat-poke');
+      void art.offsetWidth;
+      art.classList.add('fat-poke');
+      art.addEventListener('animationend', () => art.classList.remove('fat-poke'), { once: true });
+      playSound('pick');
+    }
+    for (const roll of source.rolled) {
+      const ghost = ghosts.get(roll.id), layer = fxLayer();
+      playMeowChorus([state.board.find(o => o?.group)?.group || 'orange']);
+      playSound('merge', 7);
+      if (ghost) ghost.animate([
+        { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+        { transform: 'translate(0, -18%) rotate(-25deg) scale(1.12)', opacity: 1, offset: .3 },
+        { transform: 'translate(0, -40%) rotate(340deg) scale(1.2)', opacity: .9, offset: .75 },
+        { transform: 'translate(0, -60%) rotate(360deg) scale(.6)', opacity: 0 },
+      ], { duration: 900, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).finished.then(() => ghost.remove());
+      if (!reduceMotion.matches) roll.area.forEach((index, i) => setTimeout(() => {
+        const cell = cellEl(index);
+        if (cell) { spawnPuff(cell); flyBits(layer, cell, 'yarn-bit', 3); }
+      }, 120 + i * 18));
+      shakeBoard(10);
+      effectBanner('Wakey wakey!', 0);
+      const at = cellEl(roll.id);
+      if (score) { if (at) showMergeScore(at, rollPoints([roll]), 260, 'm7'); else releaseScoreSlot(); }
+    }
+  }, delay);
 }
 
 // ---------- Hiệu ứng cụm to / gom đôi (core/cluster-effects.mjs) ----------

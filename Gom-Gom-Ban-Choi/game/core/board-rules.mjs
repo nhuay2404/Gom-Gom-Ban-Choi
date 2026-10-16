@@ -86,7 +86,7 @@ export function clearMatches(board, width, height, size = 4) {
 // Xoá các cụm cho trước (luật gom: thùng sát cụm vỡ, chuồng sát cụm mất một khóa). Dùng cho clearMatches và xả lượt (gom từng cụm).
 export function removeClusters(board, width, height, clusters, groups) {
   const cleared = clusters.flat();
-  if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [] };
+  if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [], woke: [], rolled: [] };
   const nextBoard = board.slice(), broken = new Set(), hit = new Set();
   cleared.forEach(index => {
     nextBoard[index] = null;
@@ -103,7 +103,47 @@ export function removeClusters(board, width, height, clusters, groups) {
     const { cage, ...cat } = board[index];
     if (cage > 1) { nextBoard[index] = { ...board[index], cage: cage - 1 }; caged.push(index); } else { nextBoard[index] = cat; freed.push(index); }
   });
-  return { board: nextBoard, cleared, groups, clusters, broken: [...broken], caged, freed };
+  // Mèo béo: mỗi cụm chạm vào (dù nhiều ô của cụm chạm) = 1 lần đánh thức; gom đôi cùng chạm = 2.
+  const hits = new Map();
+  clusters.forEach(cluster => {
+    const touched = new Set();
+    cluster.forEach(index => { for (const delta of [1, -1, width, -width]) { const other = neighbor(index, delta, width, height); if (other >= 0 && board[other]?.fat) touched.add(board[other].fatId); } });
+    touched.forEach(id => hits.set(id, (hits.get(id) || 0) + 1));
+  });
+  const fat = wakeFatCats(nextBoard, width, height, hits);
+  return { board: fat.board, cleared, groups, clusters, broken: [...broken], caged, freed, woke: fat.woke, rolled: fat.rolled };
+}
+
+// ---------- Mèo béo 2×2 (ngủ say) ----------
+// 4 ô cùng { fat: số lần còn phải đánh thức, fatId: ô góc trên-trái, breed }. Không có `group` nên không thuộc cụm nào, không
+// đặt thẻ lên được. Hết lượt đánh thức thì mèo lăn một vòng: dọn vùng 4×4 quanh nó (mèo, thùng, khoá chuồng; kim loại / ô ngoài
+// bàn giữ nguyên, mèo béo khác không bị đụng) rồi rời bàn.
+export const fatCells = (id, width) => [id, id + 1, id + width, id + width + 1];
+// hits: Map fatId -> số lần đánh thức. Trả về { board, woke: [{ id, left }], rolled: [{ id, area, cleared, broken, caged, freed }] }.
+export function wakeFatCats(board, width, height, hits) {
+  const woke = [], rolled = [];
+  if (!hits?.size) return { board, woke, rolled };
+  const next = board.slice();
+  hits.forEach((count, id) => {
+    const cat = next[id];
+    if (!cat?.fat || cat.fatId !== id) return;
+    const left = Math.max(0, cat.fat - count);
+    woke.push({ id, left });
+    if (left > 0) { fatCells(id, width).forEach(i => { next[i] = { ...next[i], fat: left }; }); return; }
+    const row = Math.floor(id / width), col = id % width, area = [], cleared = [], broken = [], caged = [], freed = [];
+    fatCells(id, width).forEach(i => { next[i] = null; });
+    for (let y = row - 1; y <= row + 2; y++) for (let x = col - 1; x <= col + 2; x++) {
+      if (y < 0 || y >= height || x < 0 || x >= width) continue;
+      const i = y * width + x, o = next[i];
+      area.push(i);
+      if (!o || o.void || o.metal || o.fat) continue;
+      if (o.cage) { const { cage, ...free } = o; if (cage > 1) { next[i] = { ...o, cage: cage - 1 }; caged.push(i); } else { next[i] = free; freed.push(i); } }
+      else if (o.block) { next[i] = null; broken.push(i); }
+      else if (o.group) { next[i] = null; cleared.push(i); }
+    }
+    rolled.push({ id, area, cleared, broken, caged, freed });
+  });
+  return { board: next, woke, rolled };
 }
 
 // Điểm tụ của cụm khi gom: ô vừa đặt nằm trong cụm, ưu tiên ô gần tâm cụm nhất.

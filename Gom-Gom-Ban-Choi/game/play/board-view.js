@@ -76,6 +76,7 @@ export function renderBoard() {
       for (const side of grass.replace('-', '')) tile.classList.add(`j-${side}`);
       tile.style.cssText = `--col:${index % W};--row:${Math.floor(index / W)}`;
     }
+    if (object?.fat) { paintFatCat(cell, object, index, grass); return; }
     if (!object) return;
     cell.style.setProperty('--group-color', look(object.group).color);
     addArt(cell, object);
@@ -169,3 +170,23 @@ function petCat(cell) {
     heart.addEventListener('animationend', () => heart.remove());
   }
 }
+
+// Mèo béo 2×2 đang ngủ (core/board-rules.mjs wakeFatCats): ô góc trên-trái vẽ một con mèo to phủ cả khối + hàng chấm tiến độ
+// (mỗi lần đánh thức sáng một chấm); 3 ô còn lại chỉ bị chiếm. Mặt: chưa đánh thức lần nào = ngủ say (zzz), còn 1 lần = mở mắt,
+// ở giữa = lim dim.
+export const fatMood = object => (object.fat >= object.fatMax ? 'sleep' : object.fat === 1 ? 'awake' : 'drowsy');
+function paintFatCat(cell, object, index, grass) {
+  const anchor = object.fatId === index;
+  cell.className = `cell fat${anchor ? ' fat-anchor' : ''}${grass ? ' grass' : ''}`;
+  cell.setAttribute('aria-label', `Big sleepy cat: match next to it ${object.fat} more time${object.fat > 1 ? 's' : ''} to wake it up`);
+  if (!anchor) return;
+  const big = document.createElement('span');
+  big.className = `fat-cat ${fatMood(object)}`;
+  addArt(big, { group: object.breed });
+  const pips = document.createElement('span');
+  pips.className = 'fat-pips';
+  pips.innerHTML = Array.from({ length: object.fatMax }, (_, k) => `<i${k < object.fatMax - object.fat ? ' class="on"' : ''}></i>`).join('');
+  big.prepend(pips);
+  cell.append(big);
+}
+

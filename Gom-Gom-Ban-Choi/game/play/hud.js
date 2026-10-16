@@ -1,13 +1,14 @@
 // HUD màn chơi + render() chung: số màn, lượt, ô Goal (mục tiêu còn lại, lắc + làm sáng ô khi đủ điểm mà còn mục tiêu),
 // sắp hết lượt. Sang Unity: Hud (MonoBehaviour), render() thành Refresh().
 import * as game from '../core/session.mjs';
-import { LOW_MOVE_MOODS } from '../ui/cat-art.mjs';
+import { LOW_MOVE_MOODS, catMarkup } from '../ui/cat-art.mjs';
+import { FAT_BREED } from '../core/level-rules.mjs';
 import { LOW_MOVES } from '../data/tuning.mjs';
 import { boostersUnlocked } from '../core/boosters.mjs';
 import { CAGE_ICON_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
-import { refreshSkin, state } from './context.js';
+import { refreshSkin, state, skinOf } from './context.js';
 import { renderScore, scoreSettled } from './score-bar.js';
 import { renderBoard } from './board-view.js';
 import { renderCards, normalizePreview, layoutHints } from './cards.js';
@@ -49,12 +50,15 @@ export function render(message = '', error = false) {
 // nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
 // Ô Goal cạnh ô Move: mỗi mục tiêu còn lại một ô (cỏ / mèo trong lồng). Mục tiêu nào xong thì biến mất; hết mục tiêu thì ẩn
 // cả ô Goal (ô Move về chỗ của màn không có mục tiêu).
+// has = màn có loại mục tiêu này từ đầu; ô Goal hiện tối đa 2 mục tiêu còn lại (shortcut: màn có cả 3 loại thì loại thứ 3 chỉ hiện
+// khi một loại xong — thêm ô thứ 3 nếu thiết kế màn cần).
 const GOAL_KINDS = {
-  grass: { icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
-  cage: { icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
+  grass: { has: () => state.grassTotal, icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
+  cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
+  fat: { has: () => state.hasFat, icon: () => `<span class="goal-fat">${catMarkup[skinOf(FAT_BREED)]}</span>`, left: () => game.fatLeft(state), label: 'sleepy big cats' },
 };
 
-const goalsLeft = () => Object.keys(GOAL_KINDS).filter(kind => (kind === 'grass' ? state.grassTotal : state.hasCages) && GOAL_KINDS[kind].left() > 0);
+const goalsLeft = () => Object.keys(GOAL_KINDS).filter(kind => GOAL_KINDS[kind].has() && GOAL_KINDS[kind].left() > 0);
 
 function renderGoals() {
   const goals = goalsLeft();
@@ -94,7 +98,7 @@ export function nudgeGoals() {
 
 function paintGoalHint() {
   $('board').querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    cell.classList.toggle('goal-hint', !!state.goalHint && (!!state.board[index]?.cage || !!state.grass?.[index]));
+    cell.classList.toggle('goal-hint', !!state.goalHint && (!!state.board[index]?.cage || !!state.board[index]?.fat || !!state.grass?.[index]));
   });
 }
 

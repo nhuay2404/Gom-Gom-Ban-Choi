@@ -15,12 +15,25 @@ export const grassCount = level => (parseGrass(level) || []).filter(Boolean).len
 
 // Ô ngoài bàn ('#') chặn ô như kim loại (không đặt được, không vỡ, búa không đập được) nhưng không vẽ.
 // Chữ thường ('o', 'k'...) = mèo bị nhốt trong chuồng (tuning.mjs CAGE): { group, cage: số khóa còn lại }.
+// Chữ số '1'–'9' = ô của mèo béo 2×2 đang ngủ (board-rules.mjs wakeFatCats), số = số lần phải đánh thức; mỗi khối 2×2 chữ số liền
+// nhau là một con: { fat, fatId: ô góc trên-trái, breed }.
 export function parseBoard(rows) {
-  return rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
+  const width = rows[0]?.length ?? 0;
+  const board = rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
     : ch === '#' ? { block: true, metal: true, void: true }
-      : ch !== ch.toUpperCase() ? { group: LETTERS[ch.toUpperCase()], locked: true, starting: true, cage: CAGE.LOCKS }
-        : { group: LETTERS[ch], locked: true, starting: true }));
+      : /[1-9]/.test(ch) ? { fat: Number(ch), fatMax: Number(ch), fatId: -1, breed: FAT_BREED }
+        : ch !== ch.toUpperCase() ? { group: LETTERS[ch.toUpperCase()], locked: true, starting: true, cage: CAGE.LOCKS }
+          : { group: LETTERS[ch], locked: true, starting: true }));
+  board.forEach((cell, i) => {
+    if (!cell?.fat || cell.fatId >= 0) return;
+    const block = [i, i + 1, i + width, i + width + 1];
+    if (i % width === width - 1 || !block.every(k => board[k]?.fat && board[k].fatId < 0)) throw new Error(`Mèo béo ở ô ${i} không đủ khối 2×2`);
+    block.forEach(k => { board[k] = { ...board[k], fatId: i }; });
+  });
+  return board;
 }
+// Giống của mèo béo (vẽ to 2×2 trên bàn).
+export const FAT_BREED = 'orange';
 
 export function parseCard(spec) {
   const [kind, letters] = spec.includes(':') ? spec.split(':') : [null, spec.replace('|', '')];

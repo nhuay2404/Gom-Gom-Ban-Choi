@@ -1,8 +1,10 @@
 // Một ván chơi (thuần logic, không đụng giao diện): bóc thẻ, xoay, gửi tạm, đặt, gom, thắng/thua, tutorial.
 // Giao diện (game/play/ trên web, component Unity sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
-import { clearMatches, connectedGroup, removeClusters, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
-import { MATCH_SIZE, turnPoints, clusterPoints, POINTS_PER_CRATE } from './scoring.mjs';
+import { clearMatches, connectedGroup, removeClusters, wakeFatCats, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
+import { MATCH_SIZE, turnPoints, clusterPoints, rollPoints, POINTS_PER_CRATE } from './scoring.mjs';
+// Một nhát búa trúng mèo béo = đánh thức 2 lần (búa phá thẳng thì mèo béo mất ý nghĩa).
+const FAT_HAMMER_WAKES = 2;
 import { categories } from '../ui/cat-art.mjs';
 import { LEVELS, LETTERS, SHAPES } from '../data/levels.mjs';
 import { DEFAULT_SHAPES, parseBoard, makeDealer, starsFor, parseGrass, grassCount } from './level-rules.mjs';
@@ -89,7 +91,11 @@ export function checkStuck(s) {
 export const cagesLeft = s => s.board.filter(object => object?.cage).length;
 export const grassLeft = s => (s.grass ? s.grass.filter(Boolean).length : 0);
 // Mọi màn phải đủ điểm + thả hết chuồng; màn có cỏ còn phải dọn hết cỏ.
-export const goalReached = s => cagesLeft(s) === 0 && grassLeft(s) === 0 && s.score >= s.level.target;
+// Mèo béo 2×2 còn ngủ (mỗi con đếm một lần).
+export const fatLeft = s => new Set(s.board.filter(object => object?.fat).map(object => object.fatId)).size;
+export const goalReached = s => cagesLeft(s) === 0 && grassLeft(s) === 0 && fatLeft(s) === 0 && s.score >= s.level.target;
+// Ô một lượt gom quét qua (cỏ ở đó bị phá): ô của các cụm + vùng mèo béo lăn qua.
+const sweptBy = match => [...match.cleared, ...(match.rolled ?? []).flatMap(roll => roll.area)];
 function finish(s, win, reason = '') {
   s.over = true;
   s.outcome = { win, reason, stars: win ? starsFor(s.level, s.moves) : 0 };
@@ -155,8 +161,8 @@ export function place(s, anchor) {
   const result = placeCard(s.board, s.W, s.H, anchor, s.active);
   if (result.error) return { ok: false, error: result.error };
   const match = clearMatches(result.board, s.W, s.H, MATCH_SIZE);
-  // Cỏ dưới các mèo vừa gom bị phá.
-  const cleaned = s.grass ? match.cleared.filter(index => s.grass[index]) : [];
+  // Cỏ dưới các mèo vừa gom (và vùng mèo béo lăn qua) bị phá.
+  const cleaned = s.grass ? sweptBy(match).filter(index => s.grass[index]) : [];
   cleaned.forEach(index => { s.grass[index] = false; });
   // Cụm to / gom đôi: hiệu ứng chạy tiếp trên bàn sau khi gom (cluster-effects.mjs); gom đôi nhân điểm cả lượt.
   const effect = clusterEffects(match, result.indices, s.W, s.H, s.grass);
@@ -172,7 +178,7 @@ export function place(s, anchor) {
     s.active = drawCard(s); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     return { ...turn, win: true };
   }
-  if (s.moves === 0) { finish(s, false, s.score >= s.level.target && !grassLeft(s) ? 'Cats still caged!' : 'Out of moves!'); return { ...turn, lose: true }; }
+  if (s.moves === 0) { finish(s, false, s.score < s.level.target || grassLeft(s) ? 'Out of moves!' : fatLeft(s) ? 'The fat cat is still asleep!' : 'Cats still caged!'); return { ...turn, lose: true }; }
   s.active = drawCard(s);
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
@@ -195,18 +201,25 @@ export function smash(s, index) {
 function smashArea(s, index) {
   const r = Math.floor(index / s.W), c = index % s.W, cells = [];
   for (let y = r - 1; y <= r + 1; y++) for (let x = c - 1; x <= c + 1; x++) if (y >= 0 && y < s.H && x >= 0 && x < s.W && !s.board[y * s.W + x]?.void) cells.push(y * s.W + x);
-  const removed = cells.filter(i => s.board[i]).map(i => ({ index: i, object: s.board[i] }));
+  // Mèo béo trúng búa không bị xoá: được đánh thức 2 lần (FAT_HAMMER_WAKES), đủ thì lăn.
+  const fatHits = new Map();
+  cells.forEach(i => { if (s.board[i]?.fat) fatHits.set(s.board[i].fatId, FAT_HAMMER_WAKES); });
+  const removed = cells.filter(i => s.board[i] && !s.board[i].fat).map(i => ({ index: i, object: s.board[i] }));
   const cleaned = s.grass ? cells.filter(i => s.grass[i]) : [];
-  if (!removed.length && !cleaned.length) return { ok: false, error: 'Nothing to smash here.' };
+  if (!removed.length && !cleaned.length && !fatHits.size) return { ok: false, error: 'Nothing to smash here.' };
   const perGroup = {};
   let points = 0;
   removed.forEach(({ object }) => { if (object.group && !object.cage) perGroup[object.group] = (perGroup[object.group] || 0) + 1; else points += POINTS_PER_CRATE; });
   points += Object.values(perGroup).reduce((sum, n) => sum + clusterPoints(n), 0);
   s.board = s.board.slice();
   removed.forEach(({ index: i }) => { s.board[i] = null; });
+  const fat = wakeFatCats(s.board, s.W, s.H, fatHits);
+  s.board = fat.board;
+  points += rollPoints(fat.rolled);
+  fat.rolled.forEach(roll => roll.area.forEach(i => { if (s.grass?.[i]) cleaned.push(i); }));
   cleaned.forEach(i => { s.grass[i] = false; });
   s.score += points;
-  return { ok: true, cells, removed, cleaned, points };
+  return { ok: true, cells, removed, cleaned, points, woke: fat.woke, rolled: fat.rolled };
 }
 // Đổi thẻ: thẻ đang bóc + LUCKY_TURNS - 1 thẻ bóc sau đó là thẻ có lợi nhất cho bàn lúc bóc (luckyCard).
 // Thẻ "sắp tới" giữ nguyên trong hàng, ra sau khi hết lượt may mắn.
@@ -275,7 +288,7 @@ export function finaleTurn(s) {
     result = { board: before, indices: [] };
     match = removeClusters(s.board, s.W, s.H, [cluster], [s.board[cluster[0]].group]);
   }
-  const cleaned = s.grass ? match.cleared.filter(index => s.grass[index]) : [];
+  const cleaned = s.grass ? sweptBy(match).filter(index => s.grass[index]) : [];
   cleaned.forEach(index => { s.grass[index] = false; });
   const effect = clusterEffects(match, result.indices, s.W, s.H, s.grass);
   const gained = turnPoints(match) + effect.points;

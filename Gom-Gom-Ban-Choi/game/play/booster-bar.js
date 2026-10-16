@@ -9,7 +9,7 @@ import { state, fxLayer, cellEl, W, H } from './context.js';
 import { tutorialStep } from './tutorial.js';
 import { track, endLevel } from './result.js';
 import { render, nudgeGoals } from './hud.js';
-import { breakCrates, flyBits, spawnPuff, shakeBoard } from './match-fx.js';
+import { breakCrates, flyBits, spawnPuff, shakeBoard, animateFat } from './match-fx.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot } from './score-bar.js';
 import { drainMoves, celebrateWin } from './finale.js';
 
@@ -87,6 +87,7 @@ export function smashAt(cell) {
   hammerArmed = false;
   clearSmashArea();
   playSound('smash');
+  animateFat(turn, 0); // mèo béo trúng búa: nhún / lăn (điểm lăn đã nằm trong số điểm của nhát búa)
   const crates = turn.removed.filter(({ object }) => object.block && !object.metal).map(({ index: i }) => i);
   breakCrates(crates, 0);
   if (!reduceMotion.matches) {

@@ -57,7 +57,10 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   assert.deepEqual(levelMechanics(LEVELS[4]), ['crate']);     // màn 5 giới thiệu thùng
   assert.deepEqual(levelMechanics(LEVELS[8]), ['crate', 'metal']);
   const withTutorial = LEVELS.map((level, i) => (level.tutorial ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 21], 'màn 1–2 và 11 là tutorial; màn 5, 8, 21 chỉ có bong bóng giới thiệu cơ chế');
+  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 21, 31], 'màn 1–2 và 11 là tutorial; màn 5, 8, 21, 31 giới thiệu cơ chế');
+  // Mèo béo 2×2 giới thiệu ở màn 31 (đầu chương 4, phòng ngủ): bong bóng + một lần kéo có hướng dẫn đánh thức lần đầu.
+  assert.equal(LEVELS[30].introduces, 'fat');
+  assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('fat')), 30);
   // Cỏ giới thiệu ở màn 21 (đầu chương 3).
   assert.equal(LEVELS[20].introduces, 'grass');
   assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('grass')), 20);

@@ -5,7 +5,8 @@
 //   cụm 7+: herd  — gom mọi mèo cùng màu còn trên bàn + mở 1 khoá chuồng gần nhất
 // Gom đôi (2+ cụm): 3+3 → leap (mèo vồ 1 lớp vật cản gần nhất; bàn không còn vật cản thì xoá 2 mèo lẻ) · 4+4 → 2 pounce + yarn · 5+ & 5+ → 2 yarn + herd màu đông nhất · lệch cỡ → hiệu ứng cụm to.
 // Điểm cả lượt nhân DOUBLE_MULT khi gom đôi (session.mjs).
-import { mergeTarget } from './board-rules.mjs';
+import { mergeTarget, wakeFatCats } from './board-rules.mjs';
+import { rollPoints } from './scoring.mjs';
 import { EFFECTS } from '../data/tuning.mjs';
 
 const kindOf = size => (size >= 7 ? 'herd' : size === 6 ? 'cross' : size === 5 ? 'yarn' : size === 4 ? 'pounce' : null);
@@ -26,16 +27,19 @@ const cross = (center, W, H) => { const r = Math.floor(center / W), c = center %
 // match = kết quả clearMatches, placed = ô vừa đặt thẻ, grass = mảng cỏ (hoặc null). Không sửa input.
 export function clusterEffects(match, placed, W, H, grass) {
   const sizes = match.clusters.map(c => c.length).sort((a, b) => b - a);
-  const out = { effects: [], board: match.board, blasted: [], broken: [], caged: [], freed: [], cleaned: [], points: 0, double: sizes.length >= 2 };
+  const out = { effects: [], board: match.board, blasted: [], broken: [], caged: [], freed: [], cleaned: [], woke: [], rolled: [], points: 0, double: sizes.length >= 2 };
   if (!sizes.length) return out;
   const board = match.board.slice(), lawn = grass ? grass.slice() : null;
-  const hitCage = new Set();
-  // Một ô bị trúng: mèo thường bị xoá (trừ pounce), thùng vỡ, chuồng mất 1 khoá (mỗi chuồng 1 lần / lượt), cỏ bị phá.
+  const hitCage = new Set(), fatHits = new Map();
+  let runFat = new Set();
+  // Một ô bị trúng: mèo thường bị xoá (trừ pounce), thùng vỡ, chuồng mất 1 khoá (mỗi chuồng 1 lần / lượt), cỏ bị phá,
+  // mèo béo được đánh thức 1 lần mỗi hiệu ứng (dù trúng mấy ô của nó).
   const hit = (i, catsToo) => {
     let pts = 0;
     const cell = board[i];
     if (lawn?.[i]) { lawn[i] = false; out.cleaned.push(i); }
     if (!cell) return pts;
+    if (cell.fat) { runFat.add(cell.fatId); return pts; }
     if (cell.cage) { if (hitCage.has(i)) return pts; hitCage.add(i);
       const { cage, ...cat } = cell;
       if (cage > 1) { board[i] = { ...cell, cage: cage - 1 }; out.caged.push(i); } else { board[i] = cat; out.freed.push(i); }
@@ -45,8 +49,9 @@ export function clusterEffects(match, placed, W, H, grass) {
   };
   const run = (kind, cluster, center) => {
     let pts = 0, cells, catsToo = kind !== 'pounce';
+    runFat = new Set();
     if (kind === 'leap') {
-      const obstacle = nearest(board, center, W, i => (board[i]?.block && !board[i].metal) || board[i]?.cage || (lawn?.[i] && !board[i]?.void));
+      const obstacle = nearest(board, center, W, i => (board[i]?.block && !board[i].metal) || board[i]?.cage || board[i]?.fat || (lawn?.[i] && !board[i]?.void));
       cells = obstacle.slice(0, 1);
       catsToo = !cells.length;
       if (catsToo) cells = nearest(board, center, W, i => board[i]?.group && !board[i].cage && !ring([i], W, H).some(n => board[n]?.group === board[i].group && !board[n].cage)).slice(0, 2);
@@ -61,6 +66,7 @@ export function clusterEffects(match, placed, W, H, grass) {
     }
     cells = cells.filter(i => !board[i]?.void); // ô ngoài bàn ('#'): không trúng, không loé (giữ nguyên hình bàn)
     cells.forEach(i => { pts += hit(i, catsToo); });
+    runFat.forEach(id => fatHits.set(id, (fatHits.get(id) || 0) + 1));
     if (EFFECTS.CAP[kind]) pts = Math.min(pts, EFFECTS.CAP[kind]);
     out.points += pts;
     out.effects.push({ kind, center, cells });
@@ -79,7 +85,13 @@ export function clusterEffects(match, placed, W, H, grass) {
     const kind = kindOf(sizes[0]);
     if (kind) run(kind, ordered[0], centerOf(ordered[0]));
   }
-  out.board = board;
+  // Mèo béo trúng hiệu ứng: đánh thức, đủ lần thì lăn dọn vùng 4×4 (cỏ trên đường lăn cũng bị phá).
+  const fat = wakeFatCats(board, W, H, fatHits);
+  out.board = fat.board;
+  out.woke = fat.woke;
+  out.rolled = fat.rolled;
+  out.points += rollPoints(fat.rolled);
+  fat.rolled.forEach(roll => roll.area.forEach(i => { if (lawn?.[i]) { lawn[i] = false; out.cleaned.push(i); } }));
   out.grass = lawn;
   return out;
 }

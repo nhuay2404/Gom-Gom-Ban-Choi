@@ -27,6 +27,8 @@ let skin = pieceSkin();
 
 export function refreshSkin() { skin = pieceSkin(); }
 
+// Giống vẽ thật của một nhóm theo bộ quân đang dùng (mèo / chó).
+export const skinOf = group => skinGroup(group, skin);
 export const look = group => categories[skinGroup(group, skin)];
 
 export function addArt(element, object) {
