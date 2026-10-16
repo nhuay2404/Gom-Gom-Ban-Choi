@@ -2,7 +2,8 @@
 // Chạy: node tools/levels/generate-levels.mjs [từ màn] [tới màn]   (mặc định 51 100)
 //
 // Theo nhịp tier của levels.mjs: mỗi chương 10 màn — x1–x4 normal · x5 hard · x6 chill (nghỉ) · x7–x9 normal · x0 boss.
-// Nhãn độ khó (element, adaptive.mjs) tăng theo tier: normal 1–2 cơ chế, hard 3, boss đủ 4 (thùng, kim loại, chuồng, cỏ), nghỉ 0–1.
+// Mỗi cơ chế (thùng, kim loại, chuồng, cỏ, mèo béo) là một lớp độ khó; số lớp chồng lên tăng theo tier và theo chương (layerCount).
+// Chương 4 (mèo béo vừa ra ở màn 31): mọi màn có lớp thì có mèo béo.
 // Bố trí: hình bàn có sẵn (board-shapes.mjs), mèo đặt theo cặp / lẻ không tạo cụm gom sẵn, cỏ mọc thành từng mảng.
 // Số liệu do bot giỏi (tools/levels/bot.mjs, noise 1) định: màn thường tìm mục tiêu điểm, màn cỏ tìm số lượt, sao cho tỉ lệ thắng
 // đúng chuẩn tier (cùng bảng với Level Editor): normal 95% -> 70% trong chương · hard ~33% · nghỉ 96% · boss ~22%.
@@ -22,6 +23,8 @@ const RUNS = 120;
 const TIERS = ['normal', 'normal', 'normal', 'normal', 'hard', 'chill', 'normal', 'normal', 'normal', 'boss'];
 // Chủ đề tên màn theo chương (chương 6 = màn 51–60 ...).
 const THEMES = {
+  4: { title: 'Bedroom', words: ['Sleepy Giant', 'Blanket Fold', 'Night Lights', 'Dream Cages', 'Moonlit Maze', 'Nap Time', 'Toy Pile', 'Wardrobe', 'Last Gate', 'Bedroom Fortress'] },
+  5: { title: 'Kitchen', words: ['Kitchen Door', 'Cookie Tray', 'Fish Bowl', 'Pantry', 'Fridge Lock', 'Milk Break', 'Spice Rack', 'Oven Grill', 'Sink Divide', 'Kitchen Fortress'] },
   6: { title: 'Attic', words: ['Dusty Trunk', 'Old Lamp', 'Hat Box', 'Rafters', 'Secret Map', 'Sunny Window', 'Toy Chest', 'Rocking Horse', 'Cobweb Corner', 'Attic Fortress'] },
   7: { title: 'Balcony', words: ['Flower Pots', 'Wind Chime', 'Clothesline', 'Rain Drops', 'Tall Railing', 'Sun Lounger', 'Bird Feeder', 'Ivy Wall', 'Night Breeze', 'Balcony Fortress'] },
   8: { title: 'Bathroom', words: ['Bubble Bath', 'Rubber Duck', 'Towel Rack', 'Soap Slide', 'Steamy Mirror', 'Fluffy Mat', 'Tile Puzzle', 'Drip Drop', 'Shower Curtain', 'Bathroom Fortress'] },
@@ -29,7 +32,7 @@ const THEMES = {
   10: { title: 'Moon Garden', words: ['Moon Path', 'Glow Worms', 'Night Blooms', 'Lantern Row', 'Owl Watch', 'Dream Meadow', 'Firefly Field', 'Midnight Maze', 'Comet Trail', 'Moon Fortress'] },
 };
 const SHAPE_POOL = { normal: ['plain6', 'square7', 'octagon', 'diamond', 'hexagon', 'triangle', 'heart'], hard: ['square7', 'hexagon', 'heart', 'cross', 'octagon'], chill: ['plain6', 'heart', 'diamond', 'octagon'], boss: ['cross', 'ring', 'square8'] };
-const MECHS = ['crate', 'metal', 'cage', 'grass'];
+const MECHS = ['crate', 'metal', 'cage', 'grass', 'fat'];
 
 // Tỉ lệ thắng chuẩn của bot giỏi theo tier (cùng công thức tools/levels/level-editor/editor.mjs tierGoal, chương sau khó hơn chút).
 function tierGoal(tier, index) {
@@ -40,10 +43,19 @@ function tierGoal(tier, index) {
   return 0.95 - 0.25 * Math.min(1, pos / 9);
 }
 
-function pickMechs(tier, pos, rng) {
-  const count = { normal: pos <= 1 ? 1 : 2 + (pos >= 7 && rng() < 0.4 ? 1 : 0), hard: 3, chill: rng() < 0.5 ? 1 : 0, boss: 4 }[tier];
-  const pool = tier === 'chill' ? ['grass', 'crate'] : MECHS.slice();
-  const out = [];
+// Số lớp: nghỉ 0–1 · normal x1–x2: 1, x3–x4: 2, x7–x9: 2–3 (chương 7+: 3) · hard 3 (chương 7+: 4) · boss 4 (chương 6+: đủ 5).
+function layerCount(tier, pos, chapter, rng) {
+  if (tier === 'chill') return rng() < 0.5 ? 1 : 0;
+  if (tier === 'hard') return chapter >= 7 ? 4 : 3;
+  if (tier === 'boss') return chapter >= 6 ? 5 : 4;
+  if (pos <= 2) return 1;
+  if (pos <= 4) return 2;
+  return chapter >= 7 || rng() < 0.5 ? 3 : 2;
+}
+function pickMechs(tier, pos, chapter, rng) {
+  const count = layerCount(tier, pos, chapter, rng);
+  const pool = tier === 'chill' ? ['grass', 'crate', 'fat'] : MECHS.slice();
+  const out = chapter === 4 && count ? pool.splice(pool.indexOf('fat'), 1) : [];
   while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
   return out;
 }
@@ -58,6 +70,17 @@ function buildBoard(shape, mechs, cats, tier, rng) {
   const pick = list => list[Math.floor(rng() * list.length)];
   const playable = cells.filter(ch => ch !== '#').length;
   const heavy = { normal: 1, hard: 1.3, boss: 1.4, chill: 0.6 }[tier];
+  if (mechs.includes('fat')) {
+    // Mèo béo: khối 2×2 trên ô trống, không sát mèo béo khác (hai khối chữ số liền nhau đọc sai). Số = lần phải đánh thức.
+    const wakes = { chill: 2, normal: 3, hard: 3, boss: 4 }[tier];
+    for (let k = { chill: 1, normal: 1, hard: rng() < 0.5 ? 2 : 1, boss: 2 }[tier]; k > 0; k--) {
+      const block = i => [i, i + 1, i + W, i + W + 1];
+      const spots = free().filter(i => i % W < W - 1 && block(i).every(j => cells[j] === '.')
+        && block(i).every(j => neighbors(j, W, H).every(n => !/[1-9]/.test(cells[n]))));
+      if (!spots.length) return null;
+      block(pick(spots)).forEach(j => { cells[j] = String(wakes); });
+    }
+  }
   if (mechs.includes('metal')) {
     // Kim loại thành vài đoạn tường ngắn (2 ô), không bịt kín vùng nào.
     for (let w = 0; w < Math.round(2 * heavy); w++) {
@@ -68,7 +91,8 @@ function buildBoard(shape, mechs, cats, tier, rng) {
   }
   if (mechs.includes('crate')) for (let k = Math.round(playable / 10 * heavy); k > 0; k--) cells[pick(free())] = 'X';
   // Mèo: khoảng 30% ô, đặt theo cặp cùng màu (một nửa) và lẻ; không được tạo cụm 3.
-  const want = Math.round(playable * (tier === 'chill' ? 0.26 : 0.3));
+  // Ô mèo béo tính vào phần mèo, không thì bàn boss (2 mèo béo + mọi vật cản) không còn đủ ô trống.
+  const want = Math.round(playable * (tier === 'chill' ? 0.26 : 0.3)) - cells.filter(ch => /[1-9]/.test(ch)).length;
   let placed = 0, guard = 0;
   while (placed < want && guard++ < 400) {
     const a = pick(free()), cat = cats[Math.floor(rng() * cats.length)];
@@ -153,11 +177,11 @@ for (let n = FROM; n <= TO; n++) {
   // Bố trí xấu (chuồng / cỏ bị vây kín) thì không bao giờ đạt nên tự bị loại.
   let level = null, mechs = null;
   for (let attempt = 0; attempt < 8; attempt++) {
-    const rng = mulberry32(n * 7919 + attempt * 104729), tryMechs = pickMechs(tier, pos, rng);
+    const rng = mulberry32(n * 7919 + attempt * 104729), tryMechs = pickMechs(tier, pos, chapter, rng);
     let built = null;
     for (let tries = 0; !built && tries < 200; tries++) built = buildBoard(SHAPE_POOL[tier][Math.floor(rng() * SHAPE_POOL[tier].length)], tryMechs, [...cats], tier, rng);
     if (!built) continue;
-    const feature = tryMechs.length ? tryMechs.map(m => ({ crate: 'crates', metal: 'metal', cage: 'cages', grass: 'grass' }[m])).join(' + ') : 'take a breather';
+    const feature = tryMechs.length ? tryMechs.map(m => ({ crate: 'crates', metal: 'metal', cage: 'cages', grass: 'grass', fat: 'big cat' }[m])).join(' + ') : 'take a breather';
     const tried = calibrate({ name: theme.words[pos - 1], feature, tier, moves, target: moves * 18, cats, assist, board: built.board, ...(built.grass ? { grass: built.grass } : {}), deck: [] }, index, goal);
     if (!level || Math.abs(tried.rate - goal) < Math.abs(level.rate - goal)) { level = tried; mechs = tryMechs; }
     if (Math.abs(tried.rate - goal) <= 0.08 && (!tried.grass || tried.moves <= 36)) break;
