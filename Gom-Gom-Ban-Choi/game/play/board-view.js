@@ -40,10 +40,13 @@ export function renderBoard() {
     board.onpointerleave = () => { state.preview = null; paintPreview(); };
   }
   // Ô cỏ liền nhau: chuỗi các cạnh giáp ô cỏ khác ('n' 'e' 's' 'w'), '-' = cỏ đứng riêng, '' = không có cỏ (đổi khi ô bên cạnh hết cỏ -> vẽ lại).
-  const hasGrass = (row, col) => row >= 0 && row < H && col >= 0 && col < W && !!state.grass?.[row * W + col];
+  const grassAt = (row, col) => row >= 0 && row < H && col >= 0 && col < W && !!state.grass?.[row * W + col];
   const grassJoins = index => {
     const row = Math.floor(index / W), col = index % W;
-    if (!hasGrass(row, col)) return '';
+    if (!grassAt(row, col)) return '';
+    // Cỏ dưới mèo béo không nối với cỏ ngoài khối: mèo che mất phần nối nên bãi cỏ bên ngoài trông như bị cắt cụt, mất viền
+    const fat = !!state.board[index]?.fat;
+    const hasGrass = (r, c) => grassAt(r, c) && !!state.board[r * W + c]?.fat === fat;
     return (hasGrass(row - 1, col) ? 'n' : '') + (hasGrass(row, col + 1) ? 'e' : '') + (hasGrass(row + 1, col) ? 's' : '') + (hasGrass(row, col - 1) ? 'w' : '') || '-';
   };
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {

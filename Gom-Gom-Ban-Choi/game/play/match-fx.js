@@ -98,6 +98,8 @@ export const EFFECT_FX = {
   drop: { label: 'Cat Drop!', shake: 4, bits: 'grass-bit' },
 };
 
+let bonusPounces = 0, pounceSession = null;
+
 function playEffects(turn, delay) {
   const effect = turn.effect;
   if (!effect || (!effect.effects.length && !effect.double && !effect.chain)) return;
@@ -156,7 +158,11 @@ function playEffects(turn, delay) {
     playSound(fx.kind === 'pounce' ? 'crateBreak' : 'merge', fx.kind === 'herd' ? 7 : fx.kind === 'cross' ? 6 : 5);
     if (fx.kind === 'herd') playMeowChorus(state.board.filter(o => o?.group).map(o => o.group));
     shakeBoard(style.shake);
-    effectBanner(style.label, n);
+    // Bonus Time: Pounce đếm dồn suốt lúc xả lượt ("Pounce! x3"); ván mới / ngoài Bonus Time đếm lại từ đầu
+    const bonus = document.body.classList.contains('bonus-time');
+    if (!bonus || pounceSession !== state) { bonusPounces = 0; pounceSession = state; }
+    if (bonus && fx.kind === 'pounce') bonusPounces++;
+    effectBanner(bonus && fx.kind === 'pounce' && bonusPounces > 1 ? `${style.label} x${bonusPounces}` : style.label, n);
     if (fx.kind === 'drop') return dropCats(effect, chainGhosts);
     const gathered = new Map(); // Claw Cross: mèo cùng màu bị gom chụm về tâm (không bay lên)
     const rc = i => [Math.floor(i / W), i % W], [cr, cc] = rc(fx.center);
@@ -585,6 +591,10 @@ const PRAISE = [
 const FIREWORK_COLORS = ['#ffd93d', '#ff6b8b', '#6bd8ff', '#9df07a', '#c77dff', '#ffa94d'];
 
 let lastPraise = '';
+// Bonus Time: mỗi lời khen một màu kế tiếp (cùng bậc gom vẫn đổi màu liên tục) — [chữ, viền, quầng]
+const BONUS_TONES = [['#ffe46b', '#7a3a12', '#fff3b0'], ['#9df07a', '#1f6a2a', '#d4ffb8'], ['#7fd8ff', '#174f8a', '#c8efff'],
+  ['#ff8fd8', '#7a1a5c', '#ffd0f0'], ['#ffa94d', '#8a3a0a', '#ffe0b8'], ['#c99bff', '#4a1f6b', '#eadcff']];
+let bonusTone = 0;
 
 function celebrateMatch(merges, delay) {
   if (reduceMotion.matches || !merges.length) return;
@@ -611,6 +621,10 @@ function celebrateMatch(merges, delay) {
     const pop = document.createElement('span'), tilt = (Math.random() < .5 ? -1 : 1) * (7 + Math.random() * 6);
     pop.className = `praise-pop ${tier.tone}`;
     pop.textContent = word;
+    if (document.body.classList.contains('bonus-time')) {
+      const [fill, ink, glow] = BONUS_TONES[bonusTone++ % BONUS_TONES.length];
+      Object.assign(pop.style, { color: fill, background: 'none', animation: 'none', webkitTextStroke: `8px ${ink}`, filter: `drop-shadow(0 4px 0 ${ink}99) drop-shadow(0 0 14px ${glow})` });
+    }
     pop.style.left = `${board.left + board.width / 2}px`;
     pop.style.top = `${board.top + board.height * .12}px`;
     document.querySelectorAll('.praise-pop').forEach(node => node.remove());

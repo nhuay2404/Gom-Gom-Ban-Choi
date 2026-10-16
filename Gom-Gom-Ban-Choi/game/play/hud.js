@@ -49,8 +49,7 @@ export function render(message = '', error = false) {
 // nên không bị chớp hình, không reset nhịp chớp mắt và không khựng khung hình.
 // Ô Goal cạnh ô Move: mỗi mục tiêu còn lại một ô (cỏ / mèo trong lồng). Mục tiêu nào xong thì biến mất; hết mục tiêu thì ẩn
 // cả ô Goal (ô Move về chỗ của màn không có mục tiêu).
-// has = màn có loại mục tiêu này từ đầu; ô Goal hiện tối đa 2 mục tiêu còn lại (shortcut: màn có cả 3 loại thì loại thứ 3 chỉ hiện
-// khi một loại xong — thêm ô thứ 3 nếu thiết kế màn cần).
+// has = màn có loại mục tiêu này từ đầu; ô Goal hiện đủ mọi mục tiêu còn lại (tối đa 3, mỗi loại một ô).
 const GOAL_KINDS = {
   grass: { has: () => state.grassTotal, icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
   cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
@@ -64,7 +63,8 @@ function renderGoals() {
   $('goal-box').hidden = !goals.length;
   $('goal-box').closest('.fg-panel').classList.toggle('has-goal', goals.length > 0);
   $('goal-box').classList.toggle('two', goals.length > 1);
-  [['goal-icon', 'goal-count'], ['goal-icon2', 'goal-count2']].forEach(([iconId, countId], k) => {
+  $('goal-box').classList.toggle('three', goals.length > 2);
+  [['goal-icon', 'goal-count'], ['goal-icon2', 'goal-count2'], ['goal-icon3', 'goal-count3']].forEach(([iconId, countId], k) => {
     const kind = goals[k], icon = $(iconId);
     icon.hidden = $(countId).hidden = !kind;
     if (!kind) return;
@@ -84,7 +84,7 @@ export function nudgeGoals() {
     if (state !== session || state.over) return;
     if (state.moves === moves) { state.goalHint = true; paintGoalHint(); }
     if (reduceMotion.matches) return;
-    ['goal-icon', 'goal-icon2'].forEach(id => {
+    ['goal-icon', 'goal-icon2', 'goal-icon3'].forEach(id => {
       const icon = $(id);
       if (icon.hidden) return;
       icon.classList.remove('goal-shake');
@@ -96,8 +96,16 @@ export function nudgeGoals() {
 }
 
 function paintGoalHint() {
+  const cols = 6;
+  const lit = index => !!state.goalHint && (!!state.board[index]?.cage || !!state.board[index]?.fat || !!state.grass?.[index]);
   $('board').querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    cell.classList.toggle('goal-hint', !!state.goalHint && (!!state.board[index]?.cage || !!state.board[index]?.fat || !!state.grass?.[index]));
+    const on = lit(index), col = index % cols;
+    cell.classList.toggle('goal-hint', on);
+    // Ô kề cũng sáng: bỏ viền cạnh chung để cả cụm thành một khung liền
+    cell.classList.toggle('hint-n', on && index >= cols && lit(index - cols));
+    cell.classList.toggle('hint-s', on && lit(index + cols));
+    cell.classList.toggle('hint-w', on && col > 0 && lit(index - 1));
+    cell.classList.toggle('hint-e', on && col < cols - 1 && lit(index + 1));
   });
 }
 

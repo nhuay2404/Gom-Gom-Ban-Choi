@@ -584,7 +584,11 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 /* Lồng dựng đứng trong 3D che mất mặt ô: quầng sáng vàng nằm trên mặt ô + song lồng tự phát sáng, cùng nhịp nhấp nháy */
 .board .cell.goal-hint{position:relative}
 .board .cell.goal-hint::after{content:'';position:absolute;inset:-3px;border-radius:24%;pointer-events:none;transform:translateZ(1px);
-  background:#ffe36e66;box-shadow:0 0 0 4px #ffd23f,0 0 22px 10px #ffd23fcc;animation:goal-hint 1s ease-in-out infinite}
+  background:#ffe36e66;border:4px solid #ffd23f;animation:goal-hint 1s ease-in-out infinite}
+.board .cell.hint-n::after{border-top-width:0;border-top-left-radius:0;border-top-right-radius:0}
+.board .cell.hint-s::after{border-bottom-width:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.board .cell.hint-w::after{border-left-width:0;border-top-left-radius:0;border-bottom-left-radius:0}
+.board .cell.hint-e::after{border-right-width:0;border-top-right-radius:0;border-bottom-right-radius:0}
 .board .cell.goal-hint .cage-bars{animation:goal-hint-bars 1s ease-in-out infinite}
 @keyframes goal-hint{50%{opacity:.45}}
 @keyframes goal-hint-bars{0%,100%{filter:brightness(1.25) drop-shadow(0 0 4px #ffd23f) drop-shadow(0 0 10px #ffd23f)}50%{filter:drop-shadow(0 0 2px #ffd23f)}}
@@ -592,13 +596,16 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 /* ===== Mèo béo 2×2 đang ngủ (play/board-view.js paintFatCat): ô góc trên-trái vẽ mèo to phủ cả khối (2 ô + 1 khe), chấm tiến
    độ trên đầu (sáng dần mỗi lần đánh thức). Mặt: .sleep ngủ say + zzz · .drowsy lim dim · .awake mở mắt (mặt calm mặc định). */
 .board .cell.fat{background:none!important;box-shadow:none;padding:0}
-.board .cell.fat-anchor{z-index:3;overflow:visible}
+/* Bàn preserve-3d bỏ qua z-index giữa các ô: nhấc ô neo lên trục Z cao hơn ô lồng (skin.css .locked 4px + song lồng 4px)
+   để cỏ / lồng ô bên cạnh không đè tai mèo */
+.board .cell.fat-anchor{z-index:3;overflow:visible;transform:translateZ(10px)}
 /* Một ô liền phủ cả khối 2×2 (lấp cả khe giữa 4 ô), không lộ 4 ô lẻ bên dưới */
 .fat-cat{position:absolute;left:0;top:0;width:calc(200% + var(--gap, 6px));height:calc(200% + var(--gap, 6px));display:grid;place-items:center;pointer-events:none;
   border-radius:var(--rad, 12px);background:#f3dfb4;box-shadow:inset 0 calc(var(--c, 60px) * .06) 0 #e2c48c,inset 0 0 0 1px #ead29f}
 .cell.grass .fat-cat{background:none;box-shadow:none}
-.fat-bob{position:absolute;inset:-4%;transform-origin:50% 92%}
-.fat-bob>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.fat-bob{position:absolute;inset:0;transform-origin:50% 92%}
+/* Ảnh 384² có lề trong suốt (thân ở x 22–361, y 48–342): phóng ảnh để thân phủ kín đủ 2×2 ô */
+.fat-bob>img{position:absolute;left:-6.5%;top:-16.3%;width:112.9%;height:130.2%;max-width:none;object-fit:fill}
 /* viền nâu đậm quanh thân (4 bóng không nhoè) rồi mới đổ bóng */
 .fat-bob>.fat-body{filter:drop-shadow(2px 0 0 #6b2416) drop-shadow(-2px 0 0 #6b2416) drop-shadow(0 2px 0 #6b2416) drop-shadow(0 -2px 0 #6b2416) drop-shadow(0 4px 2px #5a331640)}
 /* 3 mặt chồng nhau, chỉ mặt đúng data-mood hiện; đổi mặt mờ dần .22s */
