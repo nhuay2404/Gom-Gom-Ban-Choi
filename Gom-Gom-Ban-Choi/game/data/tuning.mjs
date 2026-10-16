@@ -98,4 +98,5 @@ export const ADAPTIVE = remote('ADAPTIVE', {
 });
 
 // Hiệu ứng gom cụm to / gom đôi (cluster-effects.mjs). CAP = trần điểm hiệu ứng mỗi loại; DOUBLE_MULT nhân điểm cả lượt khi gom 2+ cụm.
-export const EFFECTS = remote('EFFECTS', { CAP: { yarn: 60, cross: 80, herd: 100 }, DOUBLE_MULT: 1.5 });
+// WIPE = điểm mỗi thứ bị Call the Herd (cụm 7+) dọn khỏi bàn (không có trần).
+export const EFFECTS = remote('EFFECTS', { CAP: { yarn: 60, cross: 80 }, DOUBLE_MULT: 1.5, WIPE: 20 });

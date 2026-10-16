@@ -172,17 +172,23 @@ function petCat(cell) {
 }
 
 // Mèo béo 2×2 đang ngủ (core/board-rules.mjs wakeFatCats): ô góc trên-trái vẽ một con mèo to phủ cả khối + hàng chấm tiến độ
-// (mỗi lần đánh thức sáng một chấm); 3 ô còn lại chỉ bị chiếm. Mặt: chưa đánh thức lần nào = ngủ say (zzz), còn 1 lần = mở mắt,
-// ở giữa = lim dim.
-export const fatMood = object => (object.fat >= object.fatMax ? 'sleep' : object.fat === 1 ? 'awake' : 'drowsy');
+// (mỗi lần đánh thức sáng một chấm); 3 ô còn lại chỉ bị chiếm. Ảnh riêng (assets/img/cats/fat/): thân + mặt, mặt sleep (mặc định),
+// annoyed (bị gom sát bên, match-fx.js animateFat), happy (đủ lần đánh thức, lăn đi).
+const FAT_ART = 'assets/img/cats/fat/';
+// fatId -> thời điểm (performance.now) hết cau có; bàn vẽ lại giữa chừng vẫn giữ mặt annoyed
+export const fatAnnoyedUntil = new Map();
+// Đủ 3 mặt chồng nhau, đổi mặt = đổi data-mood (CSS mờ dần qua lại cho mượt); thân + mặt nằm trong .fat-bob (thở phập phồng).
+export const fatMarkup = mood => `<span class="fat-bob" data-mood="${mood}"><img class="fat-body" src="${FAT_ART}body.png" alt="">${
+  ['sleep', 'annoyed', 'happy'].map(m => `<img class="fat-face f-${m}" src="${FAT_ART}face-${m}.png" alt="">`).join('')}</span><span class="fat-zzz"><i>z</i><i>z</i><i>Z</i></span>`;
+export const setFatMood = (art, mood) => art?.querySelector('.fat-bob')?.setAttribute('data-mood', mood);
 function paintFatCat(cell, object, index, grass) {
   const anchor = object.fatId === index;
   cell.className = `cell fat${anchor ? ' fat-anchor' : ''}${grass ? ' grass' : ''}`;
   cell.setAttribute('aria-label', `Big sleepy cat: match next to it ${object.fat} more time${object.fat > 1 ? 's' : ''} to wake it up`);
   if (!anchor) return;
   const big = document.createElement('span');
-  big.className = `fat-cat ${fatMood(object)}`;
-  addArt(big, { group: object.breed });
+  big.className = 'fat-cat';
+  big.innerHTML = fatMarkup((fatAnnoyedUntil.get(object.fatId) ?? 0) > performance.now() ? 'annoyed' : 'sleep');
   const pips = document.createElement('span');
   pips.className = 'fat-pips';
   pips.innerHTML = Array.from({ length: object.fatMax }, (_, k) => `<i${k < object.fatMax - object.fat ? ' class="on"' : ''}></i>`).join('');

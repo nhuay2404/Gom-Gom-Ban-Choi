@@ -73,7 +73,8 @@ export function slideDirectional(board, width, height, source, delta) {
 // Khối kim loại ({ block: true, metal: true }) cũng chiếm ô nhưng không bao giờ vỡ.
 // Mèo trong chuồng ({ group, cage }) chiếm ô, không vào cụm; gom sát bên thì chuồng mất một khóa (`caged`), hết khóa thì
 // mèo được thả (`freed`) và từ lượt sau gom được như mèo thường.
-export function clearMatches(board, width, height, size = 4) {
+// skipFat: fatId đã bị đánh thức trong lượt này (mỗi lượt mỗi mèo béo chỉ mất 1 lần, xem removeClusters).
+export function clearMatches(board, width, height, size = 4, skipFat) {
   const seen = new Set(), cleared = [], groups = [], clusters = [];
   board.forEach((cell, index) => {
     if (!cell || seen.has(index)) return;
@@ -81,10 +82,10 @@ export function clearMatches(board, width, height, size = 4) {
     cluster.forEach(i => seen.add(i));
     if (cluster.length >= size) { cleared.push(...cluster); groups.push(cell.group); clusters.push(cluster); }
   });
-  return removeClusters(board, width, height, clusters, groups);
+  return removeClusters(board, width, height, clusters, groups, skipFat);
 }
 // Xoá các cụm cho trước (luật gom: thùng sát cụm vỡ, chuồng sát cụm mất một khóa). Dùng cho clearMatches và xả lượt (gom từng cụm).
-export function removeClusters(board, width, height, clusters, groups) {
+export function removeClusters(board, width, height, clusters, groups, skipFat) {
   const cleared = clusters.flat();
   if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [], woke: [], rolled: [] };
   const nextBoard = board.slice(), broken = new Set(), hit = new Set();
@@ -108,7 +109,8 @@ export function removeClusters(board, width, height, clusters, groups) {
   clusters.forEach(cluster => {
     const touched = new Set();
     cluster.forEach(index => { for (const delta of [1, -1, width, -width]) { const other = neighbor(index, delta, width, height); if (other >= 0 && board[other]?.fat) touched.add(board[other].fatId); } });
-    touched.forEach(id => hits.set(id, (hits.get(id) || 0) + 1));
+    // một lượt gom (dù nhiều cụm cùng chạm) chỉ đánh thức mỗi mèo béo 1 lần
+    touched.forEach(id => { if (!skipFat?.has(id)) hits.set(id, 1); });
   });
   const fat = wakeFatCats(nextBoard, width, height, hits);
   return { board: fat.board, cleared, groups, clusters, broken: [...broken], caged, freed, woke: fat.woke, rolled: fat.rolled };

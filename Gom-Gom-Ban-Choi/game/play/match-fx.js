@@ -1,13 +1,14 @@
 // Anim + juice khi gom: bóng mèo nhấc lên chụm vào điểm tụ, thùng vỡ, lồng rung, cỏ văng, hiệu ứng cụm to (Pounce, Yarn Boom,
-// Claw Cross, Call the Herd, Kitty Leap), lời khen, pháo hoa, confetti. Sang Unity: MatchFx (MonoBehaviour, DOTween / ParticleSystem).
+// Claw Cross, Call the Herd, Cat Drop), lời khen, pháo hoa, confetti. Sang Unity: MatchFx (MonoBehaviour, DOTween / ParticleSystem).
 import { mergeTarget } from '../core/board-rules.mjs';
 import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
-import { DRAG } from '../data/tuning.mjs';
-import { CRATE_SVG } from '../ui/board-art.mjs';
+import { DRAG, EFFECTS } from '../data/tuning.mjs';
+import { CRATE_SVG, cageSvg } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot, scoreTier } from './score-bar.js';
+import { setFatMood, fatAnnoyedUntil } from './board-view.js';
 
 // Anim một lượt đặt thẻ đã chốt state (gom, thùng, chuồng, cỏ, khen, hiệu ứng). Dùng cho lượt người chơi và lượt xả sau khi thắng.
 export function animateTurn(turn) {
@@ -44,6 +45,7 @@ export function animateFat(source, delay, { score = false } = {}) {
     if (!art || !cell) continue;
     const ghost = art.cloneNode(true);
     ghost.classList.add('fat-ghost');
+    setFatMood(ghost, 'happy'); // đủ lần đánh thức: vui vẻ lăn đi
     ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${art.offsetWidth}px;height:${art.offsetHeight}px`;
     fxLayer().append(ghost);
     ghosts.set(roll.id, ghost);
@@ -58,6 +60,10 @@ export function animateFat(source, delay, { score = false } = {}) {
       void art.offsetWidth;
       art.classList.add('fat-poke');
       art.addEventListener('animationend', () => art.classList.remove('fat-poke'), { once: true });
+      // bị gom sát bên: cau có một lúc rồi ngủ tiếp
+      fatAnnoyedUntil.set(id, performance.now() + 1100);
+      setFatMood(art, 'annoyed');
+      setTimeout(() => setFatMood(cellEl(id)?.querySelector('.fat-cat'), 'sleep'), 1120);
       playSound('pick');
     }
     for (const roll of source.rolled) {
@@ -89,61 +95,228 @@ export const EFFECT_FX = {
   yarn: { label: 'Yarn Boom!', shake: 6, bits: 'yarn-bit' },
   cross: { label: 'Claw Cross!', shake: 8, bits: 'yarn-bit' },
   herd: { label: 'Call the Herd!', shake: 12, bits: 'yarn-bit' },
-  leap: { label: 'Kitty Leap!', shake: 4, bits: 'grass-bit' },
+  drop: { label: 'Cat Drop!', shake: 4, bits: 'grass-bit' },
 };
 
 function playEffects(turn, delay) {
   const effect = turn.effect;
-  if (!effect || (!effect.effects.length && !effect.double)) return;
-  holdScoreSlots(1); // điểm thưởng của hiệu ứng / gom đôi giữ thanh điểm tới khi bật ra
-  const bonus = turn.gained - turnPoints(turn.match);
+  if (!effect || (!effect.effects.length && !effect.double && !effect.chain)) return;
+  // Gom dây chuyền (mèo thả xuống / mèo vừa ra khỏi lồng thành cụm): chạy y như gom thường — nhấc bổng, trượt vào điểm tụ,
+  // điểm bật ra ở điểm tụ, khen + pháo hoa, thùng sát cụm vỡ. Điểm này tách khỏi số thưởng ở tâm.
+  const chain = effect.chain, chained = chain?.cleared ?? [];
+  const sources = [...(effect.dropped ?? []).map(d => d.index), ...effect.freed, ...turn.match.freed];
+  const chainMerges = (chain?.clusters ?? []).map(cluster => ({ cluster, target: mergeTarget(cluster, sources.filter(i => cluster.includes(i)), W) }));
+  const chainShown = chainMerges.reduce((sum, { cluster }) => sum + clusterPoints(cluster.length), 0) + (chain?.broken.length ?? 0) * POINTS_PER_CRATE;
+  // Claw Cross: điểm mèo bị gom bật ra ngay lúc cả đàn chụm về tâm (nhân gom đôi như cả lượt), tách khỏi số thưởng cuối
+  const mult = effect.double ? EFFECTS.DOUBLE_MULT : 1;
+  const crossShown = effect.effects.filter(fx => fx.kind === 'cross' && fx.points).map(fx => Math.round(fx.points * mult));
+  holdScoreSlots(1 + chainMerges.length + (chain?.broken.length ?? 0) + crossShown.length); // điểm thưởng + điểm gom dây chuyền / Claw Cross giữ thanh điểm tới khi bật ra
+  const bonus = turn.gained - turnPoints(turn.match) - chainShown - crossShown.reduce((a, b) => a + b, 0);
+  // Thùng / kim loại / mèo trong chuồng bị hiệu ứng phá: chụp lại ô thật (bàn chưa vẽ lại) giữ chỗ cũ tới lúc trúng.
+  const solidGhosts = new Map();
+  [...effect.broken.filter(i => !chain?.broken.includes(i)), ...effect.blasted.filter(i => turn.match.board[i]?.cage)].forEach(index => {
+    const cell = cellEl(index);
+    if (!cell || reduceMotion.matches) return;
+    const ghost = cell.cloneNode(true);
+    ghost.classList.add('solid-ghost');
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    fxLayer().append(ghost);
+    solidGhosts.set(index, ghost);
+  });
+  const blastGhosts = spawnGhosts(effect.blasted.filter(i => !solidGhosts.has(i)), turn.match.board);
+  // Lịch: hiệu ứng thường nối nhau mỗi 260ms; cụm dây chuyền gom sau khi mèo thả đáp xong / sau hiệu ứng thường; hiệu ứng cụm to
+  // của cụm dây chuyền (fx.chain) nổ sau khi cụm đó gom xong — đúng thứ tự đặt -> gom -> nổ như lượt thường.
+  const plain = effect.effects.filter(fx => !fx.chain), dropAt = plain.findIndex(fx => fx.kind === 'drop');
+  const chainAt = dropAt >= 0 ? delay + dropAt * 260 + (effect.dropped.length - 1) * 120 + 140 : delay + plain.length * 260;
+  const chainFxAt = chainAt + DROP_MS + LIFT_MS + MERGE_MS + 60;
+  let nPlain = 0, nChain = 0;
+  const times = effect.effects.map(fx => (fx.chain ? chainFxAt + nChain++ * 260 : delay + nPlain++ * 260));
+  // Bóng mèo của cụm dây chuyền (mèo sẵn trên bàn). Mèo thả xuống thêm vào lúc rơi. Mèo còn lồng trước lượt này vẫn vẽ lồng tới đúng
+  // lúc lồng vỡ (vỡ do gom: cùng lúc cụm gom chụm lại; vỡ do hiệu ứng: lúc hiệu ứng nổ; vỡ do gom dây chuyền: lúc cụm đó chụm lại).
+  const uncaged = turn.match.board.map(o => (o?.cage ? { ...o, cage: 0 } : o));
+  const chainGhosts = spawnGhosts(chained.filter(i => uncaged[i]?.group), uncaged);
+  const freeAt = index => {
+    if (turn.match.freed.includes(index)) return DROP_MS + LIFT_MS + MERGE_MS * .7;
+    const n = effect.effects.findIndex(fx => fx.cells.includes(index));
+    return n >= 0 ? times[n] : chainAt + DROP_MS + LIFT_MS + MERGE_MS * .7;
+  };
+  chainGhosts.forEach((ghost, index) => {
+    const before = turn.result.board[index];
+    if (!before?.cage || reduceMotion.matches) return;
+    ghost.classList.add('caged', `cage-${before.cage}`);
+    ghost.insertAdjacentHTML('beforeend', cageSvg());
+    setTimeout(() => { ghost.classList.remove('caged', `cage-${before.cage}`); ghost.querySelector('.cage-bars')?.remove(); }, freeAt(index));
+  });
+  // Mèo thả xuống mà không bị gom: ô thật đã vẽ sẵn mèo, giấu đi tới lúc mèo rơi xuống
+  const keptDrops = (effect.dropped ?? []).filter(d => !chained.includes(d.index));
+  setTimeout(() => keptDrops.forEach(d => { const cell = cellEl(d.index); if (cell) cell.style.visibility = 'hidden'; }), 0);
   effect.effects.forEach((fx, n) => setTimeout(() => {
     const style = EFFECT_FX[fx.kind], layer = fxLayer();
-    if (fx.kind === 'leap') leapPaws(layer, fx);
+    n = (fx.chain ? effect.effects.filter(f => f.chain) : plain).indexOf(fx); // chữ tên hiệu ứng xếp tầng theo thứ tự trong nhóm của nó
     playSound(fx.kind === 'pounce' ? 'crateBreak' : 'merge', fx.kind === 'herd' ? 7 : fx.kind === 'cross' ? 6 : 5);
     if (fx.kind === 'herd') playMeowChorus(state.board.filter(o => o?.group).map(o => o.group));
-    const land = fx.kind === 'leap' ? 440 : 0; // mèo vồ: ô đích nổ lúc dấu chân đáp
+    shakeBoard(style.shake);
+    effectBanner(style.label, n);
+    if (fx.kind === 'drop') return dropCats(effect, chainGhosts);
+    const gathered = new Map(); // Claw Cross: mèo cùng màu bị gom chụm về tâm (không bay lên)
+    const rc = i => [Math.floor(i / W), i % W], [cr, cc] = rc(fx.center);
+    // Call the Herd: sóng quét toả từ tâm ra cả bàn, ô xa trúng sau
+    const wait = (index, i) => (fx.kind === 'herd' ? (Math.abs(rc(index)[0] - cr) + Math.abs(rc(index)[1] - cc)) * 55 : i * 18);
+    if (fx.kind === 'cross') clawSlash(layer, fx.center);
+    if (fx.kind === 'herd') herdWave(layer, fx.center);
+    const lead = fx.kind === 'cross' ? 150 : 0; // vệt cào quẹt gần xong là bắn tia gom
     fx.cells.forEach((index, i) => {
       const cell = cellEl(index);
       if (!cell) return;
+      const at = lead + wait(index, i);
       const flash = document.createElement('span');
       flash.className = `fx-flash fx-${fx.kind}`;
-      flash.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px;animation-delay:${land + i * 18}ms`;
+      flash.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px;animation-delay:${at}ms`;
       layer.append(flash);
-      setTimeout(() => flash.remove(), 700 + land + i * 18);
-      const debris = effect.blasted.includes(index) || effect.broken.includes(index) || effect.cleaned.includes(index);
-      if (debris) setTimeout(() => { flyBits(layer, cell, style.bits, 5); spawnPuff(cell); }, land);
+      setTimeout(() => flash.remove(), 700 + at);
+      const ghost = blastGhosts.get(index);
+      if (ghost) {
+        blastGhosts.delete(index);
+        if (fx.kind === 'cross') gathered.set(index, ghost); else setTimeout(() => liftAway(layer, ghost), at);
+        return;
+      }
+      const solid = solidGhosts.get(index);
+      if (solid) {
+        solidGhosts.delete(index);
+        setTimeout(() => {
+          if (solid.classList.contains('locked')) { solid.querySelector('.cage-bars')?.remove(); solid.classList.add('merge-ghost'); flyBits(layer, cell, 'cage-bar', 6); return liftAway(layer, solid); }
+          flyBits(layer, cell, solid.querySelector('.crate') ? 'crate-shard' : 'cage-bar', 6); spawnPuff(cell); solid.remove();
+        }, at);
+        return;
+      }
+      if (effect.broken.includes(index) || effect.cleaned.includes(index)) setTimeout(() => { flyBits(layer, cell, style.bits, 5); spawnPuff(cell); }, at);
     });
-    shakeBoard(style.shake);
-    effectBanner(style.label, n);
-  }, delay + n * 260));
-  const last = delay + Math.max(0, effect.effects.length - 1) * 260 + 200;
+    if (fx.kind === 'cross' && !gathered.size && fx.points) setTimeout(() => showMergeScore(cellEl(fx.center), Math.round(fx.points * mult), 0, 'm6'), lead);
+    if (gathered.size) setTimeout(() => gatherTo(layer, gathered, fx.center, Math.round(fx.points * mult)), lead);
+  }, times[n]));
+  if (chainMerges.length) {
+    const hit = chainAt + DROP_MS + LIFT_MS + MERGE_MS * .7;
+    breakCrates(chain.broken, hit);
+    chain.broken.forEach(index => { const cell = cellEl(index); if (cell) showMergeScore(cell, POINTS_PER_CRATE, hit + 120, 'crate'); else releaseScoreSlot(); });
+    celebrateMatch(chainMerges, hit);
+    setTimeout(() => { playSound('merge', Math.max(...chainMerges.map(m => m.cluster.length))); animateMerges(chainGhosts, chainMerges); }, chainAt);
+  }
+  const last = Math.max(delay + 200, ...times.map(t => t + 200), chainMerges.length ? chainAt + DROP_MS + LIFT_MS + MERGE_MS + 200 : 0);
   setTimeout(() => {
+    blastGhosts.forEach(ghost => ghost.remove()); // phòng hờ: ô xoá mà không nằm trong ô của hiệu ứng nào
+    solidGhosts.forEach(ghost => ghost.remove());
     if (effect.double && !effect.effects.length) effectBanner('Double!', 0);
     const center = cellEl(effect.effects[0]?.center ?? turn.result.indices[0]);
     if (center && bonus > 0) showMergeScore(center, bonus, 0, effect.double ? 'm7' : 'm6'); else releaseScoreSlot();
   }, last);
 }
 
-// Mèo vồ: dấu chân mèo nhảy vòng cung từ ô vừa đặt tới từng ô đích (ô đích loé sáng cùng lúc chân đáp).
-function leapPaws(layer, fx) {
-  const from = cellEl(fx.center);
-  if (!from) return;
-  fx.cells.forEach(index => {
-    const to = cellEl(index);
-    if (!to) return;
-    const paw = document.createElement('span');
-    paw.className = 'leap-paw';
-    paw.style.cssText = `left:${from.offsetLeft + from.offsetWidth / 2}px;top:${from.offsetTop + from.offsetHeight / 2}px`;
-    layer.append(paw);
-    const dx = to.offsetLeft - from.offsetLeft, dy = to.offsetTop - from.offsetTop;
-    paw.animate([
-      { transform: 'translate(-50%, -50%) scale(.4)', opacity: 0 },
-      { transform: `translate(calc(-50% + ${dx / 2}px), calc(-50% + ${dy / 2 - 40}px)) scale(1.3)`, opacity: 1, offset: .5 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1)`, opacity: 1, offset: .85 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.6)`, opacity: 0 },
-    ], { duration: 520, easing: 'ease-in-out', fill: 'both' }).finished.then(() => paw.remove());
+// Claw Cross: ba vệt cào sáng quẹt chéo qua tâm (to cỡ 3 ô), rồi mèo cùng màu bị gom.
+function clawSlash(layer, center) {
+  const cell = cellEl(center);
+  if (!cell || reduceMotion.matches) return;
+  const claw = document.createElement('span');
+  claw.className = 'claw-slash';
+  claw.style.cssText = `left:${cell.offsetLeft + cell.offsetWidth / 2}px;top:${cell.offsetTop + cell.offsetHeight / 2}px;--s:${cell.offsetWidth}px`;
+  claw.innerHTML = '<i></i><i></i><i></i>';
+  layer.append(claw);
+  setTimeout(() => claw.remove(), 900);
+}
+
+// Mèo cùng màu (Claw Cross): từ ô tâm bắn tia sáng tới từng con (lần lượt); tia chạm tới thì con đó loé sáng và bị nhấc bổng
+// (chân lủng lẳng như lúc gom); trúng hết thì cả đàn bay chụm về ô tâm, nhỏ dần; tới nơi thì loé + khói.
+const BEAM_STEP = 40, BEAM_MS = 120;
+function gatherTo(layer, ghosts, center, points) {
+  const to = cellEl(center);
+  if (!to) { if (points) releaseScoreSlot(); return ghosts.forEach(ghost => ghost.remove()); }
+  const cx = to.offsetLeft + to.offsetWidth / 2, cy = to.offsetTop + to.offsetHeight / 2;
+  let k = 0;
+  ghosts.forEach(ghost => {
+    const at = k++ * BEAM_STEP;
+    const dx = ghost.offsetLeft + ghost.offsetWidth / 2 - cx, dy = ghost.offsetTop + ghost.offsetHeight / 2 - cy;
+    const beam = document.createElement('span');
+    beam.className = 'claw-beam';
+    beam.style.cssText = `left:${cx}px;top:${cy}px;width:${Math.hypot(dx, dy)}px;rotate:${Math.atan2(dy, dx)}rad;--d:${at}ms`;
+    layer.append(beam);
+    setTimeout(() => beam.remove(), at + BEAM_MS + 420);
+    setTimeout(() => {
+      const flash = document.createElement('span');
+      flash.className = 'fx-flash fx-cross';
+      flash.style.cssText = `left:${ghost.offsetLeft}px;top:${ghost.offsetTop}px;width:${ghost.offsetWidth}px;height:${ghost.offsetHeight}px`;
+      layer.append(flash);
+      setTimeout(() => flash.remove(), 700);
+      ghost.classList.add('lifted');
+      playSound('pick');
+    }, at + BEAM_MS);
   });
+  setTimeout(() => {
+    let n = 0;
+    ghosts.forEach(ghost => {
+      const dx = to.offsetLeft - ghost.offsetLeft, dy = to.offsetTop - ghost.offsetTop;
+      ghost.animate([
+        { transform: 'none', opacity: 1 },
+        { transform: `translate(${dx * .85}px, ${dy * .85}px) scale(.7)`, opacity: 1, offset: .8 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
+      ], { duration: 280, delay: n++ * 15, easing: 'cubic-bezier(.5, 0, .75, 0)', fill: 'forwards' }).finished.then(() => ghost.remove());
+    });
+    if (points) showMergeScore(to, points, 160, 'm6'); // điểm bật ra khi đàn mèo đang chụm lại
+    setTimeout(() => { spawnPuff(to); flyBits(layer, to, 'yarn-bit', 8); playSound('merge', 6); }, 280 + n * 15);
+  }, (k - 1) * BEAM_STEP + BEAM_MS + 110);
+}
+
+// Call the Herd: vòng sáng lớn toả từ tâm ra quét cả bàn.
+function herdWave(layer, center) {
+  const cell = cellEl(center);
+  if (!cell || reduceMotion.matches) return;
+  const wave = document.createElement('span');
+  wave.className = 'herd-wave';
+  wave.style.cssText = `left:${cell.offsetLeft + cell.offsetWidth / 2}px;top:${cell.offsetTop + cell.offsetHeight / 2}px;--s:${cell.offsetWidth}px`;
+  layer.append(wave);
+  setTimeout(() => wave.remove(), 1100);
+}
+
+// Mèo bị hiệu ứng xoá: nhấc bổng (chân lủng lẳng như lúc gom) rồi bay vút lên, quanh thân có các đốm sáng phép thuật bay vòng (quỹ đạo elip,
+// vòng ra sau thân thì mờ đi), kéo theo vệt sáng; quầng tím mờ sau lưng. Các đốm nằm trong bóng mèo nên bay lên cùng mèo.
+const MAGIC = ['#c9a7ff', '#8fe3ff', '#ffb3e6', '#fff2a8'];
+function liftAway(layer, ghost) {
+  const magic = document.createElement('span');
+  magic.className = 'magic';
+  magic.innerHTML = '<i class="magic-halo"></i>';
+  const rx = ghost.offsetWidth * .72, ry = ghost.offsetWidth * .3;
+  for (let k = 0; k < 6; k++) {
+    const orb = document.createElement('i'), start = (k / 6) * Math.PI * 2, rise = (k % 3) * .22 - .22, steps = 24;
+    orb.className = 'magic-orb';
+    orb.style.setProperty('--c', MAGIC[k % MAGIC.length]);
+    magic.append(orb);
+    // 1.5 vòng xoắn từ chân lên đầu: x/y theo elip, đốm ở nửa sau thân mờ + nhỏ lại
+    orb.animate(Array.from({ length: steps + 1 }, (_, t) => {
+      const angle = start + (t / steps) * Math.PI * 3, front = Math.sin(angle);
+      const y = Math.sin(angle) * ry + ghost.offsetHeight * (rise + .35 - (t / steps) * .7);
+      return { transform: `translate(${Math.cos(angle) * rx}px, ${y}px) scale(${.75 + front * .3})`, opacity: t === 0 || t === steps ? 0 : .55 + front * .45, zIndex: front > 0 ? 2 : 0 };
+    }), { duration: 900, delay: k * 40, easing: 'linear', fill: 'both' });
+  }
+  ghost.append(magic);
+  ghost.classList.add('lifted');
+  ghost.animate([
+    { translate: '0 0', opacity: 1 },
+    { translate: '0 -15%', opacity: 1, offset: .35 },
+    { translate: '0 -160%', opacity: 0 },
+  ], { duration: 900, delay: 180, easing: 'cubic-bezier(.5, 0, .7, .4)', fill: 'forwards' }).finished.then(() => ghost.remove());
+}
+
+// Cat Drop (gom đôi 3+3): 2 mèo đơn rơi từ trên xuống ô đã chọn (khói khi đáp). Mèo thành cụm thì nằm lại làm bóng chờ gom
+// (playEffects chạy anim gom cho cả cụm); không thì mèo ở lại, hiện ô thật.
+const DROP_FALL_MS = 380;
+function dropCats(effect, chainGhosts) {
+  const chained = effect.chain?.cleared ?? [];
+  effect.dropped.forEach(({ index, group }, k) => setTimeout(() => {
+    const fake = [];
+    fake[index] = { group };
+    const ghost = spawnGhosts([index], fake, new Set([index])).get(index);
+    if (!ghost) return;
+    if (chained.includes(index)) { chainGhosts.set(index, ghost); return; }
+    setTimeout(() => { ghost.remove(); const cell = cellEl(index); if (cell) cell.style.visibility = ''; }, DROP_FALL_MS);
+  }, k * 120));
 }
 
 export function shakeBoard(px) {

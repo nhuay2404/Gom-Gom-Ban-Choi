@@ -1,16 +1,15 @@
 // HUD màn chơi + render() chung: số màn, lượt, ô Goal (mục tiêu còn lại, lắc + làm sáng ô khi đủ điểm mà còn mục tiêu),
 // sắp hết lượt. Sang Unity: Hud (MonoBehaviour), render() thành Refresh().
 import * as game from '../core/session.mjs';
-import { LOW_MOVE_MOODS, catMarkup } from '../ui/cat-art.mjs';
-import { FAT_BREED } from '../core/level-rules.mjs';
+import { LOW_MOVE_MOODS } from '../ui/cat-art.mjs';
 import { LOW_MOVES } from '../data/tuning.mjs';
 import { boostersUnlocked } from '../core/boosters.mjs';
 import { CAGE_ICON_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
-import { refreshSkin, state, skinOf } from './context.js';
+import { refreshSkin, state } from './context.js';
 import { renderScore, scoreSettled } from './score-bar.js';
-import { renderBoard } from './board-view.js';
+import { renderBoard, fatMarkup } from './board-view.js';
 import { renderCards, normalizePreview, layoutHints } from './cards.js';
 import { renderBoosters } from './booster-bar.js';
 
@@ -55,7 +54,7 @@ export function render(message = '', error = false) {
 const GOAL_KINDS = {
   grass: { has: () => state.grassTotal, icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
   cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
-  fat: { has: () => state.hasFat, icon: () => `<span class="goal-fat">${catMarkup[skinOf(FAT_BREED)]}</span>`, left: () => game.fatLeft(state), label: 'sleepy big cats' },
+  fat: { has: () => state.hasFat, icon: () => `<span class="goal-fat">${fatMarkup('sleep')}</span>`, left: () => game.fatLeft(state), label: 'sleepy big cats' },
 };
 
 const goalsLeft = () => Object.keys(GOAL_KINDS).filter(kind => GOAL_KINDS[kind].has() && GOAL_KINDS[kind].left() > 0);

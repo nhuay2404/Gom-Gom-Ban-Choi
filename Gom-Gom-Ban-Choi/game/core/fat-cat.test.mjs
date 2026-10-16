@@ -16,16 +16,18 @@ test('bàn: khối 2×2 chữ số = một mèo béo (fatId = ô góc trên-trá
   assert.throws(() => parseBoard(['3.....', '......', '......', '......', '......', '......']));
 });
 
-test('mỗi cụm chạm mèo béo = 1 lần đánh thức (chạm nhiều cạnh vẫn 1), gom đôi cùng chạm = 2', () => {
+test('mỗi lượt gom chạm mèo béo = 1 lần đánh thức (chạm nhiều cạnh / gom đôi cùng chạm vẫn 1)', () => {
   // cụm cam chạm cạnh trên + trái của mèo béo
   let board = parseBoard(['.OOO..', '.O33..', '..33..', '......', '......', '......']);
   let match = clearMatches(board, W, H, 3);
   assert.deepEqual(match.woke, [{ id: 8, left: 2 }]);
   assert.ok([8, 9, 14, 15].every(i => match.board[i].fat === 2));
-  // hai cụm (cam trên, xám dưới) cùng chạm
+  // hai cụm (cam trên, xám dưới) cùng chạm: vẫn 1; hiệu ứng nổ sau đó cũng không đánh thức thêm
   board = parseBoard(['.OOO..', '..33..', '..33..', '.GGG..', '......', '......']);
   match = clearMatches(board, W, H, 3);
-  assert.deepEqual(match.woke, [{ id: 8, left: 1 }]);
+  assert.deepEqual(match.woke, [{ id: 8, left: 2 }]);
+  const fx = clusterEffects({ ...match, clusters: [[0, 1, 2, 6, 7]], groups: ['orange'] }, [7], W, H, null);
+  assert.deepEqual(fx.woke, []);
 });
 
 test('đủ lần đánh thức thì mèo béo lăn: rời bàn, dọn vùng 4×4 (mèo, thùng; giữ kim loại), cộng thưởng', () => {
