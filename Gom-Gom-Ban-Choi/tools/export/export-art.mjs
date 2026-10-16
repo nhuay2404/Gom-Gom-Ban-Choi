@@ -5,7 +5,7 @@
 //       calm · blink · joy (gom / được cưng) · lifted (bị nhấc bổng) · sleepy (AFK)
 //       sad · worried · crying · disappointed · sulky (sắp hết lượt)
 //   cats3d/<giống>/eyes-<kiểu>.svg    lớp mắt của mèo 3D (khung mặt 80 × 72), dán lên mặt trước khối mèo
-//   board/crate.svg · board/metal.svg vật cản trên bàn
+//   (vật cản trên bàn: lấy thẳng PNG ở game/assets/img/board/)
 //   manifest.json                      danh sách file + cỡ gợi ý
 //
 // Art gốc viết cho HTML (có thuộc tính lặp trong một thẻ, HTML lấy cái đầu); file xuất ra đã bỏ bản lặp
@@ -14,7 +14,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { catGroups, catMarkup, eyesMarkup, LOW_MOVE_MOODS } from '../../game/ui/cat-art.mjs';
-import { CRATE_SVG, METAL_SVG } from '../../game/ui/board-art.mjs';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'export', 'art');
 const files = [];
@@ -74,8 +73,6 @@ for (const breed of catGroups) {
     save(`cats3d/${breed}/eyes-${kind}.svg`, clean(svg, 512, 460), [512, 460]);
   }
 }
-save('board/crate.svg', clean(CRATE_SVG, 200, 200), [200, 200]);
-save('board/metal.svg', clean(METAL_SVG, 200, 200), [200, 200]);
 
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({
   note: 'SVG xuất từ art của game. Đổi sang PNG @2x rồi gom Sprite Atlas trong Unity. Mặt mèo 3D (bụng, mũi, miệng, má) vẽ bằng canvas trong deco/cats/cat-rig.mjs — cần nướng thành texture riêng.',

@@ -15,6 +15,7 @@ Mọi file ảnh / tiếng game dùng nằm ở đây (code và CSS chỉ tham c
 | `img/deco/` | Sprite hoa 2D: `lavender.webp` oải hương 4 × 4 (hàng = tông, đậm → hồng nhạt), `hydrangea.webp` cẩm tú cầu 3 × 3 (hàng xanh / đỏ / vàng), `canopy.webp` mảng tán lá 3 × 2 | `deco/render/sprite-sheet.mjs`, dùng ở `deco/scenes/flower-garden.mjs` (vườn hoa quà), `deco/scenes/garden-expanded.mjs` (tán cây xích đu) |
 | `img/map/` | Texture cỏ `grass-bg.jpg` (bản đồ 2D + ô cỏ trên bàn) | `ui/map/map.css`, `ui/play/base.css` |
 | `img/play/` | HUD màn chơi: nền đồng cỏ, thanh điểm, huy hiệu Moves, khung dock / ô thẻ, booster (khung + hammer / swap / moves), khung panel Deco | `ui/play/skin.css`, `ui/deco/deco.css`, `index.html` |
+| `img/board/` | Vật cản trên bàn: `crate.png` hộp cardboard (vỡ được), `tin-can.png` hộp thiếc (không vỡ), 256 px, từ Figma | `ui/board-art.mjs` (CRATE_SVG, METAL_SVG) |
 | `img/result/` | Bảng kết quả thắng / thua: panel, mèo ló, sao, tim, tiêu đề, các nút | `ui/result/result.css`, `play/result.js` |
 | `img/shop/` | Đồng xu, chồng xu, gói starter, nền shop (cũng là nền loading) | `ui/shop/shop.css`, `ui/shared/loading.css`, `ui/*` (icon xu), `menu/shop.js` |
 | `models/models.json` | Mọi model 3D (252: đồ Deco kể cả phương án thay thế + 12 mèo / chó 3D), mỗi model một mục glTF 2.0 riêng (`models.<id>.gltf`, buffer + texture nhúng). **Không commit** (~70 MB): tạo bằng `npm run export:models` khi game đang chạy | Dùng ngoài game: lưu một mục ra `.gltf` là mở được bằng Blender / Cocos |

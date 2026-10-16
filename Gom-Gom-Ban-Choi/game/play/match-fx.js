@@ -3,12 +3,12 @@
 import { mergeTarget } from '../core/board-rules.mjs';
 import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { DRAG, EFFECTS } from '../data/tuning.mjs';
-import { CRATE_SVG, cageSvg } from '../ui/board-art.mjs';
+import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot, scoreTier } from './score-bar.js';
-import { setFatMood, fatAnnoyedUntil } from './board-view.js';
+import { setFatMood, fatAnnoyedUntil, cageUp, uncage } from './board-view.js';
 
 // Anim một lượt đặt thẻ đã chốt state (gom, thùng, chuồng, cỏ, khen, hiệu ứng). Dùng cho lượt người chơi và lượt xả sau khi thắng.
 export function animateTurn(turn) {
@@ -144,8 +144,8 @@ function playEffects(turn, delay) {
     const before = turn.result.board[index];
     if (!before?.cage || reduceMotion.matches) return;
     ghost.classList.add('caged', `cage-${before.cage}`);
-    ghost.insertAdjacentHTML('beforeend', cageSvg());
-    setTimeout(() => { ghost.classList.remove('caged', `cage-${before.cage}`); ghost.querySelector('.cage-bars')?.remove(); }, freeAt(index));
+    cageUp(ghost);
+    setTimeout(() => { ghost.classList.remove('caged', `cage-${before.cage}`); uncage(ghost); }, freeAt(index));
   });
   // Mèo thả xuống mà không bị gom: ô thật đã vẽ sẵn mèo, giấu đi tới lúc mèo rơi xuống
   const keptDrops = (effect.dropped ?? []).filter(d => !chained.includes(d.index));
@@ -184,7 +184,7 @@ function playEffects(turn, delay) {
       if (solid) {
         solidGhosts.delete(index);
         setTimeout(() => {
-          if (solid.classList.contains('locked')) { solid.querySelector('.cage-bars')?.remove(); solid.classList.add('merge-ghost'); flyBits(layer, cell, 'cage-bar', 6); return liftAway(layer, solid); }
+          if (solid.classList.contains('locked')) { uncage(solid); solid.classList.add('merge-ghost'); flyBits(layer, cell, 'cage-bar', 6); return liftAway(layer, solid); }
           flyBits(layer, cell, solid.querySelector('.crate') ? 'crate-shard' : 'cage-bar', 6); spawnPuff(cell); solid.remove();
         }, at);
         return;
@@ -367,9 +367,8 @@ function rattleCages(match, delay) {
     match.freed.forEach(index => {
       const cell = cellEl(index);
       if (!cell) return;
-      flyBits(layer, cell, 'cage-bar', 6);
       flyBits(layer, cell, 'cage-lock', 1);
-      spawnPuff(cell);
+      openCage(layer, cell);
     });
   }, delay);
 }
@@ -388,7 +387,38 @@ export function flyBits(layer, cell, className, count) {
   }
 }
 
-// Bóng thùng giữ nguyên chỗ cũ tới lúc gom xong, rung lên rồi vỡ thành mảnh gỗ văng ra + khói.
+// Nạp sẵn ảnh hộp mở / lồng mở để lúc đổi ảnh không bị trống một khung.
+new Image().src = CRATE_OPEN_SRC;
+new Image().src = CAGE_OPEN_SRC;
+// Bật mở mượt: nén xuống lấy đà, ảnh "mở" hiện dần chồng lên ảnh "đóng" trong lúc bật lên, giữ một nhịp, rồi bay nhẹ lên + mờ dần + khói.
+async function openUp(ghost, openSrc) {
+  const shut = ghost.querySelector('img');
+  const open = shut.cloneNode();
+  open.src = openSrc;
+  open.classList.add('open');
+  open.style.opacity = 0;
+  shut.after(open);
+  const ease = 'cubic-bezier(.34,1.56,.64,1)';
+  await ghost.animate([{ scale: '1 1' }, { scale: '1.08 .9', offset: .3 }, { scale: '.96 1.06', offset: .65 }, { scale: '1 1' }],
+    { duration: 380, easing: 'ease-in-out' }).finished.catch(() => {});
+  open.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: 0, fill: 'forwards', easing: 'ease-out' });
+  shut.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, delay: 60, fill: 'forwards', easing: 'ease-in' });
+  await ghost.animate([{ translate: '0 0' }, { translate: '0 -8%' }, { translate: '0 0' }], { duration: 320, easing: ease }).finished.catch(() => {});
+  await wait(260);
+  spawnPuff(ghost);
+  await ghost.animate([{ scale: 1, opacity: 1, translate: '0 0' }, { scale: .7, opacity: 0, translate: '0 -12%' }],
+    { duration: 320, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {});
+}
+// Lồng bật cửa khi mèo được thả: bóng lồng đóng tại ô, mở cửa (openUp) rồi tan; mèo thật bên dưới đã ra khỏi lồng.
+function openCage(layer, cell) {
+  const ghost = document.createElement('span');
+  ghost.className = 'cage-ghost';
+  ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+  ghost.innerHTML = `<img src="assets/img/board/cage.png" alt="">`;
+  layer.append(ghost);
+  openUp(ghost, CAGE_OPEN_SRC).then(() => ghost.remove());
+}
+// Bóng hộp giữ nguyên chỗ cũ tới lúc gom xong, rung lên, bật nắp, giữ một nhịp rồi thu nhỏ biến mất + khói.
 export function breakCrates(indices, delay) {
   if (!indices?.length) return;
   setTimeout(() => playSound('crateBreak'), delay);
@@ -406,18 +436,7 @@ export function breakCrates(indices, delay) {
       await ghost.animate([
         { rotate: '0deg' }, { rotate: '-7deg' }, { rotate: '6deg' }, { rotate: '-4deg' }, { rotate: '0deg' },
       ], { duration: 180 }).finished.catch(() => {});
-      for (let i = 0; i < 6; i++) {
-        const shard = document.createElement('span');
-        shard.className = 'crate-shard';
-        shard.style.cssText = `left:${cell.offsetLeft + cell.offsetWidth / 2}px;top:${cell.offsetTop + cell.offsetHeight / 2}px`;
-        layer.append(shard);
-        const angle = (i / 6) * Math.PI * 2 + Math.random() * .6, dist = cell.offsetWidth * (.6 + Math.random() * .5);
-        shard.animate([
-          { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
-          { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist + 18}px)) rotate(${(Math.random() - .5) * 540}deg)`, opacity: 0 },
-        ], { duration: 560, easing: 'cubic-bezier(.2, .7, .4, 1)', fill: 'forwards' }).finished.then(() => shard.remove());
-      }
-      spawnPuff(ghost);
+      await openUp(ghost, CRATE_OPEN_SRC);
       ghost.remove();
     }, delay);
   });

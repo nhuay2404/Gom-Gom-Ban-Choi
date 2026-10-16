@@ -143,7 +143,9 @@ body{overflow-x:clip}
 /* ---------- HUD mới theo Figma (image 107): bảng hồng tai mèo — badge "Level N", MỘT ô Move rộng (đã bỏ ô Goal), thanh điểm
    (đã bỏ 3 sao: điểm / mục tiêu ghi trên thanh). Ảnh assets/img/play/hud-panel.png cắt ghép từ ảnh Figma, số liệu là chữ thật.
    Mọi vị trí tính theo % ảnh gốc 2172 × 724; bảng 336 × 112 như Figma (x 29, y 46 trong khung 393). Bánh răng nằm góc phải trên. */
-.fg-hud{display:block;height:calc(112 * var(--u));margin:calc(4 * var(--u)) 0 calc(2 * var(--u))}
+/* HUD to hơn phần còn lại 18%: mọi số đo bên trong theo --u, nên chỉ đổi --u cho cả khối (--hud-u tính ở .shell). */
+.shell{--hud-u:calc(var(--u) * 1.18)}
+.fg-hud{--u:var(--hud-u);display:block;height:calc(112 * var(--u));margin:calc(4 * var(--u)) 0 calc(2 * var(--u))}
 .fg-panel{position:relative;width:calc(336 * var(--u));height:calc(112 * var(--u));margin:0 auto;background:url('../../assets/img/play/hud-panel.png') center/100% 100% no-repeat;
   filter:drop-shadow(0 calc(3 * var(--u)) calc(3 * var(--u)) #6b2a2833)}
 .fg-panel .fg-level{position:absolute;left:44%;width:12%;top:12%;height:12%;display:grid;place-items:center;white-space:nowrap;

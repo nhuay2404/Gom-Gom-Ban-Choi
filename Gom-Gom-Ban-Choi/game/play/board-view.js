@@ -80,7 +80,7 @@ export function renderBoard() {
     if (!object) return;
     cell.style.setProperty('--group-color', look(object.group).color);
     addArt(cell, object);
-    if (object.cage) cell.insertAdjacentHTML('beforeend', cageSvg());
+    if (object.cage) cageUp(cell);
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {
       cell.classList.add('drop');
       cell.addEventListener('animationend', () => cell.classList.remove('drop'), { once: true });
@@ -171,8 +171,22 @@ function petCat(cell) {
   }
 }
 
-// Mèo béo 2×2 đang ngủ (core/board-rules.mjs wakeFatCats): ô góc trên-trái vẽ một con mèo to phủ cả khối + hàng chấm tiến độ
-// (mỗi lần đánh thức sáng một chấm); 3 ô còn lại chỉ bị chiếm. Ảnh riêng (assets/img/cats/fat/): thân + mặt, mặt sleep (mặc định),
+// Lồng mèo: bàn là cảnh 3D (preserve-3d) nên z-index không xếp được mèo giữa thân lồng và song sắt; mèo được chuyển VÀO khung lồng
+// (dựng đứng, phẳng) nằm giữa hai lớp ảnh. uncage trả mèo ra ô rồi bỏ khung.
+export function cageUp(cell) {
+  cell.insertAdjacentHTML('beforeend', cageSvg());
+  const cat = cell.querySelector(':scope > .cat');
+  if (cat) cell.querySelector('.cage-back').after(cat);
+}
+export function uncage(cell) {
+  const box = cell.querySelector('.cage-box');
+  if (!box) return;
+  const cat = box.querySelector('.cat');
+  if (cat) box.before(cat);
+  box.remove();
+}
+// Mèo béo 2×2 đang ngủ (core/board-rules.mjs wakeFatCats): ô góc trên-trái vẽ một con mèo to phủ cả khối + huy hiệu số lần
+// còn phải đánh thức; 3 ô còn lại chỉ bị chiếm. Ảnh riêng (assets/img/cats/fat/): thân + mặt, mặt sleep (mặc định),
 // annoyed (bị gom sát bên, match-fx.js animateFat), happy (đủ lần đánh thức, lăn đi).
 const FAT_ART = 'assets/img/cats/fat/';
 // fatId -> thời điểm (performance.now) hết cau có; bàn vẽ lại giữa chừng vẫn giữ mặt annoyed
@@ -191,7 +205,7 @@ function paintFatCat(cell, object, index, grass) {
   big.innerHTML = fatMarkup((fatAnnoyedUntil.get(object.fatId) ?? 0) > performance.now() ? 'annoyed' : 'sleep');
   const pips = document.createElement('span');
   pips.className = 'fat-pips';
-  pips.innerHTML = Array.from({ length: object.fatMax }, (_, k) => `<i${k < object.fatMax - object.fat ? ' class="on"' : ''}></i>`).join('');
+  pips.textContent = object.fat;
   big.prepend(pips);
   cell.append(big);
 }

@@ -411,7 +411,11 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 @media(prefers-reduced-motion:reduce){.tutorial-ring,.map-node.current b,.map-avatar{animation:none}}
 /* ===== Thùng gỗ: ô chặn, vỡ khi gom mèo sát bên ===== */
 .cell.block{padding:1px;border:0;background:none;box-shadow:none;cursor:default}
-.cell.block .crate{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 2px #6b3f1c55)}
+.cell.block .crate{width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 3px 2px #6b3f1c55)}
+/* ảnh Figma có lề trong suốt: phóng nhẹ cho hộp to ngang mèo */
+img.crate{scale:1.12}
+/* hộp mở: ảnh rộng hơn (nắp chĩa ra) cùng tỉ lệ với hộp đóng, đáy giữ nguyên chỗ */
+img.crate.open{position:absolute;inset:0;scale:1.34;translate:0 -9%}
 .crate-ghost{position:absolute;z-index:3}
 .crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:#d08f4e;box-shadow:0 1px 0 #6d4020;pointer-events:none}
 /* Vui vẻ (chạm mèo / gom) thắng mọi biểu cảm buồn: ẩn mặt buồn/ngủ, giữ nhịp nhảy vui thay vì rung/khóc. */
@@ -425,6 +429,13 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 .cell.caged{position:relative;cursor:default}
 .cell.caged .cat{filter:saturate(.75) brightness(.92)}
 .cell.caged .cage-bars{position:absolute;inset:-4%;width:108%;height:108%;pointer-events:none;transform:rotateX(calc(var(--tilt) * -1)) translateZ(4px);transform-origin:50% 95%;filter:drop-shadow(0 2px 1px #1d361250)}
+/* Lồng Figma (board-view.js cageUp): khung .cage-box dựng đứng như mèo, PHẲNG bên trong -> thân lồng, mèo, song sắt xếp theo DOM.
+   Ảnh có lề trong suốt: khung 120% ô. Mèo đặt vừa ô cửa lồng, bỏ dáng 3D riêng của mèo (khung đã dựng đứng). */
+.cell.caged .cage-box{inset:-10%;width:120%;height:120%;transform:rotateX(calc(var(--tilt) * -1));transform-origin:50% 90%;transform-style:flat;filter:drop-shadow(0 2px 1px #1d361250)}
+.cage-box>img{position:absolute;inset:0;width:100%;height:100%}
+.cage-box>.cat{position:absolute;left:22%;top:28%;width:56%;height:58%;transform:none!important}
+.cage-ghost{position:absolute;z-index:4;pointer-events:none}
+.cage-ghost img{position:absolute;inset:-4%;width:108%;height:108%}
 /* (translateZ: mèo đứng thẳng bị đẩy lên trước ~1px trong không gian 3D của bàn, chuồng phải nằm trước mèo) */
 .cell.cage-hit .cage-bars{animation:cage-shake .42s ease-in-out}
 @keyframes cage-shake{0%,100%{rotate:0deg}20%{rotate:-6deg}45%{rotate:5deg}70%{rotate:-3deg}}
@@ -580,7 +591,8 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 .cell.grass .fat-cat{background:none;box-shadow:none}
 .fat-bob{position:absolute;inset:-4%;transform-origin:50% 92%}
 .fat-bob>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.fat-bob>.fat-body{filter:drop-shadow(0 4px 2px #5a331640)}
+/* viền nâu đậm quanh thân (4 bóng không nhoè) rồi mới đổ bóng */
+.fat-bob>.fat-body{filter:drop-shadow(2px 0 0 #6b2416) drop-shadow(-2px 0 0 #6b2416) drop-shadow(0 2px 0 #6b2416) drop-shadow(0 -2px 0 #6b2416) drop-shadow(0 4px 2px #5a331640)}
 /* 3 mặt chồng nhau, chỉ mặt đúng data-mood hiện; đổi mặt mờ dần .22s */
 .fat-bob>.fat-face{opacity:0;transition:opacity .22s ease}
 .fat-bob[data-mood="sleep"]>.f-sleep,.fat-bob[data-mood="annoyed"]>.f-annoyed,.fat-bob[data-mood="happy"]>.f-happy{opacity:1}
@@ -601,9 +613,9 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 @keyframes fat-huff{0%,100%{scale:1;rotate:0deg}30%{scale:1.05 .95;rotate:-2deg}70%{scale:.97 1.03;rotate:2deg}}
 @keyframes fat-bounce{0%,100%{translate:0 0}50%{translate:0 -6%}}
 @keyframes fat-z{0%{opacity:0;translate:0 0;scale:.5}20%{opacity:1}100%{opacity:0;translate:26px -40px;scale:1.1}}
-.fat-pips{position:absolute;top:-12%;left:50%;translate:-50% 0;display:flex;gap:5px;z-index:2;padding:3px 6px;border-radius:999px;background:#fff8e8;box-shadow:0 2px 0 #6b241640}
-.fat-pips i{width:11px;height:11px;border-radius:50%;background:#e9d7b5;box-shadow:inset 0 0 0 2px #6b241655}
-.fat-pips i.on{background:#ffcf3d;box-shadow:inset 0 0 0 2px #b47a12}
+/* Số lần còn phải đánh thức: huy hiệu tròn góc trên-phải */
+.fat-pips{position:absolute;top:-8%;right:-6%;z-index:2;min-width:26px;height:26px;padding:0 5px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;
+  background:#ff7a9c;border:2.5px solid #fff;box-shadow:0 2px 0 #6b241660;font:900 16px/1 'Baloo 2',sans-serif;color:#fff;-webkit-text-stroke:3px #b8405e;paint-order:stroke}
 .fat-cat.fat-poke{animation:fat-poke .55s cubic-bezier(.3,1.6,.5,1)}
 @keyframes fat-poke{0%{scale:1}25%{scale:1.08 .92}50%{scale:.95 1.06;rotate:-4deg}75%{rotate:3deg}100%{scale:1;rotate:0deg}}
 .fat-cat.fat-ghost{z-index:6}
