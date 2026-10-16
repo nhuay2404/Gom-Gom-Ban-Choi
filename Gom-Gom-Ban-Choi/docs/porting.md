@@ -63,8 +63,8 @@ continueTutorial(s); tutorialStep(s); tutorialAllows(s, action, anchor); upcomin
 - `anchor` = ô góc trên-trái của hình thẻ (hàng × W + cột).
 - `result.board` là bàn **sau khi đặt, trước khi gom**; `match.board` là bàn **sau khi gom**; `effect.board` (= `s.board`) là bàn
   **sau hiệu ứng cụm to**. Giao diện dùng `result` + `match.clusters` diễn anim gom, rồi `effect.effects` diễn hiệu ứng.
-- Hiệu ứng (`core/cluster-effects.mjs`): cụm 4 Pounce (phá 1 lớp vật cản quanh cụm), 5 Yarn Boom (3×3), 6 Claw Cross (hàng + cột),
-  7+ Call the Herd (gom cả màu); gom đôi ×1.5 điểm, 3+3 Kitty Leap. Trần điểm + hệ số ở `data/tuning.mjs` `EFFECTS`.
+- Hiệu ứng (`core/cluster-effects.mjs`): cụm 4 Pounce (phá 1 lớp vật cản quanh cụm), 5 Yarn Boom (3×3), 6 Claw Cross (gom mọi mèo cùng màu + mở 1 khoá lồng gần nhất),
+  7+ Call the Herd (dọn sạch cả bàn, mỗi thứ +20); cụm gom dây chuyền (mèo thoát lồng / mèo thả) cũng nổ các hiệu ứng này; gom đôi ×1.5 điểm, 3+3 Cat Drop (thả 2 mèo đơn vào chỗ có lợi nhất, thành cụm thì gom luôn). Trần điểm + hệ số ở `data/tuning.mjs` `EFFECTS`.
 - Thắng khi **đủ điểm + hết lồng + hết cỏ** (`goalReached`). Xả lượt: gọi `finaleTurn` tới khi `ok = false`; còn N lượt thì bàn mọc
   "câu đố" để đúng N lượt là sạch mèo, hết lượt mà còn mèo thì chơi thêm lượt thưởng (`extra`). Sao chốt lúc thắng.
 - Kết thúc ván: `s.over = true`, `s.outcome = { win, reason, stars }`.
