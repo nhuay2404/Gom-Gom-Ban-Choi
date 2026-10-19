@@ -1,0 +1,64 @@
+/* ---------- HUD bản mới (menu bar hồng dấu chân): nạp SAU skin.css ----------
+   Chỉ đổi giao diện. Khung vẽ bằng CSS thay cho ảnh hud-panel.png (ảnh vẫn nằm ở assets/img/play/, không còn dùng).
+   Id / class mà code game dùng giữ nguyên: #level-title, #moves (+ .moves-box .warn / .danger), #goal-box (+ .two / .three),
+   #goal-icon[2|3] / #goal-count[2|3], .fg-panel.has-goal, .progress.fg-score (.gain / .full), #score-fill, #score, #highscore
+   (play/hud.js, play/score-bar.js, play/booster-bar.js, play/tutorial.js). Bố cục theo khung 336 × 112 như cũ (--u = --hud-u). */
+
+/* Khung: viền nâu đậm > dải hồng đậm > dải hồng nhạt > nền hồng nhạt dần sang kem, rải dấu chân */
+.fg-panel{background:none}
+.fg-panel::before{content:'';position:absolute;left:calc(10 * var(--u));right:calc(10 * var(--u));top:calc(16 * var(--u));bottom:0;border-radius:calc(20 * var(--u));
+  border:calc(3 * var(--u)) solid #5a2a22;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cg fill='%23fff' fill-opacity='.42'%3E%3Cg transform='rotate(-14 24 24)'%3E%3Cellipse cx='24' cy='31' rx='9' ry='7.4'/%3E%3Cellipse cx='13.5' cy='22' rx='3.5' ry='4.7' transform='rotate(-24 13.5 22)'/%3E%3Cellipse cx='20.5' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='28' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='34.5' cy='22' rx='3.5' ry='4.7' transform='rotate(24 34.5 22)'/%3E%3C/g%3E%3Cg transform='translate(46 44) rotate(16 24 24)'%3E%3Cellipse cx='24' cy='31' rx='9' ry='7.4'/%3E%3Cellipse cx='13.5' cy='22' rx='3.5' ry='4.7' transform='rotate(-24 13.5 22)'/%3E%3Cellipse cx='20.5' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='28' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='34.5' cy='22' rx='3.5' ry='4.7' transform='rotate(24 34.5 22)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / calc(64 * var(--u)) calc(64 * var(--u)),
+    linear-gradient(#ffaabf,#ffd3dc 55%,#fff2ee);
+  box-shadow:inset 0 0 0 calc(3 * var(--u)) #ff5d88,inset 0 0 0 calc(5 * var(--u)) #ff9db6}
+
+/* Tên màn: viên kem viền nâu + dải hồng, hai dấu chân hồng hai bên, đè lên mép trên của khung */
+.fg-panel .fg-level,.fg-panel .fg-level[data-digits]{left:50%;top:calc(2 * var(--u));width:auto;height:calc(26 * var(--u));translate:-50% 0;z-index:2;
+  padding:0 calc(27 * var(--u));border-radius:999px;border:calc(2.6 * var(--u)) solid #5a2a22;background:#fff4e6;
+  box-shadow:inset 0 0 0 calc(2.4 * var(--u)) #ff7a9c,0 calc(2 * var(--u)) 0 #5a2a2230;
+  font-size:calc(14.5 * var(--u));letter-spacing:0;color:#3a1d17}
+.fg-panel .fg-level::before,.fg-panel .fg-level::after{content:'';position:absolute;top:50%;width:calc(13 * var(--u));height:calc(13 * var(--u));translate:0 -50%;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23ff6f93'%3E%3Cellipse cx='24' cy='32' rx='12' ry='9.6'/%3E%3Cellipse cx='9.5' cy='22' rx='4.6' ry='6' transform='rotate(-22 9.5 22)'/%3E%3Cellipse cx='19' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='29' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='38.5' cy='22' rx='4.6' ry='6' transform='rotate(22 38.5 22)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+.fg-panel .fg-level::before{left:calc(9 * var(--u))}
+.fg-panel .fg-level::after{right:calc(9 * var(--u))}
+
+/* Ruy-băng "Move" / "Goal" bỏ: chỉ còn số (nhãn vẫn đọc được bằng aria-label của ô) */
+.fg-panel .fg-goal .fg-moves-label,.fg-panel .fg-moves .fg-moves-label,.fg-panel.has-goal :is(.fg-goal,.fg-moves) .fg-moves-label{position:absolute;width:1px;height:1px;
+  padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::before,.fg-panel :is(.fg-moves,.fg-goal) .fg-moves-label::after{display:none}
+
+/* Bố cục đều bốn phía: lòng khung (trong viền nâu + hai dải hồng) là x 18–318, y 24–104; mọi cụm (số lượt, mục tiêu, thanh điểm)
+   lùi 10u so với lòng khung ở trái / phải / dưới, và cách mép trên 10u. Hàng trên cao 34u (y 33–67), thanh điểm y 78–96 (tính cả viền), cách hàng trên 11u. */
+
+/* Hàng giữa: số Move — vạch đứt — cụm Goal. Hai khoảng cách bên vạch bằng nhau (--row-gap), cả hàng căn giữa khung (có Goal hay không). */
+.fg-panel .fg-row{--row-gap:calc(14 * var(--u));position:absolute;left:calc(28 * var(--u));right:calc(28 * var(--u));top:calc(33 * var(--u));height:calc(34 * var(--u));
+  display:flex;align-items:center;justify-content:center;gap:0}
+/* Số lượt: to, kem viền hồng + viền nâu ngoài */
+.fg-panel .fg-row .fg-moves.moves-box,.fg-panel.has-goal .fg-row .fg-moves.moves-box{position:static;inset:auto;translate:none;width:auto;height:100%;flex:none;display:grid;place-items:center;
+  margin:0 var(--row-gap) 0 0}
+.fg-panel:not(.has-goal) .fg-row .fg-moves.moves-box{margin:0}
+.fg-panel .fg-moves strong,.fg-panel.has-goal .fg-moves strong{margin:0;font-size:calc(40 * var(--u));line-height:1;letter-spacing:-.01em;color:#fff5e8;
+  -webkit-text-stroke:calc(6 * var(--u)) #ff5d88;paint-order:stroke fill;text-shadow:none;
+  filter:drop-shadow(calc(1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(calc(-1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(0 calc(1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(-1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(3 * var(--u)) 0 #5a2a2255)}
+.fg-panel .fg-moves.moves-box.warn strong{-webkit-text-stroke-color:#ff8a3c}
+.fg-panel .fg-moves.moves-box.danger strong{color:#fff5e8;-webkit-text-stroke-color:#e0301c}
+
+/* Mục tiêu: vạch đứt ngăn với số lượt; icon (lấy từ vật liệu trong game) cỡ như ảnh mẫu, số nâu đậm bên cạnh.
+   Một / hai / ba mục tiêu cùng cỡ (bản cũ thu nhỏ dần khi nhiều mục tiêu). */
+.fg-panel .fg-row .fg-goal,.fg-panel .fg-row .fg-goal.two,.fg-panel .fg-row .fg-goal.three{position:static;inset:auto;flex:none;height:100%;margin:0;
+  justify-content:center;gap:calc(4 * var(--u));padding:0 0 0 var(--row-gap);border-right:0;border-left:calc(2 * var(--u)) dashed #b9806a99}.fg-panel .fg-goal-icon,.fg-panel .fg-goal.two .fg-goal-icon,.fg-panel .fg-goal.three .fg-goal-icon{display:grid;place-items:center;flex:none;width:calc(34 * var(--u));height:calc(34 * var(--u));margin:0}
+/* Ba icon cùng cỡ NHÌN THẤY (34u): ô icon = đúng khung nhìn thấy của hình, nên khoảng cách giữa các cụm đều nhau.
+   Cỏ: ô 34u. Lồng: ảnh có lề trong suốt (nội dung 85,2% bề ngang) nên vẽ ảnh rộng 34 / 0,852 = 39,9u, lề tràn ra ngoài ô.
+   Mèo béo: khung hình nhìn thấy = đúng khung .goal-fat, cộng viền nâu 2px mỗi bên (drop-shadow) nên khung 31u. */
+.fg-panel .fg-goal-icon[data-kind="cage"] svg{width:calc(39.9 * var(--u));height:auto;max-width:none;flex:none}
+.fg-panel .fg-goal-icon[data-kind="fat"] .goal-fat{width:calc(31 * var(--u));height:calc(31 * var(--u));flex:none}.fg-panel .fg-goal strong,.fg-panel .fg-goal.two strong,.fg-panel .fg-goal.three strong{margin:0;font-size:calc(24 * var(--u));line-height:1;color:#3a1d17;-webkit-text-stroke:0;paint-order:normal;text-shadow:none}
+.fg-panel .fg-goal strong:not([hidden])+.fg-goal-icon,.fg-panel .fg-goal.two strong:not([hidden])+.fg-goal-icon,.fg-panel .fg-goal.three strong:not([hidden])+.fg-goal-icon{margin-left:calc(6 * var(--u))}
+
+/* Thanh điểm: rãnh nâu đậm 12u, viền trắng + viền nâu mảnh, ruột xanh lá bóng, chữ kem viền nâu. Tổng cao 18u kể cả viền. */
+.fg-hud .fg-panel .progress.fg-score{left:calc(31 * var(--u));top:calc(81 * var(--u));width:calc(274 * var(--u));height:calc(12 * var(--u))}
+.fg-panel .fg-score .progress-track{padding:calc(2 * var(--u));background:#4b2820;box-shadow:0 0 0 calc(1.5 * var(--u)) #fff,0 0 0 calc(3 * var(--u)) #5a2a22,inset 0 calc(1.5 * var(--u)) 0 #00000033}
+.fg-panel .fg-score .progress-fill{background:linear-gradient(#d9f873,#79d233 55%,#4fb52a);box-shadow:inset 0 calc(1.5 * var(--u)) 0 #ffffff66}
+.fg-panel .fg-score.full .progress-fill{background:linear-gradient(#ffe88a,#ffc93d 70%,#f0ae22);box-shadow:inset 0 calc(-1.5 * var(--u)) 0 #c9861a66,inset 0 calc(1.5 * var(--u)) 0 #fff6c899}
+.fg-panel .fg-score .progress-text{font-size:calc(11 * var(--u));color:#fff;-webkit-text-stroke:calc(2.6 * var(--u)) #3a1a14;paint-order:stroke fill}
+.fg-panel .fg-score .progress-text strong{font-size:calc(12 * var(--u));color:#fff;-webkit-text-stroke:calc(2.6 * var(--u)) #3a1a14}
