@@ -1,8 +1,8 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
-import { ECONOMY } from '../gameplay/tuning.mjs';
-import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../gameplay/economy.mjs';
-import { SAVE_KEYS, readJSON, writeJSON } from '../gameplay/save.mjs';
+import { ECONOMY } from '../data/tuning.mjs';
+import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../data/economy.mjs';
+import { SAVE_KEYS, readJSON, writeJSON } from '../core/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
 // Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
@@ -49,7 +49,7 @@ export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
   return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
 }
 
-// Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở gameplay/economy.mjs (bảng DECO), áp vào cuối danh mục.
+// Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở data/economy.mjs (bảng DECO), áp vào cuối danh mục.
 export const CATALOG = [
   // --- Vườn ---
   { id: 'flowers', zone: 'garden', cat: 'furniture', name: 'Flower bed', color: '#ff9fb6' },
@@ -209,7 +209,7 @@ export const CATALOG = [
   { id: 'tfloor-checker', zone: 'bathroom', cat: 'floors', name: 'Checkerboard', color: '#f4f1ea' },
   { id: 'tfloor-teak', zone: 'bathroom', cat: 'floors', name: 'Teak', color: '#b9824f' },
   { id: 'tfloor-slate-tiles', zone: 'bathroom', cat: 'floors', name: 'Slate tiles', color: '#5c6068' },
-  // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden2-scene.mjs), đặt ở phần vườn mới nới ra.
+  // --- Vườn mở rộng (thắng màn 30): đồ "động" chạy theo gió chung (garden-expanded.mjs), đặt ở phần vườn mới nới ra.
   { id: 'windmill', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Windmill', color: '#f3d5a8' },
   { id: 'sunflowers', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Sunflowers', color: '#ffd23f' },
   { id: 'clothesline', zone: 'garden', area: 'garden2', cat: 'furniture', name: 'Clothesline', color: '#8fc9f2' },
@@ -238,7 +238,7 @@ export const CATALOG = [
   { id: 'dog-rottweiler', cat: 'cats', name: 'Rottweiler dog', breed: 'rottweiler' },
 ];
 // Phương án thay thế cho từng món đồ: một đồ vật KHÁC đặt đúng chỗ của món gốc (slot), cùng giá, cùng mốc mở khoá. Một chỗ có thể có nhiều phương án (phòng khách / phòng ngủ: 3 lựa chọn mỗi chỗ).
-// Model riêng (BUILD[id] trong deco-room.mjs / garden-scene.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
+// Model riêng (BUILD[id] trong deco-room.mjs / garden.mjs) nhưng giữ khuôn khổ + điểm neo cho mèo của món gốc,
 // nên mèo vẫn chơi được như cũ (ví dụ đài phun nước vẫn có cá để rình, tủ đầu giường vẫn có bình hoa để đẩy rơi).
 // Mỗi slot chỉ đặt được một món: đặt món khác thì nó thay chỗ món đang ở đó.
 const VARIANTS = [

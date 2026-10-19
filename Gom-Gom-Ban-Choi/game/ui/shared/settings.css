@@ -72,7 +72,7 @@
 .hub-settings .fh-round::before{width:92%;height:92%}
 .hub-settings[hidden]{display:none}
 .hub-settings .fh-gear:active{translate:0 calc(2 * var(--u))}
-/* Popup Settings mở từ màn chơi (.in-game, menu-controller.js): thêm hàng Home / Restart ở đầu, cùng kiểu nút với Language / Support */
+/* Popup Settings mở từ màn chơi (.in-game, menu/settings.js): thêm hàng Home / Restart ở đầu, cùng kiểu nút với Language / Support */
 .settings-ingame{display:none}
 .settings-modal.in-game .settings-ingame{display:grid;margin:0 0 4px;padding:0;border:0}
 .settings-ingame .settings-link{justify-content:center}

@@ -1,5 +1,5 @@
 // UI Studio (trình duyệt): tự nạp cùng thanh nút dev (main.js), bật / tắt bằng nút "Studio" ở đó; ?studio mở sẵn.
-// Máy chủ: tools/ui-studio.mjs. Hướng dẫn cho artist: docs/UI-STUDIO.md.
+// Máy chủ: tools/ui-studio/ui-studio.mjs. Hướng dẫn cho artist: docs/ui-studio.md.
 // Chữ trên bảng viết bằng tiếng Anh, thao tác theo thói quen Photoshop:
 //  - Select (V) hoặc Alt + click để chọn phần tử ("layer"), Shift + click chọn thêm. Ctrl + G liên kết nhiều layer: chọn một là chọn
 //    cả nhóm (chỉ nhớ trong trình duyệt, KHÔNG đổi cấu trúc HTML / code). Ctrl + Shift + G bỏ liên kết.
@@ -9,7 +9,7 @@
 //  - Bảng thuộc tính: các khối CSS đang áp vào phần tử; di chuột lên tên thuộc tính / ô giá trị / nút để xem giải thích (PROP_HELP).
 //  - File đổi ngoài game (artist sửa CSS / xuất ảnh đè lên game/ui/...): CSS và ảnh thay tại chỗ; .js / .mjs / .html thì tải lại trang.
 //  - Save (Ctrl + S) ghi thẳng vào đúng file CSS trong game/ui/ (rồi commit bằng GitHub Desktop như bình thường).
-import { cssRules, declarations, norm } from '/tools/ui-studio-css.mjs';
+import { cssRules, declarations, norm } from '/tools/ui-studio/ui-studio-css.mjs';
 
 const IMAGE_RE = /\.(png|jpe?g|webp|gif|svg)$/i;
 const FRAME_UNITS = 393;
@@ -1117,7 +1117,7 @@ function withAlpha(hex, old) {
 // ---------- Ảnh ----------
 function imagesOf(el) {
   const out = new Set();
-  const add = url => { const p = pathOf(url); if (p.startsWith('ui/') && IMAGE_RE.test(p)) out.add(p); };
+  const add = url => { const p = pathOf(url); if ((p.startsWith('ui/') || p.startsWith('assets/')) && IMAGE_RE.test(p)) out.add(p); };
   if (el instanceof HTMLImageElement) add(el.currentSrc || el.src);
   for (const pseudo of [null, '::before', '::after']) {
     const bg = getComputedStyle(el, pseudo).backgroundImage;
@@ -1933,7 +1933,7 @@ window.addEventListener('keydown', event => {
 }, true);
 window.addEventListener('beforeunload', event => { if (pending.size) { event.preventDefault(); event.returnValue = ''; } });
 
-// Bật / tắt cả studio từ nút "Studio" ở thanh nút dev (menu-controller.js): hai bên chỉ nói chuyện qua sự kiện của window.
+// Bật / tắt cả studio từ nút "Studio" ở thanh nút dev (menu/dev-tools.js): hai bên chỉ nói chuyện qua sự kiện của window.
 // Tắt thì ẩn hết (bảng, icon, khung, lưới) và không bắt click / phím; sửa chưa lưu vẫn giữ. Chỉ nối máy chủ khi bật lần đầu.
 let connected = false;
 function setShown(shown) {

@@ -3,28 +3,28 @@
 // Mèo khối 3D và hành vi của chúng nằm ở room-cats.mjs; chạm mèo để cưng.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './mesh-detail.mjs';
+import { sphereSegments, radialSegments, mergeStatic, roundedBox } from './render/mesh-detail.mjs';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { createCatLife } from './room-cats.mjs';
-import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, setOutlineZoom, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './toon.mjs';
-import { playSound, playMeow } from '../ui/sound.mjs';
+import { createCatLife } from './cats/room-cats.mjs';
+import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, setOutlineZoom, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './render/toon.mjs';
+import { playMeow } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
 import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U, BATHROOM_DOOR, BATHROOM_WINDOW_X, BACKYARD_DOOR, BACKYARD_EXT_X, backyardBounds, KINDER_GATE_X, kinderBounds, FLOWER_OFFSET, FLOWER_GATE_Z, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, crossingHeight, GARDEN_EXT_X, gardenBounds } from './room-layout.mjs';
-import { TIMING, DRAG } from '../gameplay/tuning.mjs';
-import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './bedroom-scene.mjs';
-import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './kitchen-scene.mjs';
-import { BATHROOM_BUILD, bathroomDecor, decorateBathroomWall } from './bathroom-scene.mjs';
-import { BACKYARD_BUILD, buildBackyardFence, backyardDecor } from './backyard-scene.mjs';
-import { KINDER_BUILD, kinderDecor, CLASSROOM } from './kinder-scene.mjs';
-import { buildMeadow } from './meadow-scene.mjs';
-import { buildFlowerGarden, flowerObstacles } from './flower-scene.mjs';
-import { buildHouseExterior, buildRoof } from './house-exterior.mjs';
-import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './garden2-scene.mjs';
+import { TIMING, DRAG } from '../data/tuning.mjs';
+import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './scenes/bedroom.mjs';
+import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './scenes/kitchen.mjs';
+import { BATHROOM_BUILD, bathroomDecor, decorateBathroomWall } from './scenes/bathroom.mjs';
+import { BACKYARD_BUILD, buildBackyardFence, backyardDecor } from './scenes/backyard.mjs';
+import { KINDER_BUILD, kinderDecor, CLASSROOM } from './scenes/kindergarten.mjs';
+import { buildMeadow } from './scenes/meadow.mjs';
+import { buildFlowerGarden, flowerObstacles } from './scenes/flower-garden.mjs';
+import { buildHouseExterior, buildRoof } from './scenes/house-exterior.mjs';
+import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './scenes/garden-expanded.mjs';
 import { runModelQC } from './qc.mjs';
-import { createDecoFx } from './deco-fx.mjs';
-import { fitToWall, fitToFloor } from './wall-theme.mjs';
-import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum } from './garden-scene.mjs';
+import { createDecoFx } from './render/deco-fx.mjs';
+import { fitToWall, fitToFloor } from './render/wall-theme.mjs';
+import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum } from './scenes/garden.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
 // Vật liệu đồ đạc kiểu vật lý: gỗ / sơn / vải đều nhám (roughness cao), phản xạ điện môi thấp (specularIntensity)
@@ -152,7 +152,7 @@ function livingDecor() {
 }
 
 // Quả bóng đồ chơi treo dưới tầng trên cùng của cây cho mèo (đáy tầng y = 1.73, bóng ở y = .72): dây nối đúng từ
-// đáy tầng xuống đỉnh quả bóng, cả dây + bóng lắc như con lắc (garden-scene.mjs pendulum).
+// đáy tầng xuống đỉnh quả bóng, cả dây + bóng lắc như con lắc (garden.mjs pendulum).
 function hangingToy(tree, color, ropeColor) {
   const pivot = new THREE.Vector3(.45, 1.73, .3), L = pivot.y - .72;
   const swing = pendulum(pivot, L, at(ball(.1, color), 0, -L, 0), ropeBetween(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -L + .1, 0), .01, ropeColor));
@@ -642,7 +642,7 @@ for (const id of ['bedside', 'desk', 'desk-study', 'fridge-steel', 'stove-wood',
 }
 
 // Dựng một món trong danh mục. Phương án thay thế có model riêng (BUILD[id]) nhưng giữ khuôn khổ và các móc
-// cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem room-cats.mjs useFurniture.
+// cho mèo của món gốc (userData.fish / leaves / bird / toy / mug, độ cao chỗ ngồi) — xem cat-brain.mjs useFurniture.
 // Món đồ không có bộ phận nào cử động riêng (mèo / hiệu ứng không giữ tham chiếu tới khối con): gộp khối cùng màu.
 const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox', 'armchair', 'bench', 'slide',
   'bed', 'bed-canopy', 'bedrug', 'bedrug-cloud', 'desk', 'desk-study', 'chair-beanbag', 'closet', 'closet-dresser', 'plushie', 'plushie-dino', 'laundry', 'catsteps-bridge',
@@ -664,6 +664,9 @@ function buildItem(entry) {
   node.userData.itemId = entry.id;
   return markOutlineUnit(node);
 }
+// Cho tools/export/export-models.mjs: id mọi model đồ deco (cả phương án thay thế) + dựng một món theo id.
+export const modelIds = () => Object.keys(BUILD);
+export const buildModel = id => buildItem({ id });
 
 // ---------- Sàn: vân gỗ / thảm / gạch vẽ bằng canvas ----------
 function floorTexture(entry) {
@@ -752,7 +755,7 @@ const slab = (w, d, top, edge = '#c79a5f') => {
 const OUTDOOR = new Set(['garden', 'backyard', 'kinder']); // khu ngoài trời: nền cỏ + hàng rào thay cho sàn + tường
 function thumbSubject(entry) {
   if (entry.cat === 'furniture') {
-    // Món kép (kinder-scene.mjs pair): hai bản đặt xa nhau, thumbnail kéo lại sát nhau, cùng quay mặt ra trước.
+    // Món kép (kindergarten.mjs pair): hai bản đặt xa nhau, thumbnail kéo lại sát nhau, cùng quay mặt ra trước.
     const node = buildItem(entry), pair = node.userData.pair;
     if (pair) node.children.forEach(part => { part.position[pair.axis] = Math.sign(part.position[pair.axis]) * pair.thumb; part.rotation.y = 0; });
     return node;
@@ -1008,7 +1011,7 @@ export function createRoom() {
   const garden = new THREE.Group();
   site.add(garden);
   scene.add(site);
-  // Môi trường: bỏ trời / mây, quanh khu nhà là bãi cỏ có hoa, cây, bụi cùng phong cách Home (meadow-scene.mjs); sương + nền cùng màu trời xanh của Home.
+  // Môi trường: bỏ trời / mây, quanh khu nhà là bãi cỏ có hoa, cây, bụi cùng phong cách Home (meadow.mjs); sương + nền cùng màu trời xanh của Home.
   // Trường mẫu giáo nằm bên kia đường: không tính vào khung khu nhà (đường chạy sát vườn), chỉ là chỗ trống không rải cây.
   const houseZones = Object.entries(ZONE_OFFSET).filter(([zone]) => !zone.startsWith('kinder')).map(([, o]) => o);
   const zoneXs = houseZones.map(o => o[0]), zoneZs = houseZones.map(o => o[1]), kb = kinderBounds(), [kx, kz] = ZONE_OFFSET.kinder;
@@ -1016,7 +1019,7 @@ export function createRoom() {
     [{ x0: kx + kb.x0, x1: kx + kb.x1, z0: kz + kb.z0, z1: kz + kb.z1 }]);
   scene.add(meadow.root);
   scene.fog = meadow.fog; scene.background = meadow.background;
-  // Không còn bệ diorama (đế kem) dưới các khu: khu nhà nằm thẳng trên bãi cỏ (meadow-scene.mjs, mặt đất ở y -.31 = đáy khối nền).
+  // Không còn bệ diorama (đế kem) dưới các khu: khu nhà nằm thẳng trên bãi cỏ (meadow.mjs, mặt đất ở y -.31 = đáy khối nền).
 
   const groundMat = Object.assign(mat('#9fd46a', { roughness: .95, smooth: true }), FLOOR_OFFSET), soil = mat('#8a6a45');
   const ground = at(mesh(new THREE.BoxGeometry(HALF * 2, .3, HALF * 2), soil), 0, -.15, 0);
@@ -1514,7 +1517,7 @@ export function createRoom() {
   const floorTextures = {};
   // zoneId = khu đang trang trí ở Deco (camera Deco khoá vào khu này). opened = các khu đã mở khoá.
   let zoneId = 'garden', applied = false, revealPending = null;
-  // Lớp học trường mẫu giáo (kinder-scene.mjs CLASSROOM, toạ độ khu nhà): mèo không đi xuyên tường. Chuỗi vật cản tròn sát nhau dọc 4 tường
+  // Lớp học trường mẫu giáo (kindergarten.mjs CLASSROOM, toạ độ khu nhà): mèo không đi xuyên tường. Chuỗi vật cản tròn sát nhau dọc 4 tường
   // + vài vòng to phủ lòng lớp (freeSpot không chọn chỗ trong lớp, mèo không cố chui vào). Mèo chưa có tương tác với đồ trong lớp.
   const CLASSROOM_BLOCK = (() => {
     const [ox, oz] = ZONE_OFFSET.kinder, C = CLASSROOM, x0 = ox + C.x0 - .12, x1 = ox + C.x1 + .1, z0 = oz + C.z0 - .1, z1 = oz + C.z1 + .1, out = [];
@@ -1866,7 +1869,7 @@ export function createRoom() {
     zoneCenter(zoneId, fxBase).setY(0); // đổi tường / sàn: hiệu ứng rộng giữa khu
     decoFx.burst(kind, fxBase, 1.2, 5);
   }
-  // Mở khu mới (menu-controller.js buyArea): pháo giấy phủ cả mảnh đất vừa mở.
+  // Mở khu mới (menu/areas.js buyArea): pháo giấy phủ cả mảnh đất vừa mở.
   function openFx(zone) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || !ZONE_OFFSET[zone]) return;
     decoFx.burst('open', fxBase.set(ZONE_OFFSET[zone][0], 0, ZONE_OFFSET[zone][1]), 2.5, HALF * 2);
@@ -2056,7 +2059,7 @@ export function createRoom() {
     const rect = renderer.domElement.getBoundingClientRect();
     return { x: rect.left + (catTop.x + 1) / 2 * rect.width, y: rect.top + (1 - catTop.y) / 2 * rect.height };
   }
-  // Khu kế tiếp chưa mở: mảnh đất mờ (nền nhạt trong suốt + viền nét đứt) đúng chỗ khu đó sẽ mở. menu-controller.js đặt chấm than
+  // Khu kế tiếp chưa mở: mảnh đất mờ (nền nhạt trong suốt + viền nét đứt) đúng chỗ khu đó sẽ mở. menu/areas.js đặt chấm than
   // vàng lên trên (screenOfGhost) — chạm chấm than mới hiện điều kiện mở. Chỉ hiện ở Deco; không chặn chạm, không viền, không bóng.
   // Mảnh đất phủ đúng khung của khu: ô vuông 8 × 8 (phòng, vườn mở rộng), sân sau là hình chữ nhật dài (zoneRect).
   const ghost = new THREE.Group();
@@ -2205,7 +2208,7 @@ export function createRoom() {
     if (event.type === 'pointerup' && down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
-      if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (room-cats.mjs pet)
+      if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (cat-brain.mjs pet)
         onCatEvent?.('pet');
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
         if (mood !== 'sleepy') playMeow(cat.breed, mood === 'grumpy' ? 'grumpy' : 'call');

@@ -19,7 +19,7 @@
 .tutorial-avatar .cat .calm-idle{opacity:1!important;visibility:visible!important}
 /* Hướng dẫn chỉ dùng vòng highlight, bỏ bàn tay chỉ (emoji) */
 .deco-tour-hand{display:none!important}
-/* Hết ván (body.level-over, play-controller.js: thanh điểm vừa đầy / thua): UI chơi mờ đi, giữ chỗ (không xô lệch bàn); nút cài đặt vẫn còn */
+/* Hết ván (body.level-over, play/finale.js + play/result.js: thanh điểm vừa đầy / thua): UI chơi mờ đi, giữ chỗ (không xô lệch bàn); nút cài đặt vẫn còn */
 .shell :is(.fg-panel,.booster-bar,.dock,.message-row){transition:opacity .3s ease,visibility 0s;left:calc(0.16 * var(--u));top:calc(17.03 * var(--u))}
 body.level-over .shell :is(.fg-panel,.booster-bar,.dock,.message-row){opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s .3s}
 /* Bảng kết quả: căn giữa màn, lệch xuống một chút để chừa chỗ mèo ló đầu phía trên khung */

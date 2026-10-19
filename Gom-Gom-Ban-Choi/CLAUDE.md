@@ -2,36 +2,38 @@
 
 Web prototype chạy bằng Node (`npm start`, cổng 4400), không cài thư viện; Three.js nạp từ CDN qua importmap.
 Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắng màn 10 / phòng khách / phòng ngủ / bếp): `game/deco/deco-room.mjs`,
-`game/deco/garden-scene.mjs`, `game/deco/bedroom-scene.mjs`, `game/deco/kitchen-scene.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/bathroom-scene.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/garden2-scene.mjs` (phần vườn mở rộng), `game/deco/backyard-scene.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/kinder-scene.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); não mèo: `game/deco/room-cats.mjs` (bảng biểu cảm: `game/deco/cat-face.mjs`);
+`game/deco/scenes/garden.mjs`, `game/deco/scenes/bedroom.mjs`, `game/deco/scenes/kitchen.mjs` (bếp, mở khi thắng màn 40, bên phải phòng khách), `game/deco/scenes/bathroom.mjs` (phòng tắm, phía sau phòng ngủ, cửa giữa tường sau phòng ngủ; chưa có tương tác mèo), `game/deco/scenes/garden-expanded.mjs` (phần vườn mở rộng), `game/deco/scenes/backyard.mjs` (sân sau: bể bơi + vườn rau, khu chữ nhật sau phòng khách + bếp, cửa từ tường phải phòng tắm, mở khi thắng màn 60; như vườn mở rộng: 'backyard2' chỉ là ô đi lại của mèo; chưa có tương tác mèo), `game/deco/scenes/kindergarten.mjs` (trường mẫu giáo 'kinder': khu chữ nhật bên kia con đường trước vườn, lớp học hở mái + sân chơi, cổng + lối qua đường nâng ở KINDER_GATE_X, mở khi thắng màn 70; món kép = một món dựng ở hai chỗ (`pair`), vật cản từng chỗ ở OBSTACLE_EXTRA; chưa có tương tác mèo); mèo 3D ở `game/deco/cats/`: não một con `cat-brain.mjs`, cả đàn `room-cats.mjs`, khung `cat-rig.mjs` (bảng biểu cảm: `cat-face.mjs`);
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
-Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `menu-controller.js`.
+Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `game/menu/map-view.js`.
 
 **Kinh tế** (xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
-`game/gameplay/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
+`game/data/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
 **Config từ xa (Firebase Remote Config)**: mọi hằng số trong `economy.mjs` / `tuning.mjs` khai bằng `remote('TÊN', mặc định)` và được
-ghi đè bởi tham số cùng tên trên Firebase (`docs/FIREBASE.md`). `app/main.js` tải config trước rồi mới nạp game (`app/start.js`).
+ghi đè bởi tham số cùng tên trên Firebase (`docs/firebase.md`). `app/main.js` tải config trước rồi mới nạp game (`app/start.js`).
 Thêm hằng số chỉnh được mới: cũng khai bằng `remote()`, tên không trùng.
 
 ## Cấu trúc thư mục `game/` và cách chia commit
 
 | Thư mục | Nội dung | Tiền tố commit |
 |---|---|---|
-| `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS + ảnh `img/` riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial, mèo `img/cats`), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
-| `game/gameplay/` | Luật + dữ liệu chơi, thuần logic (không đụng DOM): luật bàn, hình bàn, màn, ván chơi, điểm, độ khó thích ứng, tiến độ, booster, hằng số `tuning.mjs`, lưu trữ `save.mjs` (+ test) | `Gameplay:` |
+| `game/ui/<hub>/` | Thiết kế UI 2D chia theo hub, mỗi hub có CSS riêng: `shared/` (nền chung, thanh tab, ví, settings, loading, tutorial), `home/`, `map/`, `shop/`, `deco/`, `play/` (màn chơi), `result/` (bảng kết quả). Gốc `ui/` còn art SVG mèo / ô bàn (`cat-art.mjs`, `board-art.mjs`) và âm thanh (`sound.mjs`). Thứ tự nạp CSS xem `index.html` (đè lên nhau, đừng đảo) | `UI:` |
+| `game/assets/` | TOÀN BỘ ảnh + âm thanh (`img/<nhóm>/`, `sfx/`), danh sách + nơi dùng ở `assets/README.md`. Thêm ảnh / tiếng mới đặt ở đây, không đặt trong `ui/` | `UI:` |
+| `game/core/` | Luật chơi thuần logic (không đụng DOM / Three.js): ván chơi `session.mjs`, luật bàn, hiệu ứng cụm, điểm, đọc màn `level-rules.mjs`, hình bàn, độ khó thích ứng, tiến độ, booster, lưu trữ `save.mjs` (+ test). Sang Unity: class C# thường | `Gameplay:` |
+| `game/data/` | Dữ liệu chơi: 100 màn `levels.mjs` (+ bố trí sinh bằng tool), hằng số `tuning.mjs`, kinh tế `economy.mjs`. Sang Unity: ScriptableObject / JSON (`npm run export:data`) | `Gameplay:` |
 | `game/deco/` | Cảnh 3D Deco (khu nhà) + bản đồ màn: phòng, vườn, mèo 3D, toon, QC model, chỗ đặt đồ, danh mục đồ deco (+ test) | `Deco:` |
-| `game/app/play-controller.js` | Luồng điều khiển **màn chơi**: kéo / xoay / đặt thẻ, Hold, anim gom, booster trong ván, AFK, tutorial, bảng vào màn, kết quả, metric độ khó | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
-| `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong menu-controller.js | `UI:` |
-| `game/app/menu-controller.js` | Luồng điều khiển **menu**: Home hub (= bản đồ màn, ví, liveops), Deco (nút khoá ẩn UI) / Shop, phòng 3D, chọn khu, cài đặt, nút dev | `UI:` (đụng cảnh 3D thì `Deco:`) |
-| `game/app/` | Điều khiển ứng dụng (xem 3 dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
+| `game/play/` | Luồng **màn chơi**, mỗi file một component (sang Unity: MonoBehaviour cùng tên): `play-controller.js` (điều phối: vào màn, đặt thẻ, kết thúc lượt), `context.js` (ván đang chơi; chỉ `setSession` gán), `cards.js`, `card-drag.js`, `board-view.js`, `match-fx.js`, `score-bar.js`, `hud.js` (render chung, ô Goal), `finale.js` (Bonus Time), `booster-bar.js`, `afk.js`, `tutorial.js`, `result.js` (kết quả + metric độ khó) | `Gameplay:` (chỉ sửa hình / anim thì `UI:`) |
+| `game/app/deco-tour.js` | Hướng dẫn Deco (làm mờ + khoét sáng + bong bóng); bước khai báo ở `runDecoTour()` trong `menu/tours.js` | `UI:` |
+| `game/menu/` | Luồng **menu**, mỗi file một màn hình: `menu-controller.js` (mặt tiền: API cho màn chơi + gọi `start…()` của từng module theo thứ tự sau khi mọi module đã nạp — các module import vòng tròn nên KHÔNG chạy lệnh chạm module khác ngay lúc nạp), `map-view.js`, `tabs.js`, `room.js` (phòng 3D), `deco-panel.js`, `idle-coins.js`, `tours.js`, `shop.js`, `areas.js`, `settings.js`, `dev-tools.js` | `UI:` (đụng cảnh 3D thì `Deco:`) |
+| `game/app/` | `deco-tour.js` (dòng trên) + `main.js` (điểm vào: tải config Firebase rồi nạp `start.js`), `start.js` (nối hai luồng rồi mở game), `shared.js` (ví xu, kho booster, toast), `onboarding.js` | theo phần sửa |
 | `game/` (gốc) | `index.html` (khung màn hình), `code-rules.test.mjs` | theo phần sửa |
-| `tools/`, `tai-lieu/`, `docs/` | Bot mô phỏng / xuất asset, tài liệu | `Tools:` / `Docs:` |
+| `tools/`, `docs/` | Công cụ (`levels/` bot + editor, `economy/`, `export/`, `ui-studio/`, `ads/`), tài liệu | `Tools:` / `Docs:` |
 
 - Mỗi commit chỉ chạm một nhóm khi có thể: sửa giao diện → chỉ `game/ui/` (+ `index.html` nếu đổi khung);
-  cân bằng / luật → `game/gameplay/` (+ `tools/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
+  cân bằng / luật → `game/core/` + `game/data/` (+ `tools/levels/baseline.json` nếu đổi số liệu). Trong GitHub Desktop: tick theo thư mục.
 - Hai luồng không import nhau: `app/start.js` nối chúng (`play.connectMenus(menus)`, `menus.connectPlay(play)`). Màn chơi cần
-  đổi màn hình thì gọi `menus.showTab / showMap / hideMenus / menuOpen`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
+  đổi màn hình thì gọi `menus.showTab / hideMenus / menuOpen / runOnboarding`; menu cần vào màn thì gọi `play.startLevel / mapTier`.
   Thêm hàm cho bên kia gọi: `export` ở file mình và ghi vào danh sách này. Trạng thái cả hai cùng đọc / ghi (xu, booster) đặt ở `shared.js`.
-- Module mới: logic thuần đặt ở `gameplay/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `gameplay/` không import từ `ui/` hay `deco/`
+- Module mới: logic thuần đặt ở `core/`, dữ liệu (số, bảng) ở `data/`, thứ chỉ để vẽ / trang trí đặt ở `ui/` hoặc `deco/`. `core/` và `data/` không import từ `ui/` hay `deco/`
   (ngoại lệ hiện có: `session.mjs` lấy danh sách loại mèo `categories` từ `ui/cat-art.mjs`).
 
 ## Quy trình bắt buộc sau khi thêm / sửa model 3D hoặc đổi chỗ đặt đồ
@@ -83,7 +85,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 
 **Vật trên cao**
 - Camera nhìn từ trên cao (~12 m): vật lơ lửng cao giữa camera và mặt đất (mây...) che mất cảnh. Chỉ muốn bóng thì đặt
-  lên `SHADOW_ONLY_LAYER` (garden2-scene.mjs): không hiện, vẫn đổ bóng. Nhưng KHÔNG dùng cho vật trôi / lặp vòng (lỗi cũ: bóng mây
+  lên `SHADOW_ONLY_LAYER` (garden-expanded.mjs): không hiện, vẫn đổ bóng. Nhưng KHÔNG dùng cho vật trôi / lặp vòng (lỗi cũ: bóng mây
   là mảng tối đa giác trên cỏ, nhảy hiện / mất mỗi lần mây quay vòng — đã bỏ mây).
 - Không có bóng mây ở Deco: đã thử hai cách (mây đổ bóng qua shadow map nắng: mảng đa giác, nhảy hiện / mất; rồi tấm alpha tròn mềm trôi ngang vườn) và người chơi bỏ cả hai. Đừng thêm lại.
 - **Viền không được giật khi kéo / xoay / pinch camera** (toon.mjs; mỗi quy tắc từ một lỗi thật, test `outline-rules` trong `code-rules.test.mjs` canh):
@@ -138,7 +140,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   muốn phóng to model thì scale ở một lớp group ở giữa.
 - Đặt chi tiết mặt (mắt, mũi) **ngoài** bề mặt khối đầu — kiểm bằng thumbnail.
 
-**Đồ gắn trên tường hoà màu tường, đồ cố định trên sàn hoà màu sàn** (`game/deco/wall-theme.mjs`, test `wall-theme.test.mjs`)
+**Đồ gắn trên tường hoà màu tường, đồ cố định trên sàn hoà màu sàn** (`game/deco/render/wall-theme.mjs`, test `wall-theme.test.mjs`)
 - Rèm, tranh, kệ, đồng hồ, cờ, khung cửa / cửa gắn trong tường KHÔNG giữ màu mặc định khi đổi tường: `fitToWall(màu gốc, màu tường)` xoay sắc theo tường
   (đường ngắn nhất, 70%), dời độ sáng theo tường và luôn đủ tương phản (không chìm vào tường tối), tường xám thì giữ sắc gốc. Tường mặc định -> đúng màu gốc.
 - Màu trong `decorate*Wall` / `wallFrame` / `curtainPanel` cứ viết như cho tường kem mặc định (`#fff1d2`): `themeWallDecor` (deco-room.mjs) nhớ màu gốc ở
@@ -170,9 +172,9 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Hành vi đi tới chỗ bạn: tới nơi mới làm (kiểm khoảng cách sau `walkTo`, có thể hết giờ / kẹt), bạn đã thôi thì bỏ — không "ngắm chung"
   từ phòng bên. Bạn đang ngắm thì nán lại chờ (`stayUntil`).
 - Tương tác nhiều mèo (stareDown / squeezeIn / joinCampfire / watchTogether / ambush / tag / copycat) và tình huống (commotion: đồ rơi,
-  spreadZoomies, furnitureChanged(fresh): món mới) nằm trong room-cats.mjs; mỗi kiểu nhiều-mèo-một-món chỉ một con làm cùng lúc.
+  spreadZoomies, furnitureChanged(fresh): món mới) nằm trong `cats/cat-brain.mjs` (một con) / `cats/room-cats.mjs` (cả đàn); khung 3D ở `cats/cat-rig.mjs`; mỗi kiểu nhiều-mèo-một-món chỉ một con làm cùng lúc.
 
-**Biểu cảm mèo 3D** (bảng nguồn duy nhất: `game/deco/cat-face.mjs`; test: `cat-face.test.mjs`)
+**Biểu cảm mèo 3D** (bảng nguồn duy nhất: `game/deco/cats/cat-face.mjs`; test: `cat-face.test.mjs`)
 - Mặt đổi theo **nguyên nhân**, không ngẫu nhiên. `face(eyes)` chỉ nhận 8 giá trị, mỗi giá trị = đúng một mặt Figma:
   `open` calm (trung tính) · `focus` cute (quan tâm / muốn: rình, vồ, đuổi, ngó chim) · `happy` (vui: được cưng, lăn bụng, bắt được, cọ đầu) ·
   `blink` (dễ chịu nhắm mắt: liếm lông, nhồi bột, uống nước, nằm ấm) · `half` sleepy (buồn ngủ / ngáp / choáng) · `sleep` (ngủ say) ·
@@ -185,14 +187,14 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
 - Không có cú đổi mặt ngẫu nhiên (đã bỏ "cute" ngẫu nhiên lúc rảnh). Chỉ `open` mới tự chớp; `focus` nhìn chằm chằm không chớp.
 - Chống nhấp nháy: mặt vừa hiện giữ ≥ `HOLD` (.45 s) rồi mới đổi (`settleExpression`); mặt phản ứng người chơi (cưng, bế, giật mình) đổi ngay.
   Đừng viết vòng lặp đổi mặt nhanh hơn thế. Chớp mắt tự nhiên chỉ đè lên mặt calm đang hiện.
-- Lò xo cử động mèo chỉ dùng `spring()` của `game/deco/spring.mjs` (tự chia bước nhỏ theo độ cứng, test `spring.test.mjs`).
+- Lò xo cử động mèo chỉ dùng `spring()` của `game/deco/cats/spring.mjs` (tự chia bước nhỏ theo độ cứng, test `spring.test.mjs`).
   Không tự viết lại `v += a·dt; x += v·dt` với lò xo cứng: ở 30 fps / frame khựng 50 ms nó nổ tung (lỗi cũ: mí mắt k = 900 nổ tới
   1e164, mặt mèo nháy calm ↔ blink mỗi frame — "mắt giật lag"). Thêm lò xo mới thì thêm (k, zeta) vào danh sách trong test.
 - Mọi cảnh dùng chung: mèo khoe ở bản đồ / màn thưởng gọi `setCatFace(rig, breed, eyes)` với cùng bảng này.
 - Thêm hành vi mới: chọn mặt theo bảng trên, không tạo giá trị mới trừ khi có ảnh Figma mới; có ảnh mới thì thêm vào `FACE` + test.
 
 **Ambient (day / dusk / night) — tông "chill"**
-- Bảng màu: `LIGHTING` (deco-room.mjs: trời, nắng, đèn, cửa kính, `grass` = màu nhân lên texture nền vườn) + `MEADOW_LOOKS` (meadow-scene.mjs: bãi cỏ, cây, sương).
+- Bảng màu: `LIGHTING` (deco-room.mjs: trời, nắng, đèn, cửa kính, `grass` = màu nhân lên texture nền vườn) + `MEADOW_LOOKS` (meadow.mjs: bãi cỏ, cây, sương).
   Hướng: ngày dịu ấm (không xanh neon), chiều là giờ vàng đào hồng (không nâu olive), đêm xanh lam trăng (không tím đặc) + đèn vàng ấm.
 - Đổi ambient phải chuyển dần (`fadeTo` / `stepFade`, `AMBIENT_FADE` 1.6 s), không đặt màu thẳng. Màu mới phụ thuộc ambient: thêm cặp
   [màu, đích] vào `fadeTo` trong `setAmbient` (cảnh phụ thì trả về cặp như `meadow.ambientTargets`). Lần đặt đầu lúc mở game áp ngay.
@@ -206,7 +208,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Nấc cứng trên mặt cong biến ánh đèn điểm (lửa trại, đèn) thành các vòng cung sáng tối gãy khúc trên sườn đồi (lỗi cũ). Nền và đồi phải
   cùng kiểu (cùng smooth) để chân đồi liền với cỏ. Thêm địa hình cong mới (gò, dốc) cũng dùng smooth.
 - Không có hạt lơ lửng (phấn hoa / bụi nắng / đom đóm) ở bất kỳ ambient nào: đã thử và người chơi bỏ. Đừng thêm lại.
-- Đèn đường (meadow-scene.mjs `buildRoad`): vệt sáng hình nón + quầng sáng trên vỉa hè / mặt đường là lớp phủ cộng sáng (additive,
+- Đèn đường (meadow.mjs `buildRoad`): vệt sáng hình nón + quầng sáng trên vỉa hè / mặt đường là lớp phủ cộng sáng (additive,
   DECAL_LAYER, gộp một mesh cho tất cả đèn), màu chạy theo ambient (đen = tắt ban ngày). Không dùng SpotLight thật cho từng đèn (hàng chục đèn).
 
 **Ánh sáng ban đêm (chế độ đêm của Deco)**
@@ -219,6 +221,11 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   lúc chạy (tắt emissive / làm tối món không phải nguồn sáng) nhưng KHÔNG thay cho việc sửa model cho đúng.
 
 **Hiệu năng**
+- **Hoa / lá / tán cây dày (nhiều khối nhỏ lặp lại): dựng bằng lớp 2D, không dựng 3D** (người chơi yêu cầu, để giảm lag). Artist đưa tấm sprite
+  (lưới ô, nền trong suốt) → lưu `game/assets/img/deco/`, dùng `spriteSheet()` (`game/deco/render/sprite-sheet.mjs`): giữ khung 3D để ra dáng (gò lá, lõi
+  tán nhỏ, thân cây), rồi rải thật nhiều khóm sprite nhỏ chữ thập (`tuft`) theo đúng hình khối cũ (luống, mặt cầu). KHÔNG dùng một ảnh to cho cả bụi
+  / cây (người chơi bỏ: trông như tấm dán). Mép ngoài sprite không vượt khối cũ (QC va chạm với món bên cạnh). Mẫu: oải hương + cẩm tú cầu
+  (flower-garden.mjs), tán cây xích đu (garden-expanded.mjs `bigTree`).
 - Cầu / trụ dùng helper `ball()` / `cyl()` (số cạnh theo kích thước); nhiều khối nhỏ giống nhau dùng InstancedMesh;
   cụm trang trí tĩnh gộp bằng `mergeStatic()`.
 - `roundedBox()` tự chọn số nấc bo theo bán kính (≤ 2.5 cm: 1 nấc, ≤ 5 cm: 2 nấc): đừng ép lại 3 nấc cho góc bo nhỏ (hàng rào trắng từng
@@ -256,8 +263,8 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## Khác
-- UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/UI-STUDIO.md`): artist sửa CSS / ảnh trong `game/ui/` và game tự cập nhật,
-  hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
-  định dạng `tools/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
+- UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/ui-studio.md`): artist sửa CSS trong `game/ui/` / ảnh trong `game/assets/` và game tự cập nhật,
+  hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
+  định dạng `tools/ui-studio/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.

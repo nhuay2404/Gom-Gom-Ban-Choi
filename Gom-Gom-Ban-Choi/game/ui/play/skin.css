@@ -1,15 +1,15 @@
 /* Màn chơi theo Figma (file UI, frame "Gameplay" 23:442, khung 393 × 852).
-   - Ảnh nền đồng cỏ (image 116), pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (ui/play/img/).
+   - Ảnh nền đồng cỏ (image 116), pill điểm / đầu mèo Moves / pill thùng, khung dock + ô thẻ, khung booster + nút booster: cắt từ Figma (assets/img/play/).
    - Bàn chơi, ô, thùng gỗ, mèo: vẽ lại bằng CSS / SVG (cat-art.mjs, board-art.mjs) theo cùng kiểu đổ bóng với bản Figma.
    Kích thước nhân theo --u (= bề ngang khung / 393). File nạp sau ui-portrait.css nên chỉ ghi đè phần nhìn. */
 /* Màn chơi cần cao ~780u mới đủ HUD + dock + booster mà bàn vẫn gần bằng bề ngang. Màn thấp hơn thì --u trong màn chơi
    nhỏ lại theo chiều cao: HUD / dock / booster co cùng tỉ lệ, phần dôi ra dành cho bàn (bàn tự lấp chỗ trống còn lại),
    thay vì chỉ mình bàn bị bóp nhỏ còn khung thẻ mèo vẫn to. Điện thoại dọc cao (≥ 393 × 780) giữ nguyên. */
 .shell{--u:min(calc(var(--frame-w) / 393), calc(100dvh / 780));
-  background:#a7d662 url('./img/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+  background:#a7d662 url('../../assets/img/play/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
 /* Màn rộng hơn khung (màn ngang, tablet, desktop): hai bên khung là cùng ảnh đồng cỏ phóng to + làm mờ, thay cho dải màu trơn */
 body{background:none}
-body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 url('./img/meadow-bg.jpg') 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
+body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 url('../../assets/img/play/meadow-bg.jpg') 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
 .shell>.topbar{display:none}
 /* Bỏ dòng thông báo (mục tiêu / cộng điểm) dưới bàn như bản Figma */
 .shell>.message-row{display:none}
@@ -17,7 +17,7 @@ body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662
 .fg-hud{position:relative;z-index:5;display:grid;grid-template-columns:1fr calc(86 * var(--u)) 1fr;align-items:center;gap:0;
   margin:calc(16 * var(--u)) calc(-18 * var(--u)) calc(4 * var(--u));height:calc(80 * var(--u))}
 .fg-hud .progress.fg-score{justify-self:start;width:calc(169 * var(--u));height:calc(56 * var(--u));padding:0;border:0;border-radius:0;box-shadow:none;
-  background:url('./img/score-bar.png') center/100% 100% no-repeat}
+  background:url('../../assets/img/play/score-bar.png') center/100% 100% no-repeat}
 /* Thanh điểm: phủ kín rãnh vàng nhạt của pill (17–83% ngang), thanh kẹo xanh có vệt bóng, đầy thì chuyển vàng; chữ trắng viền nâu
    đọc được cả trên phần đã đầy lẫn phần trống. */
 .fg-score .progress-track{position:absolute;left:17.5%;right:17.5%;top:34%;bottom:33%;height:auto;padding:calc(1.5 * var(--u));border-radius:999px;background:none;box-shadow:none;overflow:hidden}
@@ -30,7 +30,7 @@ body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662
 .fg-score .progress-text strong{font-size:calc(15 * var(--u));color:#ff8fa6;-webkit-text-stroke:calc(3 * var(--u)) #6b2a28;paint-order:stroke fill;text-shadow:none}
 .fg-menu{position:relative;width:calc(86 * var(--u));height:calc(86 * var(--u))}
 .fg-moves.moves-box{position:relative;display:block;width:100%;height:100%;padding:0;border:0;border-radius:0;box-shadow:none;color:#6b3329;
-  background:url('./img/moves-badge.png') center/100% 100% no-repeat}
+  background:url('../../assets/img/play/moves-badge.png') center/100% 100% no-repeat}
 .fg-moves .fg-level{position:absolute;left:28%;right:28%;top:21%;font-family:var(--display);font-size:calc(7.5 * var(--u));font-weight:800;line-height:1;letter-spacing:0;text-transform:none;white-space:nowrap;text-align:center}
 .fg-moves .fg-moves-label{position:absolute;inset:36% 0 auto;font-family:var(--display);font-size:calc(13 * var(--u));font-weight:800;line-height:1;letter-spacing:0;text-transform:none;text-align:center}
 .fg-moves strong{position:absolute;inset:48% 0 auto;font-family:var(--display);font-size:calc(27 * var(--u));font-weight:800;line-height:1;text-align:center;
@@ -71,7 +71,7 @@ body.low-moves .fg-score{outline:0}
 .shell>.booster-bar{order:4}
 .dock.draw-area{width:calc(262 * var(--u));margin:calc(10 * var(--u)) auto 0;padding:calc(12 * var(--u)) calc(14 * var(--u)) calc(10 * var(--u));
   grid-template-columns:1fr calc(54 * var(--u));grid-template-rows:auto auto;grid-template-areas:"card next" "card hold";gap:calc(4 * var(--u)) calc(14 * var(--u));
-  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./img/dock-panel.png') 60 fill / calc(22 * var(--u)) stretch}
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('../../assets/img/play/dock-panel.png') 60 fill / calc(22 * var(--u)) stretch}
 .dock .card-column{grid-area:card;align-self:center}
 .dock .next-column{grid-area:next}
 .dock .hold-column{grid-area:hold}
@@ -80,7 +80,7 @@ body.low-moves .fg-score{outline:0}
 .dock-label{order:2;font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;letter-spacing:0;color:#6a3229;opacity:1}
 .dock .next-cards{order:1}
 .dock .hold-slot,.dock .next-slot{width:calc(54 * var(--u));height:calc(52 * var(--u));--card-w:calc(54 * var(--u));--card-h:calc(52 * var(--u));
-  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./img/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('../../assets/img/play/slot-blank.png') 70 fill / calc(14 * var(--u)) stretch}
 /* Ô NEXT phủ một lớp kính giả: ánh trắng mờ phía trên + vệt sáng chéo lướt qua theo chu kỳ (mèo bên dưới vẫn thấy rõ) */
 .dock .next-slot{position:relative}
 /* Khung thép (cùng kiểu khối kim loại trên bàn, board-art.mjs METAL_SVG): vành gradient xám đánh bóng + 4 đinh tán ở góc, nét ngoài
@@ -103,19 +103,19 @@ body.low-moves .fg-score{outline:0}
 .dock .next-slot .piece-grid{--cell:min(40 * var(--u),calc((50 * var(--u) - 2 * var(--u) * (var(--piece-cols) - 1)) / var(--piece-cols)),calc((48 * var(--u) - 2 * var(--u) * (var(--piece-rows) - 1)) / var(--piece-rows)));
   grid-template-columns:repeat(var(--piece-cols),var(--cell));grid-template-rows:repeat(var(--piece-rows),var(--cell));gap:calc(2 * var(--u))}
 /* Ô HOLD trống: ô có dấu cộng của Figma; có thẻ thì dùng ô trơn như NEXT / thẻ đang bóc */
-.dock .hold-slot:not(:has(.piece-grid)){border-image:none;background:url('./img/slot.png') center/100% 100% no-repeat}
+.dock .hold-slot:not(:has(.piece-grid)){border-image:none;background:url('../../assets/img/play/slot.png') center/100% 100% no-repeat}
 .dock .hold-slot:not(:has(.piece-grid))>span{visibility:hidden}
 .dock #active-card,.dock .piece-card{width:calc(146 * var(--u));height:calc(136 * var(--u));--card-w:calc(146 * var(--u));--card-h:calc(136 * var(--u));
-  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('./img/slot-blank.png') 70 fill / calc(26 * var(--u)) stretch}
+  background:none;border:0;border-radius:0;box-shadow:none;border-image:url('../../assets/img/play/slot-blank.png') 70 fill / calc(26 * var(--u)) stretch}
 .dock .hold-slot.drop-target{box-shadow:0 0 0 3px #3fbf8f,0 0 18px #9ff0d4}
 .dock .hold-slot.drop-blocked{box-shadow:0 0 0 3px #d9534f}
 /* ---------- Booster: khung kem dài, 3 nút đầu mèo, số lượng ở góc dưới trái ---------- */
 .booster-bar{width:calc(262 * var(--u));height:calc(56 * var(--u));margin:calc(8 * var(--u)) auto 0;padding:0;gap:calc(10 * var(--u));align-items:center;
-  background:url('./img/booster-frame.png') center/100% 100% no-repeat}
+  background:url('../../assets/img/play/booster-frame.png') center/100% 100% no-repeat}
 .booster-bar .boost{width:calc(52 * var(--u));height:calc(52 * var(--u));border:0;border-radius:0;box-shadow:none}
-.boost[data-boost="hammer"]{background:url('./img/booster-hammer.png') center/contain no-repeat}
-.boost[data-boost="swap"]{background:url('./img/booster-swap.png') center/contain no-repeat}
-.boost[data-boost="moves"]{background:url('./img/booster-moves.png') center/contain no-repeat}
+.boost[data-boost="hammer"]{background:url('../../assets/img/play/booster-hammer.png') center/contain no-repeat}
+.boost[data-boost="swap"]{background:url('../../assets/img/play/booster-swap.png') center/contain no-repeat}
+.boost[data-boost="moves"]{background:url('../../assets/img/play/booster-moves.png') center/contain no-repeat}
 .boost>svg,.boost>.boost-plus{visibility:hidden}
 .boost.suggest,.boost.armed{outline:0;filter:drop-shadow(0 0 5px #ffcf5a) drop-shadow(0 0 2px #ffcf5a)}
 .booster-bar .boost-count{left:calc(1 * var(--u));right:auto;top:auto;bottom:calc(1 * var(--u));min-width:calc(20 * var(--u));height:calc(20 * var(--u));padding:0 3px;
@@ -141,10 +141,12 @@ body{overflow-x:clip}
 .fg-hud .fg-settings .fh-round::before{width:calc(49.68 * var(--hub-u));height:calc(49.68 * var(--hub-u))}
 .fg-hud .fg-settings .fh-gear:active{translate:0 calc(2 * var(--hub-u))}
 /* ---------- HUD mới theo Figma (image 107): bảng hồng tai mèo — badge "Level N", MỘT ô Move rộng (đã bỏ ô Goal), thanh điểm
-   (đã bỏ 3 sao: điểm / mục tiêu ghi trên thanh). Ảnh ui/play/img/hud-panel.png cắt ghép từ ảnh Figma, số liệu là chữ thật.
+   (đã bỏ 3 sao: điểm / mục tiêu ghi trên thanh). Ảnh assets/img/play/hud-panel.png cắt ghép từ ảnh Figma, số liệu là chữ thật.
    Mọi vị trí tính theo % ảnh gốc 2172 × 724; bảng 336 × 112 như Figma (x 29, y 46 trong khung 393). Bánh răng nằm góc phải trên. */
-.fg-hud{display:block;height:calc(112 * var(--u));margin:calc(4 * var(--u)) 0 calc(2 * var(--u))}
-.fg-panel{position:relative;width:calc(336 * var(--u));height:calc(112 * var(--u));margin:0 auto;background:url('./img/hud-panel.png') center/100% 100% no-repeat;
+/* HUD to hơn phần còn lại 18%: mọi số đo bên trong theo --u, nên chỉ đổi --u cho cả khối (--hud-u tính ở .shell). */
+.shell{--hud-u:calc(var(--u) * 1.18)}
+.fg-hud{--u:var(--hud-u);display:block;height:calc(112 * var(--u));margin:calc(4 * var(--u)) 0 calc(2 * var(--u))}
+.fg-panel{position:relative;width:calc(336 * var(--u));height:calc(112 * var(--u));margin:0 0 0 calc(50% - 168 * var(--u));/* căn giữa cả khi panel rộng hơn khung (margin auto thì lệch phải) */background:url('../../assets/img/play/hud-panel.png') center/100% 100% no-repeat;
   filter:drop-shadow(0 calc(3 * var(--u)) calc(3 * var(--u)) #6b2a2833)}
 .fg-panel .fg-level{position:absolute;left:44%;width:12%;top:12%;height:12%;display:grid;place-items:center;white-space:nowrap;
   font-family:var(--display);font-size:calc(12 * var(--u));font-weight:800;line-height:1;color:#6b2416}
@@ -196,13 +198,13 @@ body.card-holding,body.card-holding *{touch-action:none}
 /* Đốm điểm vừa bay tới: thanh loé sáng */
 .fg-score.gain .progress-track{animation:score-gain .5s ease-out}
 @keyframes score-gain{0%{filter:brightness(1)}30%{filter:brightness(1.45) drop-shadow(0 0 calc(4 * var(--u)) #ffe27a)}100%{filter:brightness(1)}}
-/* Số điểm cộng: to, chữ tròn vàng viền nâu dày, bóng đổ; nảy bằng Web Animations (play-controller.js showMergeScore) */
+/* Số điểm cộng: to, chữ tròn vàng viền nâu dày, bóng đổ; nảy bằng Web Animations (play/score-bar.js showMergeScore) */
 .score-pop{position:fixed;z-index:60;pointer-events:none;font-family:var(--display);font-size:52px;font-weight:800;line-height:1;letter-spacing:0;
   color:#ffe46b;-webkit-text-stroke:9px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 3px 0 #7a3a1288) drop-shadow(0 0 10px #fff3b0);white-space:nowrap}
 /* Đốm sao vàng bay vào thanh điểm */
 .score-orb{position:fixed;z-index:60;width:16px;height:16px;pointer-events:none;border-radius:50%;
   background:radial-gradient(circle at 38% 35%,#fffbe0 0 22%,#ffd84a 45%,#f5a623 75%);box-shadow:0 0 10px 3px #ffe27acc}
-/* Màu theo loại điểm (play-controller.js SCORE_TIERS): thùng = gỗ nâu nhạt · gom 3 = vàng · 4 = xanh lá · 5 = xanh dương ·
+/* Màu theo loại điểm (play/score-bar.js SCORE_TIERS): thùng = gỗ nâu nhạt · gom 3 = vàng · 4 = xanh lá · 5 = xanh dương ·
    6 = hồng tím · 7+ = cầu vồng (chữ to nhất, rung nhẹ, toả vòng sáng). Đốm bay cùng màu với chữ. */
 .score-pop.t-crate{font-size:40px;color:#f3c98b;-webkit-text-stroke-color:#5a3216;filter:drop-shadow(0 3px 0 #5a321688)}
 .score-pop.t-m3{font-size:50px}
@@ -229,7 +231,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 /* Hết booster: nhãn giá (xu + số) là viên thuốc kem viền nâu nằm giữa đáy nút, đủ rộng cho cả đồng xu lẫn số, không đè lên nhau */
 .booster-bar .boost.empty .boost-count{z-index:2;width:max-content;min-width:0;height:calc(20 * var(--u));padding:0 calc(4 * var(--u)) 0 calc(2 * var(--u));gap:calc(2 * var(--u));
   bottom:calc(-8 * var(--u));white-space:nowrap;line-height:1;background:#ffe9a8;font-size:calc(12 * var(--u))}
-.booster-bar .boost-count .ico-coin{width:calc(14 * var(--u));height:calc(14 * var(--u));flex:none;box-shadow:none;background:url('../shop/img/coin.png') center/contain no-repeat}
+.booster-bar .boost-count .ico-coin{width:calc(14 * var(--u));height:calc(14 * var(--u));flex:none;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
 /* Sắp hết lượt (body.low-moves): không viền đỏ quanh bàn; khung HUD phía trên lắc nhẹ từng nhịp, mọi mèo run run (giữ mặt lo / buồn) */
 @media(prefers-reduced-motion:no-preference){
   body.low-moves .fg-panel{animation:hud-nudge 1.6s ease-in-out infinite;transform-origin:50% 0}
@@ -250,7 +252,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .board-shape{filter:drop-shadow(var(--line) 0 0 #73392a) drop-shadow(calc(var(--line) * -1) 0 0 #73392a) drop-shadow(0 var(--line) 0 #73392a)
   drop-shadow(0 calc(var(--line) * -1) 0 #73392a) drop-shadow(0 var(--lip) 0 #73392a)}
 .cell{background:#f3dfb4;box-shadow:inset 0 calc(var(--c) * .06) 0 #e2c48c,inset 0 0 0 1px #ead29f}
-/* Xen kẽ hai tông theo hàng + cột (data-alt do play-controller.js đặt) */
+/* Xen kẽ hai tông theo hàng + cột (data-alt do play/board-view.js đặt) */
 .cell[data-alt="1"]{background:#f8e9c8}
 .cell.block,.cell.locked,.cell.void{background:none!important;box-shadow:none}
 /* Mèo / thùng: bóng cứng màu nâu nhạt ngay dưới chân thay cho bóng mờ */
@@ -263,7 +265,7 @@ body.card-holding,body.card-holding *{touch-action:none}
 .cell.preview-invalid{background:#f6c6b8!important;box-shadow:inset 0 0 0 var(--line) #c2493a}
 /* Mèo to ra trong ô bàn (ảnh mèo có viền trong suốt quanh thân) để các chú mèo nhìn sát nhau hơn; thẻ xoay / thẻ kéo giữ cỡ gốc để còn căn giữa */
 .cell.locked .cat{transform:rotateX(calc(var(--tilt) * -1)) translateY(-4%) scale(1.3)}
-/* Lời khen khi gom (play-controller.js celebrateMatch): chữ tròn to viền dày, luôn NGHIÊNG (góc ngẫu nhiên trái / phải, xoay bằng
+/* Lời khen khi gom (play/match-fx.js celebrateMatch): chữ tròn to viền dày, luôn NGHIÊNG (góc ngẫu nhiên trái / phải, xoay bằng
    Web Animations); bậc càng cao chữ càng to, màu càng rực: p1 vàng · p2 xanh lá · p3 xanh dương · p4 hồng · p5 cầu vồng */
 .praise-pop{position:fixed;z-index:61;pointer-events:none;font-family:var(--display);font-size:40px;font-weight:800;line-height:1;white-space:nowrap;
   color:#ffe46b;-webkit-text-stroke:8px #7a3a12;paint-order:stroke fill;filter:drop-shadow(0 4px 0 #7a3a1299) drop-shadow(0 0 12px #fff3b0)}
@@ -278,6 +280,27 @@ body.card-holding,body.card-holding *{touch-action:none}
   background:radial-gradient(circle,#fff 0 18%,var(--fw) 40%,transparent 70%)}
 .firework-spark{position:fixed;z-index:59;width:9px;height:9px;border-radius:50%;pointer-events:none;background:var(--fw);box-shadow:0 0 8px 2px var(--fw)}
 
-/* Confetti khi gom (play-controller.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
+/* Confetti khi gom (play/match-fx.js confetti): mảnh giấy chữ nhật + dải ruy băng, nằm trên mọi thứ, không nhận chạm */
 .confetti{position:fixed;z-index:60;width:13px;height:18px;border-radius:2px;pointer-events:none;box-shadow:0 1px 0 #0002;will-change:transform,opacity}
 .confetti.ribbon{width:8px;height:28px;border-radius:4px}
+/* Màn có cả cỏ lẫn lồng: hai mục tiêu cạnh nhau trong ô Goal, thu nhỏ cho vừa */
+.fg-panel .fg-goal [hidden]{display:none}
+.fg-panel .fg-goal.two{gap:calc(2 * var(--u))}
+.fg-panel .fg-goal.two .fg-goal-icon{width:calc(22 * var(--u));height:calc(22 * var(--u))}
+.fg-panel .fg-goal.two strong{font-size:calc(22 * var(--u))}
+.fg-panel .fg-goal.two strong:not([hidden])+.fg-goal-icon{margin-left:calc(4 * var(--u))}
+.fg-panel .fg-goal.three{gap:calc(1 * var(--u))}
+.fg-panel .fg-goal.three .fg-goal-icon{width:calc(15 * var(--u));height:calc(15 * var(--u))}
+.fg-panel .fg-goal.three strong{font-size:calc(16 * var(--u))}
+.fg-panel .fg-goal.three strong:not([hidden])+.fg-goal-icon{margin-left:calc(2.5 * var(--u))}
+/* Ô Goal: mèo béo (mục tiêu "đánh thức mèo béo", play/hud.js GOAL_KINDS.fat) dùng chính hình mèo, thu nhỏ vừa ô icon */
+.fg-panel .fg-goal-icon .goal-fat{position:relative;display:block;width:100%;height:100%}
+.fg-panel .fg-goal-icon .goal-fat .fat-bob{inset:0;animation:none}
+.fg-panel .fg-goal-icon .goal-fat .fat-zzz{display:none}
+/* Bàn nghiêng 3D (preserve-3d) bỏ qua z-index, lớp phẳng (cỏ tràn sang ô bên, thùng, mèo béo) vẽ sau trong DOM đè lên chân mèo đứng
+   chạm mặt bàn: nâng ô mèo khỏi mặt bàn vài px để mèo luôn nằm trên lớp phẳng. */
+.board > .cell.locked:not(.drop){transform:translateZ(4px)}
+/* Icon cỏ ở ô Goal: y như ô cỏ trên bàn (base.css .grass-tile) thu nhỏ */
+.fg-panel .fg-goal-icon .goal-grass{display:block;width:100%;height:100%;box-sizing:border-box;border-radius:22%;
+  background:linear-gradient(#86c255,#86c255) 0 0/100% 100%,url('../../assets/img/map/grass-bg.jpg') 30% 40%/300% auto;background-blend-mode:multiply;
+  border:max(1.5px,.12em) solid #3d7327;box-shadow:inset 0 -.18em 0 #4f8a3270,inset 0 .12em 0 #d6f2b066,0 .12em 0 #3d7327;font-size:calc(14 * var(--u))}

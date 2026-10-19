@@ -1,10 +1,10 @@
 // Bản đồ saga 3D: con đường nằm trên một "trống cỏ" khổng lồ (hình trụ nằm ngang) như thế giới cuộn của Animal Crossing.
 // Lướt lên = trống lăn về phía trước, màn xa cong dần qua đường chân trời. Mỗi màn là khối đầu mèo nổi trên bệ tròn.
-// Chỉ vẽ: dữ liệu màn / tiến độ do menu-controller.js truyền vào qua render(); chạm màn thì gọi onPick(index).
+// Chỉ vẽ: dữ liệu màn / tiến độ do menu/map-view.js truyền vào qua render(); chạm màn thì gọi onPick(index).
 import * as THREE from 'three';
-import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './toon.mjs';
-import { roundedBox, mergeStatic } from './mesh-detail.mjs';
-import { catModel, setCatFace, poseTail } from './room-cats.mjs';
+import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './render/toon.mjs';
+import { roundedBox, mergeStatic } from './render/mesh-detail.mjs';
+import { catModel, setCatFace, poseTail } from './cats/cat-rig.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.
@@ -113,25 +113,63 @@ const pawMat = color => cached(`paw|${color}`, () => new THREE.MeshBasicMaterial
   map: canvasTexture(64, 64, (g) => { g.scale(64 / 24, 64 / 24); g.fillStyle = color; g.fill(PAW_PATH); }), transparent: true, depthWrite: false,
 }));
 // Mặt trước khối đầu mèo: số trắng viền nâu (bóng nâu nhẹ phía dưới), ổ khoá trắng nếu chưa mở.
-function faceMat(number, locked, boss = false) {
-  return cached(`face|${number}|${locked}|${boss}`, () => new THREE.MeshBasicMaterial({ map: faceTexture(number, locked, boss), transparent: true, fog: true }));
-}
-function faceTexture(number, locked, boss) {
-  return canvasTexture(256, 256, (g, w) => {
-    const ink = boss && !locked ? '#3a1a6e' : '#5b2e1c', y = locked ? 100 : 132;
-    g.font = `900 ${locked ? 124 : 158}px "Baloo 2", Nunito, sans-serif`;
-    g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
-    g.lineWidth = 22; g.strokeStyle = ink; g.fillStyle = ink;
-    g.strokeText(String(number), w / 2, y + 7); g.fillText(String(number), w / 2, y + 7);
-    g.strokeText(String(number), w / 2, y);
-    g.fillStyle = '#fff'; g.fillText(String(number), w / 2, y);
-    if (locked) {
-      g.lineWidth = 11; g.strokeStyle = '#fff'; g.fillStyle = '#fff';
-      g.beginPath(); g.arc(w / 2, 180, 17, Math.PI, 0); g.stroke();
-      g.beginPath(); g.roundRect(w / 2 - 27, 178, 54, 40, 8); g.fill();
-      g.fillStyle = '#8a6f62'; g.beginPath(); g.arc(w / 2, 195, 5, 0, Math.PI * 2); g.fill();
-    }
+// Số là font bitmap: font "Baloo 2" vẽ MỘT lần thành bảng 10 chữ số (mỗi màu mực một bảng), số của từng màn ghép từ các ô
+// chữ số đó — không sinh ảnh riêng cho từng màn. Đơn vị: px của mặt 256 × 256 cũ (FACE_PX đổi ra mét).
+const FACE_PX = 1.14 / 256, DIGITS = '0123456789';
+const GLYPH = { size: 158, height: 220, pad: 16, stroke: 22, drop: 7 };
+function digitFont(ink) {
+  return cached(`digits|${ink}`, () => {
+    const font = `900 ${GLYPH.size}px "Baloo 2", Nunito, sans-serif`;
+    const probe = document.createElement('canvas').getContext('2d');
+    probe.font = font;
+    const advance = [...DIGITS].map(d => Math.ceil(probe.measureText(d).width));
+    const cellW = advance.map(a => a + GLYPH.pad * 2), left = cellW.map((_, i) => cellW.slice(0, i).reduce((sum, w) => sum + w, 0));
+    const width = left.at(-1) + cellW.at(-1), mid = GLYPH.height / 2 - GLYPH.drop / 2;
+    const map = canvasTexture(width, GLYPH.height, g => {
+      g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = GLYPH.stroke;
+      [...DIGITS].forEach((d, i) => {
+        const x = left[i] + cellW[i] / 2;
+        g.strokeStyle = g.fillStyle = ink;
+        g.strokeText(d, x, mid + GLYPH.drop); g.fillText(d, x, mid + GLYPH.drop);
+        g.strokeText(d, x, mid);
+        g.fillStyle = '#fff'; g.fillText(d, x, mid);
+      });
+    });
+    // Mỗi chữ số một tấm phẳng (cỡ ô, tâm = tâm ô) lấy đúng phần ô của nó trên bảng; dùng chung cho mọi màn.
+    const glyphs = cellW.map((w, i) => {
+      const geo = new THREE.PlaneGeometry(w, GLYPH.height), uv = geo.attributes.uv;
+      for (let k = 0; k < uv.count; k++) uv.setX(k, (left[i] + uv.getX(k) * w) / width);
+      SHARED_GEO.add(geo);
+      return geo;
+    });
+    return { glyphs, advance, mid, material: new THREE.MeshBasicMaterial({ map, transparent: true, fog: true }) };
   });
+}
+// Ổ khoá trắng dưới số của màn chưa mở: một texture dùng chung (vẽ đúng chỗ trên mặt 256 × 256).
+// depthWrite tắt: tấm ổ khoá phủ cả mặt, không được che chữ số nằm cùng chỗ.
+const lockMat = () => cached('face-lock', () => new THREE.MeshBasicMaterial({ transparent: true, fog: true, depthWrite: false, map: canvasTexture(256, 256, (g, w) => {
+  g.lineWidth = 11; g.strokeStyle = '#fff'; g.fillStyle = '#fff';
+  g.beginPath(); g.arc(w / 2, 180, 17, Math.PI, 0); g.stroke();
+  g.beginPath(); g.roundRect(w / 2 - 27, 178, 54, 40, 8); g.fill();
+  g.fillStyle = '#8a6f62'; g.beginPath(); g.arc(w / 2, 195, 5, 0, Math.PI * 2); g.fill();
+}) }));
+function faceLabel(number, locked, boss = false) {
+  const font = digitFont(boss && !locked ? '#3a1a6e' : '#5b2e1c'), label = new THREE.Group(), digits = new THREE.Group();
+  const list = [...String(number)].map(Number), width = list.reduce((sum, d) => sum + font.advance[d], 0);
+  let x = -width / 2;
+  for (const d of list) {
+    const glyph = new THREE.Mesh(font.glyphs[d], font.material);
+    glyph.position.x = x + font.advance[d] / 2;
+    digits.add(glyph);
+    x += font.advance[d];
+  }
+  // Như mặt cũ: số mở ở giữa hơi thấp (y 132 / 256), số khoá nhỏ hơn và cao hơn (y 100) để chừa chỗ ổ khoá.
+  const scale = locked ? 124 / GLYPH.size : 1, y = locked ? 100 : 132;
+  digits.scale.setScalar(FACE_PX * scale);
+  digits.position.set(0, (128 - y) * FACE_PX - (GLYPH.height / 2 - font.mid) * FACE_PX * scale, .002); // nhích trước tấm ổ khoá
+  label.add(digits);
+  if (locked) label.add(new THREE.Mesh(FACE_GEO, lockMat()));
+  return label;
 }
 function signTexture(text, size = 38) {
   return canvasTexture(512, 160, (g, w, h) => {
@@ -927,7 +965,6 @@ const SHARED_GEO = new Set([...Object.values(headGeo), FACE_GEO, ...Object.value
 // ---------- Cảnh ----------
 // Stage = một lô STAGE_SIZE màn liền nhau (1–10, 11–20...).
 export const STAGE_SIZE = 10;
-export const stageOf = index => Math.floor(index / STAGE_SIZE);
 
 export function createMapWorld(container, { onPick, onClaim } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -1127,7 +1164,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       ear.add(inner);
       cat.add(ear);
     }
-    const face = new THREE.Mesh(FACE_GEO, faceMat(index + 1, locked, isBoss));
+    const face = faceLabel(index + 1, locked, isBoss);
     face.position.z = FACE_Z + .03;
     cat.add(face);
     if (royal) {
@@ -1199,7 +1236,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       g.add(badge);
       cats.push(badge);
     }
-    for (const mesh of [...ped.parts, rim, body, face]) { mesh.userData.level = index; mesh.userData.locked = locked; pickables.push(mesh); }
+    const faceMeshes = [];
+    face.traverse(n => { if (n.isMesh) faceMeshes.push(n); });
+    for (const mesh of [...ped.parts, rim, body, ...faceMeshes]) { mesh.userData.level = index; mesh.userData.locked = locked; pickables.push(mesh); }
     const holder = plant(g, pathX(index), index, 0);
     // LOD: màn ở xa (gần chân trời) mờ dần viền mực của khối đầu, bệ và mèo mới.
     const ink = fadeInk(g);

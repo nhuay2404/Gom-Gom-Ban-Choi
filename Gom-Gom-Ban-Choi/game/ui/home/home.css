@@ -48,13 +48,13 @@
 /* Hàng ví (pill có số in sẵn đã xoá; game tự viết số lên đúng chỗ) */
 .fh-pill b{position:absolute;top:0;bottom:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;
   font-size:calc(17.5 * var(--u));line-height:1;color:#6b3329;white-space:nowrap}
-.fh-coins{left:calc(6 * var(--u));top:calc(56 * var(--u));width:calc(144 * var(--u));height:calc(48 * var(--u));background-image:url('./img/pill-coins.png')}
+.fh-coins{left:calc(6 * var(--u));top:calc(56 * var(--u));width:calc(144 * var(--u));height:calc(48 * var(--u));background-image:url('../../assets/img/home/pill-coins.png')}
 .fh-coins b{left:calc(56 * var(--u));width:calc(56 * var(--u))}
-.fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('./img/pill-gems.png')}
+.fh-gems{left:calc(128 * var(--u));top:calc(58 * var(--u));width:calc(135 * var(--u));height:calc(45 * var(--u));background-image:url('../../assets/img/home/pill-gems.png')}
 .fh-gems b{left:calc(50 * var(--u));width:calc(54 * var(--u))}
 /* Cột trái: Daily, Starter Pack */
-.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(114.99 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('./img/btn-daily.png')}
-.fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-starter.png')}
+.fh-daily{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(114.99 * var(--u));width:calc(60 * var(--u));height:calc(60 * var(--u));background-image:url('../../assets/img/home/btn-daily.png')}
+.fh-starter{left:calc(17 * var(--u) - var(--gutter) + env(safe-area-inset-left));top:calc(185 * var(--u));width:calc(61 * var(--u));height:calc(61 * var(--u));background-image:url('../../assets/img/home/btn-starter.png')}
 /* Feedback: dưới Starter Pack, vẽ bằng CSS theo kiểu hai nút ảnh Figma (ô kem bo góc viền nâu, icon + chữ nâu đậm); mở form góp ý.
    Cỡ = phần ô nhìn thấy trong ảnh Daily / Starter (ảnh 60u có lề trong suốt + chỗ cho chấm "!": ô thật ~53 × 55u, lùi vào ~4u),
    cách Starter đúng bằng khoảng Daily → Starter (~8.5u). */
@@ -75,7 +75,7 @@
 .fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}
 .fh-round::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;width:calc(49.68 * var(--u));height:calc(49.68 * var(--u));border-radius:50%;background:#6a3229}
 .fh-round::after{content:'';position:absolute;inset:0;background:center/100% 100% no-repeat}
-.fh-gear::after{background-image:url('./img/btn-settings.png')}
+.fh-gear::after{background-image:url('../../assets/img/home/btn-settings.png')}
 .fh-settings .settings-menu{top:calc(100% + 6px)}
 .fh-alert{position:absolute;top:calc(-2 * var(--u));right:calc(6 * var(--u));width:calc(17 * var(--u));height:calc(17 * var(--u));display:grid;place-items:center;border-radius:50%;
   font-style:normal;font-size:calc(12 * var(--u));font-weight:900;color:#fff;background:#f03a4f;border:calc(1.5 * var(--u)) solid #fff}
@@ -95,5 +95,5 @@
 .fh-layer>.fh-btn{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
 /* PLAY ở Home hub (ảnh nút Figma 244 × 67): giữa khung, ngay trên thanh tab */
 .fh-layer>.fh-play{left:calc(76 * var(--u));bottom:calc(96 * var(--u) + env(safe-area-inset-bottom));width:calc(244 * var(--u));height:calc(67 * var(--u));
-  background-image:url('./img/play-button.png')}
+  background-image:url('../../assets/img/home/play-button.png')}
 @media(prefers-reduced-motion:no-preference){.fh-layer>.fh-play{animation:play-breathe 1.8s ease-in-out infinite}}

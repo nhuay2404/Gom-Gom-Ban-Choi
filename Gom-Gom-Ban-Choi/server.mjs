@@ -5,9 +5,9 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleSaveLevel } from './tools/level-save.mjs';
-import { handleSaveEconomy } from './tools/economy-save.mjs';
-import { handleStudio, studioCss } from './tools/ui-studio.mjs';
+import { handleSaveLevel } from './tools/levels/level-save.mjs';
+import { handleSaveEconomy } from './tools/economy/economy-save.mjs';
+import { handleStudio, studioCss } from './tools/ui-studio/ui-studio.mjs';
 import { networkInterfaces } from 'node:os';
 
 const ROOT = resolve(fileURLToPath(new URL('./game', import.meta.url)));
@@ -22,7 +22,7 @@ const TYPES = {
 };
 
 /** Giữ mọi đường dẫn bên trong thư mục game, không cho đi ngược ra ngoài. */
-// Level Editor (tools/level-editor/, mở từ nút dev) nằm ngoài game/: /tools/... phục vụ thư mục tools, và /game/... trỏ lại
+// Level Editor (tools/levels/level-editor/, mở từ nút dev) nằm ngoài game/: /tools/... phục vụ thư mục tools, và /game/... trỏ lại
 // game/ cho các import '../../game/gameplay/...' của editor và bot.
 const TOOLS = resolve(fileURLToPath(new URL('./tools', import.meta.url)));
 function safePath(urlPath) {
@@ -35,7 +35,7 @@ function safePath(urlPath) {
 
 const server = createServer(async (req, res) => {
   try {
-    // Level Editor (nút dev LEVELS) lưu màn vào game/gameplay/levels.mjs. Máy chủ chỉ nghe 127.0.0.1.
+    // Level Editor (nút dev LEVELS) lưu màn vào game/data/levels.mjs. Máy chủ chỉ nghe 127.0.0.1.
     if (handleSaveLevel(req, res) || handleSaveEconomy(req, res)) return;
     if (handleStudio(req, res)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end('Method Not Allowed'); return; }

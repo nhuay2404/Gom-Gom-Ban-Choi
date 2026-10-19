@@ -48,7 +48,7 @@
 .result-dialog .result-coins{display:flex;align-items:center;justify-content:center;gap:calc(8 * var(--u));width:100%;margin:calc(6 * var(--u)) 0 0;padding-top:calc(10 * var(--u));
   border-top:calc(2 * var(--u)) dashed #efd3a4;color:#6b2416;font-family:var(--display);line-height:1}
 .result-coins[hidden]{display:none}
-.result-coins .ico-coin{width:calc(42 * var(--u));height:calc(42 * var(--u));box-shadow:none;background:url('../shop/img/coin.png') center/contain no-repeat}
+.result-coins .ico-coin{width:calc(42 * var(--u));height:calc(42 * var(--u));box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
 .result-coins b{font-size:calc(30 * var(--u));font-weight:800}
 .result-coins small{align-self:flex-end;margin-bottom:calc(4 * var(--u));font-size:calc(14 * var(--u));font-weight:800;color:#9a6a52}
 .result-dialog .result-note{margin:calc(4 * var(--u)) 0 0;font-size:calc(12 * var(--u));font-weight:900;line-height:1.3;color:#b0563a}
@@ -67,28 +67,28 @@
 .result-round[hidden],.result-wide[hidden]{display:none}
 .result-round:active,.result-wide:active{translate:0 calc(2 * var(--u))}
 /* ---------- Bảng kết quả theo Figma: thắng (Group 33, frame 73:616) / thua (frame 73:680) ----------
-   Mọi mảnh là ảnh cắt từ Figma (ui/result/img/, đúng vùng hiển thị trong Figma, 3×), đặt đúng toạ độ trong khung 304.6 × 403
-   (khung = ảnh panel). Số liệu (level, điểm, xu) vẫn do play-controller.js ghi vào phần tử cũ, nằm trên rãnh đã xoá số của ảnh. */
+   Mọi mảnh là ảnh cắt từ Figma (assets/img/result/, đúng vùng hiển thị trong Figma, 3×), đặt đúng toạ độ trong khung 304.6 × 403
+   (khung = ảnh panel). Số liệu (level, điểm, xu) vẫn do play/result.js ghi vào phần tử cũ, nằm trên rãnh đã xoá số của ảnh. */
 .result-dialog{width:calc(304.6 * var(--u));height:calc(403 * var(--u));max-width:none;padding:0;border:0;border-radius:0;box-shadow:none;
-  background:url('./img/panel.png') center/100% 100% no-repeat;margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}
+  background:url('../../assets/img/result/panel.png') center/100% 100% no-repeat;margin-top:min(calc(272 * var(--u)), calc(100dvh - 420 * var(--u)))}
 .result-dialog>*{position:absolute;margin:0}
 .result-dialog .result-peek{z-index:1;translate:none;background:center/100% 100% no-repeat}
 .result-dialog .result-peek>*,.result-dialog .result-hero>.result-rays,.result-dialog .result-hero>.result-heart{display:none}
-.result-dialog.win .result-peek{left:calc(27 * var(--u));top:calc(-96 * var(--u));width:calc(252 * var(--u));height:calc(104 * var(--u));background-image:url('./img/win-cat.png')}
-.result-dialog.lose .result-peek{left:calc(32 * var(--u));top:calc(-98 * var(--u));width:calc(242 * var(--u));height:calc(104 * var(--u));background-image:url('./img/fail-cat.png')}
+.result-dialog.win .result-peek{left:calc(27 * var(--u));top:calc(-96 * var(--u));width:calc(252 * var(--u));height:calc(104 * var(--u));background-image:url('../../assets/img/result/win-cat.png')}
+.result-dialog.lose .result-peek{left:calc(32 * var(--u));top:calc(-98 * var(--u));width:calc(242 * var(--u));height:calc(104 * var(--u));background-image:url('../../assets/img/result/fail-cat.png')}
 .result-dialog .result-hero{z-index:2;background:center/100% 100% no-repeat}
-.result-dialog.win .result-hero{left:calc(-15.5 * var(--u));top:calc(-43 * var(--u));width:calc(336 * var(--u));height:calc(252 * var(--u));background-image:url('./img/win-stars.png')}
-.result-dialog.lose .result-hero{left:calc(51.5 * var(--u));top:calc(48 * var(--u));width:calc(204 * var(--u));height:calc(153 * var(--u));background-image:url('./img/fail-heart.png')}
+.result-dialog.win .result-hero{left:calc(-15.5 * var(--u));top:calc(-43 * var(--u));width:calc(336 * var(--u));height:calc(252 * var(--u));background-image:url('../../assets/img/result/win-stars.png')}
+.result-dialog.lose .result-hero{left:calc(51.5 * var(--u));top:calc(48 * var(--u));width:calc(204 * var(--u));height:calc(153 * var(--u));background-image:url('../../assets/img/result/fail-heart.png')}
 /* Sao chưa đạt: phủ một lớp làm xám đúng ngôi sao đó trong ảnh (ảnh luôn có 3 sao sáng). */
 /* Tiêu đề là ảnh; chữ thật giữ cho trình đọc màn hình */
 .result-dialog .result-title{z-index:3;font-size:0;color:transparent;-webkit-text-stroke:0;filter:none;background:center/100% 100% no-repeat}
-.result-dialog.win .result-title{left:calc(32 * var(--u));top:calc(122 * var(--u));width:calc(247 * var(--u));height:calc(58 * var(--u));background-image:url('./img/win-title.png')}
-.result-dialog.lose .result-title{left:calc(52 * var(--u));top:calc(210 * var(--u));width:calc(207 * var(--u));height:calc(48 * var(--u));background-image:url('./img/fail-title.png')}
+.result-dialog.win .result-title{left:calc(32 * var(--u));top:calc(122 * var(--u));width:calc(247 * var(--u));height:calc(58 * var(--u));background-image:url('../../assets/img/result/win-title.png')}
+.result-dialog.lose .result-title{left:calc(52 * var(--u));top:calc(210 * var(--u));width:calc(207 * var(--u));height:calc(48 * var(--u));background-image:url('../../assets/img/result/fail-title.png')}
 .result-dialog .result-sub{z-index:3;left:calc(95.5 * var(--u));top:calc(178 * var(--u));width:calc(116 * var(--u));height:calc(25 * var(--u));display:grid;place-items:center;padding:0 18%;
-  font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;line-height:1;color:#6b1f12;white-space:nowrap;background:url('./img/win-cleared.png') center/100% 100% no-repeat}
+  font-family:var(--display);font-size:calc(11 * var(--u));font-weight:800;line-height:1;color:#6b1f12;white-space:nowrap;background:url('../../assets/img/result/win-cleared.png') center/100% 100% no-repeat}
 .result-dialog .result-sub::before,.result-dialog .result-sub::after{display:none}
 /* Ô điểm (chỉ khi thắng): ảnh có chữ "Score" + đồng xu + tia; điểm ghi vào rãnh giữa, số xu cạnh đồng xu */
-.result-dialog .result-box{left:calc(35.5 * var(--u));top:calc(194.5 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));display:block;padding:0;border:0;border-radius:0;background:url('./img/win-score.png') center/100% 100% no-repeat}
+.result-dialog .result-box{left:calc(35.5 * var(--u));top:calc(194.5 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));display:block;padding:0;border:0;border-radius:0;background:url('../../assets/img/result/win-score.png') center/100% 100% no-repeat}
 .result-dialog .result-label{display:none}
 .result-dialog .result-score{position:absolute;left:31.8%;width:36.7%;top:22%;height:19.6%;min-width:0;padding:0;display:grid;place-items:center;
   background:none;font-family:var(--display);font-size:calc(25 * var(--u));font-weight:800;line-height:1;color:#6b1f12}
@@ -106,10 +106,10 @@
 .result-dialog .result-actions{inset:0;pointer-events:none;z-index:4}
 .result-dialog .result-actions>*{position:absolute;pointer-events:auto;border:0;border-radius:0;box-shadow:none;background:center/100% 100% no-repeat}
 .result-dialog .result-actions svg{display:none}
-.result-dialog #result-map{left:calc(15 * var(--u));top:calc(324 * var(--u));width:calc(58 * var(--u));height:calc(58 * var(--u));background-image:url('./img/btn-home-round.png')}
-.result-dialog #result-replay{left:calc(78 * var(--u));top:calc(325 * var(--u));width:calc(56 * var(--u));height:calc(56 * var(--u));background-image:url('./img/btn-retry-round.png')}
-.result-dialog #result-next{left:calc(146 * var(--u));top:calc(325 * var(--u));width:calc(148 * var(--u));height:calc(56 * var(--u));background-image:url('./img/btn-next.png')}
-.result-dialog #result-retry{left:calc(81 * var(--u));top:calc(323 * var(--u));width:calc(206 * var(--u));height:calc(61 * var(--u));background-image:url('./img/btn-retry.png')}
+.result-dialog #result-map{left:calc(15 * var(--u));top:calc(324 * var(--u));width:calc(58 * var(--u));height:calc(58 * var(--u));background-image:url('../../assets/img/result/btn-home-round.png')}
+.result-dialog #result-replay{left:calc(78 * var(--u));top:calc(325 * var(--u));width:calc(56 * var(--u));height:calc(56 * var(--u));background-image:url('../../assets/img/result/btn-retry-round.png')}
+.result-dialog #result-next{left:calc(146 * var(--u));top:calc(325 * var(--u));width:calc(148 * var(--u));height:calc(56 * var(--u));background-image:url('../../assets/img/result/btn-next.png')}
+.result-dialog #result-retry{left:calc(81 * var(--u));top:calc(323 * var(--u));width:calc(206 * var(--u));height:calc(61 * var(--u));background-image:url('../../assets/img/result/btn-retry.png')}
 .result-dialog .result-actions>button[hidden]{display:none}
 .result-dialog .result-actions>button:active{translate:0 calc(2 * var(--u))}
 /* Hộp tự focus nút đầu (Home) khi mở: bỏ khung focus mặc định (vuông, lệch hình nút), dùng quầng sáng theo hình nút. */
@@ -126,7 +126,7 @@
 /* ===== Bảng kết quả hiện ra kiểu hoạt hình (thay anim cũ bị giật):
    - Giật vì: nền mờ (backdrop-filter blur) phải tính lại mỗi khung hình trong lúc bảng phóng to, và ảnh Figma 3× (panel ~850 KB)
      chỉ giải mã lúc bảng mở lần đầu -> rơi khung. Sửa: bỏ blur (chỉ phủ màu, mờ dần riêng), ảnh giải mã sẵn lúc vào game
-     (play-controller.js, preloadResultArt), anim chỉ dùng scale / translate / opacity (GPU) + will-change.
+     (play/result.js, preloadResultArt), anim chỉ dùng scale / translate / opacity (GPU) + will-change.
    - Kiểu cartoon: bảng bật lên có nén-giãn (squash & stretch) rồi nảy về; sau đó lần lượt sao bật ra, tiêu đề rơi xuống nảy,
      mèo thò đầu lên, nút bật ra. */
 .result-dialog::backdrop{-webkit-backdrop-filter:none;backdrop-filter:none;background:#2b1a1099}

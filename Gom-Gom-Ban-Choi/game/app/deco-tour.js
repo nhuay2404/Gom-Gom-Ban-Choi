@@ -1,5 +1,5 @@
 // ===== Hướng dẫn Deco: làm mờ màn hình, khoét sáng từng khu vực + bong bóng lời thoại =====
-// Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu-controller.js khai báo.
+// Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu/tours.js khai báo (runDecoTour).
 // Một bước: { target: () => Element | {left, top, width, height} | mảng các thứ đó | null, text: chuỗi | () => chuỗi,
 //   next?: nhãn nút (mặc định "Next"), before?: async () => void (chạy trước khi hiện bước), after?: () => void (khi qua bước),
 //   until?: () => boolean, bubble?: 'above' | 'below' | 'speech', gesture?: 'drag' | 'pinch' | 'twist' }.
@@ -47,7 +47,6 @@ const rectOf = target => {
   return { left, top, width: Math.max(...list.map(r => r.right)) - left, height: Math.max(...list.map(r => r.bottom)) - top };
 };
 
-export const decoTourActive = () => !!running;
 export const waitFor = (test, timeout = 4000) => new Promise(resolve => {
   const start = performance.now(), tick = () => (test() || performance.now() - start > timeout ? resolve() : setTimeout(tick, 60));
   tick();
@@ -62,7 +61,7 @@ export function startDecoTour(steps, onDone) {
   const gesture = layer.querySelector('.deco-tour-gesture');
   let tappable = false;
   // Đường dẫn ĐẦY ĐỦ (không ghép `${tên}.png`): build:html chỉ nhúng ảnh có đường dẫn viết sẵn, ghép động thì bản xuất ra mất ảnh.
-  const GESTURES = { drag: './ui/shared/img/tutorial/hand-drag.png', pinch: './ui/shared/img/tutorial/gesture-pinch.png', twist: './ui/shared/img/tutorial/gesture-rotate.png', tap: './ui/shared/img/tutorial/hand-tap.png' };
+  const GESTURES = { drag: './assets/img/tutorial/hand-drag.png', pinch: './assets/img/tutorial/gesture-pinch.png', twist: './assets/img/tutorial/gesture-rotate.png', tap: './assets/img/tutorial/hand-tap.png' };
   // Bàn tay minh hoạ cử chỉ lặp lại giữa chỗ sáng: kéo = lướt ngang, chụm = co / giãn, xoay = đứng yên.
   const drawGesture = (kind, rect) => {
     gesture.hidden = !kind || !rect;

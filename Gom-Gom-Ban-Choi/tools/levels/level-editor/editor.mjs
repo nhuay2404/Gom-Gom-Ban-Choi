@@ -1,0 +1,615 @@
+// Level Editor có DDA: sửa màn, xem ngay DDA (adaptive.mjs) sẽ biến màn đó thành gì cho từng kiểu người chơi,
+// và chạy bot (tools/levels/bot.mjs, trong Web Worker) để đo tỉ lệ thắng của mọi biến thể. Dùng đúng code game, không chép logic.
+// Màn đã sửa lưu ở localStorage của trình duyệt; muốn đưa vào game thì copy khối "Xuất" dán vào game/data/levels.mjs.
+import { LEVELS, LETTERS } from '../../../game/data/levels.mjs';
+import { parseBoard, parseCard } from '../../../game/core/level-rules.mjs';
+import { boardSize } from '../../../game/core/board-shapes.mjs';
+import { play, PACES } from '../bot.mjs';
+import { levelElements, elementCount, difficultyOf, variantFor, planLevel, SHIFT_MIN, SHIFT_MAX, layoutEase, isAdaptive, ELEMENTS, MAX_ELEMENTS } from '../../../game/core/adaptive.mjs';
+import { clearMatches } from '../../../game/core/board-rules.mjs';
+import { MATCH_SIZE } from '../../../game/core/scoring.mjs';
+import { holdUnlocked, ADAPTIVE } from '../../../game/data/tuning.mjs';
+import { playableCells } from '../../../game/core/board-shapes.mjs';
+import { catMarkup } from '../../../game/ui/cat-art.mjs';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+const STORE = 'gomgom-editor-levels';
+const ORIGINAL = LEVELS.map(clone);
+const baseline = await fetch('../baseline.json').then(r => r.json()).catch(() => ({ levels: [] }));
+const baselineWin = n => baseline.levels.find(row => row.level === n)?.winRate;
+
+const COLORS = { O: '#f3a35a', G: '#9aa0a6', W: '#ffffff', K: '#33302c', S: '#ead9bd', T: '#c98d4f' };
+// Ảnh mèo thật của game (cat-art.mjs) cho ô mèo trên bàn + cọ. Đường dẫn ảnh trong art tính từ game/, editor ở tools/levels/level-editor/.
+const CAT_ART = Object.fromEntries(Object.entries(catMarkup).map(([group, svg]) => [group, svg.replaceAll('href="ui/', 'href="../../game/ui/')]));
+const catArt = letter => CAT_ART[LETTERS[letter]] ?? letter;
+// '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn.
+const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS), '~', '≈'];
+const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ' };
+const NOISES = [{ noise: 1, label: 'Bot giỏi' }, { noise: 30, label: 'Trung bình' }, { noise: 90, label: 'Người yếu' }];
+const ELEMENT_LABEL = { moves: 'Lượt chật', colors: 'Nhiều màu', crate: 'Thùng gỗ', wall: 'Kim loại', board: 'Bàn rộng/hình', cage: 'Chuồng', grass: 'Cỏ' };
+
+let edits = {};
+try { edits = JSON.parse(localStorage.getItem(STORE)) ?? {}; } catch { edits = {}; }
+for (const [i, level] of Object.entries(edits)) LEVELS[i] = level;
+
+let current = 0, brush = 'O', painting = false, botRun = 0, lastBot = null;
+const level = () => LEVELS[current];
+
+function save() {
+  const dirty = JSON.stringify(level()) !== JSON.stringify(ORIGINAL[current]);
+  if (dirty) edits[current] = level(); else delete edits[current];
+  persist();
+}
+function persist() {
+  try { localStorage.setItem(STORE, JSON.stringify(edits)); } catch { /* chế độ riêng tư: chỉ giữ trong phiên */ }
+}
+
+// ---------- Lưu vào game (POST /api/save-level -> tools/levels/level-save.mjs ghi game/data/levels.mjs) ----------
+const saveTimers = {};
+function scheduleSave(index) {
+  if (!$('autoSave').checked) return;
+  clearTimeout(saveTimers[index]);
+  saveTimers[index] = setTimeout(() => saveToGame(index), 900);
+}
+async function saveToGame(index) {
+  const l = LEVELS[index];
+  if (!edits[index]) { $('saveStatus').textContent = `Màn ${index + 1} không có gì mới để lưu`; return; }
+  const problems = issues(l);
+  if (problems.length) { $('saveStatus').innerHTML = `<span class="warn">Chưa lưu màn ${index + 1}: ${problems[0]}</span>`; return; }
+  const keepTutorial = JSON.stringify(l.tutorial) === JSON.stringify(ORIGINAL[index].tutorial);
+  $('saveStatus').textContent = `Đang lưu màn ${index + 1}…`;
+  try {
+    const res = await fetch('/api/save-level', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ index, code: toCode(l), keepTutorial }) });
+    const out = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
+    if (!out.ok) throw new Error(out.error);
+    // Đã lưu: bản này thành bản gốc mới (chỉ xoá khỏi danh sách chưa lưu nếu không bị sửa tiếp trong lúc gửi).
+    ORIGINAL[index] = clone(l);
+    if (LEVELS[index] === l) delete edits[index];
+    persist();
+    renderList();
+    renderStatus();
+    $('saveStatus').innerHTML = `<span class="ok">✓ Đã lưu màn ${index + 1} vào levels.mjs</span> · ${new Date().toLocaleTimeString()}`;
+  } catch (error) {
+    $('saveStatus').innerHTML = `<span class="warn">Không lưu được: ${error.message}. Mở editor qua npm start / npm run editor.</span>`;
+  }
+}
+
+// Sửa màn đang chọn. Mọi thay đổi đi qua đây để DDA / xuất / danh sách cập nhật và kết quả bot cũ bị bỏ.
+function update(change) {
+  LEVELS[current] = { ...level(), ...change };
+  save();
+  scheduleSave(current);
+  lastBot = null;
+  renderAll();
+}
+
+// ---------- Danh sách màn ----------
+function renderList() {
+  $('levelList').innerHTML = LEVELS.map((l, i) => `<button data-i="${i}" class="${i === current ? 'on' : ''} ${edits[i] ? 'dirty' : ''}">
+    <span class="n">Màn ${i + 1}</span><span class="tier ${l.tier || 'normal'}">${l.tier || 'normal'}</span></button>`).join('');
+}
+$('levelList').addEventListener('click', event => {
+  const button = event.target.closest('button[data-i]');
+  if (!button) return;
+  current = Number(button.dataset.i);
+  lastBot = null;
+  renderAll();
+});
+
+// ---------- Form ----------
+const FIELDS = [
+  { key: 'tier', label: 'Tier', type: 'select', options: ['normal', 'hard', 'chill', 'boss'] },
+  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage', 'grass'] },
+  { key: 'moves', label: 'Lượt', type: 'number' },
+  { key: 'target', label: 'Mục tiêu điểm', type: 'number' },
+  { key: 'cats', label: 'Giống mèo (OGWKST)' },
+  { key: 'assist', label: 'Assist (0–1)', type: 'number', step: 0.05, optional: true },
+  { key: 'shapes.single', label: 'Tỉ lệ thẻ đơn', type: 'number', optional: true },
+  { key: 'shapes.domino', label: 'Tỉ lệ thẻ đôi', type: 'number', optional: true },
+  { key: 'shapes.triple', label: 'Tỉ lệ thẻ 3', type: 'number', optional: true },
+  { key: 'feature', label: 'Feature (mô tả)' },
+  { key: 'deck', label: 'Bộ thẻ kịch bản (cách nhau bởi dấu cách: O OG O|G I:OGW)', cls: 'full' },
+];
+function fieldValue(key) {
+  const [a, b] = key.split('.');
+  if (b) return level()[a]?.[b] ?? '';
+  if (key === 'deck') return (level().deck || []).join(' ');
+  return level()[key] ?? '';
+}
+function renderForm() {
+  $('form').innerHTML = FIELDS.map(f => {
+    const value = fieldValue(f.key);
+    const input = f.type === 'select'
+      ? `<select data-k="${f.key}">${f.options.map(o => `<option ${o === value ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+      : `<input data-k="${f.key}" type="${f.type || 'text'}" ${f.step ? `step="${f.step}"` : ''} value="${String(value).replace(/"/g, '&quot;')}" ${f.optional ? 'placeholder="mặc định"' : ''}>`;
+    return `<label class="${f.cls || ''}">${f.label}${input}</label>`;
+  }).join('');
+}
+$('form').addEventListener('change', event => {
+  const key = event.target.dataset.k, raw = event.target.value.trim();
+  if (!key) return;
+  const [a, b] = key.split('.');
+  const num = event.target.type === 'number';
+  const value = num ? (raw === '' ? undefined : Number(raw)) : raw;
+  if (b) {
+    const shapes = { ...(level().shapes || { single: 6, domino: 5, triple: 1 }), [b]: value ?? 0 };
+    update({ shapes });
+  } else if (key === 'deck') update({ deck: raw ? raw.split(/\s+/) : [] });
+  else if (key === 'tier') { update({ tier: raw }); if ($('autoTune').checked) tuneToTier(); }
+  else if (key === 'cats') update({ cats: [...new Set(raw.toUpperCase())].filter(ch => LETTERS[ch]).join('') });
+  else {
+    const next = { ...level() };
+    if (value === undefined || value === '') delete next[key]; else next[key] = value;
+    LEVELS[current] = next;
+    update({});
+  }
+});
+
+// ---------- Bàn ----------
+function boardHtml(rows, interactive = false, grass = null) {
+  const { W } = boardSize(rows), grassCells = grass ? grass.join('') : '';
+  const cells = [...rows.join('')].map((ch, index) => {
+    const up = ch.toUpperCase(), cat = LETTERS[up];
+    const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : '';
+    const grassy = grassCells[index] === '~';
+    const style = `${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
+    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
+  }).join('');
+  return `<div class="board" style="grid-template-columns:repeat(${W},auto)">${cells}</div>`;
+}
+function renderBoard() {
+  const rows = level().board, { W, H } = boardSize(rows);
+  $('bw').value = W; $('bh').value = H;
+  $('boardInfo').textContent = `${W}×${H} · ${playableCells(rows)} ô chơi`;
+  $('board').innerHTML = boardHtml(rows, true, level().grass);
+  $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''} ${LETTERS[b] ? 'cat-brush' : ''}"
+    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
+}
+// Lớp cỏ: chỉ nằm dưới ô trống / mèo; không còn ô cỏ nào thì bỏ hẳn trường grass.
+function withGrass(board, grass) {
+  const { W } = boardSize(board), cells = board.join('');
+  const flat = [...(grass ? grass.join('') : '.'.repeat(cells.length))].map((ch, k) => (ch === '~' && !'XM#'.includes(cells[k]) ? '~' : '.'));
+  if (!flat.includes('~')) return undefined;
+  return board.map((_, r) => flat.slice(r * W, r * W + W).join(''));
+}
+function paint(index, cage) {
+  const rows = level().board, { W } = boardSize(rows), flat = [...rows.join('')];
+  if (brush === '~' || brush === '≈') {
+    const grass = [...(level().grass ? level().grass.join('') : '.'.repeat(flat.length))];
+    if (grass[index] === (brush === '~' ? '~' : '.')) return;
+    grass[index] = brush === '~' ? '~' : '.';
+    const next = withGrass(rows, rows.map((_, r) => grass.slice(r * W, r * W + W).join('')));
+    if (JSON.stringify(next) === JSON.stringify(level().grass)) return;
+    update({ grass: next });
+    return;
+  }
+  let ch = brush;
+  if (cage && LETTERS[flat[index].toUpperCase()]) ch = flat[index] === flat[index].toUpperCase() ? flat[index].toLowerCase() : flat[index].toUpperCase();
+  if (flat[index] === ch) return;
+  flat[index] = ch;
+  const board = [];
+  for (let r = 0; r < flat.length / W; r++) board.push(flat.slice(r * W, r * W + W).join(''));
+  update({ board, grass: withGrass(board, level().grass) });
+}
+$('palette').addEventListener('click', event => { const b = event.target.closest('[data-b]'); if (b) { brush = b.dataset.b; renderBoard(); } });
+$('board').addEventListener('mousedown', event => { const c = event.target.closest('[data-c]'); if (!c) return; painting = !event.shiftKey; paint(Number(c.dataset.c), event.shiftKey); });
+$('board').addEventListener('mouseover', event => { const c = event.target.closest('[data-c]'); if (painting && c) paint(Number(c.dataset.c), false); });
+window.addEventListener('mouseup', () => { painting = false; });
+$('btnResize').onclick = () => {
+  const W = Math.max(4, Math.min(9, Number($('bw').value))), H = Math.max(4, Math.min(9, Number($('bh').value)));
+  const old = level().board;
+  const board = Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => old[r]?.[c] ?? '.').join(''));
+  const grass = level().grass && Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => level().grass[r]?.[c] ?? '.').join(''));
+  update({ board, grass: withGrass(board, grass) });
+};
+$('btnClear').onclick = () => update({ board: level().board.map(row => row.replace(/[A-Za-z]/g, ch => (ch === 'X' || ch === 'M' ? ch : '.'))) });
+
+// ---------- Kiểm tra ----------
+function issues(l) {
+  const out = [];
+  const { W, H } = boardSize(l.board);
+  if (l.board.some(row => row.length !== W)) out.push('Các hàng của bàn không cùng độ dài');
+  try {
+    if (clearMatches(parseBoard(l.board), W, H, MATCH_SIZE).cleared.length) out.push('Bàn đầu đã có cụm gom được (≥ 3 mèo liền nhau)');
+  } catch (error) { out.push('Bàn lỗi: ' + error.message); }
+  const onBoard = new Set([...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).map(ch => ch.toUpperCase()));
+  const missing = [...onBoard].filter(ch => !l.cats.includes(ch));
+  if (missing.length) out.push(`Mèo trên bàn không có trong "Giống mèo": ${missing.join(', ')}`);
+  (l.deck || []).forEach(spec => { try { if (parseCard(spec).items.some(item => !item.group)) throw 0; } catch { out.push(`Thẻ lỗi: ${spec}`); } });
+  if (!l.moves || l.moves < 1) out.push('Số lượt phải ≥ 1');
+  const ppm = l.target / l.moves;
+  if (ppm > 30) out.push(`Mục tiêu/lượt = ${ppm.toFixed(1)}: rất chật (ngưỡng "Lượt chật" là ${ADAPTIVE.TIGHT_PPM})`);
+  if (level().tier === 'boss' && elementCount(l) < 2) out.push('Boss nên có ≥ 2 element (DDA không cho boss xuống dưới Medium)');
+  return out;
+}
+
+// ---------- DDA ----------
+function chipsHtml(l) {
+  const on = levelElements(l), count = elementCount(l), diff = difficultyOf(count);
+  return `<div class="chips">${ELEMENTS.map(k => `<span class="chip ${on[k] ? 'on' : ''}">${ELEMENT_LABEL[k]}</span>`).join('')}</div>
+    <div><span class="diff ${diff}">${diff.toUpperCase()}</span> <span class="muted">${count}/${MAX_ELEMENTS} element · ${l.moves} lượt · ${l.target} điểm · ${l.cats.length} giống</span></div>`;
+}
+
+// Lịch sử giả cho từng kiểu người chơi (khớp các nhánh của detectProfile).
+function attempt(levelIndex, extra = {}) {
+  return { level: levelIndex, win: true, reason: 'win', ratio: 1.1, stars: 2, count: 2, boosters: 0, thinkMs: 3000, idleMs: 0, durationMs: 60000, dwellMs: 2000, shift: 0, ...extra };
+}
+function history(i, tail, { pad = 6, ...rest } = {}) {
+  const prev = Math.max(0, i - 1);
+  // Phần đệm: thắng có dùng booster để không bị coi là chuỗi thắng sạch.
+  const padding = Array.from({ length: pad }, () => attempt(prev, { boosters: 1 }));
+  return { attempts: [...padding, ...tail], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: Date.now(), ...rest };
+}
+const PROFILES = [
+  { label: 'Người mới', make: () => ({ attempts: [], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 }) },
+  { label: 'Ổn định', make: i => history(i, [attempt(i - 1, { boosters: 1 })]) },
+  { label: 'Cao thủ (3 thắng sạch)', make: i => history(i, [0, 1, 2].map(() => attempt(i - 1, { count: 3 }))) },
+  { label: 'Cao thủ (6 thắng sạch)', make: i => history(i, [0, 1, 2, 3, 4, 5].map(() => attempt(i - 1, { count: 3 }))) },
+  { label: 'Sát nút (thua 2 lần ~90%)', make: i => history(i, [0, 1].map(() => attempt(i, { win: false, reason: 'moves', ratio: 0.9 }))) },
+  { label: 'Vật lộn (thua 2 lần)', make: i => history(i, [0, 1].map(() => attempt(i, { win: false, reason: 'moves', ratio: 0.5 }))) },
+  { label: 'Kẹt bàn (hết chỗ 2 lần)', make: i => history(i, [0, 1].map(() => attempt(i, { win: false, reason: 'stuck', ratio: 0.5 }))) },
+  { label: 'Sắp bỏ (thua 4 lần)', make: i => history(i, [0, 1, 2, 3].map(() => attempt(i, { win: false, reason: 'moves', ratio: 0.4 }))) },
+  { label: 'Quay lại sau nghỉ', make: i => history(i, [attempt(i - 1, { boosters: 1 })], { warmup: true }) },
+];
+function renderDDA() {
+  const l = level();
+  $('elements').innerHTML = chipsHtml(l) + (isAdaptive(l) ? '' : '<div class="muted">Màn tutorial: DDA không áp dụng.</div>')
+    + `<div class="muted">Hold: ${holdUnlocked(current) ? 'có' : 'chưa mở'}</div>`;
+
+  const rows = PROFILES.map(p => {
+    let plan;
+    try { plan = planLevel(p.make(current), current); } catch (error) { return `<tr><td>${p.label}</td><td colspan="5" class="warn">${error.message}</td></tr>`; }
+    const shift = plan.shift > 0 ? `+${plan.shift}` : plan.shift;
+    const extra = [plan.retry ? 'giữ bố trí lần trước' : plan.layout !== l.board ? 'bố trí đo sẵn cho mức này' : '', plan.deal || '', plan.suggestBooster ? 'mời booster' : ''].filter(Boolean).join(' · ');
+    return `<tr><td>${p.label}</td><td>${plan.profile}</td><td>${shift}</td><td><span class="diff ${plan.difficulty}">${plan.difficulty}</span> ${plan.count}</td>
+      <td>${plan.level.moves}</td><td class="muted" style="text-align:left">${extra}</td></tr>`;
+  }).join('');
+  $('profiles').innerHTML = `<tr><th>Hồ sơ</th><th>DDA nhận diện</th><th>Shift</th><th>Độ khó</th><th>Lượt</th><th style="text-align:left">Ghi chú</th></tr>${rows}`;
+
+  $('variants').innerHTML = variants().map(v => `<div class="variant ${v.base ? 'base' : ''}">
+    <div><b>${v.label}</b></div>
+    <div class="mini">${boardHtml(v.level.board, false, v.level.grass)}</div>
+    <div class="muted">${v.shift && !v.moved ? 'chưa có bố trí đo sẵn (npm run cat-layouts) · ' : v.moved ? `${v.moved} ô đổi · ` : ''}${v.ease} cặp cạnh nhau · assist ${v.level.assist ?? 0.3} · thẻ ${['single', 'domino', 'triple'].map(k => (v.level.shapes || { single: 6, domino: 5, triple: 1 })[k]).join('/')}</div></div>`).join('');
+}
+// Mỗi mức DDA (shift âm = dễ hơn): bố trí mèo lần đầu vào màn + hàng thẻ. Bàn, vật cản, lượt luôn đúng thiết kế.
+const shiftLabel = shift => (shift ? `${shift > 0 ? '+' : ''}${shift} ${shift < 0 ? 'dễ hơn' : 'khó hơn'}` : '0 thiết kế');
+function variants() {
+  const base = level(), out = [];
+  const adaptive = isAdaptive(base);
+  for (let shift = SHIFT_MIN; shift <= SHIFT_MAX; shift++) {
+    if (!adaptive && shift) continue;
+    const l = shift ? variantFor(base, shift) : base;
+    out.push({ level: l, shift, label: shiftLabel(shift), base: shift === 0, ease: layoutEase(l.board), moved: l.board === base.board ? 0 : [...l.board.join('')].filter((ch, k) => ch !== base.board.join('')[k]).length });
+  }
+  return out;
+}
+
+// ---------- Bot ----------
+const worker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+$('btnRun').onclick = () => {
+  const runs = Math.max(20, Number($('runs').value) || 200), id = ++botRun, list = variants();
+  const jobs = list.flatMap((v, vi) => NOISES.map((n, ni) => ({
+    key: `${vi}:${ni}`, level: v.level, runs, noise: n.noise, hold: holdUnlocked(current), seed: (current + 1) * 100000,
+  })));
+  lastBot = { id, list, results: {}, total: jobs.length, level: current };
+  $('btnRun').disabled = true;
+  $('botStatus').textContent = `0/${jobs.length}`;
+  worker.postMessage({ id, jobs });
+  renderBot();
+};
+worker.onmessage = ({ data }) => {
+  if (!lastBot || data.id !== lastBot.id) return;
+  if (data.done) { $('btnRun').disabled = false; $('botStatus').textContent = 'Xong'; renderCurve(); return; }
+  lastBot.results[data.key] = data;
+  $('botStatus').textContent = `${Object.keys(lastBot.results).length}/${lastBot.total}`;
+  renderBot();
+};
+worker.onerror = event => { $('btnRun').disabled = false; $('botStatus').textContent = 'Lỗi worker: ' + event.message; };
+const pct = x => `${Math.round(x * 100)}%`;
+
+// ---------- Đổi tier = đổi độ khó thật ----------
+// Tỉ lệ thắng bot giỏi cần đạt theo tier (đường cong ghi ở đầu levels.mjs): normal 95% -> 70% trong chương (theo vị trí x1..x9),
+// hard 45% -> 33%, chill ≥ 95%, boss 30% -> 22% (chương sau khó hơn chương trước: chương 2 -> 5).
+function tierGoal(tier, index) {
+  const t = Math.min(1, Math.max(0, (Math.floor(index / 10) - 1) / 3)), pos = index % 10;
+  if (tier === 'chill') return 0.96;
+  if (tier === 'hard') return 0.45 - 0.12 * t;
+  if (tier === 'boss') return 0.30 - 0.08 * t;
+  return 0.95 - 0.25 * Math.min(1, pos / 9);
+}
+let tuneId = 0;
+function tuneToTier() {
+  const index = current, l = level(), tier = l.tier || 'normal', goal = tierGoal(tier, index);
+  const id = ++tuneId, before = l.target;
+  $('btnTune').disabled = true;
+  $('tuneStatus').textContent = `Đang cân mục tiêu điểm cho tier ${tier} (bot giỏi thắng ~${pct(goal)})…`;
+  const tuner = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+  tuner.onmessage = ({ data }) => {
+    if (id !== tuneId) { tuner.terminate(); return; }
+    if (data.progress) { $('tuneStatus').textContent = `Đang cân cho tier ${tier}: thử ${data.progress.target} điểm -> ${pct(data.progress.winRate)}`; return; }
+    tuner.terminate();
+    $('btnTune').disabled = false;
+    const { target, winRate } = data.tuned;
+    if (current === index) update({ target }); else { LEVELS[index] = { ...LEVELS[index], target }; edits[index] = LEVELS[index]; persist(); scheduleSave(index); renderList(); }
+    const warn = tier === 'boss' && elementCount(LEVELS[index]) < 2 ? ' · ⚠ boss nên có ≥ 2 element (thêm vật cản / màu)' : '';
+    $('tuneStatus').innerHTML = `Tier <b>${tier}</b>: mục tiêu ${before} -> <b>${target}</b> điểm, bot giỏi thắng ${pct(winRate)} (chuẩn ${pct(goal)})${warn}`;
+  };
+  tuner.onerror = event => { $('btnTune').disabled = false; $('tuneStatus').textContent = 'Lỗi khi cân: ' + event.message; };
+  tuner.postMessage({ id, tune: { level: l, goal, runs: 150, hold: holdUnlocked(index), seed: (index + 1) * 100000 } });
+}
+$('btnTune').onclick = tuneToTier;
+function renderBot() {
+  if (!lastBot || lastBot.level !== current) { $('botTable').innerHTML = ''; $('botNote').textContent = 'Chưa chạy cho bản hiện tại.'; return; }
+  const head = `<tr><th>Biến thể</th>${NOISES.map(n => `<th>${n.label}</th>`).join('')}<th>Kẹt (giỏi)</th><th>Lượt dư</th></tr>`;
+  const body = lastBot.list.map((v, vi) => {
+    const cells = NOISES.map((_, ni) => {
+      const r = lastBot.results[`${vi}:${ni}`];
+      return r ? `<td>${pct(r.winRate)}<div class="bar"><i style="width:${r.winRate * 100}%"></i></div></td>` : '<td class="muted">…</td>';
+    }).join('');
+    const best = lastBot.results[`${vi}:0`];
+    return `<tr><td>${v.label}${v.base ? ' ★' : ''}</td>${cells}
+      <td>${best ? pct(best.stuckRate) : ''}</td><td>${best ? best.avgMovesLeft.toFixed(1) : ''}</td></tr>`;
+  }).join('');
+  $('botTable').innerHTML = head + body;
+
+  // Nhận xét: bản ít element phải thắng nhiều hơn; bản gốc so với baseline.
+  const notes = [];
+  const wins = lastBot.list.map((_, vi) => lastBot.results[`${vi}:0`]?.winRate);
+  if (wins.every(w => w !== undefined)) {
+    wins.forEach((w, k) => { if (k && w > wins[k - 1] + 0.05) notes.push(`<span class="warn">Đảo thứ tự: mức ${lastBot.list[k].label} thắng nhiều hơn mức ${lastBot.list[k - 1].label}</span>`); });
+    const baseIndex = lastBot.list.findIndex(v => v.base), was = baselineWin(current + 1);
+    if (was !== undefined && baseIndex >= 0) {
+      const delta = wins[baseIndex] - was;
+      const row = baseline.levels.find(r => r.level === current + 1), o = ORIGINAL[current];
+      const stale = row.name !== o.name || row.moves !== o.moves || row.target !== o.target;
+      notes.push(`Bản gốc: ${pct(wins[baseIndex])} so với baseline ${pct(was)} <span class="${Math.abs(delta) > 0.1 ? 'warn' : 'ok'}">(${delta >= 0 ? '+' : ''}${Math.round(delta * 100)} điểm)</span>`
+        + (stale ? ` <span class="muted">· baseline.json đo bản cũ (${row.moves} lượt / ${row.target} điểm); chạy npm run baseline để cập nhật</span>` : ''));
+    }
+  }
+  $('botNote').innerHTML = notes.join('<br>') || 'Bot tham lam nhìn 1 nước: tỉ lệ thắng là cận dưới của người thật.';
+}
+
+// ---------- Curve độ khó (EV) ----------
+// Profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi `pace` (bot.mjs PACES / turnShape). "Cơ bản" là curve chính,
+// các profile khác vẽ chồng lên như biến thiên quanh curve cơ bản.
+const EV_PROFILES = [
+  { id: 'base', label: 'Cơ bản', noise: 30, hold: true, pace: PACES.mid, color: '#e07a2e', width: 3 },
+  { id: 'pro', label: 'Cao thủ', noise: 1, hold: true, pace: PACES.good, color: '#3a7bd5', width: 1.5 },
+  { id: 'thinker', label: 'Suy nghĩ kỹ', noise: 10, hold: true, pace: { ...PACES.mid, look: 1.2, think: 1.4 }, color: '#8e5bd1', width: 1.5 },
+  { id: 'weak', label: 'Người yếu', noise: 90, hold: true, pace: PACES.weak, color: '#c8443a', width: 1.5 },
+  { id: 'new', label: 'Người mới (không Hold)', noise: 60, hold: false, pace: { ...PACES.weak, look: .9, think: .7 }, color: '#3a9a5b', width: 1.5 },
+];
+// Trọng số các thành phần EV (tổng = 1) và mốc chuẩn hoá (giá trị ứng với 100%).
+const EV_WEIGHTS = { time: 0.35, pressure: 0.2, goal: 0.2, label: 0.15, cats: 0.1 };
+const EV_SCALE = { timeMin: 8, goalMatches: 20 };
+const CURVE_STORE = 'gomgom-editor-curve';
+let curveCache = {};
+try { curveCache = JSON.parse(localStorage.getItem(CURVE_STORE)) ?? {}; } catch { curveCache = {}; }
+const shown = new Set(EV_PROFILES.map(p => p.id));
+const hashText = text => [...text].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7).toString(36);
+const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${JSON.stringify(p.pace)}:${runs}`;
+const grassOf = l => (l.grass ? [...l.grass.join('')].filter(ch => ch === '~').length : 0);
+const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
+const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).length;
+
+// EV của một màn với một profile (stats = kết quả bot). Trả về { ev, parts (0..1 mỗi thành phần), raw }.
+function difficultyEV(l, stats, p) {
+  const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
+  const timeMin = attempts * stats.secAvg / 60;
+  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l);
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const parts = {
+    time: clamp01(timeMin / EV_SCALE.timeMin),
+    pressure: clamp01(stats.movesUsedWin / l.moves),
+    goal: clamp01(goalMatches / EV_SCALE.goalMatches),
+    label: clamp01(elementCount(l) / MAX_ELEMENTS),
+    cats: clamp01(catsOf(l) / playableCells(l.board) / 0.4),
+  };
+  const ev = Math.round(100 * Object.entries(EV_WEIGHTS).reduce((sum, [k, w]) => sum + w * parts[k], 0));
+  return { ev, parts, raw: { attempts, timeMin, goalMatches, winRate: stats.winRate, movesUsed: stats.movesUsed } };
+}
+const evAt = (i, p, runs = Number($('curveRuns').value)) => {
+  const stats = curveCache[curveKey(i, p, runs)];
+  return stats ? difficultyEV(LEVELS[i], stats, p) : null;
+};
+
+let curveRun = 0;
+const curveWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+$('btnCurve').onclick = () => {
+  const runs = Number($('curveRuns').value), id = ++curveRun;
+  // Profile cơ bản trước (curve chính hiện ra sớm), rồi tới các profile khác; bỏ qua cặp (màn, profile) đã có trong bộ đệm.
+  const jobs = EV_PROFILES.flatMap(p => LEVELS.map((level, index) => ({ key: curveKey(index, p, runs), level, index, noise: p.noise, hold: p.hold && holdUnlocked(index), pace: p.pace, runs })))
+    .filter(job => !curveCache[job.key]);
+  if (!jobs.length) { $('curveStatus').textContent = 'Đã có đủ trong bộ đệm'; renderCurve(); return; }
+  let done = 0;
+  $('btnCurve').disabled = true;
+  $('curveStatus').textContent = `0/${jobs.length}`;
+  curveWorker.onmessage = ({ data }) => {
+    if (data.id !== id) return;
+    if (data.done) {
+      $('btnCurve').disabled = false;
+      $('curveStatus').textContent = 'Xong';
+      try { localStorage.setItem(CURVE_STORE, JSON.stringify(curveCache)); } catch { /* đầy bộ nhớ: chỉ giữ trong phiên */ }
+      renderCurve();
+      return;
+    }
+    curveCache[data.key] = data.stats;
+    if (++done % 10 === 0 || done === jobs.length) { $('curveStatus').textContent = `${done}/${jobs.length}`; renderCurve(); }
+  };
+  curveWorker.postMessage({ id, curve: jobs });
+};
+$('curveRuns').onchange = () => renderCurve();
+
+function renderCurve() {
+  const n = LEVELS.length, w = 1200, h = 260, padL = 34, padB = 22, padT = 10, col = (w - padL - 8) / n;
+  const x = i => padL + (i + 0.5) * col, y = ev => padT + (1 - ev / 100) * (h - padT - padB);
+  const tierColor = t => ({ boss: '#c8443a', hard: '#e09a6a', chill: '#7cc093' }[t] || '#bdb3a6');
+  const grid = [0, 25, 50, 75, 100].map(v => `<line x1="${padL}" x2="${w - 8}" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end">${v}</text>`).join('');
+  // Dải màu tier dưới trục, vạch chương, số màn; màn đang chọn tô cam nhạt.
+  const bands = LEVELS.map((l, i) => {
+    const left = x(i) - col / 2;
+    return `<rect x="${left}" y="${h - padB}" width="${col}" height="5" fill="${tierColor(l.tier || 'normal')}"/>`
+      + (i === current ? `<rect x="${left}" y="${padT}" width="${col}" height="${h - padT - padB}" fill="#fde6d3"/>` : '')
+      + (i % 10 === 0 && i ? `<line x1="${left}" x2="${left}" y1="${padT}" y2="${h - padB}" stroke="#ddd" stroke-dasharray="3 3"/>` : '')
+      + ((i + 1) % 10 === 0 || i === 0 ? `<text x="${x(i)}" y="${h - 4}" text-anchor="middle">${i + 1}</text>` : '');
+  }).join('');
+  // Các profile phụ vẽ trước (nét đứt), curve cơ bản vẽ sau cùng (nét đậm, có chấm theo màu tier).
+  const lines = [...EV_PROFILES].reverse().filter(p => shown.has(p.id)).map(p => {
+    const segs = [];
+    let seg = [];
+    LEVELS.forEach((_, i) => {
+      const e = evAt(i, p);
+      if (e) seg.push(`${x(i).toFixed(1)},${y(e.ev).toFixed(1)}`);
+      else if (seg.length) { segs.push(seg); seg = []; }
+    });
+    if (seg.length) segs.push(seg);
+    const path = segs.map(points => `<polyline points="${points.join(' ')}" fill="none" stroke="${p.color}" stroke-width="${p.width}" ${p.id === 'base' ? '' : 'stroke-dasharray="5 3" opacity=".75"'}/>`).join('');
+    const dots = p.id !== 'base' ? '' : LEVELS.map((l, i) => {
+      const e = evAt(i, p);
+      return e ? `<circle cx="${x(i)}" cy="${y(e.ev)}" r="${i === current ? 5 : e.raw.winRate ? 2.6 : 4.5}" fill="${tierColor(l.tier || 'normal')}" stroke="${e.raw.winRate ? '#fff' : '#c8443a'}" stroke-width="1" data-i="${i}"><title>${i + 1} (${l.tier || 'normal'}): EV ${e.ev} · thắng ${pct(e.raw.winRate)} · ~${e.raw.timeMin.toFixed(1)} phút</title></circle>` : '';
+    }).join('');
+    return path + dots;
+  }).join('');
+  // Vùng bấm theo cột để chọn màn.
+  const hits = LEVELS.map((_, i) => `<rect x="${x(i) - col / 2}" y="${padT}" width="${col}" height="${h - padT - padB}" fill="transparent" data-i="${i}"/>`).join('');
+  $('evChart').innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%">${bands}${grid}${hits}${lines}</svg>`;
+  $('curveLegend').innerHTML = EV_PROFILES.map(p => `<label class="row" style="display:flex;gap:4px;color:var(--ink)"><input type="checkbox" data-p="${p.id}" ${shown.has(p.id) ? 'checked' : ''}><span style="display:inline-block;width:18px;height:${p.width + 1}px;background:${p.color}"></span>${p.label}</label>`).join('');
+  renderBreakdown();
+}
+// Bảng chi tiết của màn đang chọn: EV từng profile, chênh lệch so với curve cơ bản, và từng thành phần (%).
+function renderBreakdown() {
+  const base = evAt(current, EV_PROFILES[0]);
+  const rows = EV_PROFILES.map(p => {
+    const e = evAt(current, p);
+    if (!e) return `<tr><td>${p.label}</td><td colspan="8" class="muted">chưa tính</td></tr>`;
+    const delta = base && p.id !== 'base' ? e.ev - base.ev : null;
+    const cell = k => `<td>${Math.round(e.parts[k] * 100)}</td>`;
+    return `<tr><td><span style="color:${p.color}">■</span> ${p.label}</td><td><b>${e.ev}</b>${delta === null ? '' : ` <span class="${delta > 0 ? 'warn' : 'ok'}">(${delta > 0 ? '+' : ''}${delta})</span>`}</td>
+      <td>${pct(e.raw.winRate)}</td><td>${e.raw.timeMin.toFixed(1)}′</td>${cell('time')}${cell('pressure')}${cell('goal')}${cell('label')}${cell('cats')}</tr>`;
+  }).join('');
+  // Bot không thắng ván nào: EV không đáng tin (số lần thử bị chặn ở 10) và màn có thể đang hỏng.
+  const broken = base && !base.raw.winRate ? `<tr><td colspan="9" class="warn">⚠ Profile cơ bản không thắng ván nào ở màn này — EV không đáng tin (số lần thử bị chặn ở 10). Kiểm tra lại màn (bàn, lượt, mục tiêu).</td></tr>` : '';
+  $('evBreakdown').innerHTML = broken + `<tr><th>Màn ${current + 1}</th><th>EV</th><th>Thắng</th><th>Thời gian</th><th>Thời gian %</th><th>Áp lực lượt %</th><th>Mục tiêu %</th><th>Nhãn %</th><th>Mèo %</th></tr>${rows}`;
+}
+$('evChart').addEventListener('click', event => { const i = event.target.dataset?.i; if (i !== undefined) { current = Number(i); lastBot = null; renderAll(); } });
+$('curveLegend').addEventListener('change', event => { const id = event.target.dataset.p; if (!id) return; if (event.target.checked) shown.add(id); else shown.delete(id); renderCurve(); });
+
+// ---------- Xuất ----------
+const q = s => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+function toCode(l) {
+  const head = [`name: ${q(l.name)}`, l.feature !== undefined && `feature: ${q(l.feature)}`, `tier: ${q(l.tier || 'normal')}`, l.introduces && `introduces: ${q(l.introduces)}`].filter(Boolean);
+  const play = [`moves: ${l.moves}`, `target: ${l.target}`, `cats: ${q(l.cats)}`, l.assist !== undefined && `assist: ${l.assist}`,
+    l.shapes && `shapes: { single: ${l.shapes.single}, domino: ${l.shapes.domino}, triple: ${l.shapes.triple} }`, l.expand && `expand: ${q(l.expand)}`].filter(Boolean);
+  const lines = [`  {`, `    ${head.join(', ')},`, `    ${play.join(', ')},`, `    board: [${l.board.map(q).join(', ')}],`, ...(l.grass ? [`    grass: [${l.grass.map(q).join(', ')}],`] : []), `    deck: [${(l.deck || []).map(q).join(', ')}],`];
+  const known = new Set(['name', 'feature', 'tier', 'introduces', 'moves', 'target', 'cats', 'assist', 'shapes', 'expand', 'board', 'grass', 'deck']);
+  for (const [k, v] of Object.entries(l)) if (!known.has(k) && v !== undefined) lines.push(`    ${k}: ${JSON.stringify(v)},`);
+  return [...lines, `  },`].join('\n');
+}
+$('btnCopy').onclick = async () => { await navigator.clipboard.writeText($('code').textContent); $('copied').textContent = 'Đã copy'; setTimeout(() => { $('copied').textContent = ''; }, 1500); };
+$('btnSave').onclick = () => { const dirty = Object.keys(edits).map(Number); if (!dirty.length) $('saveStatus').textContent = 'Không có màn nào chưa lưu'; dirty.forEach(saveToGame); };
+$('autoSave').onchange = () => { if ($('autoSave').checked) Object.keys(edits).map(Number).forEach(scheduleSave); };
+$('btnRevert').onclick = () => { LEVELS[current] = clone(ORIGINAL[current]); save(); lastBot = null; renderAll(); };
+$('btnExportAll').onclick = () => {
+  const blob = new Blob([JSON.stringify(Object.fromEntries(Object.entries(edits).map(([i, l]) => [Number(i) + 1, l])), null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'edited-levels.json' });
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+function renderAll() {
+  renderList(); renderForm(); renderBoard(); renderDDA(); renderBot(); renderCurve();
+  const list = issues(level());
+  $('issues').innerHTML = list.map(t => `<li class="warn">⚠ ${t}</li>`).join('') || '<li class="ok">✓ Màn hợp lệ</li>';
+  $('code').textContent = toCode(level());
+  renderStatus();
+}
+function renderStatus() {
+  $('status').textContent = `Màn ${current + 1}/${LEVELS.length} · ${Object.keys(edits).length} màn đã sửa chưa lưu vào game`;
+}
+renderAll();
+
+// ---------- Thời gian chơi theo profile (bảng cuối tab Thiết kế màn) ----------
+// 3 profile người chơi: bot (độ lóng ngóng `noise`, có dùng Hold không) + nhịp chơi `pace` (giây, xem bot.mjs turnSeconds): mỗi lượt =
+// nhìn bàn (look) + nghĩ think × log2(1 + số lựa chọn thật trên bàn) + kéo thả (drag) + xoay (rotate × số lần) + đổi Hold (hold) + chờ anim gom (gom)
+// / đặt (settle). Không còn giây / lượt cố định: nước rõ ràng (có tay hướng dẫn, chỉ 1–2 chỗ gom) nhanh, bàn rộng chưa thấy nước gom thì lâu.
+// Nhịp chuẩn: bot.mjs PACES.
+const PT_PROFILES = [
+  { id: 'weak', label: 'Yếu', noise: 90, hold: true, pace: PACES.weak, note: 'hay bỏ lỡ nước gom, biết dùng Hold (đã học ở màn 11), nhìn chậm, nghĩ lâu khi nhiều lựa chọn' },
+  { id: 'mid', label: 'Trung bình', noise: 30, hold: true, pace: PACES.mid, note: 'thỉnh thoảng bỏ lỡ nước gom, biết dùng Hold' },
+  { id: 'good', label: 'Giỏi', noise: 1, hold: true, lookahead: true, pace: PACES.good, note: 'nhìn trước thẻ Next, chờ ghép cụm to, dùng Hold, thao tác nhanh' },
+];
+// Số lần thua trước khi thắng (kỳ vọng) và thời gian (giây) từ kết quả bot; tỉ lệ thắng tối thiểu 3% để không chia cho 0.
+const playtimeOf = stats => {
+  const p = Math.max(.03, stats.winRate), fails = (1 - p) / p;
+  return { fails, sec: fails * stats.secLoss + stats.secWin };
+};
+// m:ss, từ 1 giờ trở lên thì h:mm:ss
+const mmss = sec => { const t = Math.round(sec), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), ss = String(t % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`; };
+let ptCache = {};
+const ptKey = (i, p, boost, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${!!p.lookahead}:${JSON.stringify(p.pace)}:${boost}:${runs}`;
+function renderPlaytime() {
+  const runs = Number($('ptRuns').value), sum = {};
+  const head = `<tr><th rowspan="2">Màn</th>${PT_PROFILES.map(p => `<th colspan="5" style="text-align:center;border-left:2px solid var(--line)" title="${p.note}">${p.label}<br><span class="muted">${p.note}</span></th>`).join('')}</tr>
+    <tr>${PT_PROFILES.map(() => '<th style="border-left:2px solid var(--line)">Thắng</th><th>Thua TB</th><th>Thời gian</th><th>Có booster<br><span class="muted">thời gian (Δ) · thua</span></th><th>Luỹ kế<br><span class="muted">từ màn 1 · có booster</span></th>').join('')}</tr>`;
+  const rows = LEVELS.map((level, i) => `<tr${i === current ? ' id="ptCurrent" class="pt-current"' : ''}><td>${i + 1} <span class="tier ${level.tier || 'normal'}">${level.tier || 'normal'}</span></td>${PT_PROFILES.map(p => {
+    const a = ptCache[ptKey(i, p, false, runs)], b = ptCache[ptKey(i, p, true, runs)];
+    if (!a) return '<td style="border-left:2px solid var(--line)">…</td><td></td><td></td><td></td><td></td>';
+    const t = playtimeOf(a), tb = b && playtimeOf(b), s = (sum[p.id] ??= { t: 0, tb: 0 });
+    s.t += t.sec; if (tb) s.tb += tb.sec;
+    const delta = tb ? Math.round((tb.sec - t.sec) / t.sec * 100) : null;
+    return `<td style="border-left:2px solid var(--line)">${Math.round(a.winRate * 100)}%</td><td>${t.fails.toFixed(1)}</td><td><b>${mmss(t.sec)}</b></td>
+      <td>${tb ? `${mmss(tb.sec)} <span class="${delta < 0 ? 'ok' : 'warn'}">(${delta > 0 ? '+' : ''}${delta}%)</span> · ${tb.fails.toFixed(1)}` : '…'}</td>
+      <td>${mmss(s.t)}${tb ? ` · <span class="muted">${mmss(s.tb)}</span>` : ''}</td>`;
+  }).join('')}</tr>`).join('');
+  const total = `<tr><th>Tổng</th>${PT_PROFILES.map(p => { const s = sum[p.id]; return s ? `<th style="border-left:2px solid var(--line)"></th><th></th><th>${mmss(s.t)}</th><th>${s.tb ? `${mmss(s.tb)} (${Math.round((s.tb - s.t) / s.t * 100)}%)` : ''}</th><th></th>` : '<th style="border-left:2px solid var(--line)"></th><th></th><th></th><th></th><th></th>'; }).join('')}</tr>`;
+  $('playtimeTable').innerHTML = head + rows + total;
+}
+// Chạy bot cho các màn `indices` (3 profile × có / không booster), bỏ qua phần đã có trong bộ đệm.
+// Mỗi luồng một worker riêng: chạy cả bảng (nút Chạy bảng) và chạy màn vừa chọn không cắt ngang nhau.
+function ptSimulate(worker, indices, { onProgress, onDone }) {
+  const runs = Number($('ptRuns').value), id = worker.runId = (worker.runId || 0) + 1; // id theo từng worker: lượt mới của worker này bỏ lượt cũ
+  const jobs = PT_PROFILES.flatMap(p => [false, true].flatMap(boost => indices.map(index => ({ key: ptKey(index, p, boost, runs), level: LEVELS[index], index, noise: p.noise, hold: p.hold && holdUnlocked(index), lookahead: !!p.lookahead, pace: p.pace, runs, boost }))))
+    .filter(job => !ptCache[job.key]);
+  if (!jobs.length) return onDone();
+  let done = 0;
+  worker.onmessage = ({ data }) => {
+    if (data.id !== id) return;
+    if (data.done) return onDone();
+    ptCache[data.key] = data.stats;
+    onProgress?.(++done, jobs.length);
+  };
+  worker.postMessage({ id, playtime: jobs });
+}
+const ptWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+const ptOneWorker = new Worker(new URL('./worker.mjs', import.meta.url), { type: 'module' });
+$('btnPlaytime').onclick = () => {
+  $('btnPlaytime').disabled = true;
+  ptSimulate(ptWorker, LEVELS.map((_, i) => i), {
+    onProgress: (done, total) => { if (done % 10 === 0) { $('ptStatus').textContent = `${done}/${total}`; renderPlaytime(); } },
+    onDone: () => { $('btnPlaytime').disabled = false; $('ptStatus').textContent = 'Xong'; renderPlaytime(); },
+  });
+};
+// Chọn màn (danh sách bên trái / biểu đồ): giả lập ngay màn đó cho cả 3 profile rồi cuộn bảng tới hàng của màn.
+function ptSelectLevel() {
+  const index = current;
+  $('ptStatus').textContent = `Đang giả lập màn ${index + 1}…`;
+  renderPlaytime(); scrollToCurrent();
+  ptSimulate(ptOneWorker, [index], { onDone: () => { if (index === current) $('ptStatus').textContent = `Màn ${index + 1}: xong`; renderPlaytime(); scrollToCurrent(); } });
+}
+function scrollToCurrent() {
+  const row = $('ptCurrent'), box = $('playtimeTable').parentElement;
+  if (row) box.scrollTop = row.offsetTop - box.clientHeight / 2;
+}
+$('levelList').addEventListener('click', event => { if (event.target.closest('button[data-i]')) ptSelectLevel(); });
+$('evChart').addEventListener('click', event => { if (event.target.dataset?.i !== undefined) ptSelectLevel(); });
+$('btnPlaytimeOne').onclick = ptSelectLevel;
+$('ptRuns').addEventListener('change', renderPlaytime);
+renderPlaytime();
+
+// Game thật chạy ngay trong editor (iframe, cùng máy chủ: /game/index.html?level=N, chỉ dev). Đọc thẳng file màn đã lưu.
+const rpGameOpen = () => { $('rpFrame').src = `../../game/index.html?dev&embed&level=${current + 1}${$('rpWho').value ? `&bot=${$('rpWho').value}` : ''}`; $('rpGame').hidden = false; };
+$('rpPlayGame').onclick = rpGameOpen;
+$('rpWho').onchange = () => { if (!$('rpGame').hidden) rpGameOpen(); };
+$('rpGameClose').onclick = () => { $('rpGame').hidden = true; $('rpFrame').src = 'about:blank'; };
+for (const id of ['levelList', 'evChart']) $(id).addEventListener('click', event => { if (!$('rpGame').hidden && (event.target.closest('button[data-i]') || event.target.dataset?.i !== undefined)) rpGameOpen(); });

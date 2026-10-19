@@ -1,6 +1,6 @@
 # Economy Gom Gom — tổng quan và đánh giá cân bằng
 
-Viết ngày 2026-10-12, theo số trong `game/gameplay/economy.mjs` tại thời điểm đó. Số chi tiết theo từng lô 10 màn:
+Viết ngày 2026-10-12, theo số trong `game/data/economy.mjs` tại thời điểm đó. Số chi tiết theo từng lô 10 màn:
 `docs/economy-report.md` (`npm run economy`). Chỉnh số + mô phỏng trực quan: Level Editor → tab **💰 Kinh tế**.
 
 ---
@@ -76,7 +76,7 @@ Hiển thị: khu kế tiếp là mảnh đất mờ có dấu "!" trên cảnh 
 | Đủ mua món chính | 96% | 93% | 91% | 95% | 99% | 94% | **116%** | **141%** | **167%** | **197%** |
 | Đủ mua mọi đồ | 28% | 35% | 27% | 25% | 24% | 23% | 29% | 35% | 41% | 49% |
 
-**Mô phỏng người chơi ảo** (40 người / kiểu, tỉ lệ thắng theo bot trong `tools/baseline.json`, trung vị):
+**Mô phỏng người chơi ảo** (40 người / kiểu, tỉ lệ thắng theo bot trong `tools/levels/baseline.json`, trung vị):
 
 | Kiểu | Ngày hết 100 màn | Mở phòng tắm | % phải chờ tiêu xu | Xu dư cuối game | Xu từ idle |
 |---|---|---|---|---|---|

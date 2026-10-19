@@ -64,13 +64,13 @@
   <!-- ===== Màn chơi (bố cục L2: HUD gọn, bàn lớn, dock ngón cái) ===== -->
   <main class="shell">
     <!-- HUD theo Figma (frame Gameplay 23:442): thanh điểm trái, đầu mèo Moves giữa, nút cài đặt phải (menu: Home / chơi lại /
-         âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (ui/play/img/), số do game viết. -->
+         âm thanh / hướng dẫn). Ảnh nền pill cắt từ Figma (assets/img/play/), số do game viết. -->
     <section class="hud fg-hud" aria-label="Game info">
       <!-- Bảng HUD theo Figma (image 107, đã bỏ ô Goal + 3 sao): badge Level, ô Move rộng, thanh điểm (điểm / mục tiêu) -->
       <div class="fg-panel">
         <span id="level-title" class="fg-level">Level 1</span>
-        <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play-controller.js render) -->
-        <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong></div>
+        <!-- Màn có mèo trong lồng: ô giữa tách đôi, Goal (icon lồng + số lồng còn lại) bên trái, Move bên phải (play/hud.js render) -->
+        <div id="goal-box" class="fg-goal" aria-label="Caged cats left" hidden><span class="fg-moves-label">Goal</span><span id="goal-icon" class="fg-goal-icon"></span><strong id="goal-count">0</strong><span id="goal-icon2" class="fg-goal-icon" hidden></span><strong id="goal-count2" hidden>0</strong><span id="goal-icon3" class="fg-goal-icon" hidden></span><strong id="goal-count3" hidden>0</strong></div>
         <div class="moves-box fg-moves" aria-label="Moves left"><span class="fg-moves-label">Move</span><strong id="moves">20</strong></div>
         <div class="progress fg-score" role="img" aria-label="Score progress">
           <div class="progress-track"><div id="score-fill" class="progress-fill"></div></div>
@@ -86,8 +86,8 @@
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
     <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để mua bằng xu -->
     <section id="booster-bar" class="booster-bar" aria-label="Boosters" hidden>
-      <button class="boost" data-boost="hammer" aria-label="Hammer: smash one cat or crate" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
-      <button class="boost" data-boost="swap" aria-label="New card: swap the current card for a new one" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="hammer" aria-label="Hammer: smash everything in a 3×3 area" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
+      <button class="boost" data-boost="swap" aria-label="New card: get the best card for the next 3 turns" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
       <button class="boost" data-boost="moves" aria-label="Extra moves" title="Extra moves"><strong class="boost-plus">+3</strong><b class="boost-count"></b></button>
     </section>
     <section class="dock draw-area" aria-label="Cards">
@@ -112,7 +112,7 @@
 <!-- Cài đặt (Figma: frame Home 73:590): popup giữa màn hình, nền tối mờ; nút bánh răng ở Home mở (aria-controls).
        Day / Night + Sound (tiếng hiệu ứng) dùng logic cũ; Music bật / tắt nhạc nền (riêng với Sound); Haptic / Notifications là lựa chọn
        được nhớ (Haptic rung nhẹ khi bật); Language / Support "sắp có". Nút dev không nằm ở đây: cột nút vuông #dev-panel ở góc trái. -->
-  <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu-controller.js markTab bật / tắt) -->
+  <!-- Nút cài đặt dùng chung cho Home (bản đồ) / Deco: nằm cùng hàng ví, góc phải (menu/settings.js markTab bật / tắt) -->
   <div id="hub-settings" class="settings hub-settings" hidden>
     <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
   </div>
@@ -123,7 +123,7 @@
         <button class="settings-close" aria-label="Close settings"><svg viewBox="0 0 24 24"><use href="#i-close"/></svg></button>
       </header>
       <div class="settings-body">
-        <!-- Chỉ hiện khi mở từ màn chơi: rời màn / chơi lại (hỏi lại trước, play-controller.js) -->
+        <!-- Chỉ hiện khi mở từ màn chơi: rời màn / chơi lại (hỏi lại trước, play/result.js confirmQuit) -->
         <div class="settings-links settings-ingame">
           <button id="open-map" class="settings-link"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
           <button id="restart" class="settings-link"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.3-5.2M5 4.5v4h4"/></svg><span>Restart</span></button>
@@ -164,7 +164,7 @@
     <div class="deco-side">
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
       <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
-      <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.4a2.7 2.7 0 1 1 3.9 2.4c-.9.5-1.3 1-1.3 2M12 17v.2"/></svg></button>
+      <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><svg viewBox="0 0 24 24"><path d="M9.4 9.4a2.7 2.7 0 1 1 3.9 2.4c-.9.5-1.3 1-1.3 2M12 17v.2"/></svg></button>
     </div>
     <!-- Mọi thứ Deco gom về một khay ở đáy (theo Figma): hàng tab (mèo + khu) → chip loại đồ (nội thất / tường / sàn) → một hàng thẻ
          vuốt ngang (4.5 thẻ mỗi màn, thẻ bị cắt mờ dần). Thẻ: món chưa xây, kiểu khác của món, tường, sàn, hoặc mèo theo tab. -->
@@ -201,11 +201,11 @@
     </div>
     <!-- Ghim "NEW" nổi trên món có đồ mới mua (Shop) thay được -->
     <div id="deco-pins" class="deco-pins" aria-hidden="true"></div>
-    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu-controller.js placeIdleCoin, gameplay/idle.mjs) -->
-    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu-controller.js renderAreaNext) -->
+    <!-- Xu tự sinh (idle): bong bóng xu bám trên đầu mèo, chạm để nhận (menu/idle-coins.js placeIdleCoin, core/idle.mjs) -->
+    <!-- Khu kế tiếp chưa mở: chấm than vàng bám trên mảnh đất mờ của khu đó; chạm mở bảng điều kiện (menu/areas.js renderAreaNext) -->
     <button id="area-next" class="area-next" hidden></button>
     <button id="idle-coin" class="idle-coin" hidden aria-label="Collect coins your cats earned"><i class="ico-coin"></i><b></b><i class="idle-spark s1"></i><i class="idle-spark s2"></i><i class="idle-spark s3"></i><i class="idle-spark s4"></i><i class="idle-spark s5"></i><i class="idle-spark s6"></i></button>
-    <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu-controller.js placeDecoPop), đuôi chỉ vào món -->
+    <!-- Bảng đổi món: đặt cạnh món / chỗ vừa chạm (menu/deco-panel.js placeDecoPop), đuôi chỉ vào món -->
     <div id="deco-pop" class="deco-pop" role="dialog" aria-labelledby="deco-pop-title" hidden>
       <header class="deco-pop-head"><b id="deco-pop-title"></b></header>
       <div id="deco-pop-scroll" class="deco-pop-scroll"><div id="deco-pop-items" class="deco-pop-items"></div></div>
@@ -214,7 +214,7 @@
   </section>
 
   <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, banner gói khởi đầu, thẻ booster kem viền nâu,
-       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu-controller.js điền). -->
+       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu/shop.js điền). -->
   <!-- Shop chia 2 tab (data-page): "Shop" = gói khởi đầu, booster, gói xu / tiền thật; "Decoration" = chỉ đồ trang trí. -->
   <section id="shop" class="screen shop" data-page="store" hidden>
     <div class="wallet-hud">
@@ -227,23 +227,23 @@
     </div>
     <button class="shop-starter soon" aria-label="Starter pack: coins, a cozy rug and 5 boosters, $1.99 (coming soon)"></button>
     <div id="shop-boosters" class="booster-row">
-      <button class="booster" data-buy="hammer"><img src="./ui/play/img/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
-      <button class="booster" data-buy="swap"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
-      <button class="booster" data-buy="moves"><img src="./ui/play/img/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
+      <button class="booster" data-buy="hammer"><img src="./assets/img/play/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
+      <button class="booster" data-buy="swap"><img src="./assets/img/play/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
+      <button class="booster" data-buy="moves"><img src="./assets/img/play/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
     </div>
     <div class="coin-list">
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
-      <button class="coin-pack soon"><img src="./ui/shop/img/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
+      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
+      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
+      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
     </div>
     <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
     <!-- Gem (placeholder, chưa có nguồn gem): gem dùng mua booster, đồ trang trí premium, skin. Chạm = "Coming soon!" (.soon). -->
     <section class="gem-shop" aria-labelledby="gem-shop-title">
       <h3 id="gem-shop-title" class="shop-deco-title">Gems</h3>
       <div class="booster-row">
-        <button class="booster soon"><img src="./ui/play/img/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Booster pack</small><em>30 gems</em></button>
-        <button class="booster soon"><img src="./ui/play/img/booster-swap.png" alt=""><span>New card ×3</span><small>Booster pack</small><em>30 gems</em></button>
-        <button class="booster soon"><img src="./ui/play/img/booster-moves.png" alt=""><span>Moves ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./assets/img/play/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./assets/img/play/booster-swap.png" alt=""><span>New card ×3</span><small>Booster pack</small><em>30 gems</em></button>
+        <button class="booster soon"><img src="./assets/img/play/booster-moves.png" alt=""><span>Moves ×3</span><small>Booster pack</small><em>30 gems</em></button>
       </div>
       <div class="gem-row">
         <button class="coin-pack soon"><b>Premium decoration</b><em>Soon</em></button>
@@ -296,7 +296,7 @@
       <rect width="100%" height="100%" mask="url(#tutorial-mask)"/>
     </svg>
     <div id="tutorial-rings"></div>
-    <div id="tutorial-hand" class="tutorial-hand" aria-hidden="true"><img id="tutorial-hand-img" src="./ui/shared/img/tutorial/hand-tap.png" alt=""></div>
+    <div id="tutorial-hand" class="tutorial-hand" aria-hidden="true"><img id="tutorial-hand-img" src="./assets/img/tutorial/hand-tap.png" alt=""></div>
     <div id="tutorial-bubble" class="tutorial-bubble" role="status">
       <span id="tutorial-avatar" class="tutorial-avatar" aria-hidden="true"></span>
       <p id="tutorial-text"></p>
@@ -305,7 +305,7 @@
   </div>
   <!-- Bảng kết quả theo Figma (frame Gameplay 73:616 thắng / 73:680 thua): mèo ló đầu trên khung (vui / khóc), thắng có 3 sao +
        tia sáng, thua có trái tim vỡ; tiêu đề, "Level N cleared / failed", ô điểm + xu thưởng; nút tròn Home / chơi lại, nút dài
-       Next (xanh) hoặc Retry (hồng). play-controller.js endLevel() điền số và bật / tắt theo thắng / thua. -->
+       Next (xanh) hoặc Retry (hồng). play/result.js endLevel() điền số và bật / tắt theo thắng / thua. -->
   <dialog id="result-dialog" class="level-dialog result-dialog">
     <div class="result-peek" aria-hidden="true">
       <span class="result-bush l"></span><span class="result-bush r"></span>
@@ -354,7 +354,7 @@
       <button id="dev-reset-ok" class="pill-button">Reset</button>
     </div>
   </dialog>
-  <!-- Shop: xem thử món trang trí đặt trong cảnh Deco trước khi mua; nút giá ở dưới = xác nhận mua (menu-controller.js) -->
+  <!-- Shop: xem thử món trang trí đặt trong cảnh Deco trước khi mua; nút giá ở dưới = xác nhận mua (menu/shop.js) -->
   <dialog id="shop-preview" class="shop-preview">
     <div class="shop-preview-head">
       <h2 id="shop-preview-name">Item</h2>
@@ -374,10 +374,10 @@
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make 2 matches next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes one cat or crate, New card swaps your current card, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
+    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make a match next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes everything in a 3×3 area, New card gives you the best card for the next 3 turns, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
   </dialog>
   <!-- Nút cho game dev / tester: cột nút vuông thô ở góc trái. Chỉ hiện khi chạy localhost, URL có ?dev, hoặc bản HTML dev
-       (menu-controller.js bỏ hidden). Không đặt trong Settings. -->
+       (menu/dev-tools.js bỏ hidden). Không đặt trong Settings. -->
   <div id="dev-panel" class="dev-panel dev-only" hidden>
     <button id="dev-toggle" class="dev-btn dev-toggle" title="Ẩn / hiện nút dev">DEV</button>
     <div class="dev-buttons">
@@ -389,7 +389,7 @@
       <button id="dev-studio" class="dev-btn" title="UI Studio: chỉnh UI 2D trực tiếp trong game" aria-pressed="false" hidden>🎨<span>Studio</span></button>
     </div>
   </div>
-  <!-- Dev: Level Editor (tools/level-editor/) mở toàn màn hình trong iframe; cần máy chủ npm start (phục vụ /tools). -->
+  <!-- Dev: Level Editor (tools/levels/level-editor/) mở toàn màn hình trong iframe; cần máy chủ npm start (phục vụ /tools). -->
   <div id="dev-editor-overlay" class="dev-editor-overlay" hidden>
     <button id="dev-editor-close" class="dev-btn">✕<span>Close</span></button>
     <iframe id="dev-editor-frame" title="Level Editor"></iframe>

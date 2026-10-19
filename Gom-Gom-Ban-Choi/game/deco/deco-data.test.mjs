@@ -1,9 +1,9 @@
 // Test Deco (deco-data.mjs): mua / đặt / gỡ đồ, khoá theo level, khoá khu, chuyển save cũ. Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setStorageBackend, SAVE_KEYS, writeJSON } from '../gameplay/save.mjs';
-import { levelReward } from '../gameplay/progression.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, MAX_ROOM_CATS, areaOpen, areaState, nextArea, unlockArea } from './deco-data.mjs';
+import { setStorageBackend, SAVE_KEYS, writeJSON } from '../core/save.mjs';
+import { levelReward } from '../core/progression.mjs';
+import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, unlockArea } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -234,7 +234,7 @@ test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua v�
 });
 
 test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ kế đã trừ tiền mở khu / giá món gốc đã mở giảm dần qua từng lô 10 màn tới khu cuối (khu sau khó mua đủ hơn)', async () => {
-  const { AREA_UNLOCK } = await import('../gameplay/economy.mjs');
+  const { AREA_UNLOCK } = await import('../data/economy.mjs');
   const sum = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => levelReward(from - 1 + i)).reduce((a, b) => a + b, 0);
   const base = (zone, area) => CATALOG.filter(e => e.zone === zone && e.cat === 'furniture' && !e.slot && e.area === area).reduce((a, e) => a + e.price, 0);
   for (let n = 1; n < 100; n++) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
@@ -252,7 +252,7 @@ test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ k�
 });
 
 test('mở khu: theo thứ tự, cần đủ màn + đủ xu, mở là trừ xu', async () => {
-  const { AREA_UNLOCK } = await import('../gameplay/economy.mjs');
+  const { AREA_UNLOCK } = await import('../data/economy.mjs');
   setStorageBackend(memoryStore());
   const { level, cost } = AREA_UNLOCK.garden2;
   const fresh = { ...loadDeco(0), coins: cost };
@@ -287,9 +287,9 @@ test('khu KHÔNG BAO GIỜ tự mở khi nạp save (chỉ mở bằng trả xu)
 });
 
 test('economy.mjs: mọi món gốc có đúng một dòng giá trong DECO, không có dòng thừa', async () => {
-  const { DECO } = await import('../gameplay/economy.mjs');
+  const { DECO } = await import('../data/economy.mjs');
   const ids = new Set(CATALOG.map(entry => entry.id));
-  for (const entry of CATALOG) if (!entry.slot) assert.ok(DECO[entry.id], `thiếu giá cho "${entry.id}" trong game/gameplay/economy.mjs DECO`);
+  for (const entry of CATALOG) if (!entry.slot) assert.ok(DECO[entry.id], `thiếu giá cho "${entry.id}" trong game/data/economy.mjs DECO`);
   for (const id of Object.keys(DECO)) assert.ok(ids.has(id), `DECO có "${id}" nhưng danh mục không có món này`);
 });
 

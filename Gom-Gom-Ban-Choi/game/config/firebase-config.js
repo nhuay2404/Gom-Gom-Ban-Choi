@@ -1,4 +1,4 @@
-// Kết nối Firebase cho Remote Config (xem docs/FIREBASE.md).
+// Kết nối Firebase cho Remote Config (xem docs/firebase.md).
 // Dán object "firebaseConfig" lấy ở Firebase console → Project settings → General → Your apps → Web app.
 // Các khoá này là định danh công khai của web app (không phải mật khẩu), để trong source là bình thường.
 // Để null = tắt Firebase: game chạy bằng số mặc định trong code (economy.mjs / tuning.mjs).

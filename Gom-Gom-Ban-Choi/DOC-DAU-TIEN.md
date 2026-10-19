@@ -38,12 +38,9 @@ ditto -c -k --sequesterRsrc --keepParent Gom-Gom-Ban-Choi Gom-Gom-Ban-Choi.zip
 | `server.mjs` | Máy chủ tĩnh tối giản, chỉ dùng Node.js, không phụ thuộc thư viện nào |
 | `Choi-Gom-Gom.bat` | Trình chạy cho Windows |
 | `Choi-Gom-Gom.command` | Trình chạy cho macOS |
-| `tools/simulate-levels.mjs` | Bot chơi thử 10 màn để cân độ khó: `node tools/simulate-levels.mjs [số ván] [--sweep]` |
-| `tai-lieu/4-Thiet-ke-10-man-Rotate.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
-| `tai-lieu/1-Dac-ta-thiet-ke-va-trien-khai.*` | Đặc tả gameplay, UI, VFX, vật phẩm, progression. Có bản Markdown, Word và PDF |
-| `tai-lieu/2-He-thong-do-kho.md` | Cách hệ thống độ khó hoạt động: cơ chế, chỉ số, cổng kiểm tra, quy trình bảo trì, nhật ký quyết định |
-| `tai-lieu/3-Bao-cao-curve-20-man.md` | Số liệu 20 màn, sinh tự động từ dữ liệu đã đóng băng |
-| `tai-lieu/bieu-do/` | Sáu biểu đồ SVG đi kèm báo cáo |
+| `tools/levels/simulate-levels.mjs` | Bot chơi thử mọi màn để cân độ khó: `node tools/levels/simulate-levels.mjs [số ván] [--sweep] [--no-effects]` |
+| `docs/thiet-ke-10-man-dau.md` | Thiết kế 10 màn đầu của bản Rotate: nhịp, tutorial, luồng màn hình, số liệu cân bằng |
+| `docs/do-kho-theo-profile.md` | Độ khó thích ứng theo profile người chơi (DDA) |
 
 ### Bên trong `game/`
 
@@ -52,10 +49,10 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | File | Nội dung |
 |---|---|
 | `index.html` | Trang game: thanh điểm, bàn chơi, thẻ đang bóc, ô gửi tạm, thẻ sắp tới, hộp hướng dẫn |
-| `app/main.js` | Điểm vào: nối hai luồng điều khiển bên dưới rồi mở game vào Home |
-| `app/menu-controller.js` | Luồng menu: bản đồ màn, Home / Deco / Shop, phòng 3D, chọn khu, cài đặt (âm thanh, ngày / đêm), nút dev |
+| `app/main.js`, `app/start.js` | Điểm vào: tải config Firebase, nối hai luồng điều khiển bên dưới rồi mở game vào Home |
 | `app/shared.js` | Dùng chung cho hai luồng: ví xu, kho booster, toast |
-| `app/play-controller.js` | Luồng màn chơi: kéo thả, xoay thẻ, gửi tạm, thắng/thua, tutorial, lưu tiến độ và mọi anim (khói khi đặt, gom mèo, sóng bay về tâm khi thắng, vuốt mèo thả tim, biểu cảm AFK) |
+| **`play/`** | **Luồng màn chơi**, mỗi file một component: `play-controller.js` (điều phối), `cards.js` / `card-drag.js` (thẻ, kéo thả, Hold), `board-view.js`, `match-fx.js` (anim gom, hiệu ứng nổ), `score-bar.js`, `hud.js` (ô Goal, lượt), `finale.js` (Bonus Time), `booster-bar.js`, `tutorial.js`, `afk.js`, `result.js` |
+| **`menu/`** | **Luồng menu**, mỗi file một màn hình: `map-view.js` (bản đồ màn), `tabs.js`, `room.js` (phòng 3D), `deco-panel.js`, `shop.js`, `areas.js` (mở khu), `settings.js`, `tours.js`, `idle-coins.js`, `dev-tools.js`; `menu-controller.js` là mặt tiền |
 | `favicon.svg` | Icon tab trình duyệt |
 | **`ui/`** | **Thiết kế giao diện 2D** |
 | `ui/shared/` | Dùng chung các hub: `base.css` (biến màu, khung màn hình, toast), `nav.css` (thanh tab), `wallet.css` (hàng ví), `settings.css`, `loading.css`, `tutorial.css`; ảnh `img/` (mèo `cats/`, tay hướng dẫn `tutorial/`, `farm-pop/`: nền hồng, mũi tên xoay, sprite trang trí) |
@@ -68,39 +65,27 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `ui/cat-art.mjs` | 6 loại mèo (cam, xám, trắng, mun, Xiêm, mướp): màu, nét mặt, hình SVG |
 | `ui/board-art.mjs` | Hình SVG thùng gỗ / tấm kim loại trên bàn |
 | `ui/sound.mjs` | Âm thanh |
-| **`gameplay/`** | **Luật và dữ liệu chơi (thuần logic, có test)** |
-| `gameplay/levels.mjs` | Dữ liệu 20 màn (bàn, loại mèo, lượt, mục tiêu, thẻ kịch bản, tutorial) và bộ chia thẻ theo màn |
-| `gameplay/board-rules.mjs` | Luật bàn thuần (không đụng giao diện): đặt thẻ, xoay thẻ, tìm và xoá cụm 3+ mèo cùng loại, phá thùng gỗ sát cụm, chọn điểm hợp nhất |
-| `gameplay/session.mjs`, `scoring.mjs`, `board-shapes.mjs` | Một ván chơi, tính điểm theo cỡ cụm, hình bàn |
-| `gameplay/adaptive.mjs`, `cat-layouts.mjs` (sinh bằng `npm run cat-layouts`) | Độ khó thích ứng theo profile người chơi: chỉ xếp lại mèo đặt sẵn + chỉnh hàng thẻ, không đổi thiết kế / số lượt |
-| `gameplay/progression.mjs`, `boosters.mjs`, `tuning.mjs`, `save.mjs` | Sao / mở màn, booster, hằng số cảm giác chơi, lưu trữ |
-| `gameplay/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
-| **`deco/`** | **Cảnh 3D Home / Deco** (phòng, vườn, mèo 3D, QC model, danh mục đồ) |
+| **`core/`** | **Luật chơi thuần logic (không đụng DOM / Three.js, có test)** — sang Unity thành class C# thường |
+| `core/session.mjs` | Một ván chơi: bóc thẻ, xoay, Hold, đặt, gom, hiệu ứng cụm to, booster, xả lượt khi thắng, thắng / thua |
+| `core/board-rules.mjs`, `cluster-effects.mjs`, `scoring.mjs` | Luật bàn (đặt thẻ, gom cụm, thùng / chuồng), hiệu ứng cụm 4/5/6/7+ và gom đôi, điểm |
+| `core/level-rules.mjs`, `board-shapes.mjs` | Đọc dữ liệu màn (bàn, cỏ, thẻ viết gọn), bộ chia thẻ, sao; hình bàn |
+| `core/adaptive.mjs`, `progression.mjs`, `boosters.mjs`, `idle.mjs`, `save.mjs`, `remote-config.mjs` | Độ khó thích ứng, tiến độ, kho booster, xu tự sinh, lưu trữ, config từ xa |
+| **`data/`** | **Dữ liệu chơi** — sang Unity thành ScriptableObject / JSON (`npm run export:data`) |
+| `data/levels.mjs`, `level-layouts.mjs`, `cat-layouts.mjs` | 100 màn; bố trí theo độ khó thích ứng (sinh bằng tool) |
+| `data/tuning.mjs`, `economy.mjs` | Hằng số cảm giác chơi; kinh tế (xu, giá) — chỉnh được từ Firebase Remote Config |
+| `core/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
+| **`deco/`** | **Cảnh 3D Home / Deco**: `deco-room.mjs` (phòng + camera), `scenes/` (từng khu), `cats/` (mèo 3D: khung `cat-rig`, não `cat-brain`, cả đàn `room-cats`), `render/` (toon, viền), `map-world.mjs` (bản đồ màn 3D), QC model, danh mục đồ |
 
 ## Luật chơi tóm tắt (Gom Gom Rotate)
 
-Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/gameplay/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
+Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cương, lục giác, chữ thập, vành khuyên — `game/core/board-shapes.mjs`). Ô Hold mở từ màn 11. Mỗi lượt kéo thẻ đang bóc (1–3 mèo) thả lên bàn; chạm vào thẻ để xoay trước khi đặt. Gom 3 mèo cùng loại liền kề trở lên thì cụm đó biến mất và được điểm: gom 3 = 30, gom 4 = 50, gom 5 = 80, gom 6+ = 120.
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 
-Có 10 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `tai-lieu/4-Thiet-ke-10-man-Rotate.md`.
+Có 100 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `docs/thiet-ke-10-man-dau.md`.
 
 Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
-
-## Luật chơi bản gốc (theo tài liệu thiết kế)
-
-Các tài liệu trong `tai-lieu/` mô tả bản Gom Gom gốc (mã nguồn ở thư mục `gomgom`), không phải bản Rotate trong `game/`. Tóm tắt bản gốc:
-
-Gom bốn thẻ cùng chủ đề nằm liền nhau trên một hàng ngang. Bàn có 4 cột và 5 hàng. Chỉ lấy được thẻ trên cùng mỗi cột nguồn. Cụm 2 đến 3 thẻ di chuyển nguyên khối. Mỗi lần chuyển thẻ tốn một lượt; thả sai không mất lượt.
-
-Không có bộ bài để gửi thẻ đi, nên **bàn kín mà chưa gom hết nhóm là ván kết thúc**. Luôn chừa chỗ: dọn xong một nhóm là mở lại cả khoảng trống đó.
-
-Có hai ô gửi tạm miễn phí, mỗi ô giữ một thẻ lẻ. Hoàn tác và gợi ý có số lần miễn phí theo từng màn; hết lượt miễn phí thì hoàn tác trả lại bàn nhưng không trả lượt, còn gợi ý tốn một lượt.
-
-Hành trình có 20 màn chia bốn chương. Màn 14 và 19 gắn nhãn Khó, màn 20 gắn nhãn Siêu khó. Sáu màn mẫu ở cuối danh sách chọn màn là bản thử nghiệm cũ, giữ lại để kiểm thử, không thuộc hành trình.
 
 ## Lưu ý
 
 Quảng cáo trong game là **mô phỏng cục bộ ba giây**, chưa nối SDK thật, không có giao dịch nào. Tiến độ chơi lưu trong trình duyệt của máy đó; đổi máy hoặc xoá dữ liệu trình duyệt là mất.
-
-Mã nguồn, bộ kiểm thử và các script hiệu chỉnh độ khó nằm ở thư mục `gomgom` bên cạnh, không đóng gói vào đây.

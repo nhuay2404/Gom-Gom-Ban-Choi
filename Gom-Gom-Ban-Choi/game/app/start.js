@@ -1,10 +1,10 @@
 // Mở game (main.js gọi SAU khi tải config từ Firebase): nối hai luồng điều khiển rồi mở game.
-// - play-controller.js: luồng MÀN CHƠI (gameplay trong một ván, bảng vào màn, kết quả).
-// - menu-controller.js: luồng MENU (Map, Home / Deco / Shop, cài đặt, dev).
+// - play/play-controller.js: luồng MÀN CHƠI (gameplay trong một ván, bảng vào màn, kết quả).
+// - menu/menu-controller.js: luồng MENU (Map, Home / Deco / Shop, cài đặt, dev).
 // Phần dùng chung (ví xu, kho booster, toast): shared.js.
-import * as play from './play-controller.js';
-import * as menus from './menu-controller.js';
-import { loadProgress, unlockedCount } from '../gameplay/progression.mjs';
+import * as play from '../play/play-controller.js';
+import * as menus from '../menu/menu-controller.js';
+import { loadProgress, unlockedCount } from '../core/progression.mjs';
 import * as ob from './onboarding.js';
 import { DEV_MODE } from './shared.js';
 
@@ -19,7 +19,7 @@ if (!loadProgress().stars.some(Boolean)) play.startLevel(0);
 // ?level=N (chỉ dev; level editor mở từ nút "Chơi thử trong game"): vào thẳng màn N, kể cả màn chưa mở khoá.
 const devLevel = Number(new URLSearchParams(location.search).get('level'));
 if (DEV_MODE && devLevel >= 1) play.startLevel(devLevel - 1);
-// ?embed (Level Editor nhúng game trong khung): ẩn cột nút Dev (chỉ ẩn, không xoá: menu-controller.js còn bám nút Studio trong đó).
+// ?embed (Level Editor nhúng game trong khung): ẩn cột nút Dev (chỉ ẩn, không xoá: menu/dev-tools.js còn bám nút Studio trong đó).
 if (new URLSearchParams(location.search).has('embed')) document.getElementById('dev-panel')?.style.setProperty('display', 'none', 'important');
 // ?bot=weak|mid|good (chỉ dev): bot tự chơi ván hiện tại ngay trên giao diện game.
 const botProfile = new URLSearchParams(location.search).get('bot');
@@ -36,4 +36,4 @@ const shownAt = performance.now(), wait = ms => new Promise(resolve => setTimeou
 document.fonts?.ready.then(() => step(60));
 Promise.race([menus.sceneReady, wait(8000)])
   .then(() => { step(100); return wait(Math.max(350, 1000 - (performance.now() - shownAt))); })
-  .then(() => loading.classList.add('done')); // giữ lại phần tử: chuyển tab Home / Deco / Shop dùng lại màn này (menu-controller.js switchTab)
+  .then(() => loading.classList.add('done')); // giữ lại phần tử: chuyển tab Home / Deco / Shop dùng lại màn này (menu/tabs.js switchTab)

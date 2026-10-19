@@ -1,6 +1,6 @@
 # Báo cáo kinh tế (tự sinh — đừng sửa tay)
 
-Sinh bởi `npm run economy` từ [game/gameplay/economy.mjs](../game/gameplay/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
+Sinh bởi `npm run economy` từ [game/data/economy.mjs](../game/data/economy.mjs). Sửa số ở file đó rồi chạy lại lệnh.
 
 - **Xu nhận**: tổng xu thưởng khi thắng lần đầu mọi màn trong stage.
 - **Giá mở khu kế**: số xu trả để mua khu có mốc màn trong stage (economy.mjs AREA_UNLOCK.cost). Không cộng vào tổng giá đồ.

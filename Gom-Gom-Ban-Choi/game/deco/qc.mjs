@@ -17,12 +17,12 @@
 //             (gradient phủ mất các nấc sáng), mặt lồi lõm nhỏ (pháp tuyến gồ ghề -> nấc sáng vỡ thành đốm loang: lỗi bụi góc vườn),
 //             toon "mượt" (smooth) dùng ngoài địa hình. Ngoại lệ có chủ đích: userData.toonOk = 'lý do' trên mesh / tổ tiên
 //   preview : popup xem trước ở Shop còn bị che sau khi đã ẩn vật chắn (chạy trong cảnh thật: deco-room.mjs qcPreview,
-//             menu-controller.js runQC gọi cho từng món, mọi khu mở)
+//             menu/dev-tools.js runQC gọi cho từng món, mọi khu mở)
 // Mọi món đều dựng mới với chế độ không gộp khối (withoutMerging) để đo từng khối riêng, theo toạ độ của khu.
 import * as THREE from 'three';
 import { CATALOG, slotOf } from './deco-data.mjs';
 import { PLACES, ROOM_HALF as H, OBSTACLE_RADIUS, ZONE_OFFSET, LINKS, groundHeight, gardenBounds, backyardBounds, kinderBounds } from './room-layout.mjs';
-import { geometryNotes, withoutMerging } from './mesh-detail.mjs';
+import { geometryNotes, withoutMerging } from './render/mesh-detail.mjs';
 
 const DECAL_GAP = .004;          // tấm phẳng phải cách mặt khối phía sau ít nhất 4 mm
 const FENCE_GAP = .11;           // mặt trong của rào dày nhất (hàng rào cây .32, tường đá .3) cách khung vườn .11

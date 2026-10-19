@@ -1,5 +1,5 @@
 // Tải config từ Firebase Remote Config TRƯỚC khi nạp game (main.js gọi rồi mới import start.js).
-// Kết quả đặt vào globalThis.__GAME_CONFIG__ = { TÊN: giá trị }; economy.mjs / tuning.mjs đọc qua remote() (gameplay/remote-config.mjs).
+// Kết quả đặt vào globalThis.__GAME_CONFIG__ = { TÊN: giá trị }; economy.mjs / tuning.mjs đọc qua remote() (core/remote-config.mjs).
 // - Mỗi tham số trên Firebase: tên = tên hằng số trong code, kiểu JSON / Number / Boolean (template: npm run firebase:template).
 // - Lần mở trước tải được thì lưu lại trong máy: lần sau mạng chậm / mất mạng vẫn dùng bản đó; chưa có thì dùng mặc định trong code.
 import { FIREBASE_CONFIG, FETCH_INTERVAL_MS, FETCH_TIMEOUT_MS } from '../config/firebase-config.js';
