@@ -38,12 +38,21 @@ cạnh nó. Icon hiện số chấm cam = số sửa chưa lưu. Vị trí bản
 
 1. **Select (V)** rồi bấm vào layer (hoặc **Alt** + click bất cứ lúc nào). **Shift** + click chọn thêm / bỏ bớt. **⬆ Parent** hoặc mục
    **Layers** để chọn layer cha / con.
-2. Sửa giá trị là thấy ngay: ↑ / ↓ trong ô giá trị tăng giảm số (Shift ×10, Alt ×0.1), ô màu để chọn màu, **+ property** để thêm
-   thuộc tính (có gợi ý), ✕ để xoá.
-3. Vị trí / kích thước: mục **Transform** ở đầu bảng, giống panel Design của Figma: **X / Y / W / H** tính bằng px thiết kế
-   (1 px = 1 px của khung Figma 393 px; X đo từ mép trái khung, Y từ mép trên màn hình). Gõ số hoặc ↑ / ↓ (Shift = 10). Nút mắt xích
-   khoá tỉ lệ W : H. Hoặc **kéo khung xanh** / **phím mũi tên**: khi kéo có **đường gióng hồng** (smart guides) hút vào mép / tâm các
-   layer khác như Figma / Photoshop, thẻ trên khung hiện X / Y; giữ **Ctrl** để kéo tự do. Layer chưa có `left` / `top` / `width` /
+2. Bảng xếp từ trên xuống như panel Design của Figma (bấm tiêu đề mục để thu / mở):
+   - **Layers**: cây dọc như panel Layers của Photoshop / Figma (cha ở trên, con thụt vào; trong cùng một cha, layer nằm trên cùng đứng
+     đầu). Icon: `#` khung chứa layer khác, `T` chữ, `▨` ảnh, `▭` hình khối. Layer mờ = đang ẩn.
+   - **Transform**: **X / Y / W / H** và **R** (bo góc) tính bằng px thiết kế (1 px = 1 px của khung Figma 393 px; X đo từ mép trái
+     khung, Y từ mép trên màn hình). Mắt xích khoá tỉ lệ W : H.
+   - **Layer** (Opacity %, Blend mode), **Fill** (màu nền), **Stroke** (viền: màu, độ dày, kiểu), **Effects** (Drop / Inner shadow:
+     X, Y, Blur, Spread, màu), **Text** (font, cỡ, độ đậm, line height, letter spacing, màu, căn lề, viền chữ, bóng chữ — chỉ hiện ở
+     layer có chữ), **Auto layout** (hướng, khoảng cách, padding, căn — chỉ hiện ở layer xếp con theo hàng / cột). Nút **+** / **−**
+     thêm / bỏ fill, stroke, shadow.
+   - Ô số: **kéo ngang trên nhãn** (X, W, Aa…) để chỉnh như Figma (Shift ×10), hoặc gõ số / ↑ ↓. Ô màu: ô màu + mã hex + độ đục %.
+   - **CSS code** (cuối bảng, thu gọn sẵn): khối CSS thô. Các mục trên tự ghi vào đây; chỉ mở khi cần chỉnh thứ bảng chưa có
+     (↑ / ↓ trong ô giá trị, **+ property** thêm thuộc tính, ✕ xoá).
+3. Kéo trên màn hình: **kéo khung xanh** / **phím mũi tên** để dời; **kéo 8 tay nắm trắng** trên khung để đổi cỡ như Free Transform
+   (mép đối diện đứng yên, giữ **Shift** để giữ tỉ lệ). Khi kéo có **đường gióng hồng** (smart guides) hút vào mép / tâm các layer khác
+   như Figma / Photoshop, thẻ trên khung hiện X / Y hoặc W / H; giữ **Ctrl** để kéo tự do. Layer chưa có `left` / `top` / `width` /
    `height` thì studio tự thêm vào khối CSS của nó.
 4. Thanh công cụ:
    - **Align** (6 nút): một layer thì căn theo khung cha, nhiều layer thì căn với nhau. **Distribute**: chia đều khoảng cách (≥ 3 layer).
