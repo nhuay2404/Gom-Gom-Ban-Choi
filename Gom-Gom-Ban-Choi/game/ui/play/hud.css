@@ -4,22 +4,19 @@
    #goal-icon[2|3] / #goal-count[2|3], .fg-panel.has-goal, .progress.fg-score (.gain / .full), #score-fill, #score, #highscore
    (play/hud.js, play/score-bar.js, play/booster-bar.js, play/tutorial.js). Bố cục theo khung 336 × 112 như cũ (--u = --hud-u). */
 
-/* Khung: viền nâu đậm > dải hồng đậm > dải hồng nhạt > nền hồng nhạt dần sang kem, rải dấu chân */
+/* Khung: ảnh assets/img/play/hud-frame.png (viền nâu > dải hồng > nền hồng dần sang kem, dấu chân), vẽ bằng border-image 9 mảnh để
+   giữ nguyên độ bo góc. Hộp giữ đúng vị trí / cỡ của bản vẽ bằng CSS trước đó (lề 10u hai bên, từ y 16u tới đáy). Ảnh 1200 × 298:
+   góc cắt 80px; viền 25,8u = 80px × (96u / 298px) nên góc ra đúng cỡ gốc. */
 .fg-panel{background:none}
-.fg-panel::before{content:'';position:absolute;left:calc(10 * var(--u));right:calc(10 * var(--u));top:calc(16 * var(--u));bottom:0;border-radius:calc(20 * var(--u));
-  border:calc(3 * var(--u)) solid #5a2a22;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cg fill='%23fff' fill-opacity='.42'%3E%3Cg transform='rotate(-14 24 24)'%3E%3Cellipse cx='24' cy='31' rx='9' ry='7.4'/%3E%3Cellipse cx='13.5' cy='22' rx='3.5' ry='4.7' transform='rotate(-24 13.5 22)'/%3E%3Cellipse cx='20.5' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='28' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='34.5' cy='22' rx='3.5' ry='4.7' transform='rotate(24 34.5 22)'/%3E%3C/g%3E%3Cg transform='translate(46 44) rotate(16 24 24)'%3E%3Cellipse cx='24' cy='31' rx='9' ry='7.4'/%3E%3Cellipse cx='13.5' cy='22' rx='3.5' ry='4.7' transform='rotate(-24 13.5 22)'/%3E%3Cellipse cx='20.5' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='28' cy='15.5' rx='3.5' ry='5'/%3E%3Cellipse cx='34.5' cy='22' rx='3.5' ry='4.7' transform='rotate(24 34.5 22)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / calc(64 * var(--u)) calc(64 * var(--u)),
-    linear-gradient(#ffaabf,#ffd3dc 55%,#fff2ee);
-  box-shadow:inset 0 0 0 calc(3 * var(--u)) #ff5d88,inset 0 0 0 calc(5 * var(--u)) #ff9db6}
-
-/* Tên màn: viên kem viền nâu + dải hồng, hai dấu chân hồng hai bên, đè lên mép trên của khung */
+.fg-panel::before{content:'';position:absolute;left:calc(10 * var(--u));right:calc(10 * var(--u));top:calc(16 * var(--u));bottom:0;box-sizing:border-box;
+  border:calc(25.8 * var(--u)) solid transparent;border-image:url('../../assets/img/play/hud-frame.png') 80 fill / calc(25.8 * var(--u)) stretch}
+/* Tên màn: viên kem viền nâu + dải cam (màu dải của khung #fa9b00), hai dấu chân cam hai bên, đè lên mép trên của khung */
 .fg-panel .fg-level,.fg-panel .fg-level[data-digits]{left:50%;top:calc(2 * var(--u));width:auto;height:calc(26 * var(--u));translate:-50% 0;z-index:2;
-  padding:0 calc(27 * var(--u));border-radius:999px;border:calc(2.6 * var(--u)) solid #5a2a22;background:#fff4e6;
-  box-shadow:inset 0 0 0 calc(2.4 * var(--u)) #ff7a9c,0 calc(2 * var(--u)) 0 #5a2a2230;
+  padding:0 calc(27 * var(--u));border-radius:999px;border:calc(2.6 * var(--u)) solid #4c1100;background:#fff4e6;
+  box-shadow:inset 0 0 0 calc(2.4 * var(--u)) #fa9b00,0 calc(2 * var(--u)) 0 #5a2a2230;
   font-size:calc(14.5 * var(--u));letter-spacing:0;color:#3a1d17}
 .fg-panel .fg-level::before,.fg-panel .fg-level::after{content:'';position:absolute;top:50%;width:calc(13 * var(--u));height:calc(13 * var(--u));translate:0 -50%;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23ff6f93'%3E%3Cellipse cx='24' cy='32' rx='12' ry='9.6'/%3E%3Cellipse cx='9.5' cy='22' rx='4.6' ry='6' transform='rotate(-22 9.5 22)'/%3E%3Cellipse cx='19' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='29' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='38.5' cy='22' rx='4.6' ry='6' transform='rotate(22 38.5 22)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23f08f00'%3E%3Cellipse cx='24' cy='32' rx='12' ry='9.6'/%3E%3Cellipse cx='9.5' cy='22' rx='4.6' ry='6' transform='rotate(-22 9.5 22)'/%3E%3Cellipse cx='19' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='29' cy='12' rx='4.6' ry='6.4'/%3E%3Cellipse cx='38.5' cy='22' rx='4.6' ry='6' transform='rotate(22 38.5 22)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
 .fg-panel .fg-level::before{left:calc(9 * var(--u))}
 .fg-panel .fg-level::after{right:calc(9 * var(--u))}
 
@@ -39,10 +36,11 @@
   margin:0 var(--row-gap) 0 0}
 .fg-panel:not(.has-goal) .fg-row .fg-moves.moves-box{margin:0}
 .fg-panel .fg-moves strong,.fg-panel.has-goal .fg-moves strong{margin:0;font-size:calc(40 * var(--u));line-height:1;letter-spacing:-.01em;color:#fff5e8;
-  -webkit-text-stroke:calc(6 * var(--u)) #ff5d88;paint-order:stroke fill;text-shadow:none;
+  -webkit-text-stroke:calc(6 * var(--u)) transparent;paint-order:stroke fill;text-shadow:none;
+  background:linear-gradient(#ee3f53,#fba1b1);-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(calc(1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(calc(-1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(0 calc(1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(-1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(3 * var(--u)) 0 #5a2a2255)}
-.fg-panel .fg-moves.moves-box.warn strong{-webkit-text-stroke-color:#ff8a3c}
-.fg-panel .fg-moves.moves-box.danger strong{color:#fff5e8;-webkit-text-stroke-color:#e0301c}
+.fg-panel .fg-moves.moves-box.warn strong{background-image:linear-gradient(#ff7a1c,#ffc78a)}
+.fg-panel .fg-moves.moves-box.danger strong{color:#fff5e8;background-image:linear-gradient(#d4160a,#ff8f84)}
 
 /* Mục tiêu: vạch đứt ngăn với số lượt; icon (lấy từ vật liệu trong game) cỡ như ảnh mẫu, số nâu đậm bên cạnh.
    Một / hai / ba mục tiêu cùng cỡ (bản cũ thu nhỏ dần khi nhiều mục tiêu). */
@@ -62,3 +60,14 @@
 .fg-panel .fg-score.full .progress-fill{background:linear-gradient(#ffe88a,#ffc93d 70%,#f0ae22);box-shadow:inset 0 calc(-1.5 * var(--u)) 0 #c9861a66,inset 0 calc(1.5 * var(--u)) 0 #fff6c899}
 .fg-panel .fg-score .progress-text{font-size:calc(11 * var(--u));color:#fff;-webkit-text-stroke:calc(2.6 * var(--u)) #3a1a14;paint-order:stroke fill}
 .fg-panel .fg-score .progress-text strong{font-size:calc(12 * var(--u));color:#fff;-webkit-text-stroke:calc(2.6 * var(--u)) #3a1a14}
+
+/* ---------- Thanh booster ----------
+   Dài đúng bằng khung HUD (316 × --hud-u, căn giữa bằng margin-left 50% - nửa bề rộng như .fg-panel); cao + icon giữ NGUYÊN cỡ gốc của skin.css
+   (cao 56u, icon 52u, số lượng ở góc). Nền = ảnh booster-bar-frame.png (981 × 147): hình chữ nhật bo góc cùng kiểu khung HUD (viền nâu, dải hồng,
+   lòng hồng dần sang kem + dấu chân), vẽ ở cùng tỉ lệ nên viền dày bằng khung HUD. Ảnh đúng tỉ lệ hộp (6,67 : 1) nên vẽ 100% × 100%, không kéo giãn.
+   Nền nằm ở ::before nên không đổi bố cục bên trong. top / left = 0 (viết .shell #booster-bar cho đủ độ ưu tiên): tutorial.css đặt top 17u cho mọi
+   .booster-bar, mà thanh này có position: relative (để ::before bám theo) nên không đặt lại là bị đẩy xuống dưới đáy màn. */
+.booster-bar{position:relative;width:calc(316 * var(--hud-u));margin-left:calc(50% - 158 * var(--hud-u));margin-right:0;background:none;justify-content:space-evenly;gap:0}
+.shell #booster-bar{top:0;left:0}
+.booster-bar::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:url('../../assets/img/play/booster-bar-frame.png') 0 0/100% 100% no-repeat}
+.booster-bar .boost{z-index:1}
