@@ -21,39 +21,21 @@ export const CAGE_DOOR_SRC = 'assets/img/board/cage-door.png';
 // Icon chuồng cho bảng vào màn.
 export const CAGE_ICON_SVG = '<svg viewBox="0 0 256 234" aria-hidden="true"><image href="assets/img/board/cage.png" width="256" height="234"/></svg>';
 
-// Ô cỏ trên bàn: texture cỏ vẽ tay (assets/img/map/grass-bg.jpg) nhuộm đậm, liền qua các ô cỏ cạnh nhau, viền + chân xanh đậm (ui/play/base.css .grass-tile);
-// mỗi ô một chỗ cắt khác nhau (play/board-view.js đặt background-position theo số ô) nên bãi cỏ không lặp đều.
+// Ô cỏ trên bàn: texture liên tục (assets/img/board/grass-surface.png), liền qua các ô cỏ cạnh nhau, viền + chân xanh đậm (ui/play/base.css .grass-tile);
+// mỗi ô lấy đúng tọa độ --col / --row trên cùng texture phủ toàn bàn; chỉ cạnh ngoài có viền.
 export const GRASS_SVG = `<span class="grass-tile" aria-hidden="true"></span>`;
 // Icon cho ô Goal: cùng texture + viền với ô cỏ trên bàn (ui/play/skin.css .goal-grass).
 export const GRASS_ICON_SVG = `<span class="goal-grass" aria-hidden="true"></span>`;
 
 // Hộp thư (luật "hộp thư" '@'): ô chặn không bao giờ vỡ; gom sát bên thì một lá thư bay vào ô Goal (play/match-fx.js flyToGoal).
-// SVG tạm (chưa có ảnh Figma): thân đỏ mái tròn trên cột gỗ, cờ vàng bên phải.
-export const MAILBOX_SVG = `<svg class="mailbox" viewBox="0 0 64 64" aria-hidden="true">
-<rect x="28" y="38" width="8" height="24" rx="2" fill="#a86a3a" stroke="#5a2e1c" stroke-width="2.5"/>
-<path d="M10 42V24a14 14 0 0 1 14-14h16a14 14 0 0 1 14 14v18z" fill="#e8584f" stroke="#5a2e1c" stroke-width="3" stroke-linejoin="round"/>
-<path d="M16 24a8 8 0 0 1 16 0" fill="none" stroke="#ffb0a0" stroke-width="3" stroke-linecap="round"/>
-<rect x="17" y="28" width="14" height="4" rx="2" fill="#5a2e1c"/>
-<path d="M50 34V8" stroke="#5a2e1c" stroke-width="3" stroke-linecap="round"/>
-<path d="M50 8h10v8H50z" fill="#f6c43c" stroke="#5a2e1c" stroke-width="2.5" stroke-linejoin="round"/>
-</svg>`;
+// Ảnh vẽ AI (nguồn gốc ở assets/img/board/generated-v2/): hộp thư béo đóng nắp; lúc gửi thư mở nắp một nhịp (MAILBOX_OPEN_SRC, match-fx.js flyToGoal).
+export const MAILBOX_SVG = '<img class="mailbox" src="assets/img/board/mailbox.png" alt="" draggable="false">';
+export const MAILBOX_OPEN_SRC = 'assets/img/board/mailbox-open.png';
 // Lá thư: bay từ hộp thư vào ô Goal, cũng là icon mục tiêu "thư".
-export const LETTER_SVG = `<svg class="letter" viewBox="0 0 48 36" aria-hidden="true">
-<rect x="2" y="2" width="44" height="32" rx="4" fill="#fff8e8" stroke="#5a2e1c" stroke-width="3"/>
-<path d="M4 5l20 15 20-15" fill="none" stroke="#5a2e1c" stroke-width="3" stroke-linejoin="round"/>
-<path d="M24 26c-4-3-6-5-6-7a3 3 0 0 1 6-1 3 3 0 0 1 6 1c0 2-2 4-6 7z" fill="#e8584f"/>
-</svg>`;
+export const LETTER_SVG = '<img class="letter" src="assets/img/board/letter.png" alt="" draggable="false">';
 
-// Bình hoa (luật "bình" '%'): bình sứ xanh bụng tròn béo. Gom sát bên lần đầu: nứt (cracked = vẽ thêm vết nứt), lần hai: vỡ, mảnh bay vào ô Goal.
-// SVG tạm (chưa có ảnh Figma).
-export const vaseSvg = (cracked = false) => `<svg class="vase" viewBox="0 0 64 64" aria-hidden="true">
-<path d="M25 13h14v6c11 3 18 11 18 23 0 12-10 19-25 19S7 54 7 42c0-12 7-20 18-23z" fill="#7cc4e8" stroke="#5a2e1c" stroke-width="3" stroke-linejoin="round"/>
-<rect x="21" y="6" width="22" height="8" rx="4" fill="#7cc4e8" stroke="#5a2e1c" stroke-width="3"/>
-<path d="M10 43c5-5 9-5 13 0s9 5 13 0 9-5 13 0 6 4 6 4" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-<circle cx="22" cy="32" r="3" fill="#fff"/><circle cx="32" cy="29" r="3" fill="#fff"/><circle cx="42" cy="32" r="3" fill="#fff"/>
-<path d="M15 34c1-5 4-9 8-11" fill="none" stroke="#c8ecff" stroke-width="3" stroke-linecap="round"/>
-${cracked ? '<path d="M33 20l-4 8 6 5-5 7 5 6-3 7M33 33l7 2 3 6" fill="none" stroke="#3a1c10" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' : ''}
-</svg>`;
+// Bình hoa (luật "bình" '%'): bình sứ xanh bụng tròn béo. Gom sát bên lần đầu: nứt (cracked = ảnh có vết nứt), lần hai: vỡ, mảnh bay vào ô Goal.
+export const vaseSvg = (cracked = false) => `<img class="vase" src="assets/img/board/vase${cracked ? '-cracked' : ''}.png" alt="" draggable="false">`;
 // Mảnh bình vỡ bay vào ô Goal.
 export const VASE_SHARD_SVG = `<svg class="vase-shard" viewBox="0 0 40 36" aria-hidden="true">
 <path d="M4 10l14-7 18 6-5 22-17 3z" fill="#7cc4e8" stroke="#5a2e1c" stroke-width="3" stroke-linejoin="round"/>

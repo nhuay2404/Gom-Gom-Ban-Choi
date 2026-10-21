@@ -1,0 +1,4 @@
+Generated with built-in image_gen. Final asset: syrup-glossy-surface.png. Used by ui/play/base.css.
+Prompt: Hand-painted strawberry syrup material for cute casual puzzle game. Saturated rose pink, large softly rounded tonal patches, gentle organic bands, soft pale pink glossy strokes and cream-pink reflections distributed across entire canvas so small cropped areas retain sheen. Simple clean cartoon candy finish. Continuous opaque material with no border, grid, drips, text or objects. Edge volume restored separately at exposed perimeter only.
+Implementation: continuous board coordinates retained; deeper lower inset bevel, soft upper rim, left/right edge volume and short cream highlight strokes only on exposed edges. All joined sides suppress their bevels.
+Visual QA: connected ring, L bends, narrow runs, disconnected patches inspected in texture-join-preview.html using actual game stylesheet. Proof: syrup-glossy-proof.jpg.

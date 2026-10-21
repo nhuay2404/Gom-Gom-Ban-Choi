@@ -7,6 +7,10 @@ import { $, reduceMotion } from '../app/shared.js';
 import { W, H, state, look, addArt, fxLayer } from './context.js';
 import { spawnPuff } from './match-fx.js';
 import { hammerArmed, smashAt } from './booster-bar.js';
+import { syrupMaskAt, syrupAtlasStyle } from '../ui/syrup-autotile.mjs';
+
+// Cùng một texture phủ toàn bàn: mỗi ô lấy đúng tọa độ để mép nối không đổi màu.
+const sheetTile = index => `--col:${index % W};--row:${Math.floor(index / W)}`;
 
 export function renderBoard() {
   const board = $('board');
@@ -54,7 +58,7 @@ export function renderBoard() {
   const syrupJoins = index => {
     const row = Math.floor(index / W), col = index % W;
     if (!syrupAt(row, col)) return '';
-    return (syrupAt(row - 1, col) ? 'n' : '') + (syrupAt(row, col + 1) ? 'e' : '') + (syrupAt(row + 1, col) ? 's' : '') + (syrupAt(row, col - 1) ? 'w' : '') || '-';
+    return syrupMaskAt(row, col, syrupAt);
   };
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
     const object = state.board[index] || null, grass = grassJoins(index), syrup = syrupJoins(index);
@@ -99,7 +103,7 @@ export function renderBoard() {
       cell.insertAdjacentHTML('afterbegin', GRASS_SVG);
       const tile = cell.firstElementChild;
       for (const side of grass.replace('-', '')) tile.classList.add(`j-${side}`);
-      tile.style.cssText = `--col:${index % W};--row:${Math.floor(index / W)}`;
+      tile.style.cssText = sheetTile(index);
     }
     if (object?.fat) { paintFatCat(cell, object, index, grass); return; }
     if (!object) return;
@@ -107,7 +111,7 @@ export function renderBoard() {
     // Siro che kín con vật: không vẽ con vật, chỉ vẽ mảng siro (nối với ô siro bên cạnh).
     if (object.syrup) {
       cell.insertAdjacentHTML('beforeend', SYRUP_TILE);
-      for (const side of syrup.replace('-', '')) cell.lastElementChild.classList.add(`j-${side}`);
+      cell.lastElementChild.style.cssText = syrupAtlasStyle(syrup);
       return;
     }
     addArt(cell, object);

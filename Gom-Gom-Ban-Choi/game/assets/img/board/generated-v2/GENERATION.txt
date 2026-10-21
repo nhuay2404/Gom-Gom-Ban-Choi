@@ -1,0 +1,13 @@
+Generated with built-in image_gen. Transparent PNG revisions from user references. Final vase states: intact and cracked (not shattered). Files saved as new v2 assets; gameplay code unchanged.
+
+vase-intact.png
+Edit the reference into a new intact vase game sprite. Preserve sky blue glazed ceramic, cream wave and three dots, thick warm brown outline, rounded chunky casual puzzle art, soft upper-left highlights. Make a fresh polished version with a slightly shorter neck and plump round belly. Single intact empty vase, no flowers, no cracks. Center on square transparent canvas with 12 percent padding, full object visible, frontal slightly top view. True alpha background, no text or ground.
+
+vase-cracked.png
+Edit ONLY adding ceramic cracks to the exact reference vase. This is a CRACKED but still completely intact standing vase, NOT shattered. Preserve exact silhouette, whole rim, full belly, base, original position scale and camera, sky blue glaze, cream wave and dots, outlines and highlights. Add one clearly readable dark blue-brown zigzag fracture from neck down the front belly towards base with two small branches, thin light edge beside crack for depth. No missing pieces, no detached shards, no holes, no change of shape. Same square transparent canvas, true alpha background. No text.
+
+mailbox-closed.png
+Edit reference mailbox into a MUCH FATTER squat chunky cute mailbox for the same casual puzzle game. Housing 35 percent wider relative to its height, broad swollen rounded arched roof and broad wide front door, short thick wooden support post only about 15 percent total height. Keep coral red housing, raised golden yellow side flag, warm dark brown outline, soft creamy upper-left highlights, near frontal slight view of right side. CLOSED state: front door fully closed with dark horizontal mail slot. No envelope, no scenery. Single object centered on square truly transparent canvas, 12 percent safe padding, full object visible. No text.
+
+mailbox-open.png
+undefined

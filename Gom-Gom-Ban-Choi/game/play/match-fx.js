@@ -3,7 +3,7 @@
 import { mergeTarget } from '../core/board-rules.mjs';
 import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { DRAG, EFFECTS } from '../data/tuning.mjs';
-import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC, LETTER_SVG, VASE_SHARD_SVG, SYRUP_DROP_SVG } from '../ui/board-art.mjs';
+import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC, LETTER_SVG, MAILBOX_OPEN_SRC, VASE_SHARD_SVG, SYRUP_DROP_SVG } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
@@ -55,7 +55,13 @@ export function flyToGoal(kind, cells, delay) {
     setTimeout(() => {
       const cell = cellEl(index), icon = [...document.querySelectorAll('.fg-goal-icon')].find(el => el.dataset.kind === kind && !el.hidden);
       if (!cell || !icon) return land();
-      if (bump) cell.querySelector(bump)?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18, .86)', offset: .3 }, { transform: 'scale(.94, 1.1)', offset: .6 }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+      const box = bump && cell.querySelector(bump);
+      if (box && kind === 'mail') {
+        const closed = box.getAttribute('src');
+        box.src = MAILBOX_OPEN_SRC;
+        setTimeout(() => box.isConnected && box.setAttribute('src', closed), 520);
+      }
+      box?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18, .86)', offset: .3 }, { transform: 'scale(.94, 1.1)', offset: .6 }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
       const from = cell.getBoundingClientRect(), to = icon.getBoundingClientRect();
       const item = document.createElement('span');
       item.className = 'goal-fly';

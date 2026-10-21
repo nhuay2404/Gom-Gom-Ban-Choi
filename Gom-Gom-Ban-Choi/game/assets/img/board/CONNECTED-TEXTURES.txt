@@ -1,0 +1,10 @@
+Connected syrup / grass textures
+
+Final files: syrup-surface.png, grass-surface.png.
+Created with built-in image_gen, referencing the existing syrup-sheet.png and grass-sheet.png respectively. Original sheets are preserved.
+
+Prompt set: Recompose each original sheet into one continuous opaque material, retaining original painted pink tonal bands and glossy highlights for syrup, and yellow-green brushed lawn with sage three-leaf tuft motifs for grass. Remove internal tile frames, gutters and color discontinuities. Do not introduce realistic material details or a different illustration style.
+
+Runtime: all cells sample the same board-wide texture coordinates. Adjacent cells overlap the grid gap; borders and inset highlights are disabled only on joined sides. Exposed outer edges retain outlines and bevels. No image repetition within a board, so opposite-edge tileability is not required.
+
+Visual QA: game/texture-join-preview.html uses the actual game CSS with 8x8 connected shapes, a hole, narrow runs, L turns, detached areas and diagonal contacts. Inspected at desktop and 375px mobile viewport. Proofs: texture-join-proof.jpg and texture-join-mobile-proof.jpg. All 135 existing project tests passed.

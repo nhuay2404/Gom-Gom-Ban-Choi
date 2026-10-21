@@ -178,7 +178,7 @@ body{overflow-x:clip}
   border-right:calc(2 * var(--u)) dashed #6b241640}
 .fg-panel .fg-goal .fg-moves-label{background:#f7c66b;box-shadow:inset 0 calc(-2 * var(--u)) 0 #e9ad45,inset 0 calc(2 * var(--u)) 0 #ffe2a6}
 .fg-panel .fg-goal-icon{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u));margin-top:calc(5 * var(--u))}
-.fg-panel .fg-goal-icon svg{width:100%;height:100%;display:block}
+.fg-panel .fg-goal-icon svg,.fg-panel .fg-goal-icon img{width:100%;height:100%;display:block;object-fit:contain}
 .fg-panel .fg-goal strong,.fg-panel.has-goal .fg-moves strong{margin-top:calc(5 * var(--u));font-family:var(--display);font-size:calc(30 * var(--u));font-weight:800;line-height:1;
   color:#f4868f;-webkit-text-stroke:calc(2.4 * var(--u)) #6b2416;paint-order:stroke fill;text-shadow:0 calc(2 * var(--u)) 0 #6b241640}
 .fg-panel .fg-goal strong{color:#ffd45c}
@@ -300,7 +300,5 @@ body.card-holding,body.card-holding *{touch-action:none}
 /* Bàn nghiêng 3D (preserve-3d) bỏ qua z-index, lớp phẳng (cỏ tràn sang ô bên, thùng, mèo béo) vẽ sau trong DOM đè lên chân mèo đứng
    chạm mặt bàn: nâng ô mèo khỏi mặt bàn vài px để mèo luôn nằm trên lớp phẳng. */
 .board > .cell.locked:not(.drop){transform:translateZ(4px)}
-/* Icon cỏ ở ô Goal: y như ô cỏ trên bàn (base.css .grass-tile) thu nhỏ */
-.fg-panel .fg-goal-icon .goal-grass{display:block;width:100%;height:100%;box-sizing:border-box;border-radius:22%;
-  background:linear-gradient(#86c255,#86c255) 0 0/100% 100%,url('../../assets/img/map/grass-bg.jpg') 30% 40%/300% auto;background-blend-mode:multiply;
-  border:max(1.5px,.12em) solid #3d7327;box-shadow:inset 0 -.18em 0 #4f8a3270,inset 0 .12em 0 #d6f2b066,0 .12em 0 #3d7327;font-size:calc(14 * var(--u))}
+/* Icon cỏ ở ô Goal: ô đầu (đứng riêng, đủ viền) của sheet cỏ trên bàn (base.css .grass-tile) */
+.fg-panel .fg-goal-icon .goal-grass{display:block;width:100%;height:100%;background:url('../../assets/img/board/grass-surface.png') center/cover;border:0;box-shadow:none;border-radius:20%}

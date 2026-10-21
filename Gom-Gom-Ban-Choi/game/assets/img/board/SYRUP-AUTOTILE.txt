@@ -1,0 +1,8 @@
+Final syrup atlas: syrup-autotile.png, 47 sprites on an 8x6 grid.
+Each sprite is 128x128 px, packed with 2 px copied-edge padding (132 px stride). Manifest: syrup-autotile.json. SVG source and reproducible build script are retained.
+Style: reference pink sheet, soft irregular pink patches, thick rose perimeter and large cream corner glints; no realistic liquid swirls or bright center dots.
+Material generated using built-in image_gen from the user's pink sheet. Prompt: single inner pink surface, broad asymmetrical gently curving translucent pink patches, warm pastel strawberry pink, simple soft painted shading, no stripes, marbling, border, bevel, grid or specular spots. Native atlas geometry provides exposed-edge shading and corner reflections.
+Rendering uses 8-neighbor blob masks including diagonals (inner corners), rather than a single board-wide image. Connected sides have no outline. Edge padding prevents sampling neighboring sprite frames.
+Visual QA: ring, narrow runs, L turns, detached patches. syrup-autotile-proof.jpg. All 137 project tests passed.
+
+Edge repair: all exposed edges use an 8px inset; concave arcs terminate at this same inset. Rim shades follow world-facing normals, not quarter IDs. Two-pixel continuation strips guarantee equal RGBA profiles across connected sprite sides. Exhaustive horizontal + vertical seam check: 2048 compatible pairs, max alpha difference 0, max premultiplied color difference 0. Project tests: 137 passed.

@@ -1,0 +1,18 @@
+Background variants generated using built-in image_gen.
+Style reference: ../meadow-bg.jpg
+New optional backgrounds; active game background unchanged.
+
+Shared prompt:
+Use case: illustration-story. A full-bleed portrait mobile puzzle game BACKGROUND, aspect ratio about 9:19.5, matching the provided game's meadow background hand-painted 2D art: simple rounded silhouettes, softly brushed color patches, matte pastel colors, gentle texture, friendly cozy children's illustration. Preserve composition: sky upper 23 percent, distant low horizon around 24 percent height, broad ground fills remaining 76 percent. Large central 65 percent width is quiet low-contrast open ground for overlaying game board and UI; decorations concentrated at far left/right edges and bottom corners, never large central objects. No characters, cats, UI, text, letters, logos, borders or watermarks. Opaque full image, not transparent. Not realistic, no 3D rendering, no dramatic perspective or hard shadows.
+
+spring-garden.png
+SPRING FLOWER GARDEN: pale mint and fresh light green meadow with soft blue sky, fluffy white clouds and two subtle paw-shaped clouds. Small pink cherry blossom trees only far edges near horizon, tiny cream daisies and blush pink petals clustered at outer margins, gentle spring sunlight. Distinct from original by pink flowering edge foliage and mint green palette.
+
+sunset-meadow.png
+SUNSET MEADOW: warm peach, apricot and pale lavender sky with softly glowing cream clouds, muted sage and golden green meadow. Low rounded distant bushes, sparse tiny buttery yellow flowers and soft warm wildgrass at edges. Calm golden-hour mood, readable pale sage central ground, no huge sun or flare.
+
+autumn-garden.png
+AUTUMN GARDEN: soft pale turquoise sky and cream clouds, warm muted ochre-green open lawn, rounded amber, copper and peach autumn trees framing far outer edges near horizon. Small scattered maple leaves and tiny mushroom clusters only bottom side corners. Cozy autumn palette, open quiet central ground, no paths or structures.
+
+moonlit-garden.png
+MOONLIT GARDEN: gentle pastel periwinkle night sky, a small cream crescent moon in upper right and sparse tiny stars. Ground is readable muted blue-teal, not dark navy. Rounded lavender distant shrubs, tiny pale luminous flowers and a few firefly dots at side margins only. Cozy peaceful magical night, soft matte painting, keep central ground plain enough for bright puzzle board overlays.

@@ -418,29 +418,18 @@ img.crate{scale:1.32;translate:0 -8%}
 img.crate.open{position:absolute;inset:0;scale:1.58;translate:0 -17%}
 .crate-ghost{position:absolute;z-index:3}
 /* Hộp thư '@' (play/board-view.js) + lá thư bay vào ô Goal (play/match-fx.js flyToGoal) */
-.cell.block.mail .mailbox{width:100%;height:100%;display:block;scale:1.25;translate:0 -8%;transform-origin:50% 95%;filter:drop-shadow(0 3px 2px #6b3f1c55)}
+.cell.block.mail .mailbox{width:100%;height:100%;display:block;object-fit:contain;scale:1.15;translate:0 -4%;transform-origin:50% 95%;filter:drop-shadow(0 3px 2px #6b3f1c55)}
 .goal-fly{position:fixed;z-index:60;pointer-events:none;display:block}
-.goal-fly svg,.fg-goal-icon svg.letter{display:block;width:100%;height:auto}
+.goal-fly svg,.goal-fly img,.fg-goal-icon .letter{display:block;width:100%;height:auto}
 /* Bình hoa '%' (play/board-view.js) + bóng bình lúc vỡ, mảnh men văng (play/match-fx.js breakVases) */
-.cell.block.vase .vase,.vase-ghost .vase{width:100%;height:100%;display:block;scale:1.2;translate:0 -6%;transform-origin:50% 90%;filter:drop-shadow(0 3px 2px #6b3f1c55)}
+.cell.block.vase .vase,.vase-ghost .vase{width:100%;height:100%;display:block;object-fit:contain;scale:1.1;translate:0 -6%;transform-origin:50% 90%;filter:drop-shadow(0 3px 2px #6b3f1c55)}
 .vase-ghost{position:absolute;z-index:4;pointer-events:none}
 /* Siro dâu (play/board-view.js): mảng siro hồng đặc che kín con vật; ô siro cạnh nhau nối liền thành một mảng (lớp j-n / j-e / j-s / j-w,
-   cùng cách với .grass-tile): cạnh giáp ô siro khác không viền, không bo, trải qua khe giữa hai ô. Mép dưới mảng chảy một giọt. */
+   cùng cách với .grass-tile): cạnh giáp ô siro khác không viền, không bo, trải qua khe giữa hai ô. Không giọt chảy ở mép dưới (artist bỏ). */
 .cell.syrup{position:relative;background:none!important;box-shadow:none}
-.cell.syrup .syrup-tile{--ov:calc((var(--pitch) - var(--gap, 6px)) * .06);--l:var(--ov);--r:var(--ov);--t:var(--ov);--b:var(--ov);
-  position:absolute;inset:calc(-1 * var(--t)) calc(-1 * var(--r)) calc(-1 * var(--b)) calc(-1 * var(--l));z-index:2;pointer-events:none;box-sizing:border-box;border-radius:26%;
-  background:radial-gradient(circle at 28% 24%,#fff6 0 9%,transparent 10%),linear-gradient(#ff8db0,#ff4f86);
-  border:calc(var(--c) * .04) solid #b8114f;
-  box-shadow:inset 0 calc(var(--c) * .07) 0 #ffffff59,inset 0 calc(var(--c) * -.07) 0 #c2185b55,0 calc(var(--c) * .07) 0 #b8114f}
-.cell.syrup .syrup-tile.j-n{--t:calc(var(--gap, 6px) * .5 + 1px);border-top-width:0;border-top-left-radius:0;border-top-right-radius:0}
-.cell.syrup .syrup-tile.j-s{--b:calc(var(--gap, 6px) * .5 + 1px);border-bottom-width:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
-.cell.syrup .syrup-tile.j-e{--r:calc(var(--gap, 6px) * .5 + 1px);border-right-width:0;border-top-right-radius:0;border-bottom-right-radius:0}
-.cell.syrup .syrup-tile.j-w{--l:calc(var(--gap, 6px) * .5 + 1px);border-left-width:0;border-top-left-radius:0;border-bottom-left-radius:0}
-.cell.syrup .syrup-tile.j-n{box-shadow:inset 0 calc(var(--c) * -.07) 0 #c2185b55,0 calc(var(--c) * .07) 0 #b8114f}
-.cell.syrup .syrup-tile.j-s{box-shadow:inset 0 calc(var(--c) * .07) 0 #ffffff59}
-.cell.syrup .syrup-tile.j-n.j-s{box-shadow:none}
-.cell.syrup .syrup-tile:not(.j-s)::after{content:'';position:absolute;left:58%;bottom:-24%;width:16%;height:26%;border-radius:0 0 50% 50% / 0 0 60% 60%;
-  background:#ff4f86;border:calc(var(--c) * .04) solid #b8114f;border-top:0}
+.cell.syrup .syrup-tile{position:absolute;inset:calc(var(--gap, 6px) * -.5 - .5px);z-index:2;pointer-events:none;
+  border:0;border-radius:0;box-shadow:none;
+  background:url('../../assets/img/board/syrup-autotile.png') var(--sx, 0%) var(--sy, 0%) / 825% 618.75% no-repeat}
 .syrup-ghost{position:absolute;z-index:4;pointer-events:none;margin:0}
 .syrup-bit{position:absolute;z-index:5;width:8px;height:10px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;background:#ff5c8a;box-shadow:0 0 0 1.5px #c2185b;pointer-events:none}
 .vase-chip{position:absolute;z-index:5;width:9px;height:7px;border-radius:2px 5px 2px 4px;background:#7cc4e8;box-shadow:0 0 0 1.5px #5a2e1c;pointer-events:none}
@@ -538,20 +527,24 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 .board{--pitch:calc((var(--bw, 100%) - 2 * var(--pad, 0px) + var(--gap, 6px)) / var(--cols, 6))}
 .cell.grass .grass-tile{--ov:calc((var(--pitch) - var(--gap, 6px)) * .05);--l:var(--ov);--r:var(--ov);--t:var(--ov);--b:var(--ov);
   position:absolute;inset:calc(-1 * var(--t)) calc(-1 * var(--r)) calc(-1 * var(--b)) calc(-1 * var(--l));z-index:0;pointer-events:none;box-sizing:border-box;border-radius:22%;
-  /* Cỏ vẽ tay (ảnh nền bản đồ), mỗi ô thấy rõ vài bụi cỏ; nhân với lớp xanh đậm cho cỏ đậm, nổi trên bàn gỗ sáng. Neo theo vị trí ô nên liền qua cả bãi */
-  --grass-pos:calc(var(--l) - var(--col, 0) * var(--pitch)) calc(var(--t) - var(--row, 0) * var(--pitch));
-  background:linear-gradient(#86c255,#86c255) 0 0/100% 100%,url('../../assets/img/map/grass-bg.jpg') var(--grass-pos)/calc(var(--pitch) * 3) auto;
-  background-blend-mode:multiply;
-  background-origin:border-box;border:calc(var(--c) * .035) solid #3d7327;
-  box-shadow:inset 0 calc(var(--c) * -.07) 0 #4f8a3270,inset 0 calc(var(--c) * .05) 0 #d6f2b066,0 calc(var(--c) * .05) 0 #3d7327}
+  /* Texture cỏ riêng, cùng hệ tọa độ với siro để nối kín qua các ô. */
+  background:url('../../assets/img/board/grass-surface.png') calc(var(--l) - var(--col, 0) * var(--pitch)) calc(var(--t) - var(--row, 0) * var(--pitch)) / calc(var(--pitch) * var(--cols, 6)) calc(var(--pitch) * var(--rows, 6)) no-repeat;
+  background-origin:border-box;border:1px solid #63844499;
+  box-shadow:none}
 .cell.grass .grass-tile.j-n{--t:calc(var(--gap, 6px) * .5 + 1px);border-top-width:0;border-top-left-radius:0;border-top-right-radius:0}
 .cell.grass .grass-tile.j-s{--b:calc(var(--gap, 6px) * .5 + 1px);border-bottom-width:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
 .cell.grass .grass-tile.j-e{--r:calc(var(--gap, 6px) * .5 + 1px);border-right-width:0;border-top-right-radius:0;border-bottom-right-radius:0}
 .cell.grass .grass-tile.j-w{--l:calc(var(--gap, 6px) * .5 + 1px);border-left-width:0;border-top-left-radius:0;border-bottom-left-radius:0}
-.cell.grass .grass-tile.j-n{box-shadow:inset 0 calc(var(--c) * -.07) 0 #4f8a3270,0 calc(var(--c) * .05) 0 #3d7327}
-.cell.grass .grass-tile.j-s{box-shadow:inset 0 calc(var(--c) * .05) 0 #d6f2b066}
-.cell.grass .grass-tile.j-n.j-s{box-shadow:none}
+.cell.grass .grass-tile.j-n{--rim-n:0px}
+.cell.grass .grass-tile.j-s{--rim-s:0px}
+.cell.grass .grass-tile.j-w{--rim-w:0px}
+.cell.grass .grass-tile.j-e{--rim-e:0px}
 .cell.grass > :not(.grass-tile){position:relative;z-index:1}
+/* Vết trũng theo thân pet, nằm trên texture nhưng dưới pet; không chạy theo chu vi bãi cỏ. */
+.cell.grass.locked:not(.syrup):has(> .cat)::before{content:'';position:absolute;inset:17% 6% 2%;z-index:1;pointer-events:none;
+  border-radius:35% 34% 29% 31%;
+  background:radial-gradient(ellipse at 50% 55%,#426b243b 0%,#426b2426 58%,#426b2400 76%);
+  box-shadow:inset 0 3px 3px #304f244d,inset 2px 0 3px #304f2426,inset 0 -1px 1px #eaf5ba8c}
 /* Lồng trên ô cỏ: giữ absolute phủ lên mèo (quy tắc trên làm lồng thành relative, cao 0 → lồng / ổ khoá biến mất) */
 .cell.grass.caged > .cage-bars{position:absolute;z-index:2}
 .grass-bit{position:absolute;z-index:5;width:6px;height:14px;border-radius:50% 50% 2px 2px;background:#84c556;box-shadow:inset 0 0 0 1.5px #3d7327;pointer-events:none}

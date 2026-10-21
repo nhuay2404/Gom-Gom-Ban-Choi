@@ -1,0 +1,25 @@
+# Asset generation v1
+
+Created with built-in image_gen, using crate.png and tin-can.png as style references. New PNG assets only; not connected to gameplay rendering yet.
+
+Use case: stylized-concept. Production 2D mobile puzzle game bitmap asset for Gom Gom Ban Choi. Match the reference crate and tin can: rounded chunky silhouette, medium thick warm dark brown colored outline, softly shaded pastel surfaces, broad cream upper-left highlights, gentle darker bottom bevel, cute polished hand-painted casual game icon, restrained detail readable at 48px. Orthographic near front view, very slight top visible, no realistic rendering, no words, no watermark. True transparent background. Centered with safe transparent padding.
+
+## mailbox.png
+
+One single red rural mailbox on a short chunky wooden post, rounded arched red housing, closed front door with a dark horizontal letter slot, small golden yellow raised side flag. Compact proportions for a square board cell. No ground or scenery.
+
+## letter.png
+
+One single cream paper envelope, horizontal rectangular rounded silhouette, closed triangular flap with warm brown seams and small coral red heart seal centered on the flap. Nearly front view, no writing or stamp. No other objects.
+
+## vase.png
+
+One single empty sky blue ceramic flower vase, squat round plump belly, short narrow neck and thick rounded lip with visible dark opening. Simple cream white wavy band and three dots across the belly, no flowers, no handles, uncracked. Compact square game obstacle.
+
+## strawberry-syrup-sheet.png
+
+A strawberry syrup AUTOTILE SPRITE SHEET, exactly 4 columns by 4 rows of equal square cells on a 1024x1024 transparent canvas. Each cell 256x256, no gutters, no labels. Opaque juicy pastel strawberry pink syrup covers board cells and hides cats; no cats, no bottles, no fruit, no separate droplets outside the tile. Smooth candy pink surface, broad light pink upper-left highlights, darker raspberry bottom edge, rounded exposed corners, subtle thick raspberry outline ONLY on exposed edges. Sixteen tile variants ordered row major by bitmask of joined neighboring syrup tiles: north=1 east=2 south=4 west=8. Row1 masks 0,1,2,3; row2 4,5,6,7; row3 8,9,10,11; row4 12,13,14,15. Joined edges reach the exact cell boundary, flat seamless edge without outline or highlight; exposed edges inset slightly and rounded, bottom exposed edges have a tiny integrated syrup drip within their cell. All 16 tiles share same scale and base pink color. Full four-way joined mask15 is completely filled flat pink square. A practical game texture atlas, not a poster.
+
+Syrup: intended 4x4 adjacency atlas, N=1 E=2 S=4 W=8, row-major masks 0..15. Generated atlas needs seam and exact grid validation before runtime integration.
+
+Visual QA: The syrup sheet contains 16 illustrated variants, with transparent spacing. It is an art source sheet, not a validated seamless runtime autotile atlas. Crop/align tiles and verify joins during integration. Original generated resolution is preserved for all PNGs.
