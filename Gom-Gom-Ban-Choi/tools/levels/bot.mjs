@@ -41,8 +41,9 @@ function movesFor(board, card, rng, noise, W, H, grass) {
     const wakes = (match.woke ?? []).length;
     // Màn có hộp thư: mỗi thư đáng như một cú gom 3 (màn không có hộp thư: luôn 0).
     const letters = match.mail.length;
-    // Màn có bình hoa / siro dâu: mỗi lần trúng (nứt / vỡ / rửa siro) đáng như một cú gom 3.
-    const vaseHits = match.cracked.length + match.shattered.length + match.syrup.length;
+    // Màn có bình hoa / siro dâu / chuồng: mỗi lần trúng (nứt / vỡ / rửa siro / bẻ khoá chuồng) đáng như một cú gom 3.
+    // (siro là chuồng 1 khoá nên đã nằm trong `freed`.)
+    const vaseHits = match.cracked.length + match.shattered.length + match.caged.length + match.freed.length;
     const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + letters * 300 + vaseHits * 300 + rng() * noise;
     out.push({ value, match, points, cleaned, indices, placed: next, rot, anchor });
   }

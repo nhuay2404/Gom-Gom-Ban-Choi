@@ -23,11 +23,18 @@ const COLORS = { O: '#f3a35a', G: '#9aa0a6', W: '#ffffff', K: '#33302c', S: '#ea
 // Ảnh mèo thật của game (cat-art.mjs) cho ô mèo trên bàn + cọ. Đường dẫn ảnh trong art tính từ game/, editor ở tools/levels/level-editor/.
 const CAT_ART = Object.fromEntries(Object.entries(catMarkup).map(([group, svg]) => [group, svg.replaceAll('href="ui/', 'href="../../game/ui/')]));
 const catArt = letter => CAT_ART[LETTERS[letter]] ?? letter;
-// '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn.
-const BRUSHES = ['.', '#', 'X', 'M', ...Object.keys(LETTERS), '~', '≈'];
-const BRUSH_LABEL = { '.': 'Trống', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ' };
+// '~' / '≈' là cọ của lớp cỏ (level.grass): vẽ / xoá cỏ, không đổi ô của bàn. '*' / '×' là cọ của lớp siro dâu (level.syrup): phủ / bỏ
+// siro trên ô mèo. '2' / '3' / '4': mèo béo 2×2 (ô bấm = góc trên-trái, số = lần phải đánh thức). '@' hộp thư, '%' bình hoa.
+// Shift + bấm ô mèo: nhốt / thả chuồng.
+const BRUSHES = ['.', '#', 'X', 'M', '@', '%', ...Object.keys(LETTERS), '2', '3', '4', '~', '≈', '*', '×'];
+const BRUSH_LABEL = { '.': 'Trống (xoá)', '#': 'Ngoài bàn', X: 'Thùng gỗ', M: 'Kim loại', '@': 'Hộp thư (không vỡ, gom sát bên ra thư — nhớ điền "Số thư")', '%': 'Bình hoa (gom sát 2 lần thì vỡ)',
+  2: 'Mèo béo 2×2, đánh thức 2 lần (ô bấm = góc trên-trái)', 3: 'Mèo béo 2×2, đánh thức 3 lần', 4: 'Mèo béo 2×2, đánh thức 4 lần',
+  '~': 'Cỏ (lớp dưới mèo)', '≈': 'Xoá cỏ', '*': 'Siro dâu (phủ lên mèo, chỉ ô có mèo)', '×': 'Xoá siro' };
+const BRUSH_TEXT = { '@': '📮', '%': '🏺', 2: '🐱2', 3: '🐱3', 4: '🐱4', '*': '🍓', '×': '✕🍓' };
+const BRUSH_BG = { X: '#b98a52', M: '#7d8790', '#': '#ddd', '~': '#8a5a33', '@': '#e8584f', '%': '#7cc4e8', 2: '#f3a35a', 3: '#f3a35a', 4: '#f3a35a', '*': '#ff5c8a', '×': '#ffd6e2' };
 const NOISES = [{ noise: 1, label: 'Bot giỏi' }, { noise: 30, label: 'Trung bình' }, { noise: 90, label: 'Người yếu' }];
 const ELEMENT_LABEL = { moves: 'Lượt chật', colors: 'Nhiều màu', crate: 'Thùng gỗ', wall: 'Kim loại', board: 'Bàn rộng/hình', cage: 'Chuồng', grass: 'Cỏ' };
+const isCatCh = ch => !!LETTERS[ch] || (!!LETTERS[ch.toUpperCase()] && ch !== ch.toUpperCase());
 
 let edits = {};
 try { edits = JSON.parse(localStorage.getItem(STORE)) ?? {}; } catch { edits = {}; }
@@ -100,9 +107,10 @@ $('levelList').addEventListener('click', event => {
 // ---------- Form ----------
 const FIELDS = [
   { key: 'tier', label: 'Tier', type: 'select', options: ['normal', 'hard', 'chill', 'boss'] },
-  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage', 'grass'] },
+  { key: 'introduces', label: 'Giới thiệu', type: 'select', options: ['', 'crate', 'metal', 'hold', 'cage', 'grass', 'fat', 'mail', 'vase', 'syrup'] },
   { key: 'moves', label: 'Lượt', type: 'number' },
   { key: 'target', label: 'Mục tiêu điểm', type: 'number' },
+  { key: 'mail', label: 'Số thư cần gom (màn có 📮)', type: 'number', optional: true },
   { key: 'cats', label: 'Giống mèo (OGWKST)' },
   { key: 'assist', label: 'Assist (0–1)', type: 'number', step: 0.05, optional: true },
   { key: 'shapes.single', label: 'Tỉ lệ thẻ đơn', type: 'number', optional: true },
@@ -147,14 +155,16 @@ $('form').addEventListener('change', event => {
 });
 
 // ---------- Bàn ----------
-function boardHtml(rows, interactive = false, grass = null) {
-  const { W } = boardSize(rows), grassCells = grass ? grass.join('') : '';
+function boardHtml(rows, interactive = false, grass = null, syrup = null) {
+  const { W } = boardSize(rows), grassCells = grass ? grass.join('') : '', syrupCells = syrup ? syrup.join('') : '';
   const cells = [...rows.join('')].map((ch, index) => {
-    const up = ch.toUpperCase(), cat = LETTERS[up];
-    const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : '';
+    const up = ch.toUpperCase(), cat = LETTERS[up], fat = /[1-9]/.test(ch), sticky = syrupCells[index] === '~' && cat;
+    const cls = ch === '#' ? 'void' : ch === 'X' || ch === 'M' ? ch : ch === '@' ? 'mail' : ch === '%' ? 'vase' : fat ? 'fat' : '';
     const grassy = grassCells[index] === '~';
     const style = `${grassy ? 'box-shadow:inset 0 0 0 4px #8a5a33;' : ''}${grassy && !cat ? 'background:#c49a6c;' : ''}`;
-    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') : ''}">${ch === '.' || ch === '#' ? '' : cat ? catArt(up) : up}</div>`;
+    const title = cat ? LETTERS[up] + (ch !== up ? ' (trong chuồng)' : '') + (sticky ? ' (phủ siro)' : '') : BRUSH_LABEL[ch] ?? (fat ? `Mèo béo, đánh thức ${ch} lần` : '');
+    const body = ch === '.' || ch === '#' ? '' : cat ? catArt(up) : fat ? ch : BRUSH_TEXT[ch] ?? up;
+    return `<div class="cell ${cls} ${cat ? 'cat' : ''} ${cat && ch !== up ? 'cage' : ''} ${sticky ? 'syrup' : ''}" ${interactive ? `data-c="${index}"` : ''} style="${style}" title="${title}">${body}</div>`;
   }).join('');
   return `<div class="board" style="grid-template-columns:repeat(${W},auto)">${cells}</div>`;
 }
@@ -162,9 +172,9 @@ function renderBoard() {
   const rows = level().board, { W, H } = boardSize(rows);
   $('bw').value = W; $('bh').value = H;
   $('boardInfo').textContent = `${W}×${H} · ${playableCells(rows)} ô chơi`;
-  $('board').innerHTML = boardHtml(rows, true, level().grass);
+  $('board').innerHTML = boardHtml(rows, true, level().grass, level().syrup);
   $('palette').innerHTML = BRUSHES.map(b => `<button data-b="${b}" title="${BRUSH_LABEL[b] || LETTERS[b]}" class="${b === brush ? 'on' : ''} ${LETTERS[b] ? 'cat-brush' : ''}"
-    style="background:${COLORS[b] || (b === 'X' ? '#b98a52' : b === 'M' ? '#7d8790' : b === '#' ? '#ddd' : b === '~' ? '#8a5a33' : '#f4ecdf')};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : b}</button>`).join('');
+    style="background:${COLORS[b] || BRUSH_BG[b] || '#f4ecdf'};color:${b === 'K' || b === 'X' || b === 'M' || b === '~' ? '#fff' : '#333'}">${b === '.' ? '·' : LETTERS[b] ? catArt(b) : BRUSH_TEXT[b] ?? b}</button>`).join('');
 }
 // Lớp cỏ: chỉ nằm dưới ô trống / mèo; không còn ô cỏ nào thì bỏ hẳn trường grass.
 function withGrass(board, grass) {
@@ -173,8 +183,33 @@ function withGrass(board, grass) {
   if (!flat.includes('~')) return undefined;
   return board.map((_, r) => flat.slice(r * W, r * W + W).join(''));
 }
+// Lớp siro: chỉ nằm trên ô mèo thường (không chuồng); không còn ô nào thì bỏ hẳn trường syrup.
+function withSyrup(board, syrup) {
+  const { W } = boardSize(board), cells = board.join('');
+  const flat = [...(syrup ? syrup.join('') : '.'.repeat(cells.length))].map((ch, k) => (ch === '~' && LETTERS[cells[k]] ? '~' : '.'));
+  if (!flat.includes('~')) return undefined;
+  return board.map((_, r) => flat.slice(r * W, r * W + W).join(''));
+}
+const layers = board => ({ board, grass: withGrass(board, level().grass), syrup: withSyrup(board, level().syrup) });
+// Ô thuộc mèo béo 2×2: cả khối (tìm góc trên-trái theo parseBoard).
+function fatBlock(flat, W, index) {
+  if (!/[1-9]/.test(flat[index])) return [];
+  for (const corner of [index, index - 1, index - W, index - W - 1]) {
+    const block = [corner, corner + 1, corner + W, corner + W + 1];
+    if (corner >= 0 && corner % W < W - 1 && block.includes(index) && block.every(k => /[1-9]/.test(flat[k] ?? ''))) return block;
+  }
+  return [index];
+}
 function paint(index, cage) {
   const rows = level().board, { W } = boardSize(rows), flat = [...rows.join('')];
+  if (brush === '*' || brush === '×') {
+    if (brush === '*' && !LETTERS[flat[index]]) return;
+    const syrup = [...(level().syrup ? level().syrup.join('') : '.'.repeat(flat.length))];
+    if (syrup[index] === (brush === '*' ? '~' : '.')) return;
+    syrup[index] = brush === '*' ? '~' : '.';
+    update({ syrup: withSyrup(rows, rows.map((_, r) => syrup.slice(r * W, r * W + W).join(''))) });
+    return;
+  }
   if (brush === '~' || brush === '≈') {
     const grass = [...(level().grass ? level().grass.join('') : '.'.repeat(flat.length))];
     if (grass[index] === (brush === '~' ? '~' : '.')) return;
@@ -185,12 +220,24 @@ function paint(index, cage) {
     return;
   }
   let ch = brush;
-  if (cage && LETTERS[flat[index].toUpperCase()]) ch = flat[index] === flat[index].toUpperCase() ? flat[index].toLowerCase() : flat[index].toUpperCase();
+  if (cage && isCatCh(flat[index])) ch = flat[index] === flat[index].toUpperCase() ? flat[index].toLowerCase() : flat[index].toUpperCase();
   if (flat[index] === ch) return;
-  flat[index] = ch;
+  // Vẽ đè lên mèo béo: xoá cả khối 2×2 (không để lại khối lẻ).
+  const cleared = new Set(fatBlock(flat, W, index));
+  if (/[1-9]/.test(ch)) {
+    // Mèo béo: ô bấm là góc trên-trái, cần đủ 2×2 trong bàn.
+    const block = [index, index + 1, index + W, index + W + 1];
+    if (index % W === W - 1 || block.some(k => k >= flat.length || flat[k] === '#')) return;
+    block.forEach(k => fatBlock(flat, W, k).forEach(j => cleared.add(j)));
+    cleared.forEach(k => { flat[k] = '.'; });
+    block.forEach(k => { flat[k] = ch; });
+  } else {
+    cleared.forEach(k => { flat[k] = '.'; });
+    flat[index] = ch;
+  }
   const board = [];
   for (let r = 0; r < flat.length / W; r++) board.push(flat.slice(r * W, r * W + W).join(''));
-  update({ board, grass: withGrass(board, level().grass) });
+  update(layers(board));
 }
 $('palette').addEventListener('click', event => { const b = event.target.closest('[data-b]'); if (b) { brush = b.dataset.b; renderBoard(); } });
 $('board').addEventListener('mousedown', event => { const c = event.target.closest('[data-c]'); if (!c) return; painting = !event.shiftKey; paint(Number(c.dataset.c), event.shiftKey); });
@@ -200,10 +247,14 @@ $('btnResize').onclick = () => {
   const W = Math.max(4, Math.min(9, Number($('bw').value))), H = Math.max(4, Math.min(9, Number($('bh').value)));
   const old = level().board;
   const board = Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => old[r]?.[c] ?? '.').join(''));
-  const grass = level().grass && Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => level().grass[r]?.[c] ?? '.').join(''));
-  update({ board, grass: withGrass(board, grass) });
+  const fit = layer => layer && Array.from({ length: H }, (_, r) => Array.from({ length: W }, (_, c) => layer[r]?.[c] ?? '.').join(''));
+  // Mèo béo bị cắt khỏi bàn thì bỏ cả khối.
+  const flat = [...board.join('')];
+  flat.forEach((ch, k) => { if (/[1-9]/.test(ch) && fatBlock(flat, W, k).length < 4) flat[k] = '.'; });
+  const fixed = board.map((_, r) => flat.slice(r * W, r * W + W).join(''));
+  update({ board: fixed, grass: withGrass(fixed, fit(level().grass)), syrup: withSyrup(fixed, fit(level().syrup)) });
 };
-$('btnClear').onclick = () => update({ board: level().board.map(row => row.replace(/[A-Za-z]/g, ch => (ch === 'X' || ch === 'M' ? ch : '.'))) });
+$('btnClear').onclick = () => update({ board: level().board.map(row => row.replace(/[A-Za-z]/g, ch => (ch === 'X' || ch === 'M' ? ch : '.'))), syrup: undefined });
 
 // ---------- Kiểm tra ----------
 function issues(l) {
@@ -211,13 +262,16 @@ function issues(l) {
   const { W, H } = boardSize(l.board);
   if (l.board.some(row => row.length !== W)) out.push('Các hàng của bàn không cùng độ dài');
   try {
-    if (clearMatches(parseBoard(l.board), W, H, MATCH_SIZE).cleared.length) out.push('Bàn đầu đã có cụm gom được (≥ 3 mèo liền nhau)');
+    if (clearMatches(parseBoard(l.board, l.syrup), W, H, MATCH_SIZE).cleared.length) out.push('Bàn đầu đã có cụm gom được (≥ 3 mèo liền nhau)');
   } catch (error) { out.push('Bàn lỗi: ' + error.message); }
   const onBoard = new Set([...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).map(ch => ch.toUpperCase()));
   const missing = [...onBoard].filter(ch => !l.cats.includes(ch));
   if (missing.length) out.push(`Mèo trên bàn không có trong "Giống mèo": ${missing.join(', ')}`);
   (l.deck || []).forEach(spec => { try { if (parseCard(spec).items.some(item => !item.group)) throw 0; } catch { out.push(`Thẻ lỗi: ${spec}`); } });
   if (!l.moves || l.moves < 1) out.push('Số lượt phải ≥ 1');
+  const boxes = [...l.board.join('')].filter(ch => ch === '@').length;
+  if (boxes && !(l.mail > 0)) out.push('Có hộp thư 📮 nhưng chưa điền "Số thư cần gom"');
+  if (!boxes && l.mail > 0) out.push('Có "Số thư cần gom" nhưng bàn không có hộp thư 📮');
   const ppm = l.target / l.moves;
   if (ppm > 30) out.push(`Mục tiêu/lượt = ${ppm.toFixed(1)}: rất chật (ngưỡng "Lượt chật" là ${ADAPTIVE.TIGHT_PPM})`);
   if (level().tier === 'boss' && elementCount(l) < 2) out.push('Boss nên có ≥ 2 element (DDA không cho boss xuống dưới Medium)');
@@ -269,7 +323,7 @@ function renderDDA() {
 
   $('variants').innerHTML = variants().map(v => `<div class="variant ${v.base ? 'base' : ''}">
     <div><b>${v.label}</b></div>
-    <div class="mini">${boardHtml(v.level.board, false, v.level.grass)}</div>
+    <div class="mini">${boardHtml(v.level.board, false, v.level.grass, v.level.syrup)}</div>
     <div class="muted">queue ${v.level.queue ?? 0} · ${v.ease} cặp cạnh nhau · assist ${v.level.assist ?? 0.3} · thẻ ${['single', 'domino', 'triple'].map(k => (v.level.shapes || { single: 6, domino: 5, triple: 1 })[k]).join('/')}</div></div>`).join('');
 }
 // Mỗi mức DDA (shift âm = dễ hơn): chỉ hàng thẻ đổi (queue + assist + tỉ lệ thẻ). Bàn, bố trí mèo, vật cản, lượt luôn đúng thiết kế.
@@ -390,14 +444,15 @@ const shown = new Set(EV_PROFILES.map(p => p.id));
 const hashText = text => [...text].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7).toString(36);
 const curveKey = (i, p, runs) => `${hashText(JSON.stringify(LEVELS[i]))}:${p.id}:${p.noise}:${p.hold}:${JSON.stringify(p.pace)}:${runs}`;
 const grassOf = l => (l.grass ? [...l.grass.join('')].filter(ch => ch === '~').length : 0);
-const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length;
+const cagesOf = l => [...l.board.join('')].filter(ch => /[a-z]/.test(ch)).length + (l.syrup ? [...l.syrup.join('')].filter(ch => ch === '~').length : 0);
+const vaseHitsOf = l => [...l.board.join('')].filter(ch => ch === '%').length * 2;
 const catsOf = l => [...l.board.join('')].filter(ch => LETTERS[ch.toUpperCase()]).length;
 
 // EV của một màn với một profile (stats = kết quả bot). Trả về { ev, parts (0..1 mỗi thành phần), raw }.
 function difficultyEV(l, stats, p) {
   const attempts = Math.min(10, 1 / Math.max(stats.winRate, 0.1));
   const timeMin = attempts * stats.secAvg / 60;
-  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l);
+  const goalMatches = l.target / 30 + grassOf(l) / 3 + cagesOf(l) + (l.mail ?? 0) + vaseHitsOf(l);
   const clamp01 = v => Math.max(0, Math.min(1, v));
   const parts = {
     time: clamp01(timeMin / EV_SCALE.timeMin),
@@ -499,10 +554,10 @@ $('curveLegend').addEventListener('change', event => { const id = event.target.d
 const q = s => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 function toCode(l) {
   const head = [`name: ${q(l.name)}`, l.feature !== undefined && `feature: ${q(l.feature)}`, `tier: ${q(l.tier || 'normal')}`, l.introduces && `introduces: ${q(l.introduces)}`].filter(Boolean);
-  const play = [`moves: ${l.moves}`, `target: ${l.target}`, `cats: ${q(l.cats)}`, l.assist !== undefined && `assist: ${l.assist}`,
+  const play = [`moves: ${l.moves}`, `target: ${l.target}`, `cats: ${q(l.cats)}`, l.assist !== undefined && `assist: ${l.assist}`, l.mail && `mail: ${l.mail}`,
     l.shapes && `shapes: { single: ${l.shapes.single}, domino: ${l.shapes.domino}, triple: ${l.shapes.triple} }`, l.expand && `expand: ${q(l.expand)}`].filter(Boolean);
-  const lines = [`  {`, `    ${head.join(', ')},`, `    ${play.join(', ')},`, `    board: [${l.board.map(q).join(', ')}],`, ...(l.grass ? [`    grass: [${l.grass.map(q).join(', ')}],`] : []), `    deck: [${(l.deck || []).map(q).join(', ')}],`];
-  const known = new Set(['name', 'feature', 'tier', 'introduces', 'moves', 'target', 'cats', 'assist', 'shapes', 'expand', 'board', 'grass', 'deck']);
+  const lines = [`  {`, `    ${head.join(', ')},`, `    ${play.join(', ')},`, `    board: [${l.board.map(q).join(', ')}],`, ...(l.syrup ? [`    syrup: [${l.syrup.map(q).join(', ')}],`] : []), ...(l.grass ? [`    grass: [${l.grass.map(q).join(', ')}],`] : []), `    deck: [${(l.deck || []).map(q).join(', ')}],`];
+  const known = new Set(['name', 'feature', 'tier', 'introduces', 'moves', 'target', 'cats', 'assist', 'mail', 'shapes', 'expand', 'board', 'syrup', 'grass', 'deck']);
   for (const [k, v] of Object.entries(l)) if (!known.has(k) && v !== undefined) lines.push(`    ${k}: ${JSON.stringify(v)},`);
   return [...lines, `  },`].join('\n');
 }
@@ -608,7 +663,7 @@ $('ptRuns').addEventListener('change', renderPlaytime);
 renderPlaytime();
 
 // Game thật chạy ngay trong editor (iframe, cùng máy chủ: /game/index.html?level=N, chỉ dev). Đọc thẳng file màn đã lưu.
-const rpGameOpen = () => { $('rpFrame').src = `../../game/index.html?dev&embed&level=${current + 1}${$('rpWho').value ? `&bot=${$('rpWho').value}` : ''}`; $('rpGame').hidden = false; };
+const rpGameOpen = () => { $('rpFrame').src = `../../../game/index.html?dev&embed&level=${current + 1}${$('rpWho').value ? `&bot=${$('rpWho').value}` : ''}`; $('rpGame').hidden = false; };
 $('rpPlayGame').onclick = rpGameOpen;
 $('rpWho').onchange = () => { if (!$('rpGame').hidden) rpGameOpen(); };
 $('rpGameClose').onclick = () => { $('rpGame').hidden = true; $('rpFrame').src = 'about:blank'; };
