@@ -1,7 +1,9 @@
 // Luật đọc dữ liệu màn (thuần logic): đọc bàn / cỏ / thẻ viết gọn, bộ chia thẻ, tính sao. Dữ liệu màn ở data/levels.mjs.
 // Sang Unity: static class LevelRules (C#), đọc LevelData (ScriptableObject / JSON xuất bằng npm run export:data).
 import { LETTERS, SHAPES } from '../data/levels.mjs';
-import { CAGE, VASE } from '../data/tuning.mjs';
+import { CAGE, VASE, ADAPTIVE } from '../data/tuning.mjs';
+import { matchesSomewhere } from './board-rules.mjs';
+import { boardSize } from './board-shapes.mjs';
 
 // Cỏ (`grass`): lớp nằm DƯỚI mèo / ô trống, các hàng chuỗi cùng cỡ với `board` ('~' = ô có cỏ, '.' = sạch). Gom một cụm thì
 // cỏ dưới các mèo của cụm bị phá (session.mjs). Màn có cỏ: phải dọn hết cỏ VÀ đủ điểm `target`. Ô thùng / kim loại / ngoài bàn
@@ -65,6 +67,8 @@ export const DEFAULT_ASSIST = 0.3;
 // của một mèo được chọn theo mèo đang có trên bàn (nhiều con cùng màu thì dễ ra màu đó) cho đỡ bí.
 // `harsh` (lần đầu vào màn paywall, adaptive.mjs): thẻ "xấu" — mỗi mèo lấy màu ÍT có trên bàn nhất, các mèo trong cùng thẻ khác màu nhau
 // (khó ghép cụm), không có trợ màu. Màn trông y hệt bình thường (cùng mục tiêu, cùng số lượt).
+// `queue` (DDA, adaptive.mjs tuneDealer): -2 … +2, nút độ khó chính của hàng thẻ. Dương: mỗi thẻ có xác suất ADAPTIVE.QUEUE_HARSH × queue
+// là thẻ xấu như trên; âm: xác suất ADAPTIVE.QUEUE_HELP × |queue| là thẻ "giúp" (thử vài thẻ màu đang có trên bàn, lấy thẻ gom được ngay).
 export function makeDealer(level, rng = Math.random) {
   const script = (level.deck || []).map(parseCard);
   const pool = [...level.cats].map(ch => LETTERS[ch]);
@@ -75,16 +79,26 @@ export function makeDealer(level, rng = Math.random) {
     const present = board.filter(cell => cell?.group).map(cell => cell.group).filter(group => pool.includes(group));
     return present.length && rng() < (level.assist ?? DEFAULT_ASSIST) ? pick(present) : pick(pool);
   };
+  const shapeOf = () => { const shape = pick(bag); return SHAPES[shape === 'triple' ? (rng() < 0.5 ? 'line' : 'elbow') : shape].map(point => point.slice()); };
+  const harshCard = (board, offsets) => {
+    const count = group => board.filter(cell => cell?.group === group).length;
+    const order = pool.map(group => [group, count(group) + rng() * .5]).sort((a, b) => a[1] - b[1]).map(([group]) => group);
+    return { offsets, items: offsets.map((_, k) => ({ group: order[k % order.length] })) };
+  };
+  const { W, H } = boardSize(level.board), queue = level.queue ?? 0;
+  const helpCard = board => {
+    const present = [...new Set(board.filter(cell => cell?.group && !cell.cage).map(cell => cell.group))].filter(group => pool.includes(group));
+    for (let k = 0; k < 4 && present.length; k++) {
+      const offsets = shapeOf(), group = pick(present), card = { offsets, items: offsets.map(() => ({ group })) };
+      if (matchesSomewhere(board, W, H, card)) return card;
+    }
+    return null;
+  };
   return board => {
     if (script.length) return script.shift();
-    let shape = pick(bag);
-    if (shape === 'triple') shape = rng() < 0.5 ? 'line' : 'elbow';
-    const offsets = SHAPES[shape].map(point => point.slice());
-    if (level.harsh) {
-      const count = group => board.filter(cell => cell?.group === group).length;
-      const order = pool.map(group => [group, count(group) + rng() * .5]).sort((a, b) => a[1] - b[1]).map(([group]) => group);
-      return { offsets, items: offsets.map((_, k) => ({ group: order[k % order.length] })) };
-    }
+    if (queue < 0 && rng() < ADAPTIVE.QUEUE_HELP * -queue) { const card = helpCard(board); if (card) return card; }
+    const offsets = shapeOf();
+    if (level.harsh || (queue > 0 && rng() < ADAPTIVE.QUEUE_HARSH * queue)) return harshCard(board, offsets);
     return { offsets, items: offsets.map(() => ({ group: color(board) })) };
   };
 }

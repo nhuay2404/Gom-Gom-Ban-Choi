@@ -1,5 +1,5 @@
-// Test độ khó thích ứng (adaptive.mjs): DDA không đụng thiết kế / số lượt, chỉ bố trí mèo + hàng thẻ; nhận diện profile;
-// chơi lại giữ bố trí; thẻ đầu luôn gom được. Chạy: npm test
+// Test độ khó thích ứng (adaptive.mjs): DDA không đụng thiết kế / bàn / số lượt, chỉ hàng thẻ; mức nền không reset; nhận diện profile;
+// thẻ đầu luôn gom được. Chạy: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LEVELS } from '../data/levels.mjs';
@@ -11,11 +11,11 @@ import { ADAPTIVE } from '../data/tuning.mjs';
 import { createSession, matchesSomewhere, openingCard } from './session.mjs';
 import { CAT_LAYOUTS } from '../data/cat-layouts.mjs';
 import {
-  elementCount, difficultyOf, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip,
+  elementCount, difficultyOf, planLevel, detectProfile, recordAttempt, startVisit, noteDwell, isAdaptive, tuneDealer, boosterTip, ratingOf, ratingShift, stepRating,
   pickCatLayout, nudgeCats, playableLayout, sameDesign, variantFor, mulberry32, SHIFT_MIN, SHIFT_MAX,
 } from './adaptive.mjs';
 
-const fresh = () => ({ attempts: [], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 });
+const fresh = () => ({ attempts: [], ratingBase: 0, streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 });
 // Profile đã qua giai đoạn người mới: 10 lần thắng 2 sao ở các màn 6–15.
 const veteran = () => ({ ...fresh(), attempts: Array.from({ length: 10 }, (_, i) => try_(5 + i, true, { stars: 2 })) });
 function try_(level, win, extra = {}) {
@@ -40,7 +40,7 @@ test('DDA không bao giờ đổi thiết kế: hình bàn, vật cản, chuồn
       assert.ok(sameDesign(plan.level.board, base.board), `màn ${i + 1} (${plan.profile}): thiết kế bàn`);
       for (const key of designKeys) assert.deepEqual(plan.level[key], base[key], `màn ${i + 1} (${plan.profile}): ${key}`);
       const { W, H } = boardSize(plan.level.board);
-      assert.equal(clearMatches(parseBoard(plan.level.board), W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1}: có sẵn cụm gom`);
+      assert.equal(clearMatches(parseBoard(plan.level.board, plan.level.syrup), W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1}: có sẵn cụm gom`);
       assert.equal(plan.count, elementCount(base));
     }
   });
@@ -82,32 +82,52 @@ test('màn tutorial luôn chơi đúng thiết kế', () => {
   }
 });
 
-test('thua rồi chơi lại: giữ nguyên bố trí lần trước, chỉ hàng thẻ thay đổi; thắng rồi vào lại thì xếp mới', () => {
-  let p = veteran();
-  const first = planLevel(p, 14);
-  const boards = [first.layout];
-  for (let n = 0; n < 3; n++) {
-    p = recordAttempt(p, try_(14, false, { profile: 'x', shift: planLevel(p, 14).shift, layout: planLevel(p, 14).layout })).profile;
-    const plan = planLevel(p, 14);
-    assert.equal(plan.retry, true);
-    boards.push(plan.layout);
+test('bàn luôn đúng thiết kế (cả bố trí mèo); độ khó chỉ ở hàng thẻ: queue = shift', () => {
+  for (const profile of [veteran(), losing(14, 2), losing(14, 4)]) {
+    const plan = planLevel(profile, 14);
+    assert.equal(plan.level.board, LEVELS[14].board);
+    assert.equal(plan.level.queue ?? 0, plan.shift);
   }
-  boards.forEach(rows => assert.deepEqual(rows, first.layout));
-  // Hàng thẻ nhẹ dần theo số lần thua (hết lượt -> assist tăng).
-  assert.match(planLevel(p, 14).deal, /assist/);
-  // Bố trí đã lưu không còn đúng thiết kế (màn bị sửa) thì bỏ, xếp mới.
-  const stale = withTries(veteran(), try_(14, false, { layout: LEVELS[15].board }));
-  assert.equal(planLevel(stale, 14).retry, false);
-  const won = recordAttempt(p, try_(14, true, { layout: first.layout })).profile;
-  assert.equal(planLevel(won, 14).retry, false);
+  // Chơi lại sau khi thua: đánh dấu retry, bàn vẫn y nguyên.
+  assert.equal(planLevel(losing(14, 1), 14).retry, true);
+  assert.equal(planLevel(veteran(), 14).retry, false);
 });
 
-test('vật lộn: dễ hơn 1 rồi 2 mức (bố trí dễ hơn + hàng thẻ nhẹ hơn); sắp bỏ: dễ nhất, boss chỉ nới 1 mức, quà khi thắng', () => {
-  const twice = losing(16, 2), plan = planLevel(withTries(veteran(), try_(15, false), try_(15, false)), 16);
-  assert.equal(detectProfile(twice, 16).id, 'struggling');
-  assert.equal(plan.shift, -1);
-  assert.ok(sameDesign(plan.layout, LEVELS[16].board));
-  assert.ok(plan.level.assist > (LEVELS[16].assist ?? 0.3));
+test('mức nền không reset: thắng liền khó dần, thua một màn khó thì nhẹ dần từng mức, thắng lại thì leo dần', () => {
+  let p = fresh();
+  const shifts = [];
+  const play = (level, win, extra) => { shifts.push(planLevel(p, level).shift); p = recordAttempt(p, try_(level, win, extra)).profile; };
+  [11, 12, 13, 14].forEach(level => play(level, true));
+  assert.deepEqual(shifts, [0, 0, 1, 1]);
+  assert.equal(planLevel(p, 15).shift, 2);
+  play(15, false);
+  assert.equal(planLevel(p, 15).shift, 1, 'thua một lần ở +2: còn +1, không về 0');
+  play(15, false);
+  assert.equal(planLevel(p, 15).shift, 0);
+  play(15, false);
+  assert.equal(planLevel(p, 15).shift, -1);
+  play(15, true);
+  assert.equal(planLevel(p, 16).shift, 0, 'thắng lại: leo dần');
+  // Thắng sau khi chơi lại / có booster chỉ cộng nửa bước; thua sát nút chỉ trừ nửa bước; màn tutorial không tính.
+  assert.equal(stepRating(0, try_(15, true), try_(15, false)), ADAPTIVE.RATING_WIN / 2);
+  assert.equal(stepRating(0, try_(15, true, { boosters: 1 })), ADAPTIVE.RATING_WIN / 2);
+  assert.equal(stepRating(0, try_(15, false, { ratio: 0.9 })), -ADAPTIVE.RATING_LOSS / 2);
+  assert.equal(stepRating(0, try_(10, false)), 0);
+  assert.equal(ratingShift(-1.5), -1);
+});
+
+test('lịch sử bị cắt (HISTORY) thì phần bị cắt cộng vào ratingBase: điểm kỹ năng không đổi vì cắt', () => {
+  let p = fresh();
+  for (let n = 0; n < ADAPTIVE.HISTORY + 5; n++) {
+    const attempt = try_(11 + (n % 8), n % 3 !== 0), before = ratingOf(p), last = p.attempts.at(-1);
+    p = recordAttempt(p, attempt).profile;
+    assert.equal(ratingOf(p), stepRating(before, attempt, last), `lần ${n}`);
+  }
+  assert.equal(p.attempts.length, ADAPTIVE.HISTORY);
+});
+
+test('vật lộn / sắp bỏ: sắp bỏ thì dễ nhất, boss chỉ nới 1 mức, quà khi thắng; nghỉ "sắp bỏ" thì chưa làm khó lại', () => {
+  assert.equal(detectProfile(losing(16, 2), 16).id, 'struggling');
   const frustrated = losing(14, 4);
   assert.equal(planLevel(frustrated, 14).profile, 'frustrated');
   assert.equal(planLevel(frustrated, 14).shift, -2);
@@ -118,40 +138,31 @@ test('vật lộn: dễ hơn 1 rồi 2 mức (bố trí dễ hơn + hàng thẻ 
   assert.ok(planLevel(hot(), 17).shift > 0 && planLevel({ ...hot(), cooldown: 2 }, 17).shift === 0);
 });
 
-test('thua sát nút: giữ độ khó, mời booster; tới lần thứ 4 hàng thẻ nhẹ đi một mức; không bao giờ cộng lượt', () => {
+test('thua sát nút: mời booster, mức nền chỉ nhẹ nửa bước mỗi lần; không bao giờ cộng lượt', () => {
   const near = n => withTries(veteran(), ...Array.from({ length: n }, () => try_(12, false, { ratio: 0.9 })));
   assert.equal(planLevel(near(2), 12).profile, 'near-miss');
-  assert.equal(planLevel(near(2), 12).shift, 0);
   assert.equal(planLevel(near(2), 12).suggestBooster, true);
-  assert.equal(planLevel(near(2), 12).deal, null);
-  assert.equal(planLevel(near(4), 12).shift, -1);
+  assert.equal(planLevel(near(2), 12).shift, ratingShift(ratingOf(veteran())) - 1);
   for (const n of [2, 4]) assert.equal(planLevel(near(n), 12).level.moves, LEVELS[12].moves);
   assert.equal(boosterTip(near(2)), true);
   assert.equal(boosterTip(withTries(veteran(), try_(13, false, { ratio: 0.9 }), try_(13, false, { ratio: 0.9, boosters: 1 }))), false);
 });
 
-test('cao thủ: khó hơn bằng bố trí rời rạc hơn + nhiều thẻ đơn, ít assist; không đổi lượt', () => {
+test('cao thủ: khó hơn bằng hàng thẻ (thẻ xấu, nhiều thẻ đơn, ít assist); không đổi bàn / lượt', () => {
   const plan = planLevel(hot(), 17);
   assert.equal(plan.profile, 'skilled');
-  assert.equal(plan.shift, 1);
-  const harder = CAT_LAYOUTS[LEVELS[17].name]?.['1'];
-  if (harder?.length) assert.ok(harder.some(rows => rows.join('') === plan.layout.join('')));
+  assert.equal(plan.shift, 2);
+  assert.equal(plan.level.queue, 2);
   assert.ok(plan.level.assist < (LEVELS[17].assist ?? 0.3));
+  assert.equal(plan.level.board, LEVELS[17].board);
   assert.equal(plan.level.moves, LEVELS[17].moves);
 });
 
-test('chơi chán: đổi chỗ mèo mà giữ độ dễ; quay lại sau nghỉ: dễ hơn 1 mức; mỗi lần thử chỉ đổi tối đa 1 mức', () => {
-  const bored = withTries(veteran(), ...[10, 11, 12].map(l => try_(l, true, { stars: 3, dwellMs: 9000 })));
-  const plan = planLevel(bored, 13);
-  assert.equal(plan.profile, 'bored');
-  assert.equal(plan.mode, 'swap');
-  if (CAT_LAYOUTS[LEVELS[13].name]?.['0']?.length) assert.notDeepEqual(plan.layout, LEVELS[13].board);
+test('quay lại sau nghỉ: nhẹ hơn mức nền 1 mức (không reset mức nền)', () => {
   const day = 86400000;
   const back = startVisit({ ...veteran(), lastSeen: 1 }, 1 + 4 * day);
   assert.equal(planLevel(back, 17).profile, 'returning');
-  assert.equal(planLevel(back, 17).shift, -1);
-  const p = withTries(veteran(), try_(13, false, { shift: 1 }), try_(13, false, { shift: 1 }), try_(13, false, { shift: 1 }));
-  assert.equal(planLevel(p, 13).shift, 0);
+  assert.equal(planLevel(back, 17).shift, ratingShift(ratingOf(veteran())) - 1);
 });
 
 test('hàng thẻ: lệch nhẹ có trần, không đổi bàn / lượt', () => {
@@ -170,7 +181,7 @@ test('hàng thẻ: lệch nhẹ có trần, không đổi bàn / lượt', () =>
 test('thẻ đầu tiên luôn gom được ngay ở lượt 1 (mọi màn, mọi mức DDA, nhiều seed)', () => {
   LEVELS.forEach((base, i) => {
     for (let shift = SHIFT_MIN; shift <= SHIFT_MAX; shift++) {
-      const level = isAdaptive(base) ? variantFor(base, shift, 1000 + shift) : base;
+      const level = isAdaptive(base) ? variantFor(base, shift) : base;
       for (let seed = 1; seed <= 12; seed++) {
         const s = createSession(i, { level, rng: mulberry32(seed * 101 + i) });
         assert.ok(matchesSomewhere(s.board, s.W, s.H, s.active), `màn ${i + 1} shift ${shift} seed ${seed}`);
@@ -211,16 +222,16 @@ test('sắp bỏ game bật sớm: thua 3 lần kèm đứng lâu ở bảng thu
   assert.equal(detectProfile(withTries(fragile, try_(13, false, { ratio: 0.9 }), try_(13, false, { ratio: 0.9 })), 13).id, 'frustrated');
 });
 
-test('người mới: thắng sạch liền vẫn được tăng khó; thua 2 lần ở cùng màn thì hàng thẻ nhẹ đi, bố trí giữ nguyên', () => {
+test('người mới: thắng sạch liền vẫn được tăng khó; thua ở cùng màn thì hàng thẻ nhẹ đi, bàn giữ nguyên', () => {
   const hotNew = withTries(fresh(), try_(11, true, { count: 2 }), try_(12, true, { count: 2 }), try_(13, true, { count: 2 }));
   assert.equal(detectProfile(hotNew, 15).id, 'skilled');
   const first = planLevel(fresh(), 12);
   assert.equal(first.profile, 'onboarding');
   assert.equal(first.shift, 0);
-  const twice = withTries(fresh(), try_(12, false, { layout: first.layout }), try_(12, false, { layout: first.layout }));
+  const twice = withTries(fresh(), try_(12, false), try_(12, false));
   const plan = planLevel(twice, 12);
-  assert.equal(plan.shift, -1);
-  assert.deepEqual(plan.layout, first.layout);
+  assert.ok(plan.shift < 0);
+  assert.equal(plan.level.board, LEVELS[12].board);
   assert.equal(plan.level.moves, LEVELS[12].moves);
 });
 
@@ -243,7 +254,7 @@ test('màn paywall (màn 10): thua bao nhiêu cũng không dễ đi; từ lần 
   for (const n of [1, 2, 4, 6]) {
     const plan = planLevel(losing(i, n), i);
     assert.ok(plan.shift >= 0, `thua ${n} lần: không hạ độ khó`);
-    assert.equal(plan.deal, null, `thua ${n} lần: hàng thẻ không nới`);
+    assert.ok(plan.level.assist <= (LEVELS[i].assist ?? 0.3) + 1e-9, `thua ${n} lần: hàng thẻ không nới`);
     assert.equal(plan.suggestBooster, true, `thua ${n} lần: mời booster`);
     assert.equal(plan.level.moves, LEVELS[i].moves);
   }

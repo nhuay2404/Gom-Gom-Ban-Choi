@@ -1,15 +1,17 @@
 // Độ khó thích ứng (DDA) theo profile người chơi (thuần logic, không đụng giao diện). Ngưỡng nằm ở tuning.mjs (ADAPTIVE).
 //
-// Luật cứng: DDA KHÔNG đụng vào thiết kế màn — hình bàn, vật cản (thùng, kim loại, ô ngoài bàn), chuồng, số lượt, mục tiêu,
-// giống mèo giữ đúng như levels.mjs. DDA chỉ được chỉnh hai thứ, và chỉnh nhẹ để người chơi không nhận ra:
-//   1. Bố trí mèo đặt sẵn lúc vào màn (pickCatLayout): thiết kế xê dịch vài con mèo tự do, giữ đúng số mèo mỗi giống. Các bố trí
-//      cho từng mức được bot đo trước (tools/levels/generate-cat-layouts.mjs -> cat-layouts.mjs): mỗi mức chỉ lệch vài điểm % tỉ lệ thắng
-//      so với thiết kế. Thua rồi chơi lại thì GIỮ NGUYÊN bố trí của lần trước (đọc từ lịch sử).
-//   2. Hàng thẻ (tuneDealer): tỉ lệ thẻ đơn / đôi / 3 ô và assist (xác suất thẻ ra màu đang có trên bàn), lệch tối đa
-//      A.ASSIST_SPAN so với thiết kế. Chơi lại chỉ còn chỉnh được phần này.
+// Luật cứng: DDA KHÔNG đụng vào thiết kế màn — hình bàn, bố trí mèo đặt sẵn, vật cản (thùng, kim loại, ô ngoài bàn), chuồng, số lượt,
+// mục tiêu, giống mèo giữ đúng như levels.mjs. Độ khó chỉ nằm ở HÀNG THẺ (tuneDealer):
+//   - `queue` (level-rules.mjs makeDealer): mức khó dương thì thỉnh thoảng ra thẻ xấu (màu bàn không cần), âm thì thỉnh thoảng ra thẻ
+//     giúp (gom được ngay). Đây là nút chính: mỗi mức lệch ~10 điểm % tỉ lệ thắng của bot.
+//   - tỉ lệ thẻ đơn / đôi / 3 ô và assist (xác suất thẻ ra màu đang có trên bàn), lệch tối đa A.ASSIST_SPAN so với thiết kế.
 // Ngoài ra mọi màn đều bảo đảm thẻ đầu tiên gom được ngay (session.mjs openingCard), kể cả khi không có DDA.
+// (pickCatLayout / CAT_LAYOUTS còn lại cho công cụ, DDA không dùng nữa.)
 //
 // `shift` của một lần vào màn: -2 … +2 (âm = dễ hơn, dương = khó hơn), 0 = đúng thiết kế.
+// Mức nền KHÔNG BAO GIỜ reset: `ratingOf(profile)` là điểm kỹ năng -2 … +2 nhích dần theo từng lần thử (thắng sạch +A.RATING_WIN, thua
+// -A.RATING_LOSS, xem stepRating), shift = phần nguyên của nó. Đang chuỗi thắng ở +2 mà thua một màn khó thì màn sau +1, thua tiếp thì 0, -1…
+// chứ không nhảy về 0; thắng lại thì leo dần lên. Một số tình huống (quay lại sau nghỉ, sắp bỏ game, boss, paywall) chỉnh thêm trên mức nền.
 // Nhãn Easy / Medium / Hard (element) chỉ còn để hiển thị, tính từ bản thiết kế và không bao giờ đổi theo DDA.
 //
 // Vòng đời: startVisit lúc mở game -> planLevel trước mỗi lần vào màn (đọc lịch sử -> profile -> bố trí + hàng thẻ)
@@ -142,15 +144,13 @@ export function tuneDealer(level, { shift = 0, stuck = 0, moves = 0 } = {}) {
   for (const key of Object.keys(shapes)) shapes[key] = clamp(shapes[key], Math.max(0, baseShapes[key] - A.SHAPE_SPAN), baseShapes[key] + A.SHAPE_SPAN);
   const notes = Object.keys(shapes).filter(key => shapes[key] !== baseShapes[key]).map(key => `${key}${shapes[key] > baseShapes[key] ? '+' : ''}${shapes[key] - baseShapes[key]}`);
   if (assist !== round2(baseAssist)) notes.push(`assist ${round2(baseAssist)}→${assist}`);
+  if (shift) notes.push(`queue ${shift > 0 ? '+' : ''}${shift}`);
   if (!notes.length) return { level, deal: null };
-  return { level: { ...level, shapes, assist }, deal: notes.join(' ') };
+  return { level: { ...level, shapes, assist, ...(shift && { queue: shift }) }, deal: notes.join(' ') };
 }
 
-// Bản màn cho một mức `shift` (công cụ: bot, editor). Lần đầu vào màn: bố trí mới + hàng thẻ; không có lý do thua.
-export function variantFor(base, shift, seed = hashOf(base.name)) {
-  const level = { ...base, board: pickCatLayout(base, shift, seed) };
-  return tuneDealer(level, { shift }).level;
-}
+// Bản màn cho một mức `shift` (công cụ: bot, editor), giống game: bàn đúng thiết kế, chỉ hàng thẻ đổi; không có lý do thua.
+export const variantFor = (base, shift) => tuneDealer(base, { shift }).level;
 
 // ---------- Profile người chơi (save) ----------
 // attempts[]: { level, win, reason ('win'|'moves'|'stuck'|'quit'), ratio (điểm/mục tiêu), stars, count (số element bản thiết kế),
@@ -159,7 +159,7 @@ export function variantFor(base, shift, seed = hashOf(base.name)) {
 //               Chỉ để thống kê, thuật toán KHÔNG đọc: boostUse { hammer, swap, moves }, bought, preBoostRatio.
 //               Booster không ảnh hưởng điều kiện thắng/thua: thắng có booster vẫn là thắng, thua có booster vẫn là một lần thua. }
 // streakFrom: chuỗi thắng/thua chỉ tính từ lần thử này (đặt lại khi người chơi quay lại sau thời gian nghỉ).
-const EMPTY = { attempts: [], streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 };
+const EMPTY = { attempts: [], ratingBase: 0, streakFrom: 0, cooldown: 0, giftPending: false, warmup: false, lastSeen: 0 };
 export function loadProfile() {
   const saved = readJSON(SAVE_KEYS.profile);
   return saved && Array.isArray(saved.attempts) ? { ...EMPTY, ...saved } : { ...EMPTY };
@@ -184,18 +184,32 @@ export function baseThink(profile) {
   return median((early.length >= 2 ? early : wins).map(a => a.thinkMs));
 }
 
-// Nhận diện profile cho lần vào màn `levelIndex`. Trả về { id, shift (-2 … +2, âm = dễ hơn), free (bỏ qua luật đổi tối đa
-// 1 mức so với lần trước), swap, suggestBooster }.
+// ---------- Mức nền (không reset) ----------
+// Một lần thử đổi điểm kỹ năng: thắng sạch (lần đầu ở màn đó, không booster) +RATING_WIN, thắng khác +RATING_WIN / 2, thua sát nút
+// -RATING_LOSS / 2, thua / bỏ ngang -RATING_LOSS. Màn tutorial không tính. Kẹp trong SHIFT_MIN … SHIFT_MAX.
+export function stepRating(rating, attempt, before) {
+  if (!LEVELS[attempt.level] || !isAdaptive(LEVELS[attempt.level])) return rating;
+  const retried = before && !before.win && before.level === attempt.level;
+  const delta = attempt.win ? (attempt.boosters || retried ? A.RATING_WIN / 2 : A.RATING_WIN)
+    : attempt.reason !== 'quit' && attempt.ratio >= A.NEAR_MISS ? -A.RATING_LOSS / 2 : -A.RATING_LOSS;
+  return clamp(rating + delta, SHIFT_MIN, SHIFT_MAX);
+}
+// ratingBase = điểm kỹ năng trước lần thử cũ nhất còn giữ trong lịch sử (recordAttempt cộng dồn phần bị cắt vào đây).
+export const ratingOf = profile => profile.attempts.reduce((r, a, i) => stepRating(r, a, profile.attempts[i - 1]), profile.ratingBase ?? 0);
+export const ratingShift = rating => Math.trunc(rating) || 0;
+
+// Nhận diện profile cho lần vào màn `levelIndex`. Trả về { id, shift (-2 … +2, âm = dễ hơn), suggestBooster }.
+// shift = mức nền (ratingOf) trừ khi tình huống cần chỉnh: quay lại sau nghỉ (-1 so với nền), sắp bỏ game (dễ nhất).
 // Xét theo thứ tự ưu tiên: quay lại · người mới (trừ khi thắng sạch liền) · sát nút (tới lần chơi lại thứ 5) · sắp bỏ · vật lộn ·
 // chán · cao thủ · suy nghĩ kỹ · ổn định.
 export function detectProfile(profile, levelIndex) {
   const recent = profile.attempts.slice(profile.streakFrom);
   const last = n => recent.slice(-n);
   const streak = win => { let n = 0; for (let i = recent.length - 1; i >= 0 && recent[i].win === win; i--) n++; return n; };
-  const winStreak = streak(true), loseStreak = streak(false);
+  const loseStreak = streak(false);
   let retries = 0;
   for (let i = recent.length - 1; i >= 0 && recent[i].level === levelIndex && !recent[i].win; i--) retries++;
-  const lastShift = recent.at(-1)?.shift ?? 0;
+  const base = ratingShift(ratingOf(profile));
   const think = baseThink(profile);
   const idleUp = a => (think > 0 && a.thinkMs > A.IDLE_RATIO * think) || (a.durationMs > 0 && a.idleMs > A.IDLE_SHARE * a.durationMs);
   const nearMiss = a => !a.win && a.reason !== 'quit' && a.ratio >= A.NEAR_MISS;
@@ -217,25 +231,20 @@ export function detectProfile(profile, levelIndex) {
     if (cleanWins.length < 2) return null;
     const wins = cleanWins.slice(0, 3).reverse(), first = wins[0], latest = wins.at(-1);
     const bored = (first.thinkMs > 0 && latest.thinkMs > 1.3 * first.thinkMs) || wins.slice(-2).every(a => a.dwellMs > A.DWELL_MS);
-    if (bored) return recent.at(-1).mode === 'swap' ? { id: 'bored', shift: lastShift + 1 } : { id: 'bored', shift: lastShift, swap: true };
-    if (hardWins >= 3 && !idleUp(latest)) return { id: 'skilled', shift: hardWins >= 6 ? 2 : 1 };
+    if (bored) return { id: 'bored', shift: base };
+    if (hardWins >= 3 && !idleUp(latest)) return { id: 'skilled', shift: base };
     return null;
   };
 
-  if (profile.warmup) return { id: 'returning', shift: -1, free: true };
-  // Người mới: chưa làm khó, thua 2 lần ở cùng màn thì hàng thẻ nhẹ đi một mức; thắng sạch liền thì vẫn được tăng khó.
-  if (levelIndex < A.ONBOARD_LEVELS || profile.attempts.length < A.ONBOARD_ATTEMPTS) {
-    return hot() ?? { id: 'onboarding', shift: retries >= 2 ? -1 : 0, free: true };
-  }
+  if (profile.warmup) return { id: 'returning', shift: Math.max(SHIFT_MIN, base - 1) };
+  if (levelIndex < A.ONBOARD_LEVELS || profile.attempts.length < A.ONBOARD_ATTEMPTS) return hot() ?? { id: 'onboarding', shift: base };
   const two = last(2), lastTry = recent.at(-1);
   // Người chơi mong manh: từng bỏ ngang gần đây. Với họ không giữ độ khó khi thua sát nút.
   const fragile = last(A.FRAGILE_WINDOW).some(a => a.reason === 'quit');
   // Thua sát nút được xét trước "sắp bỏ game" (người chơi vẫn muốn thử lại), nhưng chơi lại tới lần thứ 5 thì thôi.
   if (two.length === 2 && two.every(nearMiss) && retries < 5 && !fragile) {
-    let misses = 0;
-    for (let i = recent.length - 1; i >= 0 && nearMiss(recent[i]); i--) misses++;
-    // Giữ độ khó và mời booster +lượt; sát nút tới lần thứ 4 thì hàng thẻ nhẹ đi một mức.
-    return { id: 'near-miss', shift: misses >= 4 ? lastShift - 1 : lastShift, suggestBooster: !lastTry.boosters };
+    // Mời booster +lượt; mức nền tự nhẹ đi chậm (mỗi lần sát nút chỉ trừ nửa bước).
+    return { id: 'near-miss', shift: base, suggestBooster: !lastTry.boosters };
   }
   // Sắp bỏ game: thua 4 lần, hoặc chơi lại 5 lần, hoặc thua 3 lần kèm dấu hiệu nản (nghĩ lâu / AFK / đứng lâu ở bảng thua),
   // hoặc 2 lần thua liền cùng dấu hiệu nản, hoặc bỏ ngang sau khi đã thua, hoặc người mong manh thua 2 lần liền.
@@ -245,26 +254,12 @@ export function detectProfile(profile, levelIndex) {
     || (two.length === 2 && two.every(a => !a.win && idleUp(a) && a.dwellMs > A.DWELL_MS))
     || (lastTry?.reason === 'quit' && loseStreak >= 2)
     || (fragile && loseStreak >= 2);
-  if (frustrated) return { id: 'frustrated', shift: SHIFT_MIN, free: true };
+  if (frustrated) return { id: 'frustrated', shift: SHIFT_MIN };
   const losses = Math.max(loseStreak, retries);
-  if (losses >= 2 || (fragile && losses >= 1)) return { id: 'struggling', shift: -Math.max(1, Math.min(2, losses - 1)) };
-  // Vừa thắng lại sau chuỗi thua: giữ mức nới thêm một màn rồi mới về thiết kế.
-  if (winStreak === 1 && lastShift < 0) return { id: 'struggling', shift: lastShift };
-  const heat = hot();
-  if (heat) return heat;
-  // Cao thủ thua một lần: giữ +1, chưa hạ hẳn.
-  if (loseStreak === 1 && lastShift > 0) return { id: 'skilled', shift: Math.min(1, lastShift) };
-  return { id: thinker ? 'thinker' : 'steady', shift: 0 };
-}
-
-// Bố trí đã chơi ở lần thử gần nhất của màn này, nếu lần đó chưa thắng (đang chơi lại) và vẫn đúng thiết kế hiện tại.
-function retryLayout(profile, levelIndex, base) {
-  for (let i = profile.attempts.length - 1; i >= 0; i--) {
-    const a = profile.attempts[i];
-    if (a.level !== levelIndex) continue;
-    return !a.win && Array.isArray(a.layout) && sameDesign(a.layout, base.board) ? a.layout : null;
-  }
-  return null;
+  // Người mong manh: thua một lần là nới thêm một mức so với nền.
+  if (fragile && losses >= 1) return { id: 'struggling', shift: Math.max(SHIFT_MIN, Math.min(base, -1)) };
+  if (losses >= 2) return { id: 'struggling', shift: base };
+  return hot() ?? { id: thinker ? 'thinker' : 'steady', shift: base };
 }
 
 // Bản màn cho lần vào màn kế tiếp. `level` là dữ liệu màn đã chỉnh, đưa thẳng vào createSession.
@@ -277,19 +272,14 @@ export function planLevel(profile, levelIndex, { cleared = false } = {}) {
   if (!isAdaptive(base)) return fixed('tutorial');
 
   const p = detectProfile(profile, levelIndex);
-  const lastShift = profile.attempts.slice(profile.streakFrom).at(-1)?.shift ?? 0;
-  // Mỗi lần thử chỉ đổi tối đa 1 mức so với lần trước (trừ các profile `free`).
-  let shift = clamp(p.free ? p.shift : clamp(p.shift, lastShift - 1, lastShift + 1), SHIFT_MIN, SHIFT_MAX);
+  let shift = clamp(p.shift, SHIFT_MIN, SHIFT_MAX);
   if (profile.cooldown > 0) shift = Math.min(shift, 0);
   if (base.tier === 'boss') shift = Math.max(shift, -1); // boss chỉ nới nhẹ
   // Màn paywall (levels.mjs `paywall: true`): không bao giờ dễ đi, kể cả khi thua nhiều — muốn qua phải dùng booster.
   if (base.paywall) shift = Math.max(shift, 0);
 
-  // Bố trí: chơi lại sau khi thua thì giữ nguyên bố trí cũ; lần đầu vào màn (hoặc chơi lại sau khi thắng) thì xếp mới.
-  const kept = retryLayout(profile, levelIndex, base);
-  const board = kept ?? pickCatLayout(base, shift, hashOf(base.name) ^ Math.imul(profile.attempts.length + 1, 2654435761), { swap: !!p.swap && !base.paywall });
-  let level = board === base.board ? base : { ...base, board };
-
+  // Bàn luôn đúng thiết kế; độ khó chỉ nằm ở hàng thẻ.
+  let level = base;
   // Hàng thẻ: mức shift + lý do các lần thua liên tiếp ở chính màn này (bỏ ngang không tính vào lý do nào).
   const losses = { stuck: 0, moves: 0 };
   const recent = profile.attempts.slice(profile.streakFrom);
@@ -306,14 +296,17 @@ export function planLevel(profile, levelIndex, { cleared = false } = {}) {
   const firstTry = !!base.paywall && !cleared && !tried;
   if (firstTry) level = { ...level, harsh: true, shapes: PAYWALL_FIRST_SHAPES };
   const paywallRetry = !!base.paywall && recent.some(a => a.level === levelIndex && !a.win);
-  return { level, profile: p.id, shift, mode: p.swap ? 'swap' : null, layout: level.board, deal: tuned.deal, suggestBooster: !!p.suggestBooster || paywallRetry, retry: !!kept, baseCount, count: baseCount, difficulty };
+  const retry = recent.at(-1)?.level === levelIndex && !recent.at(-1).win;
+  return { level, profile: p.id, shift, mode: null, layout: level.board, deal: tuned.deal, suggestBooster: !!p.suggestBooster || paywallRetry, retry, baseCount, count: baseCount, difficulty };
 }
 
 // Ghi một lần thử. `attempt` gồm metric lần chơi + { profile, shift, mode, layout } của plan đã dùng.
 // Trả về { profile, gift }: gift = true khi đây là màn thắng đầu tiên sau khi bị nhận diện "sắp bỏ game".
 export function recordAttempt(profile, attempt, now = Date.now()) {
-  const attempts = [...profile.attempts, { ...attempt, t: now }].slice(-A.HISTORY);
-  const dropped = profile.attempts.length + 1 - attempts.length;
+  const all = [...profile.attempts, { ...attempt, t: now }], attempts = all.slice(-A.HISTORY);
+  const dropped = all.length - attempts.length;
+  // Lần thử bị cắt khỏi lịch sử: cộng dồn vào mức nền để điểm kỹ năng không bị reset.
+  const ratingBase = all.slice(0, dropped).reduce((r, a, i) => stepRating(r, a, all[i - 1]), profile.ratingBase ?? 0);
   const frustrated = attempt.profile === 'frustrated';
   let { cooldown, giftPending } = profile, gift = false;
   if (frustrated) { cooldown = A.CALM_LEVELS; giftPending = true; }
@@ -323,7 +316,7 @@ export function recordAttempt(profile, attempt, now = Date.now()) {
   }
   // Màn paywall: nhớ vĩnh viễn là đã chơi (lịch sử attempts chỉ giữ A.HISTORY lần gần nhất).
   const paywallTried = LEVELS[attempt.level]?.paywall ? [...new Set([...(profile.paywallTried ?? []), attempt.level])] : profile.paywallTried;
-  const next = { ...profile, paywallTried, attempts, streakFrom: Math.max(0, profile.streakFrom - dropped), cooldown, giftPending, warmup: false, lastSeen: now };
+  const next = { ...profile, paywallTried, attempts, ratingBase, streakFrom: Math.max(0, profile.streakFrom - dropped), cooldown, giftPending, warmup: false, lastSeen: now };
   return { profile: next, gift };
 }
 

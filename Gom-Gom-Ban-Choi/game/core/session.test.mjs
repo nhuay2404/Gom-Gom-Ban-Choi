@@ -32,7 +32,7 @@ function playTutorial(index) {
 test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
   assert.equal(LEVELS.length, 100);
   LEVELS.forEach((level, i) => {
-    const board = parseBoard(level.board), { W, H } = boardSize(level.board);
+    const board = parseBoard(level.board, level.syrup), { W, H } = boardSize(level.board);
     assert.ok(level.board.every(row => row.length === W), `màn ${i + 1}: các hàng cùng độ dài`);
     assert.ok(W >= 6 && W <= 8 && H >= 6 && H <= 8, `màn ${i + 1}: cỡ bàn ${W}×${H}`);
     assert.equal(clearMatches(board, W, H, MATCH_SIZE).cleared.length, 0, `màn ${i + 1} có sẵn cụm`);

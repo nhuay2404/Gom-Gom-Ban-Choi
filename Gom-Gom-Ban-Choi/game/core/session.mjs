@@ -1,7 +1,8 @@
 // Một ván chơi (thuần logic, không đụng giao diện): bóc thẻ, xoay, gửi tạm, đặt, gom, thắng/thua, tutorial.
 // Giao diện (game/play/ trên web, component Unity sau này) chỉ gọi các hàm dưới đây rồi vẽ theo kết quả trả về;
 // không tự sửa luật. Mọi hàm nhận `s` (session) và sửa trực tiếp trên nó.
-import { clearMatches, connectedGroup, removeClusters, wakeFatCats, placementIndices, placeCard, rotateOffsets } from './board-rules.mjs';
+import { clearMatches, connectedGroup, removeClusters, wakeFatCats, placementIndices, placeCard, rotateOffsets, matchesSomewhere } from './board-rules.mjs';
+export { matchesSomewhere };
 import { MATCH_SIZE, turnPoints, clusterPoints, rollPoints, POINTS_PER_CRATE } from './scoring.mjs';
 // Một nhát búa trúng mèo béo = đánh thức 2 lần (búa phá thẳng thì mèo béo mất ý nghĩa).
 const FAT_HAMMER_WAKES = 2;
@@ -33,20 +34,6 @@ export function createSession(levelIndex, { rng = Math.random, level = LEVELS[le
   return s;
 }
 
-// Gom được ngay khi đặt `card` ở đâu đó (mọi hướng xoay)?
-export function matchesSomewhere(board, W, H, card) {
-  let offsets = card.offsets;
-  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
-    for (let anchor = 0; anchor < board.length; anchor++) {
-      const indices = placementIndices(board, W, H, anchor, offsets);
-      if (!indices) continue;
-      const next = board.slice();
-      indices.forEach((index, i) => { next[index] = { group: card.items[i].group }; });
-      if (clearMatches(next, W, H, MATCH_SIZE).cleared.length) return true;
-    }
-  }
-  return false;
-}
 // Thẻ đầu tiên của mọi ván phải gom được ngay ở lượt 1. Thẻ bóc ra chưa gom được thì đổi nhẹ nhất có thể:
 // đổi màu một mèo của thẻ -> đổi màu cả thẻ (giữ hình) -> thẻ đôi cùng màu -> thẻ đơn. Màu chọn theo giống có nhiều
 // mèo (không bị nhốt) trên bàn nhất. Không có cách nào thì giữ thẻ cũ.

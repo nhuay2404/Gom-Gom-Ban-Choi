@@ -1,3 +1,4 @@
+import { MATCH_SIZE } from './scoring.mjs';
 function neighbor(index, delta, width, height) {
   const next = index + delta;
   if (next < 0 || next >= width * height) return -1;
@@ -199,4 +200,19 @@ export function placeCard(board, width, height, anchor, card) {
     }
   });
   return { board: nextBoard, indices, score: indices.length * 10 + adjacency * 5 };
+}
+
+// Gom được ngay khi đặt `card` ở đâu đó (mọi hướng xoay)?
+export function matchesSomewhere(board, W, H, card) {
+  let offsets = card.offsets;
+  for (let turn = 0; turn < 4; turn++, offsets = rotateOffsets(offsets)) {
+    for (let anchor = 0; anchor < board.length; anchor++) {
+      const indices = placementIndices(board, W, H, anchor, offsets);
+      if (!indices) continue;
+      const next = board.slice();
+      indices.forEach((index, i) => { next[index] = { group: card.items[i].group }; });
+      if (clearMatches(next, W, H, MATCH_SIZE).cleared.length) return true;
+    }
+  }
+  return false;
 }

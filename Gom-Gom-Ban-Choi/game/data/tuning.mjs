@@ -97,6 +97,11 @@ export const ADAPTIVE = remote('ADAPTIVE', {
   STUCK_AFTER: 2,         // thua vì hết chỗ bấy nhiêu lần ở màn này -> thêm thẻ đôi
   MOVES_AFTER: 2,         // thua vì hết lượt bấy nhiêu lần ở màn này -> thêm assist + một thẻ to
   CROWDED_BLOCKS: 6,      // bàn có từ bấy nhiêu ô vật cản = màn chật: thẻ to thêm vào là thẻ đôi thay vì thẻ 3 ô (đỡ kẹt)
+  QUEUE_HARSH: 0.12,      // mỗi mức khó hơn: thêm bấy nhiêu xác suất một thẻ là thẻ xấu (level-rules.mjs makeDealer `queue`)
+  QUEUE_HELP: 0.12,       // mỗi mức dễ hơn: thêm bấy nhiêu xác suất một thẻ là thẻ giúp (gom được ngay)
+  // Mức nền (adaptive.mjs stepRating, không reset): điểm kỹ năng -2 … +2, shift = phần nguyên.
+  RATING_WIN: 0.5,        // thắng sạch: cộng bấy nhiêu (2 màn thắng sạch = khó hơn 1 mức); thắng có booster / sau khi chơi lại: một nửa
+  RATING_LOSS: 1,         // thua / bỏ ngang: trừ bấy nhiêu (mỗi lần thua nhẹ đi 1 mức); thua sát nút: một nửa
 });
 
 // Hiệu ứng gom cụm to / gom đôi (cluster-effects.mjs). CAP = trần điểm hiệu ứng mỗi loại; DOUBLE_MULT nhân điểm cả lượt khi gom 2+ cụm.
