@@ -8,8 +8,8 @@
 import { boardSize } from './board-shapes.mjs';
 
 const isOpen = ch => ch === '.';
-const isCat = ch => !'.XM#'.includes(ch);
-const isObstacle = ch => ch === 'X' || ch === 'M';
+const isCat = ch => !'.XM#@%'.includes(ch);
+const isObstacle = ch => ch === 'X' || ch === 'M' || ch === '@' || ch === '%';
 
 function neighbors(i, W, H) {
   const x = i % W, y = (i - x) / W, out = [];

@@ -9,7 +9,7 @@ import { state, fxLayer, cellEl, W, H } from './context.js';
 import { tutorialStep } from './tutorial.js';
 import { track, endLevel } from './result.js';
 import { render, nudgeGoals } from './hud.js';
-import { breakCrates, flyBits, spawnPuff, shakeBoard, animateFat } from './match-fx.js';
+import { breakCrates, flyBits, spawnPuff, shakeBoard, animateFat, flyToGoal, breakVases, washSyrup } from './match-fx.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot } from './score-bar.js';
 import { drainMoves, celebrateWin } from './finale.js';
 
@@ -88,14 +88,17 @@ export function smashAt(cell) {
   clearSmashArea();
   playSound('smash');
   animateFat(turn, 0); // mèo béo trúng búa: nhún / lăn (điểm lăn đã nằm trong số điểm của nhát búa)
+  flyToGoal('mail', turn.mail, 120);
+  washSyrup(turn.removed.filter(({ object }) => object.syrup).map(({ index: i }) => i), 0);
+  breakVases({ cracked: [], shattered: turn.removed.filter(({ object }) => object.vase).map(({ index: i }) => i) }, 0);
   const crates = turn.removed.filter(({ object }) => object.block && !object.metal).map(({ index: i }) => i);
   breakCrates(crates, 0);
   if (!reduceMotion.matches) {
     const layer = fxLayer();
     turn.removed.forEach(({ index: i, object }) => {
       const target = cellEl(i);
-      if (!target || (object.block && !object.metal)) return; // thùng: breakCrates lo
-      if (object.metal || object.cage) { flyBits(layer, target, object.cage ? 'cage-bar' : 'grass-bit', 6); spawnPuff(target); return; }
+      if (!target || (object.block && !object.metal) || object.vase) return; // thùng: breakCrates lo · bình: breakVases lo
+      if (object.metal || (object.cage && !object.syrup)) { flyBits(layer, target, object.cage ? 'cage-bar' : 'grass-bit', 6); spawnPuff(target); return; }
       const ghost = target.cloneNode(true);
       ghost.classList.add('smash-ghost');
       ghost.style.cssText += `;left:${target.offsetLeft}px;top:${target.offsetTop}px;width:${target.offsetWidth}px;height:${target.offsetHeight}px`;

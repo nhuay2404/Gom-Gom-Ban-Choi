@@ -1,7 +1,7 @@
 // Luật đọc dữ liệu màn (thuần logic): đọc bàn / cỏ / thẻ viết gọn, bộ chia thẻ, tính sao. Dữ liệu màn ở data/levels.mjs.
 // Sang Unity: static class LevelRules (C#), đọc LevelData (ScriptableObject / JSON xuất bằng npm run export:data).
 import { LETTERS, SHAPES } from '../data/levels.mjs';
-import { CAGE } from '../data/tuning.mjs';
+import { CAGE, VASE } from '../data/tuning.mjs';
 
 // Cỏ (`grass`): lớp nằm DƯỚI mèo / ô trống, các hàng chuỗi cùng cỡ với `board` ('~' = ô có cỏ, '.' = sạch). Gom một cụm thì
 // cỏ dưới các mèo của cụm bị phá (session.mjs). Màn có cỏ: phải dọn hết cỏ VÀ đủ điểm `target`. Ô thùng / kim loại / ngoài bàn
@@ -9,7 +9,7 @@ import { CAGE } from '../data/tuning.mjs';
 export function parseGrass(level) {
   if (!level.grass) return null;
   const cells = level.board.join('');
-  return [...level.grass.join('')].map((ch, k) => ch === '~' && !'XM#'.includes(cells[k] ?? '#'));
+  return [...level.grass.join('')].map((ch, k) => ch === '~' && !'XM#@%'.includes(cells[k] ?? '#'));
 }
 export const grassCount = level => (parseGrass(level) || []).filter(Boolean).length;
 
@@ -17,10 +17,16 @@ export const grassCount = level => (parseGrass(level) || []).filter(Boolean).len
 // Chữ thường ('o', 'k'...) = mèo bị nhốt trong chuồng (tuning.mjs CAGE): { group, cage: số khóa còn lại }.
 // Chữ số '1'–'9' = ô của mèo béo 2×2 đang ngủ (board-rules.mjs wakeFatCats), số = số lần phải đánh thức; mỗi khối 2×2 chữ số liền
 // nhau là một con: { fat, fatId: ô góc trên-trái, breed }.
-export function parseBoard(rows) {
+// '@' = hộp thư: chặn ô như kim loại, không bao giờ vỡ (cả búa / herd); gom sát bên thì bay thư vào Goal (board-rules.mjs `mail`).
+// '%' = bình hoa: { vase: số lần trúng còn lại } (tuning.mjs VASE), lần gom sát đầu chỉ nứt, hết lượt trúng thì vỡ (board-rules.mjs `cracked` / `shattered`).
+// `syrup` (tuỳ chọn): lớp siro dâu phủ lên mèo, các hàng chuỗi cùng cỡ với bàn ('~' = mèo ở ô đó bị phủ; ô không phải mèo thường thì bỏ qua).
+// Mèo phủ siro = chuồng 1 khoá có cờ `syrup` ({ group, cage: 1, syrup: true }): không vào cụm, gom sát bên là siro vỡ (board-rules.mjs `syrup`).
+export function parseBoard(rows, syrup) {
   const width = rows[0]?.length ?? 0;
   const board = rows.join('').split('').map(ch => (ch === '.' ? null : ch === 'X' ? { block: true } : ch === 'M' ? { block: true, metal: true }
     : ch === '#' ? { block: true, metal: true, void: true }
+      : ch === '@' ? { block: true, metal: true, mail: true }
+      : ch === '%' ? { vase: VASE.HITS }
       : /[1-9]/.test(ch) ? { fat: Number(ch), fatMax: Number(ch), fatId: -1, breed: FAT_BREED }
         : ch !== ch.toUpperCase() ? { group: LETTERS[ch.toUpperCase()], locked: true, starting: true, cage: CAGE.LOCKS }
           : { group: LETTERS[ch], locked: true, starting: true }));
@@ -30,6 +36,7 @@ export function parseBoard(rows) {
     if (i % width === width - 1 || !block.every(k => board[k]?.fat && board[k].fatId < 0)) throw new Error(`Mèo béo ở ô ${i} không đủ khối 2×2`);
     block.forEach(k => { board[k] = { ...board[k], fatId: i }; });
   });
+  if (syrup) [...syrup.join('')].forEach((ch, i) => { if (ch === '~' && board[i]?.group && !board[i].cage) board[i] = { ...board[i], cage: 1, syrup: true }; });
   return board;
 }
 // Giống của mèo béo (vẽ to 2×2 trên bàn).

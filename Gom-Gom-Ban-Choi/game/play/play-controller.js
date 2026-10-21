@@ -52,12 +52,14 @@ function finishTurn(turn) {
   }
   else playSound('place');
   const crateText = match.broken?.length ? ` Broke ${match.broken.length} crate${match.broken.length > 1 ? 's' : ''}!` : '';
-  const cageText = match.freed?.length ? ` Freed ${match.freed.length} caged cat${match.freed.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
+  const freedCages = match.freed?.filter(index => !match.syrup.includes(index)) ?? [];
+  const cageText = freedCages.length ? ` Freed ${freedCages.length} caged cat${freedCages.length > 1 ? 's' : ''}!` : match.caged?.length ? ' A cage lock broke!' : '';
+  const syrupText = match.syrup?.length ? ` Washed off ${match.syrup.length} syrup!` : '';
   const grassText = turn.cleaned?.length ? ` Cleared ${turn.cleaned.length} grass!` : '';
   const effectText = turn.effect?.effects.length ? ` ${turn.effect.effects.map(fx => EFFECT_FX[fx.kind].label).join(' ')}` : '';
   if (!turn.win) nudgeGoals();
-  const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : state.board.some(object => object?.cage) ? ' Free every caged cat to win!' : '') : '';
-  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${effectText}${crateText}${grassText}${cageText}${goalText}` : goalText.trim();
+  const goalText = !turn.win && state.score >= state.level.target ? (game.grassLeft(state) ? ' Clear the rest of the grass to win!' : game.cagesLeft(state) ? ' Free every caged cat to win!' : '') : '';
+  const clearedText = match.groups.length ? `Matched ${match.groups.map(group => look(group).name).join(', ')}! +${gained} points.${effectText}${crateText}${grassText}${cageText}${syrupText}${goalText}` : goalText.trim();
   state.preview = null;
   if (turn.tutorialAdvanced) showNextTutorial(700);
   if (turn.win) {
@@ -80,8 +82,11 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   const plan = planLevel(profile, levelIndex, { cleared: !!loadProgress().stars[levelIndex] }), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   setSession(Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false }));
-  state.hasCages = state.board.some(object => object?.cage);
+  state.hasCages = game.cagesLeft(state) > 0;
+  state.hasSyrup = game.syrupLeft(state) > 0;
   state.hasFat = state.board.some(object => object?.fat);
+  state.hasVase = state.board.some(object => object?.vase);
+  state.flying = { mail: 0, vase: 0, syrup: 0 };
   disarmHammer();
   startTracking();
   // Lần chơi lại sau khi thua sát nút: nút +lượt nhấp nháy mời dùng (adaptive.mjs: suggestBooster).
@@ -92,7 +97,7 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   document.querySelectorAll('.score-pop, .score-orb, .praise-pop, .firework-spark, .firework-flash').forEach(node => node.remove());
   fill.style.transition = 'none';
   const goal = state.grassTotal ? `Reach ${level.target} points and clear all ${state.grassTotal} grass tiles in ${level.moves} moves!` : `Reach ${level.target} points in ${level.moves} moves!`;
-  render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}${state.hasFat ? ' Wake up the big sleepy cat too!' : ''}`);
+  render(`${goal}${state.hasCages ? ' Free every caged cat too!' : ''}${state.hasFat ? ' Wake up the big sleepy cat too!' : ''}${state.mailTotal ? ` Collect ${state.mailTotal} letters from the mailboxes too!` : ''}${state.hasVase ? ' Break every vase too!' : ''}${state.hasSyrup ? ' Wash the syrup off every cat too!' : ''}`);
   void fill.offsetWidth;
   fill.style.transition = '';
   renderTutorial();

@@ -4,7 +4,7 @@ import * as game from '../core/session.mjs';
 import { LOW_MOVE_MOODS } from '../ui/cat-art.mjs';
 import { LOW_MOVES } from '../data/tuning.mjs';
 import { boostersUnlocked } from '../core/boosters.mjs';
-import { CAGE_ICON_SVG, GRASS_ICON_SVG } from '../ui/board-art.mjs';
+import { CAGE_ICON_SVG, GRASS_ICON_SVG, LETTER_SVG, vaseSvg, SYRUP_DROP_SVG } from '../ui/board-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { refreshSkin, state } from './context.js';
@@ -52,13 +52,17 @@ export function render(message = '', error = false) {
 // has = màn có loại mục tiêu này từ đầu; ô Goal hiện đủ mọi mục tiêu còn lại (tối đa 3, mỗi loại một ô).
 const GOAL_KINDS = {
   grass: { has: () => state.grassTotal, icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
-  cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
+  cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => game.cagesLeft(state), label: 'caged cats' },
   fat: { has: () => state.hasFat, icon: () => `<span class="goal-fat">${fatMarkup('sleep')}</span>`, left: () => game.fatLeft(state), label: 'sleepy big cats' },
+  // thư / mảnh bình đang bay (match-fx.js flyToGoal) chưa trừ: số chỉ giảm lúc chạm ô Goal
+  mail: { has: () => state.mailTotal, icon: () => LETTER_SVG, left: () => Math.max(0, state.mailTotal - state.mail + state.flying.mail), label: 'letters' },
+  vase: { has: () => state.hasVase, icon: () => vaseSvg(), left: () => game.vasesLeft(state) + state.flying.vase, label: 'vases' },
+  syrup: { has: () => state.hasSyrup, icon: () => SYRUP_DROP_SVG, left: () => game.syrupLeft(state) + state.flying.syrup, label: 'syrup-covered cats' },
 };
 
 const goalsLeft = () => Object.keys(GOAL_KINDS).filter(kind => GOAL_KINDS[kind].has() && GOAL_KINDS[kind].left() > 0);
 
-function renderGoals() {
+export function renderGoals() {
   const goals = goalsLeft();
   $('goal-box').hidden = !goals.length;
   $('goal-box').closest('.fg-panel').classList.toggle('has-goal', goals.length > 0);
@@ -97,7 +101,7 @@ export function nudgeGoals() {
 
 function paintGoalHint() {
   const cols = 6;
-  const lit = index => !!state.goalHint && (!!state.board[index]?.cage || !!state.board[index]?.fat || !!state.grass?.[index]);
+  const lit = index => !!state.goalHint && (!!state.board[index]?.cage || !!state.board[index]?.fat || !!state.grass?.[index] || !!state.board[index]?.vase || (!!state.board[index]?.mail && game.mailLeft(state) > 0));
   $('board').querySelectorAll(':scope > .cell').forEach((cell, index) => {
     const on = lit(index), col = index % cols;
     cell.classList.toggle('goal-hint', on);

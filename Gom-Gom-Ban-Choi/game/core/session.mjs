@@ -18,11 +18,13 @@ const withNames = card => ({ offsets: card.offsets, items: card.items.map(({ gro
 // `level`: bản màn đã chỉnh độ khó (adaptive.mjs); không truyền thì dùng màn gốc.
 // s.W × s.H = kích thước bàn của màn; s.holdOn = màn đã mở ô Hold chưa (tuning.mjs: HOLD).
 // s.grass = ô nào còn cỏ (mảng true/false, null nếu màn không có cỏ) · s.grassTotal = số ô cỏ lúc đầu (> 0 = phải dọn hết cỏ, thêm vào mục tiêu điểm).
+// s.mailTotal = số thư phải gom (level.mail, hộp thư '@') · s.mail = số thư đã bay vào Goal.
 export function createSession(levelIndex, { rng = Math.random, level = LEVELS[levelIndex] } = {}) {
   const { W, H } = boardSize(level.board);
   const s = {
     level, levelIndex, W, H, holdOn: holdUnlocked(levelIndex), grass: parseGrass(level), grassTotal: grassCount(level),
-    board: parseBoard(level.board), deal: makeDealer(level, rng), rng, deck: [], active: null, hold: null,
+    mailTotal: level.mail ?? 0, mail: 0,
+    board: parseBoard(level.board, level.syrup), deal: makeDealer(level, rng), rng, deck: [], active: null, hold: null,
     score: 0, moves: level.moves, over: false, outcome: null,
     tutorial: level.tutorial ? { steps: level.tutorial, step: 0 } : null,
   };
@@ -88,12 +90,18 @@ export function checkStuck(s) {
   return true;
 }
 // Qua màn = đủ điểm VÀ đã bẻ hết khóa chuồng (không còn mèo nào bị nhốt trên bàn).
-export const cagesLeft = s => s.board.filter(object => object?.cage).length;
+export const cagesLeft = s => s.board.filter(object => object?.cage && !object.syrup).length;
+// Mèo còn phủ siro dâu (level-rules.mjs parseBoard `syrup`).
+export const syrupLeft = s => s.board.filter(object => object?.syrup).length;
 export const grassLeft = s => (s.grass ? s.grass.filter(Boolean).length : 0);
 // Mọi màn phải đủ điểm + thả hết chuồng; màn có cỏ còn phải dọn hết cỏ.
 // Mèo béo 2×2 còn ngủ (mỗi con đếm một lần).
 export const fatLeft = s => new Set(s.board.filter(object => object?.fat).map(object => object.fatId)).size;
-export const goalReached = s => cagesLeft(s) === 0 && grassLeft(s) === 0 && fatLeft(s) === 0 && s.score >= s.level.target;
+// Thư còn thiếu (hộp thư không vỡ nên đếm theo số thư đã bay vào Goal).
+// Bình hoa còn trên bàn (nứt hay chưa).
+export const vasesLeft = s => s.board.filter(object => object?.vase).length;
+export const mailLeft = s => Math.max(0, (s.mailTotal ?? 0) - (s.mail ?? 0));
+export const goalReached = s => cagesLeft(s) === 0 && grassLeft(s) === 0 && fatLeft(s) === 0 && mailLeft(s) === 0 && vasesLeft(s) === 0 && syrupLeft(s) === 0 && s.score >= s.level.target;
 // Ô một lượt gom quét qua (cỏ ở đó bị phá): ô của các cụm + vùng mèo béo lăn qua.
 const sweptBy = match => [...match.cleared, ...(match.rolled ?? []).flatMap(roll => roll.area)];
 function finish(s, win, reason = '') {
@@ -170,6 +178,7 @@ export function place(s, anchor) {
   s.board = effect.board;
   if (effect.grass) s.grass = effect.grass;
   s.score += gained;
+  s.mail += match.mail.length + effect.mail.length;
   s.moves--;
   const tutorialAdvanced = advanceTutorial(s, 'place');
   const turn = { ok: true, result, match, effect, gained, tutorialAdvanced, win: false, lose: false, stuck: false, fit: true, cleaned };
@@ -178,7 +187,7 @@ export function place(s, anchor) {
     s.active = drawCard(s); // không để thẻ vừa đặt nằm lại trong ô đang bóc
     return { ...turn, win: true };
   }
-  if (s.moves === 0) { finish(s, false, s.score < s.level.target || grassLeft(s) ? 'Out of moves!' : fatLeft(s) ? 'The fat cat is still asleep!' : 'Cats still caged!'); return { ...turn, lose: true }; }
+  if (s.moves === 0) { finish(s, false, s.score < s.level.target || grassLeft(s) ? 'Out of moves!' : fatLeft(s) ? 'The fat cat is still asleep!' : mailLeft(s) ? 'Letters still waiting!' : vasesLeft(s) ? 'Vases still standing!' : syrupLeft(s) ? 'Syrup still sticking!' : 'Cats still caged!'); return { ...turn, lose: true }; }
   s.active = drawCard(s);
   const fit = canPlaceAnywhere(s, s.active);
   const stuck = checkStuck(s);
@@ -187,6 +196,7 @@ export function place(s, anchor) {
 
 // ---------- Booster (không tốn lượt; kho booster do boosters.mjs giữ, ở đây chỉ là luật trên bàn) ----------
 // Búa: đập vùng 3×3 quanh ô chạm, xoá MỌI thứ trong vùng (mèo, mèo trong chuồng, thùng, kim loại) + phá cỏ; ô ngoài bàn ('#') giữ nguyên.
+// Hộp thư trong vùng không vỡ: mỗi hộp bay 1 thư. Bình hoa vỡ hẳn.
 // Điểm như gom: mèo cùng màu trong vùng tính như một cụm (clusterPoints theo số con), thùng / kim loại / chuồng mỗi cái POINTS_PER_CRATE.
 export const canSmash = (s, index) => index >= 0 && index < s.board.length && !s.board[index]?.void;
 export function smash(s, index) {
@@ -204,9 +214,10 @@ function smashArea(s, index) {
   // Mèo béo trúng búa không bị xoá: được đánh thức 2 lần (FAT_HAMMER_WAKES), đủ thì lăn.
   const fatHits = new Map();
   cells.forEach(i => { if (s.board[i]?.fat) fatHits.set(s.board[i].fatId, FAT_HAMMER_WAKES); });
-  const removed = cells.filter(i => s.board[i] && !s.board[i].fat).map(i => ({ index: i, object: s.board[i] }));
+  const removed = cells.filter(i => s.board[i] && !s.board[i].fat && !s.board[i].mail).map(i => ({ index: i, object: s.board[i] }));
+  const mail = cells.filter(i => s.board[i]?.mail);
   const cleaned = s.grass ? cells.filter(i => s.grass[i]) : [];
-  if (!removed.length && !cleaned.length && !fatHits.size) return { ok: false, error: 'Nothing to smash here.' };
+  if (!removed.length && !cleaned.length && !fatHits.size && !mail.length) return { ok: false, error: 'Nothing to smash here.' };
   const perGroup = {};
   let points = 0;
   removed.forEach(({ object }) => { if (object.group && !object.cage) perGroup[object.group] = (perGroup[object.group] || 0) + 1; else points += POINTS_PER_CRATE; });
@@ -219,7 +230,8 @@ function smashArea(s, index) {
   fat.rolled.forEach(roll => roll.area.forEach(i => { if (s.grass?.[i]) cleaned.push(i); }));
   cleaned.forEach(i => { s.grass[i] = false; });
   s.score += points;
-  return { ok: true, cells, removed, cleaned, points, woke: fat.woke, rolled: fat.rolled };
+  s.mail += mail.length;
+  return { ok: true, cells, removed, cleaned, points, woke: fat.woke, rolled: fat.rolled, mail };
 }
 // Đổi thẻ: thẻ đang bóc + LUCKY_TURNS - 1 thẻ bóc sau đó là thẻ có lợi nhất cho bàn lúc bóc (luckyCard).
 // Thẻ "sắp tới" giữ nguyên trong hàng, ra sau khi hết lượt may mắn.
@@ -250,7 +262,7 @@ export function bestPlay(s) {
       if (!match.cleared.length) continue;
       const fx = clusterEffects(match, placed.indices, s.W, s.H, s.grass);
       const grassHit = s.grass ? match.cleared.filter(i => s.grass[i]).length + fx.cleaned.length : 0;
-      const value = (turnPoints(match) + fx.points) * (fx.double ? EFFECTS.DOUBLE_MULT : 1) + 10 * (grassHit + match.caged.length + match.freed.length + fx.caged.length + fx.freed.length);
+      const value = (turnPoints(match) + fx.points) * (fx.double ? EFFECTS.DOUBLE_MULT : 1) + 10 * (grassHit + match.caged.length + match.freed.length + fx.caged.length + fx.freed.length + (s.mailTotal ? match.mail.length + fx.mail.length : 0) + match.cracked.length + match.shattered.length + fx.cracked.length + fx.shattered.length);
       if (!best || value > best.value) best = { value, card, anchor };
     }
   }

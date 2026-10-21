@@ -3,6 +3,7 @@
 //   cụm 5: yarn   — nổ 3×3 quanh điểm tụ
 //   cụm 6: cross  — gom mọi mèo cùng màu cụm còn trên bàn + mở 1 khoá chuồng gần nhất
 //   cụm 7+: herd  — dọn sạch cả bàn (mèo, mèo trong chuồng, thùng, kim loại, cỏ; mèo béo được đánh thức), mỗi thứ EFFECTS.WIPE điểm
+// Hộp thư trúng hiệu ứng: không vỡ, mỗi hiệu ứng trúng = 1 thư (out.mail). Bình hoa: như khoá chuồng (mỗi lượt trúng 1 lần), herd vỡ hẳn.
 // Gom đôi (2+ cụm): 3+3 → drop (thả 2 mèo đơn vào chỗ có lợi nhất: ưu tiên chỗ thành cụm 3+ để gom tiếp) · 4+4 → 2 pounce + yarn · 5+ & 5+ → 2 yarn + herd · lệch cỡ → hiệu ứng cụm to.
 // Điểm cả lượt nhân DOUBLE_MULT khi gom đôi (session.mjs).
 import { mergeTarget, wakeFatCats, connectedGroup, clearMatches } from './board-rules.mjs';
@@ -23,7 +24,7 @@ const square = (center, W, H) => { const r = Math.floor(center / W), c = center 
 // match = kết quả clearMatches, placed = ô vừa đặt thẻ, grass = mảng cỏ (hoặc null). Không sửa input.
 export function clusterEffects(match, placed, W, H, grass) {
   const sizes = match.clusters.map(c => c.length).sort((a, b) => b - a);
-  const out = { effects: [], board: match.board, blasted: [], broken: [], caged: [], freed: [], cleaned: [], woke: [], rolled: [], points: 0, double: sizes.length >= 2 };
+  const out = { effects: [], board: match.board, blasted: [], broken: [], caged: [], freed: [], cleaned: [], woke: [], rolled: [], mail: [], cracked: [], shattered: [], syrup: [], points: 0, double: sizes.length >= 2 };
   if (!sizes.length) return out;
   const board = match.board.slice(), lawn = grass ? grass.slice() : null;
   const hitCage = new Set(), fatHits = new Map();
@@ -39,11 +40,15 @@ export function clusterEffects(match, placed, W, H, grass) {
     const cell = board[i];
     if (lawn?.[i]) { lawn[i] = false; out.cleaned.push(i); if (wipe) pts += wipePts; }
     if (!cell) return pts;
+    if (cell.mail) { out.mail.push(i); return pts; }
+    if (cell.vase) { if (hitCage.has(i) && !wipe) return pts; hitCage.add(i);
+      if (cell.vase > 1 && !wipe) { board[i] = { vase: cell.vase - 1 }; out.cracked.push(i); } else { board[i] = null; out.shattered.push(i); }
+      return pts + (wipe ? wipePts : 0); }
     if (cell.fat) { runFat.add(cell.fatId); return pts; }
-    if (wipe) { board[i] = null; (cell.group ? out.blasted : out.broken).push(i); return pts + wipePts; }
+    if (wipe) { board[i] = null; (cell.group ? out.blasted : out.broken).push(i); if (cell.syrup) out.syrup.push(i); return pts + wipePts; }
     if (cell.cage) { if (hitCage.has(i)) return pts; hitCage.add(i);
-      const { cage, ...cat } = cell;
-      if (cage > 1) { board[i] = { ...cell, cage: cage - 1 }; out.caged.push(i); } else { board[i] = cat; out.freed.push(i); }
+      const { cage, syrup, ...cat } = cell;
+      if (cage > 1) { board[i] = { ...cell, cage: cage - 1 }; out.caged.push(i); } else { board[i] = cat; out.freed.push(i); if (syrup) out.syrup.push(i); }
     } else if (cell.block) { if (!cell.metal) { board[i] = null; out.broken.push(i); pts += 10; } }
     else if (catsToo) { board[i] = null; out.blasted.push(i); pts += 10; }
     return pts;
@@ -63,7 +68,7 @@ export function clusterEffects(match, placed, W, H, grass) {
     }
     cells = cells.filter(i => !board[i]?.void); // ô ngoài bàn ('#'): không trúng, không loé (giữ nguyên hình bàn)
     cells.forEach(i => { pts += hit(i, catsToo, kind === 'herd'); });
-    if (kind === 'herd') cells = cells.filter(i => out.blasted.includes(i) || out.broken.includes(i) || out.cleaned.includes(i) || board[i]?.fat);
+    if (kind === 'herd') cells = cells.filter(i => out.blasted.includes(i) || out.broken.includes(i) || out.cleaned.includes(i) || board[i]?.fat || board[i]?.mail || out.shattered.includes(i));
     runFat.forEach(id => { if (!fatDone.has(id)) fatHits.set(id, 1); });
     if (EFFECTS.CAP[kind]) pts = Math.min(pts, EFFECTS.CAP[kind]);
     out.points += pts;
@@ -74,7 +79,7 @@ export function clusterEffects(match, placed, W, H, grass) {
   const drop = center => {
     const groups = [...new Set([...match.groups, ...board.filter(c => c?.group && !c.cage).map(c => c.group)])];
     const dist = i => Math.abs(Math.floor(i / W) - Math.floor(center / W)) + Math.abs(i % W - center % W);
-    const near = cells => ring(cells, W, H).filter(i => (board[i]?.block && !board[i].metal) || board[i]?.cage || board[i]?.fat || lawn?.[i]).length;
+    const near = cells => ring(cells, W, H).filter(i => (board[i]?.block && !board[i].metal) || board[i]?.cage || board[i]?.vase || board[i]?.fat || lawn?.[i]).length;
     const cells = [];
     for (let n = 0; n < 2; n++) {
       let best = null;
@@ -106,9 +111,10 @@ export function clusterEffects(match, placed, W, H, grass) {
       chain.board.forEach((cell, i) => { board[i] = cell; });
       chain.cleared.forEach(i => { if (lawn?.[i]) { lawn[i] = false; out.cleaned.push(i); } });
       chain.woke.forEach(f => skip.add(f.id));
-      const all = out.chain ??= { cleared: [], clusters: [], groups: [], broken: [], caged: [], freed: [], woke: [], rolled: [] };
-      ['cleared', 'clusters', 'groups', 'broken', 'caged', 'freed', 'woke', 'rolled'].forEach(k => all[k].push(...chain[k]));
-      out.broken.push(...chain.broken); out.caged.push(...chain.caged); out.freed.push(...chain.freed);
+      const all = out.chain ??= { cleared: [], clusters: [], groups: [], broken: [], caged: [], freed: [], woke: [], rolled: [], mail: [], cracked: [], shattered: [], syrup: [] };
+      ['cleared', 'clusters', 'groups', 'broken', 'caged', 'freed', 'woke', 'rolled', 'mail', 'cracked', 'shattered', 'syrup'].forEach(k => all[k].push(...chain[k]));
+      out.broken.push(...chain.broken); out.caged.push(...chain.caged); out.freed.push(...chain.freed); out.mail.push(...chain.mail);
+      out.cracked.push(...chain.cracked); out.shattered.push(...chain.shattered); out.syrup.push(...chain.syrup);
       out.points += turnPoints(chain);
       const sources = [...(out.dropped ?? []).map(d => d.index), ...match.freed ?? [], ...out.freed];
       chain.clusters.forEach((cluster, k) => {

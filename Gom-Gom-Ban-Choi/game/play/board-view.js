@@ -1,7 +1,7 @@
 // Vẽ bàn: lưới ô theo hình bàn, mèo / thùng / kim loại / lồng / cỏ, xem trước chỗ thả, chạm vuốt mèo (tim, mèo bực).
 // Sang Unity: BoardView (MonoBehaviour) + prefab CellView.
 import { categories } from '../ui/cat-art.mjs';
-import { CRATE_SVG, METAL_SVG, cageSvg, GRASS_SVG } from '../ui/board-art.mjs';
+import { CRATE_SVG, METAL_SVG, MAILBOX_SVG, vaseSvg, SYRUP_TILE, cageSvg, GRASS_SVG } from '../ui/board-art.mjs';
 import { playMeow } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, H, state, look, addArt, fxLayer } from './context.js';
@@ -49,11 +49,19 @@ export function renderBoard() {
     const hasGrass = (r, c) => grassAt(r, c) && !!state.board[r * W + c]?.fat === fat;
     return (hasGrass(row - 1, col) ? 'n' : '') + (hasGrass(row, col + 1) ? 'e' : '') + (hasGrass(row + 1, col) ? 's' : '') + (hasGrass(row, col - 1) ? 'w' : '') || '-';
   };
+  // Siro dâu liền nhau: như cỏ, chuỗi cạnh giáp ô siro khác (đổi khi ô bên cạnh hết siro -> vẽ lại cho mép mảng khép kín).
+  const syrupAt = (row, col) => row >= 0 && row < H && col >= 0 && col < W && !!state.board[row * W + col]?.syrup;
+  const syrupJoins = index => {
+    const row = Math.floor(index / W), col = index % W;
+    if (!syrupAt(row, col)) return '';
+    return (syrupAt(row - 1, col) ? 'n' : '') + (syrupAt(row, col + 1) ? 'e' : '') + (syrupAt(row + 1, col) ? 's' : '') + (syrupAt(row, col - 1) ? 'w' : '') || '-';
+  };
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => {
-    const object = state.board[index] || null, grass = grassJoins(index);
-    if (cell.renderedObject === object && cell.renderedGrass === grass) return;
+    const object = state.board[index] || null, grass = grassJoins(index), syrup = syrupJoins(index);
+    if (cell.renderedObject === object && cell.renderedGrass === grass && cell.renderedSyrup === syrup) return;
     cell.renderedObject = object;
     cell.renderedGrass = grass;
+    cell.renderedSyrup = syrup;
     cell.getAnimations().forEach(animation => animation.cancel()); // bỏ fill:forwards của anim gom/bay
     cell.replaceChildren();
     cell.removeAttribute('style');
@@ -64,6 +72,18 @@ export function renderBoard() {
       cell.setAttribute('aria-hidden', 'true');
       return;
     }
+    if (object?.mail) {
+      cell.className = 'cell block mail';
+      cell.setAttribute('aria-label', 'Mailbox, it never breaks. Match cats next to it to send a letter');
+      cell.innerHTML = MAILBOX_SVG;
+      return;
+    }
+    if (object?.vase) {
+      cell.className = `cell block vase${grass ? ' grass' : ''}`;
+      cell.setAttribute('aria-label', object.vase > 1 ? 'Vase, match cats next to it twice to break it' : 'Cracked vase, one more match next to it breaks it');
+      cell.innerHTML = vaseSvg(object.vase === 1);
+      return;
+    }
     if (object?.block) {
       cell.className = `cell block${object.metal ? ' metal' : ''}`;
       cell.setAttribute('aria-label', object.metal ? 'Metal block, it never breaks' : 'Crate, match cats next to it to break it');
@@ -71,8 +91,9 @@ export function renderBoard() {
       return;
     }
     const held = cageHeld.has(index) && object && !object.cage;
-    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.cage ? ` caged cage-${object.cage}` : held ? ' caged' : ''}${grass ? ' grass' : ''}`;
+    cell.className = `cell ${object ? `locked ${object.group}` : 'empty'}${object?.syrup ? ' caged syrup' : object?.cage ? ` caged cage-${object.cage}` : held ? ' caged' : ''}${grass ? ' grass' : ''}`;
     cell.setAttribute('aria-label', !object ? `Cell ${index + 1}, empty${grass ? ', on grass' : ''}`
+      : object.syrup ? 'A cat stuck in strawberry syrup. Match next to it to wash it off'
       : object.cage ? `Caged ${look(object.group).name}. Match next to it to break the lock` : `${object.name}${grass ? ', on grass' : ''}, locked`);
     if (grass) {
       cell.insertAdjacentHTML('afterbegin', GRASS_SVG);
@@ -83,6 +104,12 @@ export function renderBoard() {
     if (object?.fat) { paintFatCat(cell, object, index, grass); return; }
     if (!object) return;
     cell.style.setProperty('--group-color', look(object.group).color);
+    // Siro che kín con vật: không vẽ con vật, chỉ vẽ mảng siro (nối với ô siro bên cạnh).
+    if (object.syrup) {
+      cell.insertAdjacentHTML('beforeend', SYRUP_TILE);
+      for (const side of syrup.replace('-', '')) cell.lastElementChild.classList.add(`j-${side}`);
+      return;
+    }
     addArt(cell, object);
     if (object.cage || held) cageUp(cell);
     if (state.justPlaced?.has(index) && !reduceMotion.matches) {

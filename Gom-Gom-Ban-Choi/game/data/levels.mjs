@@ -18,7 +18,9 @@
 //   cỏ, mèo béo) là một lớp độ khó, số lớp tăng theo tier + chương (layerCount); chương 4 lấy mèo béo làm lớp chính
 //
 // `tier` = cấp độ khó hiện ở bảng vào màn và bản đồ: chill · normal · hard · boss.
-// `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold' | 'cage' | 'grass' | 'fat'), bảng vào màn gắn nhãn NEW.
+// `introduces` = cơ chế mới của màn ('crate' | 'metal' | 'hold' | 'cage' | 'grass' | 'fat' | 'mail' | 'vase' | 'syrup'), bảng vào màn gắn nhãn NEW.
+// `mail` = số thư phải gom từ hộp thư '@' (core/board-rules.mjs), từ màn 60.
+// `syrup` = lớp siro dâu phủ lên mèo (các hàng cùng cỡ bàn, '~' = mèo ở ô đó bị phủ; core/level-rules.mjs parseBoard), từ màn 80.
 // `expand` = khuôn hình (board-shapes.mjs) khi độ khó thích ứng cần bàn to hơn cho màn 6×6 vuông.
 //
 // Bàn: các chuỗi cùng độ dài, 6×6 tới 8×8, hình dạng tuỳ màn (chương 1 chủ yếu 6×6, chương 2 to dần và
@@ -440,11 +442,13 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Attic Fortress', feature: 'metal + crates + grass + cages + big cat', tier: 'boss',
-    moves: 24, target: 360, cats: 'OGWTSK', assist: 0.35,
-    board: ['##..X.##', '##.sXX##', '44.kG44M', '44.kG44M', '......M.', 'G.M..XM.', '##M.XX##', '##GX..##'],
+    // Giới thiệu hộp thư '@' (thay 2 mèo béo cũ): không vỡ, mỗi cụm gom sát bên bay 1 thư vào Goal; đủ `mail` thư mới thắng.
+    name: 'Attic Fortress', feature: 'NEW: mailbox + metal + crates + grass + cages', tier: 'boss', introduces: 'mail',
+    moves: 24, target: 360, cats: 'OGWTSK', assist: 0.35, mail: 8,
+    board: ['##..X.##', '##.sXX##', '...kG..M', '.@.kG.@M', '......M.', 'G.M@.XM.', '##M.XX##', '##GX..##'],
     grass: ['..~~....', '..~~....', '..~~....', '..~~....', '..~~....', '...~~...', '...~....', '....~~..'],
     deck: [],
+    tutorial: [{ type: 'info', text: 'Mailboxes never break! Match cats next to one and a letter flies out. Collect all the letters!' }],
   },
   // ===== Chương 7: Balcony (màn 61–70) — sinh bằng tools/levels/generate-levels.mjs, số liệu do bot định =====
   {
@@ -508,11 +512,13 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Balcony Fortress', feature: 'cages + grass + crates + metal + big cat', tier: 'boss',
-    moves: 34, target: 510, cats: 'OGWTSK', assist: 0.35,
-    board: ['K44.....', 'X44..X..', 'MkK...X.', 'MX.##44.', '.O.##44X', 'gOX...OM', 'sSXM..OM', '.KXM....'],
+    // Giới thiệu bình hoa '%' (thay 2 mèo béo cũ): gom sát bên lần đầu nứt, lần hai vỡ, mảnh bay vào Goal; vỡ hết bình mới thắng.
+    name: 'Balcony Fortress', feature: 'NEW: vases + cages + grass + crates + metal', tier: 'boss', introduces: 'vase',
+    moves: 38, target: 510, cats: 'OGWTSK', assist: 0.35,
+    board: ['K%......', 'X.%..X..', 'MkK...X.', 'MX.##%..', '.O.##.%X', 'gOX...OM', 'sSXM..OM', '.KXM....'],
     grass: ['......~~', '......~~', '.......~', '........', '~~~.....', '~~...~..', '~...~~~.', '~...~~~.'],
     deck: [],
+    tutorial: [{ type: 'info', text: 'Careful, vases! Match next to one to crack it, match again to break it. Break them all!' }],
   },
   // ===== Chương 8: Bathroom (màn 71–80) — sinh bằng tools/levels/generate-levels.mjs, số liệu do bot định =====
   {
@@ -574,11 +580,15 @@ export const LEVELS = [
     deck: [],
   },
   {
-    name: 'Bathroom Fortress', feature: 'cages + metal + big cat + crates + grass', tier: 'boss',
+    // Giới thiệu siro dâu (thay 2 mèo béo cũ): lớp `syrup` phủ lên mèo ('~'), mèo bị phủ không gom được; gom sát bên thì siro vỡ bay vào
+    // Goal, mèo ở lại thành mèo thường. Rửa hết siro mới thắng. Siro thành một vòng 3×3 bao quanh mèo Xiêm ở giữa.
+    name: 'Bathroom Fortress', feature: 'NEW: strawberry syrup + cages + metal + crates + grass', tier: 'boss', introduces: 'syrup',
     moves: 36, target: 540, cats: 'OGWTSK', assist: 0.35,
-    board: ['...G..W.', '...44.WX', 'X..44...', 'XMWK.X.X', 'XM.44.MK', '.X.44.Mk', '...gX.kM', '...GX.GM'],
+    board: ['...G..W.', '...TGO.X', 'X..KSW..', 'XMWOTG.X', 'XM.O..MK', '.X..T.Mk', '...gX.kM', '...GX.GM'],
+    syrup: ['........', '...~~~..', '...~.~..', '...~~~..', '........', '........', '........', '........'],
     grass: ['..~.....', '.~~.....', '.~~.....', '..~~....', '.....~..', '~....~..', '~~~..~~.', '~~~..~~.'],
     deck: [],
+    tutorial: [{ type: 'info', text: "Sticky strawberry syrup! Cats under it can't be matched. Match next to them to wash it off!" }],
   },
   // ===== Chương 9: Rooftop (màn 81–90) — sinh bằng tools/levels/generate-levels.mjs, số liệu do bot định =====
   {

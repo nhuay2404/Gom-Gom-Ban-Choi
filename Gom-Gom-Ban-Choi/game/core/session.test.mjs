@@ -57,7 +57,17 @@ test('nhịp tiến trình: tutorial ở màn 1–2 và 11 (Hold) (+ bong bóng 
   assert.deepEqual(levelMechanics(LEVELS[4]), ['crate']);     // màn 5 giới thiệu thùng
   assert.deepEqual(levelMechanics(LEVELS[8]), ['crate', 'metal']);
   const withTutorial = LEVELS.map((level, i) => (level.tutorial ? i + 1 : null)).filter(Boolean);
-  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 21, 31], 'màn 1–2 và 11 là tutorial; màn 5, 8, 21, 31 giới thiệu cơ chế');
+  assert.deepEqual(withTutorial, [1, 2, 5, 8, 11, 21, 31, 60, 70, 80], 'màn 1–2 và 11 là tutorial; màn 5, 8, 21, 31, 60, 70, 80 giới thiệu cơ chế');
+  // Siro dâu giới thiệu ở màn 80 (boss chương 8).
+  assert.equal(LEVELS[79].introduces, 'syrup');
+  assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('syrup')), 79);
+  // Bình hoa giới thiệu ở màn 70 (boss chương 7).
+  assert.equal(LEVELS[69].introduces, 'vase');
+  assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('vase')), 69);
+  // Hộp thư giới thiệu ở màn 60 (boss chương 6): bong bóng giải thích, phải gom đủ thư.
+  assert.equal(LEVELS[59].introduces, 'mail');
+  assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('mail')), 59);
+  assert.ok(LEVELS[59].mail > 0);
   // Mèo béo 2×2 giới thiệu ở màn 31 (đầu chương 4, phòng ngủ): bong bóng + một lần kéo có hướng dẫn đánh thức lần đầu.
   assert.equal(LEVELS[30].introduces, 'fat');
   assert.equal(LEVELS.findIndex(level => levelMechanics(level).includes('fat')), 30);

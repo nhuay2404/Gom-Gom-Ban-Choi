@@ -87,33 +87,38 @@ export function clearMatches(board, width, height, size = 4, skipFat) {
 // Xoá các cụm cho trước (luật gom: thùng sát cụm vỡ, chuồng sát cụm mất một khóa). Dùng cho clearMatches và xả lượt (gom từng cụm).
 export function removeClusters(board, width, height, clusters, groups, skipFat) {
   const cleared = clusters.flat();
-  if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [], woke: [], rolled: [] };
+  if (!cleared.length) return { board, cleared, groups, clusters, broken: [], caged: [], freed: [], woke: [], rolled: [], mail: [], cracked: [], shattered: [], syrup: [] };
   const nextBoard = board.slice(), broken = new Set(), hit = new Set();
   cleared.forEach(index => {
     nextBoard[index] = null;
     for (const delta of [1, -1, width, -width]) {
       const other = neighbor(index, delta, width, height);
       if (other >= 0 && board[other]?.block && !board[other].metal) broken.add(other);
-      if (other >= 0 && board[other]?.cage) hit.add(other);
+      if (other >= 0 && (board[other]?.cage || board[other]?.vase)) hit.add(other);
     }
   });
   broken.forEach(index => { nextBoard[index] = null; });
   // Chuồng: mỗi lần gom (dù nhiều ô của cụm chạm vào) chỉ mất một khóa; hết khóa thì mèo được thả ra tại chỗ.
-  const caged = [], freed = [];
+  // Bình hoa: như chuồng, mỗi lần gom chỉ trúng một lần; còn lượt trúng thì nứt (`cracked`), hết thì vỡ (`shattered`).
+  // Siro dâu (chuồng 1 khoá có cờ syrup): vỡ thì mèo bên dưới thành mèo thường, ô vào `syrup` (vẫn nằm trong `freed`).
+  const caged = [], freed = [], cracked = [], shattered = [], syrup = [];
   hit.forEach(index => {
-    const { cage, ...cat } = board[index];
-    if (cage > 1) { nextBoard[index] = { ...board[index], cage: cage - 1 }; caged.push(index); } else { nextBoard[index] = cat; freed.push(index); }
+    if (board[index].vase) { if (board[index].vase > 1) { nextBoard[index] = { vase: board[index].vase - 1 }; cracked.push(index); } else { nextBoard[index] = null; shattered.push(index); } return; }
+    const { cage, syrup: sticky, ...cat } = board[index];
+    if (cage > 1) { nextBoard[index] = { ...board[index], cage: cage - 1 }; caged.push(index); } else { nextBoard[index] = cat; freed.push(index); if (sticky) syrup.push(index); }
   });
   // Mèo béo: mỗi cụm chạm vào (dù nhiều ô của cụm chạm) = 1 lần đánh thức; gom đôi cùng chạm = 2.
-  const hits = new Map();
+  // Hộp thư: mỗi cụm chạm vào (dù nhiều ô của cụm chạm) = 1 thư; 2 cụm chạm cùng hộp = 2 thư. `mail` = ô hộp thư, mỗi thư một phần tử.
+  const hits = new Map(), mail = [];
   clusters.forEach(cluster => {
-    const touched = new Set();
-    cluster.forEach(index => { for (const delta of [1, -1, width, -width]) { const other = neighbor(index, delta, width, height); if (other >= 0 && board[other]?.fat) touched.add(board[other].fatId); } });
+    const touched = new Set(), boxes = new Set();
+    cluster.forEach(index => { for (const delta of [1, -1, width, -width]) { const other = neighbor(index, delta, width, height); if (other >= 0 && board[other]?.fat) touched.add(board[other].fatId); if (other >= 0 && board[other]?.mail) boxes.add(other); } });
+    mail.push(...boxes);
     // một lượt gom (dù nhiều cụm cùng chạm) chỉ đánh thức mỗi mèo béo 1 lần
     touched.forEach(id => { if (!skipFat?.has(id)) hits.set(id, 1); });
   });
   const fat = wakeFatCats(nextBoard, width, height, hits);
-  return { board: fat.board, cleared, groups, clusters, broken: [...broken], caged, freed, woke: fat.woke, rolled: fat.rolled };
+  return { board: fat.board, cleared, groups, clusters, broken: [...broken], caged, freed, woke: fat.woke, rolled: fat.rolled, mail, cracked, shattered, syrup };
 }
 
 // ---------- Mèo béo 2×2 (ngủ say) ----------
@@ -139,7 +144,7 @@ export function wakeFatCats(board, width, height, hits) {
       const i = y * width + x, o = next[i];
       area.push(i);
       if (!o || o.void || o.metal || o.fat) continue;
-      if (o.cage) { const { cage, ...free } = o; if (cage > 1) { next[i] = { ...o, cage: cage - 1 }; caged.push(i); } else { next[i] = free; freed.push(i); } }
+      if (o.cage) { const { cage, syrup, ...free } = o; if (cage > 1) { next[i] = { ...o, cage: cage - 1 }; caged.push(i); } else { next[i] = free; freed.push(i); } }
       else if (o.block) { next[i] = null; broken.push(i); }
       else if (o.group) { next[i] = null; cleared.push(i); }
     }

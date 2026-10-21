@@ -3,12 +3,13 @@
 import { mergeTarget } from '../core/board-rules.mjs';
 import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core/scoring.mjs';
 import { DRAG, EFFECTS } from '../data/tuning.mjs';
-import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC } from '../ui/board-art.mjs';
+import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC, LETTER_SVG, VASE_SHARD_SVG, SYRUP_DROP_SVG } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot, scoreTier } from './score-bar.js';
 import { setFatMood, fatAnnoyedUntil, cageUp, uncage, cageHeld } from './board-view.js';
+import { renderGoals } from './hud.js';
 
 // Anim một lượt đặt thẻ đã chốt state (gom, thùng, chuồng, cỏ, khen, hiệu ứng). Dùng cho lượt người chơi và lượt xả sau khi thắng.
 export function animateTurn(turn) {
@@ -28,8 +29,115 @@ export function animateTurn(turn) {
   animateFat(match, DROP_MS + LIFT_MS + MERGE_MS * .7, { score: true });
   playEffects(turn, DROP_MS + LIFT_MS + MERGE_MS + 120);
   animateFat(turn.effect, DROP_MS + LIFT_MS + MERGE_MS + 420); // điểm lăn do hiệu ứng đã nằm trong số thưởng của playEffects
+  flyToGoal('mail', match.mail, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  flyToGoal('mail', turn.effect?.mail, DROP_MS + LIFT_MS + MERGE_MS + 420);
+  breakVases(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  breakVases(turn.effect, DROP_MS + LIFT_MS + MERGE_MS + 420);
+  washSyrup(turn.match.syrup, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  washSyrup(turn.effect?.syrup, DROP_MS + LIFT_MS + MERGE_MS + 420);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
+}
+
+// ---------- Bay vào ô Goal: thư (hộp thư '@') và mảnh bình vỡ (bình hoa '%') ----------
+// cells = ô nguồn, mỗi món một phần tử (hộp thư trúng 2 lần = 2 thư). Gọi ngay khi chốt lượt, TRƯỚC khi vẽ lại: món tính là "đang bay"
+// (state.flying[kind], ô Goal chưa trừ) tới lúc chạm icon cùng loại ở ô Goal thì mới trừ. Món bật lên khỏi ô rồi bay vòng vào Goal.
+const GOAL_FLY = { mail: { art: LETTER_SVG, bump: '.mailbox' }, vase: { art: VASE_SHARD_SVG }, syrup: { art: SYRUP_DROP_SVG } };
+export function flyToGoal(kind, cells, delay) {
+  if (!cells?.length || reduceMotion.matches) return;
+  const session = state, { art, bump } = GOAL_FLY[kind];
+  const land = () => { if (state !== session) return; state.flying[kind] = Math.max(0, state.flying[kind] - 1); renderGoals(); };
+  state.flying[kind] += cells.length;
+  const seen = new Map();
+  cells.forEach(index => {
+    const k = seen.get(index) ?? 0;
+    seen.set(index, k + 1);
+    setTimeout(() => {
+      const cell = cellEl(index), icon = [...document.querySelectorAll('.fg-goal-icon')].find(el => el.dataset.kind === kind && !el.hidden);
+      if (!cell || !icon) return land();
+      if (bump) cell.querySelector(bump)?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18, .86)', offset: .3 }, { transform: 'scale(.94, 1.1)', offset: .6 }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+      const from = cell.getBoundingClientRect(), to = icon.getBoundingClientRect();
+      const item = document.createElement('span');
+      item.className = 'goal-fly';
+      item.innerHTML = art;
+      item.style.cssText = `left:${from.left + from.width / 2}px;top:${from.top + from.height * .35}px;width:${from.width * .6}px`;
+      document.body.append(item);
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height * .35);
+      const side = (k % 2 ? -1 : 1) * from.width * .5;
+      playSound('pick');
+      item.animate([
+        { transform: 'translate(-50%, -50%) scale(.3) rotate(0deg)', opacity: 0 },
+        { transform: `translate(calc(-50% + ${side * .4}px), calc(-50% - ${from.height * .7}px)) scale(1.1) rotate(${side > 0 ? 12 : -12}deg)`, opacity: 1, offset: .3 },
+        { transform: `translate(calc(-50% + ${dx * .5 + side}px), calc(-50% + ${dy * .5 - from.height * .6}px)) scale(.9) rotate(${side > 0 ? -8 : 8}deg)`, opacity: 1, offset: .65 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${to.width / (from.width * .6)}) rotate(0deg)`, opacity: 1 },
+      ], { duration: 820, easing: 'cubic-bezier(.4, 0, .5, 1)', fill: 'forwards' }).finished.then(() => {
+        item.remove();
+        land();
+        playSound('reward');
+        icon.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)', offset: .4 }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
+      });
+    }, delay + k * 160);
+  });
+}
+
+// Bình hoa: `cracked` = vừa nứt (ô đã vẽ lại bình nứt: lắc + vài mảnh men văng), `shattered` = vừa vỡ. Gọi TRƯỚC khi vẽ lại bàn:
+// bình sắp vỡ được sao thành bóng ngay (ô thật trống ở lần vẽ tới), tới `delay` thì bóng phình lên rồi vỡ tung, một mảnh bay vào Goal.
+export function breakVases(source, delay) {
+  if (reduceMotion.matches || (!source?.cracked?.length && !source?.shattered?.length)) return;
+  const ghosts = source.shattered.map(index => {
+    const cell = cellEl(index), art = cell?.querySelector('.vase');
+    if (!art) return null;
+    const ghost = document.createElement('span');
+    ghost.className = 'vase-ghost';
+    ghost.append(art.cloneNode(true));
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    fxLayer().append(ghost);
+    return ghost;
+  });
+  flyToGoal('vase', source.shattered, delay + 160);
+  setTimeout(() => {
+    const layer = fxLayer();
+    source.cracked.forEach(index => {
+      const cell = cellEl(index);
+      if (!cell) return;
+      cell.querySelector('.vase')?.animate([{ rotate: '0deg' }, { rotate: '-10deg', offset: .25 }, { rotate: '8deg', offset: .55 }, { rotate: '-4deg', offset: .8 }, { rotate: '0deg' }], { duration: 420, easing: 'ease-in-out' });
+      flyBits(layer, cell, 'vase-chip', 2);
+      playSound('pick');
+    });
+    source.shattered.forEach((index, i) => {
+      const ghost = ghosts[i], cell = cellEl(index);
+      if (cell) { flyBits(layer, cell, 'vase-chip', 7); spawnPuff(cell); }
+      ghost?.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.15, .9)', opacity: 1, offset: .5 }, { transform: 'scale(1.3)', opacity: 0 }],
+        { duration: 220, easing: 'ease-out', fill: 'forwards' }).finished.then(() => ghost.remove());
+    });
+    if (source.shattered.length) playSound('crateBreak');
+  }, delay);
+}
+
+// Siro dâu vỡ (core/board-rules.mjs `syrup`). Gọi TRƯỚC khi vẽ lại bàn: ô siro được sao thành bóng phủ đúng chỗ (ô thật vẽ con vật
+// sạch ở lần vẽ tới), tới `delay` thì bóng phình ra rồi tan, giọt siro văng ra và một giọt bay vào Goal.
+export function washSyrup(cells, delay) {
+  if (!cells?.length || reduceMotion.matches) return;
+  const ghosts = cells.map(index => {
+    const cell = cellEl(index);
+    if (!cell?.querySelector('.syrup-tile')) return null;
+    const ghost = cell.cloneNode(true);
+    ghost.classList.add('syrup-ghost');
+    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
+    fxLayer().append(ghost);
+    return ghost;
+  });
+  flyToGoal('syrup', cells, delay + 120);
+  setTimeout(() => {
+    const layer = fxLayer();
+    cells.forEach((index, i) => {
+      const cell = cellEl(index);
+      if (cell) flyBits(layer, cell, 'syrup-bit', 6);
+      ghosts[i]?.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.12, .92)', opacity: .9, offset: .4 }, { transform: 'scale(1.25)', opacity: 0 }],
+        { duration: 260, easing: 'ease-out', fill: 'forwards' }).finished.then(() => ghosts[i].remove());
+    });
+    playSound('pick');
+  }, delay);
 }
 
 // ---------- Mèo béo 2×2 (core/board-rules.mjs wakeFatCats) ----------
@@ -144,7 +252,7 @@ function playEffects(turn, delay) {
   };
   chainGhosts.forEach((ghost, index) => {
     const before = turn.result.board[index];
-    if (!before?.cage || reduceMotion.matches) return;
+    if (!before?.cage || before.syrup || reduceMotion.matches) return;
     ghost.classList.add('caged', `cage-${before.cage}`);
     cageUp(ghost);
     setTimeout(() => { ghost.classList.remove('caged', `cage-${before.cage}`); uncage(ghost); }, freeAt(index));
@@ -360,9 +468,10 @@ function flyGrass(cleaned, delay) {
 // Chuồng mèo khi có gom sát bên: chuồng còn khóa thì rung + một ổ khóa bật ra; chuồng vỡ thì song sắt văng ra, mèo được thả.
 // Ô chuồng đã được vẽ lại theo trạng thái mới (bớt ổ khóa / hết chuồng), anim chạy chồng lên sau khi cụm gom xong.
 function rattleCages(match, delay) {
-  if (reduceMotion.matches || (!match.caged?.length && !match.freed?.length)) return;
+  const freed = match.freed?.filter(index => !match.syrup?.includes(index)) ?? []; // siro: washSyrup lo
+  if (reduceMotion.matches || (!match.caged?.length && !freed.length)) return;
   // Gọi trước khi vẽ lại bàn: ô được thả vẫn vẽ lồng đóng tới lúc anim mở.
-  match.freed.forEach(index => cageHeld.add(index));
+  freed.forEach(index => cageHeld.add(index));
   setTimeout(() => {
     const layer = fxLayer();
     match.caged.forEach(index => {
@@ -372,7 +481,7 @@ function rattleCages(match, delay) {
       cell.addEventListener('animationend', () => cell.classList.remove('cage-hit'), { once: true });
       flyBits(layer, cell, 'cage-lock', 1);
     });
-    match.freed.forEach(openCage);
+    freed.forEach(openCage);
   }, delay);
 }
 
