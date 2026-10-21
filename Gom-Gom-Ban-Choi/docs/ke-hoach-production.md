@@ -4,7 +4,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 
 ## Mốc thời gian
 - **21/9/2026**: tạo repo. **24/9/2026**: commit gameplay đầu tiên (Gom Gom Rotate) = ngày bắt đầu phiên bản production đầu tiên.
-- Gồm **9 sprint**: 5 sprint đã xong (24/9 → 16/10, ~200 commit, ~18 ngày có commit) + 4 sprint thiết kế còn lại (22/10 → 18/11).
+- Gồm **9 sprint**: 5 sprint đã xong (24/9 → 16/10, ~200 commit, ~18 ngày có commit) + 4 sprint thiết kế còn lại (22/10 → 31/10, hạn chót xong trong tháng 10).
 - Phạm vi các sprint còn lại: chỉ phần thiết kế game. Setup, tối ưu, build, tích hợp SDK là việc của team kỹ thuật.
 
 ## Nội dung bản production đầu tiên
@@ -70,7 +70,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 
 ## Còn lại
 
-### Sprint 6 (5 ngày, 22–28/10): lõi chơi + nhịp độ
+### Sprint 6 (2 ngày, 22–23/10): lõi chơi + nhịp độ
 - [ ] Chốt phương án UI: style, bố cục các màn chính (Home, Play, Result, Shop, Deco) theo Figma
 - [x] Chốt thứ tự giới thiệu cơ chế màn 1–100: mỗi cơ chế có màn giới thiệu riêng + tutorial trong màn
 - [ ] Rà độ khó màn 41–100 sau khi xếp lại cơ chế: đối chiếu baseline bot, đánh dấu màn vọt độ khó
@@ -80,7 +80,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 - [ ] Cơ chế mới cho màn 70–100 nếu nội dung lặp *(có thể cắt)*
 - [ ] Chế độ cho người mù màu: mỗi loại mèo / chó khác nhau đủ về hình dạng, hoạ tiết
 
-### Sprint 7 (4 ngày, 29/10–3/11): kinh tế + kiếm tiền
+### Sprint 7 (2 ngày, 24–25/10): kinh tế + kiếm tiền
 - [ ] Kinh tế gem: nguồn, chỗ tiêu, tỉ giá với xu
 - [ ] Thiết kế Shop: gói IAP, giá, starter pack (thay placeholder hiện tại)
 - [ ] Chỗ đặt rewarded ads (+lượt khi thua, x2 xu, idle coin) + giới hạn mỗi ngày
@@ -88,7 +88,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 - [ ] Giá booster + thời điểm gợi ý mua
 - [ ] Màn thua + near-miss: cho thấy suýt thắng (thiếu bao nhiêu điểm, mục tiêu nào), mời +lượt
 
-### Sprint 8 (6 ngày, 4–11/11): meta, giữ chân + nội dung
+### Sprint 8 (3 ngày, 26–28/10): meta, giữ chân + nội dung
 - [ ] Daily: quà đăng nhập, nhiệm vụ hằng ngày (nút Daily đã có trên Home)
 - [ ] Bộ sưu tập thú cưng: cách nhận, giá trị, động lực sưu tầm 12 con
 - [ ] Tương tác mèo ở 3 khu Deco cuối (phòng tắm, sân sau, mẫu giáo), hoặc khoá ở bản test *(có thể cắt)*
@@ -101,7 +101,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 - [ ] Settings + trợ năng: rung, tốc độ animation, giảm chuyển động (code đã có reduceMotion) *(có thể cắt)*
 - [ ] Đưa UI đã chốt vào game, gồm cả màn mới của Sprint 7–8 (Shop, màn thua, Daily, bộ sưu tập)
 
-### Sprint 9 (5 ngày, 12–18/11): live ops
+### Sprint 9 (3 ngày, 29–31/10): live ops
 - [ ] Khung sự kiện có hạn giờ: loại sự kiện, thời lượng, điều kiện mở (màn tối thiểu), bật / tắt qua Remote Config
 - [ ] Sự kiện đầu tiên cho bản test (ví dụ tuần lễ mèo: gom mèo để nhận đồ Deco giới hạn)
 - [ ] Season pass: thang thưởng free / trả phí, nguồn điểm pass *(có thể cắt)*
