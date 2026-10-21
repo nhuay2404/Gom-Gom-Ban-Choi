@@ -459,7 +459,7 @@ export const LEVELS = [
   },
   {
     name: 'Wind Chime', feature: 'mailboxes', tier: 'normal',
-    moves: 17, target: 255, cats: 'OGWTSK', assist: 0.4, mail: 5,
+    moves: 14, target: 210, cats: 'OGWTSK', assist: 0.4, mail: 6,
     board: ['###G@###', '##KG..##', '##GO@.##', '#.G....#', '#....@.#', '..W...S.', '..WS..S.'],
     deck: [],
   },
@@ -485,7 +485,7 @@ export const LEVELS = [
   },
   {
     name: 'Sun Lounger', feature: 'mailboxes', tier: 'chill',
-    moves: 14, target: 210, cats: 'OGWTS', assist: 0.45, mail: 4,
+    moves: 12, target: 180, cats: 'OGWTS', assist: 0.45, mail: 5,
     board: ['#G....#', 'TG....T', 'T...ST@', '.....T.', '....@OT', 'O.S..O.', '#.....#'],
     deck: [],
   },
@@ -526,7 +526,7 @@ export const LEVELS = [
   },
   {
     name: 'Rubber Duck', feature: 'vases', tier: 'normal',
-    moves: 16, target: 240, cats: 'OGWTSK', assist: 0.4,
+    moves: 13, target: 195, cats: 'OGWTSK', assist: 0.4,
     board: ['.......', 'S...WG.', '.%S.TG.', 'G.S.T.%', 'G%.....', 'O..%O..', '..SS..G'],
     deck: [],
   },
@@ -571,7 +571,7 @@ export const LEVELS = [
   },
   {
     name: 'Shower Curtain', feature: 'vases + cages + mailboxes', tier: 'normal',
-    moves: 18, target: 270, cats: 'OGWTSK', assist: 0.4, mail: 3,
+    moves: 11, target: 165, cats: 'OGWTSK', assist: 0.4, mail: 5,
     board: ['..T..T', '.@...T', 'T....W', 'T.K.kW', '%.%...', 'GG@..@'],
     deck: [],
   },
@@ -674,7 +674,7 @@ export const LEVELS = [
   },
   {
     name: 'Night Blooms', feature: 'metal + mailboxes', tier: 'normal',
-    moves: 16, target: 240, cats: 'OGWTSK', assist: 0.4, mail: 5,
+    moves: 11, target: 165, cats: 'OGWTSK', assist: 0.4, mail: 10,
     board: ['#T.##SS#', '.T.MTTO.', '.@KM..W.', '..K@T@..', '#..TM..#', '##.TM.##', '###..###'],
     deck: [],
   },
