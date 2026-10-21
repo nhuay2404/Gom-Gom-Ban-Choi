@@ -2,8 +2,11 @@
 // Chạy: node tools/levels/generate-levels.mjs [từ màn] [tới màn]   (mặc định 51 100)
 //
 // Theo nhịp tier của levels.mjs: mỗi chương 10 màn — x1–x4 normal · x5 hard · x6 chill (nghỉ) · x7–x9 normal · x0 boss.
-// Mỗi cơ chế (thùng, kim loại, chuồng, cỏ, mèo béo) là một lớp độ khó; số lớp chồng lên tăng theo tier và theo chương (layerCount).
-// Chương 4 (mèo béo vừa ra ở màn 31): mọi màn có lớp thì có mèo béo.
+// Mỗi cơ chế (thùng, kim loại, chuồng, cỏ, mèo béo, hộp thư, bình hoa, siro dâu) là một lớp độ khó; số lớp chồng lên tăng theo tier và
+// theo chương (layerCount). Lớp chính của chương (vừa giới thiệu ở boss chương trước): chương 4 mèo béo (màn 31), chương 7 hộp thư (màn 60),
+// chương 8 bình hoa (màn 70), chương 9 siro dâu (màn 80) — mọi màn có lớp thì có lớp chính.
+// Mục tiêu (cỏ, chuồng, mèo béo, thư, bình, siro) tối đa 3 loại mỗi màn (ô Goal chỉ có 3 ô). Số lượng mỗi mục tiêu co giãn theo số loại
+// mục tiêu của màn (GOAL_SCALE): 1 loại thì nhiều hơn, 3 loại thì mỗi loại ít đi để màn không quá nặng.
 // Bố trí: hình bàn có sẵn (board-shapes.mjs), mèo đặt theo cặp / lẻ không tạo cụm gom sẵn, cỏ mọc thành từng mảng.
 // Số liệu do bot giỏi (tools/levels/bot.mjs, noise 1) định: màn thường tìm mục tiêu điểm, màn cỏ tìm số lượt, sao cho tỉ lệ thắng
 // đúng chuẩn tier (cùng bảng với Level Editor): normal 95% -> 70% trong chương · hard ~33% · nghỉ 96% · boss ~22%.
@@ -12,7 +15,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { LETTERS } from '../../game/data/levels.mjs';
 import { parseBoard } from '../../game/core/level-rules.mjs';
 import { SHAPES } from '../../game/core/board-shapes.mjs';
-import { clearMatches } from '../../game/core/board-rules.mjs';
+import { clearMatches, matchesSomewhere } from '../../game/core/board-rules.mjs';
+import { parseGrass } from '../../game/core/level-rules.mjs';
 import { MATCH_SIZE } from '../../game/core/scoring.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
@@ -33,6 +37,12 @@ const THEMES = {
 };
 const SHAPE_POOL = { normal: ['plain6', 'square7', 'octagon', 'diamond', 'hexagon', 'triangle', 'heart'], hard: ['square7', 'hexagon', 'heart', 'cross', 'octagon'], chill: ['plain6', 'heart', 'diamond', 'octagon'], boss: ['cross', 'ring', 'square8'] };
 const MECHS = ['crate', 'metal', 'cage', 'grass', 'fat'];
+// Cơ chế mới mở theo chương (màn giới thiệu là boss chương trước) và lớp chính của chương.
+const LATER_MECHS = { mail: 7, vase: 8, syrup: 9 };
+const MAIN_MECH = { 4: 'fat', 7: 'mail', 8: 'vase', 9: 'syrup' };
+const GOALS = ['cage', 'grass', 'fat', 'mail', 'vase', 'syrup'], MAX_GOALS = 3;
+// Hệ số số lượng mỗi mục tiêu theo số loại mục tiêu của màn.
+const GOAL_SCALE = { 0: 1, 1: 1.35, 2: 1, 3: 0.7 };
 
 // Tỉ lệ thắng chuẩn của bot giỏi theo tier (cùng công thức tools/levels/level-editor/editor.mjs tierGoal, chương sau khó hơn chút).
 function tierGoal(tier, index) {
@@ -53,10 +63,14 @@ function layerCount(tier, pos, chapter, rng) {
   return chapter >= 7 || rng() < 0.5 ? 3 : 2;
 }
 function pickMechs(tier, pos, chapter, rng) {
-  const count = layerCount(tier, pos, chapter, rng);
-  const pool = tier === 'chill' ? ['grass', 'crate', 'fat'] : MECHS.slice();
-  const out = chapter === 4 && count ? pool.splice(pool.indexOf('fat'), 1) : [];
-  while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+  const count = layerCount(tier, pos, chapter, rng), main = MAIN_MECH[chapter];
+  const later = Object.keys(LATER_MECHS).filter(m => chapter >= LATER_MECHS[m]);
+  const pool = tier === 'chill' ? ['grass', 'crate', 'fat', ...(later.includes(main) ? [main] : [])] : [...MECHS, ...later];
+  const out = main && count ? pool.splice(pool.indexOf(main), 1) : [];
+  while (out.length < count && pool.length) {
+    const m = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+    if (!GOALS.includes(m) || out.filter(o => GOALS.includes(o)).length < MAX_GOALS) out.push(m);
+  }
   return out;
 }
 
@@ -70,9 +84,15 @@ function buildBoard(shape, mechs, cats, tier, rng) {
   const pick = list => list[Math.floor(rng() * list.length)];
   const playable = cells.filter(ch => ch !== '#').length;
   const heavy = { normal: 1, hard: 1.3, boss: 1.4, chill: 0.6 }[tier];
+  const scale = GOAL_SCALE[mechs.filter(m => GOALS.includes(m)).length];
+  const amount = (base, min = 1) => Math.max(min, Math.round(base * scale));
+  const syrup = new Set();
+  const rowsOf = list => Array.from({ length: H }, (_, r) => list.slice(r * W, r * W + W).join(''));
+  const syrupRows = () => (syrup.size ? rowsOf(cells.map((_, i) => (syrup.has(i) ? '~' : '.'))) : undefined);
+  const hasMatch = list => clearMatches(parseBoard(rowsOf(list), syrupRows()), W, H, MATCH_SIZE).cleared.length > 0;
   if (mechs.includes('fat')) {
     // Mèo béo: khối 2×2 trên ô trống, không sát mèo béo khác (hai khối chữ số liền nhau đọc sai). Số = lần phải đánh thức.
-    const wakes = { chill: 2, normal: 3, hard: 3, boss: 4 }[tier];
+    const wakes = Math.min(5, amount({ chill: 2, normal: 3, hard: 3, boss: 4 }[tier]));
     for (let k = { chill: 1, normal: 1, hard: rng() < 0.5 ? 2 : 1, boss: 2 }[tier]; k > 0; k--) {
       const block = i => [i, i + 1, i + W, i + W + 1];
       const spots = free().filter(i => i % W < W - 1 && block(i).every(j => cells[j] === '.')
@@ -90,9 +110,44 @@ function buildBoard(shape, mechs, cats, tier, rng) {
     }
   }
   if (mechs.includes('crate')) for (let k = Math.round(playable / 10 * heavy); k > 0; k--) cells[pick(free())] = 'X';
+  // Hộp thư: vài hộp trên ô trống còn ≥ 2 ô trống kề (gom sát được từ nhiều phía); số thư phải gom co giãn theo số loại mục tiêu.
+  let mail = 0;
+  if (mechs.includes('mail')) {
+    for (let k = { chill: 2, normal: 3, hard: 3, boss: 3 }[tier]; k > 0; k--) {
+      const spots = free().filter(i => neighbors(i, W, H).filter(j => cells[j] === '.').length >= 2 && neighbors(i, W, H).every(j => cells[j] !== '@'));
+      if (!spots.length) return null;
+      cells[pick(spots)] = '@';
+    }
+    mail = amount({ chill: 3, normal: 4, hard: 6, boss: 7 }[tier], 3);
+  }
+  // Bình hoa: rải trên ô trống còn ô trống kề, không sát nhau.
+  if (mechs.includes('vase')) {
+    for (let k = amount({ chill: 2, normal: 3, hard: 4, boss: 5 }[tier]); k > 0; k--) {
+      const spots = free().filter(i => neighbors(i, W, H).some(j => cells[j] === '.') && neighbors(i, W, H).every(j => cells[j] !== '%'));
+      if (!spots.length) return null;
+      cells[pick(spots)] = '%';
+    }
+  }
+  // Siro dâu: 1–2 mảng liền (mọc từ ô hạt giống) phủ lên mèo màu ngẫu nhiên (mèo phủ siro không vào cụm nên không lo cụm sẵn).
+  if (mechs.includes('syrup')) {
+    const want = amount({ chill: 3, normal: 5, hard: 7, boss: 8 }[tier], 3);
+    for (let patch = 0; patch < 2 && syrup.size < want; patch++) {
+      const seeds = free();
+      if (!seeds.length) break;
+      const queue = [pick(seeds)];
+      let size = patch ? want - syrup.size : Math.ceil(want * (0.5 + rng() * 0.5));
+      while (queue.length && size > 0) {
+        const i = queue.shift();
+        if (cells[i] !== '.') continue;
+        cells[i] = cats[Math.floor(rng() * cats.length)]; syrup.add(i); size--;
+        neighbors(i, W, H).sort(() => rng() - 0.5).forEach(j => { if (cells[j] === '.') queue.push(j); });
+      }
+    }
+    if (syrup.size < 3) return null;
+  }
   // Mèo: khoảng 30% ô, đặt theo cặp cùng màu (một nửa) và lẻ; không được tạo cụm 3.
-  // Ô mèo béo tính vào phần mèo, không thì bàn boss (2 mèo béo + mọi vật cản) không còn đủ ô trống.
-  const want = Math.round(playable * (tier === 'chill' ? 0.26 : 0.3)) - cells.filter(ch => /[1-9]/.test(ch)).length;
+  // Ô mèo béo và mèo phủ siro tính vào phần mèo.
+  const want = Math.round(playable * (tier === 'chill' ? 0.26 : 0.3)) - cells.filter(ch => /[1-9]/.test(ch)).length - syrup.size;
   let placed = 0, guard = 0;
   while (placed < want && guard++ < 400) {
     const a = pick(free()), cat = cats[Math.floor(rng() * cats.length)];
@@ -100,14 +155,13 @@ function buildBoard(shape, mechs, cats, tier, rng) {
     const trial = cells.slice();
     trial[a] = cat;
     if (b !== undefined) trial[b] = cat;
-    const asRows = Array.from({ length: H }, (_, r) => trial.slice(r * W, r * W + W).join(''));
-    if (clearMatches(parseBoard(asRows), W, H, MATCH_SIZE).cleared.length) continue;
+    if (hasMatch(trial)) continue;
     trial.forEach((ch, i) => { cells[i] = ch; });
     placed += b !== undefined ? 2 : 1;
   }
   if (mechs.includes('cage')) {
-    const catCells = cells.map((ch, i) => (LETTERS[ch] ? i : -1)).filter(i => i >= 0);
-    for (let k = tier === 'boss' ? 3 : 2; k > 0 && catCells.length; k--) {
+    const catCells = cells.map((ch, i) => (LETTERS[ch] && !syrup.has(i) ? i : -1)).filter(i => i >= 0);
+    for (let k = amount(tier === 'boss' ? 3 : 2); k > 0 && catCells.length; k--) {
       const i = catCells.splice(Math.floor(rng() * catCells.length), 1)[0];
       cells[i] = cells[i].toLowerCase();
     }
@@ -117,7 +171,7 @@ function buildBoard(shape, mechs, cats, tier, rng) {
   if (mechs.includes('grass')) {
     // Cỏ mọc thành 2–4 mảng từ một ô hạt giống, trên ô trống và dưới mèo (không dưới vật cản / ô ngoài bàn).
     const g = Array(W * H).fill('.'), okCell = i => cells[i] === '.' || LETTERS[cells[i].toUpperCase()];
-    const target = Math.round(playable * { normal: 0.22, hard: 0.3, boss: 0.32, chill: 0.16 }[tier]);
+    const target = Math.round(playable * { normal: 0.22, hard: 0.3, boss: 0.32, chill: 0.16 }[tier] * scale);
     let count = 0;
     for (let patch = 0; patch < 4 && count < target; patch++) {
       const seeds = cells.map((_, i) => i).filter(i => okCell(i) && g[i] === '.');
@@ -135,9 +189,13 @@ function buildBoard(shape, mechs, cats, tier, rng) {
     grass = Array.from({ length: H }, (_, r) => g.slice(r * W, r * W + W).join(''));
   }
   // Hợp lệ: không có sẵn cụm gom, có mèo sát ô trống, đủ chỗ trống để chơi.
-  if (clearMatches(parseBoard(board), W, H, MATCH_SIZE).cleared.length) return null;
+  if (hasMatch(cells)) return null;
   if (cells.filter(ch => ch === '.').length < playable * 0.4) return null;
-  return { board, grass };
+  // Thẻ đầu phải gom được ngay (session.mjs openingCard đổi tối đa sang thẻ đôi cùng màu): cần một màu mèo tự do mà thẻ đôi gom được.
+  const parsed = parseBoard(rowsOf(cells), syrupRows());
+  const groups = [...new Set(parsed.filter(c => c?.group && !c.cage).map(c => c.group))];
+  if (!groups.some(group => matchesSomewhere(parsed, W, H, { offsets: [[0, 0], [0, 1]], items: [{ group }, { group }] }))) return null;
+  return { board, grass, mail, syrup: syrupRows() };
 }
 
 const winRate = (level, index) => {
@@ -145,9 +203,10 @@ const winRate = (level, index) => {
   for (let r = 0; r < RUNS; r++) if (play(level, (index + 1) * 100000 + r, { noise: 1, hold: true }).win) wins++;
   return wins / RUNS;
 };
-// Màn thường: tìm nhị phân mục tiêu điểm (bội số 10). Màn cỏ: số lượt nhỏ nhất đạt chuẩn (mục tiêu = cỏ, không theo điểm).
+// Màn thường: tìm nhị phân mục tiêu điểm (bội số 10). Màn cỏ / thư / bình / siro: số lượt nhỏ nhất đạt chuẩn (mục tiêu chính là dọn
+// các thứ đó, không theo điểm).
 function calibrate(level, index, goal) {
-  if (level.grass) {
+  if (level.grass || level.mail || level.syrup || level.board.join('').includes('%')) {
     let best = null;
     for (let moves = 10; moves <= 45; moves++) {
       const rate = winRate({ ...level, moves }, index);
@@ -181,19 +240,23 @@ for (let n = FROM; n <= TO; n++) {
     let built = null;
     for (let tries = 0; !built && tries < 200; tries++) built = buildBoard(SHAPE_POOL[tier][Math.floor(rng() * SHAPE_POOL[tier].length)], tryMechs, [...cats], tier, rng);
     if (!built) continue;
-    const feature = tryMechs.length ? tryMechs.map(m => ({ crate: 'crates', metal: 'metal', cage: 'cages', grass: 'grass', fat: 'big cat' }[m])).join(' + ') : 'take a breather';
-    const tried = calibrate({ name: theme.words[pos - 1], feature, tier, moves, target: moves * 18, cats, assist, board: built.board, ...(built.grass ? { grass: built.grass } : {}), deck: [] }, index, goal);
+    const feature = tryMechs.length ? tryMechs.map(m => ({ crate: 'crates', metal: 'metal', cage: 'cages', grass: 'grass', fat: 'big cat', mail: 'mailboxes', vase: 'vases', syrup: 'syrup' }[m])).join(' + ') : 'take a breather';
+    const extra = { ...(built.mail ? { mail: built.mail } : {}), ...(built.syrup ? { syrup: built.syrup } : {}), ...(built.grass ? { grass: built.grass } : {}) };
+    const tried = calibrate({ name: theme.words[pos - 1], feature, tier, moves, target: moves * 18, cats, assist, board: built.board, ...extra, deck: [] }, index, goal);
     if (!level || Math.abs(tried.rate - goal) < Math.abs(level.rate - goal)) { level = tried; mechs = tryMechs; }
-    if (Math.abs(tried.rate - goal) <= 0.08 && (!tried.grass || tried.moves <= 36)) break;
+    if (Math.abs(tried.rate - goal) <= 0.08 && tried.moves <= 36) break;
   }
   if (!level) throw new Error(`Màn ${n}: không dựng được bàn`);
-  console.log(`${n}. ${level.name.padEnd(18)} ${tier.padEnd(6)} ${mechs.join('+').padEnd(24)} ${level.grass ? `${level.moves} lượt (cỏ)` : `${level.target} điểm / ${level.moves} lượt`}  bot ${Math.round(level.rate * 100)}% (chuẩn ${Math.round(tierGoal(tier, index) * 100)}%)`);
+  const goals = [level.grass && `${parseGrass(level).filter(Boolean).length} cỏ`, level.mail && `${level.mail} thư`, level.syrup && `${level.syrup.join('').split('~').length - 1} siro`,
+    level.board.join('').includes('%') && `${level.board.join('').split('%').length - 1} bình`].filter(Boolean).join(', ');
+  console.log(`${n}. ${level.name.padEnd(18)} ${tier.padEnd(6)} ${mechs.join('+').padEnd(30)} ${level.target} điểm / ${level.moves} lượt${goals ? ` (${goals})` : ''}  bot ${Math.round(level.rate * 100)}% (chuẩn ${Math.round(tierGoal(tier, index) * 100)}%)`);
   const head = pos === 1 ? [`  // ===== Chương ${chapter}: ${theme.title} (màn ${n}–${n + 9}) — sinh bằng tools/levels/generate-levels.mjs, số liệu do bot định =====`] : [];
   blocks.push([...head,
     '  {',
     `    name: ${q(level.name)}, feature: ${q(level.feature)}, tier: ${q(tier)},`,
-    `    moves: ${level.moves}, target: ${level.target}, cats: ${q(cats)}, assist: ${assist},`,
+    `    moves: ${level.moves}, target: ${level.target}, cats: ${q(cats)}, assist: ${assist},${level.mail ? ` mail: ${level.mail},` : ''}`,
     `    board: [${level.board.map(q).join(', ')}],`,
+    ...(level.syrup ? [`    syrup: [${level.syrup.map(q).join(', ')}],`] : []),
     ...(level.grass ? [`    grass: [${level.grass.map(q).join(', ')}],`] : []),
     '    deck: [],',
     '  },'].join('\n'));

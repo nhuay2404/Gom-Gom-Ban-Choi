@@ -21,7 +21,7 @@ const NO_FX = process.argv.includes('--no-effects'), JSON_OUT = process.argv.inc
 
 // Kiểm tra dữ liệu màn: bàn không có sẵn cụm gom được, ô tutorial hợp lệ.
 function validate(level, n) {
-  const board = parseBoard(level.board), { W, H } = boardSize(level.board);
+  const board = parseBoard(level.board, level.syrup), { W, H } = boardSize(level.board);
   if (level.board.some(row => row.length !== W)) throw new Error(`Màn ${n}: các hàng của bàn không cùng độ dài`);
   if (clearMatches(board, W, H, MATCH_SIZE).cleared.length) throw new Error(`Màn ${n}: bàn đầu đã có cụm gom được`);
   (level.deck || []).forEach(spec => { if (parseCard(spec).items.some(item => !item.group)) throw new Error(`Màn ${n}: thẻ lỗi ${spec}`); });

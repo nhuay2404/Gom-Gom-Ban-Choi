@@ -1,4 +1,4 @@
-// Sinh bố trí mèo đặt sẵn cho DDA (game/data/cat-layouts.mjs). Chạy: npm run cat-layouts [-- tên màn hoặc số màn ...]
+// Sinh bố trí mèo đặt sẵn (game/data/cat-layouts.mjs). LƯU Ý: DDA trong game KHÔNG còn dùng bảng này (độ khó chỉ ở hàng thẻ, adaptive.mjs); giữ lại để tham khảo. Chạy: npm run cat-layouts [-- tên màn hoặc số màn ...]
 // DDA không đổi thiết kế (bàn, vật cản, chuồng, lượt): chỉ được xê dịch vài con mèo tự do. Độ khó của một bố trí không đoán
 // được bằng công thức (dời mèo còn ảnh hưởng phá thùng, mở chuồng, chỗ trống) nên ĐO bằng bot "trung bình" trên cùng bộ seed
 // với bố trí thiết kế, rồi chỉ giữ bố trí lệch nhẹ đúng khoảng của từng mức (BANDS, điểm % tỉ lệ thắng):

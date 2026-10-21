@@ -261,7 +261,7 @@ function renderDDA() {
     let plan;
     try { plan = planLevel(p.make(current), current); } catch (error) { return `<tr><td>${p.label}</td><td colspan="5" class="warn">${error.message}</td></tr>`; }
     const shift = plan.shift > 0 ? `+${plan.shift}` : plan.shift;
-    const extra = [plan.retry ? 'giữ bố trí lần trước' : plan.layout !== l.board ? 'bố trí đo sẵn cho mức này' : '', plan.deal || '', plan.suggestBooster ? 'mời booster' : ''].filter(Boolean).join(' · ');
+    const extra = [plan.retry ? 'chơi lại' : '', plan.deal || '', plan.suggestBooster ? 'mời booster' : ''].filter(Boolean).join(' · ');
     return `<tr><td>${p.label}</td><td>${plan.profile}</td><td>${shift}</td><td><span class="diff ${plan.difficulty}">${plan.difficulty}</span> ${plan.count}</td>
       <td>${plan.level.moves}</td><td class="muted" style="text-align:left">${extra}</td></tr>`;
   }).join('');
@@ -270,9 +270,9 @@ function renderDDA() {
   $('variants').innerHTML = variants().map(v => `<div class="variant ${v.base ? 'base' : ''}">
     <div><b>${v.label}</b></div>
     <div class="mini">${boardHtml(v.level.board, false, v.level.grass)}</div>
-    <div class="muted">${v.shift && !v.moved ? 'chưa có bố trí đo sẵn (npm run cat-layouts) · ' : v.moved ? `${v.moved} ô đổi · ` : ''}${v.ease} cặp cạnh nhau · assist ${v.level.assist ?? 0.3} · thẻ ${['single', 'domino', 'triple'].map(k => (v.level.shapes || { single: 6, domino: 5, triple: 1 })[k]).join('/')}</div></div>`).join('');
+    <div class="muted">queue ${v.level.queue ?? 0} · ${v.ease} cặp cạnh nhau · assist ${v.level.assist ?? 0.3} · thẻ ${['single', 'domino', 'triple'].map(k => (v.level.shapes || { single: 6, domino: 5, triple: 1 })[k]).join('/')}</div></div>`).join('');
 }
-// Mỗi mức DDA (shift âm = dễ hơn): bố trí mèo lần đầu vào màn + hàng thẻ. Bàn, vật cản, lượt luôn đúng thiết kế.
+// Mỗi mức DDA (shift âm = dễ hơn): chỉ hàng thẻ đổi (queue + assist + tỉ lệ thẻ). Bàn, bố trí mèo, vật cản, lượt luôn đúng thiết kế.
 const shiftLabel = shift => (shift ? `${shift > 0 ? '+' : ''}${shift} ${shift < 0 ? 'dễ hơn' : 'khó hơn'}` : '0 thiết kế');
 function variants() {
   const base = level(), out = [];

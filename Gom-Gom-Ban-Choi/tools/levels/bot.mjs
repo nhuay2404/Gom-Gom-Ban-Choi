@@ -39,11 +39,11 @@ function movesFor(board, card, rng, noise, W, H, grass) {
     const onGrass = grass ? indices.filter(index => grass[index] && match.board[index]).length : 0;
     // Màn có mèo béo: mỗi lần đánh thức đáng như một cú gom 3 (phải đánh thức hết mới thắng).
     const wakes = (match.woke ?? []).length;
-    // Màn có hộp thư: mỗi thư như một ô cỏ (màn không có hộp thư: luôn 0).
+    // Màn có hộp thư: mỗi thư đáng như một cú gom 3 (màn không có hộp thư: luôn 0).
     const letters = match.mail.length;
-    // Màn có bình hoa: mỗi lần trúng (nứt / vỡ) như một ô cỏ.
-    const vaseHits = match.cracked.length + match.shattered.length;
-    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + letters * 40 + vaseHits * 40 + rng() * noise;
+    // Màn có bình hoa / siro dâu: mỗi lần trúng (nứt / vỡ / rửa siro) đáng như một cú gom 3.
+    const vaseHits = match.cracked.length + match.shattered.length + match.syrup.length;
+    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + letters * 300 + vaseHits * 300 + rng() * noise;
     out.push({ value, match, points, cleaned, indices, placed: next, rot, anchor });
   }
   return out;
