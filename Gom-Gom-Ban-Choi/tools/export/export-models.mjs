@@ -3,6 +3,7 @@
 // Model dựng bằng code Three.js nên phải dựng trong trình duyệt: cần game đang chạy (npm start) + Chrome.
 // Chạy: npm run export:models   ->   game/assets/models/models.json (~70 MB, không commit: .gitignore; tạo lại khi đổi model)
 //   { "version": 1, "models": { "<id>": { "kind": "deco" | "pet", "name", "zone", "gltf": {...} } } }
+// Chỉ mèo + chó: npm run export:models -- --pets  ->  game/assets/models/pets/<giống>.glb (mỗi con một file, mở thẳng Blender / Unity)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,7 @@ import { GAME } from '../ads/lib.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'game', 'assets', 'models', 'models.json');
+const PETS_ONLY = process.argv.includes('--pets'), PETS_DIR = join(ROOT, 'game', 'assets', 'models', 'pets');
 
 const b = await launch({ profile: join(tmpdir(), 'gom-gom-models-profile') });
 try {
@@ -27,11 +29,13 @@ try {
         const node = make();
         // userData là móc cho code game (mèo, hiệu ứng...), có tham chiếu vòng: không xuất
         node.traverse(part => { part.userData = {}; });
-        models[id] = { ...info, gltf: await exporter.parseAsync(node, { binary: false, embedImages: true, onlyVisible: true }) };
+        const out = await exporter.parseAsync(node, { binary: ${PETS_ONLY}, embedImages: true, onlyVisible: true });
+        // glb là ArrayBuffer: đổi sang base64 để gửi qua CDP về Node
+        models[id] = { ...info, gltf: out instanceof ArrayBuffer ? btoa(Array.from(new Uint8Array(out), c => String.fromCharCode(c)).join('')) : out };
       }
       catch (error) { failed.push(id + ': ' + error.message); }
     };
-    for (const id of room.modelIds()) {
+    if (!${PETS_ONLY}) for (const id of room.modelIds()) {
       const entry = CATALOG.find(item => item.id === id);
       await add(id, { kind: 'deco', name: entry?.name ?? id, zone: entry?.zone ?? null }, () => room.buildModel(id));
     }
@@ -44,6 +48,12 @@ try {
   const data = JSON.parse(json);
   if (data.failed.length) console.warn('Không xuất được:\n  ' + data.failed.join('\n  '));
   delete data.failed;
+  if (PETS_ONLY) {
+    mkdirSync(PETS_DIR, { recursive: true });
+    for (const { name, gltf } of Object.values(data.models)) writeFileSync(join(PETS_DIR, name + '.glb'), Buffer.from(gltf, 'base64'));
+    console.log(`${PETS_DIR}: ${Object.keys(data.models).length} file glb`);
+    process.exit(0);
+  }
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, JSON.stringify(data));
   console.log(`${OUT}: ${Object.keys(data.models).length} model (${(json.length / 1048576).toFixed(1)} MB)`);

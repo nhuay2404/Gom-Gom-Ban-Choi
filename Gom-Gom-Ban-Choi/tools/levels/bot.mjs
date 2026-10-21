@@ -39,7 +39,11 @@ function movesFor(board, card, rng, noise, W, H, grass) {
     const onGrass = grass ? indices.filter(index => grass[index] && match.board[index]).length : 0;
     // Màn có mèo béo: mỗi lần đánh thức đáng như một cú gom 3 (phải đánh thức hết mới thắng).
     const wakes = (match.woke ?? []).length;
-    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + rng() * noise;
+    // Màn có hộp thư: mỗi thư như một ô cỏ (màn không có hộp thư: luôn 0).
+    const letters = match.mail.length;
+    // Màn có bình hoa: mỗi lần trúng (nứt / vỡ) như một ô cỏ.
+    const vaseHits = match.cracked.length + match.shattered.length;
+    const value = points * 10 + cleaned * 40 + onGrass * 4 + setup * 6 + empty * 0.5 + wakes * 300 + letters * 40 + vaseHits * 40 + rng() * noise;
     out.push({ value, match, points, cleaned, indices, placed: next, rot, anchor });
   }
   return out;
@@ -131,7 +135,7 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
   const grass = parseGrass(level), grassTotal = grass ? grass.filter(Boolean).length : 0;
   // Tiến độ tới mục tiêu (0..1+): điểm / mục tiêu; màn có cỏ lấy phần kém hơn giữa điểm và phần cỏ đã phá (phải đủ cả hai).
   const progress = () => Math.min(score / level.target, grassTotal ? 1 - grass.filter(Boolean).length / grassTotal : Infinity);
-  let board = parseBoard(level.board), score = 0, moves = level.moves, hold = null;
+  let board = parseBoard(level.board, level.syrup), score = 0, moves = level.moves, hold = null, mail = level.mail ?? 0;
   const queue = [];
   const draw = () => { while (queue.length < 2) queue.push(deal(board)); return queue.shift(); };
   const boostUse = { hammer: 0, swap: 0, moves: 0 };
@@ -167,11 +171,12 @@ export function play(level, seed, { noise = 1, hold: useHold = true, boost = nul
     const fx = effects ? clusterEffects(pick.move.match, pick.move.indices, W, H, grass) : null;
     score += fx ? Math.round((pick.move.points + fx.points) * (fx.double ? EFFECTS.DOUBLE_MULT : 1)) : pick.move.points;
     board = fx ? fx.board : pick.move.match.board;
+    mail -= pick.move.match.mail.length + (fx?.mail.length ?? 0);
     if (fx?.grass) fx.grass.forEach((g, i) => { grass[i] = g; });
     moves--;
     trace?.push({ placed: pick.move.placed, board, cells: pick.move.indices, cleared: pick.move.match.cleared, card: pick.option.card, hold: pick.option.card !== active,
       points: pick.move.points, score, movesLeft: moves, boosts: { ...boostUse }, grass: grass && grass.slice() });
-    if (score >= level.target && !(grass && grass.includes(true)) && !board.some(cell => cell?.cage || cell?.fat)) return done({ win: true, stars: starsFor(level, moves) });
+    if (score >= level.target && !(grass && grass.includes(true)) && mail <= 0 && !board.some(cell => cell?.cage || cell?.fat || cell?.vase)) return done({ win: true, stars: starsFor(level, moves) });
     active = draw();
     // Thẻ mới không vừa bàn: còn đường thoát nếu cất được vào Gửi tạm (ô trống, hoặc thẻ đang gửi vừa bàn).
     const escape = useHold && (!hold || fits(board, hold, W, H));

@@ -24,7 +24,7 @@ mkdirSync(OUT, { recursive: true });
 const save = (name, value) => writeFileSync(join(OUT, name), `${JSON.stringify(value, null, 2)}\n`);
 
 save('levels.json', {
-  legend: { '.': 'empty', X: 'crate (breaks when an adjacent cluster clears)', M: 'metal (never breaks)', ...LETTERS },
+  legend: { '.': 'empty', X: 'crate (breaks when an adjacent cluster clears)', M: 'metal (never breaks)', '@': 'mailbox (never breaks; each adjacent cluster sends 1 letter)', '%': 'vase (first adjacent match cracks it, second breaks it)', ...LETTERS },
   tutorialSteps: {
     drag: 'drag the current card so its top-left lands on `anchor` (free = any cell allowed)',
     rotate: 'rotate until the card offsets equal `offsets`',
