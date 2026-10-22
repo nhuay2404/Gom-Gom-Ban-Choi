@@ -4,6 +4,7 @@
 // Chạy: npm run export:models   ->   game/assets/models/models.json (~70 MB, không commit: .gitignore; tạo lại khi đổi model)
 //   { "version": 1, "models": { "<id>": { "kind": "deco" | "pet", "name", "zone", "gltf": {...} } } }
 // Chỉ mèo + chó: npm run export:models -- --pets  ->  game/assets/models/pets/<giống>.glb (mỗi con một file, mở thẳng Blender / Unity)
+// Chỉ đồ deco: npm run export:models -- --deco  ->  game/assets/models/deco/<id>.glb (mỗi món một file, cạnh thư mục pets)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +15,7 @@ import { GAME } from '../ads/lib.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'game', 'assets', 'models', 'models.json');
 const PETS_ONLY = process.argv.includes('--pets'), PETS_DIR = join(ROOT, 'game', 'assets', 'models', 'pets');
+const DECO_ONLY = process.argv.includes('--deco'), DECO_DIR = join(ROOT, 'game', 'assets', 'models', 'deco');
 
 const b = await launch({ profile: join(tmpdir(), 'gom-gom-models-profile') });
 try {
@@ -24,22 +26,24 @@ try {
     const room = await import('./deco/deco-room.mjs'), cats = await import('./deco/cats/cat-rig.mjs');
     const { CATALOG } = await import('./deco/deco-data.mjs'), { catGroups } = await import('./ui/cat-art.mjs');
     const exporter = new GLTFExporter(), models = {}, failed = [];
-    const add = async (id, info, make) => {
+    const add = async (id, info, make, retry = true) => {
       try {
         const node = make();
         // userData là móc cho code game (mèo, hiệu ứng...), có tham chiếu vòng: không xuất
         node.traverse(part => { part.userData = {}; });
-        const out = await exporter.parseAsync(node, { binary: ${PETS_ONLY}, embedImages: true, onlyVisible: true });
+        const out = await exporter.parseAsync(node, { binary: ${PETS_ONLY || DECO_ONLY}, embedImages: true, onlyVisible: true });
         // glb là ArrayBuffer: đổi sang base64 để gửi qua CDP về Node
         models[id] = { ...info, gltf: out instanceof ArrayBuffer ? btoa(Array.from(new Uint8Array(out), c => String.fromCharCode(c)).join('')) : out };
       }
-      catch (error) { failed.push(id + ': ' + error.message); }
+      // texture ảnh tải chậm (vd swingtree): chờ rồi thử lại một lần
+      catch (error) { if (retry) { await new Promise(r => setTimeout(r, 2000)); return add(id, info, make, false); } failed.push(id + ': ' + error.message); }
     };
     if (!${PETS_ONLY}) for (const id of room.modelIds()) {
       const entry = CATALOG.find(item => item.id === id);
       await add(id, { kind: 'deco', name: entry?.name ?? id, zone: entry?.zone ?? null }, () => room.buildModel(id));
     }
     // Mèo / chó 3D: ảnh mặt chỉ vẽ lên texture sau khi tải xong -> dựng một lần, chờ ảnh, rồi mới xuất.
+    if (${DECO_ONLY}) return JSON.stringify({ version: 1, models, failed });
     const pets = Object.fromEntries(catGroups.map(breed => [breed, cats.catModel(breed)]));
     await new Promise(r => setTimeout(r, 2500));
     for (const breed of catGroups) await add('pet-' + breed, { kind: 'pet', name: breed, zone: null }, () => pets[breed]);
@@ -48,6 +52,12 @@ try {
   const data = JSON.parse(json);
   if (data.failed.length) console.warn('Không xuất được:\n  ' + data.failed.join('\n  '));
   delete data.failed;
+  if (DECO_ONLY) {
+    mkdirSync(DECO_DIR, { recursive: true });
+    for (const [id, { gltf }] of Object.entries(data.models)) writeFileSync(join(DECO_DIR, id + '.glb'), Buffer.from(gltf, 'base64'));
+    console.log(`${DECO_DIR}: ${Object.keys(data.models).length} file glb`);
+    process.exit(0);
+  }
   if (PETS_ONLY) {
     mkdirSync(PETS_DIR, { recursive: true });
     for (const { name, gltf } of Object.values(data.models)) writeFileSync(join(PETS_DIR, name + '.glb'), Buffer.from(gltf, 'base64'));
