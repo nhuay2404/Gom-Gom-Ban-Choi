@@ -5,6 +5,7 @@ import { clusterPoints, turnPoints, rollPoints, POINTS_PER_CRATE } from '../core
 import { DRAG, EFFECTS } from '../data/tuning.mjs';
 import { CRATE_SVG, CRATE_OPEN_SRC, CAGE_OPEN_SRC, CAGE_DOOR_SRC, LETTER_SVG, MAILBOX_OPEN_SRC, VASE_SHARD_SVG, SYRUP_DROP_SVG } from '../ui/board-art.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
+import { syrupAtlasStyle } from '../ui/syrup-autotile.mjs';
 import { $, reduceMotion } from '../app/shared.js';
 import { W, DROP_MS, LIFT_MS, MERGE_MS, cellEl, pendingMerges, fxLayer, state, look, addArt, wait, H } from './context.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot, scoreTier } from './score-bar.js';
@@ -33,7 +34,7 @@ export function animateTurn(turn) {
   flyToGoal('mail', turn.effect?.mail, DROP_MS + LIFT_MS + MERGE_MS + 420);
   breakVases(match, DROP_MS + LIFT_MS + MERGE_MS * .7);
   breakVases(turn.effect, DROP_MS + LIFT_MS + MERGE_MS + 420);
-  washSyrup(turn.match.syrup, DROP_MS + LIFT_MS + MERGE_MS * .7);
+  washSyrup(turn.match.syrup, DROP_MS); // siro chảy ngay khi mèo vừa đáp thành cụm, không chờ cụm gom xong
   washSyrup(turn.effect?.syrup, DROP_MS + LIFT_MS + MERGE_MS + 420);
   pendingMerges.add(done);
   done.finally(() => pendingMerges.delete(done));
@@ -42,10 +43,11 @@ export function animateTurn(turn) {
 // ---------- Bay vào ô Goal: thư (hộp thư '@') và mảnh bình vỡ (bình hoa '%') ----------
 // cells = ô nguồn, mỗi món một phần tử (hộp thư trúng 2 lần = 2 thư). Gọi ngay khi chốt lượt, TRƯỚC khi vẽ lại: món tính là "đang bay"
 // (state.flying[kind], ô Goal chưa trừ) tới lúc chạm icon cùng loại ở ô Goal thì mới trừ. Món bật lên khỏi ô rồi bay vòng vào Goal.
-const GOAL_FLY = { mail: { art: LETTER_SVG, bump: '.mailbox' }, vase: { art: VASE_SHARD_SVG }, syrup: { art: SYRUP_DROP_SVG } };
-export function flyToGoal(kind, cells, delay) {
+const GOAL_FLY = { mail: { art: LETTER_SVG, bump: '.mailbox' }, vase: { art: VASE_SHARD_SVG }, syrup: { art: SYRUP_DROP_SVG, y: 1.3, w: .95 } };
+// intro(item, index) → Promise: món diễn tại chỗ trước rồi mới bay (siro: bình hiện ra hút siro), y = chỗ món hiện theo chiều cao ô, w = bề ngang món theo ô.
+export function flyToGoal(kind, cells, delay, intro) {
   if (!cells?.length || reduceMotion.matches) return;
-  const session = state, { art, bump } = GOAL_FLY[kind];
+  const session = state, { art, bump, y = .35, w = .6 } = GOAL_FLY[kind];
   const land = () => { if (state !== session) return; state.flying[kind] = Math.max(0, state.flying[kind] - 1); renderGoals(); };
   state.flying[kind] += cells.length;
   const seen = new Map();
@@ -74,22 +76,22 @@ export function flyToGoal(kind, cells, delay) {
       const item = document.createElement('span');
       item.className = 'goal-fly';
       item.innerHTML = art;
-      item.style.cssText = `left:${from.left + from.width / 2}px;top:${from.top + from.height * .35}px;width:${from.width * .6}px`;
+      item.style.cssText = `left:${from.left + from.width / 2}px;top:${from.top + from.height * y}px;width:${from.width * w}px`;
       document.body.append(item);
-      const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height * .35);
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height * y);
       const side = (k % 2 ? -1 : 1) * from.width * .5;
-      playSound('pick');
-      item.animate([
-        { transform: 'translate(-50%, -50%) scale(.3) rotate(0deg)', opacity: 0 },
+      const fly = () => { if (!intro) playSound('pick'); item.animate([
+        intro ? { transform: 'translate(-50%, -50%) scale(1) rotate(0deg)', opacity: 1 } : { transform: 'translate(-50%, -50%) scale(.3) rotate(0deg)', opacity: 0 },
         { transform: `translate(calc(-50% + ${side * .4}px), calc(-50% - ${from.height * .7}px)) scale(1.1) rotate(${side > 0 ? 12 : -12}deg)`, opacity: 1, offset: .3 },
         { transform: `translate(calc(-50% + ${dx * .5 + side}px), calc(-50% + ${dy * .5 - from.height * .6}px)) scale(.9) rotate(${side > 0 ? -8 : 8}deg)`, opacity: 1, offset: .65 },
-        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${to.width / (from.width * .6)}) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${to.width / (from.width * w)}) rotate(0deg)`, opacity: 1 },
       ], { duration: 820, easing: 'cubic-bezier(.4, 0, .5, 1)', fill: 'forwards' }).finished.then(() => {
         item.remove();
         land();
         playSound('reward');
         icon.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)', offset: .4 }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
-      });
+      }); };
+      if (intro) intro(item, index).then(fly); else fly();
     }, delay + k * 160);
   });
 }
@@ -128,30 +130,104 @@ export function breakVases(source, delay) {
   }, delay);
 }
 
-// Siro dâu vỡ (core/board-rules.mjs `syrup`). Gọi TRƯỚC khi vẽ lại bàn: ô siro được sao thành bóng phủ đúng chỗ (ô thật vẽ con vật
-// sạch ở lần vẽ tới), tới `delay` thì bóng phình ra rồi tan, giọt siro văng ra và một giọt bay vào Goal.
+// Siro dâu vỡ (core/board-rules.mjs `syrup`). Gọi TRƯỚC khi vẽ lại bàn. Lớp siro được sao rồi gắn lại vào CHÍNH ô đó sau khi ô vẽ lại.
+// Tới `delay`: siro rung nhẹ rồi từ từ chảy xuống, phần dưới thắt cong như phễu, đuôi rót đúng vào miệng bình siro hiện ngay dưới ô,
+// bình nuốt ực rồi bay vào Goal. Con vật "đứng" khỏi mặt bàn 3D nên siro phẳng không đè được nó: con vật bị khoét đúng hình siro.
+const SUCK_MS = 1400;
+// Mỗi nhịp: [offset, trượt xuống %, đã rút (0 = còn nguyên, 1 = rút hết vào miệng bình), chỗ bắt đầu thắt (% ô), đuôi đã rót vào miệng (0..1), scale rung]
+const SYRUP_FLOW = [
+  [0, 0, 0, 100, 0, '1, 1'],
+  [.1, 0, 0, 100, 0, '1.05, .95'],
+  [.22, 0, 0, 100, 0, '.98, 1.03'],
+  [.45, 5, .14, 30, .75, '1, 1'],
+  [.7, 10, .45, 25, 1, '1, 1'],
+  [.86, 13, .8, 0, 1, '1, 1'],
+  [1, 15, 1, 0, 1, '1, 1'],
+];
+const CURVE_PTS = 11, TOP_PTS = 7;
+const smooth = t => t * t * (3 - 2 * t);
+// 65% chiều dài đầu là vai cong (thắt dần), phần còn lại là dòng siro nhỏ thẳng đứng rót vào miệng bình
+const NECK_AT = .65;
+// Viền lớp siro ở một nhịp, toạ độ % của lớp siro như đang thấy (đã gồm phần trượt): mép trên trũng nhẹ ở giữa như mặt siro đang rút,
+// hai cạnh bám khung ô tới chỗ thắt rồi cong vai tròn (smoothstep) thu về dòng siro nhỏ thẳng đứng ở miệng bình. Số điểm cố định để nội
+// suy mượt giữa các nhịp. mouth = { x, y, half } của miệng bình, box = { l, r } mép trái / phải của ô, đều theo % lớp siro.
+function syrupOutline([, , drain, waist, pour], mouth, box) {
+  const tailY = 100 + (mouth.y - 100) * pour, half = 50 + (mouth.half - 50) * pour, mid = 50 + (mouth.x - 50) * pour;
+  const top = drain * tailY, from = Math.min(Math.max(top, waist), tailY), dip = drain && drain < 1 ? 7 : 0;
+  const surface = Array.from({ length: TOP_PTS }, (_, i) => {
+    const t = i / (TOP_PTS - 1);
+    return [box.l + (box.r - box.l) * t, Math.min(tailY, top + dip * Math.sin(Math.PI * t))];
+  });
+  const side = (edge, end) => Array.from({ length: CURVE_PTS }, (_, i) => {
+    const t = i / (CURVE_PTS - 1);
+    return [edge + (end - edge) * smooth(Math.min(1, t / NECK_AT)), from + (tailY - from) * t];
+  });
+  return [...surface, ...side(box.r, mid + half), ...side(box.l, mid - half).reverse()];
+}
+
 export function washSyrup(cells, delay) {
   if (!cells?.length || reduceMotion.matches) return;
-  const ghosts = cells.map(index => {
-    const cell = cellEl(index);
-    if (!cell?.querySelector('.syrup-tile')) return null;
-    const ghost = cell.cloneNode(true);
-    ghost.classList.add('syrup-ghost');
-    ghost.style.cssText = `left:${cell.offsetLeft}px;top:${cell.offsetTop}px;width:${cell.offsetWidth}px;height:${cell.offsetHeight}px`;
-    fxLayer().append(ghost);
-    return ghost;
+  // mỗi ô hai lớp: `rim` = ô siro gốc (bo góc + viền bóng) lúc vừa vỡ và rung, mờ dần khi bắt đầu chảy; `ghost` = ô giữa mảng (nối cả
+  // 8 phía, không viền) nằm dưới, là lớp chảy theo hình clip
+  const ghosts = new Map();
+  cells.forEach(index => {
+    const tile = cellEl(index)?.querySelector('.syrup-tile');
+    if (!tile) return;
+    const rim = tile.cloneNode(), ghost = tile.cloneNode();
+    rim.className = ghost.className = 'syrup-ghost';
+    ghost.style.cssText = syrupAtlasStyle(255);
+    ghosts.set(index, { ghost, rim });
   });
-  flyToGoal('syrup', cells, delay + 120);
-  setTimeout(() => {
-    const layer = fxLayer();
-    cells.forEach((index, i) => {
-      const cell = cellEl(index);
-      if (cell) flyBits(layer, cell, 'syrup-bit', 6);
-      ghosts[i]?.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.12, .92)', opacity: .9, offset: .4 }, { transform: 'scale(1.25)', opacity: 0 }],
-        { duration: 260, easing: 'ease-out', fill: 'forwards' }).finished.then(() => ghosts[i].remove());
+  // ô thật được vẽ lại (con vật sạch) ngay sau lời gọi này: gắn siro lên trước khung hình kế tiếp
+  requestAnimationFrame(() => ghosts.forEach(({ ghost, rim }, index) => {
+    const cell = cellEl(index);
+    if (!cell) return;
+    const art = [...cell.children];
+    cell.append(ghost, rim);
+    const g = ghost.getBoundingClientRect(), r = cell.getBoundingClientRect();
+    const box = { l: (r.left - g.left) / g.width * 100, r: (r.right - g.left) / g.width * 100 };
+    // miệng bình (nắp, ~10% dưới đỉnh ảnh, dòng rót rộng ~18% ảnh) theo đúng chỗ flyToGoal đặt bình: tâm ở y × cao ô, ảnh vuông rộng w × ô
+    const { y, w } = GOAL_FLY.syrup, size = r.width * w;
+    const mouth = { x: (r.left + r.width / 2 - g.left) / g.width * 100, y: (r.top + r.height * y - size * .4 - g.top) / g.height * 100, half: size * .09 / g.width * 100 };
+    const outlines = SYRUP_FLOW.map(frame => syrupOutline(frame, mouth, box));
+    const timing = { duration: SUCK_MS, delay, easing: 'ease-in', fill: 'both' };
+    const flow = SYRUP_FLOW.map(([offset, slide, , , , squash], i) => ({
+      offset, transform: `translateZ(1px) translateY(${slide}%) scale(${squash})`,
+      clipPath: `polygon(${outlines[i].map(([x, py]) => `${x.toFixed(1)}% ${(py - slide).toFixed(1)}%`).join(', ')})`,
+    }));
+    ghost.animate(flow, timing).finished.then(() => ghost.remove());
+    // lớp gốc không cắt (giữ đúng dáng bo góc), chỉ rung theo rồi mờ đi
+    rim.animate(flow.map(({ offset, transform }) => ({ offset, transform, opacity: offset <= .22 ? 1 : 0 })), timing).finished.then(() => rim.remove());
+    art.forEach(child => {
+      const c = child.getBoundingClientRect();
+      // đổi toạ độ % của lớp siro sang % của con vật (đo trên màn hình)
+      const at = ([x, py]) => `${((g.left + x / 100 * g.width - c.left) / c.width * 100).toFixed(1)}% ${((g.top + py / 100 * g.height - c.top) / c.height * 100).toFixed(1)}%`;
+      // con vật hiện ở mọi chỗ NGOÀI hình siro: khung con vật khoét lỗ đúng hình siro (evenodd); siro chưa chảy thì lỗ phủ kín con vật
+      child.animate(SYRUP_FLOW.map(([offset, , drain], i) => {
+        const hole = drain ? outlines[i].map(at) : outlines[i].map((_, k) => k === 0 ? '-5% -5%' : k < TOP_PTS ? '105% -5%' : k < TOP_PTS + CURVE_PTS ? '105% 105%' : '-5% 105%');
+        return { offset, clipPath: `polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ${hole.join(', ')}, ${hole[0]})` };
+      }), { ...timing, fill: 'backwards' }); // xong thì bỏ cắt hẳn, con vật / cỏ về như thường
     });
-    playSound('pick');
-  }, delay);
+  }));
+  setTimeout(() => ghosts.forEach(({ ghost, rim }) => { ghost.remove(); rim.remove(); }), delay + SUCK_MS + 1500); // phòng khi không có ô Goal để bình hiện ra
+  flyToGoal('syrup', cells, delay, suckSyrup);
+}
+
+// Bình siro hiện ngay dưới ô lúc siro bắt đầu rót, đứng hứng, nuốt ực khi siro rút hết (lớp siro tự chảy trong washSyrup).
+function suckSyrup(bottle) {
+  playSound('pick');
+  const at = 'translate(-50%, -50%)';
+  const pop = bottle.animate([
+    { transform: `${at} scale(0)`, opacity: 0 },
+    { transform: `${at} scale(0)`, opacity: 0, offset: .3 },
+    { transform: `${at} scale(1.15, .88)`, opacity: 1, offset: .42 },
+    { transform: `${at} scale(.95, 1.05)`, opacity: 1, offset: .52 },
+    { transform: `${at} scale(1)`, opacity: 1, offset: .88 },
+    { transform: `${at} scale(1.18, .84)`, opacity: 1, offset: .94 },
+    { transform: `${at} scale(1)`, opacity: 1 },
+  ], { duration: SUCK_MS, easing: 'ease-out', fill: 'forwards' });
+  setTimeout(() => playSound('pet'), SUCK_MS * .9);
+  return pop.finished;
 }
 
 // ---------- Mèo béo 2×2 (core/board-rules.mjs wakeFatCats) ----------
