@@ -5,8 +5,8 @@
 //  Kiểm tra không gãy gì:     npm test
 //
 //  Mục lục
-//    1. NGUỒN XU (source)  — xu ban đầu, xu thưởng mỗi màn, quà, gói xu
-//    2. CHỖ TIÊU (sink)    — giá booster, giá đồ trang trí (DECO)
+//    1. NGUỒN XU (source)  — xu ban đầu, xu thưởng mỗi màn, quà; GEM, gói IAP, ưu đãi, rewarded ads, continue
+//    2. CHỖ TIÊU (sink)    — giá booster (gem), giá đồ trang trí (DECO)
 //    3. CÁCH ĐỌC BẢNG DECO — price / lock
 //
 //  Quy ước: "màn" đánh số từ 1 như người chơi thấy. 1 stage = 10 màn (stage 1 = màn 1–10, stage 2 = màn 11–20 ...).
@@ -32,6 +32,9 @@ export const REWARD_BASE = remote('REWARD_BASE', 50);
 export const REWARD_STEP = remote('REWARD_STEP', 50);
 export const REWARD_GROWTH = remote('REWARD_GROWTH', .1);
 export const REWARD_JITTER = remote('REWARD_JITTER', .8);
+// Thưởng tăng mãi (0) để màn sau luôn đáng hơn màn trước; game còn thêm màn + khu sau màn 100, giá khu mới theo đường tăng ZONE_PRICE_MULT.
+// Đặt > 0 (vd. 80) thì từ màn đó thưởng thôi tăng: chỉ dùng khi lâu chưa có khu mới mà xu dư quá nhiều.
+export const REWARD_FLAT_FROM = remote('REWARD_FLAT_FROM', 0);
 
 // Hướng dẫn Decoration (sau khi thắng màn 5): nếu người chơi không đủ xu mua món rẻ nhất thì bù cho đủ.
 // true = bù (người chơi chắc chắn mua được món đầu tiên trong hướng dẫn), false = không bù.
@@ -49,22 +52,58 @@ export const IDLE_RATE = remote('IDLE_RATE', 0.015);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 
-// Gói xu trong Shop (tiền thật — hiện mới là "coming soon", chưa bán). coins = xu nhận, usd = giá hiển thị.
-export const COIN_PACKS = remote('COIN_PACKS', [
-  { coins: 500, usd: 0.99 },
-  { coins: 1200, usd: 1.99 },
-  { coins: 3000, usd: 4.99 },
+// ----- GEM (tiền cứng) — thiết kế: docs/kinh-te-va-monetization.md -----
+// Gem có sẵn khi mới vào game.
+export const START_GEMS = remote('START_GEMS', 0);
+// Gem miễn phí: thắng màn paywall lần đầu · thắng màn boss lần đầu · mở một khu deco · nhận một thú cưng mới.
+// (Quà đăng nhập 7 ngày + rương nhiệm vụ ngày thuộc Daily, Sprint 8: chưa làm.)
+export const GEM_REWARDS = remote('GEM_REWARDS', { paywall: 100, boss: 25, area: 50, pet: 10 });
+
+// Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).
+export const GEM_PACKS = remote('GEM_PACKS', [
+  { id: 'gems_200', usd: 1.99, gems: 200, tag: '' },
+  { id: 'gems_550', usd: 4.99, gems: 550, tag: '+10%' },
+  { id: 'gems_1200', usd: 9.99, gems: 1200, tag: 'Most popular' },
+  { id: 'gems_2600', usd: 19.99, gems: 2600, tag: '+30%' },
+  { id: 'gems_7000', usd: 49.99, gems: 7000, tag: '+40%' },
+  { id: 'gems_15000', usd: 99.99, gems: 15000, tag: 'Best value' },
 ]);
-// Gói khởi đầu (Starter pack — "coming soon"): giá hiển thị.
-export const STARTER_PACK = remote('STARTER_PACK', { usd: 1.99 });
+// Thiếu xu khi mua đồ / mở khu: trả HẾT xu đang có + bù phần thiếu bằng gem (không có túi xu, không có tỉ giá hiện ra cho người chơi).
+// Tỉ giá ngầm theo tiến độ: thiếu đúng 1 lần thưởng của màn đang chơi = gemsPerLevel gem (làm tròn lên, tối thiểu minGems).
+//   Xu tăng theo màn nên cùng số xu thiếu, càng về sau càng ít gem; tính theo "số màn phải chơi" thì giá luôn như nhau.
+export const COIN_TOP_UP = remote('COIN_TOP_UP', { gemsPerLevel: 20, minGems: 1 });
+// Ưu đãi IAP có hạn giờ. coinLevels = xu tặng tính theo số màn thưởng (như túi xu); coins = xu cố định; boosters = số mỗi loại.
+//   starter : một lần duy nhất, bật khi thắng màn starterLevel lần đầu.
+//   rescue  : thua cùng một màn afterLosses lần liền; cách nhau ít nhất cooldownDays ngày.
+//   builder : vừa mở một khu deco; cách nhau ít nhất cooldownDays ngày.
+export const OFFERS = remote('OFFERS', {
+  starter: { id: 'starter_pack', usd: 0.99, gems: 300, boosters: 2, coins: 2000, hours: 48, starterLevel: 10 },
+  rescue: { id: 'rescue_pack', usd: 2.99, gems: 200, boosters: 3, hours: 24, afterLosses: 3, cooldownDays: 3 },
+  builder: { id: 'builder_pack', usd: 4.99, gems: 500, coinLevels: 12, hours: 24, cooldownDays: 3 },
+});
+
+// Rewarded ads (đang giả lập: đếm ngược, app/ads.js). from = màn đầu tiên có ads (đã thắng from − 1 màn).
+// caps = số lần tối đa MỖI NGÀY cho từng chỗ đặt (null = không giới hạn): continue (+lượt khi thua) · bonusCoins (thêm xu ở bảng thắng) ·
+// booster (1 booster khi hết kho) · idle (thêm xu idle) · gems (gem miễn phí ở Shop). gems = gem mỗi lần xem ở Shop.
+// coinBonus = xu thêm ở bảng thắng theo lần xem thứ 1, 2, … trong ngày (tỉ lệ xu của màn; hết danh sách thì giữ số cuối):
+//   2 lần đầu +50%, từ lần 3 +20%, xem bao nhiêu cũng được. idleBonus = xu thêm khi xem ads lúc nhận xu idle (tỉ lệ số vừa nhận).
+//   Mô phỏng (tools/economy/economy-sim.mjs, ads.bonus): người xem mọi màn vẫn chỉ đủ ~90–100% giá món gốc ở màn 20–70.
+export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 10, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 });
+
+// Continue khi thua: giá gem tăng dần trong CÙNG một lần chơi (hết danh sách = không continue nữa).
+//   moves = lượt cộng khi trả gem · adMoves = lượt cộng khi xem ads (chỉ ở lần continue đầu) · stuckMoves = lượt cộng khi thua vì hết chỗ
+//   (kèm 1 búa tặng) · minProgress = chỉ mời khi đã đạt ≥ tỉ lệ này của mục tiêu (xa nút hơn thì vào thẳng bảng thua).
+//   Màn paywall: lần continue đầu tiên của người chơi miễn phí (dạy cơ chế).
+export const CONTINUE = remote('CONTINUE', { prices: [75, 130, 220], moves: 5, adMoves: 3, stuckMoves: 2, minProgress: 0.7 });
 
 // -------------------------------------------------------------------------------------------------------------------
 // 2. CHỖ TIÊU (SINK)
 // -------------------------------------------------------------------------------------------------------------------
 
-// Booster: giá mua 1 cái bằng xu, số tặng sẵn mỗi loại khi mở booster, màn bắt đầu có booster.
-export const BOOSTER_PRICE = remote('BOOSTER_PRICE', { hammer: 60, swap: 40, moves: 80 });
-export const BOOSTER_START_STOCK = remote('BOOSTER_START_STOCK', 3);
+// Booster: chỉ mua bằng GEM (không bằng xu). Giá 1 cái, giá gói ×3, số tặng sẵn mỗi loại khi mở booster, màn bắt đầu có booster.
+export const BOOSTER_GEM_PRICE = remote('BOOSTER_GEM_PRICE', { moves: 25, hammer: 45, swap: 60 });
+export const BOOSTER_PACK_PRICE = remote('BOOSTER_PACK_PRICE', { moves: 65, hammer: 115, swap: 155 });
+export const BOOSTER_START_STOCK = remote('BOOSTER_START_STOCK', 2);
 export const BOOSTER_UNLOCK_LEVEL = remote('BOOSTER_UNLOCK_LEVEL', 3);
 export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster +lượt cộng bấy nhiêu lượt
 

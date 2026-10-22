@@ -4,7 +4,7 @@
 // Thời gian tính bằng mili giây; kích thước 3D tính bằng mét của phòng (phòng 6 × 6).
 
 // Kích thước bàn tuỳ màn (levels.mjs, board-shapes.mjs); W/H ở đây là bàn chuẩn 6×6 dùng làm mặc định.
-import { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, BOOSTER_PRICE, BOOSTER_START_STOCK, BOOSTER_UNLOCK_LEVEL, BOOSTER_EXTRA_MOVES } from './economy.mjs';
+import { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, REWARD_FLAT_FROM, BOOSTER_GEM_PRICE, BOOSTER_PACK_PRICE, BOOSTER_START_STOCK, BOOSTER_UNLOCK_LEVEL, BOOSTER_EXTRA_MOVES } from './economy.mjs';
 import { remote } from '../core/remote-config.mjs';
 
 export const BOARD = remote('BOARD', { W: 6, H: 6, PREVIEW_COUNT: 1 });
@@ -45,7 +45,7 @@ export const DRAG = remote('DRAG', {
 export const LOW_MOVES = remote('LOW_MOVES', { MSG_AT: 3, CATS_AT: 2, WARN_RATIO: .3 });
 
 // Kinh tế (xu thưởng, giá booster, giá đồ ...): sửa ở data/economy.mjs — ở đây chỉ gom lại cho code cũ dùng.
-export const ECONOMY = { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, MAX_ROOM_CATS: Infinity };
+export const ECONOMY = { REWARD_BASE, REWARD_STEP, REWARD_GROWTH, REWARD_JITTER, REWARD_FLAT_FROM, MAX_ROOM_CATS: Infinity };
 
 // Mèo 3D trong phòng
 export const CAT_BODY = remote('CAT_BODY', { W: .6, H: .55, D: .62, LEG: .1 });
@@ -61,13 +61,14 @@ export const CAT_MOTION = remote('CAT_MOTION', {
   },
 });
 
-// Booster trong màn: mở từ màn UNLOCK_LEVEL (không có tutorial), tặng START_STOCK mỗi loại, hết thì mua bằng xu.
+// Booster trong màn: mở từ màn UNLOCK_LEVEL (không có tutorial), tặng START_STOCK mỗi loại, hết thì mua bằng gem / xem ads.
 // Dùng booster không tốn lượt.
 export const BOOSTERS = {
   UNLOCK_LEVEL: BOOSTER_UNLOCK_LEVEL,
   START_STOCK: BOOSTER_START_STOCK,
   EXTRA_MOVES: BOOSTER_EXTRA_MOVES,
-  PRICE: BOOSTER_PRICE, // giá: data/economy.mjs
+  PRICE: BOOSTER_GEM_PRICE, // giá 1 cái, bằng GEM: data/economy.mjs
+  PACK_PRICE: BOOSTER_PACK_PRICE, // giá gói ×3, bằng gem
 };
 // Đổi thẻ: số lượt liên tiếp được thẻ có lợi nhất (thẻ đang bóc + TURNS - 1 thẻ sau), session.mjs luckyCard.
 export const LUCKY = remote('LUCKY', { TURNS: 3 });

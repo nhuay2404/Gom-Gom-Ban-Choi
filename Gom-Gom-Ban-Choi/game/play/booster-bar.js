@@ -1,20 +1,22 @@
-// Thanh booster trong ván: búa (đập 3×3, sáng vùng khi rê), đổi thẻ (thẻ may mắn), +lượt; hết hàng thì mua bằng xu.
+// Thanh booster trong ván: búa (đập 3×3, sáng vùng khi rê), đổi thẻ (thẻ may mắn), +lượt; hết hàng thì popup ads / gem (app/store.js).
+// Gợi ý dùng booster đúng lúc (nút nhấp nháy): suggestBoosters() sau mỗi lượt.
 // Luật booster ở core/session.mjs + core/boosters.mjs. Sang Unity: BoosterBar (MonoBehaviour).
 import * as game from '../core/session.mjs';
 import { BOOSTERS, LUCKY } from '../data/tuning.mjs';
 import { spendBooster, boostersUnlocked } from '../core/boosters.mjs';
 import { playSound } from '../ui/sound.mjs';
-import { $, reduceMotion, getBoosters, storeBoosters, buyOne, priceTag } from '../app/shared.js';
+import { $, reduceMotion, getBoosters, storeBoosters, priceTag } from '../app/shared.js';
+import { offerBooster, tookGemShopTrip } from '../app/store.js';
 import { state, fxLayer, cellEl, W, H } from './context.js';
 import { tutorialStep } from './tutorial.js';
-import { track, endLevel } from './result.js';
+import { track, endLevel, suspendForShop } from './result.js';
 import { render, nudgeGoals } from './hud.js';
 import { breakCrates, flyBits, spawnPuff, shakeBoard, animateFat, flyToGoal, breakVases, washSyrup } from './match-fx.js';
 import { holdScoreSlots, showMergeScore, releaseScoreSlot } from './score-bar.js';
 import { drainMoves, celebrateWin } from './finale.js';
 
-// ===== Booster: mở từ màn BOOSTERS.UNLOCK_LEVEL, không tốn lượt; hết thì chạm là mua luôn bằng xu =====
-// Búa đang giơ: chạm một ô trên bàn để đập (kho booster + mua bằng xu ở shared.js).
+// ===== Booster: mở từ màn BOOSTERS.UNLOCK_LEVEL, không tốn lượt; hết thì chạm mở popup xem ads / mua bằng gem =====
+// Búa đang giơ: chạm một ô trên bàn để đập.
 export let hammerArmed = false;
 
 export function disarmHammer() { hammerArmed = false; }
@@ -33,13 +35,35 @@ export function renderBoosters() {
   document.body.classList.toggle('hammer-armed', hammerArmed);
 }
 
-// Booster mua ngay trong ván (hết hàng, trả bằng xu) được ghi riêng để thống kê.
-const haveBooster = id => {
+// Hết hàng: popup ads / gem; nhận được thì bấm lại nút để dùng luôn. Booster lấy ngay trong ván được ghi riêng để thống kê.
+const haveBooster = (id, button) => {
   if (getBoosters()[id] > 0) return true;
-  if (!buyOne(id)) return false;
-  track.bought++;
-  return true;
+  offerBooster(id).then(got => {
+    renderBoosters();
+    // Thiếu gem, đã chuyển tới Shop: treo ván; về Home thì chơi tiếp đúng chỗ (result.js resumeRun).
+    if (tookGemShopTrip()) return suspendForShop('play');
+    if (!got || state.over) return;
+    track.bought++;
+    button.click();
+  });
+  return false;
 };
+
+// Gợi ý booster đúng lúc (mỗi loại tối đa một lần mỗi ván): còn ≤ 3 lượt mà theo nhịp hiện tại không đủ điểm → +lượt;
+// bàn sắp kín → búa; 2 lượt liền không gom được → thẻ mới. Gọi sau mỗi lượt chưa kết thúc ván.
+export function suggestBoosters(turn) {
+  if (!boostersUnlocked(state.levelIndex) || tutorialStep() || state.over) return;
+  state.suggested ??= new Set();
+  state.dryTurns = turn.match?.groups.length ? 0 : (state.dryTurns ?? 0) + 1;
+  const used = state.level.moves - state.moves, pace = used ? state.score / used : 0;
+  const free = state.board.filter(object => !object).length;
+  const pick = state.moves <= 3 && state.score + pace * state.moves < state.level.target ? 'moves' : free <= 5 ? 'hammer' : state.dryTurns >= 2 ? 'swap' : null;
+  if (!pick || state.suggested.has(pick)) return;
+  state.suggested.add(pick);
+  const bar = $('booster-bar');
+  bar.querySelector('.suggest')?.classList.remove('suggest');
+  bar.querySelector(`[data-boost="${pick}"]`).classList.add('suggest');
+}
 
 const useBooster = id => {
   track.boosters++; track.boostUse[id]++;
@@ -53,11 +77,11 @@ $('booster-bar').addEventListener('click', event => {
   const id = button.dataset.boost;
   if (id === 'hammer') {
     if (hammerArmed) { hammerArmed = false; clearSmashArea(); return render(); }
-    if (!haveBooster(id)) return renderBoosters();
+    if (!haveBooster(id, button)) return renderBoosters();
     hammerArmed = true;
     return render('Tap the board to smash a 3×3 area.');
   }
-  if (!haveBooster(id)) return renderBoosters();
+  if (!haveBooster(id, button)) return renderBoosters();
   hammerArmed = false;
   if (id === 'swap' && game.swapCard(state).ok) {
     useBooster(id);

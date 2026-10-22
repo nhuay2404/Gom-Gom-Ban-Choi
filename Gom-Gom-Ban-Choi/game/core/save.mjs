@@ -8,6 +8,7 @@
 //   sound     'on' | 'off'
 //   night     'on' | 'off'                   khu mèo ban đêm / ban ngày
 //   boosters  { hammer, swap, moves }        số booster đang có (chưa có save = BOOSTERS.START_STOCK mỗi loại)
+//   gems      { gems, ads, granted[], freeContinueUsed, offers }  ví gem (core/gems.mjs)
 //   profile   { attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }  lịch sử chơi cho độ khó thích ứng (adaptive.mjs)
 export const SAVE_KEYS = {
   progress: 'gomgom-rotate-progress-v1',
@@ -18,6 +19,7 @@ export const SAVE_KEYS = {
   profile: 'gomgom-rotate-profile-v1',
   decoTour: 'gomgom-rotate-deco-tour-v1',
   onboarding: 'gomgom-rotate-onboarding-v1',
+  gems: 'gomgom-rotate-gems-v1', // ví gem + đếm ads theo ngày + quà gem đã nhận + ưu đãi (core/gems.mjs)
   skin: 'gomgom-rotate-skin', // bộ quân trên bàn: 'cats' | 'dogs' (mở bộ chó ở màn 30, app/shared.js pieceSkin)
 };
 

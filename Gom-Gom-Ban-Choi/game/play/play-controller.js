@@ -12,17 +12,19 @@ import { planLevel, elementCount, difficultyOf } from '../core/adaptive.mjs';
 import { $ } from '../app/shared.js';
 import { state, now, look, setSession, refreshSkin, menus } from './context.js';
 import { render, nudgeGoals, lowMovesText } from './hud.js';
-import { track, endLevel, profile, startTracking, leaveResult } from './result.js';
+import { track, endLevel, profile, startTracking, leaveResult, dropPendingRun } from './result.js';
 import { animateTurn, EFFECT_FX } from './match-fx.js';
 import { showNextTutorial, renderTutorial } from './tutorial.js';
 import { drainMoves, celebrateWin } from './finale.js';
-import { disarmHammer } from './booster-bar.js';
+import { disarmHammer, suggestBoosters } from './booster-bar.js';
 import { resetScoreFlights } from './score-bar.js';
 import { armAfk } from './afk.js';
 import { rotateActive, holdActive } from './cards.js';
 
 // API cho menu-controller (nối ở start.js): menu gọi startLevel / mapTier, play gọi menus.* qua connectMenus.
 export { connectMenus } from './context.js';
+// Ván treo khi sang Shop mua gem: menu hỏi khi về Home để mở lại (menu/tabs.js).
+export { pendingRun, resumeRun } from './result.js';
 
 export function placeAt(anchor) {
   if (state.over || state.animating) return;
@@ -71,6 +73,7 @@ function finishTurn(turn) {
     }).then(() => endLevel(true));
   }
   if (turn.lose && !turn.stuck) return endLevel(false, state.outcome.reason);
+  suggestBoosters(turn);
   // Màn bảo đảm thắng (session.mjs): hết lượt thì được tặng lượt thay vì thua.
   const noRoom = state.holdOn ? 'No room left — drag a card into Hold.' : 'No room left for this card!';
   render(`${turn.fit ? clearedText : `${clearedText} ${noRoom}`} ${lowMovesText()}`.trim(), !turn.fit);
@@ -132,6 +135,7 @@ export const botApi = {
 
 // Vào thẳng màn chơi (không có bảng giới thiệu màn); newGame() bắt đầu đo metric độ khó.
 export function startLevel(index) {
+  dropPendingRun(); // vào màn mới: ván treo (sang Shop mua gem) bị bỏ
   refreshSkin();
   menus.hideMenus();
   document.body.classList.remove('level-over');

@@ -367,3 +367,11 @@ export function addMoves(s, count) {
   s.moves += count;
   return { ok: true };
 }
+// Continue sau khi thua (hết lượt / hết chỗ): mở lại ván và cộng lượt. Thua vì hết chỗ thì play/continue.js tặng thêm búa.
+export function revive(s, count) {
+  if (!s.over || s.outcome?.win) return { ok: false };
+  s.over = false;
+  s.outcome = null;
+  s.moves += count;
+  return { ok: true };
+}

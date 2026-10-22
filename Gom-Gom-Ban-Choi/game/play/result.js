@@ -5,12 +5,16 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { LEVELS } from '../data/levels.mjs';
 import { loadProgress, saveProgress, recordWin } from '../core/progression.mjs';
-import { COMEBACK_GIFT_MOVES, AREA_UNLOCK } from '../data/economy.mjs';
+import { COMEBACK_GIFT_MOVES, AREA_UNLOCK, GEM_REWARDS, OFFERS } from '../data/economy.mjs';
 import { boostersUnlocked } from '../core/boosters.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, recordAttempt, noteDwell, boosterTip } from '../core/adaptive.mjs';
 import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
-import { $, getDeco, setDeco, getBoosters, storeBoosters, BOOSTER_NAMES } from '../app/shared.js';
+import { $, getDeco, setDeco, getBoosters, storeBoosters, BOOSTER_NAMES, refreshWallet, getWallet } from '../app/shared.js';
+import { grantGems, triggerOffer, showOffer } from '../app/store.js';
+import { showRewarded, adReady } from '../app/ads.js';
+import { bonusCoins } from '../core/gems.mjs';
+import { offerContinue } from './continue.js';
 import { now, state, menus } from './context.js';
 import { render } from './hud.js';
 import { renderTutorial } from './tutorial.js';
@@ -47,6 +51,25 @@ function recordTry(win, reason) {
   return result.gift;
 }
 
+// Ván treo khi người chơi sang Shop mua gem: 'continue' (đang ở màn "So close!") | 'play' (đang chơi dở, từ popup hết booster).
+// Về Home (menu/tabs.js showTab) thì mở lại đúng chỗ đó thay cho bản đồ. Vào màn khác (startLevel) thì bỏ ván treo và ghi thua / bỏ ngang.
+let pending = null;
+export const pendingRun = () => pending;
+export function suspendForShop(kind) { pending = kind; }
+export function resumeRun() {
+  const kind = pending;
+  pending = null;
+  menus.hideMenus();
+  $('map').hidden = true;
+  render();
+  if (kind === 'continue') endLevel(false, state.outcome?.reason ?? '');
+}
+export function dropPendingRun() {
+  if (pending === 'continue') recordTry(false, state.moves > 0 ? 'stuck' : 'moves');
+  else if (pending === 'play') recordQuit();
+  pending = null;
+}
+
 // Rời ván giữa chừng (chơi lại / về Home) khi đã đặt ít nhất một thẻ = bỏ ngang.
 function recordQuit() {
   if (state && !state.over && state.moves < state.level.moves) recordTry(false, 'quit');
@@ -60,7 +83,14 @@ export function leaveResult() {
   $('result-dialog').close();
 }
 
-export function endLevel(win, reason = '') {
+export async function endLevel(win, reason = '') {
+  // Thua: mời continue trước (gem / ads); chơi tiếp thì không có bảng thua.
+  if (!win && !state.outcome?.win) {
+    const kept = await offerContinue();
+    if (kept === true) return;
+    // Thiếu gem, đã chuyển tới Shop: treo ván ở màn continue; về Home thì màn continue hiện lại (resumeRun).
+    if (kept === 'shop') { pending = 'continue'; return; }
+  }
   state.over = true;
   state.outcome ??= { win, reason, stars: 0 };
   // Hết ván (thắng: đã ẩn từ lúc thanh điểm đầy, celebrateWin; thua: hết lượt / kẹt): ẩn mọi UI chơi (level / move / thanh
@@ -82,13 +112,39 @@ export function endLevel(win, reason = '') {
     coinsEarned = record.coins;
     if (coinsEarned) setDeco({ ...getDeco(), coins: getDeco().coins + coinsEarned });
   }
+  // Gem thưởng lần thắng đầu: màn paywall (sau bài học continue) / màn boss.
+  const level = LEVELS[index];
+  const gems = coinsEarned ? grantGems(`level:${index}`, level.paywall ? GEM_REWARDS.paywall : level.tier === 'boss' ? GEM_REWARDS.boss : 0) : 0;
+  // Ưu đãi: starter khi thắng lần đầu màn mốc; gói giải cứu khi thua cùng màn OFFERS.rescue.afterLosses lần liền.
+  const offer = win ? (coinsEarned && index + 1 === OFFERS.starter.starterLevel && triggerOffer('starter') && 'starter')
+    : (lossStreakHere(index) >= OFFERS.rescue.afterLosses && triggerOffer('rescue') && 'rescue');
   const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
   // Vừa tới mốc màn của một khu (thắng đúng màn mốc lần đầu): báo trong hộp kết quả (còn bước trang trí ở Deco).
   const reachedArea = win && coinsEarned > 0 && AREA_ORDER.find(area => index + 1 === AREA_UNLOCK[area].level && levelsCleared() === AREA_UNLOCK[area].level);
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
-  const notes = [reachedArea && `${AREA_NAMES[reachedArea]}: level goal reached!`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+  // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, sau đó +20%; REWARDED_ADS.coinBonus), không giới hạn.
+  // Nút ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
+  $('result-coins').parentElement.querySelector('.ad-double')?.remove();
+  if (coinsEarned && adReady('bonusCoins')) {
+    const bonus = bonusCoins(getWallet(), coinsEarned, Date.now());
+    const button = document.createElement('button');
+    button.className = 'ad-double';
+    button.innerHTML = `▶ +${bonus.toLocaleString('en-US')}`;
+    button.setAttribute('aria-label', `Watch an ad for ${bonus} more coins`);
+    button.onclick = async () => {
+      button.disabled = true;
+      if (!(await showRewarded('bonusCoins'))) { button.disabled = false; return; }
+      setDeco({ ...getDeco(), coins: getDeco().coins + bonus });
+      refreshWallet();
+      playSound('reward');
+      $('result-coins').querySelector('b').textContent = `+${(coinsEarned + bonus).toLocaleString('en-US')}`;
+      button.remove();
+    };
+    $('result-coins').after(button);
+  }
+  const notes = [gems && `+${gems} gems`, reachedArea && `${AREA_NAMES[reachedArea]}: level goal reached!`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');
@@ -111,6 +167,15 @@ export function endLevel(win, reason = '') {
   $('result-retry').hidden = win;
   // Tiếng thắng phát đúng lúc bảng Level Complete hiện (sound.mjs: fade in).
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); if (win) playSound('complete'); }, win ? 0 : 700);
+  // Ưu đãi vừa bật: popup đè lên bảng kết quả một lần (sau đó vẫn ở đầu Shop tới khi hết giờ).
+  if (offer) setTimeout(() => showOffer(offer), 1600);
+}
+
+// Số lần thua liên tiếp ở màn này (lịch sử của độ khó thích ứng, gồm cả lần vừa thua).
+function lossStreakHere(index) {
+  let n = 0;
+  for (let i = profile.attempts.length - 1; i >= 0 && profile.attempts[i].level === index && !profile.attempts[i].win; i--) n++;
+  return n;
 }
 
 // Thứ được mở khoá ở các màn onboarding (onboarding.js), hiện dưới "Unlocked:" ở bảng kết quả.

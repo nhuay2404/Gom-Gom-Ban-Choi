@@ -219,15 +219,31 @@ test('booster: búa đập sạch 3×3 (mèo, chuồng, thùng, kim loại), đi
   assert.equal(s.moves, moves + 3);
 });
 
-test('booster: kho mặc định, dùng, mua bằng xu', async () => {
+test('continue: hồi ván đã thua (cộng lượt, mở lại), không hồi ván đang chơi / đã thắng', () => {
+  const s = game.createSession(0);
+  assert.equal(game.revive(s, 5).ok, false);
+  s.moves = 0; s.over = true; s.outcome = { win: false, reason: 'Out of moves!', stars: 0 };
+  assert.ok(game.revive(s, 5).ok);
+  assert.equal(s.moves, 5);
+  assert.equal(s.over, false);
+  assert.equal(s.outcome, null);
+  s.over = true; s.outcome = { win: true, stars: 1 };
+  assert.equal(game.revive(s, 5).ok, false);
+});
+
+test('booster: kho mặc định, dùng, mua bằng gem (lẻ / gói ×3)', async () => {
   const { loadBoosters, spendBooster, buyBooster, boostersUnlocked } = await import('./boosters.mjs');
   const { BOOSTERS } = await import('../data/tuning.mjs');
   const stock = loadBoosters();
   assert.deepEqual(stock, { hammer: BOOSTERS.START_STOCK, swap: BOOSTERS.START_STOCK, moves: BOOSTERS.START_STOCK });
   assert.equal(spendBooster({ ...stock, hammer: 0 }, 'hammer'), null);
   assert.equal(spendBooster(stock, 'hammer').hammer, BOOSTERS.START_STOCK - 1);
-  assert.ok(buyBooster(stock, BOOSTERS.PRICE.swap - 1, 'swap').error);
-  assert.deepEqual(buyBooster(stock, 100, 'swap').coins, 100 - BOOSTERS.PRICE.swap);
+  assert.equal(buyBooster(stock, BOOSTERS.PRICE.swap - 1, 'swap').short, 1);
+  assert.equal(buyBooster(stock, 200, 'swap').gems, 200 - BOOSTERS.PRICE.swap);
+  const pack = buyBooster(stock, 200, 'moves', true);
+  assert.equal(pack.stock.moves, stock.moves + 3);
+  assert.equal(pack.gems, 200 - BOOSTERS.PACK_PRICE.moves);
+  assert.ok(BOOSTERS.PRICE.moves < BOOSTERS.PRICE.hammer && BOOSTERS.PRICE.hammer < BOOSTERS.PRICE.swap, 'rẻ nhất +lượt, rồi búa, rồi thẻ mới');
   assert.equal(boostersUnlocked(1), false);
   assert.equal(boostersUnlocked(2), true);
 });

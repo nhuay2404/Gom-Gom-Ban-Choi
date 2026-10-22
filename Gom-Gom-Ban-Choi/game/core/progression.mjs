@@ -21,10 +21,11 @@ const wobble = levelIndex => { const x = Math.sin((levelIndex + 1) * 12.9898) * 
 // sang cụm mới bước tăng theo tỉ lệ (đường cong thoải, không vọt như cấp số nhân theo từng màn). Tổng các bước tới màn L (dạng đóng, nhanh cả
 // khi xem 300k màn): 10 × (g^(C−1) − 1) / (g − 1) − 1 + (L − 10(C − 1)) × g^(C−1) bước gốc, C = ⌈L / 10⌉, g = 1 + REWARD_GROWTH.
 // Lệch mỗi màn = REWARD_JITTER × lệch(n) × d(c): REWARD_JITTER < 1 thì vẫn luôn tăng.
-export const rewardFor = (levelIndex, { REWARD_BASE, REWARD_STEP = 0, REWARD_GROWTH = 0, REWARD_JITTER = 0 }) => {
-  const L = levelIndex + 1, C = Math.ceil(L / 10), gc = (1 + REWARD_GROWTH) ** (C - 1);
+// REWARD_FLAT_FROM > 0: từ màn đó thưởng thôi tăng (mọi màn sau nhận đúng thưởng của màn đó). 0 = tăng mãi (mặc định).
+export const rewardFor = (levelIndex, { REWARD_BASE, REWARD_STEP = 0, REWARD_GROWTH = 0, REWARD_JITTER = 0, REWARD_FLAT_FROM = 0 }) => {
+  const L = REWARD_FLAT_FROM > 0 ? Math.min(levelIndex + 1, REWARD_FLAT_FROM) : levelIndex + 1, C = Math.ceil(L / 10), gc = (1 + REWARD_GROWTH) ** (C - 1);
   const steps = 10 * (REWARD_GROWTH ? (gc - 1) / REWARD_GROWTH : C - 1) - 1 + (L - 10 * (C - 1)) * gc;
-  return Math.round(REWARD_BASE + REWARD_STEP * steps + REWARD_STEP * gc * REWARD_JITTER * wobble(levelIndex));
+  return Math.round(REWARD_BASE + REWARD_STEP * steps + REWARD_STEP * gc * REWARD_JITTER * wobble(L - 1));
 };
 export const levelReward = levelIndex => rewardFor(levelIndex, ECONOMY);
 // Tổng xu đã kiếm được từ các màn đã qua (khởi tạo ví cho save chưa có Deco).
