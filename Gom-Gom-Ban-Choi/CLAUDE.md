@@ -6,7 +6,7 @@ Test logic: `npm test`. Cảnh 3D (vườn — mở rộng có đồi khi thắn
 chỗ đặt đồ: `game/deco/room-layout.mjs`; danh mục: `game/deco/deco-data.mjs`.
 Bản đồ màn 3D (trống cỏ lăn kiểu Animal Crossing, nút màn đầu mèo trên bệ): `game/deco/map-world.mjs`; không có WebGL thì dùng bản đồ 2D trong `game/menu/map-view.js`.
 
-**Kinh tế** (xu thưởng mỗi màn, xu ban đầu, quà, gói xu, giá booster, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
+**Kinh tế** (xu, gem, gói IAP, ưu đãi, rewarded ads, continue, giá booster bằng gem, giá + màn mở khoá của mọi đồ deco): chỉ sửa ở
 `game/data/economy.mjs` (không khai giá trong `deco-data.mjs` / `tuning.mjs`). Xem bảng theo stage: `npm run economy` (ghi `docs/economy-report.md`).
 **Config từ xa (Firebase Remote Config)**: mọi hằng số trong `economy.mjs` / `tuning.mjs` khai bằng `remote('TÊN', mặc định)` và được
 ghi đè bởi tham số cùng tên trên Firebase (`docs/firebase.md`). `app/main.js` tải config trước rồi mới nạp game (`app/start.js`).
@@ -268,3 +268,6 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   định dạng `tools/ui-studio/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.
 - Dev tools chỉ hiện trên localhost, URL có `?dev`, hoặc bản HTML build (`npm run build:html` bật sẵn; bản cho người chơi: `npm run build:html -- --no-dev`): Unlock all, Reset progress, QC models.
 - Khi test bằng cách sửa save trong trình duyệt: sao lưu trước, trả lại sau.
+
+## Wiki kiến thức (`wiki/`)
+- Wiki thiết kế game do Claude duy trì, quy ước và quy trình ingest / query / lint ở `wiki/SCHEMA.md`. Khi được nhờ "thêm vào wiki", làm theo file đó; khi hỏi về kinh tế / monetization / live ops / tiến trình / cửa hàng / giá / KPI, hoặc toán cho game (toạ độ, khoảng cách, góc, vector, dao động, va chạm / phản xạ), đọc `wiki/index.md` trước rồi mở các trang liên quan và trích `[[trang]]`. Nếu wiki không có thông tin thì nói rõ, đừng bịa từ sách.

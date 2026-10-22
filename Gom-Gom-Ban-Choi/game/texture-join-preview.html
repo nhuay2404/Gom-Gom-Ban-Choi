@@ -21,4 +21,4 @@ const pets=['orange','shiba','white','dalmatian','gray','siamese','golden','tuxe
  cells[index].insertAdjacentHTML('beforeend',catMarkup[pets[k]]);
 });
 section.append(petBoard);document.querySelector('main').append(section);
-</script>
+</script><script type="module">import {GRASS_SVG} from "./ui/board-art.mjs"; const sample=document.createElement("template");sample.innerHTML=GRASS_SVG;for(const tile of document.querySelectorAll(".grass-tile")){if(!tile.querySelector(".grass-fringe"))tile.innerHTML=sample.content.firstElementChild.innerHTML;}</script>

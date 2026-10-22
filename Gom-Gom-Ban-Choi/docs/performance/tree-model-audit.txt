@@ -1,0 +1,53 @@
+KIEM TRA MODEL CAY 3D - 2026-10-22
+
+Siro: ban mep uon nhe da duoc luu trong syrup-autotile.png, syrup-autotile.svg va tools/export/build-syrup-atlas.mjs.
+
+PHAM VI VA CACH DO
+Do truc tiep buildModel() cho 23 mau trang tri thuc vat, them 4 bui goc vuon; danh muc co tong 240 model. Co tinh index/non-index va so luong InstancedMesh. So tris la hinh hoc mot luot ve co so, CHUA cong pass bong do, ID va outline, chua frustum culling. Geometry KiB khong gom texture, material hay bo nho CPU khac. Mesh/lauot ve co so chi la uoc tinh, khong phai so draw call GPU da profile. Khong do FPS tren dien thoai, vi vay day la danh sach uu tien kiem tra, KHONG ket luan model nao chac chan gay lag.
+
+Nguong noi bo de xep uu tien (khong phai gioi han chuan): nang >=10.000 tris/model; trung binh 5.000-9.999. Trong 27 mau/cum da do: 8 nang, 5 trung binh. Trung binh nhom nang: 14727.25 tris; nhom trung binh: 7558.8 tris. Co 6 mau tu 50 mesh tro len, can xem draw calls rieng.
+
+KET QUA
+vegbed                      15408 tris |  67 mesh |   0 instances |  495 KiB geometry | Tomato bed
+sunflowers                  13148 tris |  43 mesh |   0 instances |  400 KiB geometry | Sunflowers
+sunflowers-lavender         12314 tris | 136 mesh |   0 instances |  384 KiB geometry | Lavender patch
+catnip                      11424 tris |   7 mesh |   0 instances |  351 KiB geometry | Catnip bush
+plant                        8720 tris |  11 mesh |   0 instances |  729 KiB geometry | Plant
+greenhouse                   8174 tris |  86 mesh |   0 instances |  288 KiB geometry | Greenhouse
+veggies-flowers              7964 tris | 152 mesh |   0 instances |  343 KiB geometry | Flower beds
+greenhouse-tunnel            7120 tris |  34 mesh |   0 instances |  249 KiB geometry | Polytunnel
+parasol-tree                 5816 tris |  31 mesh |   0 instances |  243 KiB geometry | Lemon tree bench
+kplant                       4866 tris |  21 mesh |   0 instances |  134 KiB geometry | Monstera
+flowers                      4416 tris |  49 mesh |   0 instances |  143 KiB geometry | Flower bed
+swingtree-treehouse          4208 tris |  20 mesh |   0 instances |  197 KiB geometry | Treehouse
+swingtree-bench              4070 tris |  16 mesh |   0 instances |  167 KiB geometry | Bench swing
+kplant-fig                   3868 tris |  16 mesh |   0 instances |  108 KiB geometry | Fiddle-leaf fig
+vegbed-corn                  3630 tris |  96 mesh |   0 instances |  220 KiB geometry | Corn bed
+swingtree                    3320 tris |  12 mesh |   0 instances |  112 KiB geometry | Swing tree
+plant-cactus                 3110 tris |  27 mesh |   0 instances |   99 KiB geometry | Cactus
+plant-tulips                 2800 tris |  13 mesh |   0 instances |  101 KiB geometry | Tulip pot
+catnip-pot                   2784 tris |   8 mesh |   0 instances |   85 KiB geometry | Catnip pot
+closet-ladder                2672 tris |  14 mesh |   0 instances |  149 KiB geometry | Plant shelf
+flowers-tulips               2600 tris |  57 mesh |   0 instances |  107 KiB geometry | Tulip patch
+kbench-planter               2304 tris |  28 mesh |   0 instances |  113 KiB geometry | Planter benches (pair)
+kplant-herbs                 1888 tris |  23 mesh |   0 instances |   81 KiB geometry | Herb planter
+corner-bush-1               17620 tris |  11 mesh | 152 instances |  114 KiB geometry | Garden corner bush 1
+corner-bush-2               16220 tris |  10 mesh | 142 instances |  110 KiB geometry | Garden corner bush 2
+corner-bush-3               17620 tris |  11 mesh | 152 instances |  114 KiB geometry | Garden corner bush 3
+corner-bush-4               14064 tris |  12 mesh | 120 instances |  137 KiB geometry | Garden corner bush 4
+
+UU TIEN
+1. Bon bui goc vuon: 65524 tris/cum 4 bui, 44 mesh. La 3D lap lai bang InstancedMesh giam draw calls nhung khong giam tong tris ve. Cac mau vuon vuong/dai chi hien mot bo 4 bui (deco-room.mjs:1588,1600).
+2. Catnip bush: 11.424 tris nhung chi 7 mesh; uu tien giam do min tan/la hon la gop mesh.
+3. Tomato bed: 15.408 tris / 67 mesh; sunflower: 13.148 / 43; lavender patch: 12.314 / 136.
+4. Flower beds 7.964 tris / 152 mesh va Corn bed 3.630 / 96: co the ton CPU submission hon la tris.
+5. Cac cay lon Swing tree 3.320, Bench swing 4.070, Treehouse 4.208, Lemon tree bench 5.816 tris; trung binh 4.353,5. Ba cay swingtree da dung sprite canopy (276 tris la/cay), khong phai nhom high-poly nhat.
+
+LOI HINH HOC CAY NEN
+meadow.mjs:22 truyen sphereSegments(r) (mang [width,height]) vao tham so so cua SphereGeometry, dong thoi tru 3 tren mang. Ket qua: tan cua 33/46 cay nen va 40/40 cum bui nen co mesh rong. KHONG coi so tris thap nay la toi uu. Chua sua vi day la lan kiem tra, khong thay doi model.
+Canh meadow hien tai do voi bounds x[-7,16], z[-7,7]: 39192 tris / 25 mesh sau gop (truoc gop: 3312 mesh). So nay khong dai dien canh sau khi sua loi mesh rong hay moi bo cuc game.
+
+GIOI HAN
+Bon id fence-hedge, yfence-hedge, kfence-hedge, bwall-lavender thuoc luong tuong/rao, khong co trong buildModel(); chua do hinh hoc rieng. Khong cong tat ca bien the vao mot canh: do thay the cung slot khong cung xuat hien. Chi mat thuc vat trong pham vi da chon duoc thong ke, khong phai toan bo 240 model.
+
+Tai lap: mo /tree-model-audit.html khi game server dang chay; du lieu day du trong tree-model-audit.json.

@@ -13,13 +13,15 @@ function quarter(n, w, diagonal, corner) {
   const inner = n && w && !diagonal;
   // Exposed edges are inset by 8 px. The concave arc ends at that SAME inset
   // on the connected neighbor, so a hole never acquires little disconnected hooks.
-  const shape = outer ? 'M64 8H30Q8 8 8 30V64H64Z'
+  // A broad 4 px bulge at the center of each side gives thick-liquid edges.
+  // Every side still meets its neighbor at inset 8 with a horizontal tangent.
+  const shape = outer ? 'M64 4C50 4 44 8 30 8Q8 8 8 30C8 44 4 50 4 64H64Z'
     : inner ? 'M8 0H64V64H0V8Q8 8 8 0Z'
-    : !n ? 'M0 8H64V64H0Z'
-    : !w ? 'M8 0H64V64H8Z' : 'M0 0H64V64H0Z';
-  const horizontal = !n && !outer ? 'M0 8H64' : '';
-  const vertical = !w && !outer ? 'M8 0V64' : '';
-  const curve = outer ? 'M8 64V30Q8 8 30 8H64' : inner ? 'M0 8Q8 8 8 0' : '';
+    : !n ? 'M0 8C22 8 38 4 64 4V64H0Z'
+    : !w ? 'M8 0C8 22 4 38 4 64H64V0Z' : 'M0 0H64V64H0Z';
+  const horizontal = !n && !outer ? 'M0 8C22 8 38 4 64 4' : '';
+  const vertical = !w && !outer ? 'M8 0C8 22 4 38 4 64' : '';
+  const curve = outer ? 'M4 64C4 50 8 44 8 30Q8 8 30 8C44 8 50 4 64 4' : inner ? 'M0 8Q8 8 8 0' : '';
   // Use world-facing normals, not the quarter number: both halves of a side
   // must carry exactly the same rim color at their shared endpoint.
   const horizontalTone = corner < 2 ? '#ffd3df' : '#ca477b';

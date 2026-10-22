@@ -23,7 +23,7 @@ export const CAGE_ICON_SVG = '<svg viewBox="0 0 256 234" aria-hidden="true"><ima
 
 // Ô cỏ trên bàn: texture liên tục (assets/img/board/grass-surface.png), liền qua các ô cỏ cạnh nhau, viền + chân xanh đậm (ui/play/base.css .grass-tile);
 // mỗi ô lấy đúng tọa độ --col / --row trên cùng texture phủ toàn bàn; chỉ cạnh ngoài có viền.
-export const GRASS_SVG = `<span class="grass-tile" aria-hidden="true"></span>`;
+export const GRASS_SVG = `<span class="grass-tile" aria-hidden="true"><i class="grass-fringe edge-n"></i><i class="grass-fringe edge-e"></i><i class="grass-fringe edge-s"></i><i class="grass-fringe edge-w"></i></span>`;
 // Icon cho ô Goal: cùng texture + viền với ô cỏ trên bàn (ui/play/skin.css .goal-grass).
 export const GRASS_ICON_SVG = `<span class="goal-grass" aria-hidden="true"></span>`;
 
@@ -45,8 +45,5 @@ export const VASE_SHARD_SVG = `<svg class="vase-shard" viewBox="0 0 40 36" aria-
 // Siro dâu (luật "siro", lớp `syrup` của màn): mảng siro hồng đặc che kín con vật; ô siro cạnh nhau nối thành một mảng liền
 // (play/board-view.js syrupJoins -> lớp j-n / j-e / j-s / j-w, CSS ui/play/base.css .syrup-tile như ô cỏ).
 export const SYRUP_TILE = '<span class="syrup-tile" aria-hidden="true"></span>';
-// Giọt siro: bay vào ô Goal + icon mục tiêu "siro".
-export const SYRUP_DROP_SVG = `<svg class="syrup-drop" viewBox="0 0 40 48" aria-hidden="true">
-<path d="M20 3C14 14 6 22 6 31a14 14 0 0 0 28 0c0-9-8-17-14-28z" fill="#ff5c8a" stroke="#c2185b" stroke-width="3" stroke-linejoin="round"/>
-<path d="M13 30c0-4 2-7 5-9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-</svg>`;
+// Chai siro dâu: icon Goal và vật phẩm bay khi thu thập (giữ tên export để tái dùng hiệu ứng).
+export const SYRUP_DROP_SVG = '<img class="syrup-drop" src="assets/img/board/syrup-goal-bottle.png" alt="" draggable="false">';

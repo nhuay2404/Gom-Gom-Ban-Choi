@@ -31,7 +31,10 @@
 .ad-double:disabled{opacity:.6}
 .ad-double .ico-coin{width:18px;height:18px;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
 .result-dialog .result-box .ad-double{position:absolute;left:50%;bottom:calc(-13 * var(--u));translate:-50% 0;padding:calc(4 * var(--u)) calc(12 * var(--u));font-size:calc(14 * var(--u));white-space:nowrap}
-.idle-double{position:absolute;z-index:6;top:calc(70 * var(--u) + env(safe-area-inset-top));left:calc(16 * var(--u))}
+.idle-claim .idle-claim-total{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 12px;font-size:32px;font-weight:900}
+.idle-claim .ico-coin{display:inline-block;width:1em;height:1em;vertical-align:-.15em;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
+.idle-claim .pill-button.ad{position:relative}
+.idle-claim .pill-button.ad em{position:absolute;top:-10px;right:-6px;padding:2px 7px;border-radius:999px;background:#ff8a3d;color:#fff;font-size:12px;font-style:normal;rotate:8deg}
 @media(prefers-reduced-motion:no-preference){.ad-double:not(:disabled){animation:ad-pulse 1.2s ease-in-out infinite}}
 @keyframes ad-pulse{50%{scale:1.08}}
 

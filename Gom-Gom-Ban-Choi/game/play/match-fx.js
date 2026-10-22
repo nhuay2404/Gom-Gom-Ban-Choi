@@ -60,8 +60,16 @@ export function flyToGoal(kind, cells, delay) {
         const closed = box.getAttribute('src');
         box.src = MAILBOX_OPEN_SRC;
         setTimeout(() => box.isConnected && box.setAttribute('src', closed), 520);
-      }
-      box?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18, .86)', offset: .3 }, { transform: 'scale(.94, 1.1)', offset: .6 }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+        // Juice: nén lấy đà -> bật nảy lắc lư, loé vàng, khói + sao lấp lánh văng ra, tiếng chuông.
+        box.animate([{ transform: 'none' }, { transform: 'translateY(4%) scale(1.22, .8) rotate(-4deg)', offset: .18 },
+          { transform: 'translateY(-16%) scale(.9, 1.15) rotate(5deg)', offset: .45 }, { transform: 'scale(1.06, .95) rotate(-2deg)', offset: .75 }, { transform: 'none' }],
+        { duration: 480, easing: 'ease-out' });
+        box.animate([{ filter: 'brightness(1) drop-shadow(0 0 0 #ffd54a00)' }, { filter: 'brightness(1.25) drop-shadow(0 0 10px #ffd54a)', offset: .3 },
+          { filter: 'brightness(1) drop-shadow(0 0 0 #ffd54a00)' }], { duration: 520 });
+        spawnPuff(cell);
+        flyBits(fxLayer(), cell, 'mail-spark', 7);
+        playSound('pet');
+      } else box?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18, .86)', offset: .3 }, { transform: 'scale(.94, 1.1)', offset: .6 }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
       const from = cell.getBoundingClientRect(), to = icon.getBoundingClientRect();
       const item = document.createElement('span');
       item.className = 'goal-fly';

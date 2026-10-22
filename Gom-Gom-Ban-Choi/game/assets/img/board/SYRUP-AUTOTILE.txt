@@ -6,3 +6,5 @@ Rendering uses 8-neighbor blob masks including diagonals (inner corners), rather
 Visual QA: ring, narrow runs, L turns, detached patches. syrup-autotile-proof.jpg. All 137 project tests passed.
 
 Edge repair: all exposed edges use an 8px inset; concave arcs terminate at this same inset. Rim shades follow world-facing normals, not quarter IDs. Two-pixel continuation strips guarantee equal RGBA profiles across connected sprite sides. Exhaustive horizontal + vertical seam check: 2048 compatible pairs, max alpha difference 0, max premultiplied color difference 0. Project tests: 137 passed.
+
+Thick-liquid perimeter: broad smooth 4px bulges per exposed edge, horizontal tangents at shared endpoints. Curved silhouettes and shading follow the same paths. No pointed drips. Continuation strips retained; exhaustive 2048 side pairs still have zero pixel mismatch.
