@@ -91,6 +91,27 @@ addEventListener('ui-studio:state', event => {
 
 $('dev-studio').onclick = () => dispatchEvent(new Event('ui-studio:toggle'));
 
+// Slow-mo (soi anim, không lưu: tải lại là về ×1): mọi anim (WAAPI + CSS) chạy chậm theo playbackRate, setTimeout giãn theo cùng hệ số
+// để các nhịp hẹn giờ của juice vẫn khớp nhau. Anim tự chạy theo requestAnimationFrame (cảnh 3D, số điểm đếm lên) không bị chậm.
+const SLOW_STEPS = [1, 5, 10];
+const nativeTimeout = window.setTimeout.bind(window);
+let slow = 1;
+
+function slowTick() {
+  for (const animation of document.getAnimations()) if (animation.playbackRate !== 1 / slow) animation.playbackRate = 1 / slow;
+  if (slow > 1) requestAnimationFrame(slowTick);
+}
+
+$('dev-slow').onclick = () => {
+  const wasOff = slow === 1;
+  slow = SLOW_STEPS[(SLOW_STEPS.indexOf(slow) + 1) % SLOW_STEPS.length];
+  window.setTimeout = slow > 1 ? (fn, ms = 0, ...args) => nativeTimeout(fn, ms * slow, ...args) : nativeTimeout;
+  if (wasOff || slow === 1) slowTick();
+  $('dev-slow').setAttribute('aria-pressed', slow > 1);
+  $('dev-slow').querySelector('span').textContent = `×${slow}`;
+  showToast(slow > 1 ? `Dev: slow-mo ×${slow}` : 'Dev: slow-mo off');
+};
+
 // Level Editor (tools/levels/level-editor/): mở toàn màn hình trong iframe. Bản HTML một file (file://) không có máy chủ phục vụ /tools.
 $('dev-editor').hidden = location.protocol === 'file:';
 
