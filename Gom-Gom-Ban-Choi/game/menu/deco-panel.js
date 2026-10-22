@@ -6,6 +6,7 @@ import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet } from '../app/shared.js';
+import { coverCoins } from '../app/store.js';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
 import { startIdle } from './idle-coins.js';
@@ -150,6 +151,8 @@ const BUILD_LOCKED = 'Beat level 5 to start decorating!';
 function buildBase(base) {
   if (!ob.buildOpen()) return showToast(BUILD_LOCKED);
   const next = applyAction(getDeco(), base, decoUnlockedLevel());
+  // Thiếu xu: trả hết xu + bù gem rồi xây lại.
+  if (next.error === 'Not enough coins') return coverCoins(base.price, base.name).then(ok => ok && buildBase(base));
   if (next.error) return showToast(next.error);
   setDeco(next);
   refreshWallet();
@@ -289,7 +292,9 @@ $('deco-pop-items').addEventListener('click', event => {
     const fxKey = entry.cat === 'furniture' ? slotOf(entry) : entry.cat;
     if (popPreview === entry && event.target.closest('.deco-opt-price')) {
       const bought = buyToStock(deco, entry, unlocked);
-      if (bought.error) return showToast(bought.error === 'Not enough coins' ? `Need ${entry.price - deco.coins} more coins` : bought.error);
+      // Thiếu xu: trả hết xu + bù gem rồi bấm lại đúng nút giá của món này (bảng có thể đã vẽ lại).
+      if (bought.error === 'Not enough coins') return coverCoins(entry.price, entry.name).then(ok => ok && $('deco-pop-items').querySelector(`.deco-opt[data-id="${entry.id}"] .deco-opt-price`)?.click());
+      if (bought.error) return showToast(bought.error);
       const placed = useItem(bought, entry);
       popPreview = null;
       setDeco(placed.error ? bought : placed);

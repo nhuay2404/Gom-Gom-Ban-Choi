@@ -33,6 +33,8 @@ export function hideMenus() {
 }
 
 export function showTab(tab) {
+  // Đang treo ván để sang Shop mua gem: về Home = quay lại ván đó (màn continue / chơi tiếp), không ra bản đồ.
+  if (tab === 'home' && play.pendingRun()) return play.resumeRun();
   if (tab === 'home') return showMap();
   if (tab === 'deco' && $('deco').hidden) noticeDeco();
   if (tab !== 'deco') clearDecoNew();

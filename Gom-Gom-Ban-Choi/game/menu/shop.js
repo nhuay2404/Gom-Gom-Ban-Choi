@@ -1,20 +1,38 @@
-// Shop: tab Shop (gói khởi đầu, booster, gói xu) + tab Decoration (kiểu khác của món, tường / sàn), popup xem thử, mua.
+// Shop: tab Shop (ưu đãi, gem miễn phí, gói gem, booster bằng gem, túi xu) + tab Decoration (kiểu khác của món, tường / sàn), popup xem thử, mua.
 // Sang Unity: ShopScreen (MonoBehaviour).
 import { BOOSTERS } from '../data/tuning.mjs';
-import { COIN_PACKS, STARTER_PACK } from '../data/economy.mjs';
+import { GEM_PACKS, OFFERS, REWARDED_ADS } from '../data/economy.mjs';
+import { activeOffers, addGems } from '../core/gems.mjs';
+import { buyGemPack, buyBooster, buyOffer, coverCoins, contentsOf, timeLeft, OFFER_NAMES } from '../app/store.js';
+import { showRewarded, adReady, adsLeftToday } from '../app/ads.js';
 import { playSound } from '../ui/sound.mjs';
 import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock } from '../deco/deco-data.mjs';
-import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from '../app/shared.js';
+import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, priceTag, gemTag, getWallet, setWallet } from '../app/shared.js';
 import { decoUnlockedLevel, isZoneOpen } from './areas.js';
 import { decoVisible, coin, thumbOf } from './deco-panel.js';
 import { room3d, applyRoom } from './room.js';
+import { showTab } from './tabs.js';
+import * as ob from '../app/onboarding.js';
 
-// ---------- Shop: 2 tab — "Shop" (gói khởi đầu, booster, gói xu) và "Decoration" (chỉ đồ trang trí) ----------
-// Gói xu + gói khởi đầu: số xu / giá lấy từ data/economy.mjs (COIN_PACKS, STARTER_PACK).
-document.querySelector('.coin-list').innerHTML = COIN_PACKS.map(pack =>
-  `<button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>${pack.coins.toLocaleString('en-US')}</b><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
+// ---------- Shop: 2 tab — "Shop" (ưu đãi, gem, booster, túi xu) và "Decoration" (chỉ đồ trang trí) ----------
+// Gói gem (IAP): số / giá từ data/economy.mjs GEM_PACKS; giá cố định nên vẽ một lần.
+$('gem-packs').innerHTML = GEM_PACKS.map((pack, i) =>
+  `<button class="coin-pack gem-pack" data-gem-pack="${i}"><i class="ico-gem big"></i><b>${pack.gems.toLocaleString('en-US')}</b>${pack.tag ? `<small class="pack-tag">${pack.tag}</small>` : ''}<em>$${pack.usd.toFixed(2)}</em></button>`).join('');
+$('gem-packs').addEventListener('click', async event => {
+  const button = event.target.closest('[data-gem-pack]');
+  if (button && await buyGemPack(GEM_PACKS[button.dataset.gemPack])) { shopBurst(button); renderShopBoosters(); }
+});
 
-document.querySelector('.shop-starter').setAttribute('aria-label', `Starter pack: coins, a cozy rug and 5 boosters, $${STARTER_PACK.usd.toFixed(2)} (coming soon)`);
+// Mở Shop, trang Shop, cuộn tới mục Gems: khi chạm ví gem, và khi thiếu gem ở bất kỳ đâu (app/store.js ensureGems phát 'gomgom:gem-shop').
+function openGemShop() {
+  if (!ob.tabOpen('shop')) { showToast('The Shop opens soon. Keep playing!'); return; }
+  document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close()); // popup xem thử món / hộp hỏi còn mở
+  if ($('shop').hidden) showTab('shop');
+  setShopPage('store');
+  $('gem-packs').previousElementSibling.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+}
+document.addEventListener('click', event => { if (event.target.closest('.fh-gems')) openGemShop(); });
+addEventListener('gomgom:gem-shop', openGemShop);
 
 export function setShopPage(page) {
   $('shop').dataset.page = page;
@@ -99,7 +117,9 @@ $('shop-deco-grid').addEventListener('click', event => {
 
 function buyDeco(entry) {
   const next = buyToStock(getDeco(), entry, decoUnlockedLevel());
-  if (next.error) { showToast(next.error === 'Not enough coins' ? `Need ${entry.price - getDeco().coins} more coins` : next.error); return false; }
+  // Thiếu xu: mời trả hết xu + bù gem; xong thì mua lại (và đóng popup xem thử nếu đang mở).
+  if (next.error === 'Not enough coins') { coverCoins(entry.price, entry.name).then(ok => { if (ok && buyDeco(entry)) closeShopPreview(); }); return false; }
+  if (next.error) { showToast(next.error); return false; }
   setDeco(next);
   refreshWallet();
   playSound('reward');
@@ -169,19 +189,41 @@ export function shopBurst(card) {
   }
 }
 
-// Shop (tiền thật) vẫn là khung giao diện: bấm vào chỉ báo "sắp có".
+// Nút chưa làm (Daily, Language…): bấm vào chỉ báo "sắp có".
 document.addEventListener('click', event => { if (event.target.closest('.soon')) showToast('Coming soon!'); });
 
+// Vẽ lại trang Shop (gọi khi mở Shop + sau mỗi lần mua): ưu đãi đang chạy (đếm giờ), gem miễn phí, giá booster.
 export function renderShopBoosters() {
-  $('shop-boosters').querySelectorAll('[data-buy]').forEach(button => {
-    const id = button.dataset.buy;
-    button.querySelector('small').textContent = `You have ${getBoosters()[id]}`;
-    button.querySelector('em').innerHTML = priceTag(id);
-    button.classList.toggle('poor', getDeco().coins < BOOSTERS.PRICE[id]);
+  const gems = getWallet().gems;
+  $('shop-offers').innerHTML = activeOffers(getWallet(), Date.now()).map(kind =>
+    `<button class="offer-card" data-offer="${kind}"><b>${OFFER_NAMES[kind]}</b><span>${contentsOf(OFFERS[kind])}</span><small>Ends in ${timeLeft(kind)}</small><em>$${OFFERS[kind].usd.toFixed(2)}</em></button>`).join('');
+  const free = $('shop-free-gems'), ready = adReady('gems');
+  free.querySelector('b').innerHTML = `▶ Free ${gemTag(REWARDED_ADS.gems)}`;
+  free.querySelector('em').textContent = ready ? `${adsLeftToday('gems')} left today` : 'Tomorrow';
+  free.classList.toggle('poor', !ready);
+  document.querySelectorAll('#shop-boosters [data-buy], #shop-booster-packs [data-buy]').forEach(button => {
+    const id = button.dataset.buy, pack = button.hasAttribute('data-pack');
+    if (!pack) button.querySelector('small').textContent = `You have ${getBoosters()[id]}`;
+    button.querySelector('em').innerHTML = priceTag(id, pack);
+    button.classList.toggle('poor', gems < (pack ? BOOSTERS.PACK_PRICE : BOOSTERS.PRICE)[id]);
   });
 }
 
-$('shop-boosters').addEventListener('click', event => {
+document.querySelectorAll('#shop-boosters, #shop-booster-packs').forEach(row => row.addEventListener('click', async event => {
   const button = event.target.closest('[data-buy]');
-  if (button && buyOne(button.dataset.buy)) renderShopBoosters();
+  if (button && await buyBooster(button.dataset.buy, button.hasAttribute('data-pack'))) { shopBurst(button); renderShopBoosters(); }
+}));
+
+$('shop-offers').addEventListener('click', async event => {
+  const card = event.target.closest('[data-offer]');
+  if (card && await buyOffer(card.dataset.offer)) renderShopBoosters();
+});
+
+// ADS-SDK: chỗ đặt "gems" — gem miễn phí ở Shop.
+$('shop-free-gems').addEventListener('click', async () => {
+  if (!(await showRewarded('gems'))) return renderShopBoosters();
+  setWallet(addGems(getWallet(), REWARDED_ADS.gems));
+  playSound('reward');
+  shopBurst($('shop-free-gems'));
+  renderShopBoosters();
 });

@@ -2,6 +2,8 @@
 import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../core/idle.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet } from '../app/shared.js';
+import { showRewarded, adReady } from '../app/ads.js';
+import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
 import { decoLocked, decoPop, renderDeco } from './deco-panel.js';
 import { room3d } from './room.js';
@@ -78,4 +80,31 @@ document.addEventListener('click', event => {
   }) ?? Promise.resolve());
   Promise.all(flights).then(refreshWallet);
   setTimeout(refreshWallet, 2500);
+  offerIdleDouble(total);
 });
+
+// ADS-SDK: chỗ đặt "idle" — vừa nhận xu idle: nút "▶ +N" hiện vài giây cạnh ví, xem ads nhận thêm REWARDED_ADS.idleBonus × số vừa nhận
+// (1 lần/ngày, REWARDED_ADS.caps.idle).
+let idleDouble = null;
+function offerIdleDouble(total) {
+  idleDouble?.remove();
+  if (!adReady('idle')) return;
+  const bonus = Math.round(total * REWARDED_ADS.idleBonus);
+  if (!bonus) return;
+  const button = idleDouble = document.createElement('button');
+  button.className = 'ad-double idle-double';
+  button.innerHTML = `▶ <i class="ico-coin"></i>+${bonus.toLocaleString('en-US')}`;
+  const timer = setTimeout(() => button.remove(), 8000);
+  button.onclick = async () => {
+    clearTimeout(timer);
+    button.disabled = true;
+    const watched = await showRewarded('idle');
+    button.remove();
+    if (!watched) return;
+    setDeco({ ...getDeco(), coins: getDeco().coins + bonus });
+    refreshWallet();
+    playSound('reward');
+    showToast(`+${bonus} coins!`);
+  };
+  $('deco').append(button);
+}

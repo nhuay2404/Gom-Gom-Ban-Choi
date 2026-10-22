@@ -1,7 +1,8 @@
 // Khu (vườn, phòng khách, phòng ngủ, bếp...): chuyển khu, thẻ "khu kế tiếp" + bảng mở khu (đủ màn → tiêu xu → khánh thành).
 // Sang Unity: AreaSwitcher + AreaUnlockPanel.
 import { loadProgress, unlockedCount } from '../core/progression.mjs';
-import { AREA_UNLOCK } from '../data/economy.mjs';
+import { AREA_UNLOCK, GEM_REWARDS } from '../data/economy.mjs';
+import { grantGems, triggerOffer, showOffer, coverCoins } from '../app/store.js';
 import { playSound } from '../ui/sound.mjs';
 import { readText } from '../core/save.mjs';
 import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, nextArea, unlockArea } from '../deco/deco-data.mjs';
@@ -119,6 +120,8 @@ $('area-next').addEventListener('click', () => {
   if (!area) return;
   const { state } = areaInfo(area);
   if (state === 'ready') return buyArea(area);
+  // Đủ màn nhưng thiếu xu: trả hết xu + bù gem rồi mở khu.
+  if (state === 'coins') return coverCoins(AREA_UNLOCK[area].cost, AREA_NAMES[area]).then(ok => ok && buyArea(area));
   const marker = $('area-next');
   marker.classList.remove('deny');
   void marker.offsetWidth; // chạy lại animation khi chạm liên tiếp
@@ -143,7 +146,10 @@ function buyArea(area) {
   room3d?.openFx(area);
   playSound('reward');
   // Mở xong khu cuối cùng: quà vườn hoa (deco-room.mjs bloom) mọc lên bên trái vườn
-  showToast(AREA_ORDER.every(id => areaOpen(next, id)) ? `${AREA_NAMES[area]} is open! Gift: a Flower garden is blooming next to your garden!` : `${AREA_NAMES[area]} is open!`);
+  const gems = grantGems(`area:${area}`, GEM_REWARDS.area);
+  showToast(`${AREA_NAMES[area]} is open!${gems ? ` +${gems} gems!` : ''}${AREA_ORDER.every(id => areaOpen(next, id)) ? ' Gift: a Flower garden is blooming next to your garden!' : ''}`);
+  // Ưu đãi Builder Pack (gem + xu cho khu mới), có thời gian chờ giữa hai lần.
+  if (triggerOffer('builder')) setTimeout(() => showOffer('builder'), 1800);
 }
 
 document.addEventListener('click', event => {

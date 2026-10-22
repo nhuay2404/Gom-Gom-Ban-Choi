@@ -1,0 +1,59 @@
+/* Mua bán: icon gem, hộp hỏi dùng chung (shared.js ask: continue, hết booster, thiếu gem, ưu đãi, IAP giả lập), màn ads giả lập,
+   nút "▶ x2" (bảng thắng, xu idle), Shop: thẻ ưu đãi, gói gem, gem miễn phí. Hình tạm theo style hiện có, chờ art Figma. */
+.ico-gem{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.16em;flex:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3h12l4 6-10 12L2 9z' fill='%23ff6fae' stroke='%23a3245e' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M2 9h20M9 3 7.5 9 12 21 16.5 9 15 3' fill='none' stroke='%23a3245e' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M7 4.5 5 8' stroke='%23fff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.ico-gem.big{width:34px;height:34px}
+
+/* Hộp hỏi */
+.store-dialog[open]{display:flex;flex-direction:column;align-items:center;gap:4px;animation:result-pop .3s cubic-bezier(.3,1.5,.5,1) both}
+.store-dialog .level-feature{margin:0 0 10px}
+.store-choices{display:flex;flex-direction:column;gap:10px;width:100%}
+.store-choices .pill-button{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;font-size:17px}
+.store-choices .pill-button:disabled{opacity:.5}
+.pill-button.ad{background:#5a8dee}
+.store-dialog.continue h2{color:#e0513f}
+.store-dialog .continue-progress{margin:0 0 4px;font-size:15px!important;font-weight:800;color:var(--cream-ink)!important}
+.store-dialog .continue-next{margin:-4px 0 10px;font-size:12px!important;font-weight:800;color:#a0705a!important}
+.store-dialog.offer h2{color:#c9435f}
+.offer-contents{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;margin:4px 0;font-size:17px!important;font-weight:900;color:var(--cream-ink)!important}
+.offer-contents .ico-coin{width:20px;height:20px;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
+
+/* Rewarded ad giả lập: đếm ngược toàn màn hình (app/ads.js) */
+.ad-sim{width:100%;max-width:none;height:100%;max-height:none;margin:0;border:0;border-radius:0;background:#111;color:#fff}
+.ad-sim[open]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.ad-sim small{font-size:13px;font-weight:900;letter-spacing:1px;opacity:.6}
+.ad-sim b{font-family:var(--display);font-size:96px;line-height:1}
+.ad-sim span{font-size:18px;font-weight:900}
+.ad-sim button{position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;min-width:0;padding:8px 16px}
+
+/* Nút "▶ x2" xem ads nhân đôi xu */
+.ad-double{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border:0;border-radius:999px;background:#5a8dee;color:#fff;font:inherit;font-size:15px;font-weight:900;cursor:pointer}
+.ad-double:disabled{opacity:.6}
+.ad-double .ico-coin{width:18px;height:18px;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
+.result-dialog .result-box .ad-double{position:absolute;left:50%;bottom:calc(-13 * var(--u));translate:-50% 0;padding:calc(4 * var(--u)) calc(12 * var(--u));font-size:calc(14 * var(--u));white-space:nowrap}
+.idle-double{position:absolute;z-index:6;top:calc(70 * var(--u) + env(safe-area-inset-top));left:calc(16 * var(--u))}
+@media(prefers-reduced-motion:no-preference){.ad-double:not(:disabled){animation:ad-pulse 1.2s ease-in-out infinite}}
+@keyframes ad-pulse{50%{scale:1.08}}
+
+/* Shop: thẻ ưu đãi đang chạy, gói gem (nhãn), gem miễn phí */
+.shop-offers{display:flex;flex-direction:column;gap:calc(8 * var(--u))}
+.shop-offers:empty{display:none}
+.offer-card{display:grid;grid-template-columns:1fr auto;grid-template-areas:'t p' 'c p' 'e p';align-items:center;gap:2px calc(10 * var(--u));padding:calc(10 * var(--u)) calc(12 * var(--u));text-align:left;
+  border:calc(3 * var(--u)) solid #8a2f4a;border-radius:calc(16 * var(--u));background:linear-gradient(#ffd6e3,#ffb3c9);color:#5e1d10;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fff6f9}
+.offer-card b{grid-area:t;font-family:var(--display);font-size:calc(20 * var(--u));font-weight:800}
+.offer-card span{grid-area:c;display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:calc(13 * var(--u));font-weight:900}
+.offer-card span .ico-coin{width:calc(16 * var(--u));height:calc(16 * var(--u));box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
+.offer-card small{grid-area:e;font-size:calc(11 * var(--u));font-weight:900;color:#a3245e}
+.offer-card em{grid-area:p;padding:calc(6 * var(--u)) calc(14 * var(--u));border-radius:999px;background:var(--green);color:#fff;font-style:normal;font-weight:900;font-size:calc(17 * var(--u))}
+.screen.shop .gem-pack .pack-tag{padding:2px 8px;border-radius:999px;background:#ff6fae;color:#fff;font-size:calc(11 * var(--u));font-weight:900;white-space:nowrap}
+.screen.shop .coin-pack em .ico-gem{width:calc(18 * var(--u));height:calc(18 * var(--u))}
+.screen.shop .coin-pack.poor em{border-color:#8b7a63;background:linear-gradient(#cdbfa6,#ad9d80);-webkit-text-stroke-color:#6f604c}
+.screen.shop .ad-pack b{display:flex;align-items:center;gap:6px}
+.screen.shop .ad-pack em{border-color:#2f5fb8;background:linear-gradient(#8fb6ff,#5a8dee);-webkit-text-stroke-color:#2f5fb8;font-size:calc(14 * var(--u))}
+.screen.shop .booster em .ico-gem{width:calc(18 * var(--u));height:calc(18 * var(--u))}
+.screen.shop>h3.shop-deco-title{margin-top:calc(6 * var(--u))}
+/* Cửa hàng gem mở đè (thiếu gem ở bất kỳ đâu): mỗi gói một hàng, số gem + nhãn bên trái, giá bên phải */
+.store-dialog.gem-store .store-choices{gap:8px}
+.store-dialog.gem-store .store-choices .pill-button:not(.ghost){justify-content:space-between;padding:10px 18px}
+.store-dialog.gem-store .gs-gems{display:inline-flex;align-items:center;gap:6px}
+.store-dialog.gem-store .gs-gems small{padding:1px 7px;border-radius:999px;background:#fff;color:#c9435f;font-size:11px;font-weight:900}

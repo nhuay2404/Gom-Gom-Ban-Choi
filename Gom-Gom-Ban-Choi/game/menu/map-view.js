@@ -6,6 +6,8 @@ import { loadProgress, unlockedCount, levelTier } from '../core/progression.mjs'
 import { playSound, playMeow } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText } from '../core/save.mjs';
 import { claimCat, isCatClaimed, catRewardsAt } from '../deco/deco-data.mjs';
+import { GEM_REWARDS } from '../data/economy.mjs';
+import { grantGems } from '../app/store.js';
 import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, setPieceSkin, dogSkinOpen } from '../app/shared.js';
 import { play } from './context.js';
 import { hideMenus, renderSkinButton } from './tabs.js';
@@ -92,6 +94,8 @@ export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld
     onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
     onClaim: (breed, index) => showCatReward(breed, () => {
       setDeco(claimCat(getDeco(), breed));
+      const gems = grantGems(`pet:${breed}`, GEM_REWARDS.pet);
+      if (gems) showToast(`New friend! +${gems} gems`);
       map3d.render(mapLevels());
       map3d.focus(index, false);
       refreshClaimDot();

@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="./ui/map/map.css">
   <link rel="stylesheet" href="./ui/shop/shop.css">
   <link rel="stylesheet" href="./ui/shared/wallet.css">
+  <link rel="stylesheet" href="./ui/shared/store.css">
   <link rel="stylesheet" href="./ui/deco/deco.css">
   <link rel="stylesheet" href="./ui/play/layout.css">
   <link rel="stylesheet" href="./ui/play/skin.css">
@@ -84,7 +85,7 @@
     </section>
     <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
-    <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để mua bằng xu -->
+    <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để xem ads / mua bằng gem -->
     <section id="booster-bar" class="booster-bar" aria-label="Boosters" hidden>
       <button class="boost" data-boost="hammer" aria-label="Hammer: smash everything in a 3×3 area" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
       <button class="boost" data-boost="swap" aria-label="New card: get the best card for the next 3 turns" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
@@ -162,7 +163,7 @@
     <div id="deco-room" class="room deco-view"></div>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="deco-coins">0</b></span>
-      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-gems" aria-label="Gems: open the shop"><b>0</b></button>
     </div>
     <!-- Cột trái: mèo trong nhà, tường / rào, sàn / nền — mở bảng chọn ngay bên phải nút -->
     <div class="deco-side">
@@ -200,43 +201,35 @@
     </div>
   </section>
 
-  <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, banner gói khởi đầu, thẻ booster kem viền nâu,
-       dòng gói xu. Tiền thật vẫn "sắp có" (.soon); booster mua bằng xu (số lượng + giá do menu/shop.js điền). -->
-  <!-- Shop chia 2 tab (data-page): "Shop" = gói khởi đầu, booster, gói xu / tiền thật; "Decoration" = chỉ đồ trang trí. -->
+  <!-- Shop theo Figma (frame "Shop" 23:499): nền trời dấu chân, hàng ví như Home, thẻ booster kem viền nâu, dòng gói.
+       Trang "Shop" (menu/shop.js renderShopBoosters điền): ưu đãi đang chạy → gem miễn phí (ads) → gói gem (IAP) → booster (gem). Thiếu xu khi mua đồ: bù bằng gem ngay tại món (app/store.js coverCoins).
+       Ads + IAP đang giả lập (app/ads.js ADS-SDK, app/iap.js IAP-SDK). Thiết kế: docs/kinh-te-va-monetization.md -->
+  <!-- Shop chia 2 tab (data-page): "Shop" = ưu đãi, gem, booster; "Decoration" = chỉ đồ trang trí. -->
   <section id="shop" class="screen shop" data-page="store" hidden>
     <div class="wallet-hud">
       <span class="fh-pill fh-coins" aria-label="Coins"><b id="shop-coins">0</b></span>
-      <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+      <button class="fh-pill fh-gems" aria-label="Gems: open the shop"><b>0</b></button>
     </div>
     <div id="shop-pages" class="shop-pages" role="tablist" aria-label="Shop">
       <button role="tab" data-page="store" aria-selected="true">Shop</button>
       <button role="tab" data-page="deco" aria-selected="false">Decoration</button>
     </div>
-    <button class="shop-starter soon" aria-label="Starter pack: coins, a cozy rug and 5 boosters, $1.99 (coming soon)"></button>
+    <div id="shop-offers" class="shop-offers"></div>
+    <div class="coin-list"><button id="shop-free-gems" class="coin-pack ad-pack"><b></b><em></em></button></div>
+    <h3 class="shop-deco-title">Gems</h3>
+    <div id="gem-packs" class="coin-list"></div>
+    <h3 class="shop-deco-title">Boosters</h3>
     <div id="shop-boosters" class="booster-row">
+      <button class="booster" data-buy="moves"><img src="./assets/img/play/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
       <button class="booster" data-buy="hammer"><img src="./assets/img/play/booster-hammer.png" alt=""><span>Hammer</span><small></small><em></em></button>
       <button class="booster" data-buy="swap"><img src="./assets/img/play/booster-swap.png" alt=""><span>New card</span><small></small><em></em></button>
-      <button class="booster" data-buy="moves"><img src="./assets/img/play/booster-moves.png" alt=""><span>Extra moves</span><small></small><em></em></button>
     </div>
-    <div class="coin-list">
-      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>500</b><em>$0.99</em></button>
-      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>1,200</b><em>$1.99</em></button>
-      <button class="coin-pack soon"><img src="./assets/img/shop/coin-stack.png" alt=""><b>3,000</b><em>$4.99</em></button>
+    <div id="shop-booster-packs" class="booster-row">
+      <button class="booster" data-buy="moves" data-pack><img src="./assets/img/play/booster-moves.png" alt=""><span>Moves ×3</span><small>Save 15%</small><em></em></button>
+      <button class="booster" data-buy="hammer" data-pack><img src="./assets/img/play/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Save 15%</small><em></em></button>
+      <button class="booster" data-buy="swap" data-pack><img src="./assets/img/play/booster-swap.png" alt=""><span>New card ×3</span><small>Save 15%</small><em></em></button>
     </div>
-    <p class="soon-note">Boosters cost coins you earn in game. Real-money packs are coming soon.</p>
-    <!-- Gem (placeholder, chưa có nguồn gem): gem dùng mua booster, đồ trang trí premium, skin. Chạm = "Coming soon!" (.soon). -->
-    <section class="gem-shop" aria-labelledby="gem-shop-title">
-      <h3 id="gem-shop-title" class="shop-deco-title">Gems</h3>
-      <div class="booster-row">
-        <button class="booster soon"><img src="./assets/img/play/booster-hammer.png" alt=""><span>Hammer ×3</span><small>Booster pack</small><em>30 gems</em></button>
-        <button class="booster soon"><img src="./assets/img/play/booster-swap.png" alt=""><span>New card ×3</span><small>Booster pack</small><em>30 gems</em></button>
-        <button class="booster soon"><img src="./assets/img/play/booster-moves.png" alt=""><span>Moves ×3</span><small>Booster pack</small><em>30 gems</em></button>
-      </div>
-      <div class="gem-row">
-        <button class="coin-pack soon"><b>Premium decoration</b><em>Soon</em></button>
-        <button class="coin-pack soon"><b>Cat skins</b><em>Soon</em></button>
-      </div>
-    </section>
+    <p class="soon-note">Test build: ads and purchases are simulated, no real money.</p>
     <!-- Decoration: kiểu khác của từng món + tường / sàn khác, theo khu. Mua vào kho rồi đổi trong Deco (chạm món trong cảnh). -->
     <section id="shop-deco" class="shop-deco" aria-labelledby="shop-deco-title">
       <h3 id="shop-deco-title" class="shop-deco-title">Decoration</h3>
@@ -259,7 +252,7 @@
     <div class="fh-layer hub-layer">
       <div class="wallet-hud">
         <span class="fh-pill fh-coins" aria-label="Coins"><b id="map-coins">0</b></span>
-        <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
+        <button class="fh-pill fh-gems" aria-label="Gems: open the shop"><b>0</b></button>
       </div>
       <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
       <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
@@ -361,7 +354,7 @@
     <h2>How to play</h2>
     <p>Each turn you draw one card. A card holds 1–3 cats in a single, I or L shape.</p>
     <p>Tap the current card to rotate it, then drag it onto the board. Highlighted cells show where the card will land.</p>
-    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make a match next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes everything in a 3×3 area, New card gives you the best card for the next 3 turns, and +3 gives extra moves. When you run out, tap one to buy it with coins.</p>
+    <p>Boards come in different sizes and shapes (squares, hearts, triangles, diamonds…). From level 11 you unlock the “Hold” slot: drag a card into it to stash it (or swap it with the stashed card), as often as you like, and tap it to take the stashed card back. There are 6 cat breeds: orange, gray, white, tuxedo, Siamese and tabby. You only score when you match 3 or more adjacent cats of the same breed (they disappear): 3 = 30, 4 = 50, 5 = 80, 6+ = 120 points. Peek at the next cards to plan ahead. Crates block cells and can't hold cats; match cats next to a crate to break it. From level 15, some cats are locked in cages: they can't be matched until you make a match next to the cage, then the cat is free. Each level has its own target score and move limit; running out of moves or space means you lose. From level 3 you get boosters that don't cost a move: the Hammer smashes everything in a 3×3 area, New card gives you the best card for the next 3 turns, and +3 gives extra moves. When you run out, tap one to watch an ad or buy more with gems. Out of moves but close? Continue with gems or an ad.</p>
   </dialog>
   <!-- Nút cho game dev / tester: cột nút vuông thô ở góc trái. Chỉ hiện khi chạy localhost, URL có ?dev, hoặc bản HTML dev
        (menu/dev-tools.js bỏ hidden). Không đặt trong Settings. -->
