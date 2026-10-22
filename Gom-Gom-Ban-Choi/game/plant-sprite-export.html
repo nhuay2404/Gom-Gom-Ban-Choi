@@ -1,0 +1,54 @@
+<!doctype html><meta charset="utf-8"><title>Sprite sheets · model cây</title>
+<style>body{font:15px system-ui;background:#eee6d7;color:#493b2d;padding:20px}article{margin:22px 0}img{display:block;max-width:95%;height:auto;background:repeating-conic-gradient(#d4d4d4 0 25%,#eee 0 50%) 0/20px 20px}#status{font-weight:bold}a{display:inline-block;margin:10px}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<h1>Sprite sheets từ model gốc</h1><p>Mỗi sheet: 8 góc, 4 cột × 2 hàng; mỗi frame 384×384 px; nền trong suốt. Camera cao 30°.</p><p id="status">Đang render…</p><div id="sheets"></div><pre id="manifest"></pre>
+<script type="module">
+import * as THREE from 'three';
+let pending=0;const textureErrors=[];
+THREE.DefaultLoadingManager.onProgress=(url,loaded,total)=>{pending=total-loaded;};
+THREE.DefaultLoadingManager.onStart=(url,loaded,total)=>{pending=total-loaded;};
+THREE.DefaultLoadingManager.onLoad=()=>{pending=0;};
+THREE.DefaultLoadingManager.onError=url=>textureErrors.push(url);
+try{
+const {buildModel}=await import('./deco/deco-room.mjs');
+const {gardenCorners}=await import('./deco/scenes/garden.mjs');
+const {toonLook,TOON_LIGHT,addOutlines,syncOutlineResolution,renderOutlineIds,OUTLINE_LAYER,DECAL_LAYER}=await import('./deco/render/toon.mjs');
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);renderer.setSize(384,384,false);renderer.setClearColor(0,0);
+const scene=new THREE.Scene();toonLook(renderer,scene);
+scene.add(new THREE.HemisphereLight('#fff8e8','#e0b98a',1.15*TOON_LIGHT.hemi));
+const sun=new THREE.DirectionalLight('#fff1d6',1.7*TOON_LIGHT.sun);sun.position.set(3,7,5);scene.add(sun);
+const camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,100);
+camera.layers.enable(OUTLINE_LAYER);camera.layers.enable(DECAL_LAYER);
+const specs=[
+{id:'corner-bush-1',name:'Bụi góc vườn 1',corner:0},
+{id:'corner-bush-2',name:'Bụi góc vườn 2',corner:1},
+{id:'corner-bush-3',name:'Bụi góc vườn 3',corner:2},
+{id:'corner-bush-4',name:'Bụi góc vườn 4',corner:3},
+{id:'vegbed',name:'Luống cà chua'},
+{id:'sunflowers',name:'Hoa hướng dương'},
+{id:'sunflowers-lavender',name:'Luống lavender'},
+{id:'catnip',name:'Bụi catnip'}];
+const manifest={frameSize:384,columns:4,rows:2,width:1536,height:768,elevationDegrees:30,anglesDegrees:[0,45,90,135,180,225,270,315],angleOrigin:'Camera at +Z; clockwise around model as yaw increases toward +X. Each row left to right.',source:'Actual procedural Three.js game models; orthographic pre-render, not generated replacements.',sheets:[],textureErrors};
+const overview=document.createElement('canvas');overview.width=1280;overview.height=640;const oc=overview.getContext('2d');oc.fillStyle='#eee6d7';oc.fillRect(0,0,1280,640);
+for(let m=0;m<specs.length;m++){
+const spec=specs[m];document.getElementById('status').textContent='Đang render '+spec.name+'…';
+let node;if(spec.corner!==undefined){const corners=gardenCorners();node=corners.children[spec.corner];node.removeFromParent();node.position.set(0,0,0);node.userData.structure=true;}else node=buildModel(spec.id);
+scene.add(node);
+const until=performance.now()+20000;while(pending>0&&performance.now()<until)await new Promise(requestAnimationFrame);
+if(pending>0)throw new Error('Texture chưa tải xong: '+spec.id);
+addOutlines(node);node.updateMatrixWorld(true);
+const bounds=new THREE.Box3().setFromObject(node),center=bounds.getCenter(new THREE.Vector3()),radius=bounds.getSize(new THREE.Vector3()).length()/2;
+const distance=Math.max(8,radius*4),elevation=Math.PI/6;
+let halfSpan=0;
+for(const angle of manifest.anglesDegrees){const yaw=angle*Math.PI/180;camera.position.copy(center).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(elevation),Math.sin(elevation),Math.cos(yaw)*Math.cos(elevation)).multiplyScalar(distance));camera.lookAt(center);camera.updateMatrixWorld(true);const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){const p=new THREE.Vector3(x,y,z).sub(center);halfSpan=Math.max(halfSpan,Math.abs(p.dot(right)),Math.abs(p.dot(up)));}}
+halfSpan*=1.1;camera.left=-halfSpan;camera.right=halfSpan;camera.top=halfSpan;camera.bottom=-halfSpan;camera.updateProjectionMatrix();
+const sheet=document.createElement('canvas');sheet.width=1536;sheet.height=768;const ctx=sheet.getContext('2d');
+for(let i=0;i<8;i++){const yaw=manifest.anglesDegrees[i]*Math.PI/180;camera.position.copy(center).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(elevation),Math.sin(elevation),Math.cos(yaw)*Math.cos(elevation)).multiplyScalar(distance));camera.lookAt(center);camera.updateMatrixWorld(true);syncOutlineResolution(renderer);renderOutlineIds(renderer,scene,camera);renderer.setClearColor(0,0);renderer.render(scene,camera);ctx.drawImage(renderer.domElement,i%4*384,Math.floor(i/4)*384);if(i===1){oc.drawImage(renderer.domElement,m%4*320+32,Math.floor(m/4)*320+8,256,256);oc.fillStyle='#493b2d';oc.font='bold 18px system-ui';oc.fillText(spec.name,m%4*320+16,Math.floor(m/4)*320+290);}}
+const url=sheet.toDataURL('image/png'),article=document.createElement('article');article.innerHTML='<h2>'+spec.name+'</h2><a download="'+spec.id+'-8views.png">Tải PNG</a><img id="'+spec.id+'" width="1536" height="768">';article.querySelector('img').src=url;article.querySelector('a').href=url;document.getElementById('sheets').append(article);
+manifest.sheets.push({id:spec.id,name:spec.name,file:spec.id+'-8views.png',orthographicHalfSpan:halfSpan,center:center.toArray()});scene.remove(node);await new Promise(requestAnimationFrame);
+}
+const image=document.createElement('img');image.id='overview';image.src=overview.toDataURL('image/png');document.querySelector('h1').after(image);
+document.getElementById('manifest').textContent=JSON.stringify(manifest,null,2);document.getElementById('status').textContent='DONE: '+specs.length+' sheets';renderer.dispose();
+}catch(error){document.getElementById('status').textContent='ERROR: '+error.message;document.getElementById('manifest').textContent=error.stack;}
+</script>
