@@ -26,6 +26,8 @@ const ball = (r, color) => mesh(new THREE.SphereGeometry(r, sphereSegments(r), M
 // đêm xanh lam trăng sâu (không tím đặc), cỏ / lá ngả xanh ngọc tối để đèn vàng nổi bật.
 export const MEADOW_LOOKS = {
   day: { ground: '#a6c68c', fog: '#bfe2f2', leaf: '#74bf5c', leafDark: '#57a656', pine: '#4a9257', bush: '#80c565', wood: '#a8784e', rock: '#c4bcae' },
+  // bình minh: sương hồng đào nhạt, cỏ hơi lạnh còn đọng sương
+  dawn: { ground: '#9fb894', fog: '#f6d2c8', leaf: '#7fb468', leafDark: '#64a05e', pine: '#52885c', bush: '#88b86c', wood: '#9a7050', rock: '#bcb0aa' },
   dusk: { ground: '#b0b088', fog: '#f1b6c8', leaf: '#97b45c', leafDark: '#7c9e52', pine: '#5f8a55', bush: '#a0b864', wood: '#96633f', rock: '#b8a494' },
   night: { ground: '#2e4a48', fog: '#1b2846', leaf: '#29544c', leafDark: '#214840', pine: '#1c4440', bush: '#2b5648', wood: '#3a3440', rock: '#3e4a5e' },
 };
@@ -125,7 +127,8 @@ function tuft(m, rnd) { // cụm cỏ xanh: vài mũi nhọn ngả nghiêng
 // Con đường dài chạy ngang (trục x) song song hàng rào vườn, đối diện vườn: vệ cỏ, vỉa hè gạch, lề đường (bó vỉa), mặt đường nhựa với vạch
 // kẻ đứt + vạch mép, vạch qua đường trước cổng vườn, cây đèn đường, ghế, chậu cây ven vỉa hè. Toàn bộ tĩnh (mergeStatic).
 // Bề rộng các dải (ROAD) + mép gần (ROAD_NEAR): room-layout.mjs — trường mẫu giáo nằm ngay bên kia đường.
-const LAMP_GLOW = { day: '#ffe9b0', dusk: '#ffd08a', night: '#fff2b8' };
+// bóng đèn đường: ngày tắt (kính xám nhạt), bình minh còn le lói, chiều / đêm sáng
+const LAMP_GLOW = { dawn: '#e6d6b4', day: '#c9c5ba', dusk: '#ffd08a', night: '#fff2b8' };
 // zNear: mặt ngoài hàng rào vườn phía trước (z lớn nhất của khung khu nhà). Trả về { group, lampMat }.
 function buildRoad(zNear) {
   const group_ = group();
@@ -197,8 +200,8 @@ function buildRoad(zNear) {
 // Ánh đèn đường (dusk / night): vệt sáng hình nón từ chao đèn xuống + quầng sáng tròn trên vỉa hè / mặt đường. Không phải SpotLight thật
 // (hàng chục đèn): lớp phủ cộng sáng (additive) — màu vật liệu chạy theo ambient, đen = tắt (ban ngày). Mỗi loại gộp một mesh cho mọi đèn.
 // Nằm trên DECAL_LAYER (pass ID viền toon bỏ qua), không viền, không bóng, không chặn chạm. Quầng nằm ngay trên mặt lề đường (cao nhất).
-const LAMP_POOL = { day: '#000000', dusk: '#301c0a', night: '#6a4618' };
-const LAMP_BEAM = { day: '#000000', dusk: '#160e06', night: '#30220e' };
+const LAMP_POOL = { dawn: '#1a1008', day: '#000000', dusk: '#301c0a', night: '#6a4618' };
+const LAMP_BEAM = { dawn: '#0a0704', day: '#000000', dusk: '#160e06', night: '#30220e' };
 function lampGlow(xs, z, yTop, yGround) {
   const shaded = (geo, brightness) => { // nhân sáng từng đỉnh (vertex color): mờ dần ra mép
     const p = geo.attributes.position, c = new Float32Array(p.count * 3);

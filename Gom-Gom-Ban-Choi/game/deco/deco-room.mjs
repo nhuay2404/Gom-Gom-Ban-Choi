@@ -38,6 +38,8 @@ function mesh(geometry, material) {
 }
 const at = (node, x, y, z) => { node.position.set(x, y, z); return node; };
 // Khối chắn đèn trong tường: vô hình với camera, chỉ dùng khi vẽ bóng của đèn đồ đạc (xem castLampShadows).
+// Đèn điện: tắt / bật theo ambient (lightUp). Đồ có lửa (lửa trại, đuốc, lò sưởi, lò nướng) không nằm đây.
+const ELECTRIC_LAMPS = new Set(['lamp', 'lamp-lantern', 'lantern', 'lantern-lamppost', 'campfire-tent']);
 const LAMP_CASTER_MAT = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
 // Độ mịn kiểu subdivision: bo tròn nhiều nấc, trụ/cầu nhiều cạnh; vẫn nhẹ (vài chục nghìn tam giác cả phòng).
 const ROUND = 3, RADIAL = 32; // bo góc 3 nấc / trụ 32 cạnh là đủ mượt dưới viền toon; cầu / trụ mặc định chia theo cỡ (mesh-detail.mjs)
@@ -591,7 +593,7 @@ const BUILD = {
   },
   // Kệ ô vuông (thay kệ sách): 3 × 4 ô có giỏ vải, sách, chậu cây; nóc cao 2 như kệ sách gốc.
   'shelf-cubby'() {
-    const wood = '#f5f0e6', edge = '#e3ddd1', parts = [at(box(1.6, 2, .04, edge), 0, 1, -.23), at(box(.06, 2, .5, wood), -.77, 1, 0), at(box(.06, 2, .5, wood), .77, 1, 0)];
+    const wood = '#f5f0e6', edge = '#e3ddd1', parts = [at(box(1.6, 1.98, .04, edge), 0, .99, -.23), at(box(.06, 2, .5, wood), -.77, 1, 0), at(box(.06, 2, .5, wood), .77, 1, 0)];
     [-.26, .26].forEach(x => parts.push(at(box(.04, 1.94, .48, wood), x, 1, .01)));
     [.03, .52, 1.01, 1.49, 1.97].forEach(y => parts.push(at(box(1.6, .06, .5, wood), 0, y, 0)));
     const cols = [-.52, 0, .52], rows = [.06, .55, 1.04, 1.52];
@@ -1096,13 +1098,34 @@ export function createRoom() {
       if (roofGroup) houseShell.remove(roofGroup);
       houseShell.add(roofGroup = buildRoof(key.split(','), ZONE_OFFSET));
       shellMats = [];
-      houseShell.traverse(node => { if (node.isMesh && !node.userData.outline) for (const m of [].concat(node.material)) if (!shellMats.includes(m)) shellMats.push(m); });
+      houseShell.traverse(node => {
+        // vỏ nhà chỉ đổ bóng khi đục hẳn (coverRooms): bóng không mờ dần được, đổ bóng lúc đang mờ thì bóng mái hiện / mất phụt
+        if (node.isMesh) node.castShadow = roofCovers && !node.userData.outline;
+        // vẽ sau mọi vật trong suốt khác (viền, tường mờ): vỏ ghi depth trước thì tường mờ bên dưới mất từng mẩu, vẽ sau thì viền đè lên mái
+        if (node.isMesh) node.renderOrder = 10;
+        // luôn trong suốt (đục ở opacity 1): đổi transparent giữa chừng bắt dịch lại shader -> khựng ngay lúc mờ / hiện xong
+        if (node.isMesh && !node.userData.outline) for (const m of [].concat(node.material)) if (!shellMats.includes(m)) { m.transparent = true; m.needsUpdate = true; shellMats.push(m); }
+      });
     }
     for (const [zone, part] of Object.entries(exterior)) part.visible = opened[zone];
     houseShell.visible = k > .01;
-    const solid = k > .995;
-    for (const m of shellMats) { if (m.transparent === solid) { m.transparent = !solid; m.needsUpdate = true; } m.opacity = solid ? 1 : k; }
+    const solid = k > .995, eased = k * k * (3 - 2 * k);
+    for (const m of shellMats) m.opacity = solid ? 1 : eased;
     houseShell.traverse(node => { if (node.userData.outline) node.visible = solid; });
+    if (solid !== roofCovers) coverRooms(solid);
+  }
+  // Mái đục hẳn che kín các phòng: tạm gỡ nội thất (phòng + đồ trong phòng) khỏi mọi lượt vẽ (layers.mask = 0, nhớ mask cũ). Zoom ra xa
+  // thì vẽ cả khu nhà lẫn nội thất bên dưới mái từng ~6.800 lệnh vẽ / khung (~30 FPS); gỡ đi thì vỏ nhà đổ bóng thay (lúc đục, không mờ dần).
+  let roofCovers = false;
+  function coverRooms(on) {
+    roofCovers = on;
+    const roots = [...ROOM_ZONES.filter(z => opened[z]).map(z => interiors[z].room),
+      ...Object.values(furniture).filter(node => ROOM_ZONES.includes(itemById(node.userData.itemId)?.zone))];
+    for (const root of roots) root.traverse(node => {
+      if (on) { node.userData.roofMask ??= node.layers.mask; node.layers.mask = 0; }
+      else if (node.userData.roofMask !== undefined) { node.layers.mask = node.userData.roofMask; delete node.userData.roofMask; }
+    });
+    houseShell.traverse(node => { if (node.isMesh && !node.userData.outline) node.castShadow = on; });
   }
   const bloom = buildFlowerGarden(), GIFT_DELAY = 1800;
   let giftPending = false;
@@ -1348,7 +1371,7 @@ export function createRoom() {
     });
   }
 
-  // Ánh sáng môi trường (ambient): day / dusk (buổi chiều) / night. Đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc,
+  // Ánh sáng môi trường (ambient): dawn (bình minh: nắng hồng thấp phía đông) / day / dusk (buổi chiều) / night. Đêm thì trời tối, nắng thành ánh trăng xanh nhạt, đèn (lồng, đuốc,
   // đèn đứng, máy sưởi) rực hơn, bướm đi ngủ, mèo hay ngủ hơn (room-cats.mjs đọc ctx.night). Chiều: nắng cam thấp, bóng dài, tranh / cờ ngả ấm.
   let night = false, ambient = 'day';
   // Tông viền toon theo ngày / đêm (toon.mjs setOutlineTint): đêm viền tối + ngả xanh theo ánh trăng, không sáng hơn khối nó bao.
@@ -1356,17 +1379,19 @@ export function createRoom() {
   // Tranh / cờ / nước... ban đêm: nhân màu (setRGB nhận giá trị TUYẾN TÍNH, .13 tuyến tính ≈ .4 sRGB) cho tối bằng bề mặt có nhận sáng ở cạnh
   // (tường kem ban đêm ra khoảng sRGB .37 / .39 / .49). Số cũ .38 / .42 / .62 tuyến tính = sRGB .65+ nên tranh sáng hơn tường hẳn.
   const NIGHT_ART = new THREE.Color().setRGB(.13, .14, .23);
+  const DAWN_ART = new THREE.Color().setRGB(.8, .72, .76), DAWN_INK = new THREE.Color().setRGB(.8, .76, .86); // bình minh: hồng đào nhạt, hơi lạnh
   const DUSK_ART = new THREE.Color().setRGB(.82, .58, .6), DUSK_INK = new THREE.Color().setRGB(.86, .72, .78); // chiều: ngả cam đào + hồng tím, viền hơi sẫm
   // Tông "chill" (dịu, ấm, ít gắt): ngày là nắng sớm ấm nhẹ — trời kem, nắng bớt gắt cho nấc sáng tối êm hơn; chiều là giờ vàng — ánh
   // đào hồng pha tím (trời hồng, đất hắt tím mận, nắng san hô) thay vì nâu đục; đêm là trăng xanh lam (bớt tím), đèn vàng ấm rực hơn cho cảm giác ấm cúng.
   const LIGHTING = {
-    day: { sky: '#fff4e0', ground: '#dcc09a', hemi: 1.18, sun: '#ffefd2', sunI: 1.55, glass: '#d4ecff', lamps: 1, env: .4, grass: '#cecdb6' },
-    dusk: { sky: '#f9bccb', ground: '#9e7aa8', hemi: 1.05, sun: '#ff9f80', sunI: 1.35, glass: '#f3b4d4', lamps: 1.45, env: .28, sunFrom: [7, 4, 3], grass: '#dcc0bc' },
-    night: { sky: '#7f9bd2', ground: '#36405c', hemi: .44, sun: '#b4c6ff', sunI: .62, glass: '#22305a', lamps: 2.1, env: .1, grass: '#6e82a4' },
+    day: { sky: '#fff4e0', ground: '#dcc09a', hemi: 1.18, sun: '#ffefd2', sunI: 1.55, glass: '#d4ecff', lamps: 1, lit: 0, env: .4, grass: '#cecdb6' },
+    dawn: { sky: '#ffdccc', ground: '#a29ec0', hemi: .95, sun: '#ffc6a0', sunI: 1.15, glass: '#ffd8cc', lamps: 1.2, lit: .35, env: .24, sunFrom: [-7, 4, 3], grass: '#c4c6bc' },
+    dusk: { sky: '#f9bccb', ground: '#9e7aa8', hemi: 1.05, sun: '#ff9f80', sunI: 1.35, glass: '#f3b4d4', lamps: 1.45, lit: 1, env: .28, sunFrom: [7, 4, 3], grass: '#dcc0bc' },
+    night: { sky: '#7f9bd2', ground: '#36405c', hemi: .44, sun: '#b4c6ff', sunI: .62, glass: '#22305a', lamps: 2.1, lit: 1, env: .1, grass: '#6e82a4' },
   };
   // Đổi ambient: màu trời / nắng / cỏ / sương / viền / cửa kính / đèn chuyển dần trong AMBIENT_FADE giây (như trời ngả chiều thật),
   // không đổi phụt. Lần đặt đầu (mở game) thì áp ngay.
-  const AMBIENT_FADE = 1.6;
+  const AMBIENT_FADE = 8; // chậm cho dễ thấy trời chuyển (ambient tự đổi theo vòng, settings.js)
   const fade = { k: 1, colors: [], numbers: [] };
   const inkNow = DAY_INK.clone();
   let ambientSet = false;
@@ -1394,7 +1419,13 @@ export function createRoom() {
   function castLampShadows() {
     // Khung nào nắng cần vẽ lại bóng thì nhường cho nắng: bóng đèn dời sang khung sau (đèn giữ needsUpdate). Không thì đèn "cần vẽ"
     // mỗi khung sẽ chặn bóng nắng mãi, bóng cũ của vật đã đi chỗ khác (mèo...) kẹt lại trên mặt đất.
-    if (sun.shadow.needsUpdate) return null;
+    // Đèn đang chờ thì tạm tắt cờ trong lượt của nắng: three vẽ mọi bóng có needsUpdate cùng lượt, đèn sẽ lấy vật cản thường
+    // (đồ đạc) thay cho khối chắn tường -> ánh đèn xuyên tường (lỗi cũ, hay gặp ngay sau khi đổi ambient).
+    if (sun.shadow.needsUpdate) {
+      const held = [...lampLights].filter(light => light.shadow.needsUpdate);
+      held.forEach(light => { light.shadow.needsUpdate = false; });
+      return held.length ? () => held.forEach(light => { light.shadow.needsUpdate = true; }) : null;
+    }
     let due = false;
     for (const light of lampLights) {
       if (!light.parent) { lampLights.delete(light); continue; }
@@ -1424,6 +1455,7 @@ export function createRoom() {
     m.color.copy(m.userData.dayColor);
     if (night) m.color.multiply(NIGHT_ART);
     else if (ambient === 'dusk') m.color.multiply(DUSK_ART);
+    else if (ambient === 'dawn') m.color.multiply(DAWN_ART);
   }
   // Chốt chặn cho chế độ đêm: món không phải nguồn sáng mà lỡ có phần phát sáng (emissive / MeshBasicMaterial) thì ban đêm
   // tắt phát sáng / tối lại như tranh treo. QC (qc.mjs glow) vẫn báo lỗi để sửa model cho đúng.
@@ -1445,6 +1477,15 @@ export function createRoom() {
   }
   function lightUp(node) { // đèn của đồ đạc sáng hơn ban đêm; tranh treo tối lại
     dimNonSource(node);
+    // Đèn điện (ELECTRIC_LAMPS) tắt ban ngày, le lói lúc bình minh, bật chiều / đêm: cả ánh sáng lẫn bóng đèn phát sáng (emissive). Lửa thì cháy cả ngày.
+    const lit = ELECTRIC_LAMPS.has(node.userData.itemId) ? LIGHTING[ambient].lit : 1;
+    node.traverse(child => {
+      for (const m of child.isMesh && !child.userData.outline ? [].concat(child.material) : []) {
+        if (!m?.emissive || (m.userData.litEmissive ?? m.emissiveIntensity) === 0) continue;
+        m.userData.litEmissive ??= m.emissiveIntensity;
+        m.emissiveIntensity = m.userData.litEmissive * lit;
+      }
+    });
     node.traverse(child => {
       nightArt(child);
       if (!child.isPointLight) return;
@@ -1460,7 +1501,7 @@ export function createRoom() {
       }
       child.shadow.needsUpdate = true;
       child.userData.baseIntensity ??= child.intensity;
-      child.intensity = child.userData.baseIntensity * LIGHTING[ambient].lamps;
+      child.intensity = child.userData.baseIntensity * LIGHTING[ambient].lamps * lit;
     });
   }
   function setAmbient(mode) {
@@ -1471,15 +1512,18 @@ export function createRoom() {
     const [sx, sy, sz] = look.sunFrom || [4, 9, 5];
     // Đèn đồ đạc: lightUp() đặt ngay cường độ đích; giữ lại cường độ đang có rồi cho chạy dần tới đích cùng nhịp với trời.
     const lamps = [];
-    Object.values(furniture).forEach(node => node.traverse(child => { if (child.isPointLight) lamps.push([child, child.intensity]); }));
+    Object.values(furniture).forEach(node => node.traverse(child => {
+      if (child.isPointLight) lamps.push([child, 'intensity', child.intensity]);
+      if (child.isMesh) for (const m of [].concat(child.material)) if (m?.emissive) lamps.push([m, 'emissiveIntensity', m.emissiveIntensity]);
+    }));
     butterflies.forEach(b => { b.node.visible = !night; });
     Object.values(furniture).forEach(lightUp);
     scene.traverse(nightArt);
-    const lampFades = lamps.map(([light, now]) => { const to = light.intensity; light.intensity = now; return [light, 'intensity', to]; });
+    const lampFades = lamps.filter(([obj, key, now]) => obj[key] !== now).map(([obj, key, now]) => { const to = obj[key]; obj[key] = now; return [obj, key, to]; });
     fadeTo([
       [hemi.color, look.sky], [hemi.groundColor, look.ground], [sun.color, look.sun],
       [grassTint, look.grass], [groundMat.color, look.grass], [yardMat.color, look.grass], [kidMat.color, look.grass], [hillMat.color, look.grass],
-      [inkNow, night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : DAY_INK],
+      [inkNow, night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : ambient === 'dawn' ? DAWN_INK : DAY_INK],
       ...windowGlass.map(m => [m.color, look.glass]),
       ...meadow.ambientTargets(ambient),
     ], [
@@ -2350,7 +2394,7 @@ export function createRoom() {
     // Home: thu nhỏ thì tâm nhìn trôi dần về giữa khu nhà (thu nhỏ hết cỡ = thấy trọn khu nhà ở giữa màn hình).
     const radius = camera.position.distanceTo(controls.target);
     // Vỏ nhà: fade in / out trong ~.4 s
-    exteriorK += ((radius > controls.maxDistance * EXTERIOR_AT && !framing ? 1 : 0) - exteriorK) * Math.min(1, (now - (lastFrame || now)) / 1000 * 6 || .1);
+    exteriorK += ((radius > controls.maxDistance * EXTERIOR_AT && !framing ? 1 : 0) - exteriorK) * Math.min(1, (now - (lastFrame || now)) / 1000 * 3.5 || .1);
     if (exteriorK > .001 || houseShell.visible) fadeShell(exteriorK);
     // Sương mù đi theo camera: zoom ra xa thì khu nhà vẫn trong rõ, chỉ chân trời mờ
     if (scene.fog) { scene.fog.near = 55 + radius; scene.fog.far = 190 + radius * 1.5; }

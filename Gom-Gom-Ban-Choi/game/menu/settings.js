@@ -84,17 +84,19 @@ document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = 
 
 
 // Ánh sáng môi trường cho khu mèo (cảnh 3D ở Deco): Day / Afternoon (dusk) / Night. Lưu lại cho lần sau ('off' = ngày, 'dusk', 'on' = đêm).
-const AMBIENTS = { off: 'day', dusk: 'dusk', on: 'night' };
+const AMBIENTS = { dawn: 'dawn', off: 'day', dusk: 'dusk', on: 'night' };
 
 export let ambient = AMBIENTS[readText(SAVE_KEYS.night)] || 'day';
 
 function applyAmbient() {
   document.querySelectorAll('#ambient-toggle [data-ambient]').forEach(button => button.setAttribute('aria-pressed', button.dataset.ambient === ambient));
-  $('ambient-toggle').title = ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  $('ambient-toggle').title = ambient === 'dawn' ? 'Dawn' : ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
   $('deco-room').classList.toggle('night', ambient === 'night');
   $('deco-room').classList.toggle('dusk', ambient === 'dusk');
   $('deco').classList.toggle('night', ambient === 'night'); // nền trời đêm của màn Deco (ui-portrait.css)
   $('deco').classList.toggle('dusk', ambient === 'dusk'); // nền trời chiều
+  $('deco-room').classList.toggle('dawn', ambient === 'dawn');
+  $('deco').classList.toggle('dawn', ambient === 'dawn');
   room3d?.setAmbient(ambient);
 }
 
@@ -102,10 +104,17 @@ $('ambient-toggle').addEventListener('click', event => {
   const button = event.target.closest('[data-ambient]');
   if (!button || button.dataset.ambient === ambient) return;
   ambient = button.dataset.ambient;
-  writeText(SAVE_KEYS.night, ambient === 'night' ? 'on' : ambient === 'dusk' ? 'dusk' : 'off');
+  writeText(SAVE_KEYS.night, ambient === 'night' ? 'on' : ambient === 'dusk' || ambient === 'dawn' ? ambient : 'off');
   playSound('pick');
   applyAmbient();
 });
+
+// Tự chuyển bình minh -> ngày -> chiều -> đêm, mỗi buổi 1 phút (trời chuyển dần 8 giây); bấm nút thì vòng chạy tiếp từ buổi đã chọn. Không lưu lại.
+const AMBIENT_CYCLE = ['dawn', 'day', 'dusk', 'night'];
+setInterval(() => {
+  ambient = AMBIENT_CYCLE[(AMBIENT_CYCLE.indexOf(ambient) + 1) % AMBIENT_CYCLE.length];
+  applyAmbient();
+}, 60000);
 
 
 // Music / Haptic / Notifications: lựa chọn của người chơi (mặc định bật), nhớ qua localStorage. Music bật / tắt nhạc nền (sound.mjs setMusic,

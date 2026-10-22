@@ -65,6 +65,9 @@
 /* Deco buổi chiều (nút hoàng hôn): trời tím xanh ở đỉnh chuyển hồng cam rồi vàng nhạt sát chân trời */
 .screen.deco.dusk{background:#a39b7e}
 .room.is-3d.dusk,.room.is-3d.dusk[data-zone="garden"]{background:#f0a37a}
+/* Deco bình minh: hồng đào nhạt */
+.screen.deco.dawn{background:#b4b4a0}
+.room.is-3d.dawn,.room.is-3d.dawn[data-zone="garden"]{background:#f6c8b8}
 .room.deco-view.is-3d,.room.deco-view.is-3d[data-zone]{background:transparent;border-block:0}
 .screen.deco{overflow-x:hidden}
 .deco-panel{display:flex;flex-direction:column;gap:10px;padding:20px 16px 18px;border:0 solid transparent;border-image:url('../../assets/img/play/deco-panel.png') 90 fill / 28px stretch}
