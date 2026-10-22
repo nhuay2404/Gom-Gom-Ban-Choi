@@ -1,5 +1,7 @@
 # Economy Gom Gom — tổng quan và đánh giá cân bằng
 
+> **Đã cũ (22/10):** công thức thưởng / idle / bảng khu dưới đây không còn đúng code. Xem `docs/kinh-te-va-monetization.md` + `docs/economy-report.md`.
+
 Viết ngày 2026-10-12, theo số trong `game/data/economy.mjs` tại thời điểm đó. Số chi tiết theo từng lô 10 màn:
 `docs/economy-report.md` (`npm run economy`). Chỉnh số + mô phỏng trực quan: Level Editor → tab **💰 Kinh tế**.
 

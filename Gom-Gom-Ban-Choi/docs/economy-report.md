@@ -23,4 +23,4 @@ Sinh bởi `npm run economy` từ [game/data/economy.mjs](../game/data/economy.m
 
 **Tổng cả game** (100 màn): nhận 340,326 xu · món gốc 280,860 xu · mọi đồ 981,310 xu.
 
-Chỗ tiêu khác: booster hammer 60 · swap 40 · moves 80 xu/cái. Gói xu (tiền thật, chưa bán): 500 xu = $0.99 · 1,200 xu = $1.99 · 3,000 xu = $4.99.
+Booster mua bằng gem (không tiêu xu). Thiếu xu khi mua đồ / mở khu: trả hết xu + bù gem, 20 gem cho mỗi lần thưởng màn đang chơi còn thiếu (xem docs/kinh-te-va-monetization.md).

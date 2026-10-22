@@ -86,7 +86,7 @@ Sau bước `drag` chờ ~700 ms, các bước khác ~250 ms rồi mới hiện 
 
 ## 6. Lưu trữ (`core/save.mjs`)
 
-Mọi key ở `SAVE_KEYS`: `progress` (sao từng màn), `deco` (xu, mèo, khu, đồ đã mua / đặt), `boosters`, `profile` (lịch sử các lần
+Mọi key ở `SAVE_KEYS`: `progress` (sao từng màn), `deco` (xu, mèo, khu, đồ đã mua / đặt), `boosters`, `gems` (ví gem, đếm ads theo ngày, quà gem đã nhận, ưu đãi), `profile` (lịch sử các lần
 thử cho `adaptive`), `onboarding`, `decoTour`, `sound`, `night`, `skin`. Trong Unity: một `IStorage` (PlayerPrefs hoặc file JSON)
 cắm vào thay `defaultBackend()`; giữ nguyên key để đọc được save của bản web nếu cần. `deco-data.loadDeco` tự chuyển save cũ.
 
