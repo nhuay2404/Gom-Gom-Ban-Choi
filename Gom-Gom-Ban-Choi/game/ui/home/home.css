@@ -72,7 +72,7 @@
 .fh-skin-art svg{width:100%;height:100%;overflow:visible}
 /* Cột phải: cài đặt + hướng dẫn. Nút tròn có đĩa nâu #6A3229 (Ellipse 1, 49.68) nằm dưới ảnh nút */
 .fh-settings{left:calc(321 * var(--u));top:calc(121 * var(--u));width:calc(54 * var(--u));height:calc(54 * var(--u));z-index:2}
-.fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none}
+.fh-round{position:relative;isolation:isolate;display:block;width:100%;height:100%;padding:0;border:0;background:none;left:calc(8.4 * var(--u));top:calc(0 * var(--u))}
 .fh-round::before{content:'';position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;width:calc(49.68 * var(--u));height:calc(49.68 * var(--u));border-radius:50%;background:#6a3229}
 .fh-round::after{content:'';position:absolute;inset:0;background:center/100% 100% no-repeat}
 .fh-gear::after{background-image:url('../../assets/img/home/btn-settings.png')}
@@ -93,7 +93,65 @@
 .pet-heart.angry{font-size:30px!important}
 /* Home: cột nút liveops nhích lên sát hàng ví (bản Figma chừa trống phía trên nhiều) */
 .fh-layer>.fh-btn{margin-top:calc(env(safe-area-inset-top) - 38 * var(--u))}
-/* PLAY ở Home hub (ảnh nút Figma 244 × 67): giữa khung, ngay trên thanh tab */
-.fh-layer>.fh-play{left:calc(76 * var(--u));bottom:calc(96 * var(--u) + env(safe-area-inset-bottom));width:calc(244 * var(--u));height:calc(67 * var(--u));
-  background-image:url('../../assets/img/home/play-button.png')}
+/* PLAY ở Home hub (ảnh nút theo mẫu vàng cam dấu chân, 1636 : 413): giữa khung, rộng gần bằng thanh tab (như ảnh mẫu), cách thanh tab 7u */
+.fh-layer>.fh-play{left:calc(42.5 * var(--u));bottom:calc(96.6 * var(--u) + env(safe-area-inset-bottom));width:calc(308 * var(--u));height:calc(308 * var(--u) * 413 / 1636);
+  background:url('../../assets/img/home/play-button.png') 0 0/100% 100% no-repeat}
 @media(prefers-reduced-motion:no-preference){.fh-layer>.fh-play{animation:play-breathe 1.8s ease-in-out infinite}}
+
+/* Hai pill cùng cao 38,6u, cùng top 5u (viết .fh-pill để thắng .wallet-hud>.fh-coins / .fh-gems của wallet.css nạp sau) */
+/* ===== Bộ nút Home theo ảnh mẫu vàng cam dấu chân (cùng bộ với PLAY + thanh tab) =====
+   Ảnh cắt từ mẫu, vẽ đúng tỉ lệ (không kéo giãn); giữ chỗ đặt cũ, chỉ đổi cỡ theo tỉ lệ ảnh mới.
+   Pill xu / gem: số in sẵn đã xoá, game viết số lên chỗ đó. Daily / Starter / Feedback / cài đặt: ảnh trọn (icon + chữ + chấm "!").
+   Nút đổi bộ quân (Cats / Dogs, đổi theo lựa chọn): ô trống btn-tile.png, icon + chữ do code vẽ lên. */
+.wallet-hud>.fh-pill.fh-coins{width:calc(38.6 * var(--u) * 432 / 116);height:calc(38.6 * var(--u));top:calc(5 * var(--u))}
+.wallet-hud>.fh-pill.fh-gems{left:calc(154 * var(--u));width:calc(38.6 * var(--u) * 405 / 118);height:calc(38.6 * var(--u));top:calc(5 * var(--u))}
+.wallet-hud>.fh-coins b{left:calc(50.3 * var(--u));width:calc(66 * var(--u))}
+.wallet-hud>.fh-gems b{left:calc(60.5 * var(--u));width:calc(41 * var(--u))}
+.wallet-hud>.fh-pill b{font-size:calc(19 * var(--u));color:#3d1408}
+.fh-round.fh-gear::before{display:none}
+.fh-round.fh-gear::after{background-size:contain}
+.fh-layer>.fh-daily{width:calc(60 * var(--u) * 190 / 180)}
+.fh-layer>.fh-starter{width:calc(61 * var(--u) * 190 / 184)}
+.fh-layer>.fh-feedback{left:calc(311.7 * var(--u) + var(--gutter) - env(safe-area-inset-right));width:calc(60 * var(--u) * 196 / 182);height:calc(60 * var(--u));
+  border:0!important;border-radius:0;box-shadow:none;background:url('../../assets/img/home/btn-feedback.png') 0 0/100% 100% no-repeat!important}
+.fh-layer>.fh-feedback:not(.fh-skin)>*{visibility:hidden}
+.fh-layer>.fh-skin{height:calc(61 * var(--u));width:calc(61 * var(--u) * 196 / 186);gap:0;background:url('../../assets/img/home/btn-tile.png') 0 0/100% 100% no-repeat!important}
+.fh-layer>.fh-skin .fh-skin-art{width:calc(30 * var(--u));height:calc(30 * var(--u));margin-bottom:calc(2 * var(--u))}
+.fh-layer>.fh-skin span{font-size:calc(12.5 * var(--u));color:#3d1408}
+/* PLAY nổi bật hơn: tăng độ bão hoà màu vàng cam của ảnh nút (không đổi cỡ / vị trí) */
+.fh-layer>.fh-play{filter:saturate(1.6)}
+/* ===== Bốn ô vuông Home (Daily, Starter Pack, Feedback, đổi Cats / Dogs): dựng bằng CSS, không dùng ảnh nút cắt sẵn =====
+   Cùng một kiểu, cùng cỡ 62 × 58u: viền nâu, nền gradient #FFDA89 -> #F4E0B6 (cùng màu viên chọn tab), viền trong sáng, gờ đáy, vệt bóng góc trái trên.
+   Icon ảnh màu cùng ô 30u (contain) nên bốn icon to bằng nhau; chữ nâu đậm viền kem; chấm "!" đỏ tròn đè góc phải trên (Daily, Starter). */
+.fh-layer>.fh-tile.fh-tile{box-sizing:border-box;width:calc(62 * var(--u));height:calc(58 * var(--u));padding:calc(5 * var(--u)) calc(3 * var(--u)) calc(4 * var(--u));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1 * var(--u));overflow:visible;text-decoration:none;cursor:pointer;
+  border:calc(2.8 * var(--u)) solid #4a1a08!important;border-radius:calc(15 * var(--u));
+  background:linear-gradient(#ffda89,#f4e0b6)!important;
+  box-shadow:inset 0 0 0 calc(2.2 * var(--u)) #fff6dc,inset 0 calc(-3 * var(--u)) 0 calc(2.2 * var(--u)) #e7b85c,0 calc(3 * var(--u)) 0 #4a1a08}
+.fh-layer>.fh-tile.fh-tile::before{content:'';position:absolute;left:calc(7 * var(--u));top:calc(5 * var(--u));width:calc(14 * var(--u));height:calc(6 * var(--u));border-radius:999px;background:#ffffffa6;rotate:-20deg;pointer-events:none}
+.fh-layer>.fh-tile.fh-tile>*{visibility:visible}
+.fh-layer>.fh-tile .fh-tile-ico,.fh-layer>.fh-tile .fh-skin-art{display:block;flex:none;width:calc(30 * var(--u));height:calc(30 * var(--u));margin:0;object-fit:contain;pointer-events:none}
+.fh-layer>.fh-tile>span{display:block;font-family:var(--display);font-size:calc(10.5 * var(--u));font-weight:800;line-height:.95;text-align:center;color:#3d1408;
+  -webkit-text-stroke:calc(2.6 * var(--u)) #fff7e4;paint-order:stroke fill;white-space:nowrap}
+.fh-layer>.fh-starter.fh-tile>span{font-size:calc(9.5 * var(--u))}
+.fh-layer>.fh-starter.fh-tile .fh-tile-ico{width:calc(26 * var(--u));height:calc(26 * var(--u))}
+.fh-layer>.fh-tile .fh-badge{position:absolute;right:calc(-8 * var(--u));top:calc(-8 * var(--u));display:grid;place-items:center;width:calc(19 * var(--u));height:calc(19 * var(--u));
+  box-sizing:border-box;border:calc(2.2 * var(--u)) solid #4a1a08;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a8a,#e8384a 70%);
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) #fff;font-style:normal;font-family:var(--display);font-weight:900;font-size:calc(12 * var(--u));line-height:1;color:#fff;pointer-events:none}
+.fh-layer>.fh-tile:active{translate:0 calc(2 * var(--u))}
+/* Kiểu Cat Soup: bỏ ô nền, icon phóng to làm chính nút (44u, cùng một ô nên bốn icon to bằng nhau), chữ nhỏ viền kem ngay dưới, chấm "!" đè góc phải trên icon.
+   Hộp nút giữ nguyên cỡ / vị trí (62 × 58u, grid.css) để vùng chạm không đổi. */
+.fh-layer>.fh-tile.fh-tile{padding:0;gap:0;justify-content:flex-start;border:0!important;border-radius:0;background:none!important;box-shadow:none;filter:none}
+.fh-layer>.fh-tile.fh-tile::before{display:none}
+.fh-layer>.fh-tile.fh-tile .fh-tile-ico,.fh-layer>.fh-tile.fh-tile .fh-skin-art,.fh-layer>.fh-starter.fh-tile .fh-tile-ico{width:calc(44 * var(--u));height:calc(44 * var(--u));margin:0}
+.fh-layer>.fh-tile.fh-tile>span{font-size:calc(11 * var(--u));line-height:.92;-webkit-text-stroke:calc(3 * var(--u)) #fff7e4;margin-top:calc(-2 * var(--u))}
+.fh-layer>.fh-starter.fh-tile>span{font-size:calc(9.5 * var(--u));margin-top:calc(-4 * var(--u))}
+.fh-layer>.fh-tile.fh-tile .fh-badge{right:calc(5 * var(--u));top:calc(-4 * var(--u))}
+/* Chữ dưới icon không bị hình mèo / chó đè: hình đặt trên, chữ nằm hẳn dưới (không kéo chữ lên) */
+.fh-layer>.fh-skin.fh-tile>span{margin-top:calc(1 * var(--u))}
+/* Chữ dưới icon: một cỡ chung = cỡ chữ Daily (11u), đè nhẹ lên đáy icon (-3u) ở cả bốn nút (chữ nằm trên lớp icon nhờ viền kem) */
+.fh-layer>.fh-tile.fh-tile>span,.fh-layer>.fh-starter.fh-tile>span,.fh-layer>.fh-skin.fh-tile>span{position:relative;z-index:1;font-size:calc(11 * var(--u));margin-top:calc(-3 * var(--u))}
+/* Hình mèo / chó: viền nâu đậm như viền các icon ảnh khác (1,2u), chữ vẫn nằm trên viền này */
+.fh-layer>.fh-skin.fh-tile .fh-skin-art{filter:drop-shadow(calc(1.2 * var(--u)) 0 0 #4a1a08) drop-shadow(calc(-1.2 * var(--u)) 0 0 #4a1a08) drop-shadow(0 calc(1.2 * var(--u)) 0 #4a1a08) drop-shadow(0 calc(-1.2 * var(--u)) 0 #4a1a08)}
+/* Nút cài đặt kiểu Cat Soup: bánh răng vàng bóng (btn-settings.png) làm chính nút, không chữ; hình 44u giữa hộp 48u = cùng cỡ các icon Daily / Feedback */
+.fh-round.fh-gear::after{background-size:91.7% 91.7%}

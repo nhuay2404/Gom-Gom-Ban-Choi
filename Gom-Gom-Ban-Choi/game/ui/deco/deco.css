@@ -120,6 +120,8 @@ body.deco-locked .deco-ambient{opacity:.5}/* Nút khoá giao diện: tròn, dư�
 .deco-lock[aria-pressed="true"] .eye-shut{display:inline}
 .deco-side .deco-help{width:calc(34 * var(--u));height:calc(34 * var(--u));margin:calc(4 * var(--u)) auto 0;border-radius:50%;border-width:calc(2 * var(--u))}
 .deco-side .deco-help svg{width:calc(18 * var(--u));height:calc(18 * var(--u));stroke-width:2.4}
+/* Icon "?" màu bóng (assets/img/deco/icon-help.png) thay cho nét SVG; cùng ô như icon cũ, giữ nguyên nút tròn */
+.deco-help .deco-help-ico{display:block;width:calc(20 * var(--u));height:calc(20 * var(--u));object-fit:contain;pointer-events:none}
 #deco.ui-locked .deco-help{display:none}
 #deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
 #deco.ui-locked .deco-lock:active{opacity:.6}
@@ -332,3 +334,7 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 @keyframes idle-twinkle{0%,100%{opacity:0;scale:.2;rotate:0deg}45%{opacity:1;scale:1.15;rotate:25deg}70%{opacity:.8;scale:.8;rotate:45deg}}
 #deco.ui-locked>.idle-coin{display:none}
 .deco-dock .zone-switch.dragging{cursor:grabbing;user-select:none}
+/* Nút ngắm nhà: giữ khung tròn cũ, nét SVG mắt thay bằng icon màu bóng (assets/img/deco/icon-eye.png); đang ẩn UI thì icon mờ đi */
+.screen.deco .deco-side .deco-lock svg{display:none}
+.deco-lock .deco-lock-ico{display:block;width:calc(32 * var(--u));height:calc(32 * var(--u));object-fit:contain;pointer-events:none;transition:opacity .2s}
+.deco-lock[aria-pressed="true"] .deco-lock-ico{opacity:.55}

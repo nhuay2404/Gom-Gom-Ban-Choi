@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="./ui/play/hud.css">
   <link rel="stylesheet" href="./ui/result/result.css">
   <link rel="stylesheet" href="./ui/shared/tutorial.css">
+  <link rel="stylesheet" href="./ui/shared/grid.css">
   <link rel="stylesheet" href="./ui/shared/dev.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./app/main.js"></script>
@@ -81,15 +82,15 @@
           <span class="progress-text"><strong id="score">0</strong> / <span id="highscore">120</span></span>
         </div>
       </div>
-      <div class="settings fg-settings">
-        <!-- Cùng popup Settings với Home / Map / Deco (thêm hàng Home / Restart chỉ khi đang chơi) -->
-        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
-      </div>
     </section>
     <section class="board-wrap" aria-label="Board"><div id="board" class="board"></div></section>
     <p class="message-row"><span id="message" class="message" role="status"></span></p>
     <!-- Booster: mở từ màn 3, không có tutorial; dùng không tốn lượt, hết thì chạm để mua bằng xu -->
     <section id="booster-bar" class="booster-bar" aria-label="Boosters" hidden>
+      <!-- Nút cài đặt màn chơi: đầu trái thanh booster (hud.css). Cùng popup Settings với Home / Map / Deco (thêm hàng Home / Restart khi đang chơi) -->
+      <div class="settings fg-settings">
+        <button class="fh-round fh-gear settings-toggle" aria-label="Settings" title="Settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu"></button>
+      </div>
       <button class="boost" data-boost="hammer" aria-label="Hammer: smash everything in a 3×3 area" title="Hammer"><svg viewBox="0 0 24 24"><use href="#i-hammer"/></svg><b class="boost-count"></b></button>
       <button class="boost" data-boost="swap" aria-label="New card: get the best card for the next 3 turns" title="New card"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg><b class="boost-count"></b></button>
       <button class="boost" data-boost="moves" aria-label="Extra moves" title="Extra moves"><strong class="boost-plus">+3</strong><b class="boost-count"></b></button>
@@ -167,8 +168,8 @@
     <button id="ambient-toggle" class="deco-ambient" data-ambient="day" aria-label="Ambient: Day" title="Day"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
     <div class="deco-side">
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
-      <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
-      <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><svg viewBox="0 0 24 24"><path d="M9.4 9.4a2.7 2.7 0 1 1 3.9 2.4c-.9.5-1.3 1-1.3 2M12 17v.2"/></svg></button>
+      <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><img class="deco-lock-ico" src="./assets/img/deco/icon-eye.png" alt=""><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
+      <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><img class="deco-help-ico" src="./assets/img/deco/icon-help.png" alt=""></button>
     </div>
     <!-- Mọi thứ Deco gom về một khay ở đáy (theo Figma): hàng tab (mèo + khu) → chip loại đồ (nội thất / tường / sàn) → một hàng thẻ
          vuốt ngang (4.5 thẻ mỗi màn, thẻ bị cắt mờ dần). Thẻ: món chưa xây, kiểu khác của món, tường, sàn, hoặc mèo theo tab. -->
@@ -264,9 +265,10 @@
 
   <!-- Thanh tab chung (kiểu Figma, dựng bằng CSS): Home (hub = bản đồ màn) / Deco / Shop -->
   <nav id="tabbar" class="tabbar fh-tabbar" aria-label="Main" hidden>
-    <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg><span>Home</span></button>
-    <button class="tab" data-tab="deco"><svg viewBox="0 0 24 24"><use href="#i-deco"/></svg><span>Deco</span></button>
-    <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><use href="#i-cart"/></svg><span>Shop</span></button>
+    <!-- Icon màu bóng theo mẫu (assets/img/nav/icon-home|deco|shop.png): nhà mái đỏ, ghế bành hồng, xe đẩy vàng bánh hồng -->
+    <button class="tab" data-tab="home"><img class="ti-img" src="./assets/img/nav/icon-home.png" alt=""><span>Home</span></button>
+    <button class="tab" data-tab="deco"><img class="ti-img" src="./assets/img/nav/icon-deco.png" alt=""><span>Deco</span></button>
+    <button class="tab" data-tab="shop"><img class="ti-img" src="./assets/img/nav/icon-shop.png" alt=""><span>Shop</span></button>
   </nav>
   <div id="toast" class="toast" role="status" hidden></div>
 
@@ -279,11 +281,12 @@
         <button class="fh-pill fh-gems soon" aria-label="Gems (coming soon)"><b>0</b></button>
       </div>
       <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
-      <button id="home-daily" class="fh-btn fh-daily soon" aria-label="Daily (coming soon)"></button>
-      <button id="home-starter" class="fh-btn fh-starter" aria-label="Starter pack"></button>
-      <a id="home-feedback" class="fh-btn fh-feedback" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-feedback"/></svg><span>Feedback</span></a>
+      <!-- Bốn ô vuông (Daily, Starter Pack, Feedback, đổi Cats / Dogs) dựng bằng CSS (.fh-tile, home.css): nền gradient #FFDA89 -> #F4E0B6, icon ảnh, chữ, chấm "!" -->
+      <button id="home-daily" class="fh-btn fh-daily fh-tile soon" aria-label="Daily (coming soon)"><img class="fh-tile-ico" src="./assets/img/home/icon-daily.png" alt=""><span>Daily</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <button id="home-starter" class="fh-btn fh-starter fh-tile" aria-label="Starter pack"><img class="fh-tile-ico" src="./assets/img/home/icon-starter.png" alt=""><span>Starter<br>Pack</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <a id="home-feedback" class="fh-btn fh-feedback fh-tile" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><img class="fh-tile-ico" src="./assets/img/home/icon-feedback.png" alt=""><span>Feedback</span></a>
       <!-- Bộ quân trên bàn (mèo / chó): hiện khi chơi tới màn 30 (shared.js DOG_SKIN_LEVEL); chạm để đổi bộ -->
-      <button id="home-skin" class="fh-btn fh-feedback fh-skin" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
+      <button id="home-skin" class="fh-btn fh-feedback fh-skin fh-tile" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->
       <button id="home-play" class="fh-play" aria-label="Play"></button>
     </div>
