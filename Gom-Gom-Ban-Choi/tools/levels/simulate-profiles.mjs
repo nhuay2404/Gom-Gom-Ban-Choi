@@ -10,7 +10,7 @@
 import { LEVELS } from '../../game/data/levels.mjs';
 import { planLevel, recordAttempt, noteDwell, startVisit, elementCount, difficultyOf } from '../../game/core/adaptive.mjs';
 import { ADAPTIVE, BOOSTERS, holdUnlocked } from '../../game/data/tuning.mjs';
-import { levelReward } from '../../game/core/progression.mjs';
+import { GEM_REWARDS } from '../../game/data/economy.mjs';
 import { boostersUnlocked } from '../../game/core/boosters.mjs';
 import { play, mulberry32 } from './bot.mjs';
 
@@ -19,7 +19,7 @@ const JSON_OUT = process.argv.includes('--json'), LEVEL_OUT = process.argv.inclu
 const MAX_TRIES = 150, DAY = 24 * 3600 * 1000, T0 = Date.UTC(2026, 9, 1);
 
 // noise/hold: tay nghề (xem bot.mjs) · think: giây nghĩ mỗi lượt · patience: thua liên tiếp bấy nhiêu lần thì bỏ game.
-// boostAt: dùng +lượt khi còn 1 lượt mà đã đạt tỉ lệ điểm này · buy: hết booster thì mua bằng xu ('always' | 'rich' = khi
+// boostAt: dùng +lượt khi còn 1 lượt mà đã đạt tỉ lệ điểm này · buy: hết booster thì mua bằng gem miễn phí ('always' | 'rich' = khi
 // đủ xu cho 2 cái | false) · onlyRetry: chỉ dùng booster khi đang chơi lại màn đã thua.
 export const TYPES = [
   { id: 'weak', name: 'Người mới, chơi yếu', noise: 90, hold: false, think: 4.5, patience: 6, tiltOnLoss: true, boostAt: 0.7, buy: 'always' },
@@ -41,13 +41,13 @@ function runPlayer(type, playerIndex, mode) {
   const out = { cleared: 0, tries: 0, wins: 0, nearMiss: 0, stuck: 0, losses: 0, deals: 0, quits: 0, maxLoseStreak: 0, churn: null, tiers: { easy: 0, medium: 0, hard: 0 }, profiles: {}, gifts: 0, boostUsed: 0, bought: 0, carried: 0,
     perLevel: LEVELS.map(() => ({ tries: 0, firstWin: 0, cleared: 0, churn: 0, deals: 0, shift: 0, stuck: 0, moves: 0, tiers: { easy: 0, medium: 0, hard: 0 } })) };
   profile = startVisit(profile, now);
-  // Kho booster (START_STOCK mỗi loại như người chơi mới) và xu kiếm theo sao mới; xu chỉ dùng để mua booster.
+  // Kho booster (START_STOCK mỗi loại như người chơi mới) và gem miễn phí từ màn paywall / boss (không tính ads, không nạp tiền).
   const stock = { moves: BOOSTERS.START_STOCK, swap: BOOSTERS.START_STOCK }, best = [];
-  let coins = 0, bought = 0;
+  let gems = 0, bought = 0;
   const want = id => {
     if (stock[id] > 0) { stock[id]--; return true; }
     const price = BOOSTERS.PRICE[id];
-    if (type.buy === 'always' ? coins >= price : type.buy === 'rich' ? coins >= 2 * price : false) { coins -= price; bought++; return true; }
+    if (type.buy === 'always' ? gems >= price : type.buy === 'rich' ? gems >= 2 * price : false) { gems -= price; bought++; return true; }
     return false;
   };
   while (level < LEVELS.length && tries < MAX_TRIES) {
@@ -59,7 +59,7 @@ function runPlayer(type, playerIndex, mode) {
       { noise: type.noise, hold: type.hold && holdUnlocked(level), boost: canBoost ? { at: type.boostAt, want } : null });
     const used = result.boostUse.moves + result.boostUse.swap, boughtNow = bought - boughtBefore;
     out.boostUsed += used; out.bought += boughtNow;
-    if (result.win) { const stars = result.stars || 1; coins += best[level] ? 0 : levelReward(level); best[level] = Math.max(best[level] || 0, stars); }
+    if (result.win) { const stars = result.stars || 1; gems += best[level] ? 0 : LEVELS[level].paywall ? GEM_REWARDS.paywall : LEVELS[level].tier === 'boss' ? GEM_REWARDS.boss : 0; best[level] = Math.max(best[level] || 0, stars); }
     if (result.win && used) out.carried++;
     tries++; triesHere++;
     out.tiers[difficultyOf(elementCount(plan.level))]++;

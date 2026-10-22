@@ -4,7 +4,7 @@
 //   - Đồ trang trí MỞ trong stage (theo khu mở + lock) và tổng giá: món gốc / kiểu khác / tường-sàn
 //   - Luỹ kế: tổng xu đã nhận so với tổng giá mọi món đã mở tới hết stage đó (đủ mua bao nhiêu %)
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { START_COINS, BOOSTER_PRICE, COIN_PACKS, AREA_UNLOCK } from '../../game/data/economy.mjs';
+import { START_COINS, COIN_TOP_UP, AREA_UNLOCK } from '../../game/data/economy.mjs';
 import { levelReward } from '../../game/core/progression.mjs';
 import { LEVELS } from '../../game/data/levels.mjs';
 import { CATALOG, ZONES, GARDEN_EXPANSION, AREA_ORDER } from '../../game/deco/deco-data.mjs';
@@ -55,7 +55,7 @@ ${table.join('\n')}
 
 **Tổng cả game** (${LEVELS.length} màn): nhận ${fmt(coinsTotal)} xu · món gốc ${fmt(baseTotal)} xu · mọi đồ ${fmt(allTotal)} xu.
 
-Chỗ tiêu khác: booster ${Object.entries(BOOSTER_PRICE).map(([id, p]) => `${id} ${p}`).join(' · ')} xu/cái. Gói xu (tiền thật, chưa bán): ${COIN_PACKS.map(p => `${fmt(p.coins)} xu = $${p.usd}`).join(' · ')}.
+Booster mua bằng gem (không tiêu xu). Thiếu xu khi mua đồ / mở khu: trả hết xu + bù gem, ${COIN_TOP_UP.gemsPerLevel} gem cho mỗi lần thưởng màn đang chơi còn thiếu (xem docs/kinh-te-va-monetization.md).
 `;
 mkdirSync(new URL('../../docs/', import.meta.url), { recursive: true });
 writeFileSync(new URL('../../docs/economy-report.md', import.meta.url), md);

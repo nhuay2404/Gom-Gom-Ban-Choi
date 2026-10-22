@@ -13,7 +13,7 @@ import { mulberry32 } from '../levels/bot.mjs';
 import { idlePerHour } from '../../game/core/idle.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
-export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
+export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'REWARD_FLAT_FROM', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
 
 const CAT_LOCKS = CATALOG.filter(e => e.cat === 'cats').map(e => e.lock ?? 0);
 export const catsAt = cleared => Math.min(MAX_ROOM_CATS, CAT_LOCKS.filter(lock => lock <= cleared).length);
@@ -31,10 +31,12 @@ export const PROFILES = [
 // levelInfo: mỗi màn { moves, movesUsedWin, movesUsedLoss, secWin, secLoss, tier } (tools/levels/baseline.json): thời gian một ván = giây chơi
 //   trung bình của ván thắng / thua theo nhịp `profile.pace` (secWin[pace], bot đo từng lượt: xem bot.mjs turnShape); màn khó thua nhiều ->
 //   nhiều ván dài. Thiếu số giây thì số lượt dùng (thiếu nữa thì hết lượt) × FALLBACK_SPM.
+// ads: { bonusCoins, idle, bonus, idleBonus } = số lần xem rewarded ad mỗi ngày ở bảng thắng / lúc nhận xu idle, mỗi lần thêm bonus × số xu đó
+//   (bonus mặc định 1 = x2; mảng = thưởng của lần xem thứ 1, 2, … trong ngày, hết mảng thì giữ phần tử cuối); bỏ trống = không xem ads.
 // Sau khi hết màn mà chưa mua đủ đồ mặc định: người ảo vẫn mở game nhận xu tự sinh + mua đồ mỗi ngày (không chơi màn) tới khi đủ / hết maxDays.
 const FALLBACK_SPM = 5;
 const BASE_IDS = CATALOG.filter(e => e.cat === 'furniture' && !e.slot && e.basePrice > 0).map(e => e.id);
-export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100, maxDays = 200, levelInfo = [] } = {}) {
+export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100, maxDays = 200, levelInfo = [], ads = {} } = {}) {
   const rng = mulberry32(seed);
   const infoTail = levelInfo.slice(-10), tailOf = key => { const list = infoTail.map(i => i[key] ?? i.moves).filter(v => v != null); return list.length ? list.reduce((t, v) => t + v, 0) / list.length : 20; };
   const pace = profile.pace ?? 'mid', secTail = key => { const list = infoTail.map(i => i[key]?.[pace]).filter(v => v != null); return list.length ? list.reduce((t, v) => t + v, 0) / list.length : null; };
@@ -45,29 +47,32 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
   const shop = CATALOG.filter(e => e.cat !== 'cats' && e.basePrice > 0 && (profile.buy === 'all' || (e.cat === 'furniture' && !e.slot)))
     .map(e => ({ entry: e, price: zonePrice(e, cfg.ZONE_PRICE_MULT) })).sort((a, b) => a.price - b.price);
   const owned = new Set();
-  let deco = { coins: cfg.START_COINS, unlocked: [], spent: 0 }, cleared = 0, playSec = 0, finishDay = null, walletAtFinish = null, fullBase = null, atFinish = null;
+  let deco = { coins: cfg.START_COINS, unlocked: [], spent: 0 }, cleared = 0, playSec = 0, finishDay = null, walletAtFinish = null, fullBase = null, fullAll = null, atFinish = null;
   const tierSec = {}, tierLevels = {};
   const areaOf = e => (e.area === 'garden2' ? 'garden2' : e.zone);
   const isOpen = area => area === 'garden' || deco.unlocked.includes(area);
   const events = [], log = [], shortAt = {};
   let earned = cfg.START_COINS, idleEarned = 0, peak = deco.coins;
   const claims = Math.max(1, profile.claims ?? 2), idleHours = Math.min(24 / claims, cfg.IDLE_CAP_HOURS ?? 0);
-  for (let day = 1; day <= maxDays && (cleared < levels || !fullBase); day++) {
+  let adEarned = 0;
+  const bonusAt = n => (Array.isArray(ads.bonus) ? ads.bonus[Math.min(n, ads.bonus.length - 1)] : ads.bonus ?? 1);
+  for (let day = 1; day <= maxDays && (cleared < levels || !(profile.buy === 'all' ? fullAll : fullBase)); day++) {
+    let adCoins = ads.bonusCoins ?? 0, adIdle = ads.idle ?? 0, adSeen = 0;
     for (let a = 0; a < profile.attempts; a++) {
       if (a % Math.ceil(profile.attempts / claims) === 0 && cfg.IDLE_RATE) {
         // Mỗi mèo trong nhà sinh xu riêng: số mèo = mèo đã nhận được ở Map tới màn này (tối đa MAX_ROOM_CATS con trong nhà).
-        const idle = Math.floor(idleHours * idlePerHour(cleared, cfg) * catsAt(cleared));
-        deco = { ...deco, coins: deco.coins + idle };
-        earned += idle; idleEarned += idle;
+        const idle = Math.floor(idleHours * idlePerHour(cleared, cfg) * catsAt(cleared)), bonus = adIdle-- > 0 ? Math.round(idle * (ads.idleBonus ?? bonusAt(0))) : 0;
+        deco = { ...deco, coins: deco.coins + idle + bonus };
+        earned += idle + bonus; idleEarned += idle; adEarned += bonus;
       }
       if (cleared < levels) {
         const level = info(cleared), win = rng() < winP(cleared), tier = level.tier || 'normal';
         const sec = (win ? level.secWin : level.secLoss)?.[pace] ?? (win ? level.movesUsedWin ?? level.moves : level.movesUsedLoss ?? level.moves) * FALLBACK_SPM;
         playSec += sec; tierSec[tier] = (tierSec[tier] ?? 0) + sec;
         if (win) {
-          const coins = rewardFor(cleared, cfg);
-          deco = { ...deco, coins: deco.coins + coins };
-          earned += coins;
+          const coins = rewardFor(cleared, cfg), bonus = adCoins-- > 0 ? Math.round(coins * bonusAt(adSeen++)) : 0;
+          deco = { ...deco, coins: deco.coins + coins + bonus };
+          earned += coins + bonus; adEarned += bonus;
           tierLevels[tier] = (tierLevels[tier] ?? 0) + 1;
           cleared++;
           if (cleared === levels) { finishDay = day; walletAtFinish = null; }
@@ -93,14 +98,15 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
         }
       }
       if (!fullBase && BASE_IDS.every(id => owned.has(id))) fullBase = { day, level: cleared, playSec };
+      if (!fullAll && owned.size === shop.length) fullAll = { day, level: cleared, playSec };
       // Số liệu "cả game" (xu nhận, xu tự sinh, đã tiêu) chốt lúc thắng màn cuối; phần chờ thêm sau đó chỉ để đo mốc mua đủ đồ mặc định.
-      if (finishDay != null && walletAtFinish == null) { walletAtFinish = deco.coins; atFinish = { earned, idleEarned, spent: deco.spent, owned: owned.size }; }
+      if (finishDay != null && walletAtFinish == null) { walletAtFinish = deco.coins; atFinish = { earned, idleEarned, adEarned, spent: deco.spent, owned: owned.size }; }
       peak = Math.max(peak, deco.coins);
     }
     if (finishDay == null || day === finishDay) log.push({ day, level: cleared, wallet: deco.coins, spent: deco.spent });
   }
   const tierMin = Object.fromEntries(Object.keys(tierSec).map(tier => [tier, tierSec[tier] / 60 / Math.max(1, tierLevels[tier] ?? 0)]));
-  return { events, log, days: finishDay ?? log.length, cleared, playSec, tierMin, fullBase, earned: atFinish?.earned ?? earned, idleEarned: atFinish?.idleEarned ?? idleEarned, spent: atFinish?.spent ?? deco.spent,
+  return { events, log, days: finishDay ?? log.length, cleared, playSec, tierMin, fullBase, fullAll, earned: atFinish?.earned ?? earned, idleEarned: atFinish?.idleEarned ?? idleEarned, adEarned: atFinish?.adEarned ?? adEarned, spent: atFinish?.spent ?? deco.spent,
     wallet: walletAtFinish ?? deco.coins, peak, owned: atFinish?.owned ?? owned.size, shopSize: shop.length };
 }
 
