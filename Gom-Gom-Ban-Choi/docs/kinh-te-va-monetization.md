@@ -91,7 +91,7 @@ Tỉ giá gốc: **$1 ≈ 100 gem** (mốc wiki dùng, [[concept-store-and-prici
 
 - Continue là chỗ kiếm gem chính (bán đúng lúc người chơi vừa suýt thắng, sợ mất cả ván). Giá chốt **75 → 130 → 220**
   (22/10: 90 → 150 → 250, rồi thử 60 → 120 → 200, rồi nâng lên 75 sau khi màn "So close!" có thêm dòng kích mua). Lần đầu vẫn rẻ hơn mức gốc 90
-  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40–60 / ngày) không đủ trọn
+  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40–65 / ngày) không đủ trọn
   một lần continue, nên lần continue đầu trong ngày dễ dẫn tới gói gem nhỏ.
 - Màn "So close!" kích mua: dòng "You have X/Y points. Don't lose it now!" (công sức sắp mất) + "Next continue: 💎130" (giá lần sau làm mỏ neo, lần này trông rẻ). +3 lượt giữ 25 gem (cửa vào rẻ).
 - Mỗi lượt: continue 15 → 26 → 44 gem, +3 lượt mua trước ~8 gem. Rủi ro: người chơi canh mua +3 lượt ở lượt cuối thay vì để thua rồi continue.
@@ -166,7 +166,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 | 2 | Bảng thắng: nút "▶ +N" (ghi đúng số xu thêm) | Lần 1–2 trong ngày +50% xu màn, từ lần 3 +20% | **Không giới hạn** | — |
 | 3 | Popup booster hết kho | 1 booster loại đó | 3 (chung mọi loại) | Gem mua bao nhiêu cũng được, gói ×3 |
 | 4 | Sau khi nhận xu idle ở Deco: nút "▶ +N" (8 giây) | +50% số vừa nhận | 1 | — |
-| 5 | Shop: "Gem miễn phí" | 10 gem | 2 | 20 gem ≈ $0.20 |
+| 5 | Shop: "Gem miễn phí" | 20 gem (tăng từ 10, 22/10) | 2 | 40 gem ≈ $0.40 |
 | | **Tổng** | | 11 lượt có trần + bảng thắng không giới hạn | |
 
 - Lần xem thứ N trong ngày hết → nút đổi thành "Come back tomorrow" (không ẩn hẳn, để người chơi biết mai có).
@@ -178,7 +178,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 - **Interstitial**: tắt ở đầu bản test (`INTERSTITIAL_ON = false`). Bật cho nhóm A/B từ tuần 3: chỉ sau thắng, từ màn 20, mỗi 3 màn, cách nhau ≥ 180 s,
   không sau thua, không trong 60 s sau một RV. Mọi giao dịch IAP tắt interstitial vĩnh viễn.
 
-Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 10, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }`
+Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }`
 (`null` = không giới hạn). Interstitial: chưa làm.
 
 ---
@@ -192,13 +192,14 @@ Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null,
 | Thắng màn 10 lần đầu (sau bài học continue) | 100 | một lần |
 | Thắng màn boss lần đầu (20, 30 … 100) | 25 | ~3 |
 | Mở mỗi khu deco | 50 | ~5 |
-| Quà đăng nhập 7 ngày (5, 5, 10, 10, 15, 15, 40) | 100 / tuần | ~14 |
-| Nhiệm vụ ngày: rương đủ 3 nhiệm vụ | 15 | 15 |
+| Quà đăng nhập hằng ngày | **không cho gem** (quyết định 22/10: hard currency không làm quà đăng nhập; quà đăng nhập là xu / booster / đồ) | 0 |
+| Nhiệm vụ ngày: rương đủ 3 nhiệm vụ (Sprint 8, chưa chốt có gem hay không) | 15 | 15 |
 | Thú cưng mới vào bộ sưu tập | 10 | ~2 |
-| RV "Gem miễn phí" | 10 × 2 | 20 |
-| **Tổng** | | **~40 không ads · ~60 có ads** |
+| RV "Gem miễn phí" | 20 × 2 | 40 |
+| **Tổng** | | **~25 không ads · ~65 có ads** |
 
-60 gem / ngày ≈ một continue đầu tiên hoặc 1–2 booster mỗi ngày. Chủ ý: miễn phí đủ để **thói quen tiêu gem** hình thành, không đủ cho mọi màn khó.
+~65 gem / ngày ≈ chưa đủ một continue (75) hoặc 1–2 booster mỗi ngày. Gem miễn phí lặp lại hằng ngày chủ yếu đến từ xem ads ở Shop: muốn có gem đều
+thì xem ads hoặc mua. Chủ ý: miễn phí đủ để **thói quen tiêu gem** hình thành, không đủ cho mọi màn khó.
 Kiểm sau test: phân bố số dư gem (wiki: xem người chơi tiêu gem miễn phí vào đâu, [[concept-analytics-and-kpis]]). Nếu trung vị số dư cứ tăng → nguồn quá nhiều hoặc giá quá cao.
 
 ### 6.2 Chỗ tiêu gem
@@ -251,7 +252,7 @@ Gói đắt nhất đặt ngang tầm mắt làm mỏ neo giá ([[concept-store-
 | $9.99 | 1,200 | +20% | **Most popular** (compromise effect: món giữa) |
 | $19.99 | 2,600 | +30% | |
 | $49.99 | 7,000 | +40% | |
-| $99.99 | 15,000 | +50% | **Best value** (mỏ neo) |
+| $99.99 | 16,000 | +60% (tăng từ 15,000, 22/10; 20,000 / +100% bị loại vì phá nhịp bonus tăng đều và hạ trần chi tiêu, [[concept-store-and-pricing]]) | **Best value** (mỏ neo) |
 
 Mức thấp nhất là $1.99; cửa $0.99 chỉ dành cho starter pack để giá vào cửa rẻ là một món "hời" một lần, không phải gói thường.
 Bản test ở chợ giá thấp (VN / PH / ID…) dùng bảng giá theo vùng của store, không tự quy đổi.
@@ -300,7 +301,7 @@ Wiki không có benchmark cho các chỉ số này ([[concept-analytics-and-kpis
 | `GEM_PACKS` | 6 gói mục 8.1, kèm `id` sản phẩm store |
 | `COIN_TOP_UP` | `{ gemsPerLevel: 20, minGems: 1 }` (thay `COIN_BAGS`: bù xu khi thiếu, không có túi xu) |
 | `OFFERS` | `starter` / `rescue` / `builder` như mục 8 (Builder: xu = 12 × thưởng màn thay cho "2 món gốc") |
-| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 10, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }` |
+| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }` |
 | `REWARD_FLAT_FROM` | 0 = thưởng tăng mãi (đặt > 0 để dừng tăng từ màn đó) |
 | bỏ | `BOOSTER_PRICE` (xu), `COIN_PACKS`, `STARTER_PACK` |
 
@@ -328,11 +329,11 @@ grep -rn "ADS-SDK\|IAP-SDK" game
 | `bonusCoins` | `game/play/result.js` | Nút "▶ +N" dưới dòng xu ở bảng thắng (khi màn có xu), mọi lần thắng | Lần 1–2 trong ngày +50% xu màn, sau đó +20% |
 | `booster` | `game/app/store.js` (`offerBooster`) | Popup khi chạm booster đã hết trong ván | 1 booster loại đó |
 | `idle` | `game/menu/idle-coins.js` | Nút "▶ +N" hiện 8 giây sau khi nhận xu idle ở Deco, 1 lần / ngày | +50% số xu vừa nhận |
-| `gems` | `game/menu/shop.js` | Dòng "▶ Free 💎10" đầu Shop | 10 gem |
+| `gems` | `game/menu/shop.js` | Dòng "▶ Free 💎20" đầu Shop | 20 gem |
 
 Giới hạn mỗi ngày đếm ở `game/core/gems.mjs` (reset 0h giờ máy), ads chỉ có từ màn 6. Interstitial: chưa có (thiết kế: tắt ở đầu bản test).
 
-**Sản phẩm IAP** (id trong `economy.mjs`): 6 gói gem `gems_200` … `gems_15000`, `starter_pack`, `rescue_pack`, `builder_pack`.
+**Sản phẩm IAP** (id trong `economy.mjs`): 6 gói gem `gems_200` … `gems_16000`, `starter_pack`, `rescue_pack`, `builder_pack`.
 
 ## 12. Đã làm trong game / chưa làm
 
@@ -342,6 +343,6 @@ trong ván (+lượt khi sắp hết lượt mà thiếu điểm, búa khi bàn 
 mở khu, thú cưng mới); thêm xu ở bảng thắng (không giới hạn, giảm dần), thêm xu idle, gem miễn phí ở Shop; Shop mới (ưu đãi đang chạy, gói gem, booster); thiếu xu thì trả hết xu + bù gem ngay tại món / khu; starter /
 rescue / builder pack có hạn giờ; thưởng màn tăng mãi (mốc dừng để trên Remote Config, mặc định tắt).
 
-Chưa làm: quà đăng nhập + nhiệm vụ ngày (Daily, Sprint 8); interstitial + gói No Ads; đồ deco premium / thảm độc quyền trong starter pack
+Chưa làm: quà đăng nhập (không cho gem) + nhiệm vụ ngày (Daily, Sprint 8); interstitial + gói No Ads; đồ deco premium / thảm độc quyền trong starter pack
 (chưa có model); pulse booster đầu màn cho boss từ lần chơi lại thứ 2; art Figma cho popup / thẻ ưu đãi (đang dùng style tạm `game/ui/shared/store.css`);
 cột "có ads" trong mô phỏng kinh tế (editor).
