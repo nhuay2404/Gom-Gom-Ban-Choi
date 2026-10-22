@@ -83,7 +83,7 @@
         },
         "GEM_PACKS": {
           "defaultValue": {
-            "value": "[{\"id\":\"gems_200\",\"usd\":1.99,\"gems\":200,\"tag\":\"\"},{\"id\":\"gems_550\",\"usd\":4.99,\"gems\":550,\"tag\":\"+10%\"},{\"id\":\"gems_1200\",\"usd\":9.99,\"gems\":1200,\"tag\":\"Most popular\"},{\"id\":\"gems_2600\",\"usd\":19.99,\"gems\":2600,\"tag\":\"+30%\"},{\"id\":\"gems_7000\",\"usd\":49.99,\"gems\":7000,\"tag\":\"+40%\"},{\"id\":\"gems_15000\",\"usd\":99.99,\"gems\":15000,\"tag\":\"Best value\"}]"
+            "value": "[{\"id\":\"gems_200\",\"usd\":1.99,\"gems\":200,\"tag\":\"\"},{\"id\":\"gems_550\",\"usd\":4.99,\"gems\":550,\"tag\":\"+10%\"},{\"id\":\"gems_1200\",\"usd\":9.99,\"gems\":1200,\"tag\":\"Most popular\"},{\"id\":\"gems_2600\",\"usd\":19.99,\"gems\":2600,\"tag\":\"+30%\"},{\"id\":\"gems_7000\",\"usd\":49.99,\"gems\":7000,\"tag\":\"+40%\"},{\"id\":\"gems_16000\",\"usd\":99.99,\"gems\":16000,\"tag\":\"Best value\"}]"
           },
           "valueType": "JSON"
         },
@@ -101,7 +101,7 @@
         },
         "REWARDED_ADS": {
           "defaultValue": {
-            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":1,\"gems\":2},\"gems\":10,\"coinBonus\":[0.5,0.5,0.2],\"idleBonus\":0.5}"
+            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":1,\"gems\":2},\"gems\":20,\"coinBonus\":[0.5,0.5,0.2],\"idleBonus\":0.5}"
           },
           "valueType": "JSON"
         },
