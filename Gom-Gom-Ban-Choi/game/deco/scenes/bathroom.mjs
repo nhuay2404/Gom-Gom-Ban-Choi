@@ -154,7 +154,7 @@ export const BATHROOM_BUILD = {
     const chr = chrome();
     return group(...showerTray('#f5f8fb'), at(glassPane(1.08, 1.9, .02), 0, 1.03, .53), at(glassPane(.02, 1.9, 1.08), .53, 1.03, 0),
       at(cyl(.012, .012, 1.08, chr, 8), 0, 1.98, .53).rotateZ(Math.PI / 2), at(cyl(.012, .012, 1.08, chr, 8), .53, 1.98, 0).rotateX(Math.PI / 2),
-      at(cyl(.014, .014, 1.9, chr, 8), .53, 1.03, .53), ...showerHead(chr));
+      at(cyl(.014, .014, 1.92, chr, 8), .53, 1.04, .53), ...showerHead(chr));
   },
   'shower-rain'() {
     const black = mat('#2b2f3a', { metalness: .4, roughness: .5 }), chr = chrome();
@@ -271,7 +271,7 @@ export const BATHROOM_BUILD = {
   },
   'bathmat-duck'() {
     return group(squash(at(cyl(.42, .42, .03, '#ffd66b', 36), -.12, .015, 0), 1, 1, .75), at(cyl(.2, .2, .032, '#ffd66b', 28), .38, .016, -.12),
-      at(cyl(.035, .035, .036, '#3a2f2a', 12), .42, .018, -.18), squash(at(cyl(.08, .08, .034, '#ff8a3d', 3), .6, .017, -.1), 1, 1, .7));
+      at(cyl(.035, .035, .036, '#3a2f2a', 12), .42, .018, -.18), squash(at(cyl(.08, .08, .04, '#ff8a3d', 3), .6, .02, -.1), 1, 1, .7));
   },
 };
 

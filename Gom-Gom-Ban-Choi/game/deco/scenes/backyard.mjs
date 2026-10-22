@@ -129,7 +129,7 @@ export const BACKYARD_BUILD = {
     const g = group(
       ...[-.3, .3].flatMap(x => [-.75, .75].map(z => at(cyl(.025, .025, .25, frame, 8), x, .125, z))),
       at(rbox(.7, .06, 1.25, .025, frame), 0, .28, .25), at(rbox(.62, .08, 1.15, .04, cushion), 0, .35, .25),
-      ...[-.1, .1, .3, .5, .7].map(z => at(box(.63, .085, .02, '#ffd9e6'), 0, .35, z)));
+      ...[-.1, .1, .3, .5, .7].map(z => at(box(.63, .085, .02, '#ffd9e6'), 0, .355, z)));
     const back = group(at(rbox(.7, .06, .65, .025, frame), 0, 0, 0), at(rbox(.62, .08, .58, .04, cushion), 0, .06, 0),
       squash(at(ball(.14, '#fffaf0'), 0, .16, -.18), 1.6, .6, 1));
     back.position.set(0, .48, -.62); back.rotation.x = -.6;
@@ -435,7 +435,7 @@ Object.assign(BACKYARD_BUILD, {
   'greenhouse-shed'() {
     const W = 2.6, D = 2, H = 1.9, RISE = .7, wall = '#e9c58f', trim = '#fffaf0';
     const g = group(at(rbox(W + .1, .1, D + .1, .04, '#b5aea3'), 0, .05, 0), at(box(W, H, D, wall), 0, .1 + H / 2, 0));
-    for (let k = 0; k < 12; k++) g.add(at(box(.02, H, D + .02, '#d9b07e'), -W / 2 + .1 + k * .22, .1 + H / 2, 0));
+    for (let k = 0; k < 12; k++) g.add(at(box(.02, H - .02, D + .02, '#d9b07e'), -W / 2 + .1 + k * .22, .09 + H / 2, 0));
     const gable = new THREE.Shape([new THREE.Vector2(-W / 2, 0), new THREE.Vector2(W / 2, 0), new THREE.Vector2(0, RISE)]);
     for (const s of [-1, 1]) { const gEnd = mesh(new THREE.ExtrudeGeometry(gable, { depth: .02, bevelEnabled: false }), wall); gEnd.position.set(0, .1 + H, s * D / 2 - .01); g.add(gEnd); }
     const slope = Math.atan2(RISE, W / 2), len = Math.hypot(RISE, W / 2) + .15;

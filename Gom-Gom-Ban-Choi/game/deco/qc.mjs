@@ -137,14 +137,20 @@ export function glowIssues(node) {
 // rồi so từng cặp mặt cùng hướng GIỮA HAI NHÓM KHÁC NHAU (chồng nhau trong một nhóm là cấu tạo của chính nhóm: trụ cửa, ốp chân tường...).
 // Mặt đáy (y-) không tính: camera luôn nhìn từ trên xuống. Tính theo khung bao thế giới (khối hộp không xoay nghiêng nên khung bao =
 // chính khối). Hai khối chỉ chạm mép (diện tích 0) không tính.
-export function zFightIssues(shells) {
+// topsOnly: chỉ so mặt trên (y+) của khối hộp / trụ đứng, mỗi mesh là một nhóm riêng: dùng cho từng model (model đặt xoay nên mặt bên không tin được).
+export function zFightIssues(shells, topsOnly = false) {
   const boxes = [];
   shells.forEach((roots, group) => {
     for (const root of [].concat(roots)) {
       root.updateMatrixWorld(true);
       root.traverse(n => {
-        if (!n.isMesh || n.userData.outline || n.geometry?.type !== 'BoxGeometry') return;
-        boxes.push({ mesh: n, group, b: new THREE.Box3().setFromObject(n) });
+        const type = n.geometry?.type;
+        if (!n.isMesh || !n.visible || n.userData.outline || (type !== 'BoxGeometry' && !(topsOnly && type === 'CylinderGeometry'))) return;
+        // múi trụ (thetaLength < 2π) ghép cạnh nhau thì khung bao chồng nhưng mặt không chồng
+        if (topsOnly && n.geometry.parameters?.thetaLength < Math.PI * 2 - 1e-6) return;
+        // trụ / hộp nghiêng thì khung bao không phải mặt thật
+        if (topsOnly && new THREE.Vector3().setFromMatrixColumn(n.matrixWorld, 1).normalize().y < .999) return;
+        boxes.push({ mesh: n, group: topsOnly ? boxes.length : group, b: new THREE.Box3().setFromObject(n) });
       });
     }
   });
@@ -153,9 +159,11 @@ export function zFightIssues(shells) {
   const color = m => [].concat(m.material)[0]?.color?.getHexString?.() ?? '';
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     if (boxes[i].group === boxes[j].group) continue;
+    // cùng màu cùng hướng: chập vẫn không thấy, bỏ qua (chỉ áp cho từng model)
+    if (topsOnly && color(boxes[i].mesh) === color(boxes[j].mesh)) continue;
     const a = boxes[i].b, b = boxes[j].b;
     if (a.max.x < b.min.x || b.max.x < a.min.x || a.max.y < b.min.y || b.max.y < a.min.y || a.max.z < b.min.z || b.max.z < a.min.z) continue;
-    for (const axis of axes) {
+    for (const axis of topsOnly ? ['y'] : axes) {
       const others = axes.filter(k => k !== axis);
       const overlaps = others.every(k => Math.min(a.max[k], b.max[k]) - Math.max(a.min[k], b.min[k]) > MIN);
       if (!overlaps) continue;
@@ -253,7 +261,7 @@ export function checkModel(build, zone = 'garden') {
   geometryNotes.length = 0;
   const node = withoutMerging(build);
   node.userData.update?.(0); // bộ phận cử động (cá, chim, bóng treo) về đúng tư thế khung hình đầu
-  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list), ...glowIssues(node), ...toonIssues(node)];
+  const list = parts(node, [0, 0], zone), box = union(list), issues = [...geometryNotes, ...decalIssues(list), ...shellIssues(list), ...glowIssues(node), ...toonIssues(node), ...zFightIssues([node], true)];
   const sink = node.userData.sink || 0, low = Math.min(...list.map(p => p.low)); // sink: phần chôn xuống đất có chủ đích
   if (low < -.01 - sink) issues.push(`lún xuống mặt đất ${fmt(-low * 100)} cm (cho phép ${fmt(sink * 100)} cm qua userData.sink)`);
   if (low > .05 && !node.userData.wallMounted) issues.push(`lơ lửng ${fmt(low * 100)} cm trên mặt đất (đồ treo tường: userData.wallMounted)`);

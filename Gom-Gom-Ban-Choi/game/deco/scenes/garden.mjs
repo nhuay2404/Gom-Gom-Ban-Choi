@@ -172,7 +172,7 @@ export const GARDEN_BUILD = {
   },
   stump() {
     const stump = group(at(cyl(.38, .44, .45, '#9a6a45'), 0, .225, 0), at(cyl(.36, .36, .02, '#e6c79a'), 0, .455, 0),
-      at(cyl(.2, .2, .021, '#d2ad7a'), 0, .457, 0));
+      at(cyl(.2, .2, .021, '#d2ad7a'), 0, .462, 0));
     for (let i = 0; i < 3; i++) { const root = rbox(.14, .1, .3, .04, '#8a5a3a'); root.rotation.y = i * 2.1; root.translateZ(.4); root.position.y = .05; stump.add(root); }
     return stump;
   },
@@ -646,7 +646,7 @@ export const GARDEN_BUILD = {
     for (let i = 0; i < 4; i++) leaves.add(at(ball(.035, i % 2 ? '#c9a6f5' : '#b48ee8'), Math.cos(i * 1.6) * .08, .36 + (i % 2) * .04, Math.sin(i * 1.6) * .08));
     mergeStatic(leaves); // lá + hoa gộp theo màu, cả bụi vẫn rung như một khối
     leaves.position.y = .28;
-    const pot = group(at(cyl(.27, .2, .3, '#c9693d', 24), 0, .15, 0), at(cyl(.3, .3, .06, '#d9794d', 24), 0, .28, 0), at(cyl(.25, .25, .02, '#5a3a2a', 24), 0, .3, 0), leaves);
+    const pot = group(at(cyl(.27, .2, .3, '#c9693d', 24), 0, .15, 0), at(cyl(.3, .3, .06, '#d9794d', 24), 0, .28, 0), at(cyl(.25, .25, .02, '#5a3a2a', 24), 0, .305, 0), leaves);
     pot.userData.leaves = leaves;
     return pot;
   },

@@ -776,7 +776,7 @@ Object.assign(GARDEN2_BUILD, {
     const logs = [0, 1, 2].map(k => { const l = at(cyl(.045, .05, .5, '#8a5a3a', 10), 0, TOP + .03, 0); l.rotation.set(Math.PI / 2, k * TAU / 3, 0, 'YXZ'); return l; });
     const stool = (x, z) => group(at(cyl(.2, .22, .42, '#9a6a45', 16), x, .21, z), at(cyl(.19, .19, .02, '#d9b07e', 16), x, .43, z));
     const pit = group(at(cyl(.22, .3, .18, '#8a837a', 18), 0, .09, 0), at(cyl(.48, .3, .3, '#b5aea3', 24), 0, .33, 0),
-      at(mesh(new THREE.TorusGeometry(.47, .04, 8, 32), '#c8c2b8'), 0, .48, 0).rotateX(Math.PI / 2), at(cyl(.43, .43, .02, '#3a2a24', 24), 0, .47, 0),
+      at(mesh(new THREE.TorusGeometry(.47, .04, 8, 32), '#c8c2b8'), 0, .48, 0).rotateX(Math.PI / 2), at(cyl(.43, .43, .02, '#3a2a24', 24), 0, .485, 0),
       ...logs, ...flames, light, stool(-.8, -.55), stool(.8, -.55));
     pit.userData.update = t => {
       flames.forEach((f, k) => {

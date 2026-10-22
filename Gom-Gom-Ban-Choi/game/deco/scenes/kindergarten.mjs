@@ -401,7 +401,7 @@ Object.assign(KINDER_BUILD, {
   // Ngựa gỗ bập bênh (kép)
   'kspring-rocker': () => pairZ(1.3, .5, s => group(...[-1, 1].map(x => at(ring(.42, .03, WOOD_DARK, Math.PI * .6), x * .14, .45, 0).rotateY(Math.PI / 2).rotateZ(Math.PI * 1.2)),
     squash(at(ball(.22, s < 0 ? WOOD : '#fffaf0'), 0, .5, 0), .8, .7, 1.4), at(rbox(.14, .28, .18, .05, s < 0 ? WOOD : '#fffaf0'), 0, .72, .26),
-    at(rbox(.06, .2, .16, .03, s < 0 ? '#2f3238' : PINK), 0, .76, .17), at(rbox(.26, .04, .2, .015, RED), 0, .66, 0),
+    at(rbox(.06, .2, .16, .03, s < 0 ? '#2f3238' : PINK), 0, .765, .17), at(rbox(.26, .04, .2, .015, RED), 0, .66, 0),
     ...[-1, 1].flatMap(x => [-1, 1].map(z => at(cyl(.025, .025, .26, WOOD_DARK, 6), x * .14, .25, z * .2))))),
   // Xe đạp chân trẻ con (kép): thân xe, bốn bánh, vô lăng
   'kspring-cars': () => pairZ(1.3, .5, s => {
