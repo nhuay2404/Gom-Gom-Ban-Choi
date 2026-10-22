@@ -56,7 +56,7 @@ export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 // Gem có sẵn khi mới vào game.
 export const START_GEMS = remote('START_GEMS', 0);
 // Gem miễn phí: thắng màn paywall lần đầu · thắng màn boss lần đầu · mở một khu deco · nhận một thú cưng mới.
-// (Quà đăng nhập 7 ngày + rương nhiệm vụ ngày thuộc Daily, Sprint 8: chưa làm.)
+// Quà đăng nhập hằng ngày (Daily, Sprint 8) KHÔNG cho gem (quyết định 22/10): chỉ xu / booster / đồ. Rương nhiệm vụ ngày: chưa chốt.
 export const GEM_REWARDS = remote('GEM_REWARDS', { paywall: 100, boss: 25, area: 50, pet: 10 });
 
 // Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).
@@ -66,7 +66,7 @@ export const GEM_PACKS = remote('GEM_PACKS', [
   { id: 'gems_1200', usd: 9.99, gems: 1200, tag: 'Most popular' },
   { id: 'gems_2600', usd: 19.99, gems: 2600, tag: '+30%' },
   { id: 'gems_7000', usd: 49.99, gems: 7000, tag: '+40%' },
-  { id: 'gems_15000', usd: 99.99, gems: 15000, tag: 'Best value' },
+  { id: 'gems_16000', usd: 99.99, gems: 16000, tag: 'Best value' },
 ]);
 // Thiếu xu khi mua đồ / mở khu: trả HẾT xu đang có + bù phần thiếu bằng gem (không có túi xu, không có tỉ giá hiện ra cho người chơi).
 // Tỉ giá ngầm theo tiến độ: thiếu đúng 1 lần thưởng của màn đang chơi = gemsPerLevel gem (làm tròn lên, tối thiểu minGems).
@@ -88,7 +88,7 @@ export const OFFERS = remote('OFFERS', {
 // coinBonus = xu thêm ở bảng thắng theo lần xem thứ 1, 2, … trong ngày (tỉ lệ xu của màn; hết danh sách thì giữ số cuối):
 //   2 lần đầu +50%, từ lần 3 +20%, xem bao nhiêu cũng được. idleBonus = xu thêm khi xem ads lúc nhận xu idle (tỉ lệ số vừa nhận).
 //   Mô phỏng (tools/economy/economy-sim.mjs, ads.bonus): người xem mọi màn vẫn chỉ đủ ~90–100% giá món gốc ở màn 20–70.
-export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 10, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 });
+export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 });
 
 // Continue khi thua: giá gem tăng dần trong CÙNG một lần chơi (hết danh sách = không continue nữa).
 //   moves = lượt cộng khi trả gem · adMoves = lượt cộng khi xem ads (chỉ ở lần continue đầu) · stuckMoves = lượt cộng khi thua vì hết chỗ
