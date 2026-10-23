@@ -433,6 +433,9 @@ img.crate.open{position:absolute;inset:0;scale:1.58;translate:0 -17%}
   background:url('../../assets/img/board/syrup-autotile.png') var(--sx, 0%) var(--sy, 0%) / 825% 618.75% no-repeat}
 /* siro đang chảy (play/match-fx.js washSyrup): gắn vào ô vừa vẽ lại, đè lên con vật */
 .cell .syrup-ghost{z-index:6;transform-origin:50% 100%}
+/* Hold pets during redraw/loading; animation overrides the flow's safe default clip. */
+.cell[data-syrup-pour="pending"] > :is(.cat,.fat-cat){visibility:hidden!important}
+.cell[data-syrup-pour="flow"] > :is(.cat,.fat-cat){clip-path:inset(0 0 100% 0)}
 .vase-chip{position:absolute;z-index:5;width:9px;height:7px;border-radius:2px 5px 2px 4px;background:#7cc4e8;box-shadow:0 0 0 1.5px #5a2e1c;pointer-events:none}
 .crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:#d08f4e;box-shadow:0 1px 0 #6d4020;pointer-events:none}
 /* Vui vẻ (chạm mèo / gom) thắng mọi biểu cảm buồn: ẩn mặt buồn/ngủ, giữ nhịp nhảy vui thay vì rung/khóc. */
@@ -548,6 +551,8 @@ body.card-dragging #active-card .piece-grid{opacity:0;transition:none}
 .grass-fringe.edge-s{left:88%;top:calc(100% + var(--fh) * .7);transform:rotate(180deg)}
 .grass-fringe.edge-w{left:calc(var(--fh) * -.7);top:88%;transform:rotate(-90deg)}
 .grass-tile.j-n > .edge-n,.grass-tile.j-e > .edge-e,.grass-tile.j-s > .edge-s,.grass-tile.j-w > .edge-w{display:none}
+/* Cỏ dưới siro bị che kín nên ẩn hẳn: tấm cỏ tràn qua khe + lá ở mép đè lên ô siro vẽ trước nó (hàng lá + vạch cắt ngang mảng siro) */
+.cell.syrup > .grass-tile{visibility:hidden}
 /* lớp siro (ô siro + siro đang chảy) tự định vị absolute phủ ô: không bị kéo về relative (lỗi: siro trên cỏ thành 0×0, clip hỏng) */
 .cell.grass > :not(.grass-tile, .syrup-tile, .syrup-ghost){position:relative;z-index:1}
 /* Vết trũng theo thân pet, nằm trên texture nhưng dưới pet; không chạy theo chu vi bãi cỏ. */
