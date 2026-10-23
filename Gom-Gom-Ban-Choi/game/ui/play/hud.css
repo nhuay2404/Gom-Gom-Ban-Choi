@@ -236,3 +236,13 @@
 .shell .board[style*="--cols: 11;"] .cell.void:has(+*+*+*+*+*+*+*+*+*+*+.cell.void){--vb:0}
 .shell .board[style*="--cols: 12;"] .cell.void+*+*+*+*+*+*+*+*+*+*+*+.cell.void{--vt:0}
 .shell .board[style*="--cols: 12;"] .cell.void:has(+*+*+*+*+*+*+*+*+*+*+*+.cell.void){--vb:0}
+/* Tách bàn và khay xoay thành hai khung riêng (người chơi chọn), và chừa khoảng dưới khung HUD để Goal không đè lên bàn */
+.shell .board-wrap{margin-top:calc(14 * var(--u));padding-bottom:calc(12 * var(--u))}
+.shell .board-wrap::before{bottom:0;border-bottom:var(--box-line) solid var(--box-ink);border-radius:calc(18 * var(--u))}
+.shell>.dock.draw-area{margin-top:calc(10 * var(--u));border-top:var(--box-line) solid var(--box-ink);border-radius:calc(18 * var(--u))}
+/* Màn cao (vd. 384×1200): bàn không cao hơn bề ngang, phần dư chia đều trên bàn và dưới khay -> cụm bàn + khay nằm giữa khoảng dưới HUD.
+   Màn thấp: flex-shrink vẫn thu bàn như cũ. */
+.shell .board-wrap{flex:0 1 auto;height:calc(var(--box-w) + 26 * var(--u));margin-top:auto}
+.shell>.dock.draw-area{margin-bottom:auto}
+/* Màn thấp: khung HUD (ảnh 137u) tràn 25u dưới hộp .fg-panel 112u, khung bàn lại nhô 12u trên bàn -> chừa sẵn 48u phía trên bàn để không bao giờ đè HUD */
+.shell .board-wrap{padding-top:calc(48 * var(--u));height:calc(var(--box-w) + 74 * var(--u))}

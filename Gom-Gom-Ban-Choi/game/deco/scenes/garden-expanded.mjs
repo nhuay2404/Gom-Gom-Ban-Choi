@@ -12,7 +12,6 @@ import { sphereSegments, radialSegments, mergeStatic, roundedBox } from '../rend
 import { HILL, hillProfile, groundHeight, GARDEN_EXT_X, gardenGroundUV } from '../room-layout.mjs';
 import { TOON, toonMat } from '../render/toon.mjs';
 import { pendulum, ropeBetween, rock } from './garden.mjs';
-import { spriteSheet } from '../render/sprite-sheet.mjs';
 
 const TAU = Math.PI * 2;
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
@@ -89,24 +88,13 @@ function puff(r, dark, light, seed) {
   return mesh(geo, `#${tone.getHexString()}`);
 }
 // Cây to: thân thuôn + hai cành + tán 5 khối; tán lắc nhẹ theo gió (update trả về để món gọi).
-// Tán: lõi 3D nhỏ hơn + mảng lá 2D (canopy.webp 3 × 2, sprite-sheet.mjs) rải kín mặt từng khối như luống oải hương ở vườn hoa.
-const CANOPY = [[0, 2.75, 0, .95], [.75, 2.45, .2, .7], [-.7, 2.5, -.1, .72], [.1, 3.3, -.1, .7], [-.2, 2.4, .6, .6]]; // [x, y, z, bán kính]
 function bigTree() {
-  const bark = '#9a6a45', leaves = spriteSheet('assets/img/deco/canopy.webp', 3, 2, 'tán lá');
-  let seed = 7;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const canopy = group(...CANOPY.map(([x, y, z, r], k) => at(puff(r * .5, '#3f8a2c', '#7cc455', k * 1.7), x, y, z)));
-  for (const [x, y, z, r] of CANOPY) {
-    const n = Math.round(5 + 16 * r * r);
-    for (let i = 0; i < n; i++) { // rải đều mặt cầu (xoắn ốc Fibonacci), tâm mảng lá ở .55 bán kính: mép ngoài ~ mặt khối cũ (không lấn món bên cạnh)
-      const v = 1 - (i + .5) / n * 2, rr = Math.sqrt(1 - v * v), a = i * 2.39996, s = r * (.85 + rnd() * .15);
-      leaves.tuft(x + Math.cos(a) * rr * r * .55, y + v * r * .55 - s / 2, z + Math.sin(a) * rr * r * .55, rnd() * Math.PI, s, s, Math.floor(rnd() * 3), Math.floor(rnd() * 2));
-    }
-  }
+  const bark = '#9a6a45';
+  const canopy = group(...[[0, 2.75, 0, .95], [.75, 2.45, .2, .7], [-.7, 2.5, -.1, .72], [.1, 3.3, -.1, .7], [-.2, 2.4, .6, .6]]
+    .map(([x, y, z, r], k) => at(puff(r, '#4f9a36', '#9be06a', k * 1.7), x, y, z)));
   const trunk = group(at(cyl(.2, .3, 2.2, bark, 14), 0, 1.1, 0), at(cyl(.07, .11, 1.1, bark, 10), .45, 2.05, .1).rotateZ(-.7), at(cyl(.06, .1, 1, bark, 10), -.4, 2.05, 0).rotateZ(.75),
     ...[0, 2.1, 4.2].map(a => at(cyl(.06, .14, .35, bark, 8), Math.cos(a) * .3, .1, Math.sin(a) * .3).rotateX(Math.cos(a) * .9).rotateZ(-Math.sin(a) * .9))); // rễ nổi
   mergeStatic(canopy);
-  canopy.add(leaves.build());
   trunk.userData.sink = .12; // rễ nổi bò rồi cắm xuống đất
   return { trunk, canopy, update: (t, w) => { canopy.rotation.z = Math.sin(t * 1.1) * .02 * w; canopy.rotation.x = Math.sin(t * .8 + 1) * .015 * w; } };
 }

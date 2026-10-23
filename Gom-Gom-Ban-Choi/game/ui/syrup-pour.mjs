@@ -1,7 +1,7 @@
 // 120 frames: pour 0–83, close cap 85–108, settle 109–119.
 const SHEET = 'assets/img/board/syrup-bottle-close-60fps.png';
 export const CLOSED_BOTTLE = '<img src="assets/img/board/syrup-bottle-closed.png" alt="" draggable="false" style="height:100%">';
-export const POUR_MS = 2000;
+export const POUR_MS = 1200;
 const image = new Image();
 image.src = SHEET;
 const ready = image.decode().then(() => true, () => false);
@@ -21,28 +21,31 @@ export function revealLine(i, box, pet) {
   return clamp((Math.min(surface, pet.top + (surface - start) * 3) - pet.top) / pet.height);
 }
 
-// Pet visible = above the reveal line, plus everything inside the cell box (the pour sprite drawn on top and the inverse-sprite mask
-// hide what is still under syrup there). evenodd rings: whole pet, minus below the line, plus the cell box below the line.
-export function petRevealFrames(box, pet) {
-  const pct = (v, from, size) => `${((v - from) / size * 100).toFixed(2)}%`;
-  const bl = pct(box.left, pet.left, pet.width), br = pct(box.left + box.width, pet.left, pet.width);
+// Pet visible = above the reveal line, plus all of it below the liquid surface (the pour sprite drawn on top hides what is still under
+// syrup; showing the full width there leaves no board strip beside the stream or at the pet's edges outside the cell).
+// evenodd rings: whole pet, minus below the line, plus below the surface.
+// cut (screen y, optional): bottom of a syrup tile right above the cell; the pet's head never shows above it, the syrup stays on top.
+export function petRevealFrames(box, pet, cut = -Infinity) {
+  const pct = v => `${((v - pet.top) / pet.height * 100).toFixed(2)}%`;
+  const head = pct(Math.max(cut, pet.top));
   return Array.from({ length: 121 }, (_, i) => {
-    const line = pet.top + revealLine(i, box, pet) * pet.height;
-    // cell box re-shown only once the liquid moves, and a corner radius below its surface: the tile's rounded corners would show the pet
-    const surface = box.top + (surfaceAt(i) + .1) * box.height;
-    const top = surfaceAt(i) > surfaceAt(0) ? Math.min(Math.max(line, surface), box.top + box.height) : box.top + box.height;
-    const l = pct(line, pet.top, pet.height), t = pct(top, pet.top, pet.height), b = pct(box.top + box.height, pet.top, pet.height);
+    const line = Math.max(cut, pet.top + revealLine(i, box, pet) * pet.height);
+    // re-shown only once the liquid moves; right then a corner radius below the surface keeps the tile's rounded corners covered,
+    // shrinking to nothing over the first 15% of the drop
+    const moved = surfaceAt(i) - surfaceAt(0), corner = .1 * clamp(1 - moved / .15);
+    const top = moved > 0 ? Math.max(line, box.top + (surfaceAt(i) + corner) * box.height) : pet.top + pet.height;
+    const l = pct(line), t = pct(Math.min(top, pet.top + pet.height));
     const rings = [
-      '0% 0%', '100% 0%', '100% 100%', '0% 100%', '0% 0%',
+      `0% ${head}`, `100% ${head}`, '100% 100%', '0% 100%', `0% ${head}`,
       `0% ${l}`, `100% ${l}`, '100% 100%', '0% 100%', `0% ${l}`,
-      `${bl} ${t}`, `${br} ${t}`, `${br} ${b}`, `${bl} ${b}`, `${bl} ${t}`,
-      `0% ${l}`, '0% 0%',
+      `0% ${t}`, `100% ${t}`, '100% 100%', '0% 100%', `0% ${t}`,
+      `0% ${l}`, `0% ${head}`,
     ];
     return { offset: i / 120, clipPath: `polygon(evenodd, ${rings.join(', ')})`, easing: 'steps(1, end)' };
   });
 }
 
-export async function playSyrupPour(cell, ghost, active = () => true) {
+export async function playSyrupPour(cell, ghost, active = () => true, layer = 60, cut) {
   const loaded = await ready;
   if (!cell.isConnected || !active() || !loaded) {
     ghost?.remove();
@@ -53,24 +56,14 @@ export async function playSyrupPour(cell, ghost, active = () => true) {
   const sprite = document.createElement('span');
   sprite.className = 'syrup-pour-sprite';
   sprite.setAttribute('aria-hidden', 'true');
-  sprite.style.cssText = `position:fixed;pointer-events:none;z-index:60;background-color:transparent;left:${box.left - 32 * sx}px;top:${box.top - 16 * sy}px;width:${192 * sx}px;height:${320 * sy}px;background-size:${2304 * sx}px ${3200 * sy}px;background-repeat:no-repeat`;
+  sprite.style.cssText = `position:fixed;pointer-events:none;z-index:${layer};background-color:transparent;left:${box.left - 32 * sx}px;top:${box.top - 16 * sy}px;width:${192 * sx}px;height:${320 * sy}px;background-size:${2304 * sx}px ${3200 * sy}px;background-repeat:no-repeat`;
   sprite.style.backgroundImage = `url("${SHEET}")`;
   const timing = { duration: POUR_MS, fill: 'both', easing: 'linear' };
   const animations = [];
   // Only pets are clipped. Grass, empty slots and the board underlay stay untouched.
-  const pets = [...cell.querySelectorAll(':scope > .cat, :scope > .fat-cat')];
-  pets.forEach(pet => {
-    const rect = pet.getBoundingClientRect();
-    animations.push(pet.animate(petRevealFrames(box, rect), timing));
-    // Mask = pet minus the current sprite frame, so the pet shows wherever the syrup has already drained (no board gap beside the
-    // stream). The pet faces the screen, so its local px map to screen px by one scale factor.
-    const k = rect.width / (pet.clientWidth || rect.width), dx = (box.left - 32 * sx - rect.left) / k, dy = (box.top - 16 * sy - rect.top) / k;
-    Object.assign(pet.style, { maskImage: `linear-gradient(#000 0 0), url("${SHEET}")`, maskRepeat: 'no-repeat', maskComposite: 'exclude',
-      maskSize: `100% 100%, ${2304 * sx / k}px ${3200 * sy / k}px` });
-    animations.push(pet.animate(Array.from({ length: 121 }, (_, i) => {
-      const frame = Math.min(i, 119);
-      return { offset: i / 120, maskPosition: `0 0, ${dx - (frame % 12) * 192 * sx / k}px ${dy - Math.floor(frame / 12) * 320 * sy / k}px`, easing: 'steps(1, end)' };
-    }), timing));
+  // The pour sprite is drawn above the board, so inside the cell it hides the pet wherever syrup remains and the pet shows beside the stream.
+  cell.querySelectorAll(':scope > .cat, :scope > .fat-cat').forEach(pet => {
+    animations.push(pet.animate(petRevealFrames(box, pet.getBoundingClientRect(), cut), timing));
   });
   cell.dataset.syrupPour = 'flow';
   document.body.append(sprite);
@@ -88,7 +81,6 @@ export async function playSyrupPour(cell, ghost, active = () => true) {
     await pour.finished;
   } finally {
     animations.forEach(animation => animation.cancel());
-    pets.forEach(pet => Object.assign(pet.style, { maskImage: '', maskRepeat: '', maskComposite: '', maskSize: '' }));
     sprite.remove();
     delete cell.dataset.syrupPour;
   }

@@ -98,7 +98,7 @@ export function makeDealer(level, rng = Math.random) {
     if (script.length) return script.shift();
     if (queue < 0 && rng() < ADAPTIVE.QUEUE_HELP * -queue) { const card = helpCard(board); if (card) return card; }
     const offsets = shapeOf();
-    if (level.harsh || (queue > 0 && rng() < ADAPTIVE.QUEUE_HARSH * queue)) return harshCard(board, offsets);
+    if (queue > 0 && rng() < ADAPTIVE.QUEUE_HARSH * queue) return harshCard(board, offsets);
     return { offsets, items: offsets.map(() => ({ group: color(board) })) };
   };
 }

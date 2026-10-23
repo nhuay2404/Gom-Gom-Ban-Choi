@@ -183,6 +183,9 @@ dialog p{color:#8a6440}
 .board-fx{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;z-index:4}
 .merge-ghost{position:absolute;margin:0;pointer-events:none;will-change:transform,opacity}/* Gom / thắng: mèo sướng rơn (mắt ^^, cười toe, má hồng, sao lấp lánh) thay vì mặt nhăn */
 .merge-ghost .cat .joy{visibility:visible}
+/* Mèo vừa đặt mà gom luôn: rơi xuống nhưng không mờ dần từ 0 (block-drop) — bị nhấc lên gom sau DROP_MS khi chưa hiện rõ, trông như tự mờ đi */
+.cell.merge-ghost.drop{animation-name:ghost-drop}
+@keyframes ghost-drop{from{transform:translateY(-38px)}to{transform:none}}
 .cell.merge-ghost .cat .calm,.cell.merge-ghost .cat .annoyed,.cell.merge-ghost .cat .blush,.cell.merge-ghost.lifted .cat .calm,.cell.merge-ghost.lifted .cat .annoyed,.cell.merge-ghost.lifted .cat .blush{display:none}
 @media(prefers-reduced-motion:no-preference){.merge-ghost.lifted .cat .joy g:last-child{animation:joy-twinkle .45s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}}
 @keyframes joy-twinkle{to{transform:scale(1.35) rotate(18deg);opacity:.7}}
@@ -438,8 +441,12 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 /* siro đang chảy (play/match-fx.js washSyrup): gắn vào ô vừa vẽ lại, đè lên con vật */
 .cell .syrup-ghost{z-index:6;transform-origin:50% 100%}
 /* Hold pets during redraw/loading; animation overrides the flow's safe default clip. */
-.cell[data-syrup-pour="pending"] > :is(.cat,.fat-cat){visibility:hidden!important}
+/* opacity, không dùng visibility: mặt / ảnh theo tâm trạng của mèo (.afk, .joy, .cute…) tự đặt visibility:visible nên vẫn lòi lên trên siro */
+.cell[data-syrup-pour="pending"] > :is(.cat,.fat-cat){opacity:0!important}
 .cell[data-syrup-pour="flow"] > :is(.cat,.fat-cat){clip-path:inset(0 0 100% 0)}
+/* Mèo ngay dưới ô siro (play/board-view.js): cắt phần đầu / tai nhô vào ô siro phía trên để mảng siro luôn nằm trên mèo.
+   21.5% = từ đỉnh ảnh mèo tới mép dưới mảng siro (đo trên bàn); bóng mèo đang gom / nhấc thì không cắt. */
+.cell.under-syrup:not(.merge-ghost,.lifted,.smash-ghost) > .cat{clip-path:inset(21.5% -40% -40% -40%)}
 .vase-chip{position:absolute;z-index:5;width:9px;height:7px;border-radius:2px 5px 2px 4px;background:#7cc4e8;box-shadow:0 0 0 1.5px #5a2e1c;pointer-events:none}
 .crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:#d08f4e;box-shadow:0 1px 0 #6d4020;pointer-events:none}
 /* Vui vẻ (chạm mèo / gom) thắng mọi biểu cảm buồn: ẩn mặt buồn/ngủ, giữ nhịp nhảy vui thay vì rung/khóc. */

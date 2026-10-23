@@ -88,7 +88,16 @@ body.hammer-armed .board .cell:not(.void){cursor:crosshair}
 /* Búa 3×3: vùng sẽ bị đập sáng viền vàng khi rê trên bàn */
 body.hammer-armed .board .cell.smash-area:not(.void){outline:3px solid #ffd23f;outline-offset:-3px;filter:brightness(1.08)}
 body.hammer-armed .board .cell.smash-center:not(.void){outline:4px solid #ff9f1c;outline-offset:-4px}
-.smash-ghost{position:absolute;pointer-events:none;z-index:3}
+/* !important: bóng sao từ ô cỏ mang theo .cell.grass{position:relative} (đặc hơn) — bóng rơi sai chỗ, mèo biến mất trước khi búa chạm */
+.smash-ghost{position:absolute!important;pointer-events:none;z-index:3}
+/* Búa vung (play/booster-bar.js swingHammer): nằm trên mọi lớp bàn, xoay quanh cuối cán */
+.hammer-fx{position:fixed;z-index:200;pointer-events:none;transform-origin:50% 95%}
+.hammer-fx svg{display:block;width:100%;height:100%;filter:drop-shadow(0 6px 4px #4a1d2a55)}
+/* Chỗ búa chạm (impactBurst): loé trắng vùng 3×3, vòng sóng xung kích, sao vàng văng */
+.smash-flash{position:absolute;z-index:5;pointer-events:none;border-radius:18%;background:radial-gradient(#fff,#fffc 55%,#fff0 72%)}
+.smash-ring{position:absolute;z-index:6;pointer-events:none;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 3px #ffd23f,inset 0 0 0 3px #ffd23f}
+.smash-star{position:absolute;z-index:6;width:13px;height:13px;pointer-events:none;background:#ffd23f;
+  clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
 @media(max-height:720px){.booster-bar{margin-bottom:6px;gap:14px}.boost{width:46px;height:46px}.boost svg{width:22px;height:22px}}
 /* Màn thấp (iPhone SE, Android 360×740, điện thoại có thanh trình duyệt): gọn thanh trên, HUD, dock, booster để nhường chỗ cho bàn cờ */
 @media(max-height:760px){

@@ -152,7 +152,11 @@ export function washSyrup(cells, delay) {
     const entry = ghosts.get(index), cell = cellEl(index);
     if (!cell || state !== session) { bottle.remove(); return; }
     playSound('pick');
-    await playSyrupPour(cell, entry?.ghost, () => state === session);
+    // several pours side by side: upper rows on top (their bottle stands over the cell below), then left over right (the cap flies right)
+    const layer = 60 + (H - Math.floor(index / W)) * W + (W - index % W);
+    // ô ngay trên vẫn còn siro: đầu mèo lộ ra không được trồi lên trên mảng siro đó
+    const above = index >= W ? cellEl(index - W)?.querySelector(':scope > .syrup-tile') : null;
+    await playSyrupPour(cell, entry?.ghost, () => state === session, layer, above?.getBoundingClientRect().bottom);
     if (state !== session) { bottle.remove(); return; }
     playSound('pet');
   });

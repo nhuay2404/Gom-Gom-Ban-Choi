@@ -51,8 +51,9 @@ export const difficultyOf = count => (count <= 1 ? 'easy' : count <= 3 ? 'medium
 export const MAX_ELEMENTS = ELEMENTS.length;
 export const isAdaptive = level => !level.tutorial;
 export const SHIFT_MIN = -2, SHIFT_MAX = 2;
-// Hàng thẻ lần đầu vào màn paywall: gần như toàn thẻ 1 mèo (ít điểm mỗi lượt). Cùng thẻ xấu, bot giỏi + 3 booster +lượt vẫn không đủ điểm (tools: 0/300).
-export const PAYWALL_FIRST_SHAPES = { single: 10, domino: 1, triple: 0 };
+// Hàng thẻ lần đầu vào màn paywall: mức queue (level-rules.mjs makeDealer) — khoảng 70% thẻ là thẻ xấu, vẫn có thẻ tốt xen kẽ.
+// Mức 6: rất khó nhưng vẫn thắng được (bot trung bình ~5% ở màn 10, gốc 17%). Trước đây MỌI thẻ đều xấu -> không thể thắng (0%).
+export const PAYWALL_FIRST_QUEUE = 6;
 
 // ---------- Bố trí mèo đặt sẵn ----------
 // Ô "tự do": ô trống hoặc mèo không bị nhốt. Vật cản, ô ngoài bàn, mèo trong chuồng là thiết kế: không bao giờ dời.
@@ -290,11 +291,11 @@ export function planLevel(profile, levelIndex, { cleared = false } = {}) {
   // Màn paywall: hàng thẻ cũng không nới theo số lần thua; từ lần chơi lại sau khi thua, nút booster +lượt nhấp nháy mời dùng.
   const tuned = tuneDealer(level, p.id === 'near-miss' || base.paywall ? { shift } : { shift, ...losses });
   level = tuned.level;
-  // Lần ĐẦU vào màn paywall: hàng thẻ xấu (levels.mjs makeDealer `harsh`) để không thể thắng; từ lần chơi lại thì thẻ bình thường.
+  // Lần ĐẦU vào màn paywall: hàng thẻ khó hơn (queue PAYWALL_FIRST_QUEUE); từ lần chơi lại thì theo DDA bình thường.
   // "Lần đầu" = chưa từng thắng màn này VÀ chưa từng chơi (paywallTried lưu vĩnh viễn, không bị cắt như lịch sử attempts).
   const tried = (profile.paywallTried ?? []).includes(levelIndex) || profile.attempts.some(a => a.level === levelIndex);
   const firstTry = !!base.paywall && !cleared && !tried;
-  if (firstTry) level = { ...level, harsh: true, shapes: PAYWALL_FIRST_SHAPES };
+  if (firstTry) level = { ...level, queue: Math.max(level.queue ?? 0, PAYWALL_FIRST_QUEUE) };
   const paywallRetry = !!base.paywall && recent.some(a => a.level === levelIndex && !a.win);
   const retry = recent.at(-1)?.level === levelIndex && !recent.at(-1).win;
   return { level, profile: p.id, shift, mode: null, layout: level.board, deal: tuned.deal, suggestBooster: !!p.suggestBooster || paywallRetry, retry, baseCount, count: baseCount, difficulty };

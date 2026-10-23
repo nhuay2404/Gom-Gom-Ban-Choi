@@ -53,7 +53,8 @@ export function render(message = '', error = false) {
 // has = màn có loại mục tiêu này từ đầu; ô Goal hiện đủ mọi mục tiêu còn lại (tối đa 3, mỗi loại một ô).
 const GOAL_KINDS = {
   grass: { has: () => state.grassTotal, icon: () => GRASS_ICON_SVG, left: () => game.grassLeft(state), label: 'grass tiles' },
-  cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => game.cagesLeft(state), label: 'caged cats' },
+  // Số lồng gồm cả lồng dưới siro: không thì ô lồng biến mất khi siro phủ hết lồng rồi hiện lại lúc rửa siro.
+  cage: { has: () => state.hasCages, icon: () => CAGE_ICON_SVG, left: () => state.board.filter(object => object?.cage).length, label: 'caged cats' },
   fat: { has: () => state.hasFat, icon: () => `<span class="goal-fat">${fatMarkup('sleep')}</span>`, left: () => game.fatLeft(state), label: 'sleepy big cats' },
   // thư / mảnh bình đang bay (match-fx.js flyToGoal) chưa trừ: số chỉ giảm lúc chạm ô Goal
   mail: { has: () => state.mailTotal, icon: () => LETTER_SVG, left: () => Math.max(0, state.mailTotal - state.mail + state.flying.mail), label: 'letters' },

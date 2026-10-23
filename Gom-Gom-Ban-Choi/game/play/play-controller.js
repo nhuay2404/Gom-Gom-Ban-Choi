@@ -87,7 +87,8 @@ export function newGame(levelIndex = state?.levelIndex ?? 0) {
   const plan = planLevel(profile, levelIndex, { cleared: !!loadProgress().stars[levelIndex] }), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.
   setSession(Object.assign(game.createSession(levelIndex, { level }), { plan, preview: null, previewAnchor: null, animating: false }));
-  state.hasCages = game.cagesLeft(state) > 0;
+  // Đếm cả lồng đang bị siro phủ (cagesLeft bỏ qua chúng): màn mà mọi lồng nằm dưới siro vẫn có ô Goal lồng.
+  state.hasCages = state.board.some(object => object?.cage);
   state.hasSyrup = game.syrupLeft(state) > 0;
   state.hasFat = state.board.some(object => object?.fat);
   state.hasVase = state.board.some(object => object?.vase);

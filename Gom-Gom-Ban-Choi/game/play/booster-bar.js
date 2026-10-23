@@ -5,6 +5,7 @@ import * as game from '../core/session.mjs';
 import { BOOSTERS, LUCKY } from '../data/tuning.mjs';
 import { spendBooster, boostersUnlocked } from '../core/boosters.mjs';
 import { playSound } from '../ui/sound.mjs';
+import { HAMMER_SVG } from '../ui/board-art.mjs';
 import { $, reduceMotion, getBoosters, storeBoosters, priceTag } from '../app/shared.js';
 import { offerBooster, tookGemShopTrip } from '../app/store.js';
 import { state, fxLayer, cellEl, W, H } from './context.js';
@@ -110,33 +111,42 @@ export function smashAt(cell) {
   useBooster('hammer');
   hammerArmed = false;
   clearSmashArea();
-  playSound('smash');
-  animateFat(turn, 0); // mèo béo trúng búa: nhún / lăn (điểm lăn đã nằm trong số điểm của nhát búa)
-  flyToGoal('mail', turn.mail, 120);
-  washSyrup(turn.removed.filter(({ object }) => object.syrup).map(({ index: i }) => i), 0);
-  breakVases({ cracked: [], shattered: turn.removed.filter(({ object }) => object.vase).map(({ index: i }) => i) }, 0);
+  // Búa vung xuống trước: mọi thứ trong vùng 3×3 giữ nguyên (bóng sao từ ô thật) tới đúng lúc búa chạm rồi mới vỡ.
+  const impact = reduceMotion.matches ? 0 : HAMMER_IMPACT_MS, at = cellEl(index);
+  if (impact && at) swingHammer(at);
+  setTimeout(() => playSound('smash'), impact);
+  animateFat(turn, impact); // mèo béo trúng búa: nhún / lăn (điểm lăn đã nằm trong số điểm của nhát búa)
+  flyToGoal('mail', turn.mail, impact + 120);
+  washSyrup(turn.removed.filter(({ object }) => object.syrup).map(({ index: i }) => i), impact);
+  breakVases({ cracked: [], shattered: turn.removed.filter(({ object }) => object.vase).map(({ index: i }) => i) }, impact);
   const crates = turn.removed.filter(({ object }) => object.block && !object.metal).map(({ index: i }) => i);
-  breakCrates(crates, 0);
+  breakCrates(crates, impact);
   if (!reduceMotion.matches) {
     const layer = fxLayer();
     turn.removed.forEach(({ index: i, object }) => {
       const target = cellEl(i);
-      if (!target || (object.block && !object.metal) || object.vase) return; // thùng: breakCrates lo · bình: breakVases lo
-      if (object.metal || (object.cage && !object.syrup)) { flyBits(layer, target, object.cage ? 'cage-bar' : 'grass-bit', 6); spawnPuff(target); return; }
+      if (!target || (object.block && !object.metal) || object.vase || object.syrup) return; // thùng / bình / siro: breakCrates / breakVases / washSyrup lo
       const ghost = target.cloneNode(true);
       ghost.classList.add('smash-ghost');
       ghost.style.cssText += `;left:${target.offsetLeft}px;top:${target.offsetTop}px;width:${target.offsetWidth}px;height:${target.offsetHeight}px`;
       layer.append(ghost);
-      ghost.animate([{ scale: 1, rotate: '0deg', opacity: 1 }, { scale: 1.15, rotate: '-12deg', opacity: 1, offset: .25 }, { scale: 0, rotate: '200deg', opacity: 0 }],
-        { duration: 420, easing: 'cubic-bezier(.5,0,.7,.4)', fill: 'forwards' }).finished.then(() => ghost.remove());
-      spawnPuff(target);
+      // ô ở tâm bị đập bẹp trước, ô xung quanh bật văng theo sau một chút
+      const ring = i === index ? 0 : 40;
+      ghost.animate([{ scale: '1', rotate: '0deg', opacity: 1 }, { scale: '1.25 .7', rotate: '0deg', opacity: 1, offset: .18 }, { scale: '1.1', rotate: '-14deg', opacity: 1, offset: .38 }, { scale: '0', rotate: '220deg', opacity: 0 }],
+        { duration: 460, delay: impact + ring, easing: 'cubic-bezier(.4,0,.7,.5)', fill: 'both' }).finished.then(() => ghost.remove());
+      setTimeout(() => {
+        if (object.metal || object.cage) flyBits(layer, target, object.cage ? 'cage-bar' : 'grass-bit', 6);
+        spawnPuff(target);
+      }, impact + ring);
     });
-    turn.cleaned.forEach(i => { const target = cellEl(i); if (target) flyBits(layer, target, 'grass-bit', 5); });
-    shakeBoard(8);
+    setTimeout(() => {
+      turn.cleaned.forEach(i => { const target = cellEl(i); if (target) flyBits(layer, target, 'grass-bit', 5); });
+      if (at) impactBurst(layer, at);
+      shakeBoard(12);
+    }, impact);
   }
   holdScoreSlots(1);
-  const at = cellEl(index);
-  if (at && turn.points) showMergeScore(at, turn.points, 120, turn.points >= 60 ? 'm6' : 'm4'); else releaseScoreSlot();
+  if (at && turn.points) showMergeScore(at, turn.points, impact + 120, turn.points >= 60 ? 'm6' : 'm4'); else releaseScoreSlot();
   if (turn.win) {
     render(`You win with ${state.score} points! ✨`);
     return drainMoves().then(() => {
@@ -147,6 +157,43 @@ export function smashAt(cell) {
   }
   nudgeGoals(); // búa cũng có thể đẩy điểm qua mục tiêu lần đầu
   render(`Smash! +${turn.points} points.`);
+}
+
+// Nhịp búa: lấy đà (giơ lên, ngả ra sau) → vung xuống tăng tốc → chạm ở HAMMER_IMPACT_MS → khựng + bẹp một nhịp (hit-stop) → nảy lên mờ đi.
+// Búa nằm ngoài bàn (fixed, toạ độ màn hình), điểm xoay ở cuối cán đặt bên phải ô chạm để đầu búa xoay -90° là đáp đúng tâm ô.
+const HAMMER_MS = 560, HAMMER_IMPACT_MS = Math.round(HAMMER_MS * .5);
+function swingHammer(target) {
+  const r = target.getBoundingClientRect(), size = r.width * 1.9, reach = size * .65;
+  const hammer = document.createElement('div');
+  hammer.className = 'hammer-fx';
+  hammer.innerHTML = HAMMER_SVG;
+  hammer.style.cssText = `left:${r.left + r.width / 2 + reach - size / 2}px;top:${r.top + r.height / 2 - size * .95}px;width:${size}px;height:${size}px`;
+  document.body.append(hammer);
+  hammer.animate([
+    { transform: 'rotate(-10deg) scale(.4)', opacity: 0, easing: 'cubic-bezier(.3,1.6,.5,1)' },
+    { transform: 'rotate(18deg) scale(1.05)', opacity: 1, offset: .22 },
+    { transform: 'rotate(32deg) scale(1.1)', opacity: 1, offset: .38, easing: 'cubic-bezier(.7,0,1,.6)' },
+    { transform: 'rotate(-96deg) scale(1)', opacity: 1, offset: .5 },
+    { transform: 'rotate(-90deg) scale(1.1, .86)', opacity: 1, offset: .62, easing: 'cubic-bezier(.2,.8,.4,1)' },
+    { transform: 'rotate(-62deg) translate(8%, -14%) scale(.9)', opacity: 0 },
+  ], { duration: HAMMER_MS, fill: 'forwards' }).finished.then(() => hammer.remove());
+}
+
+// Chỗ búa chạm: sóng xung kích lan trên mặt bàn, vùng 3×3 loé trắng, sao văng, khói.
+function impactBurst(layer, cell) {
+  const cx = cell.offsetLeft + cell.offsetWidth / 2, cy = cell.offsetTop + cell.offsetHeight / 2, span = cell.offsetWidth * 3.3;
+  const place = (className, size) => {
+    const el = document.createElement('span');
+    el.className = className;
+    el.style.cssText = `left:${cx - size / 2}px;top:${cy - size / 2}px;width:${size}px;height:${size}px`;
+    layer.append(el);
+    return el;
+  };
+  const flash = place('smash-flash', span), ring = place('smash-ring', span * 1.1);
+  flash.animate([{ opacity: .9 }, { opacity: 0 }], { duration: 300, easing: 'ease-out', fill: 'forwards' }).finished.then(() => flash.remove());
+  ring.animate([{ scale: '.15', opacity: 1 }, { scale: '1', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' }).finished.then(() => ring.remove());
+  flyBits(layer, cell, 'smash-star', 10);
+  spawnPuff(cell);
 }
 
 // Búa đang giơ: rê / chạm giữ trên bàn thì sáng vùng 3×3 sẽ bị đập.

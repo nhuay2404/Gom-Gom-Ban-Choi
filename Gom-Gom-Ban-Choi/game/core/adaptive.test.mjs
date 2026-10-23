@@ -246,11 +246,11 @@ test('màn paywall (màn 10): thua bao nhiêu cũng không dễ đi; từ lần 
   assert.equal(i, 9, 'paywall ở màn 10');
   assert.equal(planLevel(veteran(), i).suggestBooster, false, 'lần đầu: không mời');
   const firstVisit = { ...veteran(), attempts: veteran().attempts.filter(a => a.level !== i) };
-  assert.equal(planLevel(firstVisit, i).level.harsh, true, 'lần đầu: hàng thẻ xấu');
-  assert.ok(!planLevel(losing(i, 1), i).level.harsh, 'chơi lại: thẻ bình thường');
-  assert.ok(!planLevel(firstVisit, i, { cleared: true }).level.harsh, 'đã thắng màn 10 (dù lịch sử đã trôi mất): không bao giờ thẻ xấu');
+  assert.ok(planLevel(firstVisit, i).level.queue >= 3, 'lần đầu: hàng thẻ khó hơn');
+  assert.ok((planLevel(losing(i, 1), i).level.queue ?? 0) < 3, 'chơi lại: thẻ bình thường');
+  assert.ok((planLevel(firstVisit, i, { cleared: true }).level.queue ?? 0) < 3, 'đã thắng màn 10 (dù lịch sử đã trôi mất): không bao giờ thẻ xấu');
   const longAgo = recordAttempt(firstVisit, try_(i, false)).profile;
-  assert.ok(!planLevel({ ...longAgo, attempts: [] }, i).level.harsh, 'đã chơi rồi (lịch sử bị cắt): không thẻ xấu lại');
+  assert.ok((planLevel({ ...longAgo, attempts: [] }, i).level.queue ?? 0) < 3, 'đã chơi rồi (lịch sử bị cắt): không thẻ xấu lại');
   for (const n of [1, 2, 4, 6]) {
     const plan = planLevel(losing(i, n), i);
     assert.ok(plan.shift >= 0, `thua ${n} lần: không hạ độ khó`);

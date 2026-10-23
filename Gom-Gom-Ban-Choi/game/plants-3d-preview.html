@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cây 3D đã khôi phục</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<style>body{margin:0;background:#eee6d5;font:14px system-ui;color:#423e30}header{padding:12px}button,select{padding:8px;margin:3px}canvas{display:block;width:100%;max-width:700px}pre{white-space:pre-wrap;font:11px system-ui;padding:12px}img{width:110px}</style>
+<header><b>Đã khôi phục cây 3D gốc</b><br><select id="subject"><option value="garden">Vườn hoa 3D</option><option value="flowers">Hoa tròn</option><option value="flowers-tulips">Tulip</option><option value="swingtree">Tán cây lớn</option></select><button id="rotate">Xoay 45°</button><button id="high">Góc nhìn trên cao</button></header><div id="view"></div><p id="status">Đang tải…</p><div id="thumbs"></div><pre id="report"></pre>
+<script type="module">
+import * as THREE from 'three';
+import {buildModel,thumbnail} from './deco/deco-room.mjs';
+import {buildFlowerGarden} from './deco/scenes/flower-garden.mjs';
+import {checkModel} from './deco/qc.mjs';
+import {toonLook,TOON_LIGHT,toonMat,addOutlines,syncOutlineResolution,renderOutlineIds,OUTLINE_LAYER,DECAL_LAYER} from './deco/render/toon.mjs';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b5d57d');const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(1);const width=Math.min(innerWidth,700),height=Math.min(560,innerHeight-230);renderer.setSize(width,height);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;toonLook(renderer,scene);document.querySelector('#view').append(renderer.domElement);
+scene.add(new THREE.HemisphereLight('#fff8e8','#e0b98a',1.15*TOON_LIGHT.hemi));const sun=new THREE.DirectionalLight('#fff1d6',1.7*TOON_LIGHT.sun);sun.position.set(3,7,5);sun.castShadow=true;Object.assign(sun.shadow.camera,{left:-7,right:7,top:7,bottom:-7});sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0001;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),toonMat({color:'#9cc96c'}));floor.rotation.x=-Math.PI/2;floor.position.y=-.015;floor.receiveShadow=true;scene.add(floor);
+const camera=new THREE.PerspectiveCamera(22,width/height,.1,100);camera.layers.enable(OUTLINE_LAYER);camera.layers.enable(DECAL_LAYER);
+const nodes={garden:buildFlowerGarden(),flowers:buildModel('flowers'),'flowers-tulips':buildModel('flowers-tulips'),swingtree:buildModel('swingtree')};let current,yaw=.55,high=false;
+const report={models:{},alphaCutoutMeshes:0};
+for(const[id,node]of Object.entries(nodes)){let triangles=0;node.traverse(n=>{if(!n.isMesh)return;triangles+=(n.geometry.index?n.geometry.index.count:n.geometry.attributes.position.count)/3*(n.isInstancedMesh?n.count:1);for(const m of [].concat(n.material))if(m.map&&m.alphaTest>0)report.alphaCutoutMeshes++;});report.models[id]={triangles};}
+for(const id of ['flowers','flowers-tulips'])report.models[id].issues=checkModel(()=>buildModel(id)).issues;
+if(report.alphaCutoutMeshes!==0)throw Error('Vegetation must use original 3D geometry');
+function show(){if(current)scene.remove(current);current=nodes[document.querySelector('#subject').value];scene.add(current);addOutlines(current);const box=new THREE.Box3().setFromObject(current),center=box.getCenter(new THREE.Vector3()),radius=box.getSize(new THREE.Vector3()).length()/2;const distance=radius/Math.sin(THREE.MathUtils.degToRad(11))*.82*Math.max(1,1/camera.aspect),el=high?.95:.63;camera.position.copy(center).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(el),Math.sin(el),Math.cos(yaw)*Math.cos(el)).multiplyScalar(distance));camera.lookAt(center);syncOutlineResolution(renderer);renderOutlineIds(renderer,scene,camera);renderer.render(scene,camera);}
+document.querySelector('#subject').onchange=show;document.querySelector('#rotate').onclick=()=>{yaw+=Math.PI/4;show();};document.querySelector('#high').onclick=()=>{high=!high;show();};
+show();for(const id of ['flowers','flowers-tulips','swingtree']){const image=document.createElement('img');image.src=thumbnail({id,cat:'furniture',zone:'garden'});document.querySelector('#thumbs').append(image);}
+document.querySelector('#report').textContent=JSON.stringify(report,null,2);document.querySelector('#status').textContent='Hoa, lá và tán cây đều là khối 3D gốc';
+</script>

@@ -47,3 +47,12 @@ export const VASE_SHARD_SVG = `<svg class="vase-shard" viewBox="0 0 40 36" aria-
 export const SYRUP_TILE = '<span class="syrup-tile" aria-hidden="true"></span>';
 // Chai siro dâu: icon Goal và vật phẩm bay khi thu thập (giữ tên export để tái dùng hiệu ứng).
 export const SYRUP_DROP_SVG = '<img class="syrup-drop" src="assets/img/board/syrup-goal-bottle.png" alt="" draggable="false">';
+// Búa đồ chơi vung xuống khi dùng booster Búa (play/booster-bar.js swingHammer). Dựng đứng, điểm xoay ở cuối cán (50, 95).
+export const HAMMER_SVG = `<svg class="hammer-swing" viewBox="0 0 100 100" aria-hidden="true">
+  <rect x="43" y="40" width="14" height="56" rx="7" fill="#ff6fa3" stroke="#6b2340" stroke-width="4"/>
+  <rect x="43" y="74" width="14" height="10" fill="#c93f78"/>
+  <rect x="10" y="10" width="80" height="34" rx="15" fill="#fff1d6" stroke="#6b2340" stroke-width="4"/>
+  <path d="M25 12v30M75 12v30" stroke="#ff8fb8" stroke-width="10"/>
+  <rect x="10" y="10" width="80" height="34" rx="15" fill="none" stroke="#6b2340" stroke-width="4"/>
+  <rect x="32" y="16" width="30" height="6" rx="3" fill="#fff" opacity=".85"/>
+</svg>`;

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 globalThis.Image = class { decode() { return Promise.resolve(); } };
-const { petRevealFrames, playSyrupPour, revealLine } = await import('./syrup-pour.mjs');
+const { petRevealFrames, playSyrupPour, revealLine, POUR_MS } = await import('./syrup-pour.mjs');
 
 test('pet rises out of the syrup with the liquid surface, fully shown before cap closure', () => {
   const line = Array.from({ length: 121 }, (_, i) => revealLine(i, { top: 100, height: 64 }, { top: 80, height: 100 }));
@@ -17,9 +17,15 @@ test('pet rises out of the syrup with the liquid surface, fully shown before cap
 test('head above the cell stays hidden until the surface sinks; frames are evenodd polygons', () => {
   const frames = petRevealFrames({ left: 10, top: 100, width: 64, height: 64 }, { left: 4, top: 80, width: 76, height: 100 });
   assert.equal(frames.length, 121);
-  // frame 0: line at the pet top and the cell box not re-shown yet (collapsed at the cell bottom, 84% down the pet)
-  assert.match(frames[0].clipPath, /^polygon\(evenodd, .*0% 0\.00%, 100% 0\.00%.*7\.89% 84\.00%/);
+  // frame 0: line at the pet top and the part below the surface not re-shown yet (ring collapsed at the pet bottom)
+  assert.match(frames[0].clipPath, /^polygon\(evenodd, .*0% 0\.00%, 100% 0\.00%.*0% 100\.00%, 100% 100\.00%, 100% 100%, 0% 100%, 0% 100\.00%/);
+  // mid-pour the re-shown part spans the pet's full width (no board strip outside the cell), starting at the liquid surface
+  assert.match(frames[60].clipPath, /0% (\d+\.\d+)%, 100% \1%, 100% 100%, 0% 100%, 0% \1%, 0% [\d.]+%, 0% 0\.00%\)$/);
   assert.match(frames[120].clipPath, /0% 100\.00%, 100% 100\.00%/);
+  // syrup tile right above ending at y = 95: nothing of the pet above 15% ever shows, even when fully revealed
+  const cut = petRevealFrames({ left: 10, top: 100, width: 64, height: 64 }, { left: 4, top: 80, width: 76, height: 100 }, 95);
+  assert.match(cut[120].clipPath, /^polygon\(evenodd, 0% 15\.00%, 100% 15\.00%/);
+  cut.forEach(f => [...f.clipPath.matchAll(/(-?[\d.]+)% (-?[\d.]+)%/g)].forEach(([, , y]) => assert(+y >= 15, f.clipPath)));
 });
 
 test('pour shares one clock with pets, preserves terrain and releases all holds', async () => {
@@ -46,7 +52,7 @@ test('pour shares one clock with pets, preserves terrain and releases all holds'
   assert.equal(removed, 2);
   assert.equal(cell.dataset.syrupPour, undefined);
   assert.equal(terrain.background, 'unchanged');
-  assert.equal(animations.length, 3);
-  animations.forEach(a => { assert.equal(a.startTime, 1234); assert.equal(a.timing.duration, 2000); });
-  assert.equal(animations[2].frames.length, 121);
+  assert.equal(animations.length, 2);
+  animations.forEach(a => { assert.equal(a.startTime, 1234); assert.equal(a.timing.duration, POUR_MS); });
+  assert.equal(animations[1].frames.length, 121);
 });

@@ -122,6 +122,9 @@ export function renderBoard() {
       spawnPuff(cell);
     }
   });
+  // Mèo ngay dưới ô siro: đầu nhô lên (ảnh mèo cao hơn ô) phải nằm sau mảng siro, base.css cắt phần nhô (.under-syrup).
+  // Bật / tắt sau vòng vẽ vì ô không vẽ lại khi chỉ ô phía trên hết siro.
+  board.querySelectorAll(':scope > .cell').forEach((cell, index) => cell.classList.toggle('under-syrup', syrupAt(Math.floor(index / W) - 1, index % W)));
   state.previewKey = '';
   state.justPlaced = null;
 }
