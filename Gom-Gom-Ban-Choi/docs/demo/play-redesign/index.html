@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Màn chơi — bản demo bớt lộn xộn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Demo độc lập, KHÔNG nằm trong game/: chỉ đọc ảnh từ game/assets. Đổi cỡ khung bằng --zoom. */
+:root{
+  --cream:#fff3d1; --cream-2:#f5dc9c; --edge:#e2bd72; --ink:#6b4523; --brown:#73392a;
+  --pink:#ec5b8c; --pink-deep:#b3386a; --green:#4fb34a; --blue:#3b8fe0; --gold:#f5b93c;
+  --display:"Baloo 2",Nunito,ui-rounded,system-ui,sans-serif; --ui:Nunito,"Avenir Next",ui-rounded,system-ui,sans-serif;
+  --A:../../../game/assets/img;
+  --zoom:.82;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#2a2220;color:#f6ead6;font-family:var(--ui);min-height:100vh}
+.sheet{max-width:1100px;margin:0 auto;padding:28px 20px 56px}
+.sheet h1{margin:0 0 4px;font:800 24px/1.2 var(--display);color:#fff1d6}
+.sheet p.lede{margin:0 0 24px;color:#d9c7ad;font-size:14px;max-width:62ch}
+.stage{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:10px;align-items:center}
+.col h2{margin:0;font:800 15px/1 var(--ui);letter-spacing:.2px;color:#f6ead6}
+.col h2 small{font-weight:700;color:#bba98e;margin-left:6px}
+.frame{width:calc(393px * var(--zoom));height:calc(852px * var(--zoom));border-radius:34px;overflow:hidden;background:#000;box-shadow:0 0 0 6px #3d322c,0 18px 40px #0008;position:relative}
+.frame>.screen{zoom:var(--zoom)}
+.frame.cur img{display:block;height:100%;width:auto;margin-left:calc(-0px)}
+.tools{display:flex;gap:8px}
+.tools button{font:800 12px var(--ui);color:#2a2220;background:#f6ead6;border:0;border-radius:999px;padding:7px 12px;cursor:pointer}
+.tools button[aria-pressed="true"]{background:#ec5b8c;color:#fff}
+.notes{margin:34px auto 0;max-width:760px;display:grid;gap:14px}
+.notes h3{margin:0 0 4px;font:800 16px var(--display);color:#fff1d6}
+.notes ol{margin:0;padding-left:20px;display:grid;gap:8px;color:#e6d6bd;font-size:14px;line-height:1.5}
+.notes b{color:#fff}
+
+/* ===================== MÀN CHƠI ĐỀ XUẤT (393 × 852) ===================== */
+.screen{position:relative;width:393px;height:852px;overflow:hidden;font-family:var(--ui);color:var(--ink);background:#9ccc65}
+/* Nền đồng cỏ: làm mờ + phủ kem để bàn là vật duy nhất sắc nét */
+.bg{position:absolute;inset:-14px;background:url(../../../game/assets/img/play/meadow-bg.jpg) 50% 100%/cover;filter:blur(3px) saturate(.9)}
+.bg::after{content:"";position:absolute;inset:0;background:linear-gradient(#fff8e400 0,#fff8e400 38%,#fff3d18c 100%)}
+
+/* Hàng đầu: tên màn + cài đặt */
+.top{position:absolute;z-index:2;left:12px;right:12px;top:12px;height:38px;display:flex;align-items:center;justify-content:space-between}
+.level{padding:8px 14px 7px;border-radius:999px;background:var(--cream);border:3px solid var(--brown);box-shadow:0 3px 0 #73392a55;font:800 17px/1 var(--display);color:var(--ink);letter-spacing:.2px}
+.gear{width:38px;height:38px;border-radius:50%;border:3px solid var(--brown);background:var(--cream);display:grid;place-items:center;padding:0;color:var(--brown);box-shadow:0 3px 0 #73392a55}
+.gear svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+/* Thẻ trạng thái: MỘT khung cho lượt đi, mục tiêu và điểm (thay cho 5 lớp: tab tai mèo, khung lá, hai nhãn ruy-băng, thanh điểm rời) */
+.status{position:absolute;left:12px;right:12px;top:56px;padding:9px 14px 12px;border-radius:20px;background:var(--cream);border:3px solid var(--brown);box-shadow:0 3px 0 #73392a55}
+.status-row{display:flex;align-items:center;gap:14px;height:46px}
+.cap{display:block;font:900 11px/1 var(--ui);letter-spacing:.7px;text-transform:uppercase;color:#7a5128;margin-bottom:3px}
+.moves{flex:none;width:74px;padding-right:14px;border-right:1.5px solid #e2bd7299}
+.moves strong{display:block;font:800 36px/.9 var(--display);color:#d63a73;font-variant-numeric:tabular-nums}
+.goals{flex:1;min-width:0}
+.goal-list{display:flex;align-items:center;gap:14px}
+.goal{display:flex;align-items:center;gap:5px;font:800 20px/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.goal i{display:block;width:28px;height:28px;border-radius:8px;background-size:cover;background-position:center}
+.goal i.grass{background-image:url(../../../game/assets/img/map/grass-bg.jpg);box-shadow:inset 0 0 0 2px #3f7326}
+.goal i.cage{background:url(../../../game/assets/img/board/cage.png) 50% 60%/contain no-repeat;border-radius:0}
+.goal i.fat{background:url(../../../game/assets/img/cats/fat/body.png) 50%/contain no-repeat,transparent;border-radius:0;position:relative}
+.goal i.fat::after{content:"";position:absolute;inset:0;background:url(../../../game/assets/img/cats/fat/face-sleep.png) 50%/contain no-repeat}
+.bar{display:flex;align-items:center;gap:8px;margin-top:9px}
+.track{flex:1;height:9px;border-radius:999px;background:#ead7a6;overflow:hidden}
+.fill{height:100%;width:0%;border-radius:999px;background:var(--green);transition:width .4s}
+.score{font:800 12px/1 var(--ui);color:#6b4523;font-variant-numeric:tabular-nums;min-width:54px;text-align:right}
+.score b{color:var(--ink)}
+.status.low .moves strong{color:#d9301c}
+
+/* Bàn: phẳng, khung kem mảnh; to hơn nhờ bớt chrome */
+.board{position:absolute;left:12px;right:12px;top:200px;aspect-ratio:1;padding:8px;border-radius:20px;background:var(--cream);border:3px solid var(--brown);box-shadow:0 4px 0 #73392a66,0 14px 22px #0000002b}
+.grid{position:relative;width:100%;height:100%;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr))}
+.cell{border-radius:10px;background:#f3e2b6;margin:1.5px;box-shadow:inset 0 2px 0 #e2c98f}
+.cell.grass{margin:0;border-radius:0;background:url(../../../game/assets/img/map/grass-bg.jpg) calc(var(--c) * -40px) calc(var(--r) * -40px)/400px auto;box-shadow:none}
+.cell.grass.tl{border-top-left-radius:10px}.cell.grass.tr{border-top-right-radius:10px}.cell.grass.bl{border-bottom-left-radius:10px}.cell.grass.br{border-bottom-right-radius:10px}
+.hole{margin:1.5px;border-radius:6px;border:3px solid #8a4a2c;background:url(../../../game/assets/img/map/grass-bg.jpg) 30% 30%/300px auto}
+.obj{position:relative;margin:1.5px;min-height:0;min-width:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.obj>.piece{width:132%;margin-bottom:-5%;flex:none}.obj>img{width:100%;height:auto;display:block;filter:drop-shadow(0 2px 0 #73392a55)}
+.piece{position:relative;width:100%;aspect-ratio:100/106;filter:drop-shadow(1.4px 0 0 #3b2418) drop-shadow(-1.4px 0 0 #3b2418) drop-shadow(0 1.4px 0 #3b2418) drop-shadow(0 -1.4px 0 #3b2418)}
+.piece img{position:absolute;display:block}
+.piece .body{left:15.2%;top:14.6%;width:69.3%;height:76.9%;object-fit:contain;object-position:50% 100%}
+.piece .face{left:20.4%;top:24.75%;width:58.9%;height:55.6%}
+.piece.dog .face{top:34%}
+.obj.fatcat{margin:0}
+.fat{position:relative;width:100%;aspect-ratio:1}
+.fat img{position:absolute;inset:0;width:100%;height:100%;filter:none}
+.fat .zz{position:absolute;right:6%;top:6%;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#fff;border:2px solid var(--pink);color:var(--pink-deep);font:800 11px/16px var(--display);text-align:center}
+.cagewrap{position:relative;width:100%}
+.cagewrap .piece{position:absolute;left:4%;top:6%;width:92%;margin:0}
+.cagewrap>img{position:relative;width:100%;display:block}
+
+/* Tay bài: MỘT khay (thay cho khay thẻ + thanh booster tách rời) */
+.tray{position:absolute;left:12px;right:12px;bottom:14px;border-radius:24px;background:var(--cream);border:3px solid var(--brown);box-shadow:0 4px 0 #73392a66,0 12px 22px #00000026;overflow:hidden}
+.hand{display:grid;grid-template-columns:68px 1fr 68px;align-items:center;gap:6px;padding:12px 12px 10px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:5px}
+.slot .box{width:62px;height:62px;border-radius:16px;background:var(--cream-2);box-shadow:inset 0 5px 8px #b7874255,0 2px 0 #fff3cf;display:grid;place-items:center;position:relative}
+.slot .box.empty svg{width:22px;height:22px;fill:none;stroke:#9a6b36;stroke-width:3;stroke-linecap:round;opacity:.75}
+.slot .box .mini{display:flex;width:56px;margin-top:6px}
+.slot label{font:900 11px/1 var(--ui);letter-spacing:.7px;text-transform:uppercase;color:#7a5128}
+.active{position:relative;display:flex;justify-content:center;align-items:flex-end;gap:2px;height:96px}
+.active .piece{width:92px;margin-bottom:-8px}
+.rotate{position:absolute;right:0;top:0;width:34px;height:34px;border-radius:50%;border:3px solid var(--brown);background:#fffdf6;color:var(--brown);display:grid;place-items:center;padding:0;box-shadow:0 2px 0 #73392a55;cursor:pointer}
+.rotate svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:rotate .35s cubic-bezier(.2,.9,.3,1)}
+.rotate:active svg{rotate:90deg}
+.boosters{display:flex;justify-content:center;gap:34px;padding:9px 12px 10px;border-top:1.5px solid #e2bd7299;background:#ffeec3}
+.boost{position:relative;width:46px;height:46px;padding:0;border:0;background:none;cursor:pointer}
+.boost img{width:100%;height:100%;display:block}
+.boost em{position:absolute;right:-7px;bottom:-4px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:#fff;border:2px solid var(--brown);font:800 13px/18px var(--display);font-style:normal;color:var(--ink);text-align:center}
+.boost:active{translate:0 2px}
+@media(prefers-reduced-motion:no-preference){.status.low .moves strong{animation:pulse .9s ease-in-out infinite}}
+@keyframes pulse{50%{transform:scale(1.1)}}
+</style>
+</head>
+<body>
+<main class="sheet">
+  <h1>Màn chơi — bản demo bớt lộn xộn</h1>
+  <p class="lede">Chỉ là demo trong <code>docs/demo/</code>, chưa đụng vào game. Bên trái là màn hiện tại, bên phải là đề xuất: cùng chất liệu kem + viền nâu + ảnh Figma, nhưng gọn lớp và cho bàn chơi nổi lên.</p>
+
+  <div class="stage">
+    <div class="col">
+      <h2>Hiện tại<small>ảnh chụp</small></h2>
+      <div class="frame cur"><img src="current.webp" alt="Màn chơi hiện tại"></div>
+    </div>
+
+    <div class="col">
+      <h2>Đề xuất<small>chạy được, bấm thử</small></h2>
+      <div class="frame">
+        <div class="screen" id="screen">
+          <div class="bg"></div>
+
+          <div class="top">
+            <span class="level">Level 100</span>
+            <button class="gear" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button>
+          </div>
+
+          <section class="status" id="status" aria-label="Level status">
+            <div class="status-row">
+              <div class="moves"><span class="cap">Moves</span><strong id="moves">29</strong></div>
+              <div class="goals"><span class="cap">Goal</span>
+                <div class="goal-list">
+                  <span class="goal" aria-label="19 grass tiles"><i class="grass"></i>19</span>
+                  <span class="goal" aria-label="3 cages"><i class="cage"></i>3</span>
+                  <span class="goal" aria-label="2 big cats"><i class="fat"></i>2</span>
+                </div>
+              </div>
+            </div>
+            <div class="bar"><div class="track"><div class="fill" id="fill"></div></div><span class="score"><b id="score">0</b> / 435</span></div>
+          </section>
+
+          <section class="board" aria-label="Board"><div class="grid" id="grid"></div></section>
+
+          <section class="tray" aria-label="Your pieces">
+            <div class="hand">
+              <div class="slot"><div class="box empty" aria-label="Hold, empty"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><label>Hold</label></div>
+              <div class="active" id="active">
+                <button class="rotate" aria-label="Rotate"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.2-5.1M19 4.5v4h-4"/></svg></button>
+              </div>
+              <div class="slot"><div class="box" aria-label="Next piece"><span class="mini" id="next"></span></div><label>Next</label></div>
+            </div>
+            <div class="boosters">
+              <button class="boost" aria-label="Hammer, 3 left"><img src="../../../game/assets/img/play/booster-hammer.png" alt=""><em>3</em></button>
+              <button class="boost" aria-label="Swap, 3 left"><img src="../../../game/assets/img/play/booster-swap.png" alt=""><em>3</em></button>
+              <button class="boost" aria-label="Extra moves, 3 left"><img src="../../../game/assets/img/play/booster-moves.png" alt=""><em>3</em></button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="tools">
+        <button id="t-low" aria-pressed="false">Sắp hết lượt</button>
+        <button id="t-prog" aria-pressed="false">Có điểm</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h3>Đã bớt gì</h3>
+      <ol>
+        <li><b>Khung HUD 5 lớp → 1 thẻ.</b> Bỏ tab tai mèo, lá trang trí, hai nhãn ruy-băng “Goal / Move”, thanh điểm đen rời. Lượt đi (số lớn, hồng), mục tiêu và điểm cùng nằm trong một thẻ; nhãn chỉ còn chữ nhỏ.</li>
+        <li><b>Hai khay dưới → 1 khay.</b> Khay thẻ và thanh booster gộp làm hai tầng của cùng một khung. Bỏ mũi tên xoay hai bên và ô nền be bên trong; chỉ còn một nút xoay ở góc thẻ.</li>
+        <li><b>Nền đồng cỏ lùi xuống.</b> Làm mờ và phủ kem dần về phía đáy, để hoa lá không tranh với bàn chơi. Bàn là thứ duy nhất sắc nét.</li>
+        <li><b>Cài đặt nằm cùng hàng với tên màn,</b> thay vì lơ lửng ngoài khung.</li>
+        <li><b>Giữ nguyên</b> mọi thông tin và thao tác của màn cũ: lượt, mục tiêu, điểm, Hold / Next, 3 booster và số lượng. Chưa đổi luật hay luồng kéo thả.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Chưa làm trong demo</h3>
+      <ol>
+        <li>Bàn chơi nghiêng phối cảnh như bản thật; ở đây vẽ phẳng để so bố cục.</li>
+        <li>Kéo thả, anim gom, các trạng thái tutorial và kết quả.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<script>
+const A = '../../../game/assets/img';
+const DOGS = new Set(['shiba','dalmatian','rottweiler','pug','golden','malamute']);
+const piece = (breed, mood = 'calm') => {
+  const dog = DOGS.has(breed), dir = dog ? 'dogs' : 'cats';
+  return `<div class="piece${dog ? ' dog' : ''}"><img class="body" src="${A}/${dir}/${breed}-body.png" alt=""><img class="face" src="${A}/${dir}/${breed}-${mood}.png" alt=""></div>`;
+};
+const grid = document.getElementById('grid');
+const put = (r, c, w, h, html, cls = '') => {
+  const d = document.createElement('div');
+  d.className = cls; d.style.gridArea = `${r + 1} / ${c + 1} / span ${h} / span ${w}`; d.innerHTML = html; grid.append(d);
+};
+// cỏ (gộp thành mảng liền) — bố cục mô phỏng màn 100, không phải dữ liệu thật
+const G = new Set(['0,1','0,2','0,3','0,4','0,5','1,4','1,5','1,6','1,7','2,4','2,5','2,6','5,5','6,4','6,5','6,6','7,5']);
+for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+  if (G.has(`${r},${c}`)) {
+    const t = !G.has(`${r-1},${c}`), b = !G.has(`${r+1},${c}`), l = !G.has(`${r},${c-1}`), rt = !G.has(`${r},${c+1}`);
+    const cls = ['cell grass', t && l ? 'tl' : '', t && rt ? 'tr' : '', b && l ? 'bl' : '', b && rt ? 'br' : ''].join(' ');
+    const d = document.createElement('div'); d.className = cls; d.style.cssText = `--r:${r};--c:${c};grid-area:${r+1}/${c+1}`; grid.append(d);
+  } else { const d = document.createElement('div'); d.className = 'cell'; d.style.gridArea = `${r+1}/${c+1}`; grid.append(d); }
+}
+put(3, 3, 2, 2, '', 'hole');
+const crate = (r, c) => put(r, c, 1, 1, `<img src="${A}/board/crate.png" alt="">`, 'obj');
+const tin = (r, c) => put(r, c, 1, 1, `<img src="${A}/board/tin-can.png" alt="">`, 'obj');
+[[0,0],[2,2],[3,2],[4,2],[5,3],[6,0],[6,7],[7,7]].forEach(p => crate(...p));
+[[1,1],[1,3],[2,1],[2,3],[5,7]].forEach(p => tin(...p));
+[['malamute',0,2],['malamute',1,2],['golden',1,4],['dalmatian',2,5],['rottweiler',1,7],['rottweiler',3,0],['rottweiler',3,1],['pug',6,3]].forEach(([b, r, c]) => put(r, c, 1, 1, piece(b, b === 'dalmatian' || b === 'golden' ? 'calm' : 'sleep'), 'obj'));
+[['dalmatian',1,5],['golden',2,4],['rottweiler',2,6]].forEach(([b, r, c]) => put(r, c, 1, 1, `<div class="cagewrap">${piece(b, 'sleep')}<img src="${A}/board/cage.png" alt=""></div>`, 'obj'));
+const fat = (r, c) => put(r, c, 2, 2, `<div class="fat"><img src="${A}/cats/fat/body.png" alt=""><img src="${A}/cats/fat/face-sleep.png" alt=""><span class="zz">4</span></div>`, 'obj fatcat');
+fat(3, 6); fat(4, 0);
+
+document.getElementById('active').insertAdjacentHTML('afterbegin', piece('dalmatian', 'cute') + piece('dalmatian', 'cute'));
+document.getElementById('next').innerHTML = piece('pug', 'calm');
+
+const status = document.getElementById('status'), moves = document.getElementById('moves');
+const low = document.getElementById('t-low'), prog = document.getElementById('t-prog');
+low.onclick = () => { const on = low.getAttribute('aria-pressed') !== 'true'; low.setAttribute('aria-pressed', on); status.classList.toggle('low', on); moves.textContent = on ? 3 : 29; };
+prog.onclick = () => { const on = prog.getAttribute('aria-pressed') !== 'true'; prog.setAttribute('aria-pressed', on); document.getElementById('fill').style.width = on ? '62%' : '0%'; document.getElementById('score').textContent = on ? 270 : 0; };
+</script>
+</body>
+</html>

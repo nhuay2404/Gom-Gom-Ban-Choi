@@ -53,7 +53,8 @@ export function renderZoneSwitch() {
 new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
 
 // PC: giữ chuột trái rồi kéo để cuộn ngang hàng tab khu và hàng thẻ (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm.
-function dragScroll(bar) {
+// Shop → Decoration dùng lại cho hàng chọn khu (menu/shop.js, gọi lúc render đầu chứ không lúc nạp module: hai module import vòng tròn).
+export function dragScroll(bar) {
   let drag = null;
   bar.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;

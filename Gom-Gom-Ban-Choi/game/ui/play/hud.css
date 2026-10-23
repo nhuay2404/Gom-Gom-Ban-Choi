@@ -35,13 +35,27 @@
 .fg-panel .fg-row .fg-moves.moves-box,.fg-panel.has-goal .fg-row .fg-moves.moves-box{position:static;inset:auto;translate:none;width:auto;height:100%;flex:none;display:grid;place-items:center;
   margin:0 var(--row-gap) 0 0}
 .fg-panel:not(.has-goal) .fg-row .fg-moves.moves-box{margin:0}
-.fg-panel .fg-moves strong,.fg-panel.has-goal .fg-moves strong{display:block;padding:.2em .22em;margin:-.2em -.22em;font-size:calc(40 * var(--u));line-height:1;letter-spacing:-.01em;color:#fff5e8;
-  -webkit-text-stroke:calc(6 * var(--u)) transparent;paint-order:stroke fill;text-shadow:none;
-  background:linear-gradient(#ee3f53,#fba1b1);-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(calc(1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(calc(-1.5 * var(--u)) 0 0 #5a2a22) drop-shadow(0 calc(1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(-1.5 * var(--u)) 0 #5a2a22) drop-shadow(0 calc(3 * var(--u)) 0 #5a2a2255)}
+/* Số Move kiểu kẹo bóng (ảnh mẫu "29"), ba lớp chồng cùng một chữ (hud.js ghi số vào data-n để hai lớp giả chép lại):
+   ::before = vành hồng dải gradient (nét viền trong suốt cho nền lộ ra) + ruột kem; ::after = ruột kem đổ dần + vệt bóng trắng;
+   chữ gốc trong suốt, chỉ giữ chỗ. Viền nâu ngoài = drop-shadow bao cả cụm theo 8 hướng (ghép thành bát giác: góc tròn, không vuông như 4 hướng;
+   viền nâu bằng nét chữ dày thì mọc gai nhọn ở góc số 2). Vệt bóng lặp theo từng chữ số: tabular-nums nên mỗi số rộng 1ch, ô nền bắt đầu sau padding trái .24em. */
+.fg-panel .fg-moves strong,.fg-panel.has-goal .fg-moves strong{--ring:3;--ink:2.6;--r-top:#ff9db0;--r-mid:#f6648a;--r-bot:#dc3a62;
+  position:relative;display:block;padding:.2em .24em;margin:-.2em -.24em;font-size:calc(40 * var(--u));line-height:1;letter-spacing:0;font-variant-numeric:tabular-nums;
+  color:transparent;-webkit-text-fill-color:transparent;-webkit-text-stroke:0;paint-order:normal;text-shadow:none;background:none;
+  filter:drop-shadow(calc(var(--ink) * .4142 * var(--u)) 0 0 #4a1a0c) drop-shadow(calc(var(--ink) * -.4142 * var(--u)) 0 0 #4a1a0c)
+    drop-shadow(0 calc(var(--ink) * .4142 * var(--u)) 0 #4a1a0c) drop-shadow(0 calc(var(--ink) * -.4142 * var(--u)) 0 #4a1a0c)
+    drop-shadow(calc(var(--ink) * .2929 * var(--u)) calc(var(--ink) * .2929 * var(--u)) 0 #4a1a0c) drop-shadow(calc(var(--ink) * -.2929 * var(--u)) calc(var(--ink) * -.2929 * var(--u)) 0 #4a1a0c)
+    drop-shadow(calc(var(--ink) * .2929 * var(--u)) calc(var(--ink) * -.2929 * var(--u)) 0 #4a1a0c) drop-shadow(calc(var(--ink) * -.2929 * var(--u)) calc(var(--ink) * .2929 * var(--u)) 0 #4a1a0c)
+    drop-shadow(0 calc(1.6 * var(--u)) 0 #4a1a0c)}
+.fg-panel .fg-moves strong::before,.fg-panel .fg-moves strong::after{content:attr(data-n);position:absolute;inset:0;padding:inherit;text-shadow:none;pointer-events:none}
+.fg-panel .fg-moves strong::before{-webkit-text-fill-color:#fcefe4;-webkit-text-stroke:calc(2 * var(--ring) * var(--u)) transparent;paint-order:stroke fill;
+  background:linear-gradient(var(--r-top) 22%,var(--r-mid) 50%,var(--r-bot) 78%);-webkit-background-clip:text;background-clip:text}
+.fg-panel .fg-moves strong::after{-webkit-text-fill-color:transparent;-webkit-text-stroke:0;
+  background:radial-gradient(ellipse 26% 9% at 28% 31%,#fff 55%,#fff0) .24em 0/1ch 100% repeat-x,radial-gradient(circle at 18% 72%,#fff 0 4.5%,#fff0 6.5%) .24em 0/1ch 100% repeat-x,linear-gradient(#fff7f0 25%,#fdebe2 62%,#f8d6d0);
+  -webkit-background-clip:text;background-clip:text}
 .fg-panel .fg-moves.moves-box{overflow:visible}
-.fg-panel .fg-moves.moves-box.warn strong{background-image:linear-gradient(#ff7a1c,#ffc78a)}
-.fg-panel .fg-moves.moves-box.danger strong{color:#fff5e8;background-image:linear-gradient(#d4160a,#ff8f84)}
+.fg-panel .fg-moves.moves-box.warn strong{--r-top:#ffc78a;--r-mid:#ff9a3c;--r-bot:#e06f0e}
+.fg-panel .fg-moves.moves-box.danger strong{--r-top:#ff8f84;--r-mid:#e8352a;--r-bot:#b8140a}
 
 /* Mục tiêu: vạch đứt ngăn với số lượt; icon (lấy từ vật liệu trong game) cỡ như ảnh mẫu, số nâu đậm bên cạnh.
    Một / hai / ba mục tiêu cùng cỡ (bản cũ thu nhỏ dần khi nhiều mục tiêu). */
@@ -84,9 +98,11 @@
 /* Ba cụm rõ ràng như màn tham chiếu: (1) menu HUD, (2) bàn cờ + khay xoay, (3) thanh booster; mỗi cụm cách nhau một khoảng đều.
    Nhãn "Move" / "Goal" hiện lại nhỏ phía trên số. */
 .fg-panel.fg-panel .fg-row .fg-moves.moves-box,.fg-panel.fg-panel .fg-row #goal-box{position:relative}
-.shell .fg-panel.fg-panel .fg-row :is(.fg-moves,.fg-goal) .fg-moves-label{position:absolute;top:calc(-25 * var(--u));left:50%;right:auto;width:auto;height:calc(18 * var(--u));overflow:visible;clip-path:none;
-  display:grid;place-items:center;padding:0 calc(13 * var(--u));border:calc(2.5 * var(--u)) solid #4c1100;border-radius:999px;background:#fff4e6;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fa9b00;
-  transform:none;translate:-50% 0;margin:0;font-size:calc(11.5 * var(--u));line-height:1;font-weight:800;letter-spacing:0;text-transform:none;color:#3a1d17;-webkit-text-stroke:0;paint-order:normal;text-shadow:none;white-space:nowrap;z-index:2}
+/* Bảng tên = ảnh pill vàng có sẵn chữ (pill-move.png / pill-goal.png, 365 × 150); chữ trong span chỉ còn cho trình đọc màn hình */
+.shell .fg-panel.fg-panel .fg-row :is(.fg-moves,.fg-goal) .fg-moves-label{position:absolute;top:calc(-29 * var(--u));left:50%;right:auto;width:calc(58.4 * var(--u));height:calc(24 * var(--u));overflow:hidden;clip-path:none;
+  display:block;padding:0;border:0;border-radius:0;background:url('../../assets/img/play/pill-move.png') 0 0/100% 100% no-repeat;box-shadow:none;
+  transform:none;translate:-50% 0;margin:0;font-size:0;line-height:0;color:transparent;-webkit-text-stroke:0;paint-order:normal;text-shadow:none;white-space:nowrap;z-index:2}
+.shell .fg-panel.fg-panel .fg-row .fg-goal .fg-moves-label{background-image:url('../../assets/img/play/pill-goal.png')}
 .shell .fg-panel.fg-panel .fg-row .fg-goal .fg-moves-label{left:calc(var(--row-gap) + (100% - var(--row-gap)) / 2)}
 .shell #booster-bar{margin-top:calc(32 * var(--u))}
 /* Chừa chỗ riêng cho bảng tên Move / Goal phía trên số: khung HUD cao thêm 19u, hàng số và thanh điểm dời xuống 14u (không đè nhau) */
@@ -141,3 +157,82 @@
    khung tràn đều 18,5u mỗi bên; hàng Move | Goal và thanh điểm nới ra theo lòng khung mới. */
 .fg-panel::before{left:calc(50% - 186.5 * var(--u));right:auto;width:calc(373 * var(--u));top:0;bottom:auto;height:calc(137 * var(--u));border:0;border-image:none;
   background:url('../../assets/img/play/hud-frame.png') 0 0/100% 100% no-repeat}
+/* ===== Bàn chơi + khay xoay theo ảnh mẫu "Simple Box": MỘT khung kem chung viền nâu mảnh bao cả bàn lẫn khay, hai cạnh đứng thẳng =====
+   Bàn nhìn thẳng (--tilt 0, xem ngay dưới); khung cũng thẳng (đã thử khung xiên / hình thang, người chơi bỏ).
+   - Nửa trên: .board-wrap::before (bo góc trên, viền trên + hai bên, không viền đáy), z-index -1 trong .board-wrap (perspective tạo stacking
+     context) nên nằm sau bàn; kéo xuống qua khe bàn -> khay (8u) và lấn 4px dưới mép khay.
+   - Nửa dưới: chính khay .dock (viền hai bên + đáy, bo góc dưới, nền kem, nằm trên) che phần lấn -> hai nửa liền, cạnh nâu thẳng một đường.
+   Ô bàn đặt thẳng trên nền kem, bàn không còn khay / mép dày / viền riêng. Chỉ đổi hình, không đổi logic. */
+/* Bàn nhìn thẳng (không nghiêng): người chơi chọn bỏ tilt sau khi thử bàn nghiêng trong khung Simple Box */
+:root{--tilt:0deg}
+.shell{--box-w:calc(var(--frame-w) - var(--edge-l) - var(--edge-r));--box-line:calc(2.6 * var(--u));--box-bg:#fbf1dc;--box-ink:#6b3a24}
+.shell .board-wrap{padding-bottom:0;align-items:flex-end}
+.shell .board,.shell .board.shaped{background:none;box-shadow:none}
+.shell .board-shape{filter:none}
+.shell .board-shape i{background:transparent}
+.shell .board-wrap::before{content:'';position:absolute;z-index:-1;pointer-events:none;left:calc(50% - var(--box-w) / 2);width:var(--box-w);
+  top:calc(22 * var(--u));bottom:calc(-8 * var(--u) - 4px);box-sizing:border-box;
+  background:var(--box-bg);border:var(--box-line) solid var(--box-ink);border-bottom:0;border-radius:calc(18 * var(--u)) calc(18 * var(--u)) 0 0}
+/* Mép trên khung bám theo mép trên THẬT của bàn (không theo .board-wrap: màn cao / bàn bị giới hạn theo bề ngang thì .board-wrap cao hơn bàn,
+   khung dài thừa một khoảng trống phía trên — lỗi cũ). Dùng anchor positioning: anchor() lấy hộp bàn ĐÃ nghiêng
+   (đúng mép trên nhìn thấy); chừa 12u phía trên. Trình duyệt chưa có anchor thì giữ 22u như trên. */
+@supports (anchor-name:--a){
+  .shell .board-wrap>.board{anchor-name:--gg-board}
+  .shell .board-wrap::before{top:calc(anchor(--gg-board top) - 12 * var(--u))}
+}
+.shell>.dock.draw-area{position:relative;z-index:1;box-sizing:border-box;width:var(--box-w);margin:0 0 0 calc(50% - var(--box-w) / 2);padding:calc(10 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u));
+  border-image:none;border:var(--box-line) solid var(--box-ink);border-top:0;border-radius:0 0 calc(18 * var(--u)) calc(18 * var(--u))}
+/* Dấu chân nhỏ trang trí bốn góc khay (như ảnh mẫu); vẽ trên nền kem của khay, không đổi bố cục */
+.shell>.dock.draw-area{--paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23eeb48c'%3E%3Cpath d='M24 24.5c-6.8 0-12 5.6-12 11 0 4.2 3.2 6.5 6.8 6.5 1.9 0 3.5-.8 5.2-.8s3.3.8 5.2.8c3.6 0 6.8-2.3 6.8-6.5 0-5.4-5.2-11-12-11z'/%3E%3Cellipse cx='8.5' cy='22' rx='4.2' ry='5.6' transform='rotate(-20 8.5 22)'/%3E%3Cellipse cx='17.5' cy='12.5' rx='4.4' ry='6' transform='rotate(-6 17.5 12.5)'/%3E%3Cellipse cx='30.5' cy='12.5' rx='4.4' ry='6' transform='rotate(6 30.5 12.5)'/%3E%3Cellipse cx='39.5' cy='22' rx='4.2' ry='5.6' transform='rotate(20 39.5 22)'/%3E%3C/g%3E%3C/svg%3E");
+  background:var(--paw) left calc(8 * var(--u)) top calc(4 * var(--u)) / calc(11 * var(--u)) no-repeat,var(--paw) right calc(8 * var(--u)) top calc(4 * var(--u)) / calc(11 * var(--u)) no-repeat,
+    var(--paw) left calc(8 * var(--u)) bottom calc(8 * var(--u)) / calc(11 * var(--u)) no-repeat,var(--paw) right calc(8 * var(--u)) bottom calc(8 * var(--u)) / calc(11 * var(--u)) no-repeat,var(--box-bg)}
+/* Khay thẻ đang bóc (theo ảnh mẫu): nới ra lấp hết phần trái khay (cột card), nền trắng mờ trong suốt nhẹ trên kem, viền trắng mềm.
+   Thẻ + mũi tên xoay giữ nguyên cỡ, nằm giữa khay; ô thẻ cũ (slot-blank.png) bỏ khung cho khỏi thành ô lồng trong ô. */
+.shell>.dock .card-column{align-self:stretch;justify-self:stretch;justify-content:center;border-radius:calc(16 * var(--u));
+  background:#ffffff73;box-shadow:inset 0 0 0 calc(1.5 * var(--u)) #ffffffcc,0 calc(1 * var(--u)) calc(3 * var(--u)) #b98a5a26}
+.shell>.dock #active-card,.shell>.dock .piece-card{border-image:none}
+/* Ô NEXT: bỏ khung thép, thay bằng viền trắng mềm đều bốn cạnh (như ảnh mẫu). Bỏ ảnh ô slot-blank.png (mép sáng tối không đều) và lớp ánh trắng
+   phía trên của kính (làm cạnh trên / trái trông dày hơn); chỉ giữ vệt sáng lướt qua. */
+.shell>.dock .next-slot{border-image:none;border-radius:calc(14 * var(--u));background:#f6e4c4}
+.shell>.dock .next-slot::before{padding:0;background:none;-webkit-mask:none;mask:none;
+  box-shadow:inset 0 0 0 calc(2.5 * var(--u)) #fffdf8,0 calc(1 * var(--u)) calc(3 * var(--u)) #b98a5a33}
+.shell>.dock .next-slot::after{inset:0;border-radius:calc(14 * var(--u));box-shadow:none;
+  background:linear-gradient(115deg,transparent 35%,#ffffff8c 45%,#ffffffd9 50%,#ffffff8c 55%,transparent 65%) 105% 0/250% 100% no-repeat}
+/* Bỏ chữ NEXT / HOLD; hai ô cùng cỡ xếp dọc giữa cột phải, khoảng cách đều (NEXT trên, HOLD dưới) */
+.shell>.dock .dock-label{display:none}
+.shell>.dock.draw-area{grid-template-rows:1fr 1fr;row-gap:calc(10 * var(--u))}
+.shell>.dock .next-column{align-self:end}
+.shell>.dock .hold-column{align-self:start}
+/* Ô ngoài bàn (.void, bàn có hình) giữ y như layout cũ: lỗ lòng xanh nhạt MỘT màu trơn (màu đồng cỏ lộ qua lỗ; màu chuyển theo từng ô thì lỗ nhiều ô lộ vạch nối — lỗi cũ), viền nâu #73392a mảnh (--line), cạnh trên dày thêm
+   mép bàn (--lip) như bóng mép dưới của bàn đổ vào lỗ. Khung kem chung lấp nền sau bàn nên lỗ phải vẽ lại.
+   Ô lỗ là nút bị khoá (button:disabled mờ .43) nên đặt lại opacity 1. Viền nâu nằm TRONG ô lỗ và chỉ ở cạnh không giáp ô lỗ khác; cạnh giáp
+   ô lỗ thì nền cỏ tràn qua khe -> lỗ nhiều ô liền thành một mảng, một viền chung bao quanh (bo góc chỉ ở góc có viền cả hai cạnh).
+   Ô lỗ kề trên / dưới tìm bằng bước --cols ô (style của #board), nên có một luật cho mỗi số cột 3..12. */
+.shell .board .cell.void{position:relative;opacity:1;--vl:1;--vr:1;--vt:1;--vb:1}
+.shell .board .cell.void::after{content:'';position:absolute;visibility:visible;pointer-events:none;box-sizing:border-box;
+  inset:calc((1 - var(--vt)) * -1.5px) calc((1 - var(--vr)) * -1.5px) calc((1 - var(--vb)) * -1.5px) calc((1 - var(--vl)) * -1.5px);
+  border:0 solid #73392a;border-width:calc(var(--vt) * (var(--line) + var(--lip))) calc(var(--vr) * var(--line)) calc(var(--vb) * var(--line)) calc(var(--vl) * var(--line));
+  border-radius:calc(var(--vt) * var(--vl) * 6 * var(--u)) calc(var(--vt) * var(--vr) * 6 * var(--u)) calc(var(--vb) * var(--vr) * 6 * var(--u)) calc(var(--vb) * var(--vl) * 6 * var(--u));
+  background:#afd774}
+.shell .board .cell.void+.cell.void{--vl:0}
+.shell .board .cell.void:has(+.cell.void){--vr:0}
+.shell .board[style*="--cols: 3;"] .cell.void+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 3;"] .cell.void:has(+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 4;"] .cell.void+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 4;"] .cell.void:has(+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 5;"] .cell.void+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 5;"] .cell.void:has(+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 6;"] .cell.void+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 6;"] .cell.void:has(+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 7;"] .cell.void+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 7;"] .cell.void:has(+*+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 8;"] .cell.void+*+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 8;"] .cell.void:has(+*+*+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 9;"] .cell.void+*+*+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 9;"] .cell.void:has(+*+*+*+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 10;"] .cell.void+*+*+*+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 10;"] .cell.void:has(+*+*+*+*+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 11;"] .cell.void+*+*+*+*+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 11;"] .cell.void:has(+*+*+*+*+*+*+*+*+*+*+.cell.void){--vb:0}
+.shell .board[style*="--cols: 12;"] .cell.void+*+*+*+*+*+*+*+*+*+*+*+.cell.void{--vt:0}
+.shell .board[style*="--cols: 12;"] .cell.void:has(+*+*+*+*+*+*+*+*+*+*+*+.cell.void){--vb:0}

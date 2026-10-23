@@ -5,7 +5,7 @@ import { COIN_PACKS, STARTER_PACK } from '../data/economy.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock } from '../deco/deco-data.mjs';
 import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, buyOne, priceTag } from '../app/shared.js';
-import { decoUnlockedLevel, isZoneOpen } from './areas.js';
+import { decoUnlockedLevel, isZoneOpen, dragScroll } from './areas.js';
 import { decoVisible, coin, thumbOf } from './deco-panel.js';
 import { room3d, applyRoom } from './room.js';
 
@@ -31,8 +31,11 @@ $('shop-pages').addEventListener('click', event => {
 
 // ---------- Shop → Decoration: kiểu khác của món + tường / sàn khác, theo khu ----------
 export let shopZone = null;
+let zoneDrag = false;
 
 export function renderShopDeco() {
+  // Hàng chọn khu cuộn ngang: kéo chuột để cuộn trên PC (như hàng khu ở Deco); gắn một lần, lúc render đầu
+  if (!zoneDrag) { dragScroll($('shop-deco-tabs')); zoneDrag = true; }
   const deco = getDeco(), unlocked = decoUnlockedLevel(), zones = ZONE_IDS.filter(zone => isZoneOpen(zone));
   if (!zones.includes(shopZone)) shopZone = zones.includes(deco.zone) ? deco.zone : zones[0];
   $('shop-deco-tabs').replaceChildren(...zones.map(zone => {
@@ -41,9 +44,18 @@ export function renderShopDeco() {
     tab.setAttribute('aria-selected', zone === shopZone);
     tab.className = zone === shopZone ? 'on' : '';
     tab.dataset.zone = zone;
-    tab.textContent = ZONES[zone].name;
+    // Cùng kiểu hàng chọn khu ở Deco (menu/areas.js): icon khu (mặt nạ .zi trong deco.css), chỉ tab đang chọn hiện thêm tên khu
+    tab.setAttribute('aria-label', ZONES[zone].name);
+    tab.innerHTML = `<i class="zi" data-z="${zone}"></i>${zone === shopZone ? `<small>${ZONES[zone].name}</small>` : ''}`;
     return tab;
   }));
+  // Tab đang chọn (dài hơn vì có tên) luôn nằm trọn trong hàng: cuộn ngang tới nó nếu bị khuất ở mép
+  const bar = $('shop-deco-tabs'), on = bar.querySelector('.on');
+  if (on) {
+    const left = on.offsetLeft - bar.offsetLeft - 8, right = left + on.offsetWidth + 16;
+    if (left < bar.scrollLeft) bar.scrollLeft = left;
+    else if (right > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = right - bar.clientWidth;
+  }
   // Tường và sàn: mỗi thứ MỘT hàng vuốt ngang. Đồ đạc: một lưới chung "Decoration" (3 món mỗi dòng, xếp liền theo thứ tự, không
   // xuống dòng riêng cho từng chỗ đặt) — các kiểu cùng chỗ vẫn đứng cạnh nhau; chỗ chưa mua được gì (chưa xây / khoá theo màn) xuống cuối.
   const names = ZONES[shopZone].cats, rows = new Map();

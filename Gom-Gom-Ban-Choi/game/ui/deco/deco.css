@@ -338,3 +338,85 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .screen.deco .deco-side .deco-lock svg{display:none}
 .deco-lock .deco-lock-ico{display:block;width:calc(32 * var(--u));height:calc(32 * var(--u));object-fit:contain;pointer-events:none;transition:opacity .2s}
 .deco-lock[aria-pressed="true"] .deco-lock-ico{opacity:.55}
+
+/* ===== Deco theo bộ art lobby: hai chuẩn, theo đúng ảnh gốc =====
+   (A) Khung: khay đáy + thẻ món + nút tròn bên phải = pill xu / gem (home/pill-gems.png, 118 px cao = 38,6u, 0,327u mỗi px), từ ngoài vào:
+       viền nâu #541a00 ~7 px = 2,3u  >  nét kem sáng #fbda91 ~5 px = 1,6u  >  vòng vàng sẫm #f9a000 ~7 px = 2,3u  >  lòng gradient vàng #fdd968 -> be #fbebcb
+   (B) Pill trong khay: tab chọn khu, chip loại đồ, viên giá, nút thu khay = viên tab đang chọn của thanh tab dưới đáy (nav/tab-active.png, 127 px cao = 50u, 0,394u mỗi px):
+       KHÔNG viền nâu; viền cam #ffb000 ~5 px = 2u  >  nét sáng #fee2a5 ~2 px = .8u  >  lòng gradient #fdda8f -> #f4e0b6; dấu chân kem mờ phía sau.
+       Pill chưa chọn = như tab thường của thanh tab: không nền, không viền, chỉ icon + chữ nâu.
+   Chỉ đổi hình (màu, viền, nền), không đổi chỗ đặt / cỡ. */
+#deco{
+  --pl-ink:#541a00;--pl-cream:#fbda91;--pl-ring:#f9a000;--pl-text:#3d1408;
+  --pl-fill:linear-gradient(#fdd968,#fbe2a0 55%,#fbebcb);
+  --tb-ring:#ffb000;--tb-light:#fee2a5;--tb-fill:linear-gradient(#fdda8f,#f9db9b 50%,#f4e0b6);
+  --pl-paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23fff6dc' fill-opacity='.6' transform='rotate(-18 24 24)'%3E%3Cellipse cx='24' cy='31' rx='8' ry='6.4'/%3E%3Cellipse cx='14.5' cy='22' rx='3' ry='4'/%3E%3Cellipse cx='20.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='27.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='33.5' cy='22' rx='3' ry='4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ---------- (A) Khung theo pill xu / gem ---------- */
+#deco :where(.deco-tray,.deco-card,.deco-side button,.deco-pop,.area-next b,.idle-coin){
+  --pl-b:calc(2.3 * var(--u));--pl-c:calc(1.6 * var(--u));--pl-o:calc(2.3 * var(--u));
+  box-sizing:border-box;border:var(--pl-b) solid var(--pl-ink);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(24 * var(--u)) calc(24 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring)}
+/* Nền khay: kem trơn đúng màu lòng thanh tab dưới đáy (nav/tabbar-frame.png #f9efd4); chỉ viền theo pill xu.
+   Ba hàng (chọn khu / loại đồ / thẻ) sát nhau hơn: khe 6u -> 2u, đệm trên hàng thẻ 6u -> 3u. */
+#deco .deco-tray{background:#f9efd4;gap:calc(2 * var(--u))}
+#deco .deco-cards{padding-top:calc(3 * var(--u))}
+/* Hàng thẻ cuộn ngang bị cắt TRONG viền vàng trong của khay (viền nâu 2,3u ở border, nét kem + vòng vàng 3,9u là bóng inset nằm trong đệm):
+   lùi vùng cuộn vào 4u mỗi bên để thẻ trượt qua mép không đè lên viền trong */
+#deco .deco-cards-wrap{width:auto;margin:0 calc(4 * var(--u))}
+#deco .deco-cards{padding-left:calc(12 * var(--u));padding-right:calc(12 * var(--u));scroll-padding-inline:calc(12 * var(--u))}
+/* Icon xu = đồng xu dấu chân của pill xu ở lobby (cắt từ pill-coins.png) */
+#deco :is(.deco-card-price,.area-next b,.idle-coin) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+#deco .deco-card-price .ico-coin{width:calc(15 * var(--u));height:calc(15 * var(--u))}
+#deco .deco-cards-wrap::after{background:linear-gradient(90deg,#f9efd400,#f9efd4)}
+#deco .deco-cards-wrap::before{background:linear-gradient(270deg,#f9efd400,#f9efd4)}
+/* Thẻ món: chưa mua (buy / poor / locked) = lòng be cũ #fffdf6; đã mua (owned / using) = lòng vàng pill xu + dấu chân. Viền hai lớp như nhau.
+   Ô hình trong suốt để thấy lòng thẻ; vạch ngăn vàng sẫm như vòng trong */
+#deco .deco-card{background:linear-gradient(#fffaf0,#fdf1cf)}
+#deco :is(.deco-card.owned,.deco-card.using){background:var(--pl-paw) 0 100%/calc(30 * var(--u)) calc(30 * var(--u)),var(--pl-fill)}
+/* Chưa mua: chỉ viền nâu ngoài, không nét kem + vòng vàng sẫm bên trong. Đã mua (owned / using): đủ viền nâu ngoài + viền vàng trong như pill xu */
+/* Không còn gờ nâu dày dưới đáy thẻ (bóng đổ 3u): thẻ phẳng, chỉ viền */
+#deco .deco-card:not(.owned):not(.using){box-shadow:none}
+#deco .deco-card:not(.owned):not(.using) .deco-card-art{border-bottom-color:#ecd7a8}
+#deco .deco-card.picked:not(.owned):not(.using){box-shadow:0 0 0 calc(3 * var(--u)) #ffd97a}
+#deco .deco-card{
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring)}
+#deco .deco-card-art{background:none;border-bottom:calc(1.6 * var(--u)) solid #f3c264}
+#deco .deco-card-name{color:var(--pl-text)}
+#deco .deco-card.using{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 0 0 calc(2.6 * var(--u)) #ffd97a}
+#deco .deco-card.picked{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 0 0 calc(3 * var(--u)) #ffd97a}
+/* Nút tròn bên phải (ngắm nhà, "?"): pill xu tròn + gờ đổ nâu như nút tròn lobby */
+#deco .deco-side button{background:var(--pl-paw) 50% 62%/calc(30 * var(--u)) calc(30 * var(--u)) no-repeat,var(--pl-fill);
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 calc(3 * var(--u)) 0 var(--pl-ink)}
+#deco.ui-locked .deco-lock{border-color:var(--pl-ink);background:var(--pl-fill)}
+/* Bảng đổi món, bong bóng mở khu, bong bóng xu idle: cùng khung pill xu; đuôi nhọn nâu */
+#deco .deco-pop{background:var(--pl-paw) 0 0/calc(34 * var(--u)) calc(34 * var(--u)),var(--pl-fill)}
+#deco .deco-opt.using{border-color:var(--pl-ink);background:var(--tb-fill)}
+#deco .area-next b{border-radius:999px;box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 3px 0 var(--pl-ink)}
+#deco .area-next b::after{background:var(--pl-ink);border:0}
+#deco .area-next small{color:#7a4a2a}
+#deco .idle-coin,#deco .idle-coin.full{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 3px 0 var(--pl-ink)}
+#deco .idle-coin::after{border-top-color:var(--pl-ink)}
+
+/* ---------- (B) Pill trong khay theo viên tab đang chọn của thanh tab ---------- */
+#deco :where(.deco-tray .zone-switch button.on,.deco-kinds button.on,.deco-collapse,.deco-card-price){
+  --tb-o:calc(2 * var(--u));--tb-l:calc(.8 * var(--u));
+  box-sizing:border-box;border:var(--tb-o) solid var(--tb-ring);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(22 * var(--u)) calc(22 * var(--u)),var(--tb-fill);box-shadow:inset 0 0 0 var(--tb-l) var(--tb-light)}
+#deco .deco-tray .zone-switch button{border-radius:999px}
+#deco .deco-tray .zone-switch button.on small{-webkit-text-stroke:calc(2.4 * var(--u)) #fff5e1;paint-order:stroke fill}
+/* Pill chưa chọn = tab thường: không nền, không viền, icon + chữ nâu */
+#deco :is(.deco-tray .zone-switch button,.deco-kinds button):not(.on){border-color:transparent;background:none;box-shadow:none;color:#4a1a0c}
+#deco .deco-kinds button.on{color:var(--pl-text)}
+#deco .deco-collapse{color:#4a1a0c}
+/* Viên giá: cỡ nhỏ (22u) thu viền theo tỉ lệ; trạng thái đã sở hữu / khoá / thiếu xu giữ viền cam nhưng lòng nhạt + màu chữ báo trạng thái */
+#deco .deco-card-price{--tb-o:calc(1.6 * var(--u));--tb-l:calc(.7 * var(--u));font-weight:900}
+/* Viên giá xu = pill xu của HUD lobby (pill-gems.png) thu theo cỡ: viên 22u / pill 38,6u = .57 -> viền nâu 1,3u, nét kem .9u, vòng vàng sẫm 1,3u, lòng vàng -> be */
+#deco .deco-card-price:not(.own):not(.lock){border:calc(1.3 * var(--u)) solid var(--pl-ink);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(16 * var(--u)) calc(16 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 calc(.9 * var(--u)) var(--pl-cream),inset 0 0 0 calc(2.2 * var(--u)) var(--pl-ring)}
+#deco .deco-card-price.own{background:#fff7e4;color:#7a4a2a}
+#deco .deco-card-price.lock{border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
+#deco .deco-card.poor .deco-card-price{border-color:#f1b2a6;background:#fff0ec;box-shadow:none;color:#c0392b}

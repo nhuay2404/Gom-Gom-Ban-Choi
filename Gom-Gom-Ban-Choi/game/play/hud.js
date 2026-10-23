@@ -24,7 +24,8 @@ addEventListener('pieceskin', () => {
 export function render(message = '', error = false) {
   $('level-title').textContent = `Level ${state.levelIndex + 1}`;
   $('level-title').dataset.digits = String(state.levelIndex + 1).length; // số 2 chữ số: chữ nhỏ lại cho lọt giữa hai lá trên badge
-  $('moves').textContent = state.moves;
+  // data-n: hud.css chép số vào hai lớp giả (vành hồng, vệt bóng) của số Move kiểu kẹo
+  $('moves').textContent = $('moves').dataset.n = state.moves;
   renderGoals();
   renderScore();
   $('booster-bar').querySelector('[data-boost="moves"]').classList.toggle('low-moves', !state.over && state.moves < 3 && boostersUnlocked(state.levelIndex));

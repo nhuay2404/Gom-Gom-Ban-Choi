@@ -412,10 +412,14 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 /* ===== Thùng gỗ: ô chặn, vỡ khi gom mèo sát bên ===== */
 .cell.block{padding:1px;border:0;background:none;box-shadow:none;cursor:default}
 .cell.block .crate{width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 3px 2px #6b3f1c55)}
-/* ảnh Figma có lề trong suốt: phóng cho hộp (cardboard + thiếc) to ngang con vật; đáy giữ sát đáy ô, phần dư nhô lên che bớt ô phía sau */
-img.crate{scale:1.32;translate:0 -8%}
-/* hộp mở: ảnh rộng hơn (nắp chĩa ra) cùng tỉ lệ với hộp đóng, đáy giữ nguyên chỗ */
-img.crate.open{position:absolute;inset:0;scale:1.58;translate:0 -17%}
+/* ảnh Figma có lề trong suốt: hộp (cardboard + thiếc) to ngang con vật (132% ô); đáy giữ sát đáy ô, phần dư nhô lên che bớt ô phía sau.
+   Đặt cỡ thật bằng left/top/width/height, KHÔNG phóng bằng scale: ảnh có transform 3D bị vẽ ở cỡ ô rồi mới phóng -> mờ (lỗi cũ). */
+.cell.block:not(.crate-ghost){position:relative}
+.cell.block .crate{position:absolute;left:-16%;top:-24%;width:132%;height:132%}
+/* hộp mở: ảnh rộng hơn (nắp chĩa ra) cùng tỉ lệ với hộp đóng (158% ô), đáy giữ nguyên chỗ */
+.cell.block .crate.open{left:-29%;top:-46%;width:158%;height:158%}
+/* Bàn ngả ra sau (--tilt): dựng hộp đứng thẳng như mèo / lồng, không thì hộp bị dẹt theo bàn (lỗi cũ) */
+.board .cell.block .crate{transform:rotateX(calc(var(--tilt) * -1));transform-origin:50% 90%}
 .crate-ghost{position:absolute;z-index:3}
 .crate-shard{position:absolute;z-index:5;width:14px;height:6px;border-radius:2px;background:#d08f4e;box-shadow:0 1px 0 #6d4020;pointer-events:none}
 /* Vui vẻ (chạm mèo / gom) thắng mọi biểu cảm buồn: ẩn mặt buồn/ngủ, giữ nhịp nhảy vui thay vì rung/khóc. */
