@@ -238,14 +238,39 @@ Không có tỉ giá cố định 1 gem = N xu, và người chơi không thấy
 | **Thưởng tăng mãi** (`REWARD_FLAT_FROM = 0`; quyết định 22/10, thay cho bản dừng ở màn 80) | Game còn thêm màn + khu sau màn 100 và giá khu sau đắt hơn khu trước (hệ số ×1.6 → ×60), nên thưởng phải tăng theo, không thì mỗi khu mới phải chơi lâu hơn khu trước. Màn 81–100 tạm dư xu (luỹ kế ~121% giá món gốc) vì chưa có khu sau mẫu giáo: xu dư vẫn có chỗ tiêu ở kiểu khác + tường / sàn (981K tổng). Game cùng thể loại (Homescapes: 1 sao / màn) giữ thưởng cố định và lấy cảm giác tiến bộ từ nội dung mới; Gom Gom chọn thưởng tăng vì giá đồ tăng theo khu |
 | Vườn hoa Đà Lạt (quà khi mở hết khu) + khu mới tiếp theo từ màn 81 qua live ops | Bù nội dung, không cần thêm số |
 | Idle giữ 0.015; phải tích ≥ 30 phút mới nhận được (`IDLE_MIN_MINUTES`, 23/10: không nhận lắt nhắt liên tục, xu vẫn tính từ đầu) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
-| Giá mở khu giữ nguyên | |
+| **Giá khu theo công thức R** (23/10, thay `ZONE_PRICE_MULT` chỉnh tay ×1.6 → ×111 và `AREA_UNLOCK` 550 → 6,550) | Xem mục 7.1. Mô phỏng (thắng 70%): người chơi trung bình / ít chơi mở các khu ở gần đúng màn cũ (lệch ≤ 2 màn) |
+| **Đồ deco không khoá theo màn** (23/10) | Khu mở là mua được mọi món, chỉ cần đủ xu. Chỉ thú cưng còn theo màn (quà nhận ở Map) |
 
 Mô phỏng có ads: `simulatePlayer(..., { ads: { bonusCoins: lượt / ngày, idle: lượt / ngày, bonus: [tỉ lệ lần 1, 2, …], idleBonus } })` trong
 `tools/economy/economy-sim.mjs` (editor Kinh tế chưa có cột này).
 Mục tiêu: luỹ kế "đủ mua món gốc" nằm trong **85–110%** ở mọi mốc stage, với cả người không xem ads lẫn có xem.
 
-**Quy ước khi thêm màn / khu sau màn 100:** cứ 10–20 màn có một khu hoặc một bộ đồ mới; giá theo đường tăng `ZONE_PRICE_MULT` sao cho xu kiếm được
-trong đoạn đó vẫn đủ ~70–100% giá đồ gốc của khu mới. Kiểm bằng `npm run economy` và mô phỏng (`tools/economy/economy-sim.mjs`) mỗi lần thêm.
+### 7.1 Giá khu theo công thức R (23/10)
+Mở khu không theo màn: xây đủ món gốc khu trước + trả xu; người chơi thấy trước giá ở bảng "2 khu kế tiếp". Giá mỗi khu **cố định**, tính một lần
+từ R (xu thắng màn, bỏ dao động) ở màn mốc thiết kế 10n, n = thứ tự khu (vườn 2 = 1 … nhà trẻ = 7). Màn mốc chỉ để tính giá, không khoá gì.
+
+```
+giá mở khu        = 1.3 × R(10n)            (làm tròn 50 xu)
+tổng giá món gốc  = k × R(10n)              k = 13 cho 2 khu đầu, 30 từ khu thứ 3
+giá một món       = tổng giá món gốc × giá gốc món / tổng giá gốc món gốc của khu (bảng DECO; tường / sàn / kiểu khác cùng hệ số)
+vườn gốc          = giá DECO × 1.6          (khu hướng dẫn)
+```
+
+Hằng số: `economy.mjs` `ZONE_PRICING` (một bản, không qua Remote Config). Bảng đã tính: `deco-data.mjs` `AREA_UNLOCK` / `ZONE_PRICE_MULT`.
+k = 13 ở 2 khu đầu để 20 màn đầu vẫn vừa mua đủ món gốc (test kinh tế); k = 30 = mức trung bình các khu cũ đã dò tay (26–34 × R).
+
+| Khu | n | Mở khu (cũ) | Tổng món gốc (cũ) |
+|---|---|---|---|
+| Vườn 2 | 1 | 650 (550) | 6,480 (6,156) |
+| Phòng khách | 2 | 1,350 (1,550) | 13,660 (12,320) |
+| Phòng ngủ | 3 | 2,150 (2,550) | 49,660 (50,715) |
+| Bếp | 4 | 3,000 (3,550) | 69,640 (69,960) |
+| Phòng tắm | 5 | 3,950 (4,550) | 91,610 (94,600) |
+| Sân sau | 6 | 5,000 (5,550) | 115,740 (100,100) |
+| Nhà trẻ | 7 | 6,150 (6,550) | 142,320 (163,170) |
+
+**Thêm khu mới:** thêm id vào `AREA_ORDER` (deco-data.mjs) + món ở `DECO`, giá tự ra theo vị trí. Kiểm bằng `npm run economy` và mô phỏng
+(`tools/economy/economy-sim.mjs`). Muốn đổi nhịp cả game: chỉnh k / 1.3 trong `ZONE_PRICING`.
 
 ---
 
