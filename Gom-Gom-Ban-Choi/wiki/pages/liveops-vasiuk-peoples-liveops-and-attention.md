@@ -1,0 +1,15 @@
+# People's LiveOps, attention time and game as a platform
+
+Source: [[liveops-vasiuk-src]], ch. 15-17 and Conclusion, pp. 205-223.
+
+- **Attention time vs play time** (ch. 15): competition is for leisure hours against Netflix/TikTok/YouTube; extend from "playtime" to **attention time** via Watching, Creating, Gathering, Socializing, Volunteering, Shopping (circles = play only; crosses = linked Twitch accounts/drops; stars = merchandise and offline events), each layer raising playtime and revenue.
+- **Attention ecosystem** (ch. 16): three parties, players (time), creators (loyalty), games (audience), each with levers: patronage, authenticity (avatar progress for community contribution), volunteering/mentors; creator scale (custom bundles that include channel subscription), niche, collabs; mods, marketplace, a revenue-share pool based on engagement metrics. "Digital labor / play labor" framing: even non-payers add value. My Nintendo points model cited.
+- **Game as a Platform / People's LiveOps** (ch. 17): game moves broker to integrator to **orchestrator**. Creator space: Creator Choice bundles, Editor Choice curated videos, Creator Challenges, Creator Subscription, Creator Events. Creators-for-creators (mentorship, internships, shared facilities), players-for-players, devs-for-creators (mods, Twitch extensions, APIs). Vine failure as warning: creators need a path to income; nurture a creator middle class.
+- **Business logic**: People's Product (outsourcing content to players escapes the "content treadmill"), People's Promotion (creator content raises conversion and ARPPU), **People's Pricing** (marketplaces: market-set prices, resale lowers purchase risk, endowment effect, collectors, content recycling). Warns that the 1%-whale incentive pushes designs toward pay-to-win and a negative loop of audience decline, and the content treadmill compresses margins (pp. 219-220). Says profit must be reinvested to creators/players or it is unsustainable.
+- Conclusion advice: play your game, study its economics, take apart events, use 3LAPs to avoid event overload.
+
+## Stance and applicability
+- (a) Platform-scale UGC games (Roblox, Fortnite) and creator-economy thinking; PC/console/mobile cross-platform ecosystems with large audiences.
+- (b) Forward-looking opinion and analogies; no measured data except industry revenue shares (mobile ~50% of revenue; F2P ~80%; 1% of players over 70% of revenue, quoted without source).
+- (c) The anti-whale-treadmill stance echoes [[concept-dark-game-design-patterns]] and cautions in [[concept-hybrid-models-and-ethics]]; "content treadmill" reframes [[concept-pacing-and-content-control]] (Czerkawski treats it as an inevitable pacing problem to cycle, Vasiuk proposes outsourcing content to creators). Marketplaces and resale contradict common mobile casual economy rules that forbid player trading.
+- (d) **Low** as a product plan for a small cat match-3 deco game (no creator tooling, no marketplace). Medium-term seeds: sharable home screenshots, cat/home showcase, creator codes for cosy-game streamers, and awareness that the 1% whale logic can erode audience.

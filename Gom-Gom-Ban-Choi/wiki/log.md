@@ -16,3 +16,9 @@ Downloaded from fdg2013.org, read in full. Created 2 pages; linked from monetiza
 
 ## [2026-10-22] ingest | GD Fresher - F2P Monetization Training (internal pptx, Vietnamese)
 Read all 76 slides incl. speaker notes (images on slides 17-19 not extracted). Created 9 pages; cross-linked from monetization, store/pricing and analytics pages.
+
+## [2026-10-23] ingest | 5 books (parallel)
+LiveOps/Vasiuk (16 pages), Game Production Toolbox/Chandler (18), Mobile Game Design Essentials 2013/Scolastici (14), F2P Deep Dive/Bycer (14), Cozy Games Deep Dive/Bycer (10). Each topic page ends with a Stance and applicability section.
+
+## [2026-10-23] council | cross-source verdicts by genre
+Added council-members-and-genres, council-topic-verdicts, council-playbook-casual-deco.
