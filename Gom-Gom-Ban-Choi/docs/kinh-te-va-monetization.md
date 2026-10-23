@@ -91,7 +91,7 @@ Tỉ giá gốc: **$1 ≈ 100 gem** (mốc wiki dùng, [[concept-store-and-prici
 
 - Continue là chỗ kiếm gem chính (bán đúng lúc người chơi vừa suýt thắng, sợ mất cả ván). Giá chốt **75 → 130 → 220**
   (22/10: 90 → 150 → 250, rồi thử 60 → 120 → 200, rồi nâng lên 75 sau khi màn "So close!" có thêm dòng kích mua). Lần đầu vẫn rẻ hơn mức gốc 90
-  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40–65 / ngày) không đủ trọn
+  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40 / ngày từ ads + quà mốc nhỏ) không đủ trọn
   một lần continue, nên lần continue đầu trong ngày dễ dẫn tới gói gem nhỏ.
 - Màn "So close!" kích mua: dòng "You have X/Y points. Don't lose it now!" (công sức sắp mất) + "Next continue: 💎130" (giá lần sau làm mỏ neo, lần này trông rẻ). +3 lượt giữ 25 gem (cửa vào rẻ).
 - Mỗi lượt: continue 15 → 26 → 44 gem, +3 lượt mua trước ~8 gem. Rủi ro: người chơi canh mua +3 lượt ở lượt cuối thay vì để thua rồi continue.
@@ -148,7 +148,7 @@ màn 5) thì mới hiện bảng gói gem đè lên. Ván treo: `play/result.js`
 | Bàn sắp kín (không còn chỗ đặt thẻ hiện tại sau khi xoay) | Pulse **Búa** | |
 | 2 lượt liền không gom được | Pulse **Thẻ mới** | |
 | Lần chơi lại thứ 2+ của cùng một màn, màn boss / paywall | Đầu màn: pulse cả bar + nhãn "Free (ads)" nếu còn lượt | Đã có cho paywall, mở rộng cho boss |
-| Màn 10 (paywall) lần đầu | **Continue đầu tiên miễn phí** (tutorial) + tặng 100 gem lúc kết thúc màn | Dạy cơ chế continue thay vì để người chơi thua trắng (vấn đề G) |
+| Màn 10 (paywall) lần đầu | **Continue đầu tiên miễn phí** (tutorial) + tặng 50 gem lúc kết thúc màn | Dạy cơ chế continue thay vì để người chơi thua trắng (vấn đề G) |
 
 ### 4.5 DDA
 Không cần sửa: DDA đã chỉ nới hàng thẻ từ lần thua thứ 2 liên tiếp (xem vấn đề F).
@@ -185,21 +185,31 @@ Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null,
 
 ## 6. Kinh tế gem
 
-### 6.1 Nguồn gem miễn phí (người chơi trung bình ~12 màn / ngày, có xem ads)
-| Nguồn | Lượng | ~gem / ngày |
-|---|---|---|
-| Có sẵn khi mở game | 0 | — |
-| Thắng màn 10 lần đầu (sau bài học continue) | 100 | một lần |
-| Thắng màn boss lần đầu (20, 30 … 100) | 25 | ~3 |
-| Mở mỗi khu deco | 50 | ~5 |
-| Quà đăng nhập hằng ngày | **không cho gem** (quyết định 22/10: hard currency không làm quà đăng nhập; quà đăng nhập là xu / booster / đồ) | 0 |
-| Nhiệm vụ ngày: rương đủ 3 nhiệm vụ (Sprint 8, chưa chốt có gem hay không) | 15 | 15 |
-| Thú cưng mới vào bộ sưu tập | 10 | ~2 |
-| RV "Gem miễn phí" | 20 × 2 | 40 |
-| **Tổng** | | **~25 không ads · ~65 có ads** |
+### 6.1 Nguồn gem miễn phí
+Quà mốc chỉ nhận **một lần** mỗi mốc (chơi lại màn đã thắng / mở lại khu thì không có). Mức giảm ngày 23/10 (cột "Trước").
 
-~65 gem / ngày ≈ chưa đủ một continue (75) hoặc 1–2 booster mỗi ngày. Gem miễn phí lặp lại hằng ngày chủ yếu đến từ xem ads ở Shop: muốn có gem đều
-thì xem ads hoặc mua. Chủ ý: miễn phí đủ để **thói quen tiêu gem** hình thành, không đủ cho mọi màn khó.
+| Nguồn | Lượng | Trước | Tới màn 10 | Tới màn 40 | Cả 100 màn |
+|---|---|---|---|---|---|
+| Có sẵn khi mở game | 0 | 0 | — | — | — |
+| Thắng màn 10 lần đầu (paywall, sau bài học continue) | 50 | 100 | 50 | 50 | 50 |
+| Thắng màn boss lần đầu (20, 30 … 100) | 15 | 25 | — | 45 | 135 |
+| Mở mỗi khu deco (7 khu) | 20 | 50 | 20 | 80 | 140 |
+| Thú cưng mới (5 mèo + 6 chó) | 0 | 10 | 0 | 0 | 0 |
+| **Tổng quà mốc** | | | **70** (trước 170) | **175** (trước 485) | **325** (trước 785) |
+| Quà đăng nhập hằng ngày | **không cho gem** (quyết định 22/10: quà đăng nhập là xu / booster / đồ) | | | | |
+| Nhiệm vụ ngày | **không cho gem** (chỉ xu, `DAILY`) | | | | |
+| RV "Gem miễn phí" ở Shop | 20 × 2 / ngày | | | | 40 / ngày |
+
+Vì sao giảm (wiki): hard currency miễn phí nên là **lượng nhỏ để dạy cách dùng** ([[concept-economy-building-blocks]],
+[[concept-monetization-strategies]]); nguồn vào lớn hơn nhiều so với chỗ tiêu thì người chơi không mua hard currency
+([[liveops-vasiuk-f2p-economics-and-sunk-cost]]); hội đồng: hard currency nhỏ, chỉ ở mốc ([[council-topic-verdicts]]); Bycer xếp "tặng premium
+currency để tập tiêu" vào nhóm phản người chơi ([[f2pdive-bycer-ethics-player-friendly-design]]). Game đã dạy bằng cách khác (2 booster tặng sẵn mỗi
+loại, continue đầu ở màn 10 miễn phí), nên gem mốc chỉ còn là phần thưởng nhỏ. Mức cũ cho ~485 gem tới màn 40 (≈ 6 continue / 20 booster +3 lượt),
+che mất điểm thiếu (pinch point) đúng giai đoạn mua lần đầu, và ví có sẵn 170 gem làm gói Starter (300 gem) ở màn 10 kém hấp dẫn.
+Paywall 50 < một continue (75): người chơi vừa đủ mua 2 booster +3 lượt, thiếu gem ở lần continue kế tiếp.
+
+Nguồn gem lặp lại hằng ngày giờ gần như chỉ còn ads ở Shop (40 / ngày ≈ $0.40): đây là nguồn lớn nhất (~1,200 / tháng nếu xem đủ), chỉnh qua
+`REWARDED_ADS.gems` / `caps.gems` nếu số dư gem sau test vẫn tăng đều. Chủ ý: miễn phí đủ để **thói quen tiêu gem** hình thành, không đủ cho mọi màn khó.
 Kiểm sau test: phân bố số dư gem (wiki: xem người chơi tiêu gem miễn phí vào đâu, [[concept-analytics-and-kpis]]). Nếu trung vị số dư cứ tăng → nguồn quá nhiều hoặc giá quá cao.
 
 ### 6.2 Chỗ tiêu gem
@@ -227,7 +237,7 @@ Không có tỉ giá cố định 1 gem = N xu, và người chơi không thấy
 | RV thêm xu ở bảng thắng (không giới hạn, +50% / +50% / rồi +20%) | Người xem mọi màn: +~20–28% xu. Lấp khúc chật: người chơi trung bình 70% → ~90% ở màn 40–70, không vượt 100% trước màn 80. **Giữ nguyên thưởng gốc màn 1–80** |
 | **Thưởng tăng mãi** (`REWARD_FLAT_FROM = 0`; quyết định 22/10, thay cho bản dừng ở màn 80) | Game còn thêm màn + khu sau màn 100 và giá khu sau đắt hơn khu trước (hệ số ×1.6 → ×60), nên thưởng phải tăng theo, không thì mỗi khu mới phải chơi lâu hơn khu trước. Màn 81–100 tạm dư xu (luỹ kế ~121% giá món gốc) vì chưa có khu sau mẫu giáo: xu dư vẫn có chỗ tiêu ở kiểu khác + tường / sàn (981K tổng). Game cùng thể loại (Homescapes: 1 sao / màn) giữ thưởng cố định và lấy cảm giác tiến bộ từ nội dung mới; Gom Gom chọn thưởng tăng vì giá đồ tăng theo khu |
 | Vườn hoa Đà Lạt (quà khi mở hết khu) + khu mới tiếp theo từ màn 81 qua live ops | Bù nội dung, không cần thêm số |
-| Idle giữ 0.015 | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
+| Idle giữ 0.015; phải tích ≥ 30 phút mới nhận được (`IDLE_MIN_MINUTES`, 23/10: không nhận lắt nhắt liên tục, xu vẫn tính từ đầu) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
 | Giá mở khu giữ nguyên | |
 
 Mô phỏng có ads: `simulatePlayer(..., { ads: { bonusCoins: lượt / ngày, idle: lượt / ngày, bonus: [tỉ lệ lần 1, 2, …], idleBonus } })` trong
@@ -258,7 +268,7 @@ Mức thấp nhất là $1.99; cửa $0.99 chỉ dành cho starter pack để gi
 Bản test ở chợ giá thấp (VN / PH / ID…) dùng bảng giá theo vùng của store, không tự quy đổi.
 
 ### 8.2 Starter pack (một lần, hạn 48 h)
-- **Hiện**: lần đầu thắng màn 10 (vừa được dạy continue, vừa nhận 100 gem), đặt trên bảng kết quả + đầu Shop. Hết giờ thì mất; quay lại ở dạng
+- **Hiện**: lần đầu thắng màn 10 (vừa được dạy continue, vừa nhận 50 gem: chưa đủ một continue 75), đặt trên bảng kết quả + đầu Shop. Hết giờ thì mất; quay lại ở dạng
   "Welcome back" sau 7 ngày nếu chưa mua (Sprint 8 luồng quay lại).
 - **$0.99**: 300 gem + 2 mỗi loại booster + **thảm Cozy Rug premium** (đồ deco chỉ có ở gói) + 2,000 xu.
   Giá trị hiển thị "x6" (≈ $6 theo bảng gem). Đồ deco độc quyền là lý do mua kể cả với người không cần booster (endowment, [[concept-reward-design-and-psychology]]).
@@ -297,7 +307,7 @@ Wiki không có benchmark cho các chỉ số này ([[concept-analytics-and-kpis
 | `BOOSTER_START_STOCK` | 3 → 2 |
 | `CONTINUE` | `{ prices: [75, 130, 220], moves: 5, adMoves: 3, stuckMoves: 2, minProgress: 0.7 }` |
 | `START_GEMS` | 0 |
-| `GEM_REWARDS` | `{ paywall: 100, boss: 25, area: 50, pet: 10 }` (quà Daily: Sprint 8) |
+| `GEM_REWARDS` | `{ paywall: 50, boss: 15, area: 20, pet: 0 }` (23/10, trước: 100 / 25 / 50 / 10) |
 | `GEM_PACKS` | 6 gói mục 8.1, kèm `id` sản phẩm store |
 | `COIN_TOP_UP` | `{ gemsPerLevel: 20, minGems: 1 }` (thay `COIN_BAGS`: bù xu khi thiếu, không có túi xu) |
 | `OFFERS` | `starter` / `rescue` / `builder` như mục 8 (Builder: xu = 12 × thưởng màn thay cho "2 món gốc") |
