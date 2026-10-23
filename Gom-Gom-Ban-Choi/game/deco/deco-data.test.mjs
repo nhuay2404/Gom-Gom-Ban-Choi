@@ -244,8 +244,9 @@ test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ k�
     // Khu có mốc màn trong lô này đã được mua (trừ xu) trước khi hết lô.
     paid += Object.values(AREA_UNLOCK).filter(({ level }) => level > to - 10 && level <= to).reduce((t, { cost: c }) => t + c, 0);
     const ratio = (sum(1, to) - paid) / cost;
-    // Hai lô đầu (vườn, vườn mở rộng) mua đủ ~100%; từ khu thứ ba giảm dần nhưng không dưới 50%.
-    const ok = to <= 20 ? Math.abs(ratio - 1) <= .05 : ratio >= .5 && ratio < prev;
+    // Hai lô đầu (vườn, vườn mở rộng) mua đủ ~100%; từ khu thứ ba giảm dần nhưng không dưới 35%: phần còn lại đến từ xu nhiệm vụ ngày +
+    // Quests (≈ +50% xu cả game, giá phòng ngủ → nhà trẻ đã tăng để bù — economy.mjs ZONE_PRICE_MULT) và xu idle.
+    const ok = to <= 20 ? Math.abs(ratio - 1) <= .05 : ratio >= .35 && ratio < prev;
     assert.ok(ok, `hết màn ${to}: còn ${ratio.toFixed(2)} giá món gốc tới ${area || zone} sau khi trả tiền mở khu (lô trước ${prev.toFixed(2)})`);
     prev = ratio;
   }

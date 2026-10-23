@@ -168,7 +168,10 @@ export const AREA_UNLOCK = remote('AREA_UNLOCK', {
 
 // Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
 // tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 13.8, kitchen: 24.15, bathroom: 26.3, backyard: 52.15, kinder: 60 });
+// 23/10/2026: phòng ngủ → nhà trẻ tăng giá để bù xu từ nhiệm vụ ngày + Quests (≈ +50% xu cả game), dò bằng mô phỏng cho người chơi
+// trung bình mở khu ở gần đúng mốc cũ (phòng tắm ~màn 50, sân sau ~60, nhà trẻ ~74, xây đủ món gốc ~86). Phòng ngủ tăng mạnh vì món
+// gốc của nó khoá tới màn 36–39 (DECO lock): người chơi dồn xu trong lúc chờ, giá cao hút bớt khoản đó.
+export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 34.5, kitchen: 53, bathroom: 55, backyard: 70, kinder: 111 });
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
