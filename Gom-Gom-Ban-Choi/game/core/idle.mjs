@@ -6,12 +6,12 @@
 //   - Giờ máy lùi lại (chỉnh giờ): bắt đầu tích lại từ bây giờ, không cộng gì.
 //   - Save cũ (idleAt là một số, chung cả nhà): mọi con trong nhà tích tiếp từ mốc đó.
 // cfg: mặc định là số trong game; tab Kinh tế của Level Editor truyền bộ số đang sửa (cùng công thức).
-import { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL } from '../data/economy.mjs';
+import { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL, IDLE_MIN_MINUTES } from '../data/economy.mjs';
 import { rewardFor } from './progression.mjs';
 import { ECONOMY } from '../data/tuning.mjs';
 
 const HOUR = 3600 * 1000;
-const GAME = { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL, ...ECONOMY };
+const GAME = { IDLE_RATE, IDLE_CAP_HOURS, IDLE_FROM_LEVEL, IDLE_MIN_MINUTES, ...ECONOMY };
 
 export const idleOpen = (cleared, cfg = GAME) => cleared >= cfg.IDLE_FROM_LEVEL;
 // Xu mỗi giờ của MỘT con mèo: theo xu thưởng của màn đang chơi (màn thứ cleared + 1), nên idle tăng cùng nhịp với công thức xu thưởng.
@@ -20,10 +20,10 @@ export const idleCap = (cleared, cfg = GAME) => Math.floor(idlePerHour(cleared, 
 
 const startOf = (deco, breed) => (typeof deco.idleAt === 'number' ? deco.idleAt : deco.idleAt?.[breed]);
 
-// Số xu con `breed` đang chờ nhận (đã chặn ở trần).
+// Số xu con `breed` đang chờ nhận (đã chặn ở trần). Chưa tích đủ IDLE_MIN_MINUTES phút thì 0 (chưa nhận được, bong bóng ẩn).
 export function idlePending(deco, cleared, now, breed, cfg = GAME) {
   const from = startOf(deco, breed);
-  if (!idleOpen(cleared, cfg) || from == null || now <= from) return 0;
+  if (!idleOpen(cleared, cfg) || from == null || now - from < (cfg.IDLE_MIN_MINUTES ?? 0) * 60000 || now <= from) return 0;
   const hours = Math.min(cfg.IDLE_CAP_HOURS, (now - from) / HOUR);
   return Math.floor(hours * idlePerHour(cleared, cfg));
 }

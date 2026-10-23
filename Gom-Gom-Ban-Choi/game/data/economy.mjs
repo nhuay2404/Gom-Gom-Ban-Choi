@@ -51,13 +51,18 @@ export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 export const IDLE_RATE = remote('IDLE_RATE', 0.015);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
+// Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
+export const IDLE_MIN_MINUTES = remote('IDLE_MIN_MINUTES', 30);
 
 // ----- GEM (tiền cứng) — thiết kế: docs/kinh-te-va-monetization.md -----
 // Gem có sẵn khi mới vào game.
 export const START_GEMS = remote('START_GEMS', 0);
-// Gem miễn phí: thắng màn paywall lần đầu · thắng màn boss lần đầu · mở một khu deco · nhận một thú cưng mới.
+// Gem miễn phí (một lần mỗi mốc): thắng màn paywall lần đầu · thắng màn boss lần đầu · mở một khu deco · nhận một thú cưng mới (0 = không cho).
 // Quà đăng nhập hằng ngày (Daily, Sprint 8) KHÔNG cho gem (quyết định 22/10): chỉ xu / booster / đồ. Nhiệm vụ ngày (DAILY) cũng chỉ cho xu.
-export const GEM_REWARDS = remote('GEM_REWARDS', { paywall: 100, boss: 25, area: 50, pet: 10 });
+// 23/10 giảm từ { 100, 25, 50, 10 } (≈785 gem / 100 màn) xuống ≈325: booster tặng sẵn + continue miễn phí ở màn 10 đã dạy cách dùng, gem mốc
+// chỉ cần ít (wiki: hard currency miễn phí là lượng nhỏ để dạy, nguồn >> chỗ tiêu thì không ai mua). Paywall 50 < 1 continue (75): thiếu gem
+// đúng lúc gói Starter hiện ở màn 10. Thú cưng tự nó là quà nên không kèm gem.
+export const GEM_REWARDS = remote('GEM_REWARDS', { paywall: 50, boss: 15, area: 20, pet: 0 });
 
 // ----- NHIỆM VỤ NGÀY (core/daily.mjs) — mỗi ngày `count` nhiệm vụ nhẹ, cùng một mức xu; không có rương, không tặng booster -----
 // R = xu thắng màn cao nhất đang mở lúc sang ngày (bỏ dao động, làm tròn chục), giữ nguyên cả ngày. Xu mỗi nhiệm vụ = share × R.

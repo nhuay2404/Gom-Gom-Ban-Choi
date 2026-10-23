@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { idleOpen, idlePerHour, idleCap, idlePending, idleFull, tickIdle, claimIdle } from './idle.mjs';
-import { IDLE_FROM_LEVEL, IDLE_CAP_HOURS, IDLE_RATE } from '../data/economy.mjs';
+import { IDLE_FROM_LEVEL, IDLE_CAP_HOURS, IDLE_RATE, IDLE_MIN_MINUTES } from '../data/economy.mjs';
 import { levelReward } from './progression.mjs';
 
 const HOUR = 3600 * 1000, T = Date.UTC(2026, 9, 1), at = IDLE_FROM_LEVEL;
@@ -24,6 +24,11 @@ test('idle: mỗi mèo tự sinh xu theo xu thưởng màn đang chơi, chặn �
   assert.equal(idlePending(deco, at, T + 2 * HOUR, 'orange'), Math.floor(2 * idlePerHour(at)));
   assert.equal(idlePending(deco, at, T + 100 * HOUR, 'gray'), idleCap(at), 'đầy trần thì ngừng');
   assert.equal(idleFull(deco, at, T + IDLE_CAP_HOURS * HOUR, 'orange'), true);
+  // Chưa tích đủ IDLE_MIN_MINUTES phút: chưa nhận được gì; đủ thì nhận cả phần đã tích từ đầu.
+  const MIN = IDLE_MIN_MINUTES * 60000;
+  assert.equal(idlePending(deco, at, T + MIN - 1, 'orange'), 0);
+  assert.equal(claimIdle(deco, at, T + MIN - 1, 'orange').amount, 0);
+  assert.equal(idlePending(deco, at, T + MIN, 'orange'), Math.floor(MIN / HOUR * idlePerHour(at)));
   const { deco: after, amount } = claimIdle(deco, at, T + 3 * HOUR, 'orange');
   assert.equal(amount, Math.floor(3 * idlePerHour(at)));
   assert.equal(after.coins, 100 + amount);
