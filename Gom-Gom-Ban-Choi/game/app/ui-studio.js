@@ -411,17 +411,51 @@ function snapLines() {
   }
   return { xs, ys };
 }
-function snapDelta(rect, dx, dy) {
-  if (!prefs.snap) return { dx, dy, guides: [] };
-  const { xs, ys } = snapLines();
-  const pick = (edges, lines) => {
-    let best = null;
-    for (const e of edges) for (const l of lines) { const d = l - e; if (Math.abs(d) <= SNAP_PX && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, l }; }
-    return best;
+// Smart guides kiểu Figma / Photoshop: lúc kéo, mép trái / tâm / mép phải (trên / giữa / dưới) của layer hút vào mép / tâm của các layer
+// khác đang hiện (kể cả layer cha) + khung / lưới khi bật Snap. Giữ Ctrl để kéo tự do. Đường gióng vẽ từ layer đang kéo tới layer được gióng.
+function guideTargets(moving) {
+  const out = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el === host || moving.some(m => m === el || m.contains(el))) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4 || (r.width > innerWidth * .95 && r.height > innerHeight * .95)) continue;
+    if (r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'contents' || Number(cs.opacity) === 0) continue;
+    out.push(r);
+    if (out.length > 800) break;
+  }
+  return out;
+}
+const xEdges = r => [r.left, r.left + r.width / 2, r.right];
+const yEdges = r => [r.top, r.top + r.height / 2, r.bottom];
+function snapDelta(rect, dx, dy, targets = [], free = false) {
+  if (free) return { dx, dy, guides: [] };
+  const vx = [], vy = [];
+  if (prefs.snap) {
+    const { xs, ys } = snapLines();
+    for (const at of xs) vx.push({ at });
+    for (const at of ys) vy.push({ at });
+  }
+  for (const t of targets) {
+    for (const at of xEdges(t)) vx.push({ at, t });
+    for (const at of yEdges(t)) vy.push({ at, t });
+  }
+  const best = (edges, lines) => {
+    let b = null;
+    for (const e of edges) for (const l of lines) { const d = l.at - e; if (Math.abs(d) <= SNAP_PX && (b === null || Math.abs(d) < Math.abs(b))) b = d; }
+    return b;
   };
-  const bx = pick([rect.left + dx, rect.left + rect.width / 2 + dx, rect.right + dx], xs);
-  const by = pick([rect.top + dy, rect.top + rect.height / 2 + dy, rect.bottom + dy], ys);
-  return { dx: dx + (bx?.d || 0), dy: dy + (by?.d || 0), guides: [bx && { x: bx.l }, by && { y: by.l }].filter(Boolean) };
+  const sx = best(xEdges(rect).map(v => v + dx), vx), sy = best(yEdges(rect).map(v => v + dy), vy);
+  if (sx !== null) dx += sx;
+  if (sy !== null) dy += sy;
+  const moved = { left: rect.left + dx, right: rect.right + dx, top: rect.top + dy, bottom: rect.bottom + dy, width: rect.width, height: rect.height };
+  // mọi đường trùng vị trí mới đều vẽ (như Figma: gióng cùng lúc nhiều layer), gộp đường trùng
+  const guides = new Map();
+  const add = g => { const k = [g.x ?? '', g.y ?? '', g.a, g.b].map(Math.round).join(); if (!guides.has(k)) guides.set(k, g); };
+  if (sx !== null) for (const l of vx) if (xEdges(moved).some(e => Math.abs(e - l.at) < .6)) add(l.t ? { x: l.at, a: Math.min(moved.top, l.t.top), b: Math.max(moved.bottom, l.t.bottom) } : { x: l.at, a: 0, b: innerHeight });
+  if (sy !== null) for (const l of vy) if (yEdges(moved).some(e => Math.abs(e - l.at) < .6)) add(l.t ? { y: l.at, a: Math.min(moved.left, l.t.left), b: Math.max(moved.right, l.t.right) } : { y: l.at, a: 0, b: innerWidth });
+  return { dx, dy, guides: [...guides.values()].slice(0, 16) };
 }
 
 // ---------- Dời vị trí ----------
@@ -478,7 +512,29 @@ function moveBy(el, dx, dy, step = .01) {
   }
   return moved;
 }
-const NOT_MOVABLE = 'This layer\'s position is set by game code (or a parent layout), so it cannot be moved from here. Try ⬆ Parent.';
+// Đổi cỡ (W / H trong mục Transform): sửa width / height đang thắng; chưa có thì thêm width: calc(N * var(--u)) vào khối của layer.
+function sizeAxis(el, name) {
+  const ref = matchedRules(el).find(r => r.rule.style.getPropertyValue(name));
+  if (!ref) return null;
+  const value = ref.rule.style.getPropertyValue(name).trim(), m = value.match(/-?\d*\.?\d+/);
+  return m ? { ref, name, value, m } : null;
+}
+function resizeTo(el, name, targetPx) {
+  let axis = sizeAxis(el, name);
+  if (!axis) {
+    const ref = editableRef(el);
+    if (!ref) return false;
+    setProp(ref, name, `calc(${round(el.getBoundingClientRect()[name] / unitPx(el.parentElement))} * var(--u))`);
+    axis = sizeAxis(el, name);
+    if (!axis) return false;
+  }
+  const scale = measure(el, axis, name);
+  if (!scale) return false;
+  const delta = targetPx - el.getBoundingClientRect()[name];
+  if (Math.abs(delta) > .05) setProp(axis.ref, name, withNumber(axis, round(parseFloat(axis.m[0]) + delta / scale)));
+  return true;
+}
+const NOT_MOVABLE ='This layer\'s position is set by game code (or a parent layout), so it cannot be moved from here. Try ⬆ Parent.';
 
 // ---------- Chọn, liên kết (group) ----------
 const primary = () => selection.at(-1) || null;
@@ -626,7 +682,7 @@ root.innerHTML = `<style>
   * { box-sizing: border-box; font: 12px/1.35 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
   canvas.grid { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; display: none; }
   .guide { position: fixed; background: #ff2fb4; pointer-events: none; }
-  .guide.x { top: 0; bottom: 0; width: 1px; } .guide.y { left: 0; right: 0; height: 1px; }
+  .guide.x { width: 1px; } .guide.y { height: 1px; }
   .box { position: fixed; border: 1.5px solid #2f8cff; background: rgba(47,140,255,.06); pointer-events: none; border-radius: 2px; display: none; }
   .box.sel { cursor: move; pointer-events: auto; }
   .box.sel.primary { border-width: 2px; background: rgba(47,140,255,.1); }
@@ -658,6 +714,57 @@ root.innerHTML = `<style>
   .gridset input[type=number] { text-align: center; padding: 2px 4px; }
   .gridset input[type=checkbox] { width: auto; accent-color: #2f8cff; }
   .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .tf { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; align-items: center; }
+  .tf label { display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 4px; }
+  .tf label b { color: #9aa0aa; font-weight: 600; text-align: center; }
+  .tf input { text-align: left; }
+  .tf button.icon { justify-self: start; }
+  .box .h { display: none; position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid #2f8cff; border-radius: 1px; pointer-events: auto; }
+  .box.sel.single .h { display: block; }
+  .h.nw { left: -5px; top: -5px; cursor: nwse-resize; } .h.se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+  .h.ne { right: -5px; top: -5px; cursor: nesw-resize; } .h.sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+  .h.n { left: calc(50% - 4px); top: -5px; cursor: ns-resize; } .h.s { left: calc(50% - 4px); bottom: -5px; cursor: ns-resize; }
+  .h.e { right: -5px; top: calc(50% - 4px); cursor: ew-resize; } .h.w { left: -5px; top: calc(50% - 4px); cursor: ew-resize; }
+  .sec-head { display: flex; align-items: center; gap: 4px; }
+  .sec-head h4 { flex: 1; cursor: pointer; user-select: none; }
+  .sec-head h4::before { content: '▾ '; color: #5d626c; }
+  .section.closed .sec-head h4::before { content: '▸ '; }
+  .section.closed > :not(.sec-head) { display: none; }
+  button.hbtn { padding: 1px 7px; background: transparent; color: #c8ccd4; font-size: 13px; line-height: 1.2; }
+  button.hbtn:hover { background: #3a3e47; }
+  .nf { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; background: #15171b; border: 1px solid #3a3e47; border-radius: 4px; min-width: 0; }
+  .nf:focus-within { border-color: #2f8cff; }
+  .nf b { color: #9aa0aa; font-weight: 600; text-align: center; cursor: ew-resize; user-select: none; font-size: 11px; white-space: nowrap; overflow: hidden; }
+  .nf input { border: 0; background: transparent; padding: 3px 4px 3px 0; min-width: 0; }
+  .nf i { color: #6b707a; font-style: normal; padding-right: 5px; font-size: 11px; }
+  .cf { display: grid; grid-template-columns: 24px 1fr 58px; gap: 4px; align-items: center; flex: 1; min-width: 0; }
+  .cf .nf { grid-template-columns: 1fr auto; }
+  .cf .nf input { padding-left: 5px; }
+  .line { display: flex; gap: 6px; align-items: center; }
+  .grid2, .grid3, .grid4 { display: grid; gap: 4px 6px; }
+  .grid2 { grid-template-columns: 1fr 1fr; } .grid3 { grid-template-columns: repeat(3, 1fr); } .grid4 { grid-template-columns: repeat(4, 1fr); }
+  .stack { display: flex; flex-direction: column; gap: 4px; }
+  select { background: #15171b; color: #fff; border: 1px solid #3a3e47; border-radius: 4px; padding: 3px 4px; font-size: 11.5px; min-width: 0; width: 100%; }
+  .line select { width: auto; }
+  input.wide { font-family: ui-sans-serif, system-ui, sans-serif; }
+  .seg { display: inline-flex; background: #15171b; border: 1px solid #3a3e47; border-radius: 4px; overflow: hidden; flex: none; }
+  .seg button { background: transparent; border-radius: 0; padding: 3px 8px; }
+  .seg button.on { background: #2f8cff; }
+  .tree { max-height: 240px; overflow: auto; display: flex; flex-direction: column; margin: 0 -4px; }
+  .tr { display: flex; align-items: center; gap: 5px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 11.5px; color: #c8ccd4; }
+  .tr:hover { background: #32363e; }
+  .tr.sel { background: #2f8cff44; }
+  .tr.cur { background: #2f8cff; color: #fff; }
+  .tr.dim { opacity: .45; }
+  .tr .car { width: 9px; color: #6b707a; flex: none; }
+  .tr .ic { width: 14px; text-align: center; color: #9aa0aa; font-family: ui-monospace, Consolas, monospace; flex: none; }
+  .tr.cur .ic, .tr.cur .car { color: #fff; }
+  .tr .nm { overflow: hidden; text-overflow: ellipsis; }
+  details.raw { display: flex; flex-direction: column; gap: 8px; }
+  details.raw summary { cursor: pointer; color: #9aa0aa; text-transform: uppercase; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; padding: 2px 0; }
+  details.raw[open] summary { margin-bottom: 6px; }
+  details.raw .card { margin-bottom: 8px; }
+  .group-title { margin: 2px 0 -2px; color: #9aa0aa; font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .04em; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #e04848; }
   .dot.on { background: #3fcf6a; }
   .sep { width: 1px; align-self: stretch; background: #3a3e47; margin: 0 3px; }
@@ -801,7 +908,7 @@ function buildBars() {
   sep(toolBar);
   tool(toolBar, 'grid', { icon: 'grid', title: 'Show layout grid  (Ctrl + \')', tip: 'Shows the layout grid over the 393 px design frame, like Figma: red = columns, blue = rows, thin lines = square grid. Pink lines = frame edges and center.', onClick: () => { prefs.grid = !prefs.grid; savePrefs(); syncBar(); } });
   tool(toolBar, 'gridSet', { text: '▾', cls: 'mini', title: 'Layout grid settings', tip: 'Set up columns, rows and the square grid (count, gutter, margin, size).', onClick: () => { showGridSettings = !showGridSettings; if (showGridSettings) prefs.grid = true; savePrefs(); render(); } });
-  tool(toolBar, 'snap', { icon: 'snap', title: 'Snap  (Ctrl + Shift + ;)', tip: 'While dragging, edges and centers stick to the frame edges / center and, when the grid is shown, to column, row and grid lines.', onClick: () => { prefs.snap = !prefs.snap; savePrefs(); syncBar(); } });
+  tool(toolBar, 'snap', { icon: 'snap', title: 'Snap  (Ctrl + Shift + ;)', tip: 'While dragging, edges and centers also stick to the frame edges / center and, when the grid is shown, to column, row and grid lines. Smart guides to other layers are always on (hold Ctrl to move freely).', onClick: () => { prefs.snap = !prefs.snap; savePrefs(); syncBar(); } });
   sep(toolBar);
   tool(toolBar, 'link', { icon: 'link', title: 'Link layers  (Ctrl + G)', tip: 'Groups the selected layers so clicking one selects all of them and they move together. Only remembered in this browser; it does not change the game files.', onClick: linkSelection });
   tool(toolBar, 'unlink', { icon: 'unlink', title: 'Unlink layers  (Ctrl + Shift + G)', tip: 'Removes the link from the selected layers.', onClick: unlinkSelection });
@@ -1067,14 +1174,61 @@ function chip(el, text, cls = '') {
   c.onpointerleave = () => { chipHover = null; };
   return c;
 }
+// Mục có tiêu đề bấm để thu / mở (nhớ theo tên mục), thêm nút nhỏ bên phải tiêu đề (vd. "+" thêm fill) qua headButton().
+const closedSections = new Set();
 function section(title, help) {
   const s = document.createElement('div');
-  s.className = 'section';
+  s.className = 'section' + (closedSections.has(title) ? ' closed' : '');
+  const head = document.createElement('div');
+  head.className = 'sec-head';
   const h = document.createElement('h4');
   h.textContent = title;
-  setTip(h, title, help);
-  s.append(h);
+  setTip(h, title, help + '\n(Click the title to collapse / expand.)');
+  h.onclick = () => { s.classList.toggle('closed'); if (s.classList.contains('closed')) closedSections.add(title); else closedSections.delete(title); };
+  head.append(h);
+  s.append(head);
   return s;
+}
+function headButton(s, text, title, tip, onClick) {
+  const b = document.createElement('button');
+  b.className = 'hbtn';
+  b.textContent = text;
+  setTip(b, title, tip);
+  b.onclick = event => { event.stopPropagation(); onClick(); };
+  s.querySelector('.sec-head').append(b);
+  return b;
+}
+
+// ---------- Layers: cây dọc kiểu Photoshop / Figma ----------
+// Layer cha ở trên, thụt vào theo cấp; trong cùng một cha, layer nằm TRÊN cùng (vẽ sau) đứng đầu danh sách như Figma / Photoshop.
+const ownText = n => [...n.childNodes].filter(c => c.nodeType === 3).map(c => c.textContent.trim()).join(' ').trim();
+const layerKids = n => [...n.children].filter(k => !(k instanceof HTMLScriptElement || k instanceof HTMLStyleElement || k instanceof HTMLTemplateElement));
+function layerName(n) {
+  let name = n.id ? '#' + n.id : n.classList[0] ? n.classList[0] : n.tagName.toLowerCase();
+  const text = ownText(n);
+  if (text) name += `  “${text.length > 18 ? text.slice(0, 17) + '…' : text}”`;
+  return name;
+}
+function layerIcon(n) {
+  if (n instanceof HTMLImageElement || n instanceof SVGElement || /url\(/.test(getComputedStyle(n).backgroundImage)) return ['▨', 'Image layer'];
+  if (ownText(n) && !layerKids(n).length) return ['T', 'Text layer'];
+  if (layerKids(n).length) return ['#', 'Frame (contains other layers)'];
+  return ['▭', 'Shape / box'];
+}
+function treeRow(n, depth, { cur = false, open = false } = {}) {
+  const row = document.createElement('div');
+  const [icon, kind] = layerIcon(n);
+  const hidden = getComputedStyle(n).display === 'none' || !n.getClientRects().length;
+  row.className = 'tr' + (cur ? ' cur' : selection.includes(n) ? ' sel' : '') + (hidden ? ' dim' : '');
+  row.style.paddingLeft = 6 + depth * 12 + 'px';
+  row.innerHTML = `<span class="car">${layerKids(n).length ? (open ? '▾' : '▸') : ''}</span><span class="ic"></span><span class="nm"></span>`;
+  row.querySelector('.ic').textContent = icon;
+  row.querySelector('.nm').textContent = layerName(n);
+  setTip(row, label(n), `${kind}${hidden ? ' · hidden right now' : ''}. Click to select, Shift + click to add to the selection.`);
+  row.onclick = event => select(n, { add: event.shiftKey });
+  row.onpointerenter = () => { chipHover = n; };
+  row.onpointerleave = () => { chipHover = null; };
+  return row;
 }
 function layersSection(el) {
   const out = [];
@@ -1094,27 +1248,338 @@ function layersSection(el) {
     s.append(chips);
     out.push(s);
   }
-  const s = section('Layers', 'Where this layer sits: its parents (left) and the layers inside it (below). Click one to select it; Shift + click adds it.');
-  const crumbs = document.createElement('div');
-  crumbs.className = 'chips';
-  const chain = [];
-  for (let p = el; p && p !== document.body; p = p.parentElement) chain.unshift(p);
-  chain.slice(-6).forEach((p, i, list) => {
-    crumbs.append(chip(p, label(p).split('.').slice(0, 2).join('.'), p === el ? 'cur' : ''));
-    if (i < list.length - 1) crumbs.append(Object.assign(document.createElement('span'), { className: 'crumb-sep', textContent: '›' }));
-  });
-  s.append(crumbs);
-  const kids = [...el.children].filter(k => !(k instanceof HTMLScriptElement || k instanceof HTMLStyleElement));
-  if (kids.length) {
-    const inner = document.createElement('div');
-    inner.className = 'chips';
-    inner.append(Object.assign(document.createElement('span'), { className: 'hint', textContent: 'Inside: ' }));
-    for (const k of kids.slice(0, 30)) inner.append(chip(k, label(k).split('.').slice(0, 2).join('.')));
-    if (kids.length > 30) inner.append(Object.assign(document.createElement('span'), { className: 'hint', textContent: `+${kids.length - 30} more` }));
-    s.append(inner);
+  const s = section('Layers', 'Like the Layers panel in Photoshop / Figma: parents above, indented children below. Within a parent, the layer drawn on top is listed first. Click to select, Shift + click to add.');
+  const tree = document.createElement('div');
+  tree.className = 'tree';
+  const parents = [];
+  for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) parents.unshift(p);
+  let depth = 0;
+  for (const p of parents.slice(-4)) tree.append(treeRow(p, depth++, { open: true }));
+  let siblings = el.parentElement ? layerKids(el.parentElement).reverse() : [el];
+  // nhiều anh em (vd. hàng chục nút màn): chỉ hiện quanh layer đang chọn
+  if (siblings.length > 40) { const i = siblings.indexOf(el); siblings = siblings.slice(Math.max(0, i - 15), i + 25); }
+  let current = null;
+  for (const sib of siblings) {
+    const isCur = sib === el;
+    const row = treeRow(sib, depth, { cur: isCur, open: isCur });
+    tree.append(row);
+    if (!isCur) continue;
+    current = row;
+    const kids = layerKids(el).reverse();
+    for (const k of kids.slice(0, 40)) tree.append(treeRow(k, depth + 1));
+    if (kids.length > 40) tree.append(Object.assign(document.createElement('div'), { className: 'hint', textContent: `   +${kids.length - 40} more` }));
   }
+  s.append(tree);
+  if (current) requestAnimationFrame(() => current.scrollIntoView({ block: 'nearest' }));
   out.push(s);
   return out;
+}
+
+// ---------- Bảng Style kiểu Figma (Design panel) ----------
+// Đọc giá trị ĐANG HIỆN (getComputedStyle, quy ra px thiết kế), ghi vào khối CSS đang thắng của thuộc tính đó (styleRef);
+// số ghi dạng calc(N * var(--u)) để UI co giãn đúng. Phần CSS thô vẫn ở cuối bảng ("CSS code").
+const toD = px => round(px / frame().u, .1);
+const fromD = n => (Math.abs(n) < .005 ? '0' : `calc(${round(n)} * var(--u))`);
+const styleRef = (el, prop) => matchedRules(el).find(r => r.rule.style.getPropertyValue(prop)) || editableRef(el);
+function setStyle(el, prop, value) {
+  const ref = styleRef(el, prop);
+  if (!ref) { flash('No style rule in game/ui/ applies to this layer, so it cannot be styled from here. Try ⬆ Parent.'); return false; }
+  setProp(ref, prop, value);
+  return true;
+}
+function parseColor(value) {
+  probe.fillStyle = '#000';
+  probe.fillStyle = value;
+  const c = probe.fillStyle;
+  if (c.startsWith('#')) return { hex: c, a: 1 };
+  const m = c.match(/[\d.]+/g) || [0, 0, 0, 0];
+  return { hex: '#' + m.slice(0, 3).map(n => (+n).toString(16).padStart(2, '0')).join(''), a: m[3] === undefined ? 1 : +m[3] };
+}
+const colorOut = (hex, a) => (a >= 1 ? hex : hex + Math.round(Math.max(0, a) * 255).toString(16).padStart(2, '0'));
+// Ô số kiểu Figma: kéo ngang trên nhãn để chỉnh (Shift ×10), gõ số, ↑ / ↓. raw: cho gõ cả chữ (50%, auto, 1.2).
+function numField(name, value, onSet, { title = name, tip = '', eg = '', step = 1, min = -Infinity, max = Infinity, suffix = '', raw = false } = {}) {
+  const wrap = document.createElement('label');
+  wrap.className = 'nf';
+  wrap.innerHTML = `<b></b><input>${suffix ? `<i>${suffix}</i>` : ''}`;
+  const b = wrap.querySelector('b'), input = wrap.querySelector('input');
+  b.textContent = name;
+  input.value = value;
+  setTip(wrap, title, tip + (tip ? '\n' : '') + 'Drag left / right on the label to change it (Shift = ×10), type a value, or use ↑ / ↓.', eg);
+  let token = null;
+  const set = v => {
+    if (typeof v === 'number') { v = Math.min(max, Math.max(min, v)); input.value = round(v, step < 1 ? .01 : .1); }
+    act(null, () => onSet(v), token || (token = { label: 'Edit ' + title }));
+    syncBar();
+  };
+  input.onfocus = () => { token = { label: 'Edit ' + title }; };
+  input.onchange = () => {
+    const text = input.value.trim();
+    if (/^-?\d*\.?\d+$/.test(text)) set(parseFloat(text));
+    else if (raw && text) set(text);
+  };
+  input.onkeydown = event => {
+    if (event.key === 'Enter') { input.blur(); return; }
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    set((parseFloat(input.value) || 0) + step * (event.shiftKey ? 10 : 1) * (event.key === 'ArrowUp' ? 1 : -1));
+  };
+  b.onpointerdown = event => {
+    event.preventDefault();
+    token = { label: 'Edit ' + title };
+    const x0 = event.clientX, v0 = parseFloat(input.value) || 0;
+    b.setPointerCapture(event.pointerId);
+    b.onpointermove = e => set(v0 + Math.round((e.clientX - x0) / 2) * step * (e.shiftKey ? 10 : 1));
+    b.onpointerup = b.onpointercancel = () => { b.onpointermove = null; };
+  };
+  return wrap;
+}
+// Ô màu kiểu Figma: ô màu + mã hex + độ đục %
+function colorField(title, value, onSet, tip = '') {
+  const wrap = document.createElement('div');
+  wrap.className = 'cf';
+  let { hex, a } = parseColor(value);
+  wrap.innerHTML = '<input type="color"><input class="hex"><label class="nf"><input class="al"><i>%</i></label>';
+  const [pick, text, alpha] = wrap.querySelectorAll('input');
+  const show = () => { pick.value = hex; text.value = hex.slice(1).toUpperCase(); alpha.value = Math.round(a * 100); };
+  show();
+  setTip(pick, title, (tip ? tip + '\n' : '') + 'Click the swatch to pick a color.');
+  setTip(text, title + ' (hex)', 'Hex color code, like in Photoshop / Figma.', 'FF7A2F');
+  setTip(alpha, title + ' opacity', 'Opacity of this color only (0 = clear, 100 = solid).', '100 · 50');
+  let token = null;
+  const commit = () => { show(); act(null, () => onSet(colorOut(hex, a)), token || (token = { label: 'Edit ' + title })); syncBar(); };
+  for (const i of [pick, text, alpha]) i.addEventListener('focus', () => { token = { label: 'Edit ' + title }; });
+  pick.oninput = () => { hex = pick.value; commit(); };
+  text.onchange = () => { const v = text.value.trim().replace(/^#/, ''); if (/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(v)) hex = parseColor('#' + v).hex; commit(); };
+  alpha.onchange = () => { const v = parseFloat(alpha.value); if (Number.isFinite(v)) a = Math.min(100, Math.max(0, v)) / 100; commit(); };
+  return wrap;
+}
+function selectField(title, options, value, onSet, tip = '') {
+  const sel = document.createElement('select');
+  for (const [v, text] of options) sel.append(new Option(text, v));
+  if (![...sel.options].some(o => o.value === value)) sel.append(new Option(value, value));
+  sel.value = value;
+  setTip(sel, title, tip);
+  sel.onchange = () => { act('Edit ' + title, () => onSet(sel.value)); syncBar(); };
+  return sel;
+}
+function segmented(title, options, value, onSet, tip = '') {
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  setTip(seg, title, tip);
+  for (const [v, text, hint] of options) {
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.className = v === value ? 'on' : '';
+    if (hint) setTip(b, hint, tip);
+    b.onclick = () => { act('Edit ' + title, () => onSet(v)); for (const x of seg.children) x.classList.toggle('on', x === b); syncBar(); };
+    seg.append(b);
+  }
+  return seg;
+}
+const rowOf = (cls, ...items) => { const r = document.createElement('div'); r.className = cls; r.append(...items); return r; };
+const minusButton = (title, tip, onClick) => { const b = document.createElement('button'); b.className = 'hbtn'; b.textContent = '−'; setTip(b, title, tip); b.onclick = onClick; return b; };
+// box-shadow / text-shadow đã tính (getComputedStyle) -> [{color, x, y, blur, spread, inset}] theo px thiết kế
+function splitTopLevel(text) {
+  const out = [];
+  let depth = 0, begin = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') depth--;
+    else if (text[i] === ',' && !depth) { out.push(text.slice(begin, i)); begin = i + 1; }
+  }
+  return [...out, text.slice(begin)].map(s => s.trim()).filter(Boolean);
+}
+function parseShadows(value) {
+  if (!value || value === 'none') return [];
+  return splitTopLevel(value).map(part => {
+    const color = (part.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}/i) || ['#000000'])[0];
+    const n = (part.replace(color, '').match(/-?[\d.]+px/g) || []).map(v => toD(parseFloat(v)));
+    return { color, x: n[0] || 0, y: n[1] || 0, blur: n[2] || 0, spread: n[3] || 0, inset: /\binset\b/.test(part) };
+  });
+}
+const shadowOut = (list, text = false) => list.length ? list.map(s => [s.inset ? 'inset' : '', fromD(s.x), fromD(s.y), fromD(s.blur), text ? '' : fromD(s.spread), s.color].filter(Boolean).join(' ')).join(', ') : 'none';
+function shadowEditor(el, prop, list, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'stack';
+  const write = () => setStyle(el, prop, shadowOut(list, text));
+  list.forEach((s, i) => {
+    const kind = text ? document.createElement('span') : selectField('Shadow type', [['drop', 'Drop shadow'], ['inner', 'Inner shadow']], s.inset ? 'inner' : 'drop', v => { s.inset = v === 'inner'; write(); }, 'Drop shadow = outside the layer; Inner shadow = inside it (Photoshop layer styles).');
+    if (text) { kind.className = 'hint'; kind.textContent = `Shadow ${i + 1}`; }
+    const del = minusButton('Remove shadow', 'Deletes this shadow.', () => { act('Remove shadow', () => { list.splice(i, 1); write(); }); render(); });
+    wrap.append(rowOf('line', kind, colorField('Shadow color', s.color, c => { s.color = c; write(); }), del));
+    const fields = [['X', 'x', 'Horizontal offset (Photoshop: angle + distance).'], ['Y', 'y', 'Vertical offset. Negative = up.'], ['B', 'blur', 'Blur (Photoshop: size). 0 = hard edge.']];
+    if (!text) fields.push(['S', 'spread', 'Spread: grows (+) or shrinks (−) the shadow before blurring.']);
+    wrap.append(rowOf(text ? 'grid3' : 'grid4', ...fields.map(([k, key, tip]) => numField(k, s[key], v => { s[key] = v; write(); }, { title: `Shadow ${key}`, tip: tip + ' In design px.', min: key === 'blur' ? 0 : -Infinity }))));
+  });
+  return wrap;
+}
+function designSections(el) {
+  const cs = getComputedStyle(el), out = [];
+  const again = () => render();
+
+  // Layer: độ đục + chế độ hoà trộn (như hàng trên cùng panel Layers của Photoshop)
+  const layer = section('Layer', 'Opacity and blend mode of the whole layer, like the top row of the Layers panel in Photoshop.');
+  layer.append(rowOf('grid2',
+    numField('◐', Math.round(+cs.opacity * 100), v => setStyle(el, 'opacity', String(round(Math.min(100, Math.max(0, v)) / 100))), { title: 'Opacity', tip: 'Layer opacity in % (0 = invisible, 100 = solid). Also fades everything inside the layer.', suffix: '%', min: 0, max: 100 }),
+    selectField('Blend mode', ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn', 'soft-light', 'hard-light', 'difference', 'luminosity'].map(m => [m, m.replace('-', ' ').replace(/^./, c => c.toUpperCase())]), cs.mixBlendMode, v => setStyle(el, 'mix-blend-mode', v), 'Blend mode, same as in the Photoshop Layers panel.')));
+  out.push(layer);
+
+  // Fill: màu nền (ảnh nền xem ô ảnh bên dưới)
+  const fill = section('Fill', 'Background fill of the layer (Color Fill). Images used by the layer are listed further down.');
+  const bg = parseColor(cs.backgroundColor);
+  if (bg.a > 0) {
+    fill.append(rowOf('line', colorField('Fill', cs.backgroundColor, c => setStyle(el, 'background-color', c)), minusButton('Remove fill', 'Makes the fill transparent.', () => { act('Remove fill', () => setStyle(el, 'background-color', 'transparent')); again(); })));
+  } else headButton(fill, '+', 'Add fill', 'Adds a solid color fill.', () => { act('Add fill', () => setStyle(el, 'background-color', '#ffffff')); again(); });
+  if (cs.backgroundImage !== 'none') fill.append(Object.assign(document.createElement('div'), { className: 'hint', textContent: /gradient/.test(cs.backgroundImage) ? 'Also has a gradient fill (edit it in CSS code below).' : 'Also has an image fill (see Image below).' }));
+  out.push(fill);
+
+  // Stroke: viền (CSS border, nằm phía trong như Stroke → Inside)
+  const stroke = section('Stroke', 'Line around the layer, drawn inside its edge (Stroke → Inside in Photoshop / Figma).');
+  const sw = parseFloat(cs.borderTopWidth) || 0;
+  if (sw > 0 && cs.borderTopStyle !== 'none') {
+    stroke.append(rowOf('line', colorField('Stroke', cs.borderTopColor, c => setStyle(el, 'border-color', c)), minusButton('Remove stroke', 'Removes the stroke.', () => { act('Remove stroke', () => setStyle(el, 'border-style', 'none')); again(); })));
+    stroke.append(rowOf('grid2',
+      numField('W', toD(sw), v => setStyle(el, 'border-width', fromD(Math.max(0, v))), { title: 'Stroke width', tip: 'Stroke thickness in design px.', min: 0 }),
+      selectField('Stroke style', [['solid', 'Solid'], ['dashed', 'Dashed'], ['dotted', 'Dotted'], ['double', 'Double']], cs.borderTopStyle, v => setStyle(el, 'border-style', v), 'Solid line, dashes or dots.')));
+  } else headButton(stroke, '+', 'Add stroke', 'Adds a 2 px dark stroke.', () => { act('Add stroke', () => { setStyle(el, 'border-style', 'solid'); setStyle(el, 'border-width', fromD(2)); setStyle(el, 'border-color', '#73392a'); }); again(); });
+  out.push(stroke);
+
+  // Effects: bóng đổ (box-shadow)
+  const effects = section('Effects', 'Drop shadows and inner shadows of the layer (Photoshop layer styles / Figma effects).');
+  const shadows = parseShadows(cs.boxShadow);
+  if (shadows.length) effects.append(shadowEditor(el, 'box-shadow', shadows, false));
+  headButton(effects, '+', 'Add shadow', 'Adds a soft drop shadow.', () => { act('Add shadow', () => setStyle(el, 'box-shadow', shadowOut([...shadows, { color: '#00000040', x: 0, y: 4, blur: 8, spread: 0, inset: false }]))); again(); });
+  out.push(effects);
+
+  // Text: chỉ hiện khi layer có chữ
+  if (ownText(el) || el instanceof HTMLInputElement) {
+    const text = section('Text', 'Font settings of this text layer (Character / Paragraph panels in Photoshop).');
+    const font = document.createElement('input');
+    font.className = 'wide';
+    font.value = cs.fontFamily;
+    setTip(font, 'Font', 'Typeface, with fallbacks after the commas.', '"Baloo 2", sans-serif');
+    font.onchange = () => { act('Edit font', () => setStyle(el, 'font-family', font.value)); syncBar(); };
+    const lh = cs.lineHeight === 'normal' ? 'auto' : toD(parseFloat(cs.lineHeight));
+    const ls = cs.letterSpacing === 'normal' ? 0 : toD(parseFloat(cs.letterSpacing));
+    text.append(font,
+      rowOf('grid2',
+        numField('Aa', toD(parseFloat(cs.fontSize)), v => setStyle(el, 'font-size', fromD(Math.max(1, v))), { title: 'Font size', tip: 'Text size in design px.', min: 1 }),
+        selectField('Weight', [['100', 'Thin'], ['200', 'Extra light'], ['300', 'Light'], ['400', 'Regular'], ['500', 'Medium'], ['600', 'Semi bold'], ['700', 'Bold'], ['800', 'Extra bold'], ['900', 'Black']], String(cs.fontWeight), v => setStyle(el, 'font-weight', v), 'Font weight (Regular, Bold…).')),
+      rowOf('grid2',
+        numField('↕', lh, v => setStyle(el, 'line-height', typeof v === 'number' ? fromD(v) : v), { title: 'Line height', tip: 'Leading: distance between lines, in design px. Type "normal" for automatic.', raw: true }),
+        numField('↔', ls, v => setStyle(el, 'letter-spacing', typeof v === 'number' ? fromD(v) : v), { title: 'Letter spacing', tip: 'Tracking: extra space between letters, in design px.', step: .1, raw: true })),
+      rowOf('line', colorField('Text color', cs.color, c => setStyle(el, 'color', c)),
+        segmented('Align', [['left', '⇤', 'Align left'], ['center', '⇔', 'Align center'], ['right', '⇥', 'Align right']], cs.textAlign === 'start' ? 'left' : cs.textAlign, v => setStyle(el, 'text-align', v), 'Paragraph alignment.')));
+    // viền chữ (-webkit-text-stroke) đang dùng nhiều trong game
+    const tsw = parseFloat(cs.webkitTextStrokeWidth) || 0;
+    const strokeHead = document.createElement('div');
+    strokeHead.className = 'hint';
+    strokeHead.textContent = 'Text stroke';
+    if (tsw > 0) {
+      let w = toD(tsw), c = colorOut(parseColor(cs.webkitTextStrokeColor).hex, parseColor(cs.webkitTextStrokeColor).a);
+      const write = () => setStyle(el, '-webkit-text-stroke', `${fromD(w)} ${c}`);
+      text.append(strokeHead, rowOf('line', colorField('Text stroke', cs.webkitTextStrokeColor, v => { c = v; write(); }),
+        numField('W', w, v => { w = Math.max(0, v); write(); }, { title: 'Text stroke width', tip: 'Outline thickness around the letters, in design px.', min: 0, step: .1 }),
+        minusButton('Remove text stroke', 'Removes the outline around the letters.', () => { act('Remove text stroke', () => setStyle(el, '-webkit-text-stroke', '0')); again(); })));
+    } else headButton(text, '+ stroke', 'Add text stroke', 'Adds an outline around the letters (Stroke layer style).', () => { act('Add text stroke', () => { setStyle(el, '-webkit-text-stroke', `${fromD(2)} #6a3229`); setStyle(el, 'paint-order', 'stroke fill'); }); again(); });
+    const tshadows = parseShadows(cs.textShadow);
+    if (tshadows.length) text.append(shadowEditor(el, 'text-shadow', tshadows, true));
+    else headButton(text, '+ shadow', 'Add text shadow', 'Adds a drop shadow behind the letters.', () => { act('Add text shadow', () => setStyle(el, 'text-shadow', shadowOut([{ color: '#00000055', x: 0, y: 2, blur: 0 }], true))); again(); });
+    out.push(text);
+  }
+
+  // Auto layout: hộp flex (con xếp hàng ngang / dọc)
+  if (/flex/.test(cs.display)) {
+    const auto = section('Auto layout', 'This layer lines up its children in a row or column, like Auto layout in Figma.');
+    const pad = side => toD(parseFloat(cs['padding' + side]) || 0);
+    auto.append(
+      rowOf('line',
+        segmented('Direction', [['row', '→', 'Horizontal'], ['column', '↓', 'Vertical']], cs.flexDirection.startsWith('column') ? 'column' : 'row', v => setStyle(el, 'flex-direction', v), 'Children go left → right (horizontal) or top ↓ bottom (vertical).'),
+        numField('Gap', toD(parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0), v => setStyle(el, 'gap', fromD(Math.max(0, v))), { title: 'Gap', tip: 'Space between children, in design px.', min: 0 })),
+      rowOf('grid4', ...[['T', 'Top'], ['R', 'Right'], ['B', 'Bottom'], ['L', 'Left']].map(([k, side]) =>
+        numField(k, pad(side), v => setStyle(el, 'padding-' + side.toLowerCase(), fromD(Math.max(0, v))), { title: `Padding ${side.toLowerCase()}`, tip: `Space inside the layer at the ${side.toLowerCase()}, in design px.`, min: 0 }))),
+      rowOf('grid2',
+        selectField('Align items', [['stretch', 'Stretch'], ['flex-start', 'Start'], ['center', 'Center'], ['flex-end', 'End'], ['baseline', 'Baseline']], cs.alignItems === 'normal' ? 'stretch' : cs.alignItems, v => setStyle(el, 'align-items', v), 'How children line up across the direction (e.g. vertically in a horizontal row).'),
+        selectField('Justify', [['flex-start', 'Packed start'], ['center', 'Packed center'], ['flex-end', 'Packed end'], ['space-between', 'Space between'], ['space-around', 'Space around'], ['space-evenly', 'Space evenly']], cs.justifyContent === 'normal' ? 'flex-start' : cs.justifyContent, v => setStyle(el, 'justify-content', v), 'How children are spread along the direction.')));
+    out.push(auto);
+  }
+  return out;
+}
+// Mục Transform kiểu Figma: X / Y / W / H bằng px thiết kế (1 px = 1 px của khung Figma 393 px), gốc toạ độ = góc trên trái khung.
+// Nhiều layer: X / Y là của cả vùng chọn (dời cùng nhau), W / H của layer đang hiện thuộc tính.
+function transformSection(el) {
+  const s = section('Transform', 'Position and size in design pixels, like the Design panel in Figma: 1 px here = 1 px in the 393 px-wide Figma frame. X / Y are measured from the top-left corner of that frame.');
+  const grid = document.createElement('div');
+  grid.className = 'tf';
+  const multi = selection.length > 1;
+  const fields = {};
+  const box = () => {
+    const f = frame(), r = multi ? union(selection.map(x => x.getBoundingClientRect())) : el.getBoundingClientRect();
+    return { X: (r.left - f.left) / f.u, Y: r.top / f.u, W: r.width / f.u, H: r.height / f.u, u: f.u };
+  };
+  const refresh = () => { const b = box(); for (const k of Object.keys(fields)) if (root.activeElement !== fields[k]) fields[k].value = round(b[k], .1); };
+  let lock = false;
+  const apply = (key, value) => {
+    const b = box();
+    if (!Number.isFinite(value)) { refresh(); return; }
+    let ok = true;
+    act(`Set ${key}`, () => {
+      if (key === 'X' || key === 'Y') {
+        const d = (value - b[key]) * b.u;
+        for (const x of live()) if (!moveBy(x, key === 'X' ? d : 0, key === 'Y' ? d : 0)) ok = false;
+      } else {
+        const name = key === 'W' ? 'width' : 'height';
+        ok = resizeTo(el, name, value * b.u);
+        if (ok && lock) {
+          const other = key === 'W' ? 'H' : 'W';
+          ok = resizeTo(el, other === 'W' ? 'width' : 'height', b[other] * (value / b[key]) * b.u);
+        }
+      }
+    });
+    if (!ok) flash(key === 'X' || key === 'Y' ? NOT_MOVABLE : 'This layer\'s size is set by game code or by its content, so it cannot be resized from here. Try ⬆ Parent.');
+    refresh();
+    syncBar();
+  };
+  const help = {
+    X: ['X', 'Distance from the LEFT edge of the 393 px design frame to the left edge of the layer, in design px. Type a number, or use ↑ / ↓ (Shift = 10).', '24'],
+    Y: ['Y', 'Distance from the TOP of the screen to the top edge of the layer, in design px. Type a number, or use ↑ / ↓ (Shift = 10).', '120'],
+    W: ['W (width)', 'Width of the layer in design px. Changing it writes a width into the layer\'s style rule.', '160'],
+    H: ['H (height)', 'Height of the layer in design px. Changing it writes a height into the layer\'s style rule.', '48'],
+  };
+  for (const key of ['X', 'Y', 'W', 'H']) {
+    const label = document.createElement('label');
+    label.innerHTML = `<b>${key}</b><input type="number" step="1">`;
+    const input = fields[key] = label.querySelector('input');
+    setTip(label, help[key][0], help[key][1], help[key][2]);
+    if (multi && (key === 'W' || key === 'H')) { input.disabled = true; label.dataset.tip = 'Select a single layer to change its size.'; }
+    input.addEventListener('change', () => apply(key, parseFloat(input.value)));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { input.blur(); return; }
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      const step = (event.shiftKey ? 10 : event.altKey ? .1 : 1) * (event.key === 'ArrowUp' ? 1 : -1);
+      input.value = round((parseFloat(input.value) || 0) + step, .1);
+      apply(key, parseFloat(input.value));
+    });
+    grid.append(label);
+    if (key === 'H') {
+      const chain = document.createElement('button');
+      chain.className = 'icon';
+      chain.innerHTML = ICON.link;
+      setTip(chain, 'Constrain proportions', 'When on, changing W also changes H (and the other way round) so the layer keeps its shape.');
+      chain.onclick = () => { lock = !lock; chain.classList.toggle('on', lock); };
+      if (multi) chain.disabled = true;
+      grid.append(chain);
+    }
+  }
+  if (!multi) {
+    const rad = getComputedStyle(el).borderTopLeftRadius;
+    grid.append(numField('R', rad.endsWith('%') ? rad : toD(parseFloat(rad) || 0), v => setStyle(el, 'border-radius', typeof v === 'number' ? fromD(Math.max(0, v)) : v),
+      { title: 'Corner radius', tip: 'Rounded corners in design px, like the corner radius in Figma. Type 50% for a circle.', eg: '12 · 50%', raw: true, min: 0 }));
+  }
+  s.append(grid);
+  refresh();
+  return s;
 }
 function helpBlock() {
   const h = document.createElement('div');
@@ -1133,7 +1598,10 @@ function helpBlock() {
     <dt><kbd>Shift</kbd> + click</dt><dd>Add / remove a layer from the selection</dd>
     <dt><kbd>Esc</kbd> · <kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Stop selecting · deselect all</dd>
     <dt>Arrows</dt><dd>Nudge 1 design px (<kbd>Shift</kbd> = 10)</dd>
-    <dt>Drag blue box</dt><dd>Move the selected layers</dd>
+    <dt>Drag blue box</dt><dd>Move the selected layers. Pink smart guides appear when an edge or center lines up with another layer; hold <kbd>Ctrl</kbd> to move freely</dd>
+    <dt>Transform</dt><dd>Type X / Y / W / H in design px (↑ / ↓ = 1, <kbd>Shift</kbd> = 10)</dd>
+    <dt>White handles</dt><dd>Drag to resize (<kbd>Shift</kbd> keeps proportions)</dd>
+    <dt>Number labels</dt><dd>Drag left / right on a label (X, W, Aa…) to scrub the value, like Figma</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>Undo</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> · <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Redo</dd>
     <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>Save to files</dd>
@@ -1171,22 +1639,32 @@ async function render() {
   }
   const head = document.createElement('div');
   head.className = 'el';
-  const rect = el.getBoundingClientRect(), u = frame().u;
-  head.innerHTML = `<code></code><span class="hint"></span>`;
+  head.innerHTML = `<code></code>`;
   head.querySelector('code').textContent = label(el);
-  setTip(head.querySelector('.hint'), 'Size', 'Width × height in design pixels (screen pixels in brackets).').textContent =
-    `${round(rect.width / u, .1)}×${round(rect.height / u, .1)} (${Math.round(rect.width)}×${Math.round(rect.height)} px)`;
   const up = document.createElement('button');
   up.textContent = '⬆ Parent';
   setTip(up, 'Select parent', 'Selects the layer that contains this one, e.g. the whole button instead of its label.');
   up.onclick = () => { if (el.parentElement && el.parentElement !== document.body) select(el.parentElement); };
   head.append(up);
-  body.append(head, ...layersSection(el));
-  for (const path of imagesOf(el)) body.append(imageCard(path));
+  body.append(head, ...layersSection(el), transformSection(el), ...designSections(el));
+  const images = imagesOf(el);
+  if (images.length) {
+    const s = section('Image', 'Image files this layer shows. Replace… (or drop a file) overwrites the file and keeps its name; Undo puts the old one back.');
+    for (const path of images) s.append(imageCard(path));
+    body.append(s);
+  }
   const refs = matchedRules(el);
   const lists = await Promise.all(refs.map(sourceDecls));
   if (id !== renderId) return;
-  if (!refs.length) body.insertAdjacentHTML('beforeend', '<div class="hint">No style rule in game/ui/ applies to this layer. Try ⬆ Parent.</div>');
+  // CSS thô: thu gọn sẵn (mục trên đã ghi vào đây giùm); mở ra khi cần chỉnh thứ bảng chưa có
+  const raw = document.createElement('details');
+  raw.className = 'raw';
+  raw.open = rawOpen;
+  raw.ontoggle = () => { rawOpen = raw.open; };
+  raw.innerHTML = '<summary></summary>';
+  setTip(raw.querySelector('summary'), 'CSS code (advanced)', 'The raw style rules behind everything above, straight from the CSS files. The panels above write into these rules for you; open this only for settings they do not cover.').textContent = `CSS code (${refs.length} rule${refs.length === 1 ? '' : 's'})`;
+  body.append(raw);
+  if (!refs.length) raw.insertAdjacentHTML('beforeend', '<div class="hint">No style rule in game/ui/ applies to this layer. Try ⬆ Parent.</div>');
   refs.forEach((ref, i) => {
     const card = document.createElement('div');
     const edit = pending.get(keyOf(ref));
@@ -1222,9 +1700,10 @@ async function render() {
     add.querySelector('button').onclick = commit;
     valueIn.addEventListener('keydown', event => { if (event.key === 'Enter') commit(); });
     card.append(add);
-    body.append(card);
+    raw.append(card);
   });
 }
+let rawOpen = false;
 function decls(text) {
   const out = [];
   let begin = 0, depth = 0, quote = '';
@@ -1260,13 +1739,54 @@ window.addEventListener('pointermove', event => {
 
 // ---------- Kéo khung xanh ----------
 let drag = null;
+// ---------- Kéo tay nắm để đổi cỡ (Free Transform) ----------
+// 8 tay nắm trên khung của layer (chỉ khi chọn một layer). Mép đối diện đứng yên; Shift = giữ tỉ lệ. Số làm tròn theo px thiết kế.
+let resize = null;
+function startResize(event, dir) {
+  const el = primary();
+  if (!el) return;
+  event.preventDefault(); event.stopPropagation();
+  resize = { el, dir, x0: event.clientX, y0: event.clientY, r0: el.getBoundingClientRect(), token: { label: 'Resize ' + label(el) }, moved: false };
+  event.target.setPointerCapture(event.pointerId);
+}
+function doResize(event) {
+  const { el, dir, r0 } = resize;
+  const dx = event.clientX - resize.x0, dy = event.clientY - resize.y0;
+  if (!resize.moved && Math.hypot(dx, dy) < 2) return;
+  resize.moved = true;
+  const u = frame().u, horiz = /[ew]/.test(dir), vert = /[ns]/.test(dir);
+  let w = r0.width + (dir.includes('e') ? dx : dir.includes('w') ? -dx : 0);
+  let h = r0.height + (dir.includes('s') ? dy : dir.includes('n') ? -dy : 0);
+  if (event.shiftKey && r0.width && r0.height) {
+    const k = !horiz ? h / r0.height : !vert ? w / r0.width : Math.max(w / r0.width, h / r0.height);
+    w = r0.width * k; h = r0.height * k;
+  }
+  w = Math.max(1, Math.round(w / u)) * u;
+  h = Math.max(1, Math.round(h / u)) * u;
+  let ok = true;
+  act(null, () => {
+    if (horiz || event.shiftKey) ok = resizeTo(el, 'width', w) && ok;
+    if (vert || event.shiftKey) ok = resizeTo(el, 'height', h) && ok;
+    // giữ mép đối diện đứng yên (layer căn giữa bằng translate -50% sẽ trôi nếu không chỉnh lại)
+    const r = el.getBoundingClientRect();
+    const left = dir.includes('w') ? r0.right - r.width : r0.left, top = dir.includes('n') ? r0.bottom - r.height : r0.top;
+    if (Math.abs(left - r.left) > .5 || Math.abs(top - r.top) > .5) moveBy(el, left - r.left, top - r.top);
+  }, resize.token);
+  if (!ok && !resize.warned) { resize.warned = true; flash('This layer\'s size is set by game code or by its content, so it cannot be resized from here. Try ⬆ Parent.'); }
+  const r = el.getBoundingClientRect();
+  resize.readout = `W ${round(r.width / u, .1)}   H ${round(r.height / u, .1)}`;
+}
+const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 sels.addEventListener('pointerdown', event => {
+  const handle = event.target.closest('.h');
+  if (handle) { startResize(event, handle.dataset.dir); return; }
   if (!event.target.closest('.box.sel') || !live().length) return;
   event.preventDefault(); event.stopPropagation();
   drag = { x0: event.clientX, y0: event.clientY, items: null, token: { label: `Move ${selection.length > 1 ? selection.length + ' layers' : label(primary())}` } };
   event.target.closest('.box.sel').setPointerCapture(event.pointerId);
 });
 sels.addEventListener('pointermove', event => {
+  if (resize) { doResize(event); return; }
   if (!drag) return;
   let dx = event.clientX - drag.x0, dy = event.clientY - drag.y0;
   // chỉ thêm left / top khi thật sự kéo (bấm nhầm không làm bẩn file)
@@ -1283,11 +1803,14 @@ sels.addEventListener('pointermove', event => {
       });
     }, drag.token);
     drag.rect = union(selection.map(el => el.getBoundingClientRect()));
+    drag.targets = guideTargets(selection);
     if (!drag.items.some(it => it.axes.some(a => a.scale))) flash(NOT_MOVABLE);
   }
-  const snapped = snapDelta(drag.rect, dx, dy);
+  const snapped = snapDelta(drag.rect, dx, dy, drag.targets, event.ctrlKey || event.metaKey);
   dx = snapped.dx; dy = snapped.dy;
   showGuides(snapped.guides);
+  const f = frame();
+  drag.readout = `X ${round((drag.rect.left + dx - f.left) / f.u, .1)}   Y ${round((drag.rect.top + dy) / f.u, .1)}`;
   act(null, () => {
     for (const { axes } of drag.items) {
       for (const a of axes) {
@@ -1298,13 +1821,18 @@ sels.addEventListener('pointermove', event => {
     }
   }, drag.token);
 });
-sels.addEventListener('pointerup', () => { if (drag) { const moved = !!drag.items; drag = null; showGuides([]); if (moved) render(); } });
+sels.addEventListener('pointerup', () => {
+  if (resize) { const moved = resize.moved; resize = null; if (moved) render(); return; }
+  if (drag) { const moved = !!drag.items; drag = null; showGuides([]); if (moved) render(); } });
 function showGuides(list) {
   guides.innerHTML = '';
   for (const g of list) {
     const line = document.createElement('div');
-    line.className = 'guide ' + ('x' in g ? 'x' : 'y');
-    line.style['x' in g ? 'left' : 'top'] = ('x' in g ? g.x : g.y) + 'px';
+    const vertical = 'x' in g;
+    line.className = 'guide ' + (vertical ? 'x' : 'y');
+    Object.assign(line.style, vertical
+      ? { left: Math.round(g.x) + 'px', top: g.a + 'px', height: (g.b - g.a) + 'px' }
+      : { top: Math.round(g.y) + 'px', left: g.a + 'px', width: (g.b - g.a) + 'px' });
     guides.append(line);
   }
 }
@@ -1323,14 +1851,15 @@ function placeSelection() {
   while (selBoxes.length < els.length) {
     const b = document.createElement('div');
     b.className = 'box sel';
-    b.innerHTML = '<span class="tag"></span>';
+    b.innerHTML = '<span class="tag"></span>' + HANDLES.map(d => `<i class="h ${d}" data-dir="${d}"></i>`).join('');
     sels.append(b);
     selBoxes.push(b);
   }
   selBoxes.forEach((b, i) => {
     const el = els[i], main = i === els.length - 1;
     b.classList.toggle('primary', main);
-    place(b, el, el && main ? label(el) : '');
+    b.classList.toggle('single', main && els.length === 1);
+    place(b, el, el && main ? (resize?.readout || drag?.readout || label(el)) : '');
   });
 }
 let gridKey = '';

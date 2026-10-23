@@ -263,6 +263,9 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## Khác
+- **Lưới + lề UI chung** (`game/ui/shared/grid.css`, nạp gần cuối): mọi nút rìa ở Home / Deco / Shop / màn chơi bám MÉP KHUNG 393u (không bám mép cửa sổ qua `--gutter`),
+  theo token `--edge-x` (10u), `--edge-top`, `--edge-bottom`, `--gap`, `--col`. Thêm nút rìa mới: đặt vị trí bằng các token này, đừng tự đặt số lề riêng.
+  Khung ảnh phải giãn theo bề ngang khung (HUD, thanh booster): `border-image` với phần giữa `repeat`, không vẽ 100% × 100% (kéo méo dấu chân).
 - UI Studio (`npm run studio`; nạp cùng cột nút dev, bật / tắt bằng nút "Studio" — `?studio` mở sẵn; hướng dẫn cho artist: `docs/ui-studio.md`): artist sửa CSS trong `game/ui/` / ảnh trong `game/assets/` và game tự cập nhật,
   hoặc chỉnh bằng bảng trong game rồi lưu thẳng vào file. Máy chủ `tools/ui-studio/ui-studio.mjs` (lệnh ghi chỉ nhận từ loopback), bộ đọc / sửa CSS giữ
   định dạng `tools/ui-studio/ui-studio-css.mjs`, bảng `game/app/ui-studio.js`. Artist có thể đã sửa `game/ui/` ngoài chat: đọc lại file trước khi sửa.

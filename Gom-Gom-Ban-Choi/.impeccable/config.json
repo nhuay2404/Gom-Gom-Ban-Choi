@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "game/ui/play/hud.css"
+        ],
+        "createdAt": "2026-10-21T08:25:11.999Z",
+        "reason": "user specified the Move-number gradient (stops #EE3F53 -> #FBA1B1) in chat"
+      }
+    ]
+  }
+}

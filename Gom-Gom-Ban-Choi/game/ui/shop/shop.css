@@ -134,3 +134,51 @@
 .shop-preview-buy .ico-coin{width:28px;height:28px}
 .shop-preview-buy.poor{filter:grayscale(.6) brightness(.95)}
 .shop-preview-buy:active{translate:0 2px}
+
+/* ===== Shop theo bộ art lobby, cùng hai chuẩn với Deco (ui/deco/deco.css) =====
+   (A) Thẻ / hàng bán + viên giá = pill xu / gem (home/pill-gems.png): viền nâu #541a00 2,3u > nét kem #fbda91 1,6u > vòng vàng sẫm #f9a000 2,3u > lòng vàng #fdd968 -> be #fbebcb.
+       Thẻ chưa mua: chỉ viền nâu, lòng gradient be -> vàng nhạt. Món đã có (owned): đủ hai lớp viền + lòng vàng dấu chân. Viên giá: pill xu thu nhỏ + icon xu dấu chân (home/icon-coin.png).
+   (B) Tab Shop / Decoration + chip khu = viên tab đang chọn của thanh tab (nav/tab-active.png): viền cam #ffb000 2u > nét sáng #fee2a5 .8u > lòng #fdda8f -> #f4e0b6;
+       khung chứa tab = khung thanh tab (viền nâu mảnh, lòng kem #f9efd4). Chip khu chưa chọn nằm trên nền trời nên giữ viên kem viền nâu mảnh để đọc được.
+   Không bóng đổ dày dưới đáy thẻ. Popup xem thử món giữ nguyên (popup chưa đổi theo bộ này). Chỉ đổi hình, không đổi chỗ đặt / cỡ. */
+#shop{
+  --pl-ink:#541a00;--pl-cream:#fbda91;--pl-ring:#f9a000;--pl-text:#3d1408;
+  --pl-fill:linear-gradient(#fdd968,#fbe2a0 55%,#fbebcb);--pl-sale:linear-gradient(#fffaf0,#fdf1cf);
+  --tb-ring:#ffb000;--tb-light:#fee2a5;--tb-fill:linear-gradient(#fdda8f,#f9db9b 50%,#f4e0b6);--tb-cream:#f9efd4;
+  --pl-paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23fff6dc' fill-opacity='.6' transform='rotate(-18 24 24)'%3E%3Cellipse cx='24' cy='31' rx='8' ry='6.4'/%3E%3Cellipse cx='14.5' cy='22' rx='3' ry='4'/%3E%3Cellipse cx='20.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='27.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='33.5' cy='22' rx='3' ry='4'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* ---------- (B) Tab trang + chip khu ---------- */
+#shop .shop-pages{border:calc(1.6 * var(--u)) solid var(--pl-ink);background:var(--tb-cream);box-shadow:none}
+#shop .shop-pages button{color:#4a1a0c;-webkit-text-stroke:0}
+#shop .shop-pages button[aria-selected="true"],#shop .shop-deco-tabs button.on{box-sizing:border-box;border:calc(2 * var(--u)) solid var(--tb-ring);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(24 * var(--u)) calc(24 * var(--u)),var(--tb-fill);box-shadow:inset 0 0 0 calc(.8 * var(--u)) var(--tb-light);
+  -webkit-text-stroke:calc(2.4 * var(--u)) #fff5e1;paint-order:stroke fill}
+/* Hàng chọn khu: y như hàng chọn khu trong khay Deco (một hàng cuộn ngang, tab = icon khu .zi, tab đang chọn = viên vàng icon + tên).
+   Hàng nằm trong một dải kem viền nâu mảnh (như khung thanh tab) vì Shop không có khay. Cỡ theo Deco: tab 30u cao, tab thường 53u, tab chọn tự dài theo tên. */
+#shop .shop-deco-tabs{flex-wrap:nowrap;justify-content:flex-start;gap:calc(4 * var(--u));overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;
+  padding:calc(6 * var(--u)) calc(8 * var(--u));border:calc(1.6 * var(--u)) solid var(--pl-ink);border-radius:calc(18 * var(--u));background:var(--tb-cream)}
+#shop .shop-deco-tabs::-webkit-scrollbar{display:none}
+#shop .shop-deco-tabs{cursor:grab;user-select:none;touch-action:pan-x pan-y}
+#shop .shop-deco-tabs.dragging{cursor:grabbing}
+#shop .shop-deco-tabs button{flex:none;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:calc(8 * var(--u));
+  min-width:calc(53 * var(--u));height:calc(30 * var(--u));min-height:0;padding:0 calc(12 * var(--u));border:calc(2 * var(--u)) solid transparent;border-radius:999px;
+  background:none;color:#4a1a0c}
+#shop .shop-deco-tabs button small{font-family:var(--display);font-size:calc(13 * var(--u));font-weight:800;letter-spacing:0;white-space:nowrap}
+#shop .shop-deco-tabs button.on small{-webkit-text-stroke:calc(2.4 * var(--u)) #fff5e1;paint-order:stroke fill}
+#shop .shop-deco-row-title small{border:calc(1.2 * var(--u)) solid var(--pl-ink);background:var(--tb-cream);color:var(--pl-text)}
+
+/* ---------- (A) Thẻ / hàng bán ---------- */
+#shop :is(.booster,.coin-pack,.shop-deco-item){box-sizing:border-box;border:calc(2.3 * var(--u)) solid var(--pl-ink);background:var(--pl-sale);box-shadow:none;color:var(--pl-text)}
+#shop .shop-deco-item.owned{background:var(--pl-paw) 0 100%/calc(30 * var(--u)) calc(30 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 calc(1.6 * var(--u)) var(--pl-cream),inset 0 0 0 calc(3.9 * var(--u)) var(--pl-ring)}
+#shop .shop-deco-item.flash{box-shadow:0 0 0 4px #ffd23f}
+#shop .booster small,#shop .shop-deco-item small{color:#8a5a3a}
+
+/* Viên giá (xu / USD): pill xu thu nhỏ, chữ nâu đậm như số trên pill lobby; thiếu xu = lòng xám be; đã có = viên kem viền vàng nhạt */
+#shop :is(.booster em,.coin-pack em,.shop-deco-item em){box-sizing:border-box;border:calc(1.6 * var(--u)) solid var(--pl-ink);color:var(--pl-text);-webkit-text-stroke:0;
+  background:var(--pl-paw) 0 50%/calc(18 * var(--u)) calc(18 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 calc(1.1 * var(--u)) var(--pl-cream),inset 0 0 0 calc(2.7 * var(--u)) var(--pl-ring)}
+#shop :is(.booster.poor em,.shop-deco-item.poor em){background:linear-gradient(#f1ebe0,#e3d9c6);box-shadow:inset 0 0 0 calc(1.1 * var(--u)) #faf6ef,inset 0 0 0 calc(2.7 * var(--u)) #cdbfa6;color:#7b7166}
+#shop .shop-deco-item.owned em{background:#fff7e4;box-shadow:inset 0 0 0 calc(1.1 * var(--u)) #fffaf0,inset 0 0 0 calc(2.7 * var(--u)) #efcd86;color:#7a4a2a}
+#shop :is(.shop-deco-item.locked em,.shop-deco-item.needBase em){border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
+#shop :is(.booster em,.coin-pack em,.shop-deco-item em) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}

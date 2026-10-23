@@ -97,7 +97,7 @@
   -webkit-mask-image:none;mask-image:none}
 .screen.deco>.wallet-hud{position:absolute;z-index:6;top:calc(18 * var(--u) + env(safe-area-inset-top));left:env(safe-area-inset-left);margin-left:0;translate:none}
 /* Nút mèo: cột trái, cùng toạ độ cột nút ở Home */
-.deco-side{position:absolute;z-index:6;top:calc(83 * var(--u) + env(safe-area-inset-top));left:calc(17 * var(--u) + env(safe-area-inset-left));width:auto;
+.deco-side{position:absolute;z-index:6;top:calc(127 * var(--u) + env(safe-area-inset-top));left:auto;right:calc(14 * var(--u) + env(safe-area-inset-right));width:auto;
   display:flex;flex-direction:column;gap:calc(8 * var(--u))}
 .deco-side button{display:flex;flex-direction:column;align-items:center;justify-content:center;width:calc(58 * var(--u));height:calc(58 * var(--u));min-height:0;padding:0;
   border:calc(3 * var(--u)) solid #73392a;border-radius:calc(16 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6,0 calc(3 * var(--u)) 0 #73392a44;
@@ -105,15 +105,26 @@
 .deco-side button.on{color:#fff;border-color:#2f7d3a;background:linear-gradient(#93df82,#5fbe57)}
 .deco-side svg{width:calc(26 * var(--u));height:calc(26 * var(--u));fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 .deco-side button:active{translate:0 calc(2 * var(--u))}
-/* Nút khoá giao diện: tròn, dưới nút Ground. Khoá = ẩn ví, thẻ mua, chọn khu, ghim NEW, bảng đổi món, thanh tab; chỉ còn nút khoá
+/* Nút Ambient: cùng cỡ (48u) + cùng cột dọc với nút cài đặt và nút ngắm nhà; nút cài đặt ở top 15u, ambient cách 8u, ngắm nhà cách thêm 8u */
+.deco-ambient{position:absolute;z-index:6;top:calc(71 * var(--u) + env(safe-area-inset-top));right:calc(14 * var(--u) + env(safe-area-inset-right));display:grid;place-items:center;
+  width:calc(48 * var(--u));height:calc(48 * var(--u));min-height:0;padding:0;border:calc(3 * var(--u)) solid #73392a;border-radius:50%;box-sizing:border-box;background:#ffe44d;color:#8a4a16;
+  box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6aa,0 calc(3 * var(--u)) 0 #73392a44;transition:background .2s,opacity .2s}
+.deco-ambient svg{width:calc(26 * var(--u));height:calc(26 * var(--u));fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.deco-ambient[data-ambient="dusk"]{background:#ffa56b;color:#7a2e10}
+.deco-ambient[data-ambient="night"]{background:#6d7bd9;color:#fff6c8}
+.deco-ambient[data-ambient="night"] svg{fill:currentColor;stroke:none}
+.deco-ambient:active{translate:0 calc(2 * var(--u))}
+body.deco-locked .deco-ambient{opacity:.5}/* Nút khoá giao diện: tròn, dưới nút Ground. Khoá = ẩn ví, thẻ mua, chọn khu, ghim NEW, bảng đổi món, thanh tab; chỉ còn nút khoá
    + cài đặt, cả hai mờ đi (vẫn bấm được). */
-.deco-side .deco-lock{width:calc(50 * var(--u));height:calc(50 * var(--u));margin:calc(4 * var(--u)) auto 0;border-radius:50%;transition:opacity .2s}
+.deco-side .deco-lock{width:calc(48 * var(--u));height:calc(48 * var(--u));margin:0 auto;border-radius:50%;transition:opacity .2s}
 .deco-side .deco-lock svg{width:calc(24 * var(--u));height:calc(24 * var(--u));stroke-width:2.4}
 /* Nút ngắm nhà: mắt mở = UI đang hiện (chạm để ẩn), mắt nhắm = đang ẩn UI (chạm để hiện lại) */
 .deco-lock .eye-shut,.deco-lock[aria-pressed="true"] .eye-open{display:none}
 .deco-lock[aria-pressed="true"] .eye-shut{display:inline}
 .deco-side .deco-help{width:calc(34 * var(--u));height:calc(34 * var(--u));margin:calc(4 * var(--u)) auto 0;border-radius:50%;border-width:calc(2 * var(--u))}
 .deco-side .deco-help svg{width:calc(18 * var(--u));height:calc(18 * var(--u));stroke-width:2.4}
+/* Icon "?" màu bóng (assets/img/deco/icon-help.png) thay cho nét SVG; cùng ô như icon cũ, giữ nguyên nút tròn */
+.deco-help .deco-help-ico{display:block;width:calc(20 * var(--u));height:calc(20 * var(--u));object-fit:contain;pointer-events:none}
 #deco.ui-locked .deco-help{display:none}
 #deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
 #deco.ui-locked .deco-lock:active{opacity:.6}
@@ -130,26 +141,79 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-dock{position:absolute;z-index:6;left:0;right:0;bottom:calc(86 * var(--u) + env(safe-area-inset-bottom));width:auto;display:flex;flex-direction:column;align-items:center;gap:6px;
   pointer-events:none}
 .deco-dock>*{pointer-events:auto}
-.deco-dock .zone-switch{margin:0;border:2px solid #e2bd72;box-shadow:0 3px 0 #73392a33;max-width:calc(100% - 24px);scroll-snap-type:x proximity;scroll-behavior:smooth}
-.deco-dock .zone-switch button{scroll-snap-align:start} /* tối đa 3 khu (menu/areas.js fitZoneSwitch), còn lại vuốt ngang */
-.deco-dock .zone-switch button{min-height:36px;padding:0 12px}
-.zone-switch button small{margin-left:3px;font-size:11px;opacity:.8}
-.deco-cards{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:none; /* hàng thẻ món dài hết bề ngang màn hình (không cắt theo khung UI) */overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
-  padding:8px 12px 6px;scrollbar-width:none;touch-action:pan-x}
+/* Khay đáy (Figma "Deco"): nền kem viền nâu; trong đó hàng tab + nút thu gọn, chip hồng, hàng thẻ. Toạ độ theo khung 393 (--u). */
+.deco-tray{width:min(100%,var(--frame-w));box-sizing:border-box;display:flex;flex-direction:column;gap:calc(6 * var(--u));padding:calc(7 * var(--u)) 0 calc(8 * var(--u));
+  background:#fcf8ee;border:calc(3 * var(--u)) solid #73392a;border-radius:calc(18 * var(--u));box-shadow:0 calc(-2 * var(--u)) 0 #73392a22}
+.deco-top{display:flex;align-items:center;gap:calc(8 * var(--u));padding:0 calc(8 * var(--u)) 0 calc(14 * var(--u))}
+.deco-tray .zone-switch{flex:1;min-width:0;width:auto;max-width:none;margin:0;padding:0;gap:calc(4 * var(--u));border:0;border-radius:0;background:none;box-shadow:none;
+  scroll-behavior:smooth;justify-content:flex-start;cursor:grab}
+.deco-tray .zone-switch.dragging,.deco-cards.dragging{cursor:grabbing}
+.deco-tray .zone-switch button{display:inline-flex;align-items:center;justify-content:center;gap:calc(10 * var(--u));min-width:calc(53 * var(--u));height:calc(30 * var(--u));min-height:0;padding:0 calc(12 * var(--u));
+  background:#f5eed7;color:#805529;border:calc(1.5 * var(--u)) solid #efe3c4;box-sizing:border-box}
+.deco-tray .zone-switch button.on{min-width:calc(73 * var(--u));background:#5c9747;color:#fff;border-color:#5c9747}
+.zone-switch button small{font-size:calc(13 * var(--u));font-weight:900;letter-spacing:0;opacity:1}
+/* Biểu tượng tab: mặt nạ ảnh tách từ Figma, tô currentColor (nâu khi chưa chọn, trắng khi chọn) */
+.zi{flex:none;display:block;width:calc(20 * var(--u));height:calc(18 * var(--u));background:currentColor;
+  -webkit-mask:var(--m) center / contain no-repeat;mask:var(--m) center / contain no-repeat}
+.zi[data-z="cats"]{--m:url('../../assets/img/deco/tab-paw.png');width:calc(20 * var(--u))}
+.zi[data-z="garden"]{--m:url('../../assets/img/deco/tab-tree.png');width:calc(16 * var(--u));height:calc(19 * var(--u))}
+.zi[data-z="living"]{--m:url('../../assets/img/deco/tab-sofa.png');width:calc(22 * var(--u));height:calc(17 * var(--u))}
+.zi[data-z="bedroom"]{--m:url('../../assets/img/deco/tab-bed.png');width:calc(24 * var(--u));height:calc(17 * var(--u))}
+.zi[data-z="kitchen"]{--m:url('../../assets/img/deco/tab-kitchen.png');width:calc(17 * var(--u));height:calc(18 * var(--u))}
+.zi[data-z="bathroom"]{--m:url('../../assets/img/deco/tab-bathroom.png');width:calc(18 * var(--u));height:calc(18 * var(--u))}
+.zi[data-z="backyard"]{--m:url('../../assets/img/deco/tab-backyard.png');width:calc(24 * var(--u));height:calc(17 * var(--u))}
+.zi[data-z="kinder"]{--m:url('../../assets/img/deco/tab-kinder.png');width:calc(16 * var(--u));height:calc(19 * var(--u))}
+/* Chip thú cưng (Cats / Dogs): ảnh màu theo art direction (tách từ ảnh thiết kế) */
+.pi{flex:none;display:block;width:calc(18 * var(--u));height:calc(18 * var(--u));background:center / contain no-repeat;filter:saturate(.65) brightness(1.08);transition:filter .15s}
+.pi[data-p="cats"]{background-image:url('../../assets/img/deco/chip-cats.png')}
+.pi[data-p="dogs"]{background-image:url('../../assets/img/deco/chip-dogs.png');width:calc(22 * var(--u))}
+.deco-kinds button.on .pi{filter:none}
+.deco-kinds[hidden]{display:none}.deco-collapse{flex:none;display:grid;place-items:center;width:calc(36 * var(--u));height:calc(36 * var(--u));min-height:0;padding:0;border-radius:calc(11 * var(--u));
+  border:calc(3 * var(--u)) solid #73392a;background:#fffdf6;color:#73392a;box-shadow:none}
+.deco-collapse svg{width:calc(20 * var(--u));height:calc(20 * var(--u));fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transition:rotate .2s}
+.deco-collapse:active{translate:0 calc(2 * var(--u))}
+.deco-tray.collapsed .deco-collapse svg{rotate:180deg}
+.deco-tray.collapsed{gap:0}
+.deco-tray.collapsed :is(.deco-kinds,.deco-cards-wrap){display:none}
+/* Chip loại đồ: nội thất / tường / sàn (hồng, biểu tượng tách từ Figma) */
+.deco-kinds{display:flex;gap:calc(6 * var(--u));justify-content:flex-start;padding:0 calc(14 * var(--u))}
+.deco-kinds.off{visibility:hidden}
+.deco-kinds button{flex:none;display:inline-flex;align-items:center;gap:calc(6 * var(--u));height:calc(28 * var(--u));min-height:0;padding:0 calc(10 * var(--u)) 0 calc(9 * var(--u));border-radius:999px;box-sizing:border-box;
+  border:calc(2 * var(--u)) solid #c0617b;background:#fdefea;color:#b21c44;font-weight:900;font-size:calc(11 * var(--u));letter-spacing:0;text-transform:none;box-shadow:none}
+.deco-kinds button.on{background:#fdd9df;color:#ac1943;border-color:#df295b}
+.ci{flex:none;display:block;width:calc(22 * var(--u));height:calc(17 * var(--u));background:center / contain no-repeat;filter:saturate(.65) brightness(1.08);transition:filter .15s}
+.deco-kinds button.on .ci{filter:none}
+.deco-kinds [data-key="furniture"] .ci{background-image:url('../../assets/img/deco/chip-furniture.png')}
+.deco-kinds [data-key="walls"] .ci{background-image:url('../../assets/img/deco/chip-fences.png');width:calc(21 * var(--u));height:calc(16 * var(--u));filter:none}
+.deco-kinds [data-key="floors"] .ci{background-image:url('../../assets/img/deco/chip-ground.png');width:calc(22 * var(--u));height:calc(14 * var(--u));filter:none}
+.deco-kinds [data-key="walls"]:not(.on) .ci,.deco-kinds [data-key="floors"]:not(.on) .ci{filter:none}
+.deco-kinds [data-key="walls"].on .ci,.deco-kinds [data-key="floors"].on .ci{filter:saturate(1.5) brightness(.92)}
+.deco-kinds [data-key="furniture"]:not(.on) .ci{filter:saturate(.65) brightness(1.08)}/* Hàng thẻ: thẻ 84 × (khe 6), lề trái 16. Dải mờ mỏng chỉ hiện khi đã kéo qua và thẻ bị cắt ở mép */
+.deco-cards-wrap{position:relative;width:100%}
+.deco-cards-wrap::before,.deco-cards-wrap::after{content:'';position:absolute;top:0;bottom:0;width:calc(18 * var(--u));pointer-events:none;z-index:2;opacity:0;transition:opacity .15s}
+.deco-cards-wrap::after{right:0;background:linear-gradient(90deg,#fcf8ee00,#fcf8ee)}
+.deco-cards-wrap::before{left:0;background:linear-gradient(270deg,#fcf8ee00,#fcf8ee)}
+.deco-cards-wrap.more-right::after,.deco-cards-wrap.more-left::before{opacity:1}
+.deco-cards{display:flex;flex-wrap:nowrap;gap:calc(6 * var(--u));width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  padding:calc(6 * var(--u)) calc(16 * var(--u)) calc(6 * var(--u));box-sizing:border-box;scroll-padding-inline:calc(16 * var(--u));scrollbar-width:none;touch-action:pan-x}
 .deco-cards::-webkit-scrollbar{display:none}
-.deco-card{position:relative;flex:none;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;width:92px;min-height:0;padding:0 0 7px;
-  border:3px solid #73392a;border-radius:16px;background:#fffdf6;box-shadow:0 3px 0 #73392a55;overflow:hidden;color:#5b2e1c;letter-spacing:0;text-transform:none;
+.deco-cards{cursor:grab;user-select:none}
+.deco-cards img{-webkit-user-drag:none;pointer-events:none}
+.deco-card{position:relative;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:calc(2 * var(--u));width:calc(84 * var(--u));min-height:0;padding:0 0 calc(6 * var(--u));
+  border:calc(3 * var(--u)) solid #73392a;border-radius:calc(12 * var(--u));background:#fffdf6;box-shadow:0 calc(3 * var(--u)) 0 #73392a55;overflow:hidden;color:#5b2e1c;letter-spacing:0;text-transform:none;
   transition:transform .15s,box-shadow .15s}
-.deco-card-art{display:grid;place-items:center;width:100%;height:70px;background:linear-gradient(#cfeefe,#eaf8ff);border-bottom:2px solid #e8dcc4}
-.deco-card .thumb{width:62px;height:62px;border-radius:10px;background:var(--c,#ddd)}
+.deco-card-art{display:grid;place-items:center;width:100%;height:calc(64 * var(--u));background:linear-gradient(#cfeefe,#eaf8ff);border-bottom:calc(2 * var(--u)) solid #e8dcc4}
+.deco-card .thumb{width:calc(56 * var(--u));height:calc(56 * var(--u));border-radius:10px;background:var(--c,#ddd)}
 .deco-card .thumb-3d{object-fit:contain;background:transparent}
-.deco-card-name{max-width:86px;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:900}
-.deco-card-price{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-height:22px;padding:0 8px;border-radius:999px;background:#fff4cc;border:1.5px solid #f2c95a;
-  font-style:normal;font-weight:900;font-size:12px;color:#5b2e1c;white-space:nowrap}
-.deco-card-price .ico-coin{width:13px;height:13px}
+.deco-card-name{max-width:100%;padding:0 calc(3 * var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(11 * var(--u));font-weight:900}
+.deco-card-price{display:inline-flex;align-items:center;justify-content:center;gap:calc(3 * var(--u));min-height:calc(22 * var(--u));padding:0 calc(7 * var(--u));border-radius:999px;background:#fff4cc;border:1.5px solid #f2c95a;
+  font-style:normal;font-weight:900;font-size:calc(12 * var(--u));color:#5b2e1c;white-space:nowrap}
+.deco-card-price .ico-coin{width:calc(14 * var(--u));height:calc(14 * var(--u))}
 .deco-card-price.lock{background:#ece7e0;border-color:transparent;color:#7b7166}
 .deco-card-price.act{background:linear-gradient(#93df82,#5fbe57);border-color:#2f7d3a;color:#fff;box-shadow:0 2px 0 #2f7d3a}
 .deco-card.poor .deco-card-price{color:#c0392b;background:#fff0ec;border-color:#f1b2a6}
+.deco-card-price.own{background:#eef8e4;border-color:#a9d48a;color:#3f7d2f}
+.deco-card.using{border-color:#4f8a34;background:#f3faec}
 .deco-card.locked{opacity:.7}
 /* Món vừa mở khoá + đủ xu (menu/deco-panel.js noticeDeco): nhãn NEW ở góc trên thẻ */
 .deco-card.is-new::before{content:"NEW";position:absolute;z-index:1;top:4px;left:50%;translate:-50% 0;padding:1px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;font-size:10px;font-weight:900;line-height:1.3;box-shadow:0 2px 0 #0002}
@@ -289,3 +353,90 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .area-sheet .area-row li i{flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;border:2px solid var(--cream-deep);font-style:normal;font-size:11px;font-weight:900;color:#fff}
 .area-sheet .area-row li.done i{background:#4f9a3f;border-color:#4f9a3f}
 .area-sheet .area-row li b{margin-left:auto}
+
+/* Nút ngắm nhà: giữ khung tròn cũ, nét SVG mắt thay bằng icon màu bóng (assets/img/deco/icon-eye.png); đang ẩn UI thì icon mờ đi */
+.screen.deco .deco-side .deco-lock svg{display:none}
+.deco-lock .deco-lock-ico{display:block;width:calc(32 * var(--u));height:calc(32 * var(--u));object-fit:contain;pointer-events:none;transition:opacity .2s}
+.deco-lock[aria-pressed="true"] .deco-lock-ico{opacity:.55}
+
+/* ===== Deco theo bộ art lobby: hai chuẩn, theo đúng ảnh gốc =====
+   (A) Khung: khay đáy + thẻ món + nút tròn bên phải = pill xu / gem (home/pill-gems.png, 118 px cao = 38,6u, 0,327u mỗi px), từ ngoài vào:
+       viền nâu #541a00 ~7 px = 2,3u  >  nét kem sáng #fbda91 ~5 px = 1,6u  >  vòng vàng sẫm #f9a000 ~7 px = 2,3u  >  lòng gradient vàng #fdd968 -> be #fbebcb
+   (B) Pill trong khay: tab chọn khu, chip loại đồ, viên giá, nút thu khay = viên tab đang chọn của thanh tab dưới đáy (nav/tab-active.png, 127 px cao = 50u, 0,394u mỗi px):
+       KHÔNG viền nâu; viền cam #ffb000 ~5 px = 2u  >  nét sáng #fee2a5 ~2 px = .8u  >  lòng gradient #fdda8f -> #f4e0b6; dấu chân kem mờ phía sau.
+       Pill chưa chọn = như tab thường của thanh tab: không nền, không viền, chỉ icon + chữ nâu.
+   Chỉ đổi hình (màu, viền, nền), không đổi chỗ đặt / cỡ. */
+#deco{
+  --pl-ink:#541a00;--pl-cream:#fbda91;--pl-ring:#f9a000;--pl-text:#3d1408;
+  --pl-fill:linear-gradient(#fdd968,#fbe2a0 55%,#fbebcb);
+  --tb-ring:#ffb000;--tb-light:#fee2a5;--tb-fill:linear-gradient(#fdda8f,#f9db9b 50%,#f4e0b6);
+  --pl-paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23fff6dc' fill-opacity='.6' transform='rotate(-18 24 24)'%3E%3Cellipse cx='24' cy='31' rx='8' ry='6.4'/%3E%3Cellipse cx='14.5' cy='22' rx='3' ry='4'/%3E%3Cellipse cx='20.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='27.5' cy='16' rx='3' ry='4.2'/%3E%3Cellipse cx='33.5' cy='22' rx='3' ry='4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ---------- (A) Khung theo pill xu / gem ---------- */
+#deco :where(.deco-tray,.deco-card,.deco-side button,.deco-pop,.area-next b,.idle-coin){
+  --pl-b:calc(2.3 * var(--u));--pl-c:calc(1.6 * var(--u));--pl-o:calc(2.3 * var(--u));
+  box-sizing:border-box;border:var(--pl-b) solid var(--pl-ink);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(24 * var(--u)) calc(24 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring)}
+/* Nền khay: kem trơn đúng màu lòng thanh tab dưới đáy (nav/tabbar-frame.png #f9efd4); chỉ viền theo pill xu.
+   Ba hàng (chọn khu / loại đồ / thẻ) sát nhau hơn: khe 6u -> 2u, đệm trên hàng thẻ 6u -> 3u. */
+#deco .deco-tray{background:#f9efd4;gap:calc(2 * var(--u))}
+#deco .deco-cards{padding-top:calc(3 * var(--u))}
+/* Hàng thẻ cuộn ngang bị cắt TRONG viền vàng trong của khay (viền nâu 2,3u ở border, nét kem + vòng vàng 3,9u là bóng inset nằm trong đệm):
+   lùi vùng cuộn vào 4u mỗi bên để thẻ trượt qua mép không đè lên viền trong */
+#deco .deco-cards-wrap{width:auto;margin:0 calc(4 * var(--u))}
+#deco .deco-cards{padding-left:calc(12 * var(--u));padding-right:calc(12 * var(--u));scroll-padding-inline:calc(12 * var(--u))}
+/* Icon xu = đồng xu dấu chân của pill xu ở lobby (cắt từ pill-coins.png) */
+#deco :is(.deco-card-price,.area-next b,.idle-coin) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+#deco .deco-card-price .ico-coin{width:calc(15 * var(--u));height:calc(15 * var(--u))}
+#deco .deco-cards-wrap::after{background:linear-gradient(90deg,#f9efd400,#f9efd4)}
+#deco .deco-cards-wrap::before{background:linear-gradient(270deg,#f9efd400,#f9efd4)}
+/* Thẻ món: chưa mua (buy / poor / locked) = lòng be cũ #fffdf6; đã mua (owned / using) = lòng vàng pill xu + dấu chân. Viền hai lớp như nhau.
+   Ô hình trong suốt để thấy lòng thẻ; vạch ngăn vàng sẫm như vòng trong */
+#deco .deco-card{background:linear-gradient(#fffaf0,#fdf1cf)}
+#deco :is(.deco-card.owned,.deco-card.using){background:var(--pl-paw) 0 100%/calc(30 * var(--u)) calc(30 * var(--u)),var(--pl-fill)}
+/* Chưa mua: chỉ viền nâu ngoài, không nét kem + vòng vàng sẫm bên trong. Đã mua (owned / using): đủ viền nâu ngoài + viền vàng trong như pill xu */
+/* Không còn gờ nâu dày dưới đáy thẻ (bóng đổ 3u): thẻ phẳng, chỉ viền */
+#deco .deco-card:not(.owned):not(.using){box-shadow:none}
+#deco .deco-card:not(.owned):not(.using) .deco-card-art{border-bottom-color:#ecd7a8}
+#deco .deco-card.picked:not(.owned):not(.using){box-shadow:0 0 0 calc(3 * var(--u)) #ffd97a}
+#deco .deco-card{
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring)}
+#deco .deco-card-art{background:none;border-bottom:calc(1.6 * var(--u)) solid #f3c264}
+#deco .deco-card-name{color:var(--pl-text)}
+#deco .deco-card.using{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 0 0 calc(2.6 * var(--u)) #ffd97a}
+#deco .deco-card.picked{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 0 0 calc(3 * var(--u)) #ffd97a}
+/* Nút tròn bên phải (ngắm nhà, "?"): pill xu tròn + gờ đổ nâu như nút tròn lobby */
+#deco .deco-side button{background:var(--pl-paw) 50% 62%/calc(30 * var(--u)) calc(30 * var(--u)) no-repeat,var(--pl-fill);
+  box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 calc(3 * var(--u)) 0 var(--pl-ink)}
+#deco.ui-locked .deco-lock{border-color:var(--pl-ink);background:var(--pl-fill)}
+/* Bảng đổi món, bong bóng mở khu, bong bóng xu idle: cùng khung pill xu; đuôi nhọn nâu */
+#deco .deco-pop{background:var(--pl-paw) 0 0/calc(34 * var(--u)) calc(34 * var(--u)),var(--pl-fill)}
+#deco .deco-opt.using{border-color:var(--pl-ink);background:var(--tb-fill)}
+#deco .area-next b{border-radius:999px;box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 3px 0 var(--pl-ink)}
+#deco .area-next b::after{background:var(--pl-ink);border:0}
+#deco .area-next small{color:#7a4a2a}
+#deco .idle-coin,#deco .idle-coin.full{box-shadow:inset 0 0 0 var(--pl-c) var(--pl-cream),inset 0 0 0 calc(var(--pl-c) + var(--pl-o)) var(--pl-ring),0 3px 0 var(--pl-ink)}
+#deco .idle-coin::after{border-top-color:var(--pl-ink)}
+
+/* ---------- (B) Pill trong khay theo viên tab đang chọn của thanh tab ---------- */
+#deco :where(.deco-tray .zone-switch button.on,.deco-kinds button.on,.deco-collapse,.deco-card-price){
+  --tb-o:calc(2 * var(--u));--tb-l:calc(.8 * var(--u));
+  box-sizing:border-box;border:var(--tb-o) solid var(--tb-ring);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(22 * var(--u)) calc(22 * var(--u)),var(--tb-fill);box-shadow:inset 0 0 0 var(--tb-l) var(--tb-light)}
+#deco .deco-tray .zone-switch button{border-radius:999px}
+#deco .deco-tray .zone-switch button.on small{-webkit-text-stroke:calc(2.4 * var(--u)) #fff5e1;paint-order:stroke fill}
+/* Pill chưa chọn = tab thường: không nền, không viền, icon + chữ nâu */
+#deco :is(.deco-tray .zone-switch button,.deco-kinds button):not(.on){border-color:transparent;background:none;box-shadow:none;color:#4a1a0c}
+#deco .deco-kinds button.on{color:var(--pl-text)}
+#deco .deco-collapse{color:#4a1a0c}
+/* Viên giá: cỡ nhỏ (22u) thu viền theo tỉ lệ; trạng thái đã sở hữu / khoá / thiếu xu giữ viền cam nhưng lòng nhạt + màu chữ báo trạng thái */
+#deco .deco-card-price{--tb-o:calc(1.6 * var(--u));--tb-l:calc(.7 * var(--u));font-weight:900}
+/* Viên giá xu = pill xu của HUD lobby (pill-gems.png) thu theo cỡ: viên 22u / pill 38,6u = .57 -> viền nâu 1,3u, nét kem .9u, vòng vàng sẫm 1,3u, lòng vàng -> be */
+#deco .deco-card-price:not(.own):not(.lock){border:calc(1.3 * var(--u)) solid var(--pl-ink);color:var(--pl-text);
+  background:var(--pl-paw) 0 50%/calc(16 * var(--u)) calc(16 * var(--u)),var(--pl-fill);
+  box-shadow:inset 0 0 0 calc(.9 * var(--u)) var(--pl-cream),inset 0 0 0 calc(2.2 * var(--u)) var(--pl-ring)}
+#deco .deco-card-price.own{background:#fff7e4;color:#7a4a2a}
+#deco .deco-card-price.lock{border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
+#deco .deco-card.poor .deco-card-price{border-color:#f1b2a6;background:#fff0ec;box-shadow:none;color:#c0392b}

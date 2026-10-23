@@ -7,7 +7,7 @@ import { ZONES, CATALOG, itemStatus, isOwned, slotOf } from '../deco/deco-data.m
 import { startDecoTour, waitFor } from '../app/deco-tour.js';
 import { $, getDeco, setDeco, refreshWallet } from '../app/shared.js';
 import { decoUnlockedLevel, renderZoneSwitch } from './areas.js';
-import { decoBases, decoVisible, setDecoLock, closeDecoPop, clearDecoPick, renderDeco, decoPick, decoPop } from './deco-panel.js';
+import { decoBases, decoVisible, setDecoLock, closeDecoPop, clearDecoPick, renderDeco, decoPick, decoPop, setDecoTab, clearPreview } from './deco-panel.js';
 import { guideRect, setGuide, applyRoom, room3d } from './room.js';
 import { switchTab } from './tabs.js';
 import { setShopPage } from './shop.js';
@@ -36,12 +36,14 @@ export function runDecoTour() {
   const plan = readText(SAVE_KEYS.decoTour) !== 'done' && guidedTourPlan();
   setDecoLock(false);
   closeDecoPop(false);
+  setDecoTab('furniture');
+  clearPreview();
   // Như hướng dẫn Garden: mèo cam ngồi trong vườn, mọi lời hướng dẫn là bong bóng thoại mọc từ nó (speaker); mèo khuất (Shop) thì bóng thường.
   const say = steps => steps.map(step => (step.text ? { speaker: guideRect, ...step } : step));
   const done = () => { setGuide(false); tourDone(); };
   const fencesStep = {
-    target: () => [...$('deco').querySelectorAll('.deco-side [data-key="walls"], .deco-side [data-key="floors"]')],
-    text: () => `${names().walls} and ${names().floors} come in other styles too. Buy them in the Shop, then pick one here.`,
+    target: () => $('deco-kinds'),
+    text: () => `${names().walls} and ${names().floors} come in other styles too. Tap a type here, preview a style, then buy it.`,
     before: () => closeDecoPop(false),
   };
   const shopTab = { target: () => $('tabbar').querySelector('[data-tab="shop"]'), before: () => closeDecoPop(false) };

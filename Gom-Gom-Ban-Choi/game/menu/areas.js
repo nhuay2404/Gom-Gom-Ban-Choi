@@ -7,7 +7,7 @@ import { playSound } from '../ui/sound.mjs';
 import { readText } from '../core/save.mjs';
 import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, areaBefore, areaBuilt, nextArea, nextAreas, unlockArea } from '../deco/deco-data.mjs';
 import { $, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, ask } from '../app/shared.js';
-import { builtCount, decoLocked, coin, clearDecoPick, closeDecoPop, renderDeco } from './deco-panel.js';
+import { builtCount, decoLocked, coin, clearDecoPick, closeDecoPop, renderDeco, decoTab, setDecoTab, clearPreview } from './deco-panel.js';
 import { levelsCleared } from './context.js';
 import { room3d, applyRoom } from './room.js';
 import { shopBurst } from './shop.js';
@@ -25,19 +25,27 @@ export const isGardenExpanded = () => areaOpen(getDeco(), 'garden2') || devAllZo
 
 export const decoUnlockedLevel = () => devAllZones() ? Infinity : unlockedCount(loadProgress());
 
+// Hàng tab ở khay đáy: nút mèo + mỗi khu đã mở một nút biểu tượng; khu đang chọn xanh lá, kèm số món đã xây / tổng.
+// Biểu tượng tab là mặt nạ ảnh (assets/img/deco/tab-*.png tách từ Figma, deco.css `.zi`), tô màu theo trạng thái.
+const zoneIcon = zone => `<i class="zi" data-z="${zone}"></i>`;
 export function renderZoneSwitch() {
-  document.querySelectorAll('.zone-switch button').forEach(button => {
-    const zone = button.dataset.zone, open = isZoneOpen(zone);
-    button.classList.toggle('on', zone === getDeco().zone);
-    button.classList.toggle('locked', !open);
-    button.setAttribute('aria-selected', zone === getDeco().zone);
+  const current = getDeco().zone;
+  document.querySelectorAll('#deco-zone button').forEach(button => {
+    if (button.dataset.kind === 'cats') {
+      button.classList.toggle('on', decoTab === 'cats');
+      button.setAttribute('aria-selected', decoTab === 'cats');
+      return;
+    }
+    const zone = button.dataset.zone, open = isZoneOpen(zone), on = zone === current && decoTab !== 'cats';
+    button.classList.toggle('on', on);
+    button.setAttribute('aria-selected', on);
+    button.setAttribute('aria-label', ZONES[zone].name);
+    button.title = ZONES[zone].name;
     const [built, total] = open ? builtCount(getDeco(), zone) : [0, 0];
-    button.innerHTML = open ? `${ZONES[zone].name} <small>${built}/${total}</small>` : ZONES[zone].name;
-    // Khu chưa mở khoá: chưa hiện (mở khi người chơi tới stage của khu đó). Khu đã xây hết mọi chỗ: ẩn khỏi hàng chọn khu
-    // (vẫn tới được bằng cách kéo cảnh / chạm đồ trong khu đó).
-    button.hidden = !open || built === total;
+    button.innerHTML = `${zoneIcon(zone)}${on ? `<small>${built}/${total}</small>` : ''}`;
+    // Khu chưa mở khoá (chưa trả xu mở khu): chưa hiện.
+    button.hidden = !open;
   });
-  $('deco-zone').hidden = ![...$('deco-zone').children].some(button => !button.hidden);
   fitZoneSwitch();
   renderAreaNext();
   renderQuestButtons(); // khu vừa mở / chỗ vừa xây: nhiệm vụ tiến trình đo lại
@@ -47,9 +55,9 @@ export function renderZoneSwitch() {
 // Lúc Deco còn ẩn thì chưa đo được nút: đo lại khi hàng chọn khu hiện ra / đổi cỡ.
 new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
 
-// PC: giữ chuột trái rồi kéo để cuộn ngang hàng chọn khu (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm chọn khu.
-{
-  const bar = $('deco-zone');
+// PC: giữ chuột trái rồi kéo để cuộn ngang hàng tab khu và hàng thẻ (cảm ứng đã vuốt được sẵn). Kéo quá 5 px thì không tính là bấm.
+// Shop → Decoration dùng lại cho hàng chọn khu (menu/shop.js, gọi lúc render đầu chứ không lúc nạp module: hai module import vòng tròn).
+export function dragScroll(bar) {
   let drag = null;
   bar.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -74,17 +82,15 @@ new ResizeObserver(() => fitZoneSwitch()).observe($('deco-zone'));
     drag = null;
   });
 }
+dragScroll($('deco-zone'));
+dragScroll($('deco-cards'));
 
 function fitZoneSwitch() {
-  const ZONE_SWITCH_MAX = 3, bar = $('deco-zone'), shown = [...bar.children].filter(button => !button.hidden);
-  bar.style.maxWidth = '';
-  if (bar.hidden || shown.length <= ZONE_SWITCH_MAX || !shown[0].offsetWidth) return;
-  const style = getComputedStyle(bar), gap = parseFloat(style.columnGap) || 0;
-  const width = shown.slice(0, ZONE_SWITCH_MAX).reduce((sum, button) => sum + button.offsetWidth, 0) + gap * (ZONE_SWITCH_MAX - 1)
-    + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
-  bar.style.maxWidth = `min(${Math.ceil(width)}px, calc(100% - 24px))`;
-  const on = shown.find(button => button.classList.contains('on'));
-  if (on) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+  const bar = $('deco-zone'), on = [...bar.children].find(button => !button.hidden && button.classList.contains('on'));
+  // Chỉ cuộn khi khu đang chọn nằm ngoài khung nhìn; còn lại giữ sát trái như thiết kế
+  if (!on || !on.offsetWidth) return;
+  const left = on.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft;
+  if (left < bar.scrollLeft || left + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = left - 12;
 }
 
 // ===== Mở khu: bong bóng "khu kế tiếp" ở Deco + bảng 2 khu kế tiếp (xây đủ món gốc khu trước → đủ xu → khánh thành) =====
@@ -163,13 +169,22 @@ function buyArea(area) {
 }
 
 document.addEventListener('click', event => {
-  const button = event.target.closest('.zone-switch button');
+  const button = event.target.closest('#deco-zone button');
   if (!button) return;
   const zone = button.dataset.zone;
-  if (!isZoneOpen(zone)) return;
-  if (zone === getDeco().zone) return;
-  setDeco({ ...getDeco(), zone });
+  if (button.dataset.kind === 'cats') {
+    if (decoTab === 'cats') return;
+    playSound('pick');
+    setDecoTab('cats');
+  } else {
+    if (!isZoneOpen(zone)) return;
+    if (zone === getDeco().zone && decoTab !== 'cats') return;
+    playSound('pick');
+    if (decoTab === 'cats') setDecoTab('furniture');
+    if (zone !== getDeco().zone) setDeco({ ...getDeco(), zone });
+  }
   clearDecoPick();
+  clearPreview();
   closeDecoPop(false);
   renderZoneSwitch();
   renderDeco();

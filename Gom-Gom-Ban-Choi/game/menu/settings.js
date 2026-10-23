@@ -86,11 +86,16 @@ document.querySelectorAll('.sound-toggle').forEach(button => { button.onclick = 
 // Ánh sáng môi trường cho khu mèo (cảnh 3D ở Deco): Day / Afternoon (dusk) / Night. Lưu lại cho lần sau ('off' = ngày, 'dusk', 'on' = đêm).
 const AMBIENTS = { dawn: 'dawn', off: 'day', dusk: 'dusk', on: 'night' };
 
+const AMBIENT_CYCLE = ['dawn', 'day', 'dusk', 'night'];
 export let ambient = AMBIENTS[readText(SAVE_KEYS.night)] || 'day';
 
+// Một nút ở Deco (dưới nút Settings): chạm để sang buổi kế (bình minh -> ngày -> chiều -> đêm); biểu tượng đổi theo (#i-sun / #i-sunset / #i-moon).
 function applyAmbient() {
-  document.querySelectorAll('#ambient-toggle [data-ambient]').forEach(button => button.setAttribute('aria-pressed', button.dataset.ambient === ambient));
-  $('ambient-toggle').title = ambient === 'dawn' ? 'Dawn' : ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  const label = ambient === 'dawn' ? 'Dawn' : ambient === 'dusk' ? 'Afternoon' : ambient === 'night' ? 'Night' : 'Day';
+  $('ambient-toggle').dataset.ambient = ambient;
+  $('ambient-toggle').title = label;
+  $('ambient-toggle').setAttribute('aria-label', `Ambient: ${label}`);
+  $('ambient-toggle').querySelector('use')?.setAttribute('href', ambient === 'dusk' || ambient === 'dawn' ? '#i-sunset' : ambient === 'night' ? '#i-moon' : '#i-sun');
   $('deco-room').classList.toggle('night', ambient === 'night');
   $('deco-room').classList.toggle('dusk', ambient === 'dusk');
   $('deco').classList.toggle('night', ambient === 'night'); // nền trời đêm của màn Deco (ui-portrait.css)
@@ -100,17 +105,14 @@ function applyAmbient() {
   room3d?.setAmbient(ambient);
 }
 
-$('ambient-toggle').addEventListener('click', event => {
-  const button = event.target.closest('[data-ambient]');
-  if (!button || button.dataset.ambient === ambient) return;
-  ambient = button.dataset.ambient;
+$('ambient-toggle').addEventListener('click', () => {
+  ambient = AMBIENT_CYCLE[(AMBIENT_CYCLE.indexOf(ambient) + 1) % AMBIENT_CYCLE.length];
   writeText(SAVE_KEYS.night, ambient === 'night' ? 'on' : ambient === 'dusk' || ambient === 'dawn' ? ambient : 'off');
   playSound('pick');
   applyAmbient();
 });
 
 // Tự chuyển bình minh -> ngày -> chiều -> đêm, mỗi buổi 1 phút (trời chuyển dần 8 giây); bấm nút thì vòng chạy tiếp từ buổi đã chọn. Không lưu lại.
-const AMBIENT_CYCLE = ['dawn', 'day', 'dusk', 'night'];
 setInterval(() => {
   ambient = AMBIENT_CYCLE[(AMBIENT_CYCLE.indexOf(ambient) + 1) % AMBIENT_CYCLE.length];
   applyAmbient();

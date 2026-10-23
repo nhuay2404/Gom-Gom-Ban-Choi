@@ -779,6 +779,19 @@ function thumbSubject(entry) {
 // Hướng nhìn ảnh thumbnail (toạ độ của model: mặt trước model quay về +z). Popup xem trước ở Shop soi món theo đúng hướng này
 // (xoay theo hướng món đặt trong phòng), nên món luôn hiện đúng mặt như ảnh thumbnail.
 export const THUMB_DIR = new THREE.Vector3(.75, .62, 1).normalize();
+// Khoảng cách camera để CẢ 8 góc hộp bao nằm trong khung ảnh (chừa lề THUMB_MARGIN), nhìn theo THUMB_DIR về tâm hộp.
+// Lỗi cũ: tính theo hình cầu bao rồi nhân .82 để phóng to -> món dẹt / rộng (thảm, sàn, tường) và món cao bị cắt mép trong ảnh 192 px.
+const THUMB_MARGIN = .94;
+function thumbDistance(bounds, center, fov) {
+  const back = THUMB_DIR, forward = back.clone().negate(), right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+  const up = new THREE.Vector3().crossVectors(right, forward), tan = Math.tan(THREE.MathUtils.degToRad(fov / 2)) * THUMB_MARGIN;
+  let distance = 0;
+  for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
+    const corner = new THREE.Vector3(x, y, z).sub(center), toward = corner.dot(back);
+    distance = Math.max(distance, Math.abs(corner.dot(right)) / tan + toward, Math.abs(corner.dot(up)) / tan + toward);
+  }
+  return distance;
+}
 export function thumbnail(entry) {
   if (thumbCache[entry.id]) return thumbCache[entry.id];
   const { renderer, scene, camera } = thumbStudio();
@@ -787,9 +800,8 @@ export function thumbnail(entry) {
   scene.add(subject);
   addOutlines(subject);
   subject.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(subject), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
-  const radius = size.length() / 2, distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * .82;
-  camera.position.copy(center).add(THUMB_DIR.clone().multiplyScalar(distance));
+  const bounds = new THREE.Box3().setFromObject(subject), center = bounds.getCenter(new THREE.Vector3());
+  camera.position.copy(center).add(THUMB_DIR.clone().multiplyScalar(thumbDistance(bounds, center, camera.fov)));
   camera.lookAt(center);
   syncOutlineResolution(renderer);
   renderer.render(scene, camera);

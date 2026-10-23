@@ -8,6 +8,9 @@
   --orange:#f07b3c;--orange-deep:#b4521f;--teal:#27a695;--teal-deep:#19756a;--purple:#8c4fd0;--purple-deep:#5a2c8e;
   --gold:#f5b93c;--red:#e5483a;--red-deep:#9e2a20;--grey:#b3aa99}
 body{font-family:var(--ui-font)}
+/* Game, không phải trang đọc: chạm / kéo không được bôi đen chữ (lỗi cũ: popup chọn món ở Deco bị quét xanh). Ô nhập liệu vẫn chọn được. */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 /* ---------- Màn menu (Home / Deco / Shop) ---------- */
 .screen{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:14px;
   padding:max(14px,env(safe-area-inset-top)) 18px calc(108px + env(safe-area-inset-bottom));

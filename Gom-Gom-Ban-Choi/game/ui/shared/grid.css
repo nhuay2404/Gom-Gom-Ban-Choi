@@ -1,0 +1,78 @@
+/* ===== Lưới + lề chuẩn cho mọi màn (Home / Deco / Shop / màn chơi) =====
+   Nạp SAU mọi CSS khác (trước dev.css): chỉ đặt lại VỊ TRÍ các nút rìa theo một bộ số chung, không đổi hình.
+
+   Khung: mọi màn bố cục trong khung 393u (--frame-w, giữa màn; --hub-u = --frame-w / 393). Khung luôn <= bề ngang màn
+   nên thứ bám theo khung không bao giờ bị cắt ra ngoài. Nút rìa bám MÉP KHUNG (không còn bám mép cửa sổ qua --gutter),
+   để Home / Deco / Shop / màn chơi cùng một đường lề trên mọi cỡ màn.
+
+   Bộ số (đổi ở đây là cả game đổi theo):
+     --edge-x       lề trái / phải tới mép khung: 10u (= mép khung HUD + thanh booster của màn chơi)
+     --edge-top     lề trên: tai thỏ + 14u (hàng ví + nút cài đặt)
+     --edge-bottom  lề dưới: thanh home ảo + 16u (thanh tab)
+     --gap          khoảng cách giữa hai khối cạnh nhau: 8u
+     4 cột trong khung: --col = (393 - 2 × 10 - 3 × 8) / 4 = 87,25u (cho bố cục mới; nút cũ chỉ cần lề) */
+:root{
+  --edge-x:calc(10 * var(--hub-u));
+  --edge-l:max(var(--edge-x), env(safe-area-inset-left));
+  --edge-r:max(var(--edge-x), env(safe-area-inset-right));
+  --edge-top:calc(env(safe-area-inset-top) + 14 * var(--hub-u));
+  --edge-bottom:calc(env(safe-area-inset-bottom) + 16 * var(--hub-u));
+  --gap:calc(8 * var(--hub-u));
+  --col:calc(87.25 * var(--hub-u));
+  /* mép khung tính theo cửa sổ (cho phần tử position: fixed / absolute theo cả màn) */
+  --frame-l:calc(50% - var(--frame-w) / 2);
+}
+
+/* Hàng ví: pill xu sát lề trái, pill gem cách một --gap. Hộp ví thu .83 từ mép trái (settings.css) nên khoảng cách trong hộp chia .83. */
+.wallet-hud>.fh-pill.fh-coins{left:0}
+.wallet-hud>.fh-pill.fh-gems{left:calc(38.6 * var(--u) * 432 / 116 + 8 * var(--u) / .83)}
+/* Home: ví nằm trong lớp nút .fh-layer (toạ độ theo khung) */
+.map>.fh-layer>.wallet-hud{left:var(--edge-l);top:var(--edge-top)}
+/* Deco: ví đặt tuyệt đối theo cả màn -> cộng mép khung */
+.screen.deco>.wallet-hud{left:calc(var(--frame-l) + var(--edge-l));top:var(--edge-top)}
+/* Shop: ví là khối đầu của cột cuộn -> lề trên = padding màn, lề trái = mép khung + lề */
+.screen.shop{padding-top:var(--edge-top)}
+.screen.shop>.wallet-hud{align-self:flex-start;width:calc(393 * var(--u));margin-left:calc(var(--frame-l) + var(--edge-l))}
+
+/* Nút cài đặt chung (Home / Deco / Shop): mép phải = mép khung - lề, tâm ngang hàng ví
+   (ví thu .83 quanh tâm dọc 25u: tâm pill = 25 + (24,3 - 25) × .83 = 24,4u; nút 48u) */
+.hub-settings{left:calc(50% + var(--frame-w) / 2 - var(--edge-r) - 48 * var(--hub-u));top:calc(var(--edge-top) + 24.4 * var(--hub-u) - 24 * var(--hub-u))}
+
+/* Home: cột trái (Daily, Starter Pack) và cột phải (Feedback, đổi Cats / Dogs) dưới hàng ví một --gap.
+   Đáy pill = lề trên + 25 + (43,6 - 25) × .83 = +40,4u (ví thu .83 quanh tâm dọc). Ảnh Daily / Starter có chỗ cho chấm "!" phía trên: ô thật thấp hơn đỉnh ảnh ~5u,
+   nên nút cột phải (không có chấm) hạ 5u để đỉnh ô hai cột thẳng hàng. Hàng 2 cách hàng 1 đúng 70u (ô 60u + 10u). */
+.fh-layer>.fh-btn{margin-top:0}
+/* Hai cột nút icon (kiểu Cat Soup): mỗi cột thẳng hàng theo TÂM, tâm cột cách mép khung đúng lề + 24u = tâm nút cài đặt (48u) bên phải;
+   cột trái đối xứng. Hộp nút 62 × 58u (home.css .fh-tile) căn tâm vào đường đó. Khoảng trống dọc đều 10u: đáy nút cài đặt -> đỉnh icon hàng 1 -> (icon 44u + chữ) -> 10u -> đỉnh icon hàng 2. */
+/* nút cài đặt: bỏ lệch 8,4u của .fh-round (home.css) để tâm bánh răng nằm đúng đường tâm cột phải */
+.hub-settings .fh-round{left:0}
+:root{--col-l:calc(var(--edge-l) + 24 * var(--hub-u));--col-r:calc(var(--frame-w) - var(--edge-r) - 24 * var(--hub-u))}
+.fh-layer>.fh-daily{left:calc(var(--col-l) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 10 * var(--hub-u))}
+.fh-layer>.fh-starter{left:calc(var(--col-l) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 72.1 * var(--hub-u))}
+.fh-layer>.fh-feedback{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 10 * var(--hub-u))}
+.fh-layer>.fh-quests{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 72.1 * var(--hub-u))}
+/* Đổi Cats / Dogs (hiện từ màn 30): hàng 3 cột phải, dưới Quests */
+.fh-layer>.fh-skin{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 134.2 * var(--hub-u))}
+
+/* Đáy: thanh tab cách đáy --edge-bottom, nút PLAY ngay trên thanh tab (khe 7u như ảnh mẫu) */
+#tabbar.fh-tabbar{bottom:var(--edge-bottom)}
+.fh-layer>.fh-play{bottom:calc(var(--edge-bottom) + 73.16 * var(--u) + 7 * var(--u))}
+
+/* Màn chơi: khung HUD + thanh booster luôn rộng đúng khung - 2 lề (như Home / Deco / Shop), kể cả màn thấp khi .shell thu nhỏ --u
+   để vừa chiều cao (vd. 375 × 667: --u của màn chơi < --hub-u, trước đây khung hẹp lại, lề 28px thay vì 10px).
+   Ảnh khung vẽ bằng border-image 9 mảnh, phần giữa LẶP (repeat) chứ không kéo giãn: góc + viền giữ đúng tỉ lệ, dấu chân không méo.
+   Trên điện thoại 393 khung rộng đúng bằng ảnh nên trông y như trước.
+   HUD: ảnh 981 × 360 (khung 137u cao) -> mảnh góc 100px = 100 × 137 / 360 = 38,06u. Thanh booster: ảnh 981 × 205 (78u cao) -> mảnh 64px = 24,35u. */
+.shell .fg-panel::before{left:calc(50% - var(--frame-w) / 2 + var(--edge-l));width:calc(var(--frame-w) - var(--edge-l) - var(--edge-r));
+  background:none;box-sizing:border-box;border:calc(38.06 * var(--u)) solid transparent;
+  border-image:url('../../assets/img/play/hud-frame.png') 100 fill / calc(38.06 * var(--u)) repeat}
+.shell #booster-bar{width:calc(var(--frame-w) - var(--edge-l) - var(--edge-r));margin-left:calc(50% - var(--frame-w) / 2 + var(--edge-l))}
+.shell #booster-bar::before{background:none;box-sizing:border-box;border:calc(24.35 * var(--u)) solid transparent;
+  border-image:url('../../assets/img/play/booster-bar-frame.png') 64 fill / calc(24.35 * var(--u)) repeat}
+
+/* Deco: bỏ nút Ambient (game đã bỏ tính năng đổi ngày / chiều / đêm; phần tử vẫn giữ trong index.html vì menu/settings.js còn gán nhãn cho nó, chỉ ẩn).
+   Cột nút bên phải (ngắm nhà, hướng dẫn "?") thẳng tâm với nút cài đặt (--col-r), ngay dưới nút cài đặt, khoảng cách dọc đều 10u như cột icon ở Home. */
+#ambient-toggle.deco-ambient{display:none}
+.screen.deco>.deco-side{left:calc(var(--frame-l) + var(--col-r) - 29 * var(--hub-u));right:auto;width:calc(58 * var(--hub-u));align-items:center;
+  top:calc(var(--edge-top) + 24.4 * var(--hub-u) + 24 * var(--hub-u) + 10 * var(--hub-u));gap:calc(10 * var(--hub-u))}
+.screen.deco>.deco-side .deco-help{margin-top:0}
