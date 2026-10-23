@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../core/save.mjs';
 import { levelReward } from '../core/progression.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, unlockArea } from './deco-data.mjs';
+import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, nextAreas, areaBases, unlockArea } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -251,21 +251,27 @@ test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ k�
   }
 });
 
-test('mở khu: theo thứ tự, cần đủ màn + đủ xu, mở là trừ xu', async () => {
+test('mở khu: theo thứ tự, cần xây đủ món gốc khu trước + đủ xu (không theo màn), mở là trừ xu', async () => {
   const { AREA_UNLOCK } = await import('../data/economy.mjs');
   setStorageBackend(memoryStore());
-  const { level, cost } = AREA_UNLOCK.garden2;
+  const { cost } = AREA_UNLOCK.garden2;
+  const buildAll = (deco, area) => ({ ...deco, zones: { ...deco.zones, [area === 'garden2' ? 'garden' : area]: { ...deco.zones[area === 'garden2' ? 'garden' : area],
+    owned: [...deco.zones[area === 'garden2' ? 'garden' : area].owned, ...areaBases(area).map(entry => entry.id)] } } });
   const fresh = { ...loadDeco(0), coins: cost };
   assert.equal(areaOpen(fresh, 'garden'), true);
   assert.equal(nextArea(fresh), 'garden2');
-  assert.equal(areaState(fresh, 'garden2', level - 1), 'level');
-  assert.equal(areaState({ ...fresh, coins: cost - 1 }, 'garden2', level), 'coins');
-  assert.ok(unlockArea({ ...fresh, coins: cost - 1 }, 'garden2', level).error, 'thiếu 1 xu thì chưa mở');
-  assert.equal(areaState(fresh, 'living', 99), 'soon', 'khu trước chưa mở');
-  const opened = unlockArea(fresh, 'garden2', level);
+  assert.deepEqual(nextAreas(fresh), ['garden2', 'living'], 'luôn thấy 2 khu kế tiếp');
+  assert.ok(areaBases('garden').some(entry => entry.price > 0), 'vườn có món gốc phải mua');
+  assert.equal(areaState(fresh, 'garden2', 999), 'build', 'thắng bao nhiêu màn cũng chưa mở khi chưa xây đủ vườn');
+  const built = buildAll(fresh, 'garden');
+  assert.equal(areaState(built, 'garden2', 0), 'ready', 'xây đủ + đủ xu thì mở được ngay cả ở màn 0');
+  assert.equal(areaState({ ...built, coins: cost - 1 }, 'garden2', 0), 'coins');
+  assert.ok(unlockArea({ ...built, coins: cost - 1 }, 'garden2', 0).error, 'thiếu 1 xu thì chưa mở');
+  assert.equal(areaState(built, 'living', 0), 'soon', 'khu trước chưa mở');
+  const opened = unlockArea(built, 'garden2', 0);
   assert.equal(opened.coins, 0, 'mở khu trừ đúng giá');
   assert.equal(areaOpen(opened, 'garden2'), true);
-  assert.equal(areaState(opened, 'living', AREA_UNLOCK.living.level), 'coins');
+  assert.equal(areaState(opened, 'living', 0), areaBases('garden2').some(entry => entry.price > 0) ? 'build' : 'coins');
 });
 
 test('khu KHÔNG BAO GIỜ tự mở khi nạp save (chỉ mở bằng trả xu), dù đã qua màn mốc', () => {

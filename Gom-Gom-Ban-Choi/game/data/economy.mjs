@@ -56,8 +56,45 @@ export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 // Gem có sẵn khi mới vào game.
 export const START_GEMS = remote('START_GEMS', 0);
 // Gem miễn phí: thắng màn paywall lần đầu · thắng màn boss lần đầu · mở một khu deco · nhận một thú cưng mới.
-// Quà đăng nhập hằng ngày (Daily, Sprint 8) KHÔNG cho gem (quyết định 22/10): chỉ xu / booster / đồ. Rương nhiệm vụ ngày: chưa chốt.
+// Quà đăng nhập hằng ngày (Daily, Sprint 8) KHÔNG cho gem (quyết định 22/10): chỉ xu / booster / đồ. Nhiệm vụ ngày (DAILY) cũng chỉ cho xu.
 export const GEM_REWARDS = remote('GEM_REWARDS', { paywall: 100, boss: 25, area: 50, pet: 10 });
+
+// ----- NHIỆM VỤ NGÀY (core/daily.mjs) — mỗi ngày `count` nhiệm vụ nhẹ, cùng một mức xu; không có rương, không tặng booster -----
+// R = xu thắng màn cao nhất đang mở lúc sang ngày (bỏ dao động, làm tròn chục), giữ nguyên cả ngày. Xu mỗi nhiệm vụ = share × R.
+// Bắt đầu khi đã mở tới màn fromLevel (sau FTUE). Không có nhiệm vụ xem ads / tiêu gem.
+export const DAILY = remote('DAILY', { fromLevel: 6, count: 5, share: .3 });
+// Bảng nhiệm vụ: { id, event, n, text }. event = sự kiện game đếm (core/daily.mjs DAILY_EVENTS). Mỗi ngày bốc `count` món khác nhau, ưu tiên món hôm qua chưa có.
+// need: 'boosters' (chỉ sau màn mở booster) · 'idle' (đã mở xu idle) · 'base' (khu đang mở còn món gốc chưa mua) · 'noBase' (hết món gốc: place2 thay cho build1 + place1).
+// Số "n" là số tạm, chỉnh theo dữ liệu thật.
+export const DAILY_POOL = remote('DAILY_POOL', [
+  { id: 'play3', event: 'play', n: 3, text: 'Play 3 levels' },
+  { id: 'match30', event: 'match', n: 30, text: 'Match 30 groups' },
+  { id: 'score1000', event: 'score', n: 1000, text: 'Earn 1,000 points' },
+  { id: 'clean1', event: 'cleanWin', n: 1, need: 'boosters', text: 'Win a level without boosters' },
+  { id: 'pet3', event: 'pet', n: 3, text: 'Pet your cats 3 times' },
+  { id: 'idle1', event: 'idle', n: 1, need: 'idle', text: 'Collect coins from your cats' },
+  { id: 'place1', event: 'place', n: 1, need: 'base', text: 'Place or swap 1 item' },
+  { id: 'build1', event: 'build', n: 1, need: 'base', text: 'Build 1 new spot' },
+  { id: 'place2', event: 'place', n: 2, need: 'noBase', text: 'Place or swap 2 items' },
+]);
+
+// ----- NHIỆM VỤ TIẾN TRÌNH (core/quests.mjs) — nút Quests ở Home + Deco. Chỉ là MỐC TIẾN TRÌNH (thắng màn, mở khu, xây chỗ, nhận mèo,
+// sưu tầm kiểu đồ); việc nhỏ trong phiên chơi (chơi, gom, vuốt mèo) để cho nhiệm vụ ngày. Luôn có tối đa `slots` nhiệm vụ; nhận thưởng
+// xong thì nhiệm vụ kế của cùng chuỗi đẻ ra ngay, chuỗi vừa nhận xuống cuối hàng. Hết nội dung (hết màn / khu / chỗ / mèo / kiểu) thì chuỗi
+// đó thôi, cuối game bảng có thể trống. Không có thưởng lớn khi làm hết. Mở từ màn fromLevel.
+// Thiết kế theo wiki: thưởng theo công sức (concept-economy-building-blocks), mục tiêu có trần để không thành cày (cozydive-bycer-relaxing-progression-curve).
+export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3 });
+// Chuỗi nhiệm vụ. Xu = share × R (R như nhiệm vụ ngày, lấy lúc nhiệm vụ đẻ ra).
+// kind 'level': thắng tới màn bội số của step · 'area': mở khu kế tiếp · còn lại đếm sự kiện (event):
+// mục tiêu = min(base + grow × số lần đã xong chuỗi, max), và không vượt số còn lại trong game (cap: tên số đếm trong ctx của quests.mjs).
+// {n} = mục tiêu, {area} = tên khu, {s} = 's' khi n > 1.
+export const QUEST_TRACKS = remote('QUEST_TRACKS', [
+  { id: 'level', kind: 'level', step: 5, share: 1.5, text: 'Beat level {n}' },
+  { id: 'area', kind: 'area', share: 2, text: 'Open the {area}' },
+  { id: 'build', event: 'build', base: 3, grow: 1, max: 5, cap: 'basesLeft', share: 1.5, text: 'Build {n} new spot{s}' },
+  { id: 'pets', event: 'claimPet', base: 1, grow: 0, max: 1, cap: 'petsLeft', share: 1, text: 'Welcome a new pet from the map' },
+  { id: 'styles', event: 'style', base: 2, grow: 1, max: 4, cap: 'stylesLeft', share: 1, text: 'Collect {n} new style{s} in the Shop' },
+]);
 
 // Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).
 export const GEM_PACKS = remote('GEM_PACKS', [

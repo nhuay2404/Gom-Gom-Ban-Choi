@@ -1,5 +1,5 @@
 // Mô phỏng economy cho Level Editor (tab Economy) — thuần logic, chạy được cả trình duyệt lẫn Node (test: economy-sim.test.mjs).
-// Dùng đúng code game: rewardFor (progression.mjs), zonePrice / areaState / unlockArea (deco-data.mjs); chỉ truyền bảng số đang sửa.
+// Dùng đúng code game: rewardFor (progression.mjs), zonePrice / areaBases (deco-data.mjs; luật mở khu chép lại vì người ảo không có save deco thật); chỉ truyền bảng số đang sửa.
 //
 // Mỗi người ảo, mỗi ngày: chơi `attempts` lượt; mỗi lượt thắng với xác suất p(màn) (tỉ lệ thắng của bot ở tools/levels/baseline.json,
 // chỉnh theo tay nghề: p = 1 − (1 − winRate)^skill). Thắng lần đầu thì nhận xu và sang màn sau. Sau mỗi lượt: mua đồ rẻ nhất
@@ -8,7 +8,7 @@
 // Idle: mỗi ngày chia lượt chơi thành `claims` phiên; đầu mỗi phiên nhận xu idle của min(24 / claims, trần) giờ (idle.mjs).
 // Đây là mô hình giả định để so các bộ số với nhau, không phải dự báo số liệu thật.
 import { rewardFor } from '../../game/core/progression.mjs';
-import { CATALOG, AREA_ORDER, MAX_ROOM_CATS, areaState, unlockArea, zonePrice } from '../../game/deco/deco-data.mjs';
+import { CATALOG, AREA_ORDER, MAX_ROOM_CATS, areaBefore, areaBases, zonePrice } from '../../game/deco/deco-data.mjs';
 import { mulberry32 } from '../levels/bot.mjs';
 import { idlePerHour } from '../../game/core/idle.mjs';
 
@@ -51,6 +51,7 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
   const tierSec = {}, tierLevels = {};
   const areaOf = e => (e.area === 'garden2' ? 'garden2' : e.zone);
   const isOpen = area => area === 'garden' || deco.unlocked.includes(area);
+  const built = area => areaBases(area).every(e => e.basePrice === 0 || owned.has(e.id));
   const events = [], log = [], shortAt = {};
   let earned = cfg.START_COINS, idleEarned = 0, peak = deco.coins;
   const claims = Math.max(1, profile.claims ?? 2), idleHours = Math.min(24 / claims, cfg.IDLE_CAP_HOURS ?? 0);
@@ -78,18 +79,19 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
           if (cleared === levels) { finishDay = day; walletAtFinish = null; }
         }
       }
+      // Luật mở khu của game (deco-data.mjs areaState): xây đủ món gốc của khu trước + đủ xu; không theo màn.
       for (const area of AREA_ORDER) {
         if (isOpen(area)) continue;
-        // Lúc vừa thắng màn mốc: ví còn thiếu bao nhiêu xu so với giá mở khu (0 = mở được ngay).
-        if (cleared >= cfg.AREA_UNLOCK[area].level) shortAt[area] ??= Math.max(0, cfg.AREA_UNLOCK[area].cost - deco.coins);
-        const next = areaState(deco, area, cleared, cfg.AREA_UNLOCK) === 'ready' ? unlockArea(deco, area, cleared, cfg.AREA_UNLOCK) : null;
-        if (!next || next.error) break;
-        deco = next;
+        if (!isOpen(areaBefore(area)) || !built(areaBefore(area))) break;
+        // Lúc vừa xây đủ khu trước: ví còn thiếu bao nhiêu xu so với giá mở khu (0 = mở được ngay).
+        shortAt[area] ??= Math.max(0, cfg.AREA_UNLOCK[area].cost - deco.coins);
+        if (deco.coins < cfg.AREA_UNLOCK[area].cost) break;
+        deco = { ...deco, coins: deco.coins - cfg.AREA_UNLOCK[area].cost, unlocked: [...deco.unlocked, area] };
         events.push({ area, day, level: cleared, short: shortAt[area] ?? 0 });
       }
-      // Đã tới màn mốc của khu kế mà chưa đủ xu: để dành tiền mở khu, chưa mua đồ (người chơi thật ưu tiên mở khu mới).
+      // Đã xây đủ khu trước của khu kế mà chưa đủ xu mở: để dành tiền mở khu, chưa mua đồ (người chơi thật ưu tiên mở khu mới).
       const nextGate = AREA_ORDER.find(area => !isOpen(area));
-      if (!(nextGate && cleared >= cfg.AREA_UNLOCK[nextGate].level)) {
+      if (!(nextGate && isOpen(areaBefore(nextGate)) && built(areaBefore(nextGate)))) {
         for (const item of shop) {
           if (owned.has(item.entry.id) || !isOpen(areaOf(item.entry)) || (item.entry.lock && cleared + 1 < item.entry.lock)) continue;
           if (deco.coins < item.price) break; // danh sách xếp theo giá: món này không đủ thì món sau cũng không

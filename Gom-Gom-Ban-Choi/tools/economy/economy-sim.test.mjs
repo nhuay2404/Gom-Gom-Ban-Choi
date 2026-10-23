@@ -10,11 +10,10 @@ import { join } from 'node:path';
 const cfg = Object.fromEntries(EDITABLE.map(name => [name, ECO[name]]));
 const always = Array(100).fill(1);
 
-test('mô phỏng economy: người thắng mọi màn mở đủ 7 khu đúng mốc màn; kết quả lặp lại theo seed', () => {
+test('mô phỏng economy: người thắng mọi màn mở đủ 7 khu theo thứ tự (xây đủ khu trước + đủ xu); kết quả lặp lại theo seed', () => {
   const run = simulatePlayer(cfg, PROFILES[1], always, { seed: 3 });
   assert.equal(run.cleared, 100);
   assert.deepEqual(run.events.map(e => e.area), ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder']);
-  for (const e of run.events) assert.ok(e.level >= cfg.AREA_UNLOCK[e.area].level);
   assert.deepEqual(simulatePlayer(cfg, PROFILES[0], Array(100).fill(.5), { seed: 9 }), simulatePlayer(cfg, PROFILES[0], Array(100).fill(.5), { seed: 9 }));
 });
 

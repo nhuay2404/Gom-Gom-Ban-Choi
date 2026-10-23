@@ -9,7 +9,7 @@ import { loadProgress, levelsCleared as clearedCount, levelTier } from '../core/
 import { boostersUnlocked } from '../core/boosters.mjs';
 import { playSound, playMeowChorus } from '../ui/sound.mjs';
 import { planLevel, elementCount, difficultyOf } from '../core/adaptive.mjs';
-import { $ } from '../app/shared.js';
+import { $, noteEvent } from '../app/shared.js';
 import { state, now, look, setSession, refreshSkin, menus } from './context.js';
 import { render, nudgeGoals, lowMovesText } from './hud.js';
 import { track, endLevel, profile, startTracking, leaveResult, dropPendingRun } from './result.js';
@@ -48,6 +48,8 @@ function finishTurn(turn) {
   // Mèo vừa đặt mà không bị gom thì rơi xuống ô thật; mèo bị gom đã có bóng mèo lo phần anim.
   state.justPlaced = new Set(result.indices.filter(index => match.board[index]));
   if (match.clusters.length) {
+    noteEvent('match', match.clusters.length);
+    noteEvent('score', gained);
     playSound('merge', Math.max(...match.clusters.map(cluster => cluster.length)));
     // Cả bàn mèo vui kêu chồng lên (giống vừa gom trước, thêm vài giống đang đứng trên bàn; mèo trong lồng không kêu).
     playMeowChorus([...match.groups, ...match.board.filter(object => object?.group && !object.cage && !object.block).map(object => object.group)]);

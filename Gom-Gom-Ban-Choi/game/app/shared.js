@@ -1,10 +1,14 @@
 // Phần dùng chung của hai luồng điều khiển (game/play/, game/menu/): DOM helper, toast, ví xu, ví gem, kho booster.
-import { loadProgress, earnedCoins, levelsCleared } from '../core/progression.mjs';
+import { loadProgress, earnedCoins, levelsCleared, unlockedCount } from '../core/progression.mjs';
 import { BOOSTERS } from '../data/tuning.mjs';
 import { START_COINS } from '../data/economy.mjs';
-import { loadBoosters, saveBoosters, buyBooster, PACK_SIZE } from '../core/boosters.mjs';
+import { loadBoosters, saveBoosters, buyBooster, PACK_SIZE, boostersUnlocked } from '../core/boosters.mjs';
+import { loadDaily, saveDaily, rollDaily, noteDaily as countDaily, dailyOpen } from '../core/daily.mjs';
+import { idleOpen } from '../core/idle.mjs';
 import { loadWallet, saveWallet } from '../core/gems.mjs';
-import { loadDeco, saveDeco } from '../deco/deco-data.mjs';
+import { loadDeco, saveDeco, baseLeft, basesLeft, petsLeft, stylesLeft, nextArea, areaOpen, AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
+import { loadQuests, saveQuests, fillQuests, noteQuests, questsOpen } from '../core/quests.mjs';
+import { LEVELS } from '../data/levels.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 
@@ -88,4 +92,42 @@ export function buyOne(id, pack = false) {
   playSound('reward');
   showToast(`Bought ${BOOSTER_NAMES[id]}${pack ? ` ×${PACK_SIZE}` : ''} · −${(pack ? BOOSTERS.PACK_PRICE : BOOSTERS.PRICE)[id]} gems`);
   return { ok: true };
+}
+
+// ===== Nhiệm vụ ngày (core/daily.mjs, bảng menu/daily.js) + nhiệm vụ tiến trình (core/quests.mjs, bảng menu/quests.js) =====
+// Cả màn chơi lẫn menu báo sự kiện qua noteEvent; hai bảng nghe sự kiện 'tasks' để vẽ lại chấm số trên nút.
+// getDaily: null = chưa mở (chưa qua FTUE). Sang ngày thì tự ra bộ nhiệm vụ mới theo tình trạng hiện tại.
+export function getDaily(now = Date.now()) {
+  const unlocked = unlockedCount(loadProgress());
+  if (!dailyOpen(unlocked)) return null;
+  const saved = loadDaily();
+  const daily = rollDaily(saved, { unlocked, boosters: boostersUnlocked(unlocked - 1), idle: idleOpen(levelsCleared(loadProgress())), base: baseLeft(deco) }, now);
+  if (daily !== saved) saveDaily(daily);
+  return daily;
+}
+export function setDaily(daily) { saveDaily(daily); dispatchEvent(new Event('tasks')); }
+// Trạng thái game mà nhiệm vụ tiến trình đo (màn đã thắng, khu kế tiếp, số chỗ / mèo / kiểu đồ còn lại).
+export function questCtx() {
+  const progress = loadProgress(), area = nextArea(deco);
+  return { unlocked: unlockedCount(progress), cleared: levelsCleared(progress), maxLevel: LEVELS.length, nextArea: area, areaName: area && AREA_NAMES[area],
+    open: ['garden', ...AREA_ORDER].filter(id => areaOpen(deco, id)), basesLeft: basesLeft(deco), petsLeft: petsLeft(deco), stylesLeft: stylesLeft(deco) };
+}
+// null = chưa mở. Mỗi lần đọc đều đo lại tiến độ + lấp đủ nhiệm vụ.
+export function getQuests() {
+  const ctx = questCtx();
+  if (!questsOpen(ctx.unlocked)) return null;
+  const saved = loadQuests(), quests = fillQuests(saved, ctx);
+  if (quests !== saved) saveQuests(quests);
+  return quests;
+}
+export function setQuests(quests) { saveQuests(quests); dispatchEvent(new Event('tasks')); }
+export function noteEvent(event, n = 1) {
+  if (n <= 0) return;
+  const daily = getDaily(), quests = getQuests();
+  if (quests) { const next = noteQuests(quests, event, n); if (next !== quests) setQuests(next); }
+  if (!daily) return;
+  const result = countDaily(daily, event, n);
+  if (result.daily === daily) return;
+  setDaily(result.daily);
+  if (result.done.length) showToast(`Daily task done: ${result.done[0].text}!`);
 }

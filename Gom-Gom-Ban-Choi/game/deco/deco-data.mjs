@@ -23,28 +23,44 @@ export const zoneOpen = (zone, cleared) => cleared >= ZONES[zone].unlockAfter;
 export const GARDEN_EXPANSION = { unlockAfter: AREA_UNLOCK.garden2.level, name: 'Garden expansion' };
 export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter;
 
-// ===== Mở khu: đủ màn + đủ xu thì mua khu (trừ xu). Mỗi khu đi qua các trạng thái =====
-//   soon  : khu trước chưa mở              level : chưa thắng tới mốc màn
-//   coins : đủ màn, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
+// ===== Mở khu: xây đủ món gốc của khu trước + đủ xu thì mua khu (trừ xu). Không còn mốc màn. Mỗi khu đi qua các trạng thái =====
+//   soon  : khu trước chưa mở              build : khu trước còn chỗ chưa xây (món gốc chưa mua)
+//   coins : đã xây đủ, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
+// AREA_UNLOCK.level giờ chỉ là nhịp mong muốn cho tool mô phỏng kinh tế, game không chặn theo màn.
 export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
-export const AREA_NAMES = { garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
+export const AREA_NAMES = { garden: 'Garden', garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
 export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
 const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
-// table = bảng mốc mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng).
+// Khu đứng trước `area` trong thứ tự mở (khu đầu tiên đứng sau vườn gốc).
+export const areaBefore = area => AREA_ORDER[AREA_ORDER.indexOf(area) - 1] ?? 'garden';
+// Món gốc (chỗ đặt) của một khu, vườn gốc và vườn mở rộng tách riêng theo `area`.
+export const areaBases = area => CATALOG.filter(entry => isBase(entry) && (entry.area || entry.zone) === area);
+// [đã xây, tổng] món gốc của một khu.
+export const areaBuilt = (deco, area) => { const bases = areaBases(area); return [bases.filter(entry => isOwned(deco, entry)).length, bases.length]; };
+// table = bảng giá mở khu (mặc định AREA_UNLOCK; Level Editor truyền bảng đang sửa để mô phỏng). `cleared` giữ để tool cũ gọi được, không dùng.
 export function areaState(deco, area, cleared, table = AREA_UNLOCK) {
   if (areaOpen(deco, area)) return 'open';
-  const before = AREA_ORDER[AREA_ORDER.indexOf(area) - 1];
-  if (before && !areaOpen(deco, before)) return 'soon';
-  if (cleared < table[area].level) return 'level';
+  const before = areaBefore(area);
+  if (!areaOpen(deco, before)) return 'soon';
+  const [built, total] = areaBuilt(deco, before);
+  if (built < total) return 'build';
   return deco.coins >= table[area].cost ? 'ready' : 'coins';
 }
-// Khu kế tiếp chưa mở (null = đã mở hết).
+// Khu kế tiếp chưa mở (null = đã mở hết); nextAreas: tối đa n khu kế tiếp (Deco luôn cho thấy 2 khu).
 export const nextArea = deco => AREA_ORDER.find(area => !areaOpen(deco, area)) ?? null;
+export const nextAreas = (deco, n = 2) => AREA_ORDER.filter(area => !areaOpen(deco, area)).slice(0, n);
+// Số chỗ (món gốc phải mua) chưa xây ở MỌI khu, kể cả khu chưa mở (nhiệm vụ tiến trình "xây N chỗ" không vượt số này).
+export const basesLeft = deco => CATALOG.filter(entry => isBase(entry) && deco.zones[entry.zone] && !isOwned(deco, entry)).length;
+// Mèo còn nhận được ở Map (có mốc màn, chưa nhận) / kiểu đồ + tường / sàn bán ở Shop chưa mua, ở mọi khu (nhiệm vụ tiến trình).
+export const petsLeft = deco => CATALOG.filter(entry => entry.cat === 'cats' && entry.lock && !isCatClaimed(deco, entry.breed)).length;
+export const stylesLeft = deco => ZONE_IDS.reduce((sum, zone) => sum + (deco.zones[zone] ? shopCatalog(zone).filter(entry => !isOwned(deco, entry)).length : 0), 0);
+// Còn khu đang mở nào chưa xây đủ món gốc không (nhiệm vụ ngày "xây 1 chỗ").
+export const baseLeft = deco => ['garden', ...AREA_ORDER].some(area => { if (!areaOpen(deco, area)) return false; const [built, total] = areaBuilt(deco, area); return built < total; });
 export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
   const state = areaState(deco, area, cleared, table);
   if (state === 'open') return { error: 'Already open' };
-  if (state === 'soon') return { error: `Open the ${AREA_NAMES[AREA_ORDER[AREA_ORDER.indexOf(area) - 1]].toLowerCase()} first` };
-  if (state === 'level') return { error: `Beat level ${table[area].level} first` };
+  if (state === 'soon') return { error: `Open the ${AREA_NAMES[areaBefore(area)].toLowerCase()} first` };
+  if (state === 'build') return { error: `Build every spot in the ${AREA_NAMES[areaBefore(area)].toLowerCase()} first` };
   if (state === 'coins') return { error: `Need ${table[area].cost - deco.coins} more coins` };
   return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
 }

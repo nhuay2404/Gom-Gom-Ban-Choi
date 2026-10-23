@@ -5,12 +5,11 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { LEVELS } from '../data/levels.mjs';
 import { loadProgress, saveProgress, recordWin } from '../core/progression.mjs';
-import { COMEBACK_GIFT_MOVES, AREA_UNLOCK, GEM_REWARDS, OFFERS } from '../data/economy.mjs';
+import { COMEBACK_GIFT_MOVES, GEM_REWARDS, OFFERS } from '../data/economy.mjs';
 import { boostersUnlocked } from '../core/boosters.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, recordAttempt, noteDwell, boosterTip } from '../core/adaptive.mjs';
-import { AREA_ORDER, AREA_NAMES } from '../deco/deco-data.mjs';
-import { $, getDeco, setDeco, getBoosters, storeBoosters, BOOSTER_NAMES, refreshWallet, getWallet } from '../app/shared.js';
+import { $, getDeco, setDeco, getBoosters, storeBoosters, BOOSTER_NAMES, refreshWallet, getWallet, noteEvent } from '../app/shared.js';
 import { grantGems, triggerOffer, showOffer } from '../app/store.js';
 import { showRewarded, adReady } from '../app/ads.js';
 import { bonusCoins } from '../core/gems.mjs';
@@ -18,7 +17,7 @@ import { offerContinue } from './continue.js';
 import { now, state, menus } from './context.js';
 import { render } from './hud.js';
 import { renderTutorial } from './tutorial.js';
-import { levelsCleared, startLevel } from './play-controller.js';
+import { startLevel } from './play-controller.js';
 
 // Profile người chơi cho độ khó thích ứng (adaptive.mjs) + metric của ván đang chơi (ghi ở recordTry).
 export let profile = startVisit(loadProfile());
@@ -105,6 +104,9 @@ export async function endLevel(win, reason = '') {
   renderTutorial();
   const index = state.levelIndex, last = index === LEVELS.length - 1;
   const stars = win ? state.outcome.stars : 0;
+  // Nhiệm vụ: chơi xong 1 màn (thắng / thua), thắng không booster (chỉ tính khi đã mở booster).
+  noteEvent('play');
+  if (win && track && !track.boosters && boostersUnlocked(index)) noteEvent('cleanWin');
   let coinsEarned = 0;
   if (win) {
     const record = recordWin(loadProgress(), index, stars); // chỉ sao mới (vượt kỷ lục cũ) mới ra xu
@@ -119,8 +121,6 @@ export async function endLevel(win, reason = '') {
   const offer = win ? (coinsEarned && index + 1 === OFFERS.starter.starterLevel && triggerOffer('starter') && 'starter')
     : (lossStreakHere(index) >= OFFERS.rescue.afterLosses && triggerOffer('rescue') && 'rescue');
   const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
-  // Vừa tới mốc màn của một khu (thắng đúng màn mốc lần đầu): báo trong hộp kết quả (còn bước trang trí ở Deco).
-  const reachedArea = win && coinsEarned > 0 && AREA_ORDER.find(area => index + 1 === AREA_UNLOCK[area].level && levelsCleared() === AREA_UNLOCK[area].level);
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
@@ -144,7 +144,7 @@ export async function endLevel(win, reason = '') {
     };
     $('result-coins').after(button);
   }
-  const notes = [gems && `+${gems} gems`, reachedArea && `${AREA_NAMES[reachedArea]}: level goal reached!`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+  const notes = [gems && `+${gems} gems`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');
