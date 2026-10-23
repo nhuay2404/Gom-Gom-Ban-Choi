@@ -4,7 +4,7 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
-import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, shopCatalog } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
 import { coverCoins } from '../app/store.js';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
@@ -150,9 +150,8 @@ function stripEntries(deco) {
   const zone = deco.zone;
   if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats' && entry.id.startsWith('dog-') === (decoPet === 'dogs'));
   if (decoTab === 'walls' || decoTab === 'floors') return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
-  const bases = decoBases(zone).filter(base => !isOwned(deco, base));
-  const variants = shopCatalog(zone).filter(entry => entry.cat === 'furniture' && decoVisible(entry) && isOwned(deco, itemById(entry.slot)));
-  return [...bases, ...variants];
+  // Furniture: chỉ món gốc chưa xây (kiểu khác của món mua ở Shop → Decoration / chạm món trong cảnh)
+  return decoBases(zone).filter(base => !isOwned(deco, base));
 }
 // Thẻ bị cắt ở mép nào thì mép đó có dải mờ phủ lên (CSS .deco-cards-wrap.more-left / .more-right)
 // Chỉ hiện khi đã kéo qua (đứng yên ở đầu hàng thì không có dải mờ).
