@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: high
+tags: [book, liveops-vasiuk]
+---
 # Four layers of value and promotion rules
 
 Source: [[liveops-vasiuk-src]], ch. 5 pp. 46-48; ch. 9 p. 117.

@@ -1,3 +1,7 @@
+---
+type: source
+tags: [source]
+---
 # Source: Dark Patterns in the Design of Games
 
 Zagal, Björk, Lewis — Foundations of Digital Games (FDG) 2013, paper 06. 6-page academic paper.

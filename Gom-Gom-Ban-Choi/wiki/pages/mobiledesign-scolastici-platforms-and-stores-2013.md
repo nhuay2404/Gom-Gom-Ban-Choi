@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: low
+tags: [book, mobiledesign-scolastici]
+---
 # Mobile platforms and stores in 2013
 
 Source: [[mobiledesign-scolastici-src]], Ch. 1 (pp. 9-34), Ch. 11 (pp. 281-282), Ch. 12 (pp. 297-298).

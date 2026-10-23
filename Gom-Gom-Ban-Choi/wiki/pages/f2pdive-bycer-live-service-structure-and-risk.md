@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium
+tags: [book, f2pdive-bycer]
+---
 # F2P structure, live-service risk, and the future
 
 Source: [[f2pdive-bycer-src]], ch. 4 (4.1-4.4, 4.6-4.7), 11.6, 12.

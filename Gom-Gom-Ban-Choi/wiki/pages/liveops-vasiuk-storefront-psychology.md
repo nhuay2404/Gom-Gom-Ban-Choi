@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # Game storefront: Four Ps and nine psychological levers
 
 Source: [[liveops-vasiuk-src]], ch. 9, pp. 115-122.

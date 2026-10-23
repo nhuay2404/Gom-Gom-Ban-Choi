@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Spreadsheet modeling, docs and balancing
 
 Source: [[src-czerkawski-game-economy-design]], ch. 3 (pp. 51–87).

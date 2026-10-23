@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: low-medium
+tags: [book, cozydive-bycer]
+---
 # Cozy market and history (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 2.2, 3.1-3.3, 3.5-3.6, 6.

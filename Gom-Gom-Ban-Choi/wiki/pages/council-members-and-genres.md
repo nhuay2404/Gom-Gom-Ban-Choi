@@ -1,3 +1,7 @@
+---
+type: council
+tags: [council]
+---
 # Council: members, genres and how much each source can be trusted for which genre
 
 Purpose: the wiki sources often write about the same topic but disagree. A topic page can't tell you which book is right; it depends on **which genre the author was writing about**. This page defines the genres and each source's "home turf". The verdicts are in [[council-topic-verdicts]]; what that means for our game is in [[council-playbook-casual-deco]].

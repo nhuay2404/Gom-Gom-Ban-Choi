@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: mixed
+tags: [book, mobiledesign-scolastici]
+---
 # Pitch document and the Lilypads sample
 
 Source: [[mobiledesign-scolastici-src]], Ch. 12 (pp. 290-322), Ch. 2 (pp. 40-41).

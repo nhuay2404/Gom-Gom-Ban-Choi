@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Analytics and KPIs
 
 Source: [[src-czerkawski-game-economy-design]], ch. 5 (pp. 132–139).

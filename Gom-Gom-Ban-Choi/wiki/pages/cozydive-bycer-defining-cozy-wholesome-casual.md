@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: mixed
+tags: [book, cozydive-bycer]
+---
 # Defining cozy, wholesome and casual (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 2.1, 3.5, 5.1, 5.5, 6.2.

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Scheduling, WBS and estimation
 
 Source: [[prodtoolbox-chandler-src]], Ch7 (pp. 105-119); Ch18.2; Ch13.3.

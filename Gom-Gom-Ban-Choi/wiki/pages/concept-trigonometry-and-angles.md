@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Trigonometry, radians and field of view
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 5 (pp. 90–120).

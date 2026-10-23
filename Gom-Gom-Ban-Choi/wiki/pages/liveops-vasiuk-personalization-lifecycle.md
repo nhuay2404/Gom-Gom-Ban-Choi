@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: medium-high
+tags: [book, liveops-vasiuk]
+---
 # Personalization across the lifecycle: onboarding, retention, winback, monetization
 
 Source: [[liveops-vasiuk-src]], ch. 11, pp. 145-156.

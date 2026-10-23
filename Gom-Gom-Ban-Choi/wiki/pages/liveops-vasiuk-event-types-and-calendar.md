@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # Four event types and the LiveOps calendar
 
 Source: [[liveops-vasiuk-src]], ch. 4, pp. 37-40; calendar waste points ch. 12.

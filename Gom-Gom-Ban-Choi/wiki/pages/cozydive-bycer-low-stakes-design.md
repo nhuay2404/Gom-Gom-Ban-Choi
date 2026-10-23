@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: medium
+tags: [book, cozydive-bycer]
+---
 # Low-stakes design rules (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 2.2, 3.4 (energy penalty), 5.2, 5.4, 5.1.

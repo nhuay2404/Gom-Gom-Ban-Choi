@@ -1,3 +1,8 @@
+---
+type: book-source
+source: f2pdive-bycer
+tags: [book, f2pdive-bycer]
+---
 # Bycer, Game Design Deep Dive: Free-to-Play (2023)
 
 Source key: `f2pdive-bycer`. Joshua Bycer (Game-Wisdom critic), CRC Press, 12 chapters, ~180 pp; written end of 2021. Text read in full except front/back matter.

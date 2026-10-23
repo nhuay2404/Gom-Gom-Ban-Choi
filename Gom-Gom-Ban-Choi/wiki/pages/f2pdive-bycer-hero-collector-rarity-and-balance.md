@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: mixed
+tags: [book, f2pdive-bycer]
+---
 # Hero collectors, rarity tiers, and balancing paid content
 
 Source: [[f2pdive-bycer-src]], 8.5, 11.3, 9.4.4, 10.1.

@@ -1,3 +1,7 @@
+---
+type: source
+tags: [source]
+---
 # Source: GD Fresher — F2P Monetization Training (internal deck)
 
 Internal Game Design team training deck, in Vietnamese, 76 slides with long speaker notes. File: `AppData/Local/Temp/GD Fresher - F2P Monetization Training.pptx` (a temp path, not copied into `raw/`). Slide numbers below are the deck's own. The deck's data tags mention "data since 01/2026", AppsFlyer/TopOn/Sensor Tower 2025–2026 reports, and a reference game called ZF3D.

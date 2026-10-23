@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Process methods, the iron triangle, waterfall vs Scrum
 
 Source: [[prodtoolbox-chandler-src]], Ch4.7 (pp. 75-79); Ch11.5; Ch14.1, 14.5 sidebars.

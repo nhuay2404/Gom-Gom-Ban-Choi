@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # UI design and the diegesis model
 
 Source: [[mobiledesign-scolastici-src]], Ch. 3 (pp. 90-91), Ch. 7 (pp. 147-167), Ch. 12 (pp. 298-299, 311-317).

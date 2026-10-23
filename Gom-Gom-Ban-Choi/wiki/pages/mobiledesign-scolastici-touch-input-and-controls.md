@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: low-medium
+tags: [book, mobiledesign-scolastici]
+---
 # Touch input and mobile controls
 
 Source: [[mobiledesign-scolastici-src]], Ch. 6 (pp. 127-146), Ch. 7 (pp. 163, 166), Ch. 11 (p. 277-278).

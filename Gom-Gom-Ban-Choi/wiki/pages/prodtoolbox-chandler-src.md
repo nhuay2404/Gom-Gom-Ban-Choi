@@ -1,3 +1,9 @@
+---
+type: book-source
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # Source: Chandler, The Game Production Toolbox (2020)
 
 Heather Maxwell Chandler, *The Game Production Toolbox*, CRC Press, 2020 (xxiii + ~290 pp., 20 chapters, 6 parts). Book key `prodtoolbox-chandler`. Text extracted with pdftotext; the PDF is outside the repo.

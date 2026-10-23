@@ -1,3 +1,9 @@
+---
+type: book-source
+source: cozydive-bycer
+fit_g1: medium
+tags: [book, cozydive-bycer]
+---
 # Source: Bycer, *Game Design Deep Dive: Cozy Games* (CRC Press, 2026/27)
 
 Book key `cozydive-bycer`. Short (about 100 pages, ~42k words), the author's own words: the shortest book of the Deep Dive series, because "cozy" is a thematic genre, not a mechanical one. Bycer is a design critic/analyst (Game-Wisdom.com), explicitly a hardcore-action player who came to cozy as an outsider. Method: case studies of mostly indie PC/console games (Stardew Valley above all), a few quotes from Matthew Taylor (Wholesome Direct curator), and opinion. There is no data of his own beyond Steam achievement-rate observations.

@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # Price discrimination (segmentation by spending power)
 
 Source: [[src-gd-fresher-f2p-monetization-training]], slides 29–31 (notes cite Javier Barnes, Coase, EU Directive 2019/2161).

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: low
+tags: [book, mobiledesign-scolastici]
+---
 # Engines, languages and tech choices (2013)
 
 Source: [[mobiledesign-scolastici-src]], Ch. 5 (pp. 107-125), Ch. 8 (pp. 169-195), Ch. 2 (pp. 48-50).

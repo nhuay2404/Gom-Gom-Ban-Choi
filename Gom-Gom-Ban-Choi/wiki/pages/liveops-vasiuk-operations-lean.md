@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # Operations management: lean LiveOps
 
 Source: [[liveops-vasiuk-src]], ch. 12, pp. 159-172; Part IV intro p. 157.

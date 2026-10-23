@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: high
+tags: [book, f2pdive-bycer]
+---
 # The casual market and its limits
 
 Source: [[f2pdive-bycer-src]], 3.2, 5.1-5.3, 4.3, 4.4, 7.1.

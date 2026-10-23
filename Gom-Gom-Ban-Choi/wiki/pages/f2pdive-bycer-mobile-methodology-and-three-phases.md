@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: mixed
+tags: [book, f2pdive-bycer]
+---
 # Mobile methodology, daily loop and the three phases
 
 Source: [[f2pdive-bycer-src]], ch. 5.4-5.5, 4.2, 7.3, 9.4.1.

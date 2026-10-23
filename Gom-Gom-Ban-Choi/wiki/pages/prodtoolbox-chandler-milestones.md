@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # Milestones: prototype to post-release
 
 Source: [[prodtoolbox-chandler-src]], Ch4.5 (pp. 66-71, Fig. 4.4); Ch7.3; Ch3.3.1 sidebar; Ch14.

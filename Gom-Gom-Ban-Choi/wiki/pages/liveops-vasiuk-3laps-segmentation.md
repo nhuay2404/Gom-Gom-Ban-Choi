@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # 3 LAPs framework and player segmentation
 
 Source: [[liveops-vasiuk-src]], ch. 5-6, pp. 41-52; ch. 12 pp. 160-162.

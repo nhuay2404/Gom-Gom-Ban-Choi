@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium-high
+tags: [book, f2pdive-bycer]
+---
 # Battle passes and seasonal play
 
 Source: [[f2pdive-bycer-src]], 10.4, 6.4, 7.2, 9.4.4, 10.3 (Warframe, Path of Exile as non-pass contrast).

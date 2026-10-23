@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Goals, stakeholders, approvals and change requests
 
 Source: [[prodtoolbox-chandler-src]], Ch4.2-4.4, 4.6 (pp. 58-64, 70-74); Ch9.2.

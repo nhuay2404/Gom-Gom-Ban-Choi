@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: medium
+tags: [book, liveops-vasiuk]
+---
 # LiveOps toolset, analytics, experiments and data culture
 
 Source: [[liveops-vasiuk-src]], ch. 13-14, pp. 173-201.

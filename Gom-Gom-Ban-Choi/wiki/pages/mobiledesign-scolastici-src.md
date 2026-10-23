@@ -1,3 +1,8 @@
+---
+type: book-source
+source: mobiledesign-scolastici
+tags: [book, mobiledesign-scolastici]
+---
 # Source: Scolastici and Nolte, *Mobile Game Design Essentials* (Packt, Nov 2013)
 
 Book key: `mobiledesign-scolastici`. Text extracted from the PDF; chapter-level references (Ch. N, printed page numbers in brackets) are used on the topic pages.

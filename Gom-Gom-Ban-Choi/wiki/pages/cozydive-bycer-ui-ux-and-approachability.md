@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: mixed
+tags: [book, cozydive-bycer]
+---
 # UI/UX, onboarding and approachability (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 1.2, 4.1, 4.2, 4.5 (pp. 41-68).

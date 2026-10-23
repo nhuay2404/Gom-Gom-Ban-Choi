@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Progression systems
 
 Source: [[src-czerkawski-game-economy-design]], ch. 2 (pp. 30–39).

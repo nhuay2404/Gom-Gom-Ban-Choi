@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # IAP: packs, gift ratio, starter pack, purchase psychology
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 2 (slides 12–21), slide 16/27/28 for gift ratio.

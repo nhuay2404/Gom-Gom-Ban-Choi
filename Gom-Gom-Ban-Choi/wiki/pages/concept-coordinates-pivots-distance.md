@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Coordinates, pivots and distance
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 3–4 (pp. 59–89).

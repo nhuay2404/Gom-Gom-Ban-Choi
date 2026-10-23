@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: high
+tags: [book, prodtoolbox-chandler]
+---
 # Prototyping: types, audience, feedback
 
 Source: [[prodtoolbox-chandler-src]], Ch6 (pp. 95-102); Ch4.5.1-4.5.2; Ch9.4.3.

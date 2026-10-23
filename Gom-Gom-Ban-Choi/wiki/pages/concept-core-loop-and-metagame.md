@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Core loop and metagame
 
 Source: [[src-czerkawski-game-economy-design]], ch. 2 (pp. 23–29).

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: high
+tags: [book, f2pdive-bycer]
+---
 # Ethics of F2P and Player-Friendly Design (PFD)
 
 Source: [[f2pdive-bycer-src]], ch. 1, 9 (9.1-9.5), 12.3. The book's signature contribution; mostly opinion, anchored on documented examples and laws.

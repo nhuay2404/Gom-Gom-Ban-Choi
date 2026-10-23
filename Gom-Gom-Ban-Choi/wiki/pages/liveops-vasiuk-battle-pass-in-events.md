@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: medium
+tags: [book, liveops-vasiuk]
+---
 # Battle Pass as an engagement mechanic
 
 Source: [[liveops-vasiuk-src]], ch. 10, pp. 141-144; also p. 115.

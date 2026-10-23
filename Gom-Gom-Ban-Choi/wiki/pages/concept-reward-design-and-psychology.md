@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Reward design and psychology
 
 Sources: [[src-czerkawski-game-economy-design]] ch. 2 (pp. 40–49), ch. 4 (p. 105, 115–117).

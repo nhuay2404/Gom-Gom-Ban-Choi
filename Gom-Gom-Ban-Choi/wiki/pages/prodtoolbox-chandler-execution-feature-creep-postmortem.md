@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Execution: pipeline, documentation, reviews, feature creep, postmortems, builds, ratings
 
 Source: [[prodtoolbox-chandler-src]], Ch14 (pp. 191-204).

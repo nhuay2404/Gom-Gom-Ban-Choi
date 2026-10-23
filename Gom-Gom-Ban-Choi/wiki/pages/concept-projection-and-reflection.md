@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Vector projection and reflection
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 10 (pp. 223–243).

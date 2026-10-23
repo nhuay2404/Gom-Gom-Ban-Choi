@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Pacing and content control
 
 Sources: [[src-czerkawski-game-economy-design]] ch. 2 (pp. 39–40), ch. 4 (pp. 103–105), ch. 5 (pp. 119–128).

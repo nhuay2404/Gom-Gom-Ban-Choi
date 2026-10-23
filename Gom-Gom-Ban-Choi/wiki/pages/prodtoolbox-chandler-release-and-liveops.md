@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Release, marketing support and live operations
 
 Source: [[prodtoolbox-chandler-src]], Ch19 (pp. 259-264), Ch20 (pp. 265-273); Ch2.4.6-2.4.8; Ch4.5.5-4.5.7.

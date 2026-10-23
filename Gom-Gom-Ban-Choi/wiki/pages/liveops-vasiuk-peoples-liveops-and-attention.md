@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # People's LiveOps, attention time and game as a platform
 
 Source: [[liveops-vasiuk-src]], ch. 15-17 and Conclusion, pp. 205-223.

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Budget, burn rate and forecasts
 
 Source: [[prodtoolbox-chandler-src]], Ch8 (pp. 121-128); Ch1.3.7; Ch4.7.

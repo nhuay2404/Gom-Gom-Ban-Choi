@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # Engagement as a chain: loyalty, advocacy, UGC
 
 Source: [[liveops-vasiuk-src]], ch. 8, pp. 84-92.

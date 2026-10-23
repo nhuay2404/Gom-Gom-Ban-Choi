@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium
+tags: [book, f2pdive-bycer]
+---
 # History of F2P and the three mobile generations
 
 Source: [[f2pdive-bycer-src]], ch. 2-3, 5, 7, 10. Mostly documented history; the periodisation is the author's framing.

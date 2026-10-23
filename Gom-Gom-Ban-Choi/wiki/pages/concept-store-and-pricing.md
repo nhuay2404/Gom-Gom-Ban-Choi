@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # In-game store, bundles and pricing
 
 Source: [[src-czerkawski-game-economy-design]], ch. 4 (pp. 108–117), ch. 7 (pp. 166–168).

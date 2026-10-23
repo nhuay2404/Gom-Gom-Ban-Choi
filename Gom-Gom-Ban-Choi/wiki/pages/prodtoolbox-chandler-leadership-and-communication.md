@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # Team leadership, trust, communication, meetings, feedback, conflict
 
 Source: [[prodtoolbox-chandler-src]], Ch12 (pp. 167-182); Ch4.2; Ch7.

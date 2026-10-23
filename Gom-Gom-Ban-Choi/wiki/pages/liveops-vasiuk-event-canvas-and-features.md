@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # LiveOps Event Canvas and event features
 
 Source: [[liveops-vasiuk-src]], ch. 10, pp. 123-145.

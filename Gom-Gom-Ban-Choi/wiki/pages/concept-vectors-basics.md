@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Vectors and matrices basics
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 6 (pp. 121–164).

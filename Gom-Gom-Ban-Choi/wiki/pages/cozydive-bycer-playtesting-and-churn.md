@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: medium
+tags: [book, cozydive-bycer]
+---
 # Playtesting and churn (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 4.3-4.4 (pp. 50-60), 4.2, 5.2.

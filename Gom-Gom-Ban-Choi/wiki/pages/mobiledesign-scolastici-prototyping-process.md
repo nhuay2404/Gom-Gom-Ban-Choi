@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # Prototyping process
 
 Source: [[mobiledesign-scolastici-src]], Ch. 9 (pp. 197-227), Ch. 11 (pp. 272-274), Ch. 2 (p. 43), Ch. 12 (p. 296). The Unity Space Invaders code in Ch. 8-10 is tutorial only.

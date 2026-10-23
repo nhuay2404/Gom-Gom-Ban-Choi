@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: low-medium
+tags: [book, mobiledesign-scolastici]
+---
 # Indie team, roles and production habits
 
 Source: [[mobiledesign-scolastici-src]], Ch. 2 (pp. 35-64), plus Ch. 9 (p. 202) and Ch. 11 (p. 274).

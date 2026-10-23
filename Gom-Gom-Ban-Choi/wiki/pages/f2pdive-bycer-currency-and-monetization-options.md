@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: high
+tags: [book, f2pdive-bycer]
+---
 # Currency design and the menu of monetization options
 
 Source: [[f2pdive-bycer-src]], ch. 6.2-6.4.

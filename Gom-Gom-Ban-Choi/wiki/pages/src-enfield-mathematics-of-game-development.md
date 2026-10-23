@@ -1,3 +1,7 @@
+---
+type: source
+tags: [source]
+---
 # Source: Mathematics of Game Development — A Collection of Applied Lessons
 
 Jacob Enfield (George Mason University), CRC Press, 2024 (ISBN 9780367527716). Textbook for students; each chapter = one math idea + a small Unity/C# project + challenges + exercises. Prerequisite: algebra only.

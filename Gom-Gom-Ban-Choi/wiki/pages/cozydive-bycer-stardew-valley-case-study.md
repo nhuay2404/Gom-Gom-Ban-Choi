@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: mixed
+tags: [book, cozydive-bycer]
+---
 # Stardew Valley case study (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 3.4 (pp. 26-33), plus 5.4 references.

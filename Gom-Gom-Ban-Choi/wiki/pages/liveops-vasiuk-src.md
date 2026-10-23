@@ -1,3 +1,8 @@
+---
+type: book-source
+source: liveops-vasiuk
+tags: [book, liveops-vasiuk]
+---
 # Source: Vasiuk and Dubrovskyi, Running a Successful Live Service Game (2025)
 
 Book key `liveops-vasiuk`. CRC Press, 2025, ~225 pp. Subtitle "Live Outside of Game Updates". Authors are ex-Wargaming (World of Tanks / Warships / Blitz) LiveOps leaders; the "LiveOps" discipline there was founded in 2017. Text extracted by pdftotext; page numbers below are the book's printed pages. Front/back matter (copyright, acknowledgments, index) skipped.

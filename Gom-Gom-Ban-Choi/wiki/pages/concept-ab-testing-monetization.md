@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # Measuring and A/B testing monetization
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 5 (slides 53–59).

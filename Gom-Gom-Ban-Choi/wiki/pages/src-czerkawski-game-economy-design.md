@@ -1,3 +1,7 @@
+---
+type: source
+tags: [source]
+---
 # Source: Game Economy Design — Metagame, Monetization and Live Operations
 
 Charlie Czerkawski, CRC Press, 2024 (ISBN 9781032479903). Czerkawski is an economy/monetization designer (Shadowgun Legends, PAYDAY 3, Exoborne). Practical, F2P-leaning, aimed at students and juniors.

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: mixed
+tags: [book, cozydive-bycer]
+---
 # A relaxing progression curve (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 5.4 (pp. 83-94), 3.4, 5.2.

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Hiring, onboarding, picking leads, strike teams, remote work
 
 Source: [[prodtoolbox-chandler-src]], Ch10 (pp. 147-155), Ch11 (pp. 157-165).

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: low-medium
+tags: [book, liveops-vasiuk]
+---
 # Acquisition, media mix, partnerships and virality
 
 Source: [[liveops-vasiuk-src]], ch. 7, pp. 55-83.

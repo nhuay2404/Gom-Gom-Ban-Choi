@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # Offers, bundles and merchandising
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 3 (slides 22–43). Turbine Games' Merchandising Playbook (Emery) parts 1–2 are the deck's source for UI.

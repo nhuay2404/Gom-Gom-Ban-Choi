@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: mixed
+tags: [book, liveops-vasiuk]
+---
 # Content lifecycle and economy-steering techniques
 
 Source: [[liveops-vasiuk-src]], ch. 9, pp. 104-115.

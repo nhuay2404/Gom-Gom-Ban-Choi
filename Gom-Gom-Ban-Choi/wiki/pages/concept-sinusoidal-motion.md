@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Sinusoidal motion (sine/cosine for oscillation)
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 7 (pp. 165–186).

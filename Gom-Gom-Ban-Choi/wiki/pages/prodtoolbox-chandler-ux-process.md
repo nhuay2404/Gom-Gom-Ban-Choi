@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # UX process and working with a UX team
 
 Source: [[prodtoolbox-chandler-src]], Ch15 (pp. 205-213, written with Celia Hodent); Ch6.5; Ch18.1.

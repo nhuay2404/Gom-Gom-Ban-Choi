@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: medium
+tags: [book, liveops-vasiuk]
+---
 # Live service, value chain, forecasts and validation (Part I)
 
 Source: [[liveops-vasiuk-src]], ch. 1-3, pp. 9-34.

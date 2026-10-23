@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # Battle Pass, VIP/monthly card and gacha
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 4 (slides 44–52).

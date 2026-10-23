@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # Outsourcing, vendors and middleware
 
 Source: [[prodtoolbox-chandler-src]], Ch13 (pp. 183-188); Ch16.2.5, Ch17.6, Ch18.4.

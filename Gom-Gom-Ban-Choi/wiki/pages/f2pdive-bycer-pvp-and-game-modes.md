@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: low
+tags: [book, f2pdive-bycer]
+---
 # PvP, competition and late-game content
 
 Source: [[f2pdive-bycer-src]], 7.1-7.2, 7.4, 9.1, 11.3.

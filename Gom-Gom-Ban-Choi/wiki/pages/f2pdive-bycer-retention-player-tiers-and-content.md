@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium-high
+tags: [book, f2pdive-bycer]
+---
 # Retention, player tiers, content planning and collabs
 
 Source: [[f2pdive-bycer-src]], ch. 11 (11.1-11.5), 5.5, 7.4.

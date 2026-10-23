@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: mixed
+tags: [book, mobiledesign-scolastici]
+---
 # Business models and market (2013)
 
 Source: [[mobiledesign-scolastici-src]], Ch. 11 (pp. 281-286), Ch. 12 (pp. 297, 303, 309-311), Ch. 2 (pp. 50, 55).

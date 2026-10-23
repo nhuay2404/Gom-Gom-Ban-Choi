@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # Four keys to fun (Lazzaro) and theories of fun
 
 Source: [[mobiledesign-scolastici-src]], Ch. 11 (pp. 287-290), Ch. 10 (p. 232), Ch. 2 (p. 42).

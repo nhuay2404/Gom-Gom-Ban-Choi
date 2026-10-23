@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Audio production and localization
 
 Source: [[prodtoolbox-chandler-src]], Ch16 (pp. 215-230), Ch17 (pp. 231-244).

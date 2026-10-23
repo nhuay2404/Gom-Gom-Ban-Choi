@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Live operations, inflation and content planning
 
 Source: [[src-czerkawski-game-economy-design]], ch. 5 (pp. 118–132).

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Concept definition, SWOT and risk management
 
 Source: [[prodtoolbox-chandler-src]], Ch5 (pp. 81-94).

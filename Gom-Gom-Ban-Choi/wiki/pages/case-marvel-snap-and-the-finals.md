@@ -1,3 +1,7 @@
+---
+type: case-study
+tags: [case-study]
+---
 # Case studies: Marvel Snap and The Finals
 
 Source: [[src-czerkawski-game-economy-design]], ch. 7 (pp. 157–169). The author stresses these are deductions from public products, not insider knowledge.

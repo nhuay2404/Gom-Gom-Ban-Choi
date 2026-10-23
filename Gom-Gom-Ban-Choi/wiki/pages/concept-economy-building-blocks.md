@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Economy building blocks
 
 Source: [[src-czerkawski-game-economy-design]], ch. 1 (pp. 5–14).

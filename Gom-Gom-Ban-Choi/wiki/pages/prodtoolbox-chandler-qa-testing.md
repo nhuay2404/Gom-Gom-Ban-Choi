@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # QA testing: process, test plans, bug handling
 
 Source: [[prodtoolbox-chandler-src]], Ch18 (pp. 245-256); Ch14.7; Ch17.7.

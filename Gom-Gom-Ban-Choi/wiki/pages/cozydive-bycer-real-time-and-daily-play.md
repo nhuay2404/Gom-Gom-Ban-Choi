@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: medium
+tags: [book, cozydive-bycer]
+---
 # Real-time timers, daily play and the "conditioning" remark (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 3.1 (p. 12), 3.5 (p. 35), 5.2 (p. 76), 5.5 (p. 97), 5.4. Thin material, collected here because it bears on our energy/timer/daily-reward questions.

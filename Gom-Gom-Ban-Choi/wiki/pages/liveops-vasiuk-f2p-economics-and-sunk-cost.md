@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: liveops-vasiuk
+fit_g1: medium-high
+tags: [book, liveops-vasiuk]
+---
 # F2P economics, sunk cost, resources and the economist/monetizator split
 
 Source: [[liveops-vasiuk-src]], ch. 9, pp. 93-104.

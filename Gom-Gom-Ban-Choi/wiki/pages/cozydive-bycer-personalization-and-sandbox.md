@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: cozydive-bycer
+fit_g1: high
+tags: [book, cozydive-bycer]
+---
 # Personalization, sandbox and community (Bycer)
 
 Source: [[cozydive-bycer-src]] ch. 3.5, 5.3 (pp. 77-82), 3.2 (diorama games), 6.

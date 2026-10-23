@@ -1,3 +1,7 @@
+---
+type: council
+tags: [council]
+---
 # Council playbook for a casual match-3 + deco game
 
 Distilled from [[council-topic-verdicts]] using the genre weights in [[council-members-and-genres]]. These are **hypotheses to check against our own data**, not rules from the books. The user owns the design; setup, performance and SDKs belong to another team.

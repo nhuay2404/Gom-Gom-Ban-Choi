@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: low-medium
+tags: [book, f2pdive-bycer]
+---
 # Surprise mechanics: loot boxes, gacha, random progression
 
 Source: [[f2pdive-bycer-src]], ch. 8.1-8.4, 9.2, 9.4.4.

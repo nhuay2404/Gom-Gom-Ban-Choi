@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: medium
+tags: [book, prodtoolbox-chandler]
+---
 # Production roles, the producer, developer vs publisher
 
 Source: [[prodtoolbox-chandler-src]], Ch2 (pp. 25-41), Ch11.2-11.4, Preface.

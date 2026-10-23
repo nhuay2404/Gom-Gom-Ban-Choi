@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # Pure IAP, pure ads and hybrid; ethics and law
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 7 (slides 69–76).

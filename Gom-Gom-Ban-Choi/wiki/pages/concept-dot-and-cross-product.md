@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-enfield-mathematics-of-game-development
+tags: [concept]
+---
 # Dot product and cross product
 
 Source: [[src-enfield-mathematics-of-game-development]], ch. 8–9 (pp. 187–222).

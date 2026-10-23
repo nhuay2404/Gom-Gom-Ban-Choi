@@ -1,3 +1,7 @@
+---
+type: council
+tags: [council]
+---
 # Council: topic-by-topic verdicts
 
 Method and member profiles: [[council-members-and-genres]]. Our genre is **G1** (casual puzzle + meta layer; a cat match-3 with a deco home). Each verdict states the positions, the best-fit answer per genre, and a **confidence** (High/Medium/Low). Evidence tags: [D] measured, [P] consensus of several sources, [O] one author's opinion. Verdicts are editorial; source pages hold the details.

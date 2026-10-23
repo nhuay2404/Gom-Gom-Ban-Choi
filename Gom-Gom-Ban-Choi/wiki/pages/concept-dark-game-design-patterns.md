@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-zagal-dark-patterns-in-game-design
+tags: [concept]
+---
 # Dark game design patterns
 
 Source: [[src-zagal-dark-patterns-in-game-design]] (FDG 2013). Patterns are grouped by what the player is deceived into spending: **time, money, social capital**. Each group has guiding questions.

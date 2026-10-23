@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # In-app ads (IAA) design
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 6 (slides 60–68). Czerkawski covers ad types briefly in [[concept-monetization-strategies]].

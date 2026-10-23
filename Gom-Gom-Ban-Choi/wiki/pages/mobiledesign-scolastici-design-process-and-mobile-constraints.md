@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # Design process, dos and don'ts, and mobile constraints
 
 Source: [[mobiledesign-scolastici-src]], Ch. 11 (pp. 271-281), Ch. 2 (pp. 49-50).

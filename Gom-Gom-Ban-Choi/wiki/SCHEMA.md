@@ -17,3 +17,11 @@ Claude viết và duy trì `pages/`; người dùng chỉ thêm nguồn vào `ra
 - **Ingest**: đọc nguồn (PDF đọc theo khoảng ≤20 trang) → viết `pages/src-<nguồn>.md` → tạo/cập nhật các trang khái niệm liên quan (thường 5–15 trang) → cập nhật `index.md` → thêm mục vào `log.md`. Ghi rõ trang/chương nguồn cho mỗi ý.
 - **Query**: đọc `index.md`, đọc các trang liên quan, trả lời có trích `[[trang]]`. Câu trả lời đáng giữ thì lưu thành trang mới.
 - **Lint**: tìm mâu thuẫn, ý đã cũ, trang mồ côi, khái niệm được nhắc mà chưa có trang, liên kết gãy. Báo lại, sửa khi được đồng ý.
+
+## Frontmatter (cho Obsidian)
+Mỗi trang trong `pages/` mở đầu bằng khối `---`:
+- `type`: `source` | `concept` | `case-study` | `council` | `book-source` | `book-topic`
+- `source`: slug nguồn (trang `src-…` hoặc khoá sách như `liveops-vasiuk`)
+- `fit_g1` (chỉ trang `book-topic`): `high` | `medium-high` | `medium` | `low-medium` | `low` | `mixed` (mục (d) nêu nhiều mức khác nhau) — trích tự động từ mục "Stance and applicability", cần đọc trang để biết lý do
+- `tags`: danh sách, ví dụ `[book, liveops-vasiuk]`
+Trang mới phải có khối này. Vault Obsidian mở ở thư mục `wiki/`; `.obsidian/` được gitignore.

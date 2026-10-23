@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium
+tags: [book, f2pdive-bycer]
+---
 # Fun pain, pay-or-wait, energy and ads
 
 Source: [[f2pdive-bycer-src]], 3.3, 4.5, 5.4, 6.1, 6.4, 9.1.

@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: prodtoolbox-chandler
+fit_g1: mixed
+tags: [book, prodtoolbox-chandler]
+---
 # Business context: financing, revenue models, platforms, pitch, legal
 
 Source: [[prodtoolbox-chandler-src]], Ch1 (pp. 3-23), Ch3 (pp. 43-53), Ch9 (pp. 129-143).

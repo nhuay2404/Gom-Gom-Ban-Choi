@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: low-medium
+tags: [book, mobiledesign-scolastici]
+---
 # Audio for mobile games
 
 Source: [[mobiledesign-scolastici-src]], Ch. 2 (pp. 60-64), Ch. 4 (pp. 93-106), Ch. 11 (p. 278).

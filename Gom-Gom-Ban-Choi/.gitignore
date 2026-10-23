@@ -6,3 +6,6 @@
 
 # Sinh bằng npm run export:models (~70 MB)
 game/assets/models/models.json
+
+# Obsidian vault settings (wiki/ is opened as a vault)
+wiki/.obsidian/

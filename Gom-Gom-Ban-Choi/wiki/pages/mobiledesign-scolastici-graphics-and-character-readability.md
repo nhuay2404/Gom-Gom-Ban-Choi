@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # Graphics, character readability and resolution
 
 Source: [[mobiledesign-scolastici-src]], Ch. 3 (pp. 65-91), Ch. 11 (p. 277).

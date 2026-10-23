@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: f2pdive-bycer
+fit_g1: medium-high
+tags: [book, f2pdive-bycer]
+---
 # Value of time vs money, and fairness to free players
 
 Source: [[f2pdive-bycer-src]], 6.5, 9.3-9.4, 2.2.

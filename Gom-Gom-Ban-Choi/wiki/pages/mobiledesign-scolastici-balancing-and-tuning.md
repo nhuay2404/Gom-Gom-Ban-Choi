@@ -1,3 +1,9 @@
+---
+type: book-topic
+source: mobiledesign-scolastici
+fit_g1: medium
+tags: [book, mobiledesign-scolastici]
+---
 # Balancing, tuning and difficulty
 
 Source: [[mobiledesign-scolastici-src]], Ch. 10 (pp. 229-235), Ch. 11 (pp. 275, 283).

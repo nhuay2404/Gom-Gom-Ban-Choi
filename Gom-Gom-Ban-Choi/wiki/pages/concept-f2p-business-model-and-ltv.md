@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-gd-fresher-f2p-monetization-training
+tags: [concept]
+---
 # F2P business model, LTV and payer segments
 
 Source: [[src-gd-fresher-f2p-monetization-training]], stage 1 (slides 3–11).

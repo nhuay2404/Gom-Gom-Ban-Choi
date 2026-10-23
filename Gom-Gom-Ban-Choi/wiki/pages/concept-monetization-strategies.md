@@ -1,3 +1,8 @@
+---
+type: concept
+source: src-czerkawski-game-economy-design
+tags: [concept]
+---
 # Monetization strategies and components
 
 Source: [[src-czerkawski-game-economy-design]], ch. 4 (pp. 89–111), ch. 1 (pp. 14–18).
