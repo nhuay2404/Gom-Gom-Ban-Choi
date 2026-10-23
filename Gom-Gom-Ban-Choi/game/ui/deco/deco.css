@@ -131,6 +131,7 @@ body.deco-locked .deco-ambient{opacity:.5}/* Nút khoá giao diện: tròn, dư�
 #deco.ui-locked .deco-side>[data-key],#deco.ui-locked .deco-quests{visibility:hidden}
 /* Nút Quests ở Deco (menu/quests.js): như các nút cột trái, chấm số đỏ góc trên khi có nhiệm vụ chờ nhận */
 .deco-side .deco-quests{position:relative}
+.deco-quests .deco-quest-ico{display:block;flex:none;width:calc(34 * var(--u));height:calc(34 * var(--u));object-fit:contain;pointer-events:none}
 .deco-quests[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;right:calc(-5 * var(--u));top:calc(-5 * var(--u));min-width:calc(20 * var(--u));height:calc(20 * var(--u));
   padding:0 calc(5 * var(--u));box-sizing:border-box;border:calc(2 * var(--u)) solid #fff;border-radius:999px;background:#e0513f;color:#fff;
   font:900 calc(12 * var(--u))/calc(16 * var(--u)) var(--display);text-align:center}

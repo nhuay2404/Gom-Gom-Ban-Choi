@@ -981,12 +981,12 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     return [z.id, div];
   }));
   container.append(renderer.domElement);
-  // Nút về màn đang chơi: hiện khi người chơi lướt xa khỏi màn hiện tại (mũi tên chỉ hướng của màn đó), chạm là lăn về.
+  // Nút về màn đang chơi: hiện khi người chơi lướt xa khỏi màn hiện tại (ghim định vị), chạm là lăn về.
   const jump = document.createElement('button');
   jump.type = 'button';
   jump.className = 'map-jump';
   jump.hidden = true;
-  jump.innerHTML = '<i aria-hidden="true"></i><span></span>';
+  jump.innerHTML = '<img class="map-jump-pin" src="assets/img/map/current-level-pin.png" alt="" width="28" height="28"><span></span>';
   container.append(jump);
   const canvas = renderer.domElement;
   canvas.style.position = 'relative';
@@ -1629,12 +1629,12 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       fogMix.lerp(zoneFog[z.id], k);
     }
     scene.fog.color.copy(fogMix);
-    // Lướt xa màn đang chơi hơn JUMP_AWAY màn: hiện nút về, mũi tên lên / xuống theo hướng màn đó trên màn hình.
+    // Lướt xa màn đang chơi hơn JUMP_AWAY màn: hiện nút ghim để trở về màn hiện tại.
     const away = t - curIndex, show = Math.abs(away) > JUMP_AWAY;
     if (jump.hidden === show) jump.hidden = !show;
     if (show) {
-      jump.classList.toggle('up', away < 0);
       const label = `Level ${curIndex + 1}`;
+      jump.setAttribute('aria-label', `Return to ${label}`);
       if (jump.lastChild.textContent !== label) jump.lastChild.textContent = label;
     }
   }
