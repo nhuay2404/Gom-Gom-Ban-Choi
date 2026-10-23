@@ -1,0 +1,222 @@
+{
+  "source": "Original in-game textures, converted to PNG without repainting",
+  "cards": [
+    {
+      "file": "canopy/canopy-r1-c1.png",
+      "row": 1,
+      "column": 1,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "canopy/canopy-r1-c2.png",
+      "row": 1,
+      "column": 2,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "canopy/canopy-r1-c3.png",
+      "row": 1,
+      "column": 3,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "canopy/canopy-r2-c1.png",
+      "row": 2,
+      "column": 1,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "canopy/canopy-r2-c2.png",
+      "row": 2,
+      "column": 2,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "canopy/canopy-r2-c3.png",
+      "row": 2,
+      "column": 3,
+      "width": 384,
+      "height": 384
+    },
+    {
+      "file": "hydrangea/hydrangea-r1-c1.png",
+      "row": 1,
+      "column": 1,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "hydrangea/hydrangea-r1-c2.png",
+      "row": 1,
+      "column": 2,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "hydrangea/hydrangea-r1-c3.png",
+      "row": 1,
+      "column": 3,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "hydrangea/hydrangea-r2-c1.png",
+      "row": 2,
+      "column": 1,
+      "width": 320,
+      "height": 254
+    },
+    {
+      "file": "hydrangea/hydrangea-r2-c2.png",
+      "row": 2,
+      "column": 2,
+      "width": 320,
+      "height": 254
+    },
+    {
+      "file": "hydrangea/hydrangea-r2-c3.png",
+      "row": 2,
+      "column": 3,
+      "width": 320,
+      "height": 254
+    },
+    {
+      "file": "hydrangea/hydrangea-r3-c1.png",
+      "row": 3,
+      "column": 1,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "hydrangea/hydrangea-r3-c2.png",
+      "row": 3,
+      "column": 2,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "hydrangea/hydrangea-r3-c3.png",
+      "row": 3,
+      "column": 3,
+      "width": 320,
+      "height": 253
+    },
+    {
+      "file": "lavender/lavender-r1-c1.png",
+      "row": 1,
+      "column": 1,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r1-c2.png",
+      "row": 1,
+      "column": 2,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r1-c3.png",
+      "row": 1,
+      "column": 3,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r1-c4.png",
+      "row": 1,
+      "column": 4,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r2-c1.png",
+      "row": 2,
+      "column": 1,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r2-c2.png",
+      "row": 2,
+      "column": 2,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r2-c3.png",
+      "row": 2,
+      "column": 3,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r2-c4.png",
+      "row": 2,
+      "column": 4,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r3-c1.png",
+      "row": 3,
+      "column": 1,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r3-c2.png",
+      "row": 3,
+      "column": 2,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r3-c3.png",
+      "row": 3,
+      "column": 3,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r3-c4.png",
+      "row": 3,
+      "column": 4,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r4-c1.png",
+      "row": 4,
+      "column": 1,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r4-c2.png",
+      "row": 4,
+      "column": 2,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r4-c3.png",
+      "row": 4,
+      "column": 3,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "lavender/lavender-r4-c4.png",
+      "row": 4,
+      "column": 4,
+      "width": 256,
+      "height": 256
+    }
+  ]
+}
