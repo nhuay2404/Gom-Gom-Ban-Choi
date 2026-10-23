@@ -4,7 +4,7 @@ import * as ob from '../app/onboarding.js';
 import { categories, addArt as addCatArt } from '../ui/cat-art.mjs';
 import { playMeow } from '../ui/sound.mjs';
 import { claimCat, isCatClaimed } from '../deco/deco-data.mjs';
-import { $, reduceMotion, DEV_MODE, getDeco, setDeco } from '../app/shared.js';
+import { $, reduceMotion, DEV_MODE, getDeco, setDeco, noteEvent } from '../app/shared.js';
 import { isZoneOpen, isGardenExpanded, placeAreaMarker, renderZoneSwitch } from './areas.js';
 import { decoShown, onScenePick, placeDecoPop, placeDecoPins, clearDecoPick, closeDecoPop, renderDeco } from './deco-panel.js';
 import { runQC } from './dev-tools.js';
@@ -120,6 +120,7 @@ export const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thu
   room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
   room3d.onPick(onScenePick);
+  room3d.onCatEvent(kind => { if (kind === 'pet') noteEvent('pet'); }); // nhiệm vụ "vuốt mèo"
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
   room3d.onFrame(() => { if (!$('deco').hidden) { placeDecoPop(); placeDecoPins(); placeIdleCoin(); placeAreaMarker(); } });
   // Deco: kéo cảnh sang phòng khác thì hàng thẻ, nút cột trái và hàng chọn khu đổi theo phòng đang ở giữa (camera không lướt lại).

@@ -66,7 +66,9 @@
 .fh-feedback span{font-family:var(--display);font-size:calc(10 * var(--u));font-weight:800;line-height:1;color:#6b3329}
 .fh-feedback:active{translate:0 calc(2 * var(--u))}
 /* Nút đổi bộ quân (mèo / chó): cùng kiểu nút Feedback, ngay dưới; ảnh là quân mèo / chó thu nhỏ */
-.fh-skin{top:calc(317 * var(--u));padding:0;font:inherit;cursor:pointer}
+/* Nút Quests (nhiệm vụ tiến trình, menu/quests.js): cùng kiểu nút Feedback, ngay dưới */
+.fh-quests{top:calc(317 * var(--u));padding:0;font:inherit;cursor:pointer}
+.fh-skin{top:calc(380.5 * var(--u));padding:0;font:inherit;cursor:pointer}
 .fh-skin[hidden]{display:none}
 .fh-skin-art{display:block;width:calc(30 * var(--u));height:calc(30 * var(--u))}
 .fh-skin-art svg{width:100%;height:100%;overflow:visible}
@@ -97,3 +99,25 @@
 .fh-layer>.fh-play{left:calc(76 * var(--u));bottom:calc(96 * var(--u) + env(safe-area-inset-bottom));width:calc(244 * var(--u));height:calc(67 * var(--u));
   background-image:url('../../assets/img/home/play-button.png')}
 @media(prefers-reduced-motion:no-preference){.fh-layer>.fh-play{animation:play-breathe 1.8s ease-in-out infinite}}
+
+/* ===== Nhiệm vụ ngày (menu/daily.js): chấm số trên nút Daily + bảng nhiệm vụ. Hình tạm theo style hộp hỏi, chờ art Figma. ===== */
+.fh-daily[data-badge]:not([data-badge=""])::after,.fh-quests[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;right:calc(2 * var(--u));top:calc(2 * var(--u));min-width:calc(20 * var(--u));height:calc(20 * var(--u));
+  padding:0 calc(5 * var(--u));box-sizing:border-box;border:calc(2 * var(--u)) solid #fff;border-radius:999px;background:#e0513f;color:#fff;
+  font:900 calc(12 * var(--u))/calc(16 * var(--u)) var(--display);text-align:center}
+.daily-dialog .daily-reset{margin:-4px 0 8px;font-size:12px;font-weight:800;line-height:1.2}
+.daily-dialog .daily-body{display:flex;flex-direction:column;gap:10px;width:100%;margin-bottom:12px}
+.daily-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.daily-task{display:grid;grid-template-columns:1fr auto;grid-template-areas:"text act" "bar act";column-gap:10px;row-gap:3px;align-items:center;
+  padding:9px 10px 9px 12px;border-radius:16px;background:#fff8e4;border:2px solid var(--cream-edge);text-align:left}
+.daily-task.claimed{opacity:.6}
+.daily-text{grid-area:text;font-size:15px;font-weight:900;line-height:1.2;color:var(--cream-ink)}
+.daily-bar{grid-area:bar;position:relative;display:block;height:14px;border-radius:999px;background:#ead6a6;overflow:hidden}
+.daily-bar i{position:absolute;inset:0 auto 0 0;background:#7cc46a;border-radius:inherit;transition:width .3s}
+.daily-bar em{position:relative;display:block;font-size:10px;font-style:normal;font-weight:900;line-height:14px;text-align:center;color:var(--cream-ink)}
+.daily-task .daily-claim{grid-area:act;min-width:84px;padding:8px 12px;font-size:14px}
+.daily-claim:disabled{opacity:.45;cursor:default;transform:none}
+.daily-claim:not(:disabled){animation:daily-ready 1.2s ease-in-out infinite}
+@keyframes daily-ready{50%{scale:1.06}}
+.daily-done{grid-area:act;min-width:84px;font-size:22px;font-weight:900;color:#4f9a3f;text-align:center}
+@media (prefers-reduced-motion: reduce){.daily-claim:not(:disabled){animation:none}}
+.quests-dialog .quests-empty{margin:6px 0;font-size:14px;font-weight:800;line-height:1.4}

@@ -7,7 +7,7 @@ import { buyGemPack, buyBooster, buyOffer, coverCoins, contentsOf, timeLeft, OFF
 import { showRewarded, adReady, adsLeftToday } from '../app/ads.js';
 import { playSound } from '../ui/sound.mjs';
 import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock } from '../deco/deco-data.mjs';
-import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, priceTag, gemTag, getWallet, setWallet } from '../app/shared.js';
+import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, priceTag, gemTag, getWallet, setWallet, noteEvent } from '../app/shared.js';
 import { decoUnlockedLevel, isZoneOpen } from './areas.js';
 import { decoVisible, coin, thumbOf } from './deco-panel.js';
 import { room3d, applyRoom } from './room.js';
@@ -121,6 +121,7 @@ function buyDeco(entry) {
   if (next.error === 'Not enough coins') { coverCoins(entry.price, entry.name).then(ok => { if (ok && buyDeco(entry)) closeShopPreview(); }); return false; }
   if (next.error) { showToast(next.error); return false; }
   setDeco(next);
+  noteEvent('style');
   refreshWallet();
   playSound('reward');
   showToast(entry.slot ? `Bought ${entry.name}! Tap the ${itemById(entry.slot).name.toLowerCase()} in Deco to swap` : `Bought ${entry.name}! Tap the ${entry.cat === 'walls' ? ZONES[entry.zone].cats.walls.toLowerCase() : ZONES[entry.zone].cats.floors.toLowerCase()} in Deco to use it`);

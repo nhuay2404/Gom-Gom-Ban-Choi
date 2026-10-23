@@ -1,7 +1,7 @@
 // Xu tự sinh (core/idle.mjs): bong bóng xu trên đầu từng con mèo trong nhà, chạm để nhận. Sang Unity: IdleCoinView.
 import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../core/idle.mjs';
 import { playSound } from '../ui/sound.mjs';
-import { $, ask, showToast, getDeco, setDeco, refreshWallet } from '../app/shared.js';
+import { $, ask, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
 import { showRewarded, adReady } from '../app/ads.js';
 import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
@@ -94,6 +94,7 @@ function claimAll(withBonus) {
   setDeco({ ...deco, coins: deco.coins + bonus });
   playSound('reward');
   showToast(`+${total + bonus} coins!`);
+  noteEvent('idle');
   renderDeco();
   // Xu 3D bay từ từng con mèo vào thanh xu (deco-room.mjs flyCoins); số trên thanh giữ giá trị cũ tới khi xu chạm,
   // dự phòng 2.5 s nếu cảnh 3D không chạy.

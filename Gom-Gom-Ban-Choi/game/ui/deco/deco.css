@@ -117,7 +117,12 @@
 #deco.ui-locked .deco-help{display:none}
 #deco.ui-locked .deco-lock{color:#fff;border-color:#5b2e1c;background:#73392a;opacity:.25}
 #deco.ui-locked .deco-lock:active{opacity:.6}
-#deco.ui-locked .deco-side>[data-key]{visibility:hidden}
+#deco.ui-locked .deco-side>[data-key],#deco.ui-locked .deco-quests{visibility:hidden}
+/* Nút Quests ở Deco (menu/quests.js): như các nút cột trái, chấm số đỏ góc trên khi có nhiệm vụ chờ nhận */
+.deco-side .deco-quests{position:relative}
+.deco-quests[data-badge]:not([data-badge=""])::after{content:attr(data-badge);position:absolute;right:calc(-5 * var(--u));top:calc(-5 * var(--u));min-width:calc(20 * var(--u));height:calc(20 * var(--u));
+  padding:0 calc(5 * var(--u));box-sizing:border-box;border:calc(2 * var(--u)) solid #fff;border-radius:999px;background:#e0513f;color:#fff;
+  font:900 calc(12 * var(--u))/calc(16 * var(--u)) var(--display);text-align:center}
 #deco.ui-locked>.wallet-hud,#deco.ui-locked>.deco-dock,#deco.ui-locked>.deco-pins,#deco.ui-locked>.deco-pop{display:none}
 body.deco-locked #tabbar{display:none}
 body.deco-locked .hub-settings{opacity:.5}
@@ -273,3 +278,14 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 @keyframes idle-twinkle{0%,100%{opacity:0;scale:.2;rotate:0deg}45%{opacity:1;scale:1.15;rotate:25deg}70%{opacity:.8;scale:.8;rotate:45deg}}
 #deco.ui-locked>.idle-coin{display:none}
 .deco-dock .zone-switch.dragging{cursor:grabbing;user-select:none}
+
+/* Bảng "khu kế tiếp" (menu/areas.js): 2 khu kế tiếp, mỗi khu các bước mở (xây đủ món gốc khu trước, trả xu). */
+.area-sheet .area-row{width:100%;margin:0 0 8px;padding:10px 12px;border-radius:16px;background:#fff8e4;border:2px solid var(--cream-edge);text-align:left}
+.area-sheet .area-row[data-state=soon]{opacity:.6;border-style:dashed}
+.area-sheet .area-row[data-state=ready]{background:#e9f9df;border-color:#4f9a3f}
+.area-sheet .area-row h3{margin:0 0 4px;font-family:var(--display);font-size:18px;color:var(--cream-ink)}
+.area-sheet .area-row ul{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.area-sheet .area-row li{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--cream-ink)}
+.area-sheet .area-row li i{flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;border:2px solid var(--cream-deep);font-style:normal;font-size:11px;font-weight:900;color:#fff}
+.area-sheet .area-row li.done i{background:#4f9a3f;border-color:#4f9a3f}
+.area-sheet .area-row li b{margin-left:auto}

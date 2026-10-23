@@ -8,9 +8,11 @@ import { SAVE_KEYS, readText } from '../core/save.mjs';
 import { claimCat, isCatClaimed, catRewardsAt } from '../deco/deco-data.mjs';
 import { GEM_REWARDS } from '../data/economy.mjs';
 import { grantGems } from '../app/store.js';
-import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, setPieceSkin, dogSkinOpen } from '../app/shared.js';
+import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, setPieceSkin, dogSkinOpen, noteEvent } from '../app/shared.js';
 import { play } from './context.js';
 import { hideMenus, renderSkinButton } from './tabs.js';
+import { renderDailyButton } from './daily.js';
+import { renderQuestButtons } from './quests.js';
 import { clearDecoNew } from './deco-panel.js';
 import { markTab } from './settings.js';
 
@@ -94,6 +96,7 @@ export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld
     onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
     onClaim: (breed, index) => showCatReward(breed, () => {
       setDeco(claimCat(getDeco(), breed));
+      noteEvent('claimPet');
       const gems = grantGems(`pet:${breed}`, GEM_REWARDS.pet);
       if (gems) showToast(`New friend! +${gems} gems`);
       map3d.render(mapLevels());
@@ -178,6 +181,8 @@ export function showMap() {
   // Vừa chơi tới màn 30: bộ chó mở, tự đổi sang chó + báo một lần
   if (dogSkinOpen() && !readText(SAVE_KEYS.skin)) { setPieceSkin('dogs'); showToast('New! Dog pieces unlocked. Switch sets anytime with the button on the left.'); }
   renderSkinButton();
+  renderDailyButton();
+  renderQuestButtons();
   clearDecoNew();
   markTab('home');
   refreshWallet();

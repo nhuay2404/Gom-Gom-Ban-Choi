@@ -5,7 +5,7 @@ import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
-import { $, showToast, getDeco, setDeco, refreshWallet } from '../app/shared.js';
+import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
 import { coverCoins } from '../app/store.js';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
@@ -158,6 +158,7 @@ function buildBase(base) {
   refreshWallet();
   playSound('reward');
   showToast(`Built ${base.name}!`);
+  noteEvent('build');
   if (!room3d) buildFlatRooms();
   clearDecoPick();
   applyRoom(getDeco());
@@ -295,9 +296,11 @@ $('deco-pop-items').addEventListener('click', event => {
       // Thiếu xu: trả hết xu + bù gem rồi bấm lại đúng nút giá của món này (bảng có thể đã vẽ lại).
       if (bought.error === 'Not enough coins') return coverCoins(entry.price, entry.name).then(ok => ok && $('deco-pop-items').querySelector(`.deco-opt[data-id="${entry.id}"] .deco-opt-price`)?.click());
       if (bought.error) return showToast(bought.error);
+      noteEvent('style');
       const placed = useItem(bought, entry);
       popPreview = null;
       setDeco(placed.error ? bought : placed);
+      if (!placed.error) noteEvent('place');
       refreshWallet();
       playSound('reward');
       if (!room3d) buildFlatRooms();
@@ -324,6 +327,7 @@ $('deco-pop-items').addEventListener('click', event => {
     const next = useItem(deco, entry);
     if (next.error) return showToast(next.error);
     setDeco(next);
+    noteEvent('place');
   }
   playSound('pick');
   if (!room3d) buildFlatRooms();
