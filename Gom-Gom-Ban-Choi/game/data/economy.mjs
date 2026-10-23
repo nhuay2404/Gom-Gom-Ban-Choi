@@ -32,7 +32,7 @@ export const REWARD_BASE = remote('REWARD_BASE', 50);
 export const REWARD_STEP = remote('REWARD_STEP', 50);
 export const REWARD_GROWTH = remote('REWARD_GROWTH', .1);
 export const REWARD_JITTER = remote('REWARD_JITTER', .8);
-// Thưởng tăng mãi (0) để màn sau luôn đáng hơn màn trước; game còn thêm màn + khu sau màn 100, giá khu mới theo đường tăng ZONE_PRICE_MULT.
+// Thưởng tăng mãi (0) để màn sau luôn đáng hơn màn trước; game còn thêm màn + khu sau màn 100, giá khu mới tự theo R (ZONE_PRICING).
 // Đặt > 0 (vd. 80) thì từ màn đó thưởng thôi tăng: chỉ dùng khi lâu chưa có khu mới mà xu dư quá nhiều.
 export const REWARD_FLAT_FROM = remote('REWARD_FLAT_FROM', 0);
 
@@ -153,30 +153,20 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 // 3. ĐỒ TRANG TRÍ (DECO) — giá + màn mở khoá của từng món
 // -------------------------------------------------------------------------------------------------------------------
 //  price : giá xu. 0 = có sẵn miễn phí (không cần mua).
-//  lock  : phải mở tới màn này (thắng màn lock − 1) thì mới mua được. Bỏ trống = mua được ngay khi khu đó mở.
-//          Khu mở khi thắng: Vườn = từ đầu · Vườn mở rộng = màn 10 · Phòng khách = màn 20 · Phòng ngủ = màn 30 · Bếp = màn 40.
-//  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá / lock với món gốc.
+//  price thật = price × hệ số của khu (ZONE_PRICING ở trên). Đồ không khoá theo màn (23/10): khu mở là mua được mọi món, chỉ cần đủ xu.
+//  lock  : CHỈ cho thú cưng = màn thưởng, nhận ở Map.
+//  Mỗi món đồ có 1–2 "kiểu khác" (vd. Tree stump → Hay bale, Apple crate): kiểu khác lấy CÙNG giá với món gốc.
 //  Muốn kiểu khác có giá riêng thì thêm một dòng cho id của nó, vd.  'stump-hay': { price: 120 },
 //  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
-// Mở khu (progression kiểu unlock): Vườn có sẵn; các khu sau mở theo thứ tự, mỗi khu cần ĐỦ CẢ HAI:
-//   level : đã thắng tới màn này,
-//   cost  : ví có đủ bấy nhiêu xu — mở khu là mua khu, trừ đúng số xu này. garden2 = Vườn mở rộng (cùng khu vườn, thêm đồi + đồ area 'garden2').
-export const AREA_UNLOCK = remote('AREA_UNLOCK', {
-  garden2: { level: 10, cost: 550 },
-  living: { level: 20, cost: 1550 },
-  bedroom: { level: 30, cost: 2550 },
-  kitchen: { level: 40, cost: 3550 },
-  bathroom: { level: 50, cost: 4550 },
-  backyard: { level: 60, cost: 5550 },
-  kinder: { level: 70, cost: 6550 },
-});
-
-// Hệ số giá theo khu: giá thật = price trong bảng DECO × hệ số khu (làm tròn tới 10 xu). Khu mở sau đắt hơn để chỗ tiêu xu
-// tăng cùng nhịp với xu thưởng. garden2 = phần vườn mở rộng (món có area 'garden2'). 1 = giữ nguyên giá trong bảng.
-// 23/10/2026: phòng ngủ → nhà trẻ tăng giá để bù xu từ nhiệm vụ ngày + Quests (≈ +50% xu cả game), dò bằng mô phỏng cho người chơi
-// trung bình mở khu ở gần đúng mốc cũ (phòng tắm ~màn 50, sân sau ~60, nhà trẻ ~74, xây đủ món gốc ~86). Phòng ngủ tăng mạnh vì món
-// gốc của nó khoá tới màn 36–39 (DECO lock): người chơi dồn xu trong lúc chờ, giá cao hút bớt khoản đó.
-export const ZONE_PRICE_MULT = remote('ZONE_PRICE_MULT', { garden: 1.6, garden2: 2.85, living: 7.7, bedroom: 34.5, kitchen: 53, bathroom: 55, backyard: 70, kinder: 111 });
+// Giá khu theo công thức (23/10, một bản, không qua Remote Config). Mở khu KHÔNG theo màn: xây đủ món gốc khu trước + trả xu (deco-data.mjs
+// unlockArea); người chơi thấy trước giá ở bảng "2 khu kế tiếp". Khu thứ n (vườn 2 = 1, phòng khách = 2 … theo AREA_ORDER ở deco-data.mjs) có giá
+// CỐ ĐỊNH tính từ R(10n) = xu thắng màn 10n (bỏ dao động). 10n chỉ là nhịp thiết kế (mỗi khu ~pace màn) và nhịp cho tool mô phỏng, game không khoá:
+//   giá mở khu        = unlockR × R(10n), làm tròn 50 xu
+//   tổng giá món gốc  = k × R(10n): k = kEarly cho `early` khu đầu (mở nhanh, làm quen deco), kLate từ khu sau. Từng món (và tường / sàn của khu)
+//                       nhân cùng hệ số nên giữ tỉ lệ giá trong bảng DECO.
+//   Vườn gốc (khu hướng dẫn) = giá DECO × gardenMult.
+// Thêm khu mới: thêm id vào AREA_ORDER + món ở DECO, giá tự ra. Bảng giá đã tính: deco-data.mjs AREA_UNLOCK / ZONE_PRICE_MULT, `npm run economy`.
+export const ZONE_PRICING = { pace: 10, unlockR: 1.3, kEarly: 13, early: 2, kLate: 30, gardenMult: 1.6 };
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
@@ -186,20 +176,20 @@ export const DECO = remote('DECO', {
   lantern:               { price: 100 },              // Lantern
   sandbox:               { price: 120 },              // Sandbox
   cathouse:              { price: 150 },              // Cat house
-  pond:                  { price: 200, lock: 3 },     // Koi pond
-  hammock:               { price: 240, lock: 4 },     // Hammock
-  birdbath:              { price: 180, lock: 6 },     // Bird bath
-  bench:                 { price: 220, lock: 8 },     // Bench
+  pond:                  { price: 200 },     // Koi pond
+  hammock:               { price: 240 },     // Hammock
+  birdbath:              { price: 180 },     // Bird bath
+  bench:                 { price: 220 },     // Bench
   // --- Vườn — tường / rào ---
   'fence-white':         { price: 0 },                // White picket
   'fence-wood':          { price: 100 },              // Wood fence
   'fence-hedge':         { price: 100 },              // Hedge
-  'fence-stone':         { price: 100, lock: 7 },     // Stone wall
+  'fence-stone':         { price: 100 },     // Stone wall
   // --- Vườn — sàn / nền ---
   'ground-grass':        { price: 0 },                // Grass
   'ground-clover':       { price: 100 },              // Clover
   'ground-meadow':       { price: 100 },              // Meadow
-  'ground-path':         { price: 100, lock: 5 },     // Stone path
+  'ground-path':         { price: 100 },     // Stone path
   // --- Phòng khách — đồ ---
   rug:                   { price: 0 },                // Pink rug
   armchair:              { price: 120 },              // Armchair
@@ -229,14 +219,14 @@ export const DECO = remote('DECO', {
   // --- Phòng ngủ — đồ ---
   bed:                   { price: 0 },                // Cozy bed
   bedrug:                { price: 0 },                // Fluffy rug
-  laundry:               { price: 100, lock: 36 },    // Laundry basket
-  bedside:               { price: 120, lock: 36 },    // Bedside table
-  desk:                  { price: 260, lock: 36 },    // Gaming desk
-  chair:                 { price: 180, lock: 37 },    // Gaming chair
-  closet:                { price: 220, lock: 37 },    // Closet
-  plushie:               { price: 150, lock: 38 },    // Teddy bear
-  catsteps:              { price: 240, lock: 39 },    // Wall steps
-  mirror:                { price: 200, lock: 39 },    // Floor mirror
+  laundry:               { price: 100 },    // Laundry basket
+  bedside:               { price: 120 },    // Bedside table
+  desk:                  { price: 260 },    // Gaming desk
+  chair:                 { price: 180 },    // Gaming chair
+  closet:                { price: 220 },    // Closet
+  plushie:               { price: 150 },    // Teddy bear
+  catsteps:              { price: 240 },    // Wall steps
+  mirror:                { price: 200 },    // Floor mirror
   // --- Phòng ngủ — tường / rào ---
   'bwall-lavender':      { price: 0 },                // Lavender
   'bwall-blush':         { price: 100 },              // Blush
@@ -283,7 +273,7 @@ export const DECO = remote('DECO', {
   'kfloor-slate-tiles':  { price: 100 },              // Slate tiles
   'kfloor-tatami':       { price: 100 },              // Tatami
   'kfloor-bamboo':       { price: 100 },              // Bamboo
-  // --- Sân sau (mở theo AREA_UNLOCK.backyard; giá nhân ZONE_PRICE_MULT.backyard) — đồ ---
+  // --- Sân sau (khu thứ 6; giá theo ZONE_PRICING) — đồ ---
   pool:                  { price: 0 },                // Swimming pool (bể có sẵn khi mở khu)
   greenhouse:            { price: 0 },                // Greenhouse
   lounger:               { price: 180 },              // Sun lounger
@@ -301,7 +291,7 @@ export const DECO = remote('DECO', {
   'yground-grass':       { price: 0 },                // Grass
   'yground-clover':      { price: 100 },              // Clover
   'yground-meadow':      { price: 100 },              // Meadow
-  // --- Trường mẫu giáo (mở theo AREA_UNLOCK.kinder; giá nhân ZONE_PRICE_MULT.kinder) — đồ ---
+  // --- Trường mẫu giáo (khu thứ 7; giá theo ZONE_PRICING) — đồ ---
   kdesk:                 { price: 0 },                // Kids desks (lớp có sẵn bàn khi mở khu)
   kplayset:              { price: 0 },                // Slide tower
   kboard:                { price: 160 },              // Chalkboard
@@ -319,7 +309,7 @@ export const DECO = remote('DECO', {
   'kground-grass':       { price: 0 },                // Grass
   'kground-clover':      { price: 100 },              // Clover
   'kground-path':        { price: 100 },              // Stone path
-  // --- Phòng tắm (mở theo AREA_UNLOCK.bathroom; giá nhân ZONE_PRICE_MULT.bathroom) — đồ ---
+  // --- Phòng tắm (khu thứ 5; giá theo ZONE_PRICING) — đồ ---
   toilet:                { price: 0 },                // Toilet
   vanity:                { price: 0 },                // Sink vanity
   bathtub:               { price: 300 },              // Clawfoot tub
@@ -346,17 +336,17 @@ export const DECO = remote('DECO', {
   'tfloor-checker':      { price: 100 },              // Checkerboard
   'tfloor-teak':         { price: 100 },              // Teak
   'tfloor-slate-tiles':  { price: 100 },              // Slate tiles
-  // --- Vườn mở rộng (vườn 2: mở khi thắng màn 10) — đồ ---
-  windmill:              { price: 0, lock: 11 },      // Windmill
-  sunflowers:            { price: 0, lock: 11 },      // Sunflowers
-  clothesline:           { price: 200, lock: 11 },    // Clothesline
-  campfire:              { price: 260, lock: 12 },    // Campfire
-  kite:                  { price: 220, lock: 13 },    // Kite
-  stream:                { price: 280, lock: 14 },    // Little stream
-  swingtree:             { price: 320, lock: 15 },    // Swing tree
-  slide:                 { price: 340, lock: 17 },    // Slide
-  birdhouse:             { price: 240, lock: 16 },    // Birdhouse
-  picnic:                { price: 300, lock: 18 },    // Picnic table
+  // --- Vườn mở rộng (vườn 2, khu thứ 1) — đồ ---
+  windmill:              { price: 0 },      // Windmill
+  sunflowers:            { price: 0 },      // Sunflowers
+  clothesline:           { price: 200 },    // Clothesline
+  campfire:              { price: 260 },    // Campfire
+  kite:                  { price: 220 },    // Kite
+  stream:                { price: 280 },    // Little stream
+  swingtree:             { price: 320 },    // Swing tree
+  slide:                 { price: 340 },    // Slide
+  birdhouse:             { price: 240 },    // Birdhouse
+  picnic:                { price: 300 },    // Picnic table
   // --- Mèo (giá 0; lock = màn thưởng, nhận ở Map; không lock = có sẵn từ đầu) ---
   'cat-orange':          { price: 0 },                // Orange cat
   'cat-gray':            { price: 0, lock: 7 },       // Gray cat
