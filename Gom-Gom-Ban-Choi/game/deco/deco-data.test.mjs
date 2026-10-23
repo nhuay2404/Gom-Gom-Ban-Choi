@@ -17,14 +17,14 @@ test('save mới: xu khởi tạo = số truyền vào, bắt đầu ở vườn
   assert.deepEqual(Object.keys(deco.zones), ['garden', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder']);
 });
 
-test('vườn mở rộng (thắng màn 10): cùng khu vườn, đồ mới nằm trong danh mục vườn, khoá từ màn 11', () => {
+test('vườn mở rộng: cùng khu vườn, đồ mới nằm trong danh mục vườn, không khoá theo màn', () => {
   assert.equal(gardenExpanded(9), false);
   assert.equal(gardenExpanded(10), true);
   const ext = CATALOG.filter(e => e.area === 'garden2');
   assert.ok(ext.length >= 16, 'đồ phần mở rộng + phương án thay thế');
   ext.forEach(e => {
     assert.equal(e.zone, 'garden', `${e.id} thuộc vườn`);
-    assert.ok(e.lock >= 11, `${e.id} khoá từ màn 11`);
+    assert.equal(e.lock, undefined, `${e.id} không khoá theo màn`);
     assert.ok(catalogFor('garden', e.cat).includes(e), `${e.id} có trong danh mục vườn`);
   });
   assert.equal(catalogFor('garden', 'walls').filter(e => e.area).length, 0, 'không có rào riêng');
@@ -109,7 +109,7 @@ test('phần vườn mở rộng: khe giữa các vật cản (cả đồi) đ�
   }
 });
 
-test('mua -> đặt -> gỡ; thiếu xu và khoá level báo lỗi', () => {
+test('mua -> đặt -> gỡ; thiếu xu báo lỗi; đồ không khoá theo màn', () => {
   setStorageBackend(memoryStore());
   let deco = loadDeco(200);
   const stump = itemById('stump');
@@ -119,7 +119,7 @@ test('mua -> đặt -> gỡ; thiếu xu và khoá level báo lỗi', () => {
   assert.equal(itemStatus(deco, stump, 1), 'using');
   deco = applyAction(deco, stump, 1);
   assert.equal(itemStatus(deco, stump, 1), 'owned');
-  assert.match(applyAction(deco, itemById('pond'), 1).error, /level 3/);
+  assert.notEqual(itemStatus(deco, itemById('pond'), 1), 'locked');
   assert.equal(applyAction({ ...deco, coins: 0 }, itemById('bench'), 10).error, 'Not enough coins');
 });
 
@@ -234,7 +234,7 @@ test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua v�
 });
 
 test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ kế đã trừ tiền mở khu / giá món gốc đã mở giảm dần qua từng lô 10 màn tới khu cuối (khu sau khó mua đủ hơn)', async () => {
-  const { AREA_UNLOCK } = await import('../data/economy.mjs');
+  const { AREA_UNLOCK } = await import('./deco-data.mjs');
   const sum = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => levelReward(from - 1 + i)).reduce((a, b) => a + b, 0);
   const base = (zone, area) => CATALOG.filter(e => e.zone === zone && e.cat === 'furniture' && !e.slot && e.area === area).reduce((a, e) => a + e.price, 0);
   for (let n = 1; n < 100; n++) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
@@ -253,7 +253,7 @@ test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ k�
 });
 
 test('mở khu: theo thứ tự, cần xây đủ món gốc khu trước + đủ xu (không theo màn), mở là trừ xu', async () => {
-  const { AREA_UNLOCK } = await import('../data/economy.mjs');
+  const { AREA_UNLOCK } = await import('./deco-data.mjs');
   setStorageBackend(memoryStore());
   const { cost } = AREA_UNLOCK.garden2;
   const buildAll = (deco, area) => ({ ...deco, zones: { ...deco.zones, [area === 'garden2' ? 'garden' : area]: { ...deco.zones[area === 'garden2' ? 'garden' : area],

@@ -1,11 +1,20 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../data/tuning.mjs';
-import { DECO, ZONE_PRICE_MULT, AREA_UNLOCK } from '../data/economy.mjs';
+import { DECO, ZONE_PRICING, REWARD_BASE, REWARD_STEP, REWARD_GROWTH } from '../data/economy.mjs';
+import { rewardFor } from '../core/reward.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../core/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
-// Thứ tự mở khu: Vườn (từ đầu) -> Vườn 2 -> Phòng khách -> Phòng ngủ -> Bếp. Mốc màn + giá mở ở economy.mjs AREA_UNLOCK.
+// Thứ tự mở khu sau vườn gốc. Khu thứ n (vị trí trong danh sách + 1) có giá cố định theo R(10n) — economy.mjs ZONE_PRICING.
+export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
+// R của màn L, bỏ dao động (giá khu không lệch theo từng màn).
+const paceReward = L => rewardFor(L - 1, { REWARD_BASE, REWARD_STEP, REWARD_GROWTH });
+// Giá mở từng khu: { level: màn mốc thiết kế 10n (chỉ là nhịp cho tool mô phỏng, game không khoá theo màn), cost: unlockR × R(10n) làm tròn 50 }.
+export const AREA_UNLOCK = Object.fromEntries(AREA_ORDER.map((area, i) => {
+  const level = ZONE_PRICING.pace * (i + 1);
+  return [area, { level, cost: Math.round(ZONE_PRICING.unlockR * paceReward(level) / 50) * 50 }];
+}));
 export const ZONES = {
   garden: { name: 'Garden', unlockAfter: 0, cats: { furniture: 'Garden', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
   living: { name: 'Living room', unlockAfter: AREA_UNLOCK.living.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
@@ -27,7 +36,6 @@ export const gardenExpanded = cleared => cleared >= GARDEN_EXPANSION.unlockAfter
 //   soon  : khu trước chưa mở              build : khu trước còn chỗ chưa xây (món gốc chưa mua)
 //   coins : đã xây đủ, ví chưa đủ xu (AREA_UNLOCK.cost)    ready : đủ cả hai, chạm "khánh thành" là mua + mở    open : đã mở
 // AREA_UNLOCK.level giờ chỉ là nhịp mong muốn cho tool mô phỏng kinh tế, game không chặn theo màn.
-export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
 export const AREA_NAMES = { garden: 'Garden', garden2: 'Garden expansion', living: 'Living room', bedroom: 'Bedroom', kitchen: 'Kitchen', bathroom: 'Bathroom', backyard: 'Backyard', kinder: 'Kindergarten' };
 export const areaOpen = (deco, area) => area === 'garden' || (deco.unlocked ?? []).includes(area);
 const pay = (deco, price) => ({ ...deco, coins: deco.coins - price });
@@ -460,13 +468,23 @@ VARIANTS.forEach(([slot, id, name, color]) => {
 });
 // Giá thật = giá trong bảng DECO × hệ số khu, làm tròn 10 xu (mult = ZONE_PRICE_MULT; Level Editor truyền bảng đang sửa).
 export const zonePrice = (entry, mult) => Math.round(entry.basePrice * (mult[entry.area || entry.zone] ?? 1) / 10) * 10;
-// Giá + mốc mở khoá từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
+// Giá gốc + khoá (chỉ thú cưng) từ economy.mjs: dòng của chính món, không có thì lấy dòng của món gốc (kiểu khác đồng giá món gốc).
 for (const entry of CATALOG) {
   const row = DECO[entry.id] || DECO[entry.slot] || {};
   entry.basePrice = row.price ?? 0;
-  entry.price = zonePrice(entry, ZONE_PRICE_MULT);
   if (row.lock) entry.lock = row.lock;
 }
+// Hệ số giá mỗi khu (ZONE_PRICING): khu thứ n → tổng giá món gốc = k × R(10n), chia cho tổng giá gốc món gốc của khu trong bảng DECO.
+// Lọc món gốc tại chỗ (isBase khai ở dưới, chưa có lúc file chạy tới đây).
+const rawBaseSum = area => CATALOG.filter(e => e.cat === 'furniture' && !e.slot && (e.area || e.zone) === area).reduce((sum, e) => sum + e.basePrice, 0);
+export const ZONE_PRICE_MULT = {
+  garden: ZONE_PRICING.gardenMult,
+  ...Object.fromEntries(AREA_ORDER.map((area, i) => {
+    const k = i < ZONE_PRICING.early ? ZONE_PRICING.kEarly : ZONE_PRICING.kLate;
+    return [area, k * paceReward(AREA_UNLOCK[area].level) / rawBaseSum(area)];
+  })),
+};
+for (const entry of CATALOG) entry.price = zonePrice(entry, ZONE_PRICE_MULT);
 export const itemById = id => CATALOG.find(entry => entry.id === id);
 // Chỗ đặt của một món (món gốc: chính nó; phương án thay thế: món gốc).
 export const slotOf = entry => entry.slot || entry.id;
