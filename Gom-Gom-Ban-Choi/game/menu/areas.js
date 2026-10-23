@@ -1,11 +1,11 @@
 // Khu (vườn, phòng khách, phòng ngủ, bếp...): chuyển khu, thẻ "khu kế tiếp" + bảng mở khu (đủ màn → tiêu xu → khánh thành).
 // Sang Unity: AreaSwitcher + AreaUnlockPanel.
 import { loadProgress, unlockedCount } from '../core/progression.mjs';
-import { AREA_UNLOCK, GEM_REWARDS } from '../data/economy.mjs';
+import { GEM_REWARDS } from '../data/economy.mjs';
 import { grantGems, triggerOffer, showOffer, coverCoins } from '../app/store.js';
 import { playSound } from '../ui/sound.mjs';
 import { readText } from '../core/save.mjs';
-import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, areaBefore, areaBuilt, nextArea, nextAreas, unlockArea } from '../deco/deco-data.mjs';
+import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, areaBefore, areaBuilt, nextArea, nextAreas, unlockArea, AREA_UNLOCK } from '../deco/deco-data.mjs';
 import { $, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, ask } from '../app/shared.js';
 import { builtCount, decoLocked, coin, clearDecoPick, closeDecoPop, renderDeco, decoTab, setDecoTab, clearPreview } from './deco-panel.js';
 import { levelsCleared } from './context.js';
