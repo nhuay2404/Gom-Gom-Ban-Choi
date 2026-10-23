@@ -3,7 +3,7 @@
 // Dùng đúng code game (rewardFor, zonePrice, areaState...), chỉ truyền bộ số đang sửa.
 import * as ECO from '../../../game/data/economy.mjs';
 import { rewardFor } from '../../../game/core/progression.mjs';
-import { CATALOG, AREA_ORDER, AREA_NAMES, zonePrice } from '../../../game/deco/deco-data.mjs';
+import { CATALOG, AREA_ORDER, AREA_NAMES, zonePrice, AREA_UNLOCK, ZONE_PRICE_MULT } from '../../../game/deco/deco-data.mjs';
 import { EDITABLE, PROFILES, simulateProfile } from '../../economy/economy-sim.mjs';
 import { economyVerdict, profileVerdict, profilesSummary } from '../../economy/economy-verdict.mjs';
 import { idlePerHour, idleCap } from '../../../game/core/idle.mjs';
@@ -12,7 +12,8 @@ import { runFlow } from '../../economy/economy-flow.mjs';
 const $ = id => document.getElementById(id);
 const fmt = n => (n == null ? '—' : Math.round(n).toLocaleString('en-US'));
 const clone = value => JSON.parse(JSON.stringify(value));
-const fromGame = () => Object.fromEntries(EDITABLE.map(name => [name, clone(ECO[name])]));
+// Giá khu (AREA_UNLOCK, ZONE_PRICE_MULT) tính từ công thức ZONE_PRICING ở deco-data.mjs: sửa ở đây chỉ để xem thử, không lưu vào economy.mjs.
+const fromGame = () => ({ ...Object.fromEntries(EDITABLE.map(name => [name, clone(ECO[name])])), AREA_UNLOCK: clone(AREA_UNLOCK), ZONE_PRICE_MULT: clone(ZONE_PRICE_MULT) });
 let cfg = fromGame(), profiles = clone(PROFILES), winRates = [], levelInfo = [], dirty = false;
 // Giá gốc đang sửa (cfg.DECO) áp vào danh mục để mọi bảng + mô phỏng tính theo giá mới: dòng của chính món, không có thì của món gốc.
 function applyPrices() {
@@ -399,7 +400,7 @@ $('btnSave').onclick = async () => {
   if (bad) return void ($('saveStatus').textContent = '⚠ có ô trống / không phải số');
   $('saveStatus').textContent = 'Đang lưu…';
   try {
-    const res = await fetch('/api/save-economy', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ values: cfg }) });
+    const res = await fetch('/api/save-economy', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ values: Object.fromEntries(EDITABLE.map(name => [name, cfg[name]])) }) });
     const out = await res.json();
     if (!out.ok) throw new Error(out.error);
     dirty = false;

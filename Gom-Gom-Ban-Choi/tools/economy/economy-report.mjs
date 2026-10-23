@@ -4,10 +4,10 @@
 //   - Đồ trang trí MỞ trong stage (theo khu mở + lock) và tổng giá: món gốc / kiểu khác / tường-sàn
 //   - Luỹ kế: tổng xu đã nhận so với tổng giá mọi món đã mở tới hết stage đó (đủ mua bao nhiêu %)
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { START_COINS, COIN_TOP_UP, AREA_UNLOCK } from '../../game/data/economy.mjs';
+import { START_COINS, COIN_TOP_UP } from '../../game/data/economy.mjs';
 import { levelReward } from '../../game/core/progression.mjs';
 import { LEVELS } from '../../game/data/levels.mjs';
-import { CATALOG, ZONES, GARDEN_EXPANSION, AREA_ORDER } from '../../game/deco/deco-data.mjs';
+import { CATALOG, ZONES, GARDEN_EXPANSION, AREA_ORDER, AREA_UNLOCK } from '../../game/deco/deco-data.mjs';
 
 const STAGE = 10, stages = Math.ceil(LEVELS.length / STAGE);
 const stageOfLevel = level => Math.ceil(level / STAGE);

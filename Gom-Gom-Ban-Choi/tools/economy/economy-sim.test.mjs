@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as ECO from '../../game/data/economy.mjs';
+import { AREA_UNLOCK, ZONE_PRICE_MULT } from '../../game/deco/deco-data.mjs';
 import { simulatePlayer, simulateProfile, PROFILES } from './economy-sim.mjs';
 import { saveEconomy, EDITABLE } from './economy-save.mjs';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const cfg = Object.fromEntries(EDITABLE.map(name => [name, ECO[name]]));
+const cfg = { ...Object.fromEntries(EDITABLE.map(name => [name, ECO[name]])), AREA_UNLOCK, ZONE_PRICE_MULT };
 const always = Array(100).fill(1);
 
 test('mô phỏng economy: người thắng mọi màn mở đủ 7 khu theo thứ tự (xây đủ khu trước + đủ xu); kết quả lặp lại theo seed', () => {
@@ -34,10 +35,10 @@ test('lưu economy từ editor: ghi lại đúng số mặc định, file giữ 
   const file = join(tmpdir(), `economy-${process.pid}.mjs`);
   writeFileSync(file, before);
   try {
-    saveEconomy({ values: { REWARD_BASE: 133, AREA_UNLOCK: { ...cfg.AREA_UNLOCK, kitchen: { level: 41, cost: 1234 } } } }, file);
+    saveEconomy({ values: { REWARD_BASE: 133, IDLE_CAP_HOURS: 9 } }, file);
     const after = readFileSync(file, 'utf8');
     assert.match(after, /remote\('REWARD_BASE', 133\)/);
-    assert.match(after, /kitchen: \{ level: 41, cost: 1234 \}/);
+    assert.match(after, /remote\('IDLE_CAP_HOURS', 9\)/);
     assert.equal(after.split('remote(').length, before.split('remote(').length);
     saveEconomy({ values: { DECO: { pool: { price: 0 }, 'yfence-wood': { price: 125 } } } }, file);
     const priced = readFileSync(file, 'utf8');

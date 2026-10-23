@@ -13,7 +13,7 @@ import { mulberry32 } from '../levels/bot.mjs';
 import { idlePerHour } from '../../game/core/idle.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
-export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'REWARD_FLAT_FROM', 'ZONE_PRICE_MULT', 'AREA_UNLOCK', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
+export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'REWARD_FLAT_FROM', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
 
 const CAT_LOCKS = CATALOG.filter(e => e.cat === 'cats').map(e => e.lock ?? 0);
 export const catsAt = cleared => Math.min(MAX_ROOM_CATS, CAT_LOCKS.filter(lock => lock <= cleared).length);
