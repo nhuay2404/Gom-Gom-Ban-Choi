@@ -69,6 +69,12 @@
           },
           "valueType": "NUMBER"
         },
+        "IDLE_MIN_MINUTES": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "valueType": "NUMBER"
+        },
         "START_GEMS": {
           "defaultValue": {
             "value": "0"
@@ -77,7 +83,31 @@
         },
         "GEM_REWARDS": {
           "defaultValue": {
-            "value": "{\"paywall\":100,\"boss\":25,\"area\":50,\"pet\":10}"
+            "value": "{\"paywall\":50,\"boss\":15,\"area\":20,\"pet\":0}"
+          },
+          "valueType": "JSON"
+        },
+        "DAILY": {
+          "defaultValue": {
+            "value": "{\"fromLevel\":6,\"count\":5,\"share\":0.3}"
+          },
+          "valueType": "JSON"
+        },
+        "DAILY_POOL": {
+          "defaultValue": {
+            "value": "[{\"id\":\"play3\",\"event\":\"play\",\"n\":3,\"text\":\"Play 3 levels\"},{\"id\":\"match30\",\"event\":\"match\",\"n\":30,\"text\":\"Match 30 groups\"},{\"id\":\"score1000\",\"event\":\"score\",\"n\":1000,\"text\":\"Earn 1,000 points\"},{\"id\":\"clean1\",\"event\":\"cleanWin\",\"n\":1,\"need\":\"boosters\",\"text\":\"Win a level without boosters\"},{\"id\":\"pet3\",\"event\":\"pet\",\"n\":3,\"text\":\"Pet your cats 3 times\"},{\"id\":\"idle1\",\"event\":\"idle\",\"n\":1,\"need\":\"idle\",\"text\":\"Collect coins from your cats\"},{\"id\":\"place1\",\"event\":\"place\",\"n\":1,\"need\":\"base\",\"text\":\"Place or swap 1 item\"},{\"id\":\"build1\",\"event\":\"build\",\"n\":1,\"need\":\"base\",\"text\":\"Build 1 new spot\"},{\"id\":\"place2\",\"event\":\"place\",\"n\":2,\"need\":\"noBase\",\"text\":\"Place or swap 2 items\"}]"
+          },
+          "valueType": "JSON"
+        },
+        "QUESTS": {
+          "defaultValue": {
+            "value": "{\"fromLevel\":6,\"slots\":3}"
+          },
+          "valueType": "JSON"
+        },
+        "QUEST_TRACKS": {
+          "defaultValue": {
+            "value": "[{\"id\":\"level\",\"kind\":\"level\",\"step\":5,\"share\":1.5,\"text\":\"Beat level {n}\"},{\"id\":\"area\",\"kind\":\"area\",\"share\":2,\"text\":\"Open the {area}\"},{\"id\":\"build\",\"event\":\"build\",\"base\":3,\"grow\":1,\"max\":5,\"cap\":\"basesLeft\",\"share\":1.5,\"text\":\"Build {n} new spot{s}\"},{\"id\":\"pets\",\"event\":\"claimPet\",\"base\":1,\"grow\":0,\"max\":1,\"cap\":\"petsLeft\",\"share\":1,\"text\":\"Welcome a new pet from the map\"},{\"id\":\"styles\",\"event\":\"style\",\"base\":2,\"grow\":1,\"max\":4,\"cap\":\"stylesLeft\",\"share\":1,\"text\":\"Collect {n} new style{s} in the Shop\"}]"
           },
           "valueType": "JSON"
         },
@@ -149,7 +179,7 @@
         },
         "ZONE_PRICE_MULT": {
           "defaultValue": {
-            "value": "{\"garden\":1.6,\"garden2\":2.85,\"living\":7.7,\"bedroom\":13.8,\"kitchen\":24.15,\"bathroom\":26.3,\"backyard\":52.15,\"kinder\":60}"
+            "value": "{\"garden\":1.6,\"garden2\":2.85,\"living\":7.7,\"bedroom\":34.5,\"kitchen\":53,\"bathroom\":55,\"backyard\":70,\"kinder\":111}"
           },
           "valueType": "JSON"
         },
