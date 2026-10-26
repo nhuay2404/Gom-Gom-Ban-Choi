@@ -441,3 +441,4 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 #deco .deco-card-price.own{background:#fff7e4;color:#7a4a2a}
 #deco .deco-card-price.lock{border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
 #deco .deco-card.poor .deco-card-price{border-color:#f1b2a6;background:#fff0ec;box-shadow:none;color:#c0392b}
+.deco-kinds button[hidden]{display:none}

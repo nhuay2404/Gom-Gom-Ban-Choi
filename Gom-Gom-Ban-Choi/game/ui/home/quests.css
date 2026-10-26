@@ -27,3 +27,7 @@
 .quest-empty{padding:8px 16px 20px}.quest-empty>img{width:145px;height:130px}.quest-empty h3{margin:4px 0;color:#527b32;font-size:21px}.quests-dialog .quest-empty p{font-size:13px;line-height:1.5;color:#8b6746}
 @media(max-width:360px){.quests-dialog{padding-inline:10px}.quest-card{grid-template-columns:42px minmax(0,1fr) 74px;gap:6px;padding-inline:8px}.quest-icon{width:42px;height:53px}.quest-icon>img{width:44px;height:44px}.quest-claim{width:74px}.quest-text{font-size:12px}.quest-emblem{left:15px;width:65px}.quest-header h2{font-size:31px}}
 @media(prefers-reduced-motion:reduce){.quest-claim,.quest-progress i{transition:none}.quests-dialog{animation:none}}
+/* Nút thưởng gọn: không kéo dài theo chiều cao thẻ */
+.quest-claim{align-self:center;min-height:44px;height:auto;padding:5px 3px}
+/* Bỏ dòng hạng nhà + nhãn số quest (người chơi chọn) */
+.quests-dialog :is(.quest-subtitle,.quest-summary){display:none}

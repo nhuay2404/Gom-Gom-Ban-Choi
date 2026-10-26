@@ -78,6 +78,9 @@ export function renderDeco() {
   renderAreaNext(); // mua đồ (ở thẻ, bảng đổi món, Shop) đẩy thanh "tiêu xu vào decor" của khu kế tiếp
   startIdle();
   room3d?.setHighlights(decoLocked ? new Set() : fresh);
+  // Xây hết món gốc của khu thì tab Furniture không còn thẻ nào -> ẩn chip, nhảy sang Walls
+  const built = builtCount(deco, deco.zone), allBuilt = built[0] === built[1];
+  if (allBuilt && decoTab === 'furniture') decoTab = 'walls';
   $('deco-kinds').hidden = decoTab === 'cats';
   $('deco-pets').hidden = decoTab !== 'cats';
   $('deco-pets').querySelectorAll('[data-pet]').forEach(button => {
@@ -88,6 +91,7 @@ export function renderDeco() {
     button.querySelector('span').textContent = button.dataset.key === 'furniture' ? 'Furniture' : ZONES[deco.zone].cats[button.dataset.key];
     button.classList.toggle('on', decoTab === button.dataset.key);
     button.setAttribute('aria-selected', decoTab === button.dataset.key);
+    if (button.dataset.key === 'furniture') button.hidden = allBuilt;
   });
   // Ghim "NEW" trên các món có đồ mới thay được (chỉ đồ đạc; tường / sàn mới báo bằng toast ở Shop)
   $('deco-pins').replaceChildren(...[...fresh].filter(key => key !== 'walls' && key !== 'floors').map(slot => {
