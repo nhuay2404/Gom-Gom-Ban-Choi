@@ -71,7 +71,7 @@
         },
         "IDLE_MIN_MINUTES": {
           "defaultValue": {
-            "value": "60"
+            "value": "1"
           },
           "valueType": "NUMBER"
         },
@@ -101,13 +101,31 @@
         },
         "QUESTS": {
           "defaultValue": {
-            "value": "{\"fromLevel\":6,\"slots\":3}"
+            "value": "{\"fromLevel\":6,\"slots\":3,\"rankEvery\":5,\"rankGems\":20,\"ranks\":[\"Cozy Newcomer\",\"Cat Sitter\",\"Home Maker\",\"Cat Whisperer\",\"Dream Decorator\",\"Master of Purrfection\"]}"
           },
           "valueType": "JSON"
         },
         "QUEST_TRACKS": {
           "defaultValue": {
-            "value": "[{\"id\":\"level\",\"kind\":\"level\",\"step\":5,\"share\":1.5,\"text\":\"Beat level {n}\"},{\"id\":\"area\",\"kind\":\"area\",\"share\":2,\"text\":\"Open the {area}\"},{\"id\":\"build\",\"event\":\"build\",\"base\":3,\"grow\":1,\"max\":5,\"cap\":\"basesLeft\",\"share\":1.5,\"text\":\"Build {n} new spot{s}\"},{\"id\":\"pets\",\"event\":\"claimPet\",\"base\":1,\"grow\":0,\"max\":1,\"cap\":\"petsLeft\",\"share\":1,\"text\":\"Welcome a new pet from the map\"},{\"id\":\"styles\",\"event\":\"style\",\"base\":2,\"grow\":1,\"max\":4,\"cap\":\"stylesLeft\",\"share\":1,\"text\":\"Collect {n} new style{s} in the Shop\"}]"
+            "value": "[{\"id\":\"level\",\"kind\":\"level\",\"step\":5,\"share\":0.5,\"text\":\"The cats are cheering you on. Beat level {n}!\"},{\"id\":\"area\",\"kind\":\"area\",\"share\":2,\"text\":\"Your home is growing. Open the {area} next!\"},{\"id\":\"build\",\"event\":\"build\",\"base\":3,\"grow\":1,\"max\":5,\"cap\":\"basesLeft\",\"share\":1.5,\"text\":\"The cats need more cozy corners. Build {n} new spot{s}!\"},{\"id\":\"pets\",\"event\":\"claimPet\",\"base\":1,\"grow\":0,\"max\":1,\"cap\":\"petsLeft\",\"share\":1,\"text\":\"A new friend is waiting on the map. Welcome them home!\"},{\"id\":\"styles\",\"event\":\"style\",\"base\":2,\"grow\":1,\"max\":4,\"cap\":\"stylesLeft\",\"share\":1,\"text\":\"Fresh looks are in the Shop. Collect {n} new style{s}!\"},{\"id\":\"carry\",\"event\":\"carry\",\"base\":1,\"grow\":0,\"once\":true,\"share\":0.5,\"text\":\"A cat wants a ride. Hold and carry a cat in Deco!\"},{\"id\":\"view\",\"event\":\"view\",\"base\":1,\"grow\":0,\"once\":true,\"share\":0.5,\"text\":\"Take a moment. Hide the buttons and admire your home!\"},{\"id\":\"surface\",\"event\":\"surface\",\"base\":1,\"grow\":0,\"once\":true,\"share\":0.5,\"text\":\"Make it yours. Change the walls or floor of a room!\"}]"
+          },
+          "valueType": "JSON"
+        },
+        "LOGIN_CALENDAR": {
+          "defaultValue": {
+            "value": "[{\"booster\":\"moves\",\"n\":1},{\"coins\":800},{\"item\":\"catbed-heart\",\"gems\":15,\"art\":\"./assets/img/deco/gift-catbed-heart.jpg\"},{\"booster\":\"hammer\",\"n\":1},{\"coins\":3000},{\"booster\":\"swap\",\"n\":1},{\"cat\":\"login-cat\"}]"
+          },
+          "valueType": "JSON"
+        },
+        "LOGIN_FROM_LEVEL": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "valueType": "NUMBER"
+        },
+        "LOGIN_CATS": {
+          "defaultValue": {
+            "value": "{\"login-cat\":{\"name\":\"Mystery cat\",\"breed\":\"\"}}"
           },
           "valueType": "JSON"
         },

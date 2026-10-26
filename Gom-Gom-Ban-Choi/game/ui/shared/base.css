@@ -39,3 +39,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 /* Chấm đỏ báo còn mèo chưa nhận ở tab Home (menu/map-view.js refreshClaimDot) */
 .tab{position:relative}
 .tab.has-dot::after{content:'';position:absolute;top:5px;left:calc(50% + 6px);width:11px;height:11px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #fffaf0}
+/* Popup vẽ bằng px (Quests, Settings, hộp thoại store / quà rảnh) phóng theo bề ngang khung như phần dùng --u.
+   --s = frame-w / 393px (tan(atan2) cho ra số không đơn vị), kẹp .85–1.15 để máy nhỏ không tí hon, tablet không phình. */
+:root{--s:clamp(.85, tan(atan2(var(--frame-w), 393px)), 1.15)}
+:is(.quests-dialog,.settings-panel,.store-dialog){zoom:var(--s)}

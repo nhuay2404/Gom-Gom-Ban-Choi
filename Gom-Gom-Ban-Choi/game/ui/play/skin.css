@@ -52,14 +52,14 @@ body.low-moves .fg-score{outline:0}
   padding:var(--pad);border-radius:calc(var(--rad) * 1.6);gap:var(--gap)}
 .board{
   background:linear-gradient(#fbe7b2,#f5d998);
-  box-shadow:inset 0 2px 0 #fff6d9,inset 0 0 0 2px #f0cf8a,0 0 0 2px #e5bd74,0 var(--edge) 0 #e2b46a,0 calc(var(--edge) * 1.2) 0 #c99a52,
-    0 calc(var(--edge) * 2) calc(var(--edge) * 2) #6b4a1c55}
+  box-shadow:inset 0 2px 0 #fff6d9,inset 0 0 0 2px #f0cf8a,0 0 0 2px #e5bd74,0 var(--gutter) 0 #e2b46a,0 calc(var(--gutter) * 1.2) 0 #c99a52,
+    0 calc(var(--gutter) * 2) calc(var(--gutter) * 2) #6b4a1c55}
 /* Bàn có hình: các mảnh chồng mép lên nhau, nên chỉ tô màu kem trơn + mép dày (viền trong sẽ lộ đường nối giữa mảnh) */
 .board.shaped{background:none;box-shadow:none}
 /* Mép dày vẽ một lần trên cả khối hình (drop-shadow theo đường bao chung), không vẽ riêng từng mảnh: mép từng mảnh bo góc
    bị mặt mảnh bên cạnh đè lên thành vết đứt ở chỗ hai mảnh giáp nhau. */
 .board-shape i{background:#f8e0a5;box-shadow:none}
-.board-shape{filter:drop-shadow(0 var(--edge) 0 #e2b46a) drop-shadow(0 calc(var(--edge) * .2) 0 #c99a52) drop-shadow(0 calc(var(--edge) * .9) calc(var(--edge) * 1.2) #6b4a1c40)}
+.board-shape{filter:drop-shadow(0 var(--gutter) 0 #e2b46a) drop-shadow(0 calc(var(--gutter) * .2) 0 #c99a52) drop-shadow(0 calc(var(--gutter) * .9) calc(var(--gutter) * 1.2) #6b4a1c40)}
 .cell{border-radius:var(--rad);
   background:linear-gradient(#efcf8a,#f4d898 45%,#f6dda2);
   box-shadow:inset 0 calc(var(--c) * .07) calc(var(--c) * .09) #c3954f70,inset 0 -1px 0 #fff1cc}

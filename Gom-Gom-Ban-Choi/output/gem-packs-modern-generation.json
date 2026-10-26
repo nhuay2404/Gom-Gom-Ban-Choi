@@ -1,0 +1,44 @@
+{
+  "tool": "built-in image_gen",
+  "direction": "Modern everyday cat-home items, matte pastel sticker style",
+  "prompts": [
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: three chunky rose-pink gem tokens lying together, each with only two or three broad facets. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism.",
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: a small frosted blush-pink zip-lock pouch with a simple cream paw-print label, open at the top with several pink gem tokens visible. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism.",
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: a small cream paper shopping bag with short soft pink handles and a simple pink paw-print logo, filled with pink gem tokens. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism.",
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: a medium open pastel peach cardboard delivery box with folded flaps and a pink paw-print sticker, filled with pink gem tokens. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism.",
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: a large open mint-and-cream rectangular storage bin with rounded corners and a small paw-print label, generously filled with pink gem tokens. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism.",
+    "Use case: stylized-concept. Production transparent item icon for a contemporary cozy mobile game about adopting cats and decorating their home. Subject: two stacked cream cardboard delivery boxes with pink packing tape and paw-print labels, top box open and filled with many pink gem tokens. Modern Korean casual game sticker illustration, simple bold rounded silhouette, clean medium warm dark-brown outline, restrained flat pastel blocks, minimal two-tone shading, matte surfaces. Gem tokens are stylized pink game currency, broad simple facets, never realistic jewels. Consistent pink/cream/peach/mint palette. Centered, whole silhouette visible, compact composition, three-quarter frontal view, readable at 66px. Transparent background. No text, letters, numbers, scenery, floor, shadow halo, sparkles, magic, medieval, fantasy, treasure chests, gold trim, ornate decoration, velvet, elaborate highlights or photorealism."
+  ],
+  "assets": [
+    {
+      "id": "gems_200",
+      "file": "gems_200-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-51bd0974-b9a9-4699-b4ba-4cd4c28ced7c.png"
+    },
+    {
+      "id": "gems_550",
+      "file": "gems_550-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-f94731e3-19e6-4120-809d-e3a338a213a0.png"
+    },
+    {
+      "id": "gems_1200",
+      "file": "gems_1200-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-227382c4-b74e-43e6-b597-621663069f07.png"
+    },
+    {
+      "id": "gems_2600",
+      "file": "gems_2600-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-9f6c523f-5ece-4757-bc91-335fb5d4cd4c.png"
+    },
+    {
+      "id": "gems_7000",
+      "file": "gems_7000-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-8d7293e5-eedb-4a57-932c-67dec74ab38c.png"
+    },
+    {
+      "id": "gems_16000",
+      "file": "gems_16000-modern.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-96dde9a3-d304-412f-8249-67aae8dff7bb.png"
+    }
+  ]
+}

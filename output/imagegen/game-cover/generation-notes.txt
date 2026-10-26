@@ -1,0 +1,5 @@
+Generated using the built-in image_gen tool, with existing project logo and cat artwork as references.
+Deliverable: cube-cat-cover-400x600.png (400 x 600 pixels).
+Master: cube-cat-cover-master.png.
+
+Prompt summary: Portrait 2:3 cover for the existing Cube Cat Match 3 game. Preserve green/pink title branding, square orange, gray, calico and white kittens, warm brown outlines and pastel casual game illustration. Use a sunny flower meadow, cozy house and a cream puzzle board. No interface, buttons or extra text.

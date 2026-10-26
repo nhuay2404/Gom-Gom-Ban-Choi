@@ -1,0 +1,60 @@
+{
+  "version": 4,
+  "assets": [
+    {
+      "name": "banner",
+      "file": "banner.png",
+      "reusedFrom": "idle-reward/banner.png"
+    },
+    {
+      "name": "hero-cat",
+      "file": "hero-cat.png",
+      "reusedFrom": "result/win-cat.png"
+    },
+    {
+      "name": "icon-login",
+      "file": "icon-login.png",
+      "reusedFrom": "home/icon-login.png"
+    },
+    {
+      "name": "icon-coin",
+      "file": "icon-coin.png",
+      "reusedFrom": "home/icon-coin.png"
+    },
+    {
+      "name": "moves",
+      "file": "moves.png",
+      "reusedFrom": "play/booster-moves.png"
+    },
+    {
+      "name": "hammer",
+      "file": "hammer.png",
+      "reusedFrom": "play/booster-hammer.png"
+    },
+    {
+      "name": "swap",
+      "file": "swap.png",
+      "reusedFrom": "play/booster-swap.png"
+    },
+    {
+      "name": "heart-cushion",
+      "file": "heart-cushion.jpg",
+      "reusedFrom": "deco/gift-catbed-heart.jpg"
+    },
+    {
+      "name": "mystery-cat",
+      "file": "mystery-cat.png",
+      "reusedFrom": "quests/icon-pets.png"
+    },
+    {
+      "name": "check",
+      "file": "check.png",
+      "reusedFrom": "quests/check.png"
+    },
+    {
+      "name": "close",
+      "file": "close.svg",
+      "reusedFrom": "quests/close.svg"
+    }
+  ]
+}

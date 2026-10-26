@@ -187,7 +187,19 @@
 .login-cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px 6px;border-radius:14px;background:#fff8e4;border:2px solid var(--cream-edge);text-align:center}
 .login-cell b{font-size:11px;font-weight:900;color:var(--cream-ink)}
 .login-cell .login-icon{font-size:26px;line-height:1.1}
-.login-cell .login-icon .ico-coin{width:26px;height:26px}
+/* Ảnh quà (booster, xu, thumbnail món): khung vuông cố định để 6 ô đều nhau */
+.login-cell .login-icon{display:grid;place-items:center;width:44px;height:44px}
+.login-cell .login-icon>img,.login-cell .login-icon .thumb{width:100%;height:100%;object-fit:contain}
+.login-cell.big .login-icon{width:56px;height:56px}
+/* Ô có ảnh món chụp trong phòng (ô ngày 3): ảnh phủ kín cả ô; chữ trắng viền nâu nằm trên ảnh, dải tối nhẹ ở đáy cho dễ đọc */
+/* Ảnh chụp sát chiếc gối (384 px, không phóng thêm cho khỏi vỡ), viền hồng + nhãn EXCLUSIVE để nổi hơn các ô khác */
+.login-cell.photo{justify-content:space-between;background:center/cover no-repeat;overflow:hidden;border-color:#ff7fa8;box-shadow:0 0 0 2px #ffd1e1,0 3px 8px #d9467a55}
+.login-cell.photo::before{content:'Exclusive';position:absolute;z-index:2;top:11px;right:-25px;rotate:40deg;width:92px;padding:1px 0;background:#ff5f8a;color:#fff;font-size:7.5px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;text-align:center;box-shadow:0 1px 2px #3d140866}
+.login-cell.photo::after{content:'';position:absolute;inset:auto 0 0;height:55%;background:linear-gradient(transparent,#3d140899);pointer-events:none}
+.login-cell.photo>*{position:relative;z-index:1;color:#fff;text-shadow:0 1px 2px #3d1408,0 0 2px #3d1408}
+.login-cell.photo .login-icon{height:28px}
+.login-cell.photo em{color:#fff}
+.login-cell.photo b{align-self:flex-start;margin-left:4px}
 .login-cell small{font-size:10.5px;font-weight:800;line-height:1.2;color:var(--cream-ink)}
 .login-cell em{font-style:normal;font-size:9.5px;font-weight:900;text-transform:uppercase;color:#a0705a}
 .login-cell.claimed{opacity:.55}

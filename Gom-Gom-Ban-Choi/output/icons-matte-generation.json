@@ -1,0 +1,54 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "id": "home",
+      "original": "nav/icon-home.png",
+      "file": "nav/icon-home-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-d001e13e-e77d-4fe0-9e49-96d9d2101e40.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same cream house with red coral roof and brown door. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "deco",
+      "original": "nav/icon-deco.png",
+      "file": "nav/icon-deco-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-31194726-1259-45c3-a85e-82ed20dbc80b.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same pink armchair with warm brown short feet. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "shop",
+      "original": "nav/icon-shop.png",
+      "file": "nav/icon-shop-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-dd49b11f-bbf6-4f79-bdb1-9f11ca57718c.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same pale yellow shopping cart with coral pink handle and wheels. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "daily",
+      "original": "home/icon-daily.png",
+      "file": "home/icon-daily-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-698ffd5f-ec6e-464a-a8b5-ecb9071d6022.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same cream calendar with red coral header, yellow binding loops and orange-brown paw print. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "login",
+      "original": "home/icon-login.png",
+      "file": "home/icon-login-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-300525a2-1609-462b-87ae-934479890988.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same cream calendar with coral header, yellow binding loops, large brown numeral 7 and blue gift box with red ribbon in front. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "starter",
+      "original": "home/icon-starter.png",
+      "file": "home/icon-starter-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-687d40c3-9032-4387-98b8-d74306d267d0.png",
+      "prompt": "Restyle Image 1, the existing game icon, keeping its SHAPE AND COLORS. Image 2 is ONLY a rendering-style reference. Subject remains exactly the same red coral gift box with yellow ribbon and bow. Preserve Image 1 silhouette, proportions, viewpoint, object parts, placement, main color assignments, recognizability and any existing numeral (7 stays exactly 7). Do not redesign or replace the object. Change only the painting/rendering to match Image 2: modern cozy cartoon with clean warm brown outlines, matte flat color blocks and restrained simple two-tone cel shading, broad forms. Remove glossy white specular streaks, plastic/metal reflections, airbrushed gradients and deep amber shading. Keep existing pinks/reds/yellows/blues: do NOT recolor mint, do NOT change yellow areas into another hue. Cream areas neutral light ivory instead of amber-stained. Yellow remains yellow where the original design is yellow, with softer flat fill. No overall yellow lighting cast. Maintain crisp legibility at 29-44px. Isolated whole original icon centered, transparent alpha background, no scenery, floor, new ornaments or text beyond the existing 7. No fantasy effects."
+    },
+    {
+      "id": "quest",
+      "original": "home/icon-quest.png",
+      "file": "home/icon-quest-matte.png",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-081c9b2d-5a2f-4d0f-beb4-c9cdf6ed31d3.png",
+      "prompt": "Redesign Image 1 quest scroll icon into a MODERN CLIPBOARD CHECKLIST, preserving its ORIGINAL COLOR FAMILY: cream/ivory paper, warm orange-peach board and task bars, coral red top clip, two green checkmarks, a small simple yellow star sticker at the lower corner. Replace the rolled parchment silhouette completely with a clean rounded rectangular clipboard, no curled paper, no medieval scroll, no ribbon banner. Image 2 is the approved rendering style reference. Match its warm brown clean outlines, matte pastel flat color blocks, minimal two-tone cel shading and chunky rounded shapes. No glossy plastic, shiny specular white streaks, metallic gold, airbrushed gradients, or overall yellow lighting cast. Light neutral ivory paper. Large simple shape readable at 44px, centered, full object visible, transparent alpha background, no letters/numbers/text, no scenery or floor. Subtle three-quarter frontal view."
+    }
+  ]
+}

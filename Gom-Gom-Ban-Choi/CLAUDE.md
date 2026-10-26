@@ -239,7 +239,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   lúc rảnh vẽ thử từng vật vào ảnh 1×1 ẩn (≤ 10 ms mỗi lần, dừng khi đang kéo). Thêm loại vật mới lên bản đồ: cứ đưa vào `content` + `culled` là được làm nóng.
   Đo trước khi tối ưu: đếm `bufferData` / `compileShader` của WebGL theo frame và Long Animation Frame, không đoán.
   Viền không tắt phụt: mờ dần theo khoảng cách (`INK_FADE`), hết viền rồi mới đổi sang bản xa (`LOD_FAR`) — tắt đột ngột thì nhìn thấy rõ.
-  Mèo trên bản đồ dùng `newCatModel(breed, { coarse: true })` (lưới thô), màn thưởng dùng bản đủ chi tiết.
+  Mèo trên bản đồ giống hệt Deco (người chơi yêu cầu): đúng lưới (không làm thô) và đúng viền `addOutlines` kiểu `cat`; pass ID chỉ vẽ lớp `CAT_ID_LAYER` (`renderWithCatInk`), không vẽ lại cả bản đồ. Cử động cũng y hệt: mỗi con là một `Cat` thật không não (`newCatModel(..., { live: true })`), bản đồ chỉ đặt x / z / heading rồi gọi `update()`; đừng tự viết anim nhún riêng. Mèo chờ nhận đứng yên trong thùng các-tông (`petBox`), đang ngủ (`eyes: 'sleep'`, `sleeping: true`).
 
 **Dữ liệu**
 - Mỗi chỗ đặt (slot) có `PLACES` + `OBSTACLE_RADIUS`; id món là duy nhất giữa mọi khu (test kiểm).
@@ -263,6 +263,7 @@ Nếu thêm một kiểu lỗi mới mà QC chưa bắt được: thêm phép ki
   Món mới đặt sát ranh giới hai khu: thử chọn món đó ở Deco trước khi báo xong.
 
 ## Khác
+- **Art 2D đã được người dùng duyệt**: đọc `docs/art-style.md` trước khi tạo / thay minh họa game. Chuẩn là gói gem `game/assets/img/shop/gem-packs/gems_16000-modern-full.png`: cartoon hiện đại, viền nâu ấm, pastel lì, cel shading nhẹ, vật dụng đời thường có dấu chân mèo; gói lớn đầy ụ. Tránh fantasy / rương vàng / trang sức bóng cầu kỳ. Áp dụng mặc định cho asset mới, không tự thay toàn bộ art cũ.
 - **Lưới + lề UI chung** (`game/ui/shared/grid.css`, nạp gần cuối): mọi nút rìa ở Home / Deco / Shop / màn chơi bám MÉP KHUNG 393u (không bám mép cửa sổ qua `--gutter`),
   theo token `--edge-x` (10u), `--edge-top`, `--edge-bottom`, `--gap`, `--col`. Thêm nút rìa mới: đặt vị trí bằng các token này, đừng tự đặt số lề riêng.
   Khung ảnh phải giãn theo bề ngang khung (HUD, thanh booster): `border-image` với phần giữa `repeat`, không vẽ 100% × 100% (kéo méo dấu chân).

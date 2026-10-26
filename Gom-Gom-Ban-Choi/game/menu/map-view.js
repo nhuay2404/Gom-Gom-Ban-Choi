@@ -127,12 +127,12 @@ export function refreshClaimDot() {
 
 // Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
 // Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
-const CAT_RARITY = { orange: 'Common', gray: 'Common', white: 'Common', tabby: 'Rare', siamese: 'Epic', tuxedo: 'Legendary',
-  shiba: 'Rare', golden: 'Rare', pug: 'Epic', dalmatian: 'Epic', malamute: 'Legendary', rottweiler: 'Legendary' };
+// Mọi chó mèo nhận ở Home đều là Common (thiết kế chọn; CSS r-rare / r-epic / r-legendary còn giữ nếu sau này cần lại).
+const CAT_RARITY = 'Common';
 
 // `keep`: sắp có màn thưởng kế tiếp nên giữ nền khi đóng (không mờ ra); `chained`: màn kế của một cặp, hiện luôn không mờ vào.
 function showCatReward(breed, onClaimed, { keep = false, chained = false } = {}) {
-  const rarity = CAT_RARITY[breed] || 'Rare', name = categories[breed].name;
+  const rarity = CAT_RARITY, name = categories[breed].name;
   const screen = document.createElement('div');
   screen.className = `cat-reward${chained ? ' chained' : ''}`;
   screen.setAttribute('role', 'dialog');

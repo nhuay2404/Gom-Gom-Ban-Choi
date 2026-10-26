@@ -25,3 +25,6 @@ Added council-members-and-genres, council-topic-verdicts, council-playbook-casua
 
 ## [2026-10-26] ingest | Howard, Quests: Design, Theory, and History in Games and Narratives
 Read all body text (copyright, index, works cited, appendix poems skipped). Created 13 quests-howard-* pages; added topic 17 (daily tasks and milestone quests) to council-topic-verdicts and a row to council-members-and-genres.
+
+## [2026-10-26] ingest | Brewer, The Pocket Mentor for Video Game UX/UI; Swink, Game Feel
+uxui-brewer-* (13 pages) and gamefeel-swink-* (17 pages). Added topics 18 (popups, HUD density, accessibility) and 19 (game feel, polish, audio) to council-topic-verdicts and two rows to council-members-and-genres.

@@ -1,0 +1,8 @@
+{
+  "mode": "built-in imagegen",
+  "references": [
+    "game/assets/img/home/btn-daily.png",
+    "game/assets/img/home/icon-quest.png"
+  ],
+  "prompt": "Create ONE production mobile game UI icon for \"7 day login rewards\", isolated on a true transparent background. Match the supplied Daily button and Quest scroll STYLE REFERENCES exactly: polished hand-painted 2.5D casual cozy game art, chunky soft rounded forms, thick dark cocoa outer contour, warm amber occlusion, creamy glossy highlights from upper left, saturated friendly colors.\nSubject: a cream tear-off desk calendar with a coral-pink top header and two rounded golden binding rings. On the cream page, display one LARGE clear cocoa-brown numeral \"7\" and nothing else. A small puffy sky-blue present with a coral-pink ribbon and oversized cute bow sits at the lower-right corner, overlapping at most the bottom-right quarter of the calendar; the numeral 7 remains completely unobstructed. The calendar is slightly tilted playfully, front-facing so the 7 is easy to read. The calendar is the primary silhouette and gift secondary. Do not add a checkmark, because this icon is used before claiming.\nSquare composition, full icon centered, 10% transparent margin, simple strong silhouette readable at 48px. Number 7 is the ONLY text. NO words such as Login or Days, no date grid, no button tile, no circular badge, no red notification dot, no scenery, no watermark. Real alpha transparency. Render as a finished matching asset, not flat vector line art."
+}

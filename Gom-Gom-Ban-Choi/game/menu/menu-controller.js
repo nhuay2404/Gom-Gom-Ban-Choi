@@ -7,6 +7,7 @@ import { startRoom, roomReady } from './room.js';
 import { startSettings } from './settings.js';
 import { startDevTools } from './dev-tools.js';
 import { map3dReady } from './map-view.js';
+import { startIdleDot } from './idle-coins.js';
 
 // API cho màn chơi (play/play-controller.js gọi qua `menus`) và start.js.
 export { connectPlay } from './context.js';
@@ -19,6 +20,7 @@ startTabs();
 startRoom();
 startSettings();
 startDevTools();
+startIdleDot();
 
 // Phòng 3D + bản đồ 3D đã dựng xong (start.js chờ cái này để tắt màn loading).
 export const sceneReady = Promise.all([roomReady, map3dReady]);

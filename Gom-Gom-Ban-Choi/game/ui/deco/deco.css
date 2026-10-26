@@ -42,7 +42,7 @@
 /* Ô một món: ảnh nhỏ, tên một dòng, nhãn trạng thái */
 .deco-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:6px 3px 5px;border-radius:14px;
   background:#fffdf7;border:2.5px solid transparent;color:var(--cream-ink);font-weight:900;font-size:11px;transition:transform .15s,border-color .15s}
-.deco-item .thumb{width:54px;height:54px;aspect-ratio:1;border-radius:12px;background:var(--c,#ddd)}
+.deco-item .thumb{width:54px;height:54px;aspect-ratio:1;border-radius:12px;background:var(--c,transparent)}
 .deco-item .thumb-3d{object-fit:contain;display:block;background:transparent}
 .deco-item .cat-thumb{background:none}
 .deco-item .cat-thumb .cat{width:100%;height:100%}
@@ -204,7 +204,7 @@ body.deco-locked .hub-settings{opacity:.5}
   border:calc(3 * var(--u)) solid #73392a;border-radius:calc(12 * var(--u));background:#fffdf6;box-shadow:0 calc(3 * var(--u)) 0 #73392a55;overflow:hidden;color:#5b2e1c;letter-spacing:0;text-transform:none;
   transition:transform .15s,box-shadow .15s}
 .deco-card-art{display:grid;place-items:center;width:100%;height:calc(64 * var(--u));background:linear-gradient(#cfeefe,#eaf8ff);border-bottom:calc(2 * var(--u)) solid #e8dcc4}
-.deco-card .thumb{width:calc(56 * var(--u));height:calc(56 * var(--u));border-radius:10px;background:var(--c,#ddd)}
+.deco-card .thumb{width:calc(56 * var(--u));height:calc(56 * var(--u));border-radius:10px;background:var(--c,transparent)}
 .deco-card .thumb-3d{object-fit:contain;background:transparent}
 .deco-card-name{max-width:100%;padding:0 calc(3 * var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(11 * var(--u));font-weight:900}
 .deco-card-price{display:inline-flex;align-items:center;justify-content:center;gap:calc(3 * var(--u));min-height:calc(22 * var(--u));padding:0 calc(7 * var(--u));border-radius:999px;background:#fff4cc;border:1.5px solid #f2c95a;
@@ -251,7 +251,7 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-pop-items::-webkit-scrollbar{display:none}
 .deco-opt{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;width:74px;min-height:0;padding:5px 3px;border-radius:14px;
   background:#fff;border:2.5px solid #eadfc8;color:#5b2e1c;font-size:10.5px;font-weight:900;letter-spacing:0;text-transform:none}
-.deco-opt .thumb{width:52px;height:52px;border-radius:10px;background:var(--c,#ddd)}
+.deco-opt .thumb{width:52px;height:52px;border-radius:10px;background:var(--c,transparent)}
 .deco-opt .thumb-3d{object-fit:contain;background:transparent}
 /* Món đã có (không có nút giá): ảnh nở ra lấp chỗ nút giá, model vừa khít thẻ thay vì nhỏ lọt thỏm ở nửa trên */
 .deco-opt:not(.in-shop) .thumb-3d{flex:1 1 auto;width:100%;height:auto;min-height:52px;max-height:76px}

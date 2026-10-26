@@ -5,7 +5,7 @@ import { $, ask, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '.
 import { showRewarded, adReady } from '../app/ads.js';
 import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
-import { decoLocked, decoPop, renderDeco } from './deco-panel.js';
+import { decoLocked, decoPop, renderDeco, refreshDecoDot } from './deco-panel.js';
 import { room3d } from './room.js';
 import { idleRewardOptions } from './idle-reward-view.mjs';
 
@@ -29,6 +29,15 @@ const idleButton = breed => idleButtons[breed] ||= (() => {
   $('idle-coin').after(button);
   return button;
 })();
+
+// Chấm đỏ ở tab Deco (deco-panel.js refreshDecoDot) khi có con mèo đã tích ≥ 80% trần xu idle: mời người chơi vào nhận.
+const DOT_SHARE = .8;
+export function idleDot() {
+  const deco = getDeco(), cleared = levelsCleared(), cap = idleCap(cleared), now = Date.now();
+  return cap > 0 && deco.cats.some(breed => idlePending(deco, cleared, now, breed) >= DOT_SHARE * cap);
+}
+// Xu idle tăng cả khi đang ở Home / Shop: kiểm lại chấm mỗi 30 giây (menu-controller.js gọi lúc khởi động).
+export function startIdleDot() { setInterval(refreshDecoDot, 30000); }
 
 export function placeIdleCoin() {
   const deco = getDeco(), now = Date.now();
@@ -88,6 +97,7 @@ function claimAll(withBonus) {
   showToast(`+${total + bonus} coins!`);
   noteEvent('idle');
   renderDeco();
+  refreshDecoDot();
   // Xu 3D bay từ từng con mèo vào thanh xu (deco-room.mjs flyCoins); số trên thanh giữ giá trị cũ tới khi xu chạm,
   // dự phòng 2.5 s nếu cảnh 3D không chạy.
   const pill = $('deco-coins').closest('.fh-coins'), box = pill.getBoundingClientRect(), target = { x: box.left + box.width * .22, y: box.top + box.height / 2 };

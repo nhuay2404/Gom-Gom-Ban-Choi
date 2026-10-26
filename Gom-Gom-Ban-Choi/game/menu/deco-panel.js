@@ -9,7 +9,7 @@ import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app
 import { coverCoins } from '../app/store.js';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
-import { startIdle } from './idle-coins.js';
+import { startIdle, idleDot } from './idle-coins.js';
 
 export let decoPick = null; // món gốc đang xem trước (thẻ chưa xây vừa chạm)
 
@@ -63,7 +63,7 @@ function seenIds() {
 
 export function refreshDecoDot() {
   const seen = seenIds();
-  $('tabbar').querySelector('[data-tab="deco"]')?.classList.toggle('has-dot', buyableIds().some(id => !seen.has(id)));
+  $('tabbar').querySelector('[data-tab="deco"]')?.classList.toggle('has-dot', buyableIds().some(id => !seen.has(id)) || idleDot());
 }
 
 export function noticeDeco() {

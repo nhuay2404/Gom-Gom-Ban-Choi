@@ -2,9 +2,17 @@
 // Lướt lên = trống lăn về phía trước, màn xa cong dần qua đường chân trời. Mỗi màn là khối đầu mèo nổi trên bệ tròn.
 // Chỉ vẽ: dữ liệu màn / tiến độ do menu/map-view.js truyền vào qua render(); chạm màn thì gọi onPick(index).
 import * as THREE from 'three';
-import { toonMat, toonLook, TOON_LIGHT, MAP_INK } from './render/toon.mjs';
+import { toonMat, toonLook, TOON_LIGHT, MAP_INK, addOutlines, syncOutlineResolution, renderOutlineIds } from './render/toon.mjs';
+const CAT_ID_LAYER = 3;
+// Vẽ một khung có viền mèo kiểu Deco: pass ID chỉ gồm mèo rồi mới vẽ cảnh.
+function renderWithCatInk(renderer, scene, camera) {
+  syncOutlineResolution(renderer);
+  renderOutlineIds(renderer, scene, camera, CAT_ID_LAYER);
+  renderer.render(scene, camera);
+}
 import { roundedBox, mergeStatic } from './render/mesh-detail.mjs';
 import { catModel, setCatFace, poseTail } from './cats/cat-rig.mjs';
+import { Cat } from './cats/cat-brain.mjs';
 
 // R: bán kính trống; STEP: góc giữa hai màn (R * STEP = khoảng cách trên mặt cỏ, 4.4: các màn cách nhau thoáng, đủ chỗ
 // trang trí giữa hai màn); SWING / FREQ: đường uốn sang hai bên.
@@ -475,6 +483,20 @@ const box = (w, h, d, mat, x = 0, y = 0, z = 0, ink = .06) => {
   m.position.set(x, y, z);
   return ink ? withInk(m, ink) : m;
 };
+// Thùng các-tông mèo chờ nhận đứng trong (toạ độ mèo: thân .6 × .62, chân .1): vách che chân + nửa dưới thân, bốn nắp mở chĩa ra ngoài.
+function petBox() {
+  const g = new THREE.Group(), card = matOf(0xd9a36a), dark = matOf(0xb9854a), w = .78, d = .8, h = .36, t = .04;
+  g.add(box(w, h, t, card, 0, h / 2, d / 2), box(w, h, t, card, 0, h / 2, -d / 2), box(t, h, d, card, w / 2, h / 2, 0), box(t, h, d, card, -w / 2, h / 2, 0));
+  g.add(box(.09, .26, .01, matOf(0xc9955e), 0, h * .55, d / 2 + .025, 0)); // băng keo giữa mặt trước
+  for (const [x, z, rot, len, droop] of [[0, d / 2, 0, w, .8], [0, -d / 2, Math.PI, w, .95], [w / 2, 0, Math.PI / 2, d, 1.05], [-w / 2, 0, -Math.PI / 2, d, .85]]) {
+    const hinge = new THREE.Group(), fold = new THREE.Group();
+    hinge.position.set(x, h, z); hinge.rotation.y = rot; fold.rotation.x = droop;
+    fold.add(box(len - .02, .025, .26, dark, 0, 0, .13));
+    hinge.add(fold); g.add(hinge);
+  }
+  g.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
+  return g;
+}
 function sofa(rnd, seats = 2) {
   const g = new THREE.Group(), mat = choose(rnd, furnMats.sofa), w = seats * .55 + .3;
   g.add(box(w, .26, .6, mat, 0, .2, 0), box(w, .42, .16, mat, 0, .45, -.24), box(.16, .36, .6, mat, -w / 2 + .08, .34, 0), box(.16, .36, .6, mat, w / 2 - .08, .34, 0));
@@ -723,18 +745,6 @@ const SCATTER = {
     { kind: 'fruit', make: () => fruitBasket, r: .25, w: 1, cap: 1, small: true },
   ] },
 };
-// Cổng chuyển vùng bắc ngang đường: hai cột + xà ngang + bảng tên phòng.
-function zoneGate(label) {
-  const g = new THREE.Group(), half = WORLD.ROAD / 2 + WORLD.EDGE + .25;
-  for (const x of [-half, half]) g.add(box(.18, 1.5, .18, furnMats.woodDark, x, .75, 0));
-  g.add(box(half * 2 + .4, .18, .22, furnMats.woodDark, 0, 1.55, 0));
-  const board = box(1.7, .42, .08, furnMats.white, 0, 1.92, 0);
-  g.add(board);
-  const text = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), cached(`sign|${label}`, () => new THREE.MeshBasicMaterial({ map: signTexture(label, 84), transparent: true })));
-  text.position.set(0, 1.92, .05); g.add(text);
-  g.traverse(n => { if (n.isMesh) n.castShadow = true; });
-  return g;
-}
 
 function startSignTexture() {
   return canvasTexture(512, 160, (g, w, h) => {
@@ -852,32 +862,6 @@ function pedestal(kind) {
   return { group: g, parts: [base, body, plate], top: .43 };
 }
 // Mèo 3D (cùng model với Home) đứng cạnh màn mở giống mới, có viền nâu kiểu sticker như khối đầu mèo.
-// Mèo trên bản đồ chỉ cao vài chục px: model của Deco (thân 10 phân đoạn, đuôi / chân / bàn chân 14–20 cạnh) quá mịn.
-// coarse: thay lưới bằng bản ít cạnh (cùng kích thước, dùng chung giữa các con); mặt / mắt và tai (lưới đã uốn) giữ nguyên.
-function coarsen(mesh) {
-  const g = mesh.geometry, p = g.parameters || {};
-  let key = null, make = null;
-  if (g.type === 'BoxGeometry' && g.attributes.position.count > 600) {
-    // Thân hộp bo góc (RoundedBoxGeometry): đo kích thước thật từ khung bao.
-    g.computeBoundingBox();
-    const size = g.boundingBox.getSize(new THREE.Vector3());
-    key = `box|${size.toArray().map(n => n.toFixed(3))}`;
-    make = () => roundedBox(size.x, size.y, size.z, 3, Math.min(size.x, size.y, size.z) * .2);
-  } else if (g.type === 'CapsuleGeometry' && p.radialSegments > 8) {
-    key = `cap|${p.radius}|${p.length}`;
-    make = () => new THREE.CapsuleGeometry(p.radius, p.length, 3, 8);
-  } else if (g.type === 'SphereGeometry' && p.widthSegments > 8) {
-    // Bỏ qua cầu đã bị uốn lại (tai): khung bao không còn khớp bán kính gốc.
-    g.computeBoundingSphere();
-    if (Math.abs(g.boundingSphere.radius - p.radius) > p.radius * .02) return;
-    key = `sph|${p.radius}|${p.phiLength}|${p.thetaLength}`;
-    make = () => new THREE.SphereGeometry(p.radius, 9, 6, p.phiStart, p.phiLength, p.thetaStart, p.thetaLength);
-  } else if (g.type === 'CylinderGeometry' && p.radialSegments > 10) {
-    key = `cyl|${p.radiusTop}|${p.radiusBottom}|${p.height}|${p.openEnded}`;
-    make = () => new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, p.height, 8, 1, p.openEnded);
-  }
-  if (key) mesh.geometry = cached(`coarse|${key}`, make);
-}
 // Mèo của màn chưa mở (phía trước tiến độ): phủ lớp sương đen từ dưới lên, chưa lộ giống (nhãn "?" thay cho NEW!).
 // Chân còn thấy mờ mờ ảo ảo, lên tới thân thì tối dần rồi che kín. Mỗi đỉnh mang thuộc tính `shroud` (0 = thấy, 1 = đen)
 // tính theo độ cao trong toạ độ con mèo; shader trộn màu thật với màu sương theo giá trị đó.
@@ -926,14 +910,26 @@ function shroudCat(cat) {
     node.material = Array.isArray(node.material) ? node.material.map(shroudMat) : shroudMat(node.material);
   });
 }
-function newCatModel(breed, { coarse = false, silhouette = false } = {}) {
-  const cat = catModel(breed), solids = [];
+// live: thân thể mèo Deco thật (Cat, không có não): thở, chớp mắt, giật tai, vẫy đuôi, bước chân y hệt Deco; bản đồ chỉ đặt chỗ / hướng / tốc độ.
+const catWorld = { scene: new THREE.Group(), dt: 0 };
+function newCatModel(breed, { silhouette = false, live = false } = {}) {
+  let cat;
+  if (live) {
+    const body = new Cat(catWorld, breed, 0, 0);
+    body.brain = null;
+    catWorld.scene.remove(body.rig.root);
+    cat = body.rig.root;
+    cat.userData.rig = body.rig;
+  } else cat = catModel(breed);
   setCatFace(cat.userData.rig, breed, 'open'); // mặt calm mặc định, giống mèo đi lại trong Deco
-  if (coarse) cat.traverse(node => { if (node.isMesh) coarsen(node); });
   if (silhouette) shroudCat(cat);
-  cat.traverse(node => { if (node.isMesh && node.material?.isMeshToonMaterial && !node.material.transparent && !node.userData.noOutline) solids.push(node); });
-  solids.forEach(mesh => withInk(mesh, .07));
-  cat.traverse(node => { if (node.isMesh) node.castShadow = true; });
+  // Viền y hệt Deco (toon.mjs addOutlines, kiểu 'cat'); thân mèo thêm lớp CAT_ID_LAYER cho pass ID riêng của mèo.
+  addOutlines(cat);
+  cat.traverse(node => {
+    if (!node.isMesh || node.userData.outline) return;
+    node.castShadow = true;
+    if (!node.userData.decal) node.layers.enable(CAT_ID_LAYER);
+  });
   return cat;
 }
 // Nút Claim (màn đã thắng, mèo chưa nhận): nền xanh lá viền xanh đậm, chữ trắng.
@@ -1210,10 +1206,12 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     const cats = [], catTilt = new THREE.Group(), spots = catSpots(index, newCats.length, current ? 1.3 : 1.12);
     g.add(catTilt);
     newCats.forEach((breed, k) => {
-      const cat = newCatModel(breed, { coarse: true, silhouette: locked }), [dx, dz, turn] = spots[k];
+      const cat = newCatModel(breed, { silhouette: locked, live: true }), [dx, dz, turn] = spots[k], body = cat.userData.cat;
       cat.scale.setScalar(1.35);
-      cat.position.set(dx, 0, dz);
-      cat.rotation.y = turn;
+      cat.add(petBox());
+      // Chờ được nhận: ngủ trong thùng các-tông (thở chậm, tai cụp, Zzz như mèo ngủ ở Deco).
+      Object.assign(body, { x: dx, z: dz, heading: turn, yaw: turn, eyes: 'sleep', sleeping: true });
+      body.update(0, 0);
       cat.userData.spot = [dx, dz];
       catTilt.add(cat);
       cats.push(cat);
@@ -1334,7 +1332,6 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const signT = end + .95;
       if (Math.abs(t - signT) * LEVEL_GAP < .8 + r && Math.abs(x - pathX(signT)) < 1.6 + r) return false;
       // Cổng chuyển vùng bắc ngang đường.
-      for (const z of ZONES) if (z.label && Math.abs(t - z.from) * LEVEL_GAP < .5 + r && Math.abs(x - pathX(z.from)) < 1.3 + r) return false;
       return placed.every(p => Math.hypot(p.x - x, (p.t - t) * LEVEL_GAP) > p.r + r);
     };
     const first = Math.floor(VISIBLE.behind / WORLD.STEP) - 1, last = Math.ceil(end + VISIBLE.ahead / WORLD.STEP) + 1;
@@ -1484,6 +1481,8 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   function render(levels) {
     const cur = levels.findIndex(l => l.current);
     curIndex = cur >= 0 ? cur : Math.max(0, levels.length - 1);
+    // Màn sớm nhất còn chó mèo chờ nhận: nút ghim thành nút Claim dẫn tới đó (nhận xong render lại -> màn kế tiếp).
+    claimIndex = levels.findIndex(l => l.claimable && l.newCats?.length);
     const key = JSON.stringify(levels);
     if (key === builtKey) return;
     builtKey = key;
@@ -1519,11 +1518,6 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     }
     nodes = levels.map((l, i) => levelNode(i, l));
     sign(end + .95);
-    for (const z of ZONES) if (z.label && z.from < end) {
-      const gate = zoneGate(z.label);
-      gate.rotation.set(-.2, -Math.atan(pathSlope(z.from)), 0, 'YXZ');
-      plant(gate, pathX(z.from), z.from);
-    }
     decorate(levels);
     // Các món lẻ còn viền (cổng phòng, biển cuối đường, cụm điểm xuất phát, đèn...): mỗi cụm một chất liệu viền mờ theo khoảng cách.
     for (const object of culled) {
@@ -1618,9 +1612,9 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   // Sương + tường đổi theo vùng của màn đang ở giữa khung (pha trộn mượt quanh ranh giới, ±.6 màn).
   const gardenFog = new THREE.Color(SKY_FOG), fogMix = new THREE.Color(), zoneFog = Object.fromEntries(ZONES.filter(z => z.fog).map(z => [z.id, new THREE.Color(z.fog)]));
   // Màn đang chơi (render() ghi lại): đích của nút về màn hiện tại.
-  let curIndex = 0;
+  let curIndex = 0, claimIndex = -1;
   const JUMP_AWAY = 2.5;
-  jump.onclick = () => { target = clamp(angleOf(curIndex)); velocity = 0; };
+  jump.onclick = () => { target = clamp(angleOf(claimIndex >= 0 ? claimIndex : curIndex)); velocity = 0; };
   function updateZone(t) {
     fogMix.copy(gardenFog);
     for (const z of ZONES) if (z.wall) {
@@ -1629,12 +1623,14 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       fogMix.lerp(zoneFog[z.id], k);
     }
     scene.fog.color.copy(fogMix);
-    // Lướt xa màn đang chơi hơn JUMP_AWAY màn: hiện nút ghim để trở về màn hiện tại.
-    const away = t - curIndex, show = Math.abs(away) > JUMP_AWAY;
+    // Còn chó mèo chờ nhận: luôn hiện nút Claim dẫn tới màn sớm nhất có mèo đó.
+    // Không thì lướt xa màn đang chơi hơn JUMP_AWAY màn mới hiện nút ghim để trở về màn hiện tại.
+    const claim = claimIndex >= 0, show = claim || Math.abs(t - curIndex) > JUMP_AWAY;
     if (jump.hidden === show) jump.hidden = !show;
+    jump.classList.toggle('claim', claim);
     if (show) {
-      const label = `Level ${curIndex + 1}`;
-      jump.setAttribute('aria-label', `Return to ${label}`);
+      const label = claim ? 'CLAIM' : `Level ${curIndex + 1}`;
+      jump.setAttribute('aria-label', claim ? `Claim your new pet at Level ${claimIndex + 1}` : `Return to ${label}`);
       if (jump.lastChild.textContent !== label) jump.lastChild.textContent = label;
     }
   }
@@ -1682,15 +1678,11 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
         node.star.position.y = node.star.userData.baseY + calm * Math.sin(time * 3.4) * .08;
         node.sparkles.forEach(s => { const k = Math.max(0, Math.sin(time * 2.8 + s.userData.phase)); s.scale.setScalar(.12 + (reduceMotion ? .1 : k * .22)); });
       }
-      // Mèo mới nhún nhẹ lệch nhịp, nhãn NEW! bập bềnh.
-      if (!reduceMotion) node.cats.forEach((c, k) => { if (c.isSprite) { c.position.y = c.userData.baseY + Math.sin(time * 2.6) * .06; if (node.claimable) c.material.rotation = Math.sin(time * 5) * .06; } else c.scale.y = 1.35 * (1 + Math.sin(time * 3 + k * 1.7) * .03); });
-      // Mèo chờ nhận: đi lon ton vòng tròn quanh chỗ đứng (vùng trống CLAIM_CLEAR, decorate()) cho người chơi chú ý; nút Claim bay theo con đầu.
-      if (node.claimable && !reduceMotion) node.cats.forEach((c, k) => {
-        if (c.isSprite) { const lead = node.cats[0]; c.position.x = lead.position.x; c.position.z = lead.position.z + .1; return; }
-        const [x, z] = c.userData.spot, a = time * 1.3 + k * 2.1;
-        c.position.set(x + Math.cos(a) * CLAIM_WALK, Math.abs(Math.sin(time * 9 + k)) * .05, z + Math.sin(a) * CLAIM_WALK);
-        c.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a));
-      });
+      // Nhãn NEW! bập bềnh.
+      if (!reduceMotion) node.cats.forEach(c => { if (c.isSprite) { c.position.y = c.userData.baseY + Math.sin(time * 2.6) * .06; if (node.claimable) c.material.rotation = Math.sin(time * 5) * .06; } });
+      // Mèo đứng yên trong thùng; cử động tại chỗ (thở, đuôi, tai) do Cat.update của Deco lo.
+      catWorld.dt = dt;
+      node.cats.forEach(c => c.userData.cat?.update(dt, time));
     }
     for (const { fly, holder } of flyers) if (holder.visible) fly.visible = holder.userData.angle - scroll <= LOD_FAR;
     if (!reduceMotion) for (const { fly, holder, phase, radius } of flyers) {
@@ -1702,7 +1694,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       const flap = Math.sin(time * 18 + phase) * .9;
       fly.userData.wings.forEach((w, k) => { w.rotation.z = (k ? -1 : 1) * flap; });
     }
-    renderer.render(scene, camera);
+    renderWithCatInk(renderer, scene, camera);
   }
 
   return {
@@ -1732,6 +1724,7 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
   const cat = newCatModel(breed), turn = new THREE.Group(), rig = cat.userData.rig;
   turn.add(cat);
   scene.add(turn);
+  if (rig) { rig.tail.forEach((joint, i) => { joint.rotation.x = i === 0 ? -.95 : .12; }); poseTail(rig); } // reduceMotion: đuôi vẫn ngả, không dựng thẳng
   // Khung hình theo kích thước thật của model: tâm khối ở giữa, camera lùi đủ xa cho cả con mèo (kể cả tai, đuôi).
   const box = new THREE.Box3().setFromObject(cat), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
   cat.position.sub(center);
@@ -1769,13 +1762,17 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
       turn.rotation.z = resting ? Math.sin(rest * 3) * .1 : 0; // nghiêng đầu
       const legSwing = running ? e : 0;
       rig?.legs.forEach((leg, i) => { leg.hip.rotation.x = Math.sin(step + (i === 0 || i === 3 ? 0 : Math.PI)) * .9 * legSwing; });
-      rig?.tail.forEach((joint, i) => { joint.rotation.y = Math.sin(t * (resting ? 14 : 9) - i) * (resting ? .6 : .3); });
+      // Đuôi như mèo Deco đang vui (cat-brain update, tailUp ~.8): gốc ngả ra sau, các đốt cong nhẹ; vẫy ngang theo trục z.
+      rig?.tail.forEach((joint, i) => {
+        joint.rotation.x = i === 0 ? -.95 : .12;
+        joint.rotation.z = Math.sin(t * (resting ? 10 : 6) - i * .6) * (resting ? .35 : .2) * (i ? .6 : 1);
+      });
       if (rig) poseTail(rig);
       rig?.ears.forEach((ear, i) => { ear.rotation.z = (i ? 1 : -1) * -.18 + Math.sin(t * 12 + i * 2) * (resting ? .22 : .06); });
       // Mặt: ngạc nhiên -> cười hí mắt khi chạy (thỉnh thoảng mở to mắt) -> sung sướng khi nhún nhảy.
       if (rig) setCatFace(rig, breed, t <= 1.1 ? 'focus' : resting ? (rest < .35 ? 'focus' : 'happy') : (Math.floor(t * 1.2) % 3 === 2 ? 'open' : 'happy'), 'open');
     }
-    renderer.render(scene, camera);
+    renderWithCatInk(renderer, scene, camera);
   });
   return {
     stop() { renderer.setAnimationLoop(null); observer.disconnect(); renderer.dispose(); renderer.domElement.remove(); },

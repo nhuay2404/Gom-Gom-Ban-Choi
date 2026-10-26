@@ -84,7 +84,7 @@
 .shop-deco-wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(6 * var(--u))}
 .shop-deco-item{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;min-height:0;padding:calc(6 * var(--u)) calc(4 * var(--u)) calc(7 * var(--u));
   border:calc(3 * var(--u)) solid #73392a;border-radius:calc(14 * var(--u));background:#fdf6e8;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:#5b2e1c;letter-spacing:0;text-transform:none}
-.shop-deco-item .thumb{width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:10px;background:var(--c,#ddd)}
+.shop-deco-item .thumb{width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:10px;background:var(--c,transparent)}
 .shop-deco-item .thumb-3d{object-fit:contain;background:transparent}
 .shop-deco-item span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--display);font-size:calc(13.5 * var(--u));font-weight:800;line-height:1.15}
 .shop-deco-item small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(10 * var(--u));font-weight:900;color:#a0705a}
@@ -182,3 +182,10 @@
 #shop .shop-deco-item.owned em{background:#fff7e4;box-shadow:inset 0 0 0 calc(1.1 * var(--u)) #fffaf0,inset 0 0 0 calc(2.7 * var(--u)) #efcd86;color:#7a4a2a}
 #shop :is(.shop-deco-item.locked em,.shop-deco-item.needBase em){border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
 #shop :is(.booster em,.coin-pack em,.shop-deco-item em) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+
+/* Gem pack art: stable image slot, with the offer below the amount on narrow screens. */
+#shop .gem-pack{display:grid;grid-template-columns:calc(66 * var(--u)) minmax(0,1fr) calc(108 * var(--u));gap:calc(8 * var(--u));height:calc(72 * var(--u));padding-left:calc(5 * var(--u))}
+#shop .gem-pack .gem-pack-art{display:block;width:calc(66 * var(--u));height:calc(60 * var(--u));object-fit:contain;pointer-events:none}
+#shop .gem-pack .gem-pack-info{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:calc(2 * var(--u));min-width:0}
+#shop .gem-pack .gem-pack-info b{flex:none;font-size:calc(20 * var(--u));line-height:1.1;white-space:nowrap}
+#shop .gem-pack .pack-tag{max-width:100%;box-sizing:border-box;font-size:calc(10 * var(--u));padding:calc(2 * var(--u)) calc(6 * var(--u));line-height:1.3}

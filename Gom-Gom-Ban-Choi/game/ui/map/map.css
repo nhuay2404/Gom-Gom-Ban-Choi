@@ -105,3 +105,12 @@
 .map-jump .map-jump-pin{display:block;flex:none;width:28px;height:28px;object-fit:contain;pointer-events:none}
 @keyframes map-jump-in{from{opacity:0;scale:.6}}
 @media(prefers-reduced-motion:reduce){.map-jump{animation:none}}
+/* Nút về màn hiện tại: chỉ icon ghim, không nền / viền (chữ "Level N" vẫn đọc qua aria-label) — vùng bấm vẫn 48px */
+.map-jump{width:48px;height:48px;padding:0;justify-content:center;border:0;background:none;box-shadow:none}
+.map-jump .map-jump-pin{width:44px;height:44px;filter:drop-shadow(0 3px 2px #2b1a1059)}
+.map-jump>span{display:none}
+/* Còn chó mèo chờ nhận: nút ghim thành nút CLAIM xanh lá (cùng màu nút Claim trên bản đồ), bấm thì lướt tới con sớm nhất */
+.map-jump.claim{bottom:calc(186 * var(--u) + env(safe-area-inset-bottom));width:auto;height:34px;padding:0 14px;border:2.5px solid #2e8a3e;border-radius:999px;background:#4cc35a;box-shadow:inset 0 2px 0 #ffffff59,0 3px 0 #2e8a3e;
+  font-size:15px;letter-spacing:1px;color:#fff;text-shadow:0 2px 0 #2e8a3e}
+.map-jump.claim .map-jump-pin{display:none}
+.map-jump.claim>span{display:inline}

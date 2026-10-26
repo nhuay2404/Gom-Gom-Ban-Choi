@@ -16,8 +16,10 @@ import * as ob from '../app/onboarding.js';
 
 // ---------- Shop: 2 tab — "Shop" (ưu đãi, gem, booster, túi xu) và "Decoration" (chỉ đồ trang trí) ----------
 // Gói gem (IAP): số / giá từ data/economy.mjs GEM_PACKS; giá cố định nên vẽ một lần.
+const gemPackArt = new Set(['gems_200', 'gems_550', 'gems_1200', 'gems_2600', 'gems_7000', 'gems_16000']);
+const gemPackImage = pack => `${gemPackArt.has(pack.id) ? pack.id : 'gems_200'}-modern${pack.id === 'gems_16000' ? '-full' : ''}.png`;
 $('gem-packs').innerHTML = GEM_PACKS.map((pack, i) =>
-  `<button class="coin-pack gem-pack" data-gem-pack="${i}"><i class="ico-gem big"></i><b>${pack.gems.toLocaleString('en-US')}</b>${pack.tag ? `<small class="pack-tag">${pack.tag}</small>` : ''}<em>$${pack.usd.toFixed(2)}</em></button>`).join('');
+  `<button class="coin-pack gem-pack" data-gem-pack="${i}"><img class="gem-pack-art" src="./assets/img/shop/gem-packs/${gemPackImage(pack)}" alt="" width="192" height="160"><span class="gem-pack-info"><b>${pack.gems.toLocaleString('en-US')}</b>${pack.tag ? `<small class="pack-tag">${pack.tag}</small>` : ''}</span><em>$${pack.usd.toFixed(2)}</em></button>`).join('');
 $('gem-packs').addEventListener('click', async event => {
   const button = event.target.closest('[data-gem-pack]');
   if (button && await buyGemPack(GEM_PACKS[button.dataset.gemPack])) { shopBurst(button); renderShopBoosters(); }

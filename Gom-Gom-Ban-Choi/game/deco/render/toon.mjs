@@ -218,7 +218,8 @@ idMat.onBeforeRender = (renderer, scene, camera, geometry, object) => {
 };
 let idTarget = null;
 const clearTmp = new THREE.Color();
-export function renderOutlineIds(renderer, scene, camera) {
+// layer: chỉ vẽ lớp này vào pass ID (bản đồ màn: chỉ mèo, khỏi vẽ lại cả bản đồ).
+export function renderOutlineIds(renderer, scene, camera, layer = 0) {
   renderer.getDrawingBufferSize(sizeTmp);
   if (!idTarget) idTarget = new THREE.WebGLRenderTarget(sizeTmp.x, sizeTmp.y, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false });
   else if (idTarget.width !== sizeTmp.x || idTarget.height !== sizeTmp.y) idTarget.setSize(sizeTmp.x, sizeTmp.y);
@@ -226,7 +227,7 @@ export function renderOutlineIds(renderer, scene, camera) {
   const prevOverride = scene.overrideMaterial, prevBackground = scene.background, prevMask = camera.layers.mask;
   renderer.getClearColor(clearTmp);
   scene.overrideMaterial = idMat; scene.background = null;
-  camera.layers.set(0);                  // không vẽ viền vào pass ID
+  camera.layers.set(layer);              // không vẽ viền vào pass ID
   renderer.shadowMap.autoUpdate = false; // bóng đổ để pass chính cập nhật, khỏi vẽ shadow map hai lần
   // Vật trong suốt đang mờ (tường phòng khách khi chắn camera) không được che ID của vật phía sau: nếu không, viền
   // của vật đó không nhận ra mình đang đè lên chính nó và vẽ đậm thành mảng tối (thảm) trong lúc tường mờ dần.

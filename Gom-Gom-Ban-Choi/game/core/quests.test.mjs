@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fillQuests, noteQuests, claimQuest, questDone, questsClaimable } from './quests.mjs';
+import { fillQuests, noteQuests, claimQuest, questDone, questsClaimable, milestone } from './quests.mjs';
 import { dailyRate } from './daily.mjs';
 import { QUESTS, QUEST_TRACKS } from '../data/economy.mjs';
 
@@ -20,24 +20,55 @@ test('nhiệm vụ tiến trình: đủ slots nhiệm vụ, mỗi chuỗi tối 
   assert.ok(QUEST_TRACKS.every(t => !['play', 'match', 'pet'].includes(t.event)), 'việc trong phiên chơi để cho nhiệm vụ ngày');
 });
 
-test('nhiệm vụ tiến trình: nhận xong thì đẻ nhiệm vụ kế ngay; mục tiêu có trần; hết nội dung thì chuỗi thôi', () => {
+test('nhiệm vụ tiến trình: nhận xong thì đẻ nhiệm vụ kế ngay; mốc tăng theo dãy steps rồi cộng then; hết nội dung thì chuỗi thôi', () => {
   let q = fillQuests(null, ctx);
-  q = noteQuests(q, 'build', 3);
+  q = noteQuests(q, 'build', 4);
   const got = claimQuest(q, 2, ctx);
   assert.equal(got.quests.active.length, QUESTS.slots, 'chỗ trống được lấp ngay');
-  assert.equal(got.quests.active[2].track, 'pets', 'chuỗi đầu hàng còn lại');
-  // Xây nhiều lần: mục tiêu tăng 3 → 4 → 5 rồi dừng ở trần.
+  assert.equal(got.quests.active[2].track, 'build', 'mốc kế của cùng chuỗi thay vào đúng ô');
+  assert.equal(got.quests.active[2].n, track('build').steps[1]);
   const b = track('build');
-  for (const tier of [0, 1, 2, 5, 9]) assert.equal(fillQuests({ order: ['build'], tiers: { build: tier }, active: [] }, ctx).active[0].n, Math.min(b.base + b.grow * tier, b.max));
+  assert.deepEqual([0, 1, 2].map(t => milestone(b, t)), b.steps.slice(0, 3));
+  assert.equal(milestone(b, b.steps.length), b.steps.at(-1) + b.then, 'hết steps thì cộng then');
+  assert.equal(milestone(track('carry'), 1), null, 'chuỗi một mốc thì hết');
   // Cuối game: hết màn, hết khu, hết chỗ, hết mèo, hết kiểu đồ -> bảng trống.
   const done = { ...ctx, cleared: 100, nextArea: null, basesLeft: 0, petsLeft: 0, stylesLeft: 0 };
-  // Chuỗi dạy chơi (once) đã làm xong từ trước.
-  const taught = { order: QUEST_TRACKS.map(t => t.id), tiers: { carry: 1, view: 1, surface: 1 }, active: [] };
+  const taught = { order: QUEST_TRACKS.map(t => t.id), tiers: { carry: 1, view: 1, surface: 1, level: 99 }, active: [] };
   assert.equal(fillQuests(taught, done).active.length, 0);
-  assert.deepEqual(fillQuests(taught, { ...done, stylesLeft: 1 }).active.map(x => [x.track, x.n]), [['styles', 1]], 'mục tiêu không vượt số còn lại');
+  assert.deepEqual(fillQuests(taught, { ...done, stylesLeft: 1 }).active.map(x => [x.track, x.n]), [['styles', 1]], 'mốc không vượt số còn lại');
 });
 
-test('nhiệm vụ tiến trình: chưa xong không nhận được; đếm không vượt mục tiêu; chuỗi lên bậc + xuống cuối hàng', () => {
+test('nhiệm vụ tiến trình: đếm ngầm — làm vượt nhiều mốc khi quest chưa hiện / chưa nhận thì các mốc đó đầy sẵn, nhận lần lượt', () => {
+  const b = track('build');
+  // Quest xây chỗ chưa hiện trong 3 ô (order đẩy nó xuống cuối) nhưng vẫn được đếm.
+  let q = fillQuests({ order: ['level', 'area', 'pets', 'build'], tiers: {}, active: [] }, ctx);
+  assert.ok(!q.active.some(x => x.track === 'build'));
+  q = noteQuests(q, 'build', 20);
+  assert.equal(q.totals.build, 20);
+  // Lên tới lượt build: mốc 1 (4) đầy; nhận xong mốc 2 (10) cũng đầy sẵn; rồi mốc 3 (20) đầy; mốc 4 (30) còn 20/30.
+  q = { ...q, order: ['build', 'level', 'area', 'pets'], active: [] };
+  const seen = [];
+  for (let i = 0; i < 4; i++) {
+    // Lần đầu, hoặc khi chuỗi đã nhường ô (đủ keep mốc): cho chuỗi quay lại đầu hàng để xem mốc kế.
+    if (!i || !q.active.some(x => x.track === 'build')) q = fillQuests({ ...q, order: ['build', 'level', 'area', 'pets'], active: [] }, ctx);
+    const at = q.active.findIndex(x => x.track === 'build'), quest = q.active[at];
+    seen.push([quest.n, quest.progress]);
+    if (!questDone(quest)) break;
+    q = claimQuest(q, at, ctx).quests;
+  }
+  assert.deepEqual(seen, [[b.steps[0], b.steps[0]], [b.steps[1], b.steps[1]], [b.steps[2], 20], [b.steps[3], 20]]);
+});
+
+test('nhiệm vụ tiến trình: mốc màn tính từ lúc mở Quests, bỏ ngang mốc thì vẫn nhận lần lượt', () => {
+  let q = fillQuests({ order: ['level', 'area', 'pets'], tiers: {}, active: [] }, ctx);
+  assert.equal(q.active[0].n, 15);
+  const far = { ...ctx, cleared: 27, unlocked: 28 };
+  q = claimQuest(fillQuests(q, far), 0, far).quests;
+  const next = q.active[0];
+  assert.deepEqual([next.n, next.progress], [20, 20], 'mốc 20 không bị bỏ qua, đầy sẵn');
+});
+
+test('nhiệm vụ tiến trình: chưa xong không nhận được; đếm không vượt mục tiêu; chuỗi giữ ô và lên mốc kế', () => {
   const q = fillQuests(null, ctx);
   assert.ok(claimQuest(q, 2, ctx).error);
   const counted = noteQuests(q, 'build', 99);
@@ -46,7 +77,7 @@ test('nhiệm vụ tiến trình: chưa xong không nhận được; đếm khô
   assert.ok(questDone(counted.active[2]));
   const got = claimQuest(counted, 2, ctx).quests;
   assert.equal(got.tiers.build, 1);
-  assert.equal(got.order.at(-1), 'build');
+  assert.equal(got.active[2].track, 'build', 'chuỗi giữ ô, lên mốc kế');
   assert.equal(noteQuests(got, 'play', 5), got, 'sự kiện không thuộc chuỗi nào thì không đổi');
 });
 
@@ -55,6 +86,7 @@ test('nhiệm vụ tiến trình: chuỗi dạy chơi (once) chỉ ra một lầ
   assert.equal(q.active[0].track, 'carry');
   const done = claimQuest(noteQuests(q, 'carry'), 0, ctx).quests;
   assert.ok(!done.active.some(x => x.track === 'carry'), 'xong rồi thì không ra lại');
+  assert.equal(done.active.length, QUESTS.slots, 'chuỗi hết mốc thì ô được lấp bằng chuỗi khác');
   assert.ok(q.active[1].reward < q.active[2].reward);
 });
 
@@ -65,4 +97,17 @@ test('cấp nhà: lên bậc sau mỗi rankEvery quest đã nhận; bậc cuối
   assert.equal(r.rank, 1);
   assert.equal(r.into, 1);
   assert.equal(questRank({ tiers: { level: QUESTS.rankEvery * 99 } }).title, QUESTS.ranks.at(-1));
+});
+
+test('nhiệm vụ tiến trình: chuỗi giữ ô tối đa QUESTS.keep mốc liên tiếp rồi nhường ô (vẫn đếm ngầm)', () => {
+  let q = fillQuests({ order: ['styles', 'level', 'area', 'pets', 'build'], tiers: {}, active: [] }, ctx);
+  q = noteQuests(q, 'style', 100);
+  for (let i = 0; i < QUESTS.keep; i++) {
+    assert.equal(q.active[0].track, 'styles', `mốc ${i + 1} vẫn ở ô đầu`);
+    q = claimQuest(q, 0, ctx).quests;
+  }
+  assert.ok(!q.active.some(x => x.track === 'styles'), 'đủ keep mốc thì nhường ô');
+  assert.equal(q.order.at(-1), 'styles', 'xuống cuối hàng');
+  q = noteQuests(q, 'style', 5);
+  assert.equal(q.totals.style, 105, 'vẫn đếm ngầm khi không hiện');
 });

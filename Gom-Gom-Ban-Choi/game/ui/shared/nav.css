@@ -39,15 +39,7 @@
 #tabbar.fh-tabbar svg,#tabbar.fh-tabbar button[aria-current="page"] svg{width:calc(25 * var(--u));height:calc(25 * var(--u));overflow:visible;fill:none;stroke:#3d1408;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 #tabbar.fh-tabbar svg .ti-fill{fill:#fff5e1}
 #tabbar.fh-tabbar svg .ti-wheel{fill:#f0626b}
-/* Icon ba tab là ảnh màu bóng theo mẫu (nav/icon-home|deco|shop.png): ô 25u, nảy khi chọn tab */
+/* Matte icon art has its own warm-brown outline; preserve it at the native tab size. */
 #tabbar.fh-tabbar .ti-img{display:block;width:calc(29 * var(--u));height:calc(29 * var(--u));object-fit:contain;pointer-events:none}
 @media(prefers-reduced-motion:no-preference){#tabbar.fh-tabbar button[aria-current="page"] .ti-img{animation:tab-pop .3s cubic-bezier(.3,1.6,.5,1)}}
-/* Nét viền icon tab dày bằng nét viền icon Daily / Starter Pack (~2,4u trên màn): ảnh icon có sẵn nét ~0,9u ở cỡ 25u,
-   nới thêm 1u ra ngoài (giảm 1,5 lần từ 1,5u theo yêu cầu) bằng drop-shadow 4 hướng nối tiếp (lớp sau đổ cả lớp trước nên phủ kín góc) cùng màu nâu nét viền (#571a07), chỉ phủ phía ngoài nên không đè lên chi tiết trong icon */
-#tabbar.fh-tabbar .ti-img{--ink-w:calc(1 * var(--u));
-  filter:drop-shadow(var(--ink-w) 0 0 #571a07) drop-shadow(calc(-1 * var(--ink-w)) 0 0 #571a07) drop-shadow(0 var(--ink-w) 0 #571a07) drop-shadow(0 calc(-1 * var(--ink-w)) 0 #571a07)}
-/* Icon to 29u. Viền tổng của mỗi icon = 2u trên màn: ảnh gốc có sẵn viền dày khác nhau so với cỡ hình (đo ở cạnh thẳng:
-   nhà 47 px / 1210, ghế bành 28 px / 762, xe đẩy 30 px / 772 -> ở ô 29u lần lượt 1,13 / 1,07 / 1,13u) nên mỗi icon bù phần thiếu riêng */
-#tabbar.fh-tabbar [data-tab="home"] .ti-img{--ink-w:calc(.87 * var(--u))}
-#tabbar.fh-tabbar [data-tab="deco"] .ti-img{--ink-w:calc(.93 * var(--u))}
-#tabbar.fh-tabbar [data-tab="shop"] .ti-img{--ink-w:calc(.87 * var(--u))}
+#tabbar.fh-tabbar .ti-img{filter:none}

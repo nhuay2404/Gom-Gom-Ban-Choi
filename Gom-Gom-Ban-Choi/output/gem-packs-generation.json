@@ -1,0 +1,37 @@
+{
+  "tool": "built-in image_gen",
+  "prompts": [
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated three loose pink faceted gemstones, simple small starter arrangement. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background.",
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated a compact cluster of seven pink faceted gemstones. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background.",
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated a small open cream cloth drawstring pouch filled with pink gemstones, three gems beside it. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background.",
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated a plump open cream drawstring sack overflowing with pink gemstones, little pink bow and five loose gems. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background.",
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated an open small golden wooden treasure chest brimming with pink gemstones, a few gems beside it. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background.",
+    "Use case: stylized-concept. Transparent game shop item illustration, one isolated a grand open golden treasure chest overflowing with a large mound of pink gemstones, several gems cascading at its base. Cute cozy casual mobile cat puzzle game, polished hand-drawn 2D cartoon, chunky rounded shapes, clean dark warm brown outlines, hot pink and rose crystal facets with pale pink highlights, cream and honey gold containers, gentle cel shading, flat frontal three-quarter item view. Centered compact horizontal composition, entire silhouette visible with generous transparent padding, legible at 68 pixels. No text, numbers, badges, background, scenery, floor, watermark or UI. True transparent alpha background."
+  ],
+  "assets": [
+    {
+      "id": "gems_200",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-ce6ef2c8-b13e-44a3-99cb-88a1391ba3f4.png"
+    },
+    {
+      "id": "gems_550",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-1dd64952-72e2-40cc-ac06-c8a2a63952c9.png"
+    },
+    {
+      "id": "gems_1200",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-7d956e25-840f-4e7a-bd92-d2bfacc03775.png"
+    },
+    {
+      "id": "gems_2600",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-70080a88-4578-499a-9624-c0390e04cd69.png"
+    },
+    {
+      "id": "gems_7000",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-72b2cfce-51af-48d0-b979-fba970a16ff8.png"
+    },
+    {
+      "id": "gems_16000",
+      "source": "C:\\Users\\CPU13410\\.codex\\generated_images\\01a17746-10f0-71d2-9648-f4a2a5c3f16d\\exec-4a50232c-e518-4aa0-8483-2838f58ca9af.png"
+    }
+  ]
+}
