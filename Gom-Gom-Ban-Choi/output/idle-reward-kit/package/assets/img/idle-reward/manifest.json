@@ -1,0 +1,78 @@
+{
+  "version": 4,
+  "assets": [
+    {
+      "name": "icon-pet",
+      "file": "icon-pet.png",
+      "reusedFrom": "quests/icon-pets.png"
+    },
+    {
+      "name": "icon-coin",
+      "file": "icon-coin.png",
+      "reusedFrom": "shop/coin.png"
+    },
+    {
+      "name": "coin-stack",
+      "file": "coin-stack.png",
+      "reusedFrom": "shop/coin-stack.png"
+    },
+    {
+      "name": "panel",
+      "file": "panel.png",
+      "reusedFrom": "result/panel.png"
+    },
+    {
+      "name": "close",
+      "file": "close.svg",
+      "reusedFrom": "quests/close.svg"
+    },
+    {
+      "name": "banner",
+      "file": "banner.png",
+      "source": "painted/banner.png",
+      "width": 1200,
+      "height": 400,
+      "preserveAspectRatio": true
+    },
+    {
+      "name": "button-claim",
+      "file": "button-claim.svg",
+      "png": "button-claim.png",
+      "width": 320,
+      "height": 64,
+      "slice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
+      "name": "button-video",
+      "file": "button-video.svg",
+      "png": "button-video.png",
+      "width": 320,
+      "height": 100,
+      "slice": [
+        26,
+        26,
+        26,
+        26
+      ]
+    },
+    {
+      "name": "bonus-badge",
+      "file": "bonus-badge.svg",
+      "png": "bonus-badge.png",
+      "width": 90,
+      "height": 44
+    },
+    {
+      "name": "icon-video",
+      "file": "icon-video.png",
+      "source": "painted/icon-video.png",
+      "width": 512,
+      "height": 512
+    }
+  ]
+}

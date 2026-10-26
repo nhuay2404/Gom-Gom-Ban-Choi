@@ -1,0 +1,9 @@
+{
+  "mode": "built-in imagegen",
+  "prompt": "Edit image 1, the Pets quest icon, to resemble the actual orange game cat shown by images 2 and 3. Image 1 is the edit target and UI material reference. Image 2 is the exact character body/silhouette/color identity reference; image 3 is that same character's separate happy face overlay (mentally overlay it onto body image 2). Redesign only this single Pets icon.\nCharacter identity requirements: unmistakably the same squared jelly/block orange cat from image 2: nearly square softly rounded front-facing compact body/head combined, two tall sharp triangular ears in upper corners with pink centers, flat-ish top between ears, orange coat, three short darker orange vertical forehead stripes, two side stripes on each side, angular ivory belly/chest patch, two small ivory paws at bottom with brown toe lines. Use the simple happy closed crescent eyes, small eyebrows and tiny smiling pink open mouth from image 3. Eyes and mouth are graphic simple shapes, no irises, no realistic muzzle, no puffed cheek fur, no whiskers. Keep the square silhouette prominent; this is NOT a round kitten head.\nUI finishing: match image 1's polished casual mobile game UI rendering with dark cocoa outer contour, soft orange/amber bevel shadows, subtle warm creamy specular highlights from upper left, but considerably simpler facial details so it reads clearly at 48px. Preserve original game cat proportions and markings rather than realistic anatomy. Full single little cat icon including the tiny front paws; centered, generous 10% transparent margin, truly transparent background. No frame, badge, furniture, text, numbers, watermark or other items.",
+  "referenceImages": [
+    "output/quest-kit/legacy-painted/icon-pets-v2.png",
+    "game/assets/img/cats/orange-body.png",
+    "game/assets/img/cats/orange-happy.png"
+  ]
+}

@@ -1,0 +1,30 @@
+/* Buttons use CSS geometry to preserve corners at every width. Blue RV art sits on warm gold. */
+.idle-claim.store-dialog{position:fixed;box-sizing:border-box;width:min(420px,calc(100% - 28px));max-height:calc(100dvh - 28px);padding:22px 22px 23px;overflow:auto;border:4px solid #713518;border-radius:34px;background:linear-gradient(145deg,#fffdf1,#ffedc6);box-shadow:inset 0 0 0 3px #ffcf72,0 9px 0 #71351840,0 22px 65px #28140750;color:#66321e;text-align:center;font-family:var(--ui-font,Nunito,system-ui,sans-serif)}
+.idle-claim::backdrop{background:#38251099;backdrop-filter:blur(5px)}
+.idle-claim.store-dialog[open]{gap:0}
+.idle-claim.store-dialog>h2{position:relative;align-self:stretch;display:flex;align-items:center;justify-content:center;min-height:0;aspect-ratio:3/1;margin:0 -13px 0;padding:8px 46px 24px;font-family:var(--display,'Baloo 2',system-ui,sans-serif);font-size:22px;font-weight:900;letter-spacing:0;line-height:1.05;color:#fff9df;text-shadow:0 2px #9c461a,1px 0 #9c461a,-1px 0 #9c461a;background:url('../../assets/img/idle-reward/banner.png') center/contain no-repeat}
+.idle-reward-close{position:absolute;z-index:1;right:7px;top:8px;width:44px;height:44px;margin:0;padding:0;border:0;background:url('../../assets/img/idle-reward/close.svg') center/contain no-repeat;cursor:pointer}
+.idle-reward-hero{position:relative;isolation:isolate;flex:none;width:196px;height:126px;margin:8px auto 0}
+.idle-reward-glow{position:absolute;inset:0 -20px -2px;background:radial-gradient(ellipse,#ffdc6380,transparent 68%);z-index:-1}
+.idle-reward-pet{position:absolute;left:17px;top:0;width:116px;height:116px;object-fit:contain;rotate:-7deg;filter:drop-shadow(0 4px 0 #ae6a2420)}
+.idle-reward-stack{position:absolute;right:0;bottom:1px;width:106px;height:69px;object-fit:contain;rotate:5deg}
+.idle-claim.store-dialog .idle-claim-total{display:flex;align-items:center;justify-content:center;gap:9px;margin:3px 0 0;color:#75431e;font-family:var(--display,'Baloo 2',system-ui,sans-serif);font-size:42px;font-weight:900;line-height:1.1;white-space:nowrap}
+.idle-coin-icon{display:inline-block;flex:none;width:1.05em;height:1.05em;object-fit:contain;vertical-align:middle}
+.idle-claim .idle-claim-total .idle-coin-icon{width:36px;height:36px}
+.idle-claim.store-dialog .idle-reward-caption{margin:5px 0 20px;color:#a1784a;font-size:12px;font-weight:800;line-height:1.4}
+.idle-claim .store-choices{gap:12px}
+.idle-claim .store-choices>.pill-button{position:relative;box-sizing:border-box;width:100%;min-width:0;padding:9px 16px;font-family:inherit;font-weight:900;cursor:pointer;transition:transform .13s,filter .13s}
+.idle-claim .store-choices>.pill-button.ad{justify-content:center;gap:12px;min-height:86px;border:3px solid #87451e;border-radius:22px;background:linear-gradient(#ffe783,#ffc64e 52%,#f2a037);box-shadow:inset 0 0 0 3px #fff0b2,inset 0 6px 0 #ffffff55,0 5px 0 #87451e;color:#633018;text-shadow:0 1px #fff1be;font-size:17px}
+.idle-video-icon{flex:none;width:54px;height:54px;object-fit:contain}
+.idle-video-copy{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15}
+.idle-btn-amount{display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:var(--display,'Baloo 2',system-ui,sans-serif);font-size:24px;font-weight:900;line-height:1.1;white-space:nowrap}
+.idle-btn-amount .idle-coin-icon{width:24px;height:24px}
+.idle-claim .pill-button.ad .idle-bonus{position:absolute;right:5px;top:-13px;display:grid;place-items:center;box-sizing:border-box;min-width:67px;height:35px;padding:4px 11px;border-radius:0;background:url('../../assets/img/idle-reward/bonus-badge.svg') center/100% 100% no-repeat;color:#fffaf0;font-size:15px;font-weight:900;font-style:normal;text-shadow:0 1px #9e3c19;rotate:8deg}
+.idle-claim .store-choices>.pill-button.ghost{gap:8px;min-height:59px;border:2px solid #397a32;border-radius:18px;background:linear-gradient(#a4e773,#6bc74e 52%,#43ac42);box-shadow:inset 0 0 0 2px #d6f7a5,inset 0 5px 0 #ffffff40,0 3px 0 #397a32;color:#fffde9;text-shadow:0 1px 1px #2f6728;font-size:18px}
+.idle-claim .pill-button.ghost .idle-btn-amount{font-size:22px}
+.idle-claim .store-choices>.pill-button:hover{filter:brightness(1.06)}.idle-claim .store-choices>.pill-button:active{transform:translateY(3px);filter:brightness(.96)}
+.idle-claim button:focus-visible{outline:3px solid #227bb3;outline-offset:3px}
+.idle-claim .store-choices>.pill-button:disabled{filter:grayscale(.6);opacity:.6;cursor:default;transform:none}
+@media(max-width:360px){.idle-claim.store-dialog{padding:17px 14px 18px}.idle-claim.store-dialog>h2{font-size:18px;min-height:0;margin-inline:-7px}.idle-reward-hero{width:180px;height:111px}.idle-reward-pet{width:104px;height:104px}.idle-reward-stack{width:96px;height:62px}.idle-claim.store-dialog .idle-claim-total{font-size:36px}.idle-claim .store-choices>.pill-button.ad{font-size:15px;gap:9px}.idle-video-icon{width:46px;height:46px}.idle-btn-amount{font-size:22px}}
+@media(max-height:560px){.idle-claim.store-dialog{padding-block:12px}.idle-reward-hero{height:83px;width:150px;margin-top:0}.idle-reward-pet{width:82px;height:82px}.idle-reward-stack{width:85px;height:55px}.idle-claim.store-dialog .idle-reward-caption{margin-bottom:14px}.idle-claim.store-dialog>h2{min-height:0;font-size:20px}}
+@media(prefers-reduced-motion:reduce){.idle-claim.store-dialog[open]{animation:none}.idle-claim .store-choices>.pill-button{transition:none}}
