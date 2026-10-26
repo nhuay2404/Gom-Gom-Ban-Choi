@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { roundedBox } from '../render/mesh-detail.mjs';
 import { ROOM_HALF, WALL_H, DOOR } from '../room-layout.mjs';
 import { TOON, toonMat } from '../render/toon.mjs';
+import { CLASSROOM } from './kindergarten.mjs';
 
 const mat = color => TOON ? toonMat({ color }) : new THREE.MeshPhysicalMaterial({ color, roughness: .9 });
 const mesh = (geometry, color) => { const m = new THREE.Mesh(geometry, mat(color)); m.castShadow = m.receiveShadow = true; return m; };
@@ -57,9 +58,36 @@ function hipRoof(w, d) {
   g.traverse(node => { if (node.isMesh) node.raycast = () => {}; });
   return g;
 }
+// Mái trường mẫu giáo: mái hai dốc (nóc dài theo x) lợp từng hàng ngói chồng mí xanh trời / xanh nhạt xen kẽ, nóc ống vàng, hai đầu hồi
+// tam giác kem: khác hẳn mái bốn mái ngói cam của nhà. Hàng trên nằm cao hơn hàng dưới .02 (chồng mí thật, không trùng mặt phẳng).
+function gableRoof(w, d) {
+  const g = new THREE.Group(), PITCH = .55, ROWS = 6, W = w + EAVE * 2, half = d / 2 + EAVE, a = Math.atan(PITCH), slope = half / Math.cos(a), row = slope / ROWS;
+  for (const s of [-1, 1]) for (let k = 0; k < ROWS; k++) {
+    const t = (k + .5) * row, tile = rbox(W, .07, row * 1.25, .03, k % 2 ? '#8fd0f2' : '#4fa9e0');
+    tile.position.set(0, t * Math.sin(a) + .03 + k * .02, s * (half - t * Math.cos(a)));
+    tile.rotation.x = s * a;
+    g.add(tile);
+  }
+  const ridge = mesh(new THREE.CylinderGeometry(.11, .11, W + .1, 12), '#ffd66b');
+  ridge.rotation.z = Math.PI / 2;
+  g.add(at(ridge, 0, half * PITCH + .16, 0));
+  const gh = d / 2, gable = new THREE.Shape([new THREE.Vector2(-gh, 0), new THREE.Vector2(gh, 0), new THREE.Vector2(0, gh * PITCH)]);
+  for (const s of [-1, 1]) {
+    const end = mesh(new THREE.ExtrudeGeometry(gable, { depth: .1, bevelEnabled: false }), '#fff1d2');
+    end.rotation.y = Math.PI / 2;
+    g.add(at(end, s * (w / 2 - .05) - .05, 0, 0));
+  }
+  g.traverse(node => { if (node.isMesh) node.raycast = () => {}; });
+  return g;
+}
 // Mái cho các phòng đang mở: cánh trước = các phòng hàng trước liền nhau, cánh sau (phòng tắm) cắm tới nóc cánh trước.
+// Trường mẫu giáo (lớp học hở mái) có mái hai dốc riêng (gableRoof) phủ lớp học, cùng ẩn / hiện theo zoom như mái nhà.
 export function buildRoof(open, offset) {
   const g = new THREE.Group(), front = ['bedroom', 'living', 'kitchen'].filter(z => open.includes(z));
+  if (open.includes('kinder')) {
+    const C = CLASSROOM, [kx, kz] = offset.kinder, T = .2; // T: bề dày tường lớp
+    g.add(at(gableRoof(C.x1 - C.x0 + T * 2, C.z1 - C.z0 + T * 2), kx + (C.x0 + C.x1) / 2, C.wallH + .02, kz + (C.z0 + C.z1) / 2));
+  }
   if (!front.length) return g;
   const xs = front.map(z => offset[z][0]), fz = offset.living[1];
   const fw = Math.max(...xs) - Math.min(...xs) + S * 2;

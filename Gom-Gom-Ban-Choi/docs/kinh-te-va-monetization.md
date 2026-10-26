@@ -91,7 +91,7 @@ Tỉ giá gốc: **$1 ≈ 100 gem** (mốc wiki dùng, [[concept-store-and-prici
 
 - Continue là chỗ kiếm gem chính (bán đúng lúc người chơi vừa suýt thắng, sợ mất cả ván). Giá chốt **75 → 130 → 220**
   (22/10: 90 → 150 → 250, rồi thử 60 → 120 → 200, rồi nâng lên 75 sau khi màn "So close!" có thêm dòng kích mua). Lần đầu vẫn rẻ hơn mức gốc 90
-  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40 / ngày từ ads + quà mốc nhỏ) không đủ trọn
+  để nhiều người chịu continue và quen làm vậy; lần 2–3 đắt, là lúc người chơi phải mua gói gem. Gem miễn phí (~40 / ngày từ ads + quà mốc nhỏ + 15 gem một lần ở ô 3 quà đăng nhập) không đủ trọn
   một lần continue, nên lần continue đầu trong ngày dễ dẫn tới gói gem nhỏ.
 - Màn "So close!" kích mua: dòng "You have X/Y points. Don't lose it now!" (công sức sắp mất) + "Next continue: 💎130" (giá lần sau làm mỏ neo, lần này trông rẻ). +3 lượt giữ 25 gem (cửa vào rẻ).
 - Mỗi lượt: continue 15 → 26 → 44 gem, +3 lượt mua trước ~8 gem. Rủi ro: người chơi canh mua +3 lượt ở lượt cuối thay vì để thua rồi continue.
@@ -195,8 +195,9 @@ Quà mốc chỉ nhận **một lần** mỗi mốc (chơi lại màn đã thắ
 | Thắng màn boss lần đầu (20, 30 … 100) | 15 | 25 | — | 45 | 135 |
 | Mở mỗi khu deco (7 khu) | 20 | 50 | 20 | 80 | 140 |
 | Thú cưng mới (5 mèo + 6 chó) | 0 | 10 | 0 | 0 | 0 |
-| **Tổng quà mốc** | | | **70** (trước 170) | **175** (trước 485) | **325** (trước 785) |
-| Quà đăng nhập hằng ngày | **không cho gem** (quyết định 22/10: quà đăng nhập là xu / booster / đồ) | | | | |
+| Quà đăng nhập 7 ngày, ô 3 (một lần, `LOGIN_CALENDAR`) | 15 | 0 | 15 | 15 | 15 |
+| **Tổng quà mốc** | | | **85** (trước 170) | **190** (trước 485) | **340** (trước 785) |
+| Quà đăng nhập hằng ngày | **chỉ 15 gem một lần ở ô 3** (26/10, đổi quyết định 22/10 "không cho gem"): ít hơn booster rẻ nhất (25), dạy gem để dành được; các ô khác là xu / booster / đồ / mèo | | | | |
 | Nhiệm vụ ngày | **không cho gem** (chỉ xu, `DAILY`) | | | | |
 | RV "Gem miễn phí" ở Shop | 20 × 2 / ngày | | | | 40 / ngày |
 
@@ -237,7 +238,7 @@ Không có tỉ giá cố định 1 gem = N xu, và người chơi không thấy
 | RV thêm xu ở bảng thắng (không giới hạn, +50% / +50% / rồi +20%) | Người xem mọi màn: +~20–28% xu. Lấp khúc chật: người chơi trung bình 70% → ~90% ở màn 40–70, không vượt 100% trước màn 80. **Giữ nguyên thưởng gốc màn 1–80** |
 | **Thưởng tăng mãi** (`REWARD_FLAT_FROM = 0`; quyết định 22/10, thay cho bản dừng ở màn 80) | Game còn thêm màn + khu sau màn 100 và giá khu sau đắt hơn khu trước (hệ số ×1.6 → ×60), nên thưởng phải tăng theo, không thì mỗi khu mới phải chơi lâu hơn khu trước. Màn 81–100 tạm dư xu (luỹ kế ~121% giá món gốc) vì chưa có khu sau mẫu giáo: xu dư vẫn có chỗ tiêu ở kiểu khác + tường / sàn (981K tổng). Game cùng thể loại (Homescapes: 1 sao / màn) giữ thưởng cố định và lấy cảm giác tiến bộ từ nội dung mới; Gom Gom chọn thưởng tăng vì giá đồ tăng theo khu |
 | Vườn hoa Đà Lạt (quà khi mở hết khu) + khu mới tiếp theo từ màn 81 qua live ops | Bù nội dung, không cần thêm số |
-| Idle giữ 0.015; phải tích ≥ 30 phút mới nhận được (`IDLE_MIN_MINUTES`, 23/10: không nhận lắt nhắt liên tục, xu vẫn tính từ đầu) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
+| Idle giữ 0.015; phải tích ≥ 1 giờ mới nhận được (`IDLE_MIN_MINUTES` 60; 23/10 là 30 phút, 26/10 nâng lên 1 giờ: không nhận lắt nhắt liên tục, xu vẫn tính từ đầu) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
 | **Giá khu theo công thức R** (23/10, thay `ZONE_PRICE_MULT` chỉnh tay ×1.6 → ×111 và `AREA_UNLOCK` 550 → 6,550) | Xem mục 7.1. Mô phỏng (thắng 70%): người chơi trung bình / ít chơi mở các khu ở gần đúng màn cũ (lệch ≤ 2 màn) |
 | **Đồ deco không khoá theo màn** (23/10) | Khu mở là mua được mọi món, chỉ cần đủ xu. Chỉ thú cưng còn theo màn (quà nhận ở Map) |
 

@@ -51,8 +51,8 @@ export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 export const IDLE_RATE = remote('IDLE_RATE', 0.015);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
-// Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
-export const IDLE_MIN_MINUTES = remote('IDLE_MIN_MINUTES', 30);
+// 26/10: 60 (trước 30). Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
+export const IDLE_MIN_MINUTES = remote('IDLE_MIN_MINUTES', 60);
 
 // ----- GEM (tiền cứng) — thiết kế: docs/kinh-te-va-monetization.md -----
 // Gem có sẵn khi mới vào game.
@@ -107,6 +107,25 @@ export const QUEST_TRACKS = remote('QUEST_TRACKS', [
   { id: 'view', event: 'view', base: 1, grow: 0, once: true, share: .5, text: 'Take a moment. Hide the buttons and admire your home!' },
   { id: 'surface', event: 'surface', base: 1, grow: 0, once: true, share: .5, text: 'Make it yours. Change the walls or floor of a room!' },
 ]);
+
+// ----- QUÀ ĐĂNG NHẬP 7 NGÀY (core/login.mjs, menu/login.js) — dạng lịch, KHÔNG streak: mỗi ngày đăng nhập mở một ô, nghỉ thì nhận
+// tiếp ô kế (không reset, không ô nào hết hạn). Mỗi ô một quà:
+//   booster: id + n · coins: số xu cố định (không theo R) · item: id món deco (độc quyền: không bán ở Shop; đã có thì đổi ra
+//   xu bằng giá món) + gems · cat: id trong LOGIN_CATS (mèo độc quyền).
+// Gem ô 3 (26/10): thay đổi có chủ ý so với quyết định 22/10 "quà đăng nhập không cho gem" — ít hơn giá booster rẻ nhất (25), một lần.
+export const LOGIN_CALENDAR = remote('LOGIN_CALENDAR', [
+  { booster: 'moves', n: 1 },
+  // 26/10: xu cố định. Ước theo nhịp người chơi: ngày 2 ~màn 6–12 (≈ 2 R ≈ 1 món vườn mở rộng), ngày 5 ~màn 15–30 (≈ 3 R ≈ 2 món phòng khách).
+  { coins: 800 },
+  { item: 'catbed-heart', gems: 15 },
+  { booster: 'hammer', n: 1 },
+  { coins: 3000 },
+  { booster: 'swap', n: 1 },
+  { cat: 'login-cat' },
+]);
+// Mèo quà ngày 7. breed trống = mèo chưa làm: nhận thì vào "mèo chờ" (save login.pendingCats), tự vào nhà khi breed có trong danh mục mèo.
+// Có mèo thật: chỉ cần điền breed (+ tên), không đổi logic.
+export const LOGIN_CATS = remote('LOGIN_CATS', { 'login-cat': { name: 'Mystery cat', breed: '' } });
 
 // Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).
 export const GEM_PACKS = remote('GEM_PACKS', [
@@ -311,7 +330,7 @@ export const DECO = remote('DECO', {
   kbench:                { price: 120 },              // Benches
   // --- Trường mẫu giáo — rào / nền ---
   'kfence-picket':       { price: 0 },                // Yellow picket
-  'kfence-rail':         { price: 100 },              // Blue rails
+  'kfence-rail':         { price: 100 },              // Rainbow rails
   'kfence-hedge':        { price: 100 },              // Hedge
   'kground-grass':       { price: 0 },                // Grass
   'kground-clover':      { price: 100 },              // Clover

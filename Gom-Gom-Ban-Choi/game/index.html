@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="./ui/shared/grid.css">
   <link rel="stylesheet" href="./ui/shared/dev.css">
   <link rel="stylesheet" href="./ui/home/quests.css">
+  <link rel="stylesheet" href="./ui/shared/idle-reward.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script type="module" src="./app/main.js"></script>
 </head>
@@ -281,6 +282,8 @@
       <button id="home-starter" class="fh-btn fh-starter fh-tile" aria-label="Starter pack"><img class="fh-tile-ico" src="./assets/img/home/icon-starter.png" alt=""><span>Starter<br>Pack</span><i class="fh-badge" aria-hidden="true">!</i></button>
       <a id="home-feedback" class="fh-btn fh-feedback fh-tile" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><img class="fh-tile-ico" src="./assets/img/home/icon-feedback.png" alt=""><span>Feedback</span></a>
       <button id="home-quests" class="fh-btn fh-feedback fh-quests fh-tile" aria-label="Quests"><img class="fh-tile-ico" src="./assets/img/home/icon-quest.png" alt="" width="256" height="256"><span>Quests</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <!-- Quà đăng nhập 7 ngày (menu/login.js): hàng 3 cột trái, ẩn khi nhận đủ 7 ô -->
+      <button id="home-login" class="fh-btn fh-login fh-tile" aria-label="7-day gift"><img class="fh-tile-ico" src="./assets/img/home/icon-login.svg" alt=""><span>7 Days</span><i class="fh-badge" aria-hidden="true">!</i></button>
       <!-- Bộ quân trên bàn (mèo / chó): hiện khi chơi tới màn 30 (shared.js DOG_SKIN_LEVEL); chạm để đổi bộ -->
       <button id="home-skin" class="fh-btn fh-feedback fh-skin fh-tile" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->

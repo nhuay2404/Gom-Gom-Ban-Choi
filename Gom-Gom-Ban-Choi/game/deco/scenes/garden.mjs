@@ -880,6 +880,7 @@ export function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ư
 // `gates` = [{ side, u, w }]: chừa cổng trên cạnh side (0 = -z, 1 = +z, 2 = -x, 3 = +x), tâm cổng ở u theo trục dọc
 // cạnh đó trong toạ độ cục bộ của đoạn rào (cạnh 0: u = x, 1: u = -x, 2: u = -z, 3: u = z); hai bên cổng có cột.
 // `halfX`: nửa chiều dài theo x (vườn mở rộng là hình chữ nhật dài theo x); mặc định = half (hình vuông).
+const RAINBOW_POSTS = ['#ff6b6b', '#ff9a3c', '#ffd66b', '#7fc45a', '#5fb8e8', '#b48ee8'];
 export function buildFence(entry, half = HALF, gates = [], halfX = half) {
   const kind = entry.style || entry.id;
   const fence = markOutlineUnit(new THREE.Group()); // cả hàng rào là một khối: chấn song đè lên cột không có nét trong
@@ -892,11 +893,13 @@ export function buildFence(entry, half = HALF, gates = [], halfX = half) {
       for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), x0 + step * (i + .5), .18, 0));
       return g;
     }
-    const g = group(at(box(span + extra, .06, .04, entry.color), mid, .42, 0), at(box(span + extra, .06, .04, entry.color), mid, .2, 0));
+    // rào cầu vồng: thanh ngang trắng, cọc lần lượt đỏ cam vàng xanh lá xanh dương tím
+    const rainbow = kind === 'fence-rainbow', rail = rainbow ? '#fffaf0' : entry.color;
+    const g = group(at(box(span + extra, .06, .04, rail), mid, .42, 0), at(box(span + extra, .06, .04, rail), mid, .2, 0));
     const n = Math.max(1, Math.round(span / .5)), step = span / n;
     for (let i = 0; i <= n; i++) {
       const x = x0 + i * step;
-      g.add(at(rbox(.12, .6, .05, .02, entry.color), x, .3, .02));
+      g.add(at(rbox(.12, .6, .05, .02, rainbow ? RAINBOW_POSTS[i % RAINBOW_POSTS.length] : entry.color), x, .3, .02));
       if (kind === 'fence-white') g.add(at(mesh(new THREE.ConeGeometry(.085, .1, 4), entry.color), x, .64, .02).rotateY(Math.PI / 4));
     }
     return g;

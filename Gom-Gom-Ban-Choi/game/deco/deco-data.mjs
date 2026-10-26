@@ -1,7 +1,7 @@
 // Dữ liệu Deco: 4 khu (vườn — mở rộng thêm khi thắng màn 10, phòng khách, phòng ngủ, bếp), danh mục đồ, giá, mốc mở khoá và trạng thái đã mua/đặt (lưu trong máy).
 // Thuần dữ liệu/logic, không đụng giao diện. Xu kiếm khi thắng màn lần đầu (levelReward, progression.mjs). Mèo dùng chung cả 2 khu.
 import { ECONOMY } from '../data/tuning.mjs';
-import { DECO, ZONE_PRICING, REWARD_BASE, REWARD_STEP, REWARD_GROWTH } from '../data/economy.mjs';
+import { DECO, ZONE_PRICING, REWARD_BASE, REWARD_STEP, REWARD_GROWTH, LOGIN_CALENDAR } from '../data/economy.mjs';
 import { rewardFor } from '../core/reward.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../core/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
@@ -203,7 +203,7 @@ export const CATALOG = [
   { id: 'kmerry', zone: 'kinder', cat: 'furniture', name: 'Merry-go-round', color: '#b48ee8' },
   { id: 'kbench', zone: 'kinder', cat: 'furniture', name: 'Benches (pair)', color: '#ff8fb8' },
   { id: 'kfence-picket', zone: 'kinder', cat: 'walls', name: 'Yellow picket', color: '#ffd66b', style: 'fence-white' },
-  { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Blue rails', color: '#8fc9f2', style: 'fence-wood' },
+  { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Rainbow rails', color: '#ff9a3c', style: 'fence-rainbow' },
   { id: 'kfence-hedge', zone: 'kinder', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
   { id: 'kground-grass', zone: 'kinder', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
   { id: 'kground-clover', zone: 'kinder', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
@@ -672,7 +672,16 @@ export function previewDeco(deco, entry) {
 // (mục Decoration): mua vào kho, chưa đặt, ghi vào `fresh` để Deco báo "có món mới thay được". Đổi món: chạm món trong cảnh.
 export const isBase = entry => entry.cat === 'furniture' && !entry.slot;
 // Món bán ở Shop: phương án thay thế của đồ + tường / sàn không miễn phí.
-export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && entry.price > 0)));
+// Món độc quyền (quà đăng nhập): không bán ở Shop / bảng đổi món, chỉ có được qua quà.
+const EXCLUSIVE = new Set(LOGIN_CALENDAR.map(cell => cell.item).filter(Boolean));
+export const isExclusive = entry => EXCLUSIVE.has(entry.id);
+export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && !isExclusive(entry) && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && entry.price > 0)));
+// Tặng một món (quà): vào kho như mua ở Shop (chưa đặt, báo "món mới"), không trừ xu. Đã có thì trả null (người gọi đổi ra xu).
+export function giftItem(deco, entry) {
+  if (isOwned(deco, entry)) return null;
+  const zone = zoneState(deco, entry.zone);
+  return { ...withZone(deco, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+}
 // Trạng thái ở Shop: locked (chưa tới màn) / needBase (chưa xây chỗ ở Deco) / owned / buy / poor.
 export function shopStatus(deco, entry, unlockedLevel) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';

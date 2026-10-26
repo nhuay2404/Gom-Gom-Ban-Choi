@@ -194,10 +194,22 @@ export function kinderDecor() {
     const c = k % 2 ? '#fffaf0' : RED;
     wall.add(at(box(W / 10 - .01, .06, .95, c), C.x0 + (k + .5) * W / 10, C.wallH - .02, wz - .5).rotateX(-.3), at(box(W / 10 - .01, .16, .04, c), C.x0 + (k + .5) * W / 10, C.wallH - .2, wz - .95));
   }
-  RAINBOW.forEach((c, k) => { const arc = ring(1.25 - k * .12, .06, c, Math.PI); arc.position.set(cx, C.wallH + .05, wz - .02); wall.add(arc); });
-  wall.add(at(ball(.22, '#fffaf0'), cx - 1.3, C.wallH + .1, wz - .02), at(ball(.22, '#fffaf0'), cx + 1.3, C.wallH + .1, wz - .02));
+  RAINBOW.forEach((c, k) => { const arc = ring(1.9 - k * .17, .09, c, Math.PI); arc.position.set(cx, C.wallH + .05, wz - .02); wall.add(arc); });
+  wall.add(at(ball(.32, '#fffaf0'), cx - 1.95, C.wallH + .14, wz - .02), at(ball(.32, '#fffaf0'), cx + 1.95, C.wallH + .14, wz - .02));
   g.add(wall);
-  return mergeStatic(g);
+  const out = mergeStatic(g);
+  // Đèn tường hai vách lớp học (tránh cửa sổ giữa vách) chiếu sáng cả phòng: đèn thật luôn bật cả ngày lẫn đêm, không theo ambient (đồ cố định, không qua lightUp).
+  for (const s of [-1, 1]) {
+    const x = s < 0 ? C.x0 : C.x1, lamp = group(at(rbox(.04, .2, .12, .015, TRIM), x - s * .02, 1.85, -.6),
+      at(mesh(new THREE.SphereGeometry(.09, 16, 12), mat('#ffffff', { emissive: '#eef4ff', emissiveIntensity: .6 })), x - s * .13, 1.92, -.6));
+    // ánh sáng đặt ở 1/4 bề ngang lớp (không sát vách): hai đèn phủ đều cả phòng 7.6 × 4.2 m, tắt dần chậm (decay 1); ánh trắng như đèn lớp học, không vàng ấm như đèn nhà
+    const light = new THREE.PointLight('#f4f8ff', 2, 6.5, 1);
+    light.position.set(x - s * 1.9, 2.2, (C.z0 + C.z1) / 2);
+    lamp.add(light);
+    lamp.userData.lightSource = true;
+    out.add(lamp);
+  }
+  return out;
 }
 
 // ---------- Từng bản của món kép ----------

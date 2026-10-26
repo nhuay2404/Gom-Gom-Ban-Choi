@@ -259,6 +259,8 @@ export function renderOutlineIds(renderer, scene, camera) {
 export const MAP_INK = '#5b2e1c';
 export const OUTLINE_STYLES = {
   default: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: STROKE.inner }, // nét đậm đặc, không đoạn nhạt
+  // chỉ nét ngoài: món mà khối này lồng trong khối kia (viền gối ôm nệm) thì nét trong thành vệt đen chạy dọc mép
+  outer: { px: OUTLINE_PX, dark: .35, tone: 0, brown: '#4a2c1f', inner: 0 },
   cat: { px: 4.6, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
   // tai mèo: khối nhỏ nên cùng số px trông mảnh hơn thân, dày hơn chút cho cân
   catEar: { px: 5.3, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },

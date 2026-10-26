@@ -177,3 +177,26 @@
 .fh-layer>.fh-skin.fh-tile .fh-skin-art{filter:drop-shadow(calc(1.2 * var(--u)) 0 0 #4a1a08) drop-shadow(calc(-1.2 * var(--u)) 0 0 #4a1a08) drop-shadow(0 calc(1.2 * var(--u)) 0 #4a1a08) drop-shadow(0 calc(-1.2 * var(--u)) 0 #4a1a08)}
 /* Nút cài đặt kiểu Cat Soup: bánh răng vàng bóng (btn-settings.png) làm chính nút, không chữ; hình 44u giữa hộp 48u = cùng cỡ các icon Daily / Feedback */
 .fh-round.fh-gear::after{background-size:91.7% 91.7%}
+
+/* ===== Quà đăng nhập 7 ngày (menu/login.js): nút ô vuông + popup 6 ô nhỏ + ô ngày 7 to. Hình tạm (emoji), chờ art Figma. ===== */
+.fh-login{padding:0;font:inherit;cursor:pointer}
+.fh-login[hidden]{display:none}
+.fh-layer>.fh-tile.fh-login:is(:not([data-badge]),[data-badge=""]) .fh-badge{display:none}
+.login-dialog .login-note{margin:-2px 0 10px;font-size:12px;font-weight:800;line-height:1.3}
+.login-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin:0 0 12px;padding:0;list-style:none}
+.login-cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px 6px;border-radius:14px;background:#fff8e4;border:2px solid var(--cream-edge);text-align:center}
+.login-cell b{font-size:11px;font-weight:900;color:var(--cream-ink)}
+.login-cell .login-icon{font-size:26px;line-height:1.1}
+.login-cell .login-icon .ico-coin{width:26px;height:26px}
+.login-cell small{font-size:10.5px;font-weight:800;line-height:1.2;color:var(--cream-ink)}
+.login-cell em{font-style:normal;font-size:9.5px;font-weight:900;text-transform:uppercase;color:#a0705a}
+.login-cell.claimed{opacity:.55}
+.login-cell.claimed em{font-size:14px;color:#4f9a3f}
+.login-cell.today{border-color:#4f9a3f;background:#e9f9df;box-shadow:0 0 0 3px #b6e6a1}
+.login-cell.today em{color:#2f7d3a}
+.login-cell.tomorrow{border-style:dashed}
+/* Ô ngày 7: to nhất, nổi nhất (hết một hàng, nền hồng vàng) */
+.login-cell.big{grid-column:1 / -1;flex-direction:row;justify-content:center;gap:10px;padding:10px;background:linear-gradient(#fff1c4,#ffd6e6);border-color:#e88aac}
+.login-cell.big .login-icon{font-size:40px}
+.login-cell.big small{font-size:13px}
+@media (prefers-reduced-motion: no-preference){.login-cell.today{animation:daily-ready 1.2s ease-in-out infinite}}

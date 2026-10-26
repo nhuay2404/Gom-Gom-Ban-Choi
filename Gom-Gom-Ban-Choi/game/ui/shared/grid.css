@@ -51,6 +51,8 @@
 .fh-layer>.fh-starter{left:calc(var(--col-l) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 72.1 * var(--hub-u))}
 .fh-layer>.fh-feedback{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 10 * var(--hub-u))}
 .fh-layer>.fh-quests{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 72.1 * var(--hub-u))}
+/* Quà đăng nhập 7 ngày: hàng 3 cột trái, dưới Starter Pack */
+.fh-layer>.fh-login{left:calc(var(--col-l) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 134.2 * var(--hub-u))}
 /* Đổi Cats / Dogs (hiện từ màn 30): hàng 3 cột phải, dưới Quests */
 .fh-layer>.fh-skin{left:calc(var(--col-r) - 31 * var(--u));top:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 134.2 * var(--hub-u))}
 

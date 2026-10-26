@@ -529,23 +529,41 @@ const BUILD = {
     toy.userData.home = toy.position.clone();
     return pit;
   },
-  // Nệm trái tim (thay ổ mèo): viền tim phồng + nệm lót; mèo nằm ở .14 như ổ gốc.
+  // Nệm trái tim (thay ổ mèo): đế + nệm lót tròn mép + viền gối ống tròn bọc quanh, ba nút bọc vải; mèo nằm ở .14 như ổ gốc.
+  // Đường tim dựng từ hai cung thùy + đoạn thẳng xuống mũi + cung lõm bo tròn ở giữa (bán kính > bán kính ống viền): hai thùy viền chạm nhau
+  // ở chỗ lõm chứ không xuyên vào nhau, nệm / đế không có góc nhọn để mép bo gập ngược (lởm chởm).
   'catbed-heart'() {
-    const heart = s => {
-      const pts = [];
-      for (let k = 0; k < 64; k++) {
-        const t = k / 64 * TAU;
-        pts.push(new THREE.Vector2(16 * Math.sin(t) ** 3 / 17 * s, ((13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 + .15) * s));
-      }
-      return new THREE.Shape(pts);
+    const R = .24, A = .255, TIP = .6, F = .08, TUBE = .075;
+    const yF = Math.sqrt((R + F) ** 2 - A ** 2), d = Math.hypot(A, TIP);
+    const a0 = Math.atan2(-TIP, -A) + Math.acos(R / d), a1 = Math.atan2(yF, -A), f0 = Math.atan2(-yF, A);
+    const half = [];
+    for (let k = 0; k <= 6; k++) { const u = k / 6, ex = A + R * Math.cos(a0), ey = R * Math.sin(a0); half.push([ex * u, -TIP + (ey + TIP) * u]); }
+    for (let k = 1; k <= 40; k++) { const a = a0 + (a1 - a0) * k / 40; half.push([A + R * Math.cos(a), R * Math.sin(a)]); }
+    for (let k = 1; k <= 10; k++) { const a = f0 + (-Math.PI / 2 - f0) * k / 10; half.push([F * Math.cos(a), yF + F * Math.sin(a)]); }
+    // nửa phải (ngược kim đồng hồ từ mũi lên tới đáy cung lõm) + nửa trái đối xứng; bỏ điểm trùng ở mũi và đáy lõm
+    const loop = [...half, ...half.slice(1, -1).reverse().map(([x, y]) => [-x, y])].map(([x, y]) => new THREE.Vector2(x, y + .12));
+    const scaled = k => loop.map(p => new THREE.Vector2(p.x * k, (p.y - .05) * k + .05));
+    const slab = (pts, depth, bevel, color, y) => {
+      const geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 12 });
+      geo.rotateX(-Math.PI / 2).translate(0, bevel, 0); // nằm phẳng, đáy ở y = 0; thùy tim quay ra sau (-z), mũi tim ra trước
+      const node = at(mesh(geo, color), 0, y, 0);
+      // đế / nệm lọt trong viền gối: viền toon (vỏ phồng ra) của chúng lòi qua mặt trong ống viền thành nét đen
+      node.userData.noOutline = true;
+      return node;
     };
-    const slab = (shape, depth, bevel, color, y) => {
-      const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 24 });
-      geo.rotateX(-Math.PI / 2).translate(0, bevel, 0); // nằm phẳng, đáy ở y = 0; đỉnh tim quay ra sau (-z), mũi tim ra trước
-      return at(mesh(geo, color), 0, y, 0);
+    // ống chạy theo đường tim, dời ra ngoài `out` theo pháp tuyến (đường đi ngược kim đồng hồ: pháp tuyến ngoài = (dy, -dx))
+    const tube = (out, y, r, color) => {
+      const pts = loop.map((p, k) => {
+        const a = loop[(k + loop.length - 1) % loop.length], b = loop[(k + 1) % loop.length], nx = b.y - a.y, ny = a.x - b.x, n = Math.hypot(nx, ny);
+        return new THREE.Vector3(p.x + nx / n * out, y, -(p.y + ny / n * out));
+      });
+      return mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 220, r, 16, true), color);
     };
-    const ring = heart(.62); ring.holes.push(new THREE.Path(heart(.44).getPoints()));
-    return group(slab(heart(.5), .06, .03, '#ffc9d5', 0), slab(heart(.4), .04, .03, '#fff7ea', .07), slab(ring, .16, .05, '#ff8fb8', 0));
+    const rim = tube(0, .13, TUBE, '#ff8fb8');
+    const buttons = [[0, .1], [-.2, -.14], [.2, -.14]].map(([x, z]) => squash(at(ball(.035, '#ff8fb8'), x, .16, z), 1, .45, 1));
+    const bed = group(slab(scaled(1.04), .04, .02, '#e8668f', 0), slab(scaled(.86), .05, .04, '#f1e4ff', .03), rim, ...buttons);
+    bed.userData.outlineStyle = 'outer';
+    return bed;
   },
   // Bàn thùng gỗ (thay bàn nhỏ): hai thùng chồng + tấm ván; mặt bàn .81, chai sữa là thứ mèo đẩy rơi.
   'table-crate'() {
@@ -1104,7 +1122,7 @@ export function createRoom() {
   site.add(houseShell);
   // Độ hiện k (0..1): vật liệu trong suốt theo k khi đang chuyển, đục hẳn ở k = 1 (lúc đó mới có viền toon: viền chỉ dành cho khối đục).
   function fadeShell(k) {
-    const key = ROOM_ZONES.filter(z => opened[z]).join();
+    const key = [...ROOM_ZONES, 'kinder'].filter(z => opened[z]).join();
     if (key !== roofKey) {
       roofKey = key;
       if (roofGroup) houseShell.remove(roofGroup);

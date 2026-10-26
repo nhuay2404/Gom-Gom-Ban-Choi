@@ -11,6 +11,7 @@
 //   gems      { gems, ads, granted[], freeContinueUsed, offers }  ví gem (core/gems.mjs)
 //   daily     { day, R, missions[] }  nhiệm vụ ngày (core/daily.mjs)
 //   quests    { order[], tiers, active[] }  nhiệm vụ tiến trình (core/quests.mjs)
+//   login     { claimed, lastDay, lastAt, pendingCats[], seenDay }  quà đăng nhập 7 ngày (core/login.mjs)
 //   profile   { attempts[], streakFrom, cooldown, giftPending, warmup, lastSeen }  lịch sử chơi cho độ khó thích ứng (adaptive.mjs)
 export const SAVE_KEYS = {
   progress: 'gomgom-rotate-progress-v1',
@@ -24,6 +25,7 @@ export const SAVE_KEYS = {
   gems: 'gomgom-rotate-gems-v1', // ví gem + đếm ads theo ngày + quà gem đã nhận + ưu đãi (core/gems.mjs)
   daily: 'gomgom-rotate-daily-v1', // nhiệm vụ ngày (core/daily.mjs)
   quests: 'gomgom-rotate-quests-v1', // nhiệm vụ tiến trình (core/quests.mjs)
+  login: 'gomgom-rotate-login-v1', // quà đăng nhập 7 ngày (core/login.mjs)
   skin: 'gomgom-rotate-skin', // bộ quân trên bàn: 'cats' | 'dogs' (mở bộ chó ở màn 30, app/shared.js pieceSkin)
 };
 

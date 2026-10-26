@@ -320,7 +320,7 @@ export const GARDEN2_BUILD = {
     const stake = group(at(cyl(.025, .015, .5, '#9a6a45', 8), 0, .25, 0), at(cyl(.07, .07, .08, '#c98a55', 14), 0, .3, 0).rotateZ(Math.PI / 2),
       at(cyl(.12, .14, .02, '#8a5a3a', 14), 0, .01, 0));
     const node = group(stake, kite, ...bows, string, tail);
-    const anchor = new THREE.Vector3(0, .32, 0), pos = new THREE.Vector3(), prev = [];
+    const anchor = new THREE.Vector3(0, .32, 0), pos = new THREE.Vector3(), prev = [], bridle = new THREE.Vector3(), tip = new THREE.Vector3();
     let tug = 0;
     node.userData.tug = (k = 1) => { tug += k; };
     node.userData.kite = kite;
@@ -331,12 +331,17 @@ export const GARDEN2_BUILD = {
       pos.set(Math.sin(t * .7) * (.4 + .5 * w) + Math.sin(t * 7) * tug * .15, 2.6 + .7 * w + Math.sin(t * 1.4) * .25 - tug * .3, -1.1 - .4 * w + Math.cos(t * .7) * .2);
       kite.position.copy(pos);
       kite.rotation.set(-.5, Math.sin(t * .7) * .3, Math.cos(t * .7) * .4 + Math.sin(t * 9) * tug * .2);
+      // Dây buộc vào giao điểm hai nan (bridle), đuôi buộc ở mũi dưới: lấy theo đúng góc nghiêng / xoay của diều, không lệch cố định
+      // (lỗi cũ: dây tới điểm pos - .6 thẳng đứng, diều nghiêng thì cánh tách rời khỏi dây).
+      kite.updateMatrix();
+      bridle.set(0, 0, -.006).applyMatrix4(kite.matrix);
+      tip.set(0, -.55, 0).applyMatrix4(kite.matrix);
       // Dây diều: đường võng nhẹ từ cuộn dây lên diều.
       const p = stringGeo.attributes.position;
-      for (let i = 0; i < 10; i++) { const k = i / 9; p.setXYZ(i, anchor.x + (pos.x - anchor.x) * k, anchor.y + (pos.y - .6 - anchor.y) * k - Math.sin(k * Math.PI) * .35 * (1 - w * .5), anchor.z + (pos.z - anchor.z) * k); }
+      for (let i = 0; i < 10; i++) { const k = i / 9; p.setXYZ(i, anchor.x + (bridle.x - anchor.x) * k, anchor.y + (bridle.y - anchor.y) * k - Math.sin(k * Math.PI) * .35 * (1 - w * .5), anchor.z + (bridle.z - anchor.z) * k); }
       p.needsUpdate = true;
       // Đuôi: mỗi nơ đuổi theo nơ trước (trễ) -> uốn lượn mềm.
-      let lead = v3.set(pos.x, pos.y - .62, pos.z);
+      let lead = v3.copy(tip);
       bows.forEach((b, i) => {
         if (!prev[i]) prev[i] = lead.clone();
         prev[i].lerp(v3b.set(lead.x + Math.sin(t * 5 + i) * .05 * w, lead.y - .2, lead.z + .05), Math.min(1, dt * 8 || 1));
@@ -344,7 +349,7 @@ export const GARDEN2_BUILD = {
         lead = prev[i];
       });
       const tp = tailGeo.attributes.position;
-      tp.setXYZ(0, pos.x, pos.y - .6, pos.z); bows.forEach((b, i) => tp.setXYZ(i + 1, b.position.x, b.position.y, b.position.z)); tp.needsUpdate = true;
+      tp.setXYZ(0, tip.x, tip.y, tip.z); bows.forEach((b, i) => tp.setXYZ(i + 1, b.position.x, b.position.y, b.position.z)); tp.needsUpdate = true;
       stringGeo.computeBoundingSphere(); tailGeo.computeBoundingSphere();
     };
     node.userData.update(0);

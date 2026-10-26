@@ -78,5 +78,10 @@ Scolastici (2013) calls HTML5 slow and immature; the project uses web + Capacito
 Scolastici: score sharing. Vasiuk: limit invites, aggressive popups kill word of mouth. Zagal: social pyramid schemes and impersonation are dark.
 **Verdict (High):** optional photo/share mode is fine; never make recruiting required for progress.
 
+## 17. Daily tasks and milestone quests
+[[quests-howard-src]] (Howard) is the only source written about quests; it is academic theory on PC/console RPG, adventure and MMO, with no mobile or retention data. It values meaning and stakes over repeatable chores and says nothing on failure states, expiry or streaks, so it neither supports nor contradicts a Daily of plain coin tasks. Other positions: Czerkawski's daily/weekly mission design with a meta mission and analytics hooks ([[concept-spreadsheet-modeling]]); Zagal on grinding and appointments ([[concept-dark-game-design-patterns]]); Bycer Cozy on pressure-free return ([[cozydive-bycer-real-time-and-daily-play]]).
+**Usable from Howard ([[quests-howard-quest-systems-and-quest-log]], [[quests-howard-quest-typology]]):** three states and one clear goal line with the next action visible; counters shown as x/N and updated on every event, not only at claim; completion detected from game events; spaced stage ids (10, 20, 30) so chains can be extended without save migration; milestones as a collect-the-set with visible partial progress and a visible consequence (a room unlocks, a cat reacts); audit task variety by goal type (do N times, reach a state, use a feature).
+**Verdict (Medium, genre fit is weak):** keep Daily short and low-friction; use Howard for the quest log and milestone UX only. Make set-completion rewards non-expiring (completion compulsion is the lever, see Zagal).
+
 ## Where the sources agree (safe ground)
 Engagement before monetization; monetization designed in early but not ahead of the game; transparency (prices, contents, odds); reward return without punishing absence; no hidden walls; measure with cohorts and guardrail metrics.

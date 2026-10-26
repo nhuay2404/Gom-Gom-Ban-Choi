@@ -22,3 +22,6 @@ LiveOps/Vasiuk (16 pages), Game Production Toolbox/Chandler (18), Mobile Game De
 
 ## [2026-10-23] council | cross-source verdicts by genre
 Added council-members-and-genres, council-topic-verdicts, council-playbook-casual-deco.
+
+## [2026-10-26] ingest | Howard, Quests: Design, Theory, and History in Games and Narratives
+Read all body text (copyright, index, works cited, appendix poems skipped). Created 13 quests-howard-* pages; added topic 17 (daily tasks and milestone quests) to council-topic-verdicts and a row to council-members-and-genres.

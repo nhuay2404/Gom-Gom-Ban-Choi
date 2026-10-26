@@ -71,7 +71,7 @@
         },
         "IDLE_MIN_MINUTES": {
           "defaultValue": {
-            "value": "30"
+            "value": "60"
           },
           "valueType": "NUMBER"
         },

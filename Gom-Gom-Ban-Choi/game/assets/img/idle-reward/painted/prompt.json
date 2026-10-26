@@ -1,0 +1,5 @@
+{
+  "mode": "built-in imagegen",
+  "reference": "game/assets/img/home/icon-quest.png",
+  "prompt": "Create ONE isolated rewarded-video UI icon for a cozy mobile puzzle game. Subject: a chunky rounded little blue cinema clapperboard / video screen, with a large unmistakable ivory white right-facing PLAY triangle centered in the blue screen, and a slightly tilted black/navy-and-ivory striped clapper at the top. Tiny warm golden bevel trim is allowed. This is the familiar mobile-game rewarded video / watch ad symbol. No coin or gift attached, no text, no letters or numbers. Keep the symbol extremely readable at 40px. Match provided reference's polished casual game UI art: thick dark cocoa-brown outer contour, rounded puffy beveled forms, smooth rich gradients, soft amber crevice shadows, ivory specular reflections upper left, clean silhouette. Front view with slight playful tilt only. True transparent alpha background, square canvas, centered with 12% transparent margin. Do not draw a background, badge, UI button, watermark or realistic photographic objects."
+}

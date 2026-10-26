@@ -13,6 +13,7 @@ import { play } from './context.js';
 import { hideMenus, renderSkinButton } from './tabs.js';
 import { renderDailyButton } from './daily.js';
 import { renderQuestButtons } from './quests.js';
+import { showLoginOnHome } from './login.js';
 import { clearDecoNew } from './deco-panel.js';
 import { markTab } from './settings.js';
 
@@ -188,6 +189,7 @@ export function showMap() {
   refreshWallet();
   $('map').hidden = false;
   $('tutorial').hidden = true;
+  showLoginOnHome();
   if (map3dFailed) showMap2d();
   else showMap3d();
 }

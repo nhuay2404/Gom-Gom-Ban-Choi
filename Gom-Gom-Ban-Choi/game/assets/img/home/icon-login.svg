@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Icon nút quà đăng nhập 7 ngày (Home): tờ lịch số 7 + hộp quà nơ hồng. Viền nâu #5b2316 như các icon Home khác. -->
+  <g stroke="#5b2316" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <!-- tờ lịch -->
+    <rect x="30" y="38" width="150" height="150" rx="22" fill="#fff7e4"/>
+    <path d="M30 60a22 22 0 0 1 22-22h106a22 22 0 0 1 22 22v28H30z" fill="#ff7f9e"/>
+    <path d="M70 26v28M140 26v28" fill="none"/>
+    <!-- số 7 -->
+    <path d="M78 112h56l-30 56" fill="none" stroke-width="16"/>
+    <!-- hộp quà -->
+    <rect x="118" y="142" width="110" height="88" rx="14" fill="#7fd0f5"/>
+    <rect x="108" y="122" width="130" height="32" rx="10" fill="#a8e2fb"/>
+    <path d="M173 122v108" fill="none" stroke="#5b2316"/>
+    <rect x="160" y="122" width="26" height="108" fill="#ff7f9e"/>
+    <path d="M173 120c-10-26-46-30-46-10 0 14 26 14 46 10zM173 120c10-26 46-30 46-10 0 14-26 14-46 10z" fill="#ff9fb8"/>
+  </g>
+  <path d="M46 66l14-12M128 154l14-10" stroke="#ffffffcc" stroke-width="7" stroke-linecap="round"/>
+</svg>

@@ -30,6 +30,7 @@ Trust is rated per genre: **H** high, **M** medium, **L** low (my judgement, bas
 | [[cozydive-bycer-src]] (Bycer, Cozy) | premium cozy sims | named games, design opinion | M (deco/meta only) | **H** | L | L | L | L |
 | [[mobiledesign-scolastici-src]] (Scolastici, Nolte, 2013) | 2013 premium/early-freemium 2D casual and arcade | opinion, some 2012 stats; ~40% obsolete | L-M (timeless tuning/UI only) | L | L | L | M (early era) | L |
 | [[prodtoolbox-chandler-src]] (Chandler) | publisher-funded console/PC production, 10–300 people | practitioner experience | L-M (prototyping, scope, QA) | L | L | M | L | **H** |
+| [[quests-howard-src]] (Howard) | PC/console RPG, adventure, interactive fiction, MMO quest theory and history | academic theory, literary history, modding pedagogy; no mobile data | L-M (quest log and milestone UX only) | L | L | L-M | L | L |
 | [[src-enfield-mathematics-of-game-development]] (Enfield) | game maths with Unity | textbook | tool, not a design opinion | | | | | |
 
 ## Reading the table

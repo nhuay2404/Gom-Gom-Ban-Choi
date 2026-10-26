@@ -7,6 +7,7 @@ import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
 import { decoLocked, decoPop, renderDeco } from './deco-panel.js';
 import { room3d } from './room.js';
+import { idleRewardOptions } from './idle-reward-view.mjs';
 
 // ---------- Xu tự sinh (idle, core/idle.mjs): mỗi con mèo trong nhà có bong bóng xu riêng bám trên đầu, chạm để nhận ----------
 // Số màn đã thắng đọc một lần mỗi lần vẽ Deco (không đọc save mỗi khung hình).
@@ -59,16 +60,7 @@ document.addEventListener('click', async event => {
   let bonus = 0;
   if (adReady('idle') && Math.round(pending * REWARDED_ADS.idleBonus)) {
     idleAsking = true;
-    const extra = Math.round(pending * REWARDED_ADS.idleBonus), coin = n => `<i class="ico-coin"></i>${n.toLocaleString('en-US')}`;
-    const choice = await ask({
-      title: 'Pets collected coins!',
-      body: `<p class="idle-claim-total">${coin(pending)}</p>`,
-      className: 'idle-claim',
-      choices: [
-        { id: 'ad', style: 'ad', label: `▶ Claim ${coin(pending + extra)} <em>+${Math.round(REWARDED_ADS.idleBonus * 100)}%</em>` },
-        { id: 'claim', style: 'ghost', label: `Claim ${coin(pending)}` },
-      ],
-    });
+    const choice = await ask(idleRewardOptions(pending, REWARDED_ADS.idleBonus));
     if (choice === 'ad' && await showRewarded('idle')) bonus = 1;
     idleAsking = false;
     if (!choice) return;

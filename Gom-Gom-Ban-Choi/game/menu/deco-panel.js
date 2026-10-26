@@ -4,7 +4,7 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
-import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive } from '../deco/deco-data.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
 import { coverCoins } from '../app/store.js';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
@@ -314,7 +314,8 @@ function decoPopOptions(deco) {
   if (decoPop.key === 'cats') return CATALOG.filter(entry => entry.cat === 'cats');
   const all = decoPop.key === 'walls' || decoPop.key === 'floors' ? catalogFor(decoPop.zone, decoPop.key) : CATALOG.filter(entry => entry.cat === 'furniture' && slotOf(entry) === decoPop.key);
   // Đã có trước, kiểu bán ở Shop sau
-  return all.filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
+  // Món độc quyền (quà đăng nhập) chưa có thì không hiện để mua.
+  return all.filter(entry => decoVisible(entry) && (!isExclusive(entry) || isOwned(deco, entry))).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
 }
 
 function renderDecoPop() {
