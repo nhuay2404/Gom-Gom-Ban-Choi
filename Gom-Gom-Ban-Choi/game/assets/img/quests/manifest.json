@@ -1,0 +1,232 @@
+{
+  "version": 2,
+  "style": "Gom Gom warm cream / honey gold / cocoa / leaf green",
+  "alpha": true,
+  "assets": [
+    {
+      "name": "panel",
+      "source": "panel.svg",
+      "png": "panel.png",
+      "width": 480,
+      "height": 640,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "card-active",
+      "source": "card-active.svg",
+      "png": "card-active.png",
+      "width": 400,
+      "height": 120,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "card-ready",
+      "source": "card-ready.svg",
+      "png": "card-ready.png",
+      "width": 400,
+      "height": 120,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "card-complete",
+      "source": "card-complete.svg",
+      "png": "card-complete.png",
+      "width": 400,
+      "height": 120,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "button-claim",
+      "source": "button-claim.svg",
+      "png": "button-claim.png",
+      "width": 200,
+      "height": 76,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "button-pressed",
+      "source": "button-pressed.svg",
+      "png": "button-pressed.png",
+      "width": 200,
+      "height": 76,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "button-disabled",
+      "source": "button-disabled.svg",
+      "png": "button-disabled.png",
+      "width": 200,
+      "height": 76,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "button-secondary",
+      "source": "button-secondary.svg",
+      "png": "button-secondary.png",
+      "width": 200,
+      "height": 76,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "progress-track",
+      "source": "progress-track.svg",
+      "png": "progress-track.png",
+      "width": 300,
+      "height": 32,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "progress-fill",
+      "source": "progress-fill.svg",
+      "png": "progress-fill.png",
+      "width": 300,
+      "height": 32,
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "name": "banner",
+      "source": "banner.svg",
+      "png": "banner.png",
+      "width": 480,
+      "height": 110
+    },
+    {
+      "name": "close",
+      "source": "close.svg",
+      "png": "close.png",
+      "width": 80,
+      "height": 80
+    },
+    {
+      "name": "badge",
+      "source": "badge.svg",
+      "png": "badge.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "name": "icon-level",
+      "png": "icon-level.png",
+      "paintedSource": "painted/icon-level.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "icon-area",
+      "png": "icon-area.png",
+      "paintedSource": "painted/icon-area.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "icon-build",
+      "png": "icon-build.png",
+      "paintedSource": "painted/icon-build.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "icon-pets",
+      "png": "icon-pets.png",
+      "paintedSource": "painted/icon-pets.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "icon-styles",
+      "png": "icon-styles.png",
+      "paintedSource": "painted/icon-styles.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "check",
+      "png": "check.png",
+      "paintedSource": "painted/check.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "empty",
+      "png": "empty.png",
+      "paintedSource": "painted/empty.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "sparkle",
+      "png": "sparkle.png",
+      "paintedSource": "painted/sparkle.png",
+      "width": 512,
+      "height": 512,
+      "artstyle": "glossy hand-painted 2.5D, cocoa outline, ivory upper-left highlights"
+    },
+    {
+      "name": "icon-quest",
+      "png": "icon-quest.png",
+      "reusedFrom": "home/icon-quest.png"
+    },
+    {
+      "name": "icon-coin",
+      "png": "icon-coin.png",
+      "reusedFrom": "shop/coin.png"
+    }
+  ]
+}

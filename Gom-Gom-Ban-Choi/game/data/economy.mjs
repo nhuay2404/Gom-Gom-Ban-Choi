@@ -88,17 +88,24 @@ export const DAILY_POOL = remote('DAILY_POOL', [
 // xong thì nhiệm vụ kế của cùng chuỗi đẻ ra ngay, chuỗi vừa nhận xuống cuối hàng. Hết nội dung (hết màn / khu / chỗ / mèo / kiểu) thì chuỗi
 // đó thôi, cuối game bảng có thể trống. Không có thưởng lớn khi làm hết. Mở từ màn fromLevel.
 // Thiết kế theo wiki: thưởng theo công sức (concept-economy-building-blocks), mục tiêu có trần để không thành cày (cozydive-bycer-relaxing-progression-curve).
-export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3 });
+// rankEvery: mỗi N quest nhận thưởng = lên một bậc nhà (danh hiệu ranks) + rankGems gem (quà lớn theo mốc, wiki: peak-end + gem chỉ ở mốc).
+export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3, rankEvery: 5, rankGems: 20,
+  ranks: ['Cozy Newcomer', 'Cat Sitter', 'Home Maker', 'Cat Whisperer', 'Dream Decorator', 'Master of Purrfection'] });
 // Chuỗi nhiệm vụ. Xu = share × R (R như nhiệm vụ ngày, lấy lúc nhiệm vụ đẻ ra).
 // kind 'level': thắng tới màn bội số của step · 'area': mở khu kế tiếp · còn lại đếm sự kiện (event):
 // mục tiêu = min(base + grow × số lần đã xong chuỗi, max), và không vượt số còn lại trong game (cap: tên số đếm trong ctx của quests.mjs).
 // {n} = mục tiêu, {area} = tên khu, {s} = 's' khi n > 1.
 export const QUEST_TRACKS = remote('QUEST_TRACKS', [
-  { id: 'level', kind: 'level', step: 5, share: 1.5, text: 'Beat level {n}' },
-  { id: 'area', kind: 'area', share: 2, text: 'Open the {area}' },
-  { id: 'build', event: 'build', base: 3, grow: 1, max: 5, cap: 'basesLeft', share: 1.5, text: 'Build {n} new spot{s}' },
-  { id: 'pets', event: 'claimPet', base: 1, grow: 0, max: 1, cap: 'petsLeft', share: 1, text: 'Welcome a new pet from the map' },
-  { id: 'styles', event: 'style', base: 2, grow: 1, max: 4, cap: 'stylesLeft', share: 1, text: 'Collect {n} new style{s} in the Shop' },
+  // Thắng màn vốn đã có thưởng: quest này chỉ thưởng nhẹ (đừng trả hai lần cho cùng một việc).
+  { id: 'level', kind: 'level', step: 5, share: .5, text: 'The cats are cheering you on. Beat level {n}!' },
+  { id: 'area', kind: 'area', share: 2, text: 'Your home is growing. Open the {area} next!' },
+  { id: 'build', event: 'build', base: 3, grow: 1, max: 5, cap: 'basesLeft', share: 1.5, text: 'The cats need more cozy corners. Build {n} new spot{s}!' },
+  { id: 'pets', event: 'claimPet', base: 1, grow: 0, max: 1, cap: 'petsLeft', share: 1, text: 'A new friend is waiting on the map. Welcome them home!' },
+  { id: 'styles', event: 'style', base: 2, grow: 1, max: 4, cap: 'stylesLeft', share: 1, text: 'Fresh looks are in the Shop. Collect {n} new style{s}!' },
+  // Dạy chơi (once: chỉ một lần): chỉ cho người chơi những thứ dễ bỏ lỡ, thưởng nhẹ.
+  { id: 'carry', event: 'carry', base: 1, grow: 0, once: true, share: .5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },
+  { id: 'view', event: 'view', base: 1, grow: 0, once: true, share: .5, text: 'Take a moment. Hide the buttons and admire your home!' },
+  { id: 'surface', event: 'surface', base: 1, grow: 0, once: true, share: .5, text: 'Make it yours. Change the walls or floor of a room!' },
 ]);
 
 // Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).

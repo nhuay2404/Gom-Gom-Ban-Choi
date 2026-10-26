@@ -1,0 +1,23 @@
+// Presentation only: shared by the live dialog and the asset-kit preview.
+const art = './assets/img/quests/';
+const fmt = n => n.toLocaleString('en-US');
+const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Nhãn + icon theo chuỗi (QUEST_TRACKS); chuỗi dạy chơi dùng lại icon có sẵn.
+const labels = { level: 'Adventure', area: 'Explore', build: 'Build', pets: 'New friends', styles: 'Decorate', carry: 'Cat care', view: 'Cozy time', surface: 'Decorate' };
+const icons = { carry: 'pets', view: 'styles', surface: 'styles' };
+export function questRow(q, index) {
+  const done = q.progress >= q.n;
+  const progress = Math.max(0, Math.min(q.n, q.progress));
+  const pct = q.n > 0 ? Math.round(progress / q.n * 100) : 0;
+  const track = Object.hasOwn(labels, q.track) ? q.track : 'level';
+  return `<li class="quest-card${done ? ' is-ready' : ''}">
+    <div class="quest-icon"><img src="${art}icon-${icons[track] ?? track}.png" alt="">${done ? `<img class="quest-check" src="${art}check.png" alt="">` : ''}</div>
+    <div class="quest-info"><span class="quest-category">${labels[track]}${done ? ' · Complete!' : ''}</span><b class="quest-text">${escape(q.text)}</b>
+    <span class="quest-progress" role="progressbar" aria-label="${escape(q.text)}" aria-valuemin="0" aria-valuemax="${q.n}" aria-valuenow="${progress}"><i style="width:${pct}%"></i><em>${fmt(progress)} / ${fmt(q.n)}</em></span></div>
+    <button class="quest-claim" data-claim="${index}" aria-label="${done ? 'Claim' : 'Reward'} ${fmt(q.reward)} coins: ${escape(q.text)}"${done ? '' : ' disabled'}><span>${done ? 'Claim' : 'Reward'}</span><strong><img src="${art}icon-coin.png" alt="">${fmt(q.reward)}</strong></button></li>`;
+}
+export function questBody(quests) {
+  return quests.active.length ? `<ul class="quest-list">${quests.active.map(questRow).join('')}</ul>`
+    : `<div class="quest-empty"><img src="${art}empty.png" alt=""><h3>You're all caught up!</h3><p>New quests arrive with new levels and areas.</p></div>`;
+}
+export const questShell = () => `<header class="quest-header"><img class="quest-emblem" src="${art}icon-quest.png" alt=""><h2 id="quests-title">Quests</h2><button class="quest-close" data-close aria-label="Close quests" autofocus></button></header><p class="quest-subtitle">Little steps, lovely rewards</p><div class="quest-summary" role="status" aria-live="polite"></div><div class="quest-body"></div><footer class="quest-footer"><img src="${art}sparkle.png" alt=""><span>Finish a quest to discover the next one!</span></footer>`;

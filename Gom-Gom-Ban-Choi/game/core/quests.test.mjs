@@ -11,9 +11,9 @@ test('nhiệm vụ tiến trình: đủ slots nhiệm vụ, mỗi chuỗi tối 
   const q = fillQuests(null, ctx);
   assert.equal(q.active.length, QUESTS.slots);
   assert.deepEqual(q.active.map(x => x.track), QUEST_TRACKS.slice(0, QUESTS.slots).map(t => t.id));
-  assert.equal(q.active[0].text, 'Beat level 15');
+  assert.match(q.active[0].text, /Beat level 15!$/);
   assert.equal(q.active[0].progress, 11, 'tiến độ màn đo theo số màn đã thắng');
-  assert.equal(q.active[1].text, 'Open the Living room');
+  assert.match(q.active[1].text, /Open the Living room next!$/);
   for (const x of q.active) assert.equal(x.reward, Math.round(track(x.track).share * dailyRate(ctx.unlocked) / 10) * 10);
   assert.ok(q.active[1].reward > fillQuests({ order: ['pets'], tiers: {}, active: [] }, ctx).active[0].reward, 'mở khu thưởng hơn nhận mèo');
   assert.equal(fillQuests(q, ctx), q);
@@ -31,8 +31,10 @@ test('nhiệm vụ tiến trình: nhận xong thì đẻ nhiệm vụ kế ngay;
   for (const tier of [0, 1, 2, 5, 9]) assert.equal(fillQuests({ order: ['build'], tiers: { build: tier }, active: [] }, ctx).active[0].n, Math.min(b.base + b.grow * tier, b.max));
   // Cuối game: hết màn, hết khu, hết chỗ, hết mèo, hết kiểu đồ -> bảng trống.
   const done = { ...ctx, cleared: 100, nextArea: null, basesLeft: 0, petsLeft: 0, stylesLeft: 0 };
-  assert.equal(fillQuests(null, done).active.length, 0);
-  assert.deepEqual(fillQuests(null, { ...done, stylesLeft: 1 }).active.map(x => [x.track, x.n]), [['styles', 1]], 'mục tiêu không vượt số còn lại');
+  // Chuỗi dạy chơi (once) đã làm xong từ trước.
+  const taught = { order: QUEST_TRACKS.map(t => t.id), tiers: { carry: 1, view: 1, surface: 1 }, active: [] };
+  assert.equal(fillQuests(taught, done).active.length, 0);
+  assert.deepEqual(fillQuests(taught, { ...done, stylesLeft: 1 }).active.map(x => [x.track, x.n]), [['styles', 1]], 'mục tiêu không vượt số còn lại');
 });
 
 test('nhiệm vụ tiến trình: chưa xong không nhận được; đếm không vượt mục tiêu; chuỗi lên bậc + xuống cuối hàng', () => {
@@ -46,4 +48,21 @@ test('nhiệm vụ tiến trình: chưa xong không nhận được; đếm khô
   assert.equal(got.tiers.build, 1);
   assert.equal(got.order.at(-1), 'build');
   assert.equal(noteQuests(got, 'play', 5), got, 'sự kiện không thuộc chuỗi nào thì không đổi');
+});
+
+test('nhiệm vụ tiến trình: chuỗi dạy chơi (once) chỉ ra một lần; thắng màn thưởng nhẹ hơn mở khu', () => {
+  const q = fillQuests({ order: ['carry', 'level', 'area'], tiers: {}, active: [] }, ctx);
+  assert.equal(q.active[0].track, 'carry');
+  const done = claimQuest(noteQuests(q, 'carry'), 0, ctx).quests;
+  assert.ok(!done.active.some(x => x.track === 'carry'), 'xong rồi thì không ra lại');
+  assert.ok(q.active[1].reward < q.active[2].reward);
+});
+
+test('cấp nhà: lên bậc sau mỗi rankEvery quest đã nhận; bậc cuối giữ danh hiệu cuối', async () => {
+  const { questRank } = await import('./quests.mjs');
+  assert.deepEqual(questRank(null), { rank: 0, title: QUESTS.ranks[0], into: 0, every: QUESTS.rankEvery });
+  const r = questRank({ tiers: { build: QUESTS.rankEvery, pets: 1 } });
+  assert.equal(r.rank, 1);
+  assert.equal(r.into, 1);
+  assert.equal(questRank({ tiers: { level: QUESTS.rankEvery * 99 } }).title, QUESTS.ranks.at(-1));
 });

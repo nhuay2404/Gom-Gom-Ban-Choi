@@ -120,7 +120,7 @@ export const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thu
   room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
   room3d.onPick(onScenePick);
-  room3d.onCatEvent(kind => { if (kind === 'pet') noteEvent('pet'); }); // nhiệm vụ "vuốt mèo"
+  room3d.onCatEvent(kind => noteEvent(kind)); // nhiệm vụ "vuốt mèo" (pet) / "bế mèo" (carry)
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
   room3d.onFrame(() => { if (!$('deco').hidden) { placeDecoPop(); placeDecoPins(); placeIdleCoin(); placeAreaMarker(); } });
   // Deco: kéo cảnh sang phòng khác thì hàng thẻ, nút cột trái và hàng chọn khu đổi theo phòng đang ở giữa (camera không lướt lại).

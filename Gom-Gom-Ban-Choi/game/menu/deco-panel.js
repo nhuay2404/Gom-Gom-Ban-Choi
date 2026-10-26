@@ -375,7 +375,7 @@ function chooseOption(entry, buyTap) {
       const placed = useItem(bought, entry);
       popPreview = null;
       setDeco(placed.error ? bought : placed);
-      if (!placed.error) noteEvent('place');
+      if (!placed.error) { noteEvent('place'); if (entry.cat !== 'furniture') noteEvent('surface'); }
       refreshWallet();
       playSound('reward');
       if (!room3d) buildFlatRooms();
@@ -402,6 +402,7 @@ function chooseOption(entry, buyTap) {
     if (next.error) return showToast(next.error);
     setDeco(next);
     noteEvent('place');
+    if (entry.cat === 'walls' || entry.cat === 'floors') noteEvent('surface');
   }
   playSound('pick');
   if (!room3d) buildFlatRooms();
@@ -435,7 +436,7 @@ export function setDecoLock(on) {
   renderAreaNext(); // chế độ xem: ẩn cả mảnh đất mờ + bong bóng giá
 }
 
-$('deco-lock').onclick = () => { playSound('pick'); setDecoLock(!decoLocked); };
+$('deco-lock').onclick = () => { playSound('pick'); if (!decoLocked) noteEvent('view'); setDecoLock(!decoLocked); };
 
 // Bảng đổi món luôn nằm PHÍA TRÊN món (bám theo món mỗi khung hình khi camera trượt / xoay / zoom — room3d.onFrame), đuôi chỉ xuống món.
 // Phía trên không đủ chỗ (món ở sát mép trên) thì trượt camera cho món tụt xuống tới khi vừa. Bảng mở từ cột nút trái thì nằm

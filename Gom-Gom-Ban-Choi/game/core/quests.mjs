@@ -27,6 +27,7 @@ function spawn(track, tier, ctx) {
     n = 1;
     area = ctx.nextArea;
   } else {
+    if (track.once && tier) return null;
     // Có trần (không thành cày) và không vượt số còn lại trong game (nhiệm vụ không bao giờ kẹt).
     n = Math.min(track.base + track.grow * tier, track.max ?? Infinity);
     if (track.cap) { if (!ctx[track.cap]) return null; n = Math.min(n, ctx[track.cap]); }
@@ -85,4 +86,11 @@ export function claimQuest(quests, index, ctx) {
     active: quests.active.filter((_, i) => i !== index),
   };
   return { quests: fillQuests(next, ctx), coins: quest.reward };
+}
+
+// Cấp nhà: mỗi QUESTS.rankEvery quest đã nhận thưởng = lên một bậc (danh hiệu QUESTS.ranks, bậc cuối giữ nguyên tên).
+// done = số quest đã nhận (tổng số lần lên bậc của mọi chuỗi), into = đã làm bao nhiêu quest trong bậc hiện tại.
+export function questRank(quests) {
+  const done = Object.values(quests?.tiers ?? {}).reduce((sum, n) => sum + n, 0), rank = Math.floor(done / QUESTS.rankEvery);
+  return { rank, title: QUESTS.ranks[Math.min(rank, QUESTS.ranks.length - 1)], into: done % QUESTS.rankEvery, every: QUESTS.rankEvery };
 }
