@@ -14,7 +14,7 @@ export function questRow(q, index) {
     <div class="quest-icon"><img src="${art}icon-${icons[track] ?? track}.png" alt="">${done ? `<img class="quest-check" src="${art}check.png" alt="">` : ''}</div>
     <div class="quest-info"><span class="quest-category">${labels[track]}${done ? ' · Complete!' : ''}</span><b class="quest-text">${escape(q.text)}</b>
     <span class="quest-progress" role="progressbar" aria-label="${escape(q.text)}" aria-valuemin="0" aria-valuemax="${q.n}" aria-valuenow="${progress}"><i style="width:${pct}%"></i><em>${fmt(progress)} / ${fmt(q.n)}</em></span></div>
-    <button class="quest-claim" data-claim="${index}" aria-label="${done ? 'Claim' : 'Reward'} ${fmt(q.reward)} coins: ${escape(q.text)}"${done ? '' : ' disabled'}>${done ? '<span>Claim</span>' : ''}<strong><img src="${art}icon-coin.png" alt="">${fmt(q.reward)}</strong></button></li>`;
+    <button class="quest-claim" data-claim="${index}" aria-label="${done ? 'Claim' : 'Reward'} ${fmt(q.reward)} coins: ${escape(q.text)}"${done ? '' : ' disabled'}><strong><img src="${art}icon-coin.png" alt="">${fmt(q.reward)}</strong></button></li>`;
 }
 export function questBody(quests) {
   return quests.active.length ? `<ul class="quest-list">${quests.active.map(questRow).join('')}</ul>`
