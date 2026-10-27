@@ -121,9 +121,14 @@ export function placeAreaMarker() {
   const marker = $('area-next');
   if (!marker.dataset.state) return;
   const at = nextArea(getDeco()) && !devAllZones() && !decoLocked ? room3d?.screenOfGhost() : null;
-  marker.hidden = !at;
-  if (at) marker.style.transform = `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0)`;
+  // Lướt tới vị trí mới thay vì nhảy (neo đổi từ tâm khu sang mép khi khu ra khỏi khung); ra khỏi khung thì mờ dần, không tắt phụt.
+  marker.classList.toggle('away', !at);
+  if (!at) return;
+  markerAt = markerAt && !marker.hidden ? { x: markerAt.x + (at.x - markerAt.x) * .2, y: markerAt.y + (at.y - markerAt.y) * .2 } : at;
+  marker.hidden = false;
+  marker.style.transform = `translate3d(${markerAt.x.toFixed(1)}px, ${markerAt.y.toFixed(1)}px, 0)`;
 }
+let markerAt = null;
 
 // Một dòng trong bảng mở khu: 2 bước (xây đủ khu trước, trả xu); khu thứ hai chỉ ghi "sau khu trước".
 const STEP = (done, text) => `<li class="${done ? 'done' : ''}"><i aria-hidden="true">${done ? '✓' : ''}</i>${text}</li>`;

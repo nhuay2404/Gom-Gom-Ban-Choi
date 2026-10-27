@@ -124,7 +124,8 @@ export function renderDeco() {
     const className = `deco-card ${status}${entry.gems ? ' premium' : ''}${picked ? ' picked' : ''}${decoNew.has(entry.id) || (!base && freshIds.has(entry.id)) ? ' is-new' : ''}`;
     if (card.className !== className) card.className = className;
     const buyable = status === 'buy' && picked;
-    const art = thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">${entry.cat === 'cats' ? 'Claim' : `Lv ${entry.lock}`}</em>`
+    // Pet chưa nhận ở bản đồ: giấu mặt sau dấu "?" như thùng các-tông trên bản đồ.
+    const art = status === 'locked' && entry.cat === 'cats' ? '<span class="thumb cat-mystery" aria-hidden="true">?</span>' : thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">${entry.cat === 'cats' ? 'Claim' : `Lv ${entry.lock}`}</em>`
       : buyable ? `<em class="deco-card-price act" data-act="buy">Buy ${cost(entry)}</em>`
       : status === 'using' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'In home' : '✓ In use'}</em>`
       : status === 'owned' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'Add' : 'Use'}</em>`

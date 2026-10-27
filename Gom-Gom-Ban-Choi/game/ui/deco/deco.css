@@ -306,8 +306,9 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .screen>.area-next{width:auto}
 /* Chỉ có dấu "!" (không nền tròn): chữ vàng viền nâu + quầng trắng để đọc được trên cỏ / sàn. */
 /* Bong bóng giá: viên kem viền nâu + đuôi nhọn chỉ xuống mảnh đất; đủ điều kiện thì viền xanh. translate -50%/-100% để đuôi chạm điểm neo. */
-.area-next{position:absolute;left:0;top:0;z-index:6;will-change:transform;padding:0;border:0;background:none;color:var(--ink)}
+.area-next{position:absolute;left:0;top:0;z-index:5;will-change:transform;padding:0;border:0;background:none;color:var(--ink)}
 .area-next[hidden]{display:none}
+.area-next{transition:opacity .25s}.area-next.away{opacity:0;pointer-events:none}
 .area-next b{position:relative;display:flex;flex-direction:column;align-items:center;translate:-50% calc(-100% - 10px);padding:5px 12px;border:3px solid #73392a;
   border-radius:16px;background:#fff8e4;box-shadow:0 3px 0 #73392a66;font:800 17px/1.1 var(--display, inherit);white-space:nowrap}
 .area-next b::after{content:'';position:absolute;left:50%;bottom:-9px;width:12px;height:12px;margin-left:-6px;rotate:45deg;background:inherit;
@@ -468,3 +469,4 @@ body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
 .deco-card.premium .deco-card-price.act{background:linear-gradient(#d9a6ff,#a35fe0);border-color:#8a3fb8;box-shadow:0 2px 0 #8a3fb8}
 .deco-card-price .ico-gem,.deco-opt-price .ico-gem{width:calc(13 * var(--u));height:calc(13 * var(--u))}
 .deco-opt.premium{background:linear-gradient(#fff3f7,#ffe6ee)}
+.deco-card .cat-mystery{display:grid;place-items:center;width:100%;height:100%;background:none;color:#ffd45c;font:900 56px/1 var(--display,"Baloo 2",system-ui);-webkit-text-stroke:6px #73392a;paint-order:stroke fill}

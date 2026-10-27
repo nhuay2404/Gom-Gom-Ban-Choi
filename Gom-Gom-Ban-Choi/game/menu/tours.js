@@ -137,8 +137,17 @@ function runBasicsTour() {
 export async function runOnboarding() {
   const stage = ob.stage();
   if (!ob.pending()) return;
-  await switchTab(stage === 'basics' ? 'home' : 'deco'); // hướng dẫn Deco đầu tiên bắt đầu từ Home hub: chỉ vào nút Deco
-  await new Promise(resolve => setTimeout(resolve, 600));
-  if (stage === 'basics') runBasicsTour();
-  else if (stage === 'decor') runDecoTour();
+  // Chặn mọi cú chạm từ lúc chuyển tab tới khi lớp hướng dẫn hiện: trước đây khoảng chờ này (màn loading + 600 ms + lúc vẽ bước đầu)
+  // để hở bản đồ / nút PLAY ở Home, chạm vào là vào thẳng màn 2 thay vì đi hướng dẫn Deco.
+  const shield = Object.assign(document.createElement('div'), { className: 'tour-shield' });
+  shield.style.cssText = 'position:fixed;inset:0;z-index:2147483000';
+  document.body.append(shield);
+  try {
+    await switchTab(stage === 'basics' ? 'home' : 'deco'); // hướng dẫn Deco đầu tiên bắt đầu từ Home hub: chỉ vào nút Deco
+    await new Promise(resolve => setTimeout(resolve, 600));
+    if (stage === 'basics') runBasicsTour();
+    else if (stage === 'decor') runDecoTour();
+    // Tấm chắn của hướng dẫn đã vẽ thì mới gỡ tấm chắn tạm (bước đầu có thể vẽ muộn vài giây, chờ cảnh / màn loading xong).
+    await waitFor(() => document.querySelector('.deco-tour-blocker'), 10000);
+  } finally { shield.remove(); }
 }

@@ -180,10 +180,12 @@ function lossStreakHere(index) {
 }
 
 // Thứ được mở khoá ở các màn onboarding (onboarding.js), hiện dưới "Unlocked:" ở bảng kết quả.
+// Mở khu / mở Deco dùng chung icon Deco của thanh tab.
+const DECO_ICON = '<img src="./assets/img/nav/icon-deco-matte.png" alt="">';
 const UNLOCK_ITEMS = {
-  garden: [{ name: 'Garden', icon: '<svg viewBox="0 0 24 24"><use href="#i-deco"/></svg>' }],
+  garden: [{ name: 'Garden', icon: DECO_ICON }],
   cats: [{ name: 'Orange cat', icon: catMarkup.orange }, { name: 'Gray cat', icon: catMarkup.gray }],
-  decor: [{ name: 'Decoration', icon: '<svg viewBox="0 0 24 24"><use href="#i-cart"/></svg>' }],
+  decor: [{ name: 'Decoration', icon: DECO_ICON }],
 };
 
 $('result-continue').onclick = () => { leaveResult(); menus.runOnboarding(); };

@@ -44,3 +44,4 @@ body.afk .shell .cat.bitmap .calm{transition:opacity .15s linear calc(var(--afk-
 .result-unlock .ru-icon{display:grid;place-items:center;width:calc(64 * var(--u));height:calc(64 * var(--u));border-radius:calc(18 * var(--u));background:#fdf6e8;border:calc(3 * var(--u)) solid #73392a;box-shadow:inset 0 0 0 calc(2 * var(--u)) #fffdf6;color:#73392a;overflow:hidden}
 .result-unlock .ru-icon>svg{width:calc(38 * var(--u));height:calc(38 * var(--u));fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .result-unlock .ru-icon .cat{width:90%;height:90%}
+.result-unlock .ru-icon>img{width:85%;height:85%;object-fit:contain}
