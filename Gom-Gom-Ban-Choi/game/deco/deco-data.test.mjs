@@ -143,8 +143,8 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
   const { PLACES } = await import('./room-layout.mjs');
   const bases = CATALOG.filter(entry => entry.cat === 'furniture' && !entry.slot);
   bases.forEach(base => {
-    const alts = CATALOG.filter(entry => entry.slot === base.id);
-    // Đúng 3 món mỗi chỗ: món gốc + 2 kiểu khác (không chia theme màu).
+    const alts = CATALOG.filter(entry => entry.slot === base.id && !entry.gems);
+    // Đúng 3 món bán bằng xu mỗi chỗ: món gốc + 2 kiểu khác (không chia theme màu). Món giá gem (bộ Vườn Nhật) là kiểu thêm, test riêng.
     assert.equal(1 + alts.length, 3, `${base.id}: 3 món`);
     alts.forEach(alt => {
       assert.equal(alt.price, base.price, `${alt.id} đồng giá`);
@@ -169,7 +169,7 @@ test('phương án thay thế: đồng giá, cùng khoá, cùng chỗ; đặt v�
 test('slotGroups: đồ gom theo chỗ đặt (món gốc + phương án), tường / sàn / mèo là một nhóm', () => {
   const groups = slotGroups('garden', 'furniture');
   groups.forEach(group => assert.ok(group.every(e => (e.slot || e.id) === (group[0].slot || group[0].id)), 'cùng chỗ'));
-  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom', 'flowers-tulips']);
+  assert.deepEqual(groups[0].map(e => e.id), ['flowers', 'flowers-mushroom', 'flowers-tulips', 'flowers-jp']);
   assert.equal(groups.flat().length, catalogFor('garden', 'furniture').length, 'không sót món nào');
   assert.equal(slotGroups('living', 'walls').length, 1);
   assert.equal(slotGroups('living', 'cats').length, 1);
@@ -231,6 +231,27 @@ test('Shop Decoration: phương án thay thế cần xây chỗ trước, mua v�
   deco = clearFresh(buyToStock(deco, itemById('fence-wood'), 99), 'garden', 'walls');
   assert.equal(freshKeys(deco, 'garden').size, 0);
   assert.equal(useItem(deco, itemById('fence-wood')).zones.garden.wall, 'fence-wood');
+});
+
+test('bộ Vườn Nhật: 28 món giá gem ở vườn (gốc + mở rộng), tổng 1,200 gem; không miễn phí, không mua bằng xu, cần xây chỗ trước', async () => {
+  const { shopCatalog, shopStatus, buyToStock, isOwned, isBase } = await import('./deco-data.mjs');
+  const { GEM_PACKS } = await import('../data/economy.mjs');
+  const set = CATALOG.filter(entry => entry.gems);
+  assert.equal(set.length, 28);
+  assert.equal(set.filter(entry => entry.area === 'garden2').length, 10, '10 món ở vườn mở rộng');
+  assert.ok(set.every(entry => entry.zone === 'garden' && !isBase(entry)), 'chỉ ở vườn, không phải món gốc');
+  assert.equal(set.reduce((sum, entry) => sum + entry.gems, 0), GEM_PACKS.find(pack => pack.id === 'gems_1200').gems, 'cả bộ = gói $9.99');
+  assert.ok(set.every(entry => shopCatalog('garden').includes(entry)), 'bán ở Shop');
+  setStorageBackend(memoryStore());
+  let deco = { ...loadDeco(0), coins: 99999 };
+  assert.ok(set.every(entry => !isOwned(deco, entry)), 'không có sẵn');
+  const fence = itemById('fence-bamboo'), lantern = itemById('lantern-jp');
+  assert.equal(shopStatus(deco, fence, 99, 19), 'poor', 'xu nhiều nhưng thiếu gem');
+  assert.equal(buyToStock(deco, fence, 99, 0).error, 'Not enough gems');
+  const bought = buyToStock(deco, fence, 99, 20);
+  assert.equal(bought.coins, 99999, 'không trừ xu');
+  assert.ok(isOwned(bought, fence));
+  assert.equal(shopStatus(deco, lantern, 99, 999), 'needBase', 'kiểu Nhật cần xây chỗ trước như kiểu khác');
 });
 
 test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ kế đã trừ tiền mở khu / giá món gốc đã mở giảm dần qua từng lô 10 màn tới khu cuối (khu sau khó mua đủ hơn)', async () => {

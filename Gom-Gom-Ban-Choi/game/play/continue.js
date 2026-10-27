@@ -41,7 +41,7 @@ export async function offerContinue() {
   playSound('invalid');
   for (;;) {
     const choice = await ask({
-      title: 'So close!', className: 'continue', body,
+      title: 'So close!', className: 'continue', icon: './assets/img/play/booster-moves.png', body,
       choices: [
         { id: 'gems', label: `${gain(stuck ? CONTINUE.stuckMoves : CONTINUE.moves)} · ${free ? 'FREE' : gemTag(price)}` },
         used === 0 && adReady('continue') && { id: 'ad', label: `▶ Watch ad: ${gain(adMoves)}`, style: 'ad' },

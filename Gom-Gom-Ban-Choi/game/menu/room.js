@@ -17,6 +17,7 @@ import { map3dReady } from './map-view.js';
 export let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
 
 export let decoThumbnail = null; // chụp model 3D làm ảnh cho ô đồ (có sau khi nạp Three.js)
+export let decoSpinner = null; // model 3D quay được cho popup (deco-room.mjs thumbSpinner), có sau khi nạp Three.js
 
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10). Chỉ Deco dựng cảnh này.
 // Mèo cam dẫn đường của các hướng dẫn Deco (Garden, Decoration): trong lúc hướng dẫn luôn có mặt trong vườn (chưa nhận thì ở TẠM,
@@ -114,11 +115,12 @@ export function startRoom() {
 }
 
 // Cảnh 3D nạp xong (phòng + bản đồ): màn loading (main.js) đợi cái này rồi mới tắt.
-export const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thumbnail }) => {
+export const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thumbnail, thumbSpinner }) => {
   room3d = createRoom();
   if (DEV_MODE && new URLSearchParams(location.search).has('qc')) setTimeout(runQC, 500);
   room3d.setAmbient(ambient);
   decoThumbnail = thumbnail;
+  decoSpinner = thumbSpinner;
   room3d.onPick(onScenePick);
   room3d.onCatEvent(kind => noteEvent(kind)); // nhiệm vụ "vuốt mèo" (pet) / "bế mèo" (carry)
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).

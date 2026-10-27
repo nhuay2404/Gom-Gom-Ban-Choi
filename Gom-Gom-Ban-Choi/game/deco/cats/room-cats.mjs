@@ -11,7 +11,7 @@ import { zoneHome, boxNearest, PASSES } from './cat-nav.mjs';
 // ---------- Cả đàn: chọn hành vi, vật cản, đồ chơi rơi/lăn ----------
 // Độ thích từng món đồ (trọng số chọn hành vi), theo khu.
 // Hammock variants that hang from a beam and swing like a pendulum (not a cloth sling).
-export const hangsFromBeam = kind => kind === 'hammock-tire' || kind === 'hammock-basket';
+export const hangsFromBeam = kind => kind === 'hammock-tire' || kind === 'hammock-basket' || kind === 'hammock-jp';
 
 const GARDEN_TOYS = { flowers: .9, stump: 1.1, catnip: 1.2, lantern: .7, sandbox: 1, cathouse: 1.5, pond: 1.3, hammock: 1.4, birdbath: 1.1, bench: .9 };
 

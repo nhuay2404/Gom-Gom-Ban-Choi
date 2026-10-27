@@ -1,0 +1,36 @@
+/* Common cream/cocoa confirmation system. Flat fills, real game icons, no ribbon. */
+.confirm-dialog.store-dialog{box-sizing:border-box;width:min(390px,calc((var(--frame-w,100vw) - 28px)/var(--s,1)));max-width:calc((100vw - 24px)/var(--s,1));max-height:calc((100dvh - 28px)/var(--s,1));margin:auto;padding:20px 20px 22px;overflow:auto;overscroll-behavior:contain;border:3px solid #724c2c;border-radius:28px;background:#fff8e5;box-shadow:inset 0 0 0 2px #f5dfa7,0 5px 0 #51351c40,0 16px 48px #2e221a38;color:#674626;font-family:var(--ui-font,Nunito,system-ui,sans-serif);text-align:center}
+.confirm-dialog.store-dialog[open]{display:flex;flex-direction:column;align-items:stretch;gap:0;animation:confirm-pop .2s ease-out both}
+.confirm-dialog::backdrop{background:#30261999;backdrop-filter:blur(4px)}
+.confirm-header{position:relative;flex:none;margin:0 0 17px;padding:5px 37px 16px;border-bottom:1px solid #e5d2a9}
+.confirm-header::after{content:'';position:absolute;bottom:-2px;left:calc(50% - 18px);width:36px;height:3px;border-radius:2px;background:#d3a74e}
+.confirm-dialog .confirm-header h2{margin:0;font-family:var(--display,'Baloo 2',system-ui);font-size:28px;font-weight:800;line-height:1.1;letter-spacing:0;color:#674626;text-shadow:none;overflow-wrap:anywhere}
+.confirm-close{position:absolute;right:-7px;top:0;width:36px;height:36px;padding:0;border:0;background:url('../../assets/img/quests/close.svg') center/contain no-repeat;cursor:pointer}
+.confirm-hero{display:block;flex:none;width:90px;height:78px;object-fit:contain;margin:-2px auto 12px}
+.confirm-body{flex:none;min-width:0;color:#896644;line-height:1.5}
+.confirm-dialog .confirm-body p,.confirm-dialog .confirm-body .level-feature{margin:0 0 14px;font-size:14px!important;font-weight:800;line-height:1.5;color:#896644!important}
+.confirm-body:empty{display:none}
+.confirm-body b{color:#674626}
+.confirm-dialog .confirm-actions{flex:none;display:flex;flex-direction:column;gap:9px;width:100%;margin:4px 0 0}
+.confirm-dialog .confirm-action{box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-width:0;min-height:52px;margin:0;padding:10px 14px;border:2px solid #487c36;border-radius:16px;background:#69a94d;box-shadow:0 3px 0 #3d6a2d;color:#fffbed;font-family:var(--display,'Baloo 2',system-ui);font-size:18px;font-weight:800;line-height:1.2;letter-spacing:0;text-shadow:none;-webkit-text-stroke:0;cursor:pointer;transition:translate .12s,filter .12s}
+.confirm-action-label{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;min-width:0;overflow-wrap:anywhere}
+.confirm-dialog .confirm-action.ghost{border-color:#dfc58b;background:#f7ebcb;box-shadow:0 2px 0 #d7bb7c;color:#7a5733}
+.confirm-dialog .confirm-action.danger{border-color:#d49a82;background:#f4dacc;box-shadow:0 2px 0 #c88b73;color:#913e2c}
+.confirm-dialog .confirm-action.ad{border-color:#c58c2c;background:#f6cc6b;box-shadow:0 3px 0 #ad7629;color:#69431f}
+.confirm-video-icon{display:block;flex:none;width:32px;height:32px;object-fit:contain}
+.confirm-dialog .confirm-action:hover:not(:disabled){filter:brightness(1.04)}
+.confirm-dialog .confirm-action:active:not(:disabled){transform:none;translate:0 2px;box-shadow:none}
+.confirm-dialog .confirm-action:disabled{opacity:.5;cursor:default;box-shadow:none;filter:grayscale(.4)}
+.confirm-dialog button:focus-visible{outline:3px solid #2586aa;outline-offset:3px}
+.confirm-dialog .ico-coin{display:inline-block;width:1.1em;height:1.1em;flex:none;vertical-align:-.15em;border:0;border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+.confirm-dialog .continue-progress{margin-bottom:8px!important;font-size:15px!important}
+.confirm-dialog .continue-next{font-size:12px!important}
+.confirm-dialog.gem-store .confirm-action:not(.ghost){border-color:#dbbc7c;background:#f9edcf;box-shadow:0 2px 0 #d6b776;color:#674626}
+.confirm-dialog.gem-store .confirm-action:not(.ghost) .confirm-action-label{justify-content:space-between;width:100%}
+.confirm-dialog.gem-store .gs-price{flex:none;padding:5px 10px;border-radius:10px;background:#69a94d;color:#fffbed;font-size:16px}
+.confirm-dialog .area-row{box-sizing:border-box}
+.confirm-dialog .amt{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.confirm-dialog .area-row li .ico-coin{display:inline-block;width:18px;height:18px;flex:none;border:0;border-radius:0;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+@keyframes confirm-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:360px){.confirm-dialog.store-dialog{padding:17px 16px 19px;border-radius:24px}.confirm-header{padding-inline:32px}.confirm-dialog .confirm-header h2{font-size:25px}.confirm-dialog .confirm-action{font-size:17px}.confirm-dialog .confirm-body p{font-size:13px!important}}
+@media(prefers-reduced-motion:reduce){.confirm-dialog.store-dialog[open]{animation:none}.confirm-dialog .confirm-action{transition:none}}

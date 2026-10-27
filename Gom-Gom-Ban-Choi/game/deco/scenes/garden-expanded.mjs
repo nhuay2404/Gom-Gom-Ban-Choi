@@ -465,7 +465,7 @@ export const GARDEN2_BUILD = {
 const v3 = new THREE.Vector3(), v3b = new THREE.Vector3();
 
 // Suối (và bản có cầu): mặt nước + lòng suối là tấm phẳng (cách nhau 15 mm), nước chảy bằng cách trượt texture.
-function streamBase(withBridge, withWheel = false) {
+export function streamBase(withBridge, withWheel = false) {
   const tick = ticker();
   const outline = new THREE.Shape();
   const L = 1.05, Wd = .36;
@@ -578,7 +578,7 @@ function gableRoof(w, wallH, peak, depth, color) {
   return [...planks, at(cyl(.025, .025, depth + .02, color, 10), 0, wallH + peak + .02, 0).rotateX(Math.PI / 2)];
 }
 // Cột cắm đế tròn + nhà trên đỉnh cột + chim đậu (birdY = mặt nóc nhà, toạ độ nhà). Chim ngó quanh, thỉnh thoảng mổ, đuôi rung theo gió.
-const BIRD_POST_H = 1.2;
+export const BIRD_POST_H = 1.2;
 // Chim nhỏ (gốc = chân): thân, bụng, đầu có mỏ + mắt (nằm ngoài mặt đầu), cánh, đuôi.
 function perchedBird(color, belly) {
   const head = group(ball(.035, color), at(cone(.012, .035, '#ffb347', 8), 0, 0, .045).rotateX(Math.PI / 2),
@@ -592,7 +592,7 @@ function perchedBird(color, belly) {
   bird.userData.head = head; bird.userData.tail = tail;
   return bird;
 }
-function birdhouseRig(house, postColor, baseColor, [birdColor, belly], birdY = .465) {
+export function birdhouseRig(house, postColor, baseColor, [birdColor, belly], birdY = .465) {
   house.position.y = BIRD_POST_H + .03;
   const bird = perchedBird(birdColor, belly);
   bird.position.set(0, BIRD_POST_H + .03 + birdY, .08);

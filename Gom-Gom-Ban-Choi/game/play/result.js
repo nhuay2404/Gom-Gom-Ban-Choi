@@ -18,6 +18,7 @@ import { now, state, menus } from './context.js';
 import { render } from './hud.js';
 import { renderTutorial } from './tutorial.js';
 import { startLevel } from './play-controller.js';
+import { confirmationMarkup } from '../ui/shared/confirmation-view.mjs';
 
 // Profile người chơi cho độ khó thích ứng (adaptive.mjs) + metric của ván đang chơi (ghi ở recordTry).
 export let profile = startVisit(loadProfile());
@@ -195,22 +196,33 @@ $('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };
 
 // Rời ván đang chơi dở (đã đặt ít nhất một thẻ): hỏi lại trước để không mất lượt vì bấm nhầm.
 let quitAction = null;
+$('quit-dialog').innerHTML = confirmationMarkup({
+  title: 'Leave this level?', titleId: 'quit-title', bodyId: 'quit-description',
+  body: '<p>Moves used and boosters spent won’t come back.</p>',
+  choices: [
+    { id: 'cancel', domId: 'quit-cancel', label: 'Keep playing', autofocus: true },
+    { id: 'leave', domId: 'quit-ok', label: 'Leave', style: 'danger' },
+  ],
+});
+$('quit-dialog').querySelector('[data-confirm-close]').onclick = () => $('quit-dialog').close();
+$('quit-dialog').addEventListener('close', () => { quitAction = null; });
 
-function confirmQuit(title, action) {
+function confirmQuit(title, action, label) {
   if (state.animating) return;
   if (state.over || state.moves >= state.level.moves) return action();
   quitAction = action;
   $('quit-title').textContent = title;
+  $('quit-ok').querySelector('.confirm-action-label').textContent = label;
   $('quit-dialog').showModal();
 }
 
 $('quit-cancel').onclick = () => $('quit-dialog').close();
 
-$('quit-ok').onclick = () => { $('quit-dialog').close(); recordQuit(); quitAction?.(); quitAction = null; };
+$('quit-ok').onclick = () => { const action = quitAction; quitAction = null; $('quit-dialog').close(); recordQuit(); action?.(); };
 
-$('restart').onclick = () => confirmQuit('Restart this level?', () => startLevel(state.levelIndex));
+$('restart').onclick = () => confirmQuit('Restart this level?', () => startLevel(state.levelIndex), 'Restart');
 
-$('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showTab('home'));
+$('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showTab('home'), 'Leave');
 
 // Ảnh bảng kết quả (Figma 3×, panel ~850 KB): giải mã sẵn lúc rảnh, để lần đầu bảng bật lên không phải giải mã giữa anim (giật).
 (function preloadResultArt() {

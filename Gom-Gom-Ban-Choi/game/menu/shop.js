@@ -2,14 +2,14 @@
 // Sang Unity: ShopScreen (MonoBehaviour).
 import { BOOSTERS } from '../data/tuning.mjs';
 import { GEM_PACKS, OFFERS, REWARDED_ADS } from '../data/economy.mjs';
-import { activeOffers, addGems } from '../core/gems.mjs';
-import { buyGemPack, buyBooster, buyOffer, coverCoins, contentsOf, timeLeft, OFFER_NAMES } from '../app/store.js';
+import { activeOffers, addGems, spendGems } from '../core/gems.mjs';
+import { buyGemPack, buyBooster, buyOffer, coverCoins, ensureGems, contentsOf, timeLeft, OFFER_NAMES } from '../app/store.js';
 import { showRewarded, adReady, adsLeftToday } from '../app/ads.js';
 import { playSound } from '../ui/sound.mjs';
 import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock } from '../deco/deco-data.mjs';
 import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, priceTag, gemTag, getWallet, setWallet, noteEvent } from '../app/shared.js';
 import { decoUnlockedLevel, isZoneOpen, dragScroll } from './areas.js';
-import { decoVisible, coin, thumbOf } from './deco-panel.js';
+import { decoVisible, cost, thumbOf } from './deco-panel.js';
 import { room3d, applyRoom } from './room.js';
 import { showTab } from './tabs.js';
 import * as ob from '../app/onboarding.js';
@@ -78,18 +78,21 @@ export function renderShopDeco() {
   }
   // Tường và sàn: mỗi thứ MỘT hàng vuốt ngang. Đồ đạc: một lưới chung "Decoration" (3 món mỗi dòng, xếp liền theo thứ tự, không
   // xuống dòng riêng cho từng chỗ đặt) — các kiểu cùng chỗ vẫn đứng cạnh nhau; chỗ chưa mua được gì (chưa xây / khoá theo màn) xuống cuối.
-  const names = ZONES[shopZone].cats, rows = new Map();
+  // Món giá gem (bộ Vườn Nhật) gom thành một mục riêng ở đầu, không trộn vào hàng tường / sàn / đồ.
+  const names = ZONES[shopZone].cats, rows = new Map(), gems = getWallet().gems, premium = [];
   shopCatalog(shopZone).filter(decoVisible).forEach(entry => {
+    const item = [entry, shopStatus(deco, entry, unlocked, gems)];
+    if (entry.gems) return premium.push(item);
     const key = entry.slot || entry.cat;
-    rows.set(key, [...(rows.get(key) || []), [entry, shopStatus(deco, entry, unlocked)]]);
+    rows.set(key, [...(rows.get(key) || []), item]);
   });
   const rank = key => (key === 'walls' ? -2 : key === 'floors' ? -1 : 0) + (rows.get(key).some(([, status]) => status === 'buy' || status === 'poor' || status === 'owned') ? 0 : 10);
   const keys = [...rows.keys()].sort((a, b) => rank(a) - rank(b));
   const card = ([entry, status]) => {
     const node = document.createElement('button');
-    node.className = `shop-deco-item ${status}`;
+    node.className = `shop-deco-item ${status}${entry.gems ? ' premium' : ''}`;
     node.dataset.id = entry.id;
-    const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `Lv ${entry.lock}` : status === 'needBase' ? 'Build first' : coin(entry.price);
+    const price = status === 'owned' ? 'Owned ✓' : status === 'locked' ? `Lv ${entry.lock}` : status === 'needBase' ? 'Build first' : cost(entry);
     node.innerHTML = `${thumbOf(entry)}<span>${entry.name}</span><em>${price}</em>`;
     return node;
   };
@@ -103,10 +106,13 @@ export function renderShopDeco() {
     row.append(list);
     return row;
   };
-  const sections = ['walls', 'floors'].filter(key => rows.has(key)).map(key => {
+  premium.sort(([a], [b]) => (a.cat !== 'furniture') - (b.cat !== 'furniture')); // đồ (vườn gốc rồi mở rộng) trước, rào / nền sau
+  const sections = premium.length ? [section(`<i class="premium-mark" aria-hidden="true"></i>Japanese Garden<small>${premium.filter(([, status]) => status === 'owned').length}/${premium.length} owned</small>`, premium, 'shop-deco-wrap')] : [];
+  sections[0]?.classList.add('premium-set');
+  sections.push(...['walls', 'floors'].filter(key => rows.has(key)).map(key => {
     const items = rows.get(key), owned = items.filter(([, status]) => status === 'owned').length;
     return section(`${names[key]}<small>${owned}/${items.length} owned</small>`, items, 'shop-deco-strip');
-  });
+  }));
   const furniture = keys.filter(key => key !== 'walls' && key !== 'floors').flatMap(key => rows.get(key));
   if (furniture.length) sections.push(section('Decoration', furniture, 'shop-deco-wrap'));
   $('shop-deco-grid').replaceChildren(...sections);
@@ -123,17 +129,19 @@ $('shop-deco-tabs').addEventListener('click', event => {
 $('shop-deco-grid').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.shop-deco-item')?.dataset.id);
   if (!entry) return;
-  const status = shopStatus(getDeco(), entry, decoUnlockedLevel());
+  const status = shopStatus(getDeco(), entry, decoUnlockedLevel(), getWallet().gems);
   if (status !== 'buy' && status !== 'poor') return buyDeco(entry); // đã có / khoá / chưa xây: báo lý do như cũ
   playSound('pick');
   openShopPreview(entry);
 });
 
 function buyDeco(entry) {
-  const next = buyToStock(getDeco(), entry, decoUnlockedLevel());
-  // Thiếu xu: mời trả hết xu + bù gem; xong thì mua lại (và đóng popup xem thử nếu đang mở).
+  const next = buyToStock(getDeco(), entry, decoUnlockedLevel(), getWallet().gems);
+  // Thiếu xu: mời trả hết xu + bù gem; thiếu gem (món giá gem): mời mua gem. Xong thì mua lại (và đóng popup xem thử nếu đang mở).
   if (next.error === 'Not enough coins') { coverCoins(entry.price, entry.name).then(ok => { if (ok && buyDeco(entry)) closeShopPreview(); }); return false; }
+  if (next.error === 'Not enough gems') { ensureGems(entry.gems).then(ok => { if (ok && buyDeco(entry)) closeShopPreview(); }); return false; }
   if (next.error) { showToast(next.error); return false; }
+  if (entry.gems) setWallet(spendGems(getWallet(), entry.gems));
   setDeco(next);
   noteEvent('style');
   refreshWallet();
@@ -152,8 +160,8 @@ let shopPreviewEntry = null;
 function openShopPreview(entry) {
   shopPreviewEntry = entry;
   $('shop-preview-name').textContent = entry.name;
-  $('shop-preview-buy').innerHTML = `Buy ${coin(entry.price)}`;
-  $('shop-preview-buy').classList.toggle('poor', getDeco().coins < entry.price);
+  $('shop-preview-buy').innerHTML = `Buy ${cost(entry)}`;
+  $('shop-preview-buy').classList.toggle('poor', entry.gems ? getWallet().gems < entry.gems : getDeco().coins < entry.price);
   const stage = $('shop-preview-stage');
   stage.replaceChildren();
   $('shop-preview').showModal();
@@ -213,8 +221,9 @@ export function renderShopBoosters() {
   $('shop-offers').innerHTML = activeOffers(getWallet(), Date.now()).map(kind =>
     `<button class="offer-card" data-offer="${kind}"><b>${OFFER_NAMES[kind]}</b><span>${contentsOf(OFFERS[kind])}</span><small>Ends in ${timeLeft(kind)}</small><em>$${OFFERS[kind].usd.toFixed(2)}</em></button>`).join('');
   const free = $('shop-free-gems'), ready = adReady('gems');
-  free.querySelector('b').innerHTML = `▶ Free ${gemTag(REWARDED_ADS.gems)}`;
+  free.querySelector('b').innerHTML = `Free ${gemTag(REWARDED_ADS.gems)}`;
   free.querySelector('em').textContent = ready ? `${adsLeftToday('gems')} left today` : 'Tomorrow';
+  free.setAttribute('aria-label', `Watch a video for ${REWARDED_ADS.gems} gems. ${free.querySelector('em').textContent}`);
   free.classList.toggle('poor', !ready);
   document.querySelectorAll('#shop-boosters [data-buy], #shop-booster-packs [data-buy]').forEach(button => {
     const id = button.dataset.buy, pack = button.hasAttribute('data-pack');

@@ -19,12 +19,17 @@
 .offer-contents .ico-coin{width:20px;height:20px;box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
 
 /* Rewarded ad giả lập: đếm ngược toàn màn hình (app/ads.js) */
-.ad-sim{width:100%;max-width:none;height:100%;max-height:none;margin:0;border:0;border-radius:0;background:#111;color:#fff}
-.ad-sim[open]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-.ad-sim small{font-size:13px;font-weight:900;letter-spacing:1px;opacity:.6}
-.ad-sim b{font-family:var(--display);font-size:96px;line-height:1}
-.ad-sim span{font-size:18px;font-weight:900}
+.ad-sim{width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:#000;color:#fff}
+.ad-sim[open]{display:block}
+.ad-sim video{width:100%;height:100%;object-fit:contain}
+.ad-sim small{position:absolute;top:calc(20px + env(safe-area-inset-top));left:16px;padding:4px 8px;border-radius:6px;background:#0008;font-size:12px;font-weight:900;letter-spacing:1px}
+/* Đồng hồ đếm ngược tới lúc hiện Skip: vành --p (1 → 0) quay theo thời gian còn lại. */
+.ad-clock{position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:conic-gradient(#fff calc(var(--p,1) * 360deg),#fff3 0);transition:--p .25s linear}
+@property --p{syntax:'<number>';inherits:false;initial-value:1}
+.ad-clock::before{content:'';position:absolute;inset:4px;border-radius:50%;background:#000b}
+.ad-clock b{position:relative;font-size:18px;font-weight:900}
 .ad-sim button{position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;min-width:0;padding:8px 16px}
+.ad-sim [hidden]{display:none}
 
 /* Nút "▶ x2" xem ads nhân đôi xu */
 .ad-double{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border:0;border-radius:999px;background:#5a8dee;color:#fff;font:inherit;font-size:15px;font-weight:900;cursor:pointer}

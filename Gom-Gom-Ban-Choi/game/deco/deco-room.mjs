@@ -25,6 +25,7 @@ import { runModelQC } from './qc.mjs';
 import { createDecoFx } from './render/deco-fx.mjs';
 import { fitToWall, fitToFloor } from './render/wall-theme.mjs';
 import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum } from './scenes/garden.mjs';
+import { JAPAN_BUILD } from './scenes/garden-japan.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
 // Vật liệu đồ đạc kiểu vật lý: gỗ / sơn / vải đều nhám (roughness cao), phản xạ điện môi thấp (specularIntensity)
@@ -653,7 +654,7 @@ const BUILD = {
 };
 
 // Đồ vườn dùng chung cơ chế đặt/dựng với đồ phòng khách.
-Object.assign(BUILD, GARDEN_BUILD, BEDROOM_BUILD, KITCHEN_BUILD, BATHROOM_BUILD, GARDEN2_BUILD, BACKYARD_BUILD, KINDER_BUILD);
+Object.assign(BUILD, GARDEN_BUILD, JAPAN_BUILD, BEDROOM_BUILD, KITCHEN_BUILD, BATHROOM_BUILD, GARDEN2_BUILD, BACKYARD_BUILD, KINDER_BUILD);
 // Món tự phát sáng (đèn bàn, màn hình, dải LED, lửa, nến) không có PointLight riêng: khai là nguồn sáng để QC (qc.mjs glow) và
 // chế độ đêm giữ phần sáng. Món KHÁC mà có vật liệu emissive / MeshBasicMaterial không nhận sáng là lỗi (ban đêm sáng rực như đèn).
 for (const id of ['bedside', 'desk', 'desk-study', 'fridge-steel', 'stove-wood', 'dining-square']) {
@@ -671,6 +672,7 @@ const STATIC_ITEMS = new Set(['cathouse', 'shelf', 'rug', 'rug-quilt', 'sandbox'
   // vườn: món không có bộ phận cử động riêng (đèn PointLight giữ nguyên, mergeStatic chỉ gộp mesh)
   'stump', 'stump-hay', 'stump-crate', 'lantern', 'lantern-lamppost', 'sandbox-turtle', 'sandbox-parasol',
   'cathouse-barrel', 'cathouse-mushroom', 'bench-log', 'bench-sofa',
+  'stump-jp', 'lantern-jp', 'sandbox-jp', 'cathouse-jp', 'bench-jp',
   // bếp: món không có bộ phận cử động riêng (bàn ăn / xe đẩy giữ cốc cho mèo đẩy rơi nên không gộp)
   'fridge', 'fridge-retro', 'fridge-steel', 'stove', 'stove-wood', 'stove-red', 'sink', 'sink-farm', 'sink-steel', 'pantry', 'pantry-rack', 'pantry-hutch',
   'kchair', 'kchair-stool', 'kchair-bench', 'catfood', 'catfood-feeder', 'catfood-stand',
@@ -689,9 +691,11 @@ export const modelIds = () => Object.keys(BUILD);
 export const buildModel = id => buildItem({ id });
 
 // ---------- Sàn: vân gỗ / thảm / gạch vẽ bằng canvas ----------
-function floorTexture(entry) {
-  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
+// k: độ phân giải gấp k lần (ảnh cận cảnh, vd. quà 7 ngày), hình vẽ y hệt.
+function floorTexture(entry, k = 1) {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512 * k;
   const g = canvas.getContext('2d');
+  g.scale(k, k);
   g.fillStyle = entry.color; g.fillRect(0, 0, 512, 512);
   if (entry.id.endsWith('-checker')) {
     g.fillStyle = '#2f3238';
@@ -751,11 +755,12 @@ function physicalLook(renderer, scene, envIntensity = .45) {
   pmrem.dispose();
 }
 
-function thumbStudio() {
-  if (thumbKit) return thumbKit;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+// Máy chụp: renderer + cảnh có đèn giống phòng. thumbKit chụp ảnh tĩnh (thumbnail), spinKit vẽ model sống của popup (thumbSpinner):
+// tách riêng để canvas của spinKit gắn thẳng vào trang (không chép ảnh GPU -> CPU mỗi khung, không đổi cỡ bộ đệm mỗi lần vẽ).
+function makeStudio(size, preserveDrawingBuffer) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer });
   renderer.setPixelRatio(1);
-  renderer.setSize(192, 192, false);
+  renderer.setSize(size, size, false);
   const scene = new THREE.Scene();
   physicalLook(renderer, scene);
   scene.add(new THREE.HemisphereLight('#fff8e8', '#e0b98a', TOON ? 1.15 * TOON_LIGHT.hemi : 1.5));
@@ -764,8 +769,14 @@ function thumbStudio() {
   scene.add(sun);
   const camera = new THREE.PerspectiveCamera(TOON ? TOON_FOV : 28, 1, .05, 60);
   camera.layers.enable(OUTLINE_LAYER); camera.layers.enable(DECAL_LAYER);
-  return (thumbKit = { renderer, scene, camera });
+  return { renderer, scene, camera };
 }
+const thumbStudio = () => (thumbKit ||= makeStudio(192, true));
+let spinKit = null;
+// Gỡ model chụp xong. Chất liệu nướng màu (mergeStatic bakeColors) dùng chung với bản đồ màn: không huỷ.
+const disposeSubject = subject => subject.traverse(node => {
+  if (node.isMesh) { node.geometry.dispose(); [].concat(node.material).forEach(m => { if (m.userData.bakedColors) return; m.map?.dispose(); m.dispose(); }); }
+});
 const slab = (w, d, top, edge = '#c79a5f') => {
   const node = mesh(new THREE.BoxGeometry(w, .12, d), mat(edge));
   node.material = [mat(edge), mat(edge), top, mat(edge), mat(edge), mat(edge)];
@@ -774,7 +785,6 @@ const slab = (w, d, top, edge = '#c79a5f') => {
 };
 const OUTDOOR = new Set(['garden', 'backyard', 'kinder']); // khu ngoài trời: nền cỏ + hàng rào thay cho sàn + tường
 // Quà 7 ngày (menu/login.js) dựng 3D toon, chụp bằng thumbnail() như đồ deco. Mặt trước quay về +z.
-const torusArc = (r, tube, arc, color) => mesh(new THREE.TorusGeometry(r, tube, 12, 28, arc), color);
 function pawCoin() {
   const rim = at(new THREE.Mesh(new THREE.TorusGeometry(.47, .05, 10, 40), mat('#d9962b')), 0, .07, 0);
   rim.rotation.x = Math.PI / 2;
@@ -785,53 +795,73 @@ function pawCoin() {
   return coin;
 }
 const standing = node => { node.rotation.x = Math.PI / 2; return node; };
+// Booster = đồng xu dày, mặt trước dán đúng ảnh booster (assets/img/play/booster-*.png; ảnh tròn kín khung nên khớp UV nắp trụ).
+// Nạp sẵn ảnh lúc nạp module: thumbnail chụp đồng bộ, ảnh chưa xong thì thumbnail() trả null (người gọi dùng ảnh PNG).
+const BOOSTER_RIM = { moves: '#5cbf78', hammer: '#e0528e', swap: '#3f8fe0' };
+const BOOSTER_IMG = Object.fromEntries(Object.keys(BOOSTER_RIM).map(id => { const img = new Image(); img.src = `./assets/img/play/booster-${id}.png`; return [id, img]; }));
+function boosterCoin(id) {
+  const map = new THREE.Texture(BOOSTER_IMG[id]);
+  // UV nắp trụ lệch 90° so với ảnh: xoay lại cho ảnh đứng thẳng.
+  map.colorSpace = THREE.SRGBColorSpace; map.center.set(.5, .5); map.rotation = Math.PI / 2; map.needsUpdate = true;
+  // Mặt ảnh không nhận sáng: giữ đúng màu art; viền + mặt sau tô toon theo màu vành.
+  const rim = mat(BOOSTER_RIM[id]), coin = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .16, 48), [rim, new THREE.MeshBasicMaterial({ map, transparent: true }), rim]);
+  return standing(group(coin));
+}
 function rewardModel(kind) {
-  if (kind === 'coin') return standing(pawCoin());
+  // Xu quà (1 đồng, núi xu): không viền toon (người chơi bỏ). Cờ structure: addOutlines bỏ qua cả cụm.
+  const plain = node => { node.userData.structure = true; return node; };
+  if (kind === 'coin') return plain(standing(pawCoin()));
   if (kind === 'coins') {
-    const pile = group();
-    [[0, 0, 0], [.55, 0, -.2], [-.55, 0, -.15], [.25, 0, .45], [-.3, 0, .4]].forEach(([x, , z], i) => {
-      for (let k = 0; k < 3 - i % 2; k++) pile.add(at(pawCoin(), x + k * .03, k * .15, z));
+    // Núi xu: tháp xu giữa cao nhất, các vòng ngoài thấp dần; chỉ đồng trên cùng mỗi tháp có dấu chân, rải thêm xu nằm nghiêng / dựng đứng.
+    // Xu thân tháp dùng chung một lưới 16 cạnh + 2 chất liệu (nhỏ trên màn hình): dựng + gộp nhanh hơn nhiều so với lưới riêng từng đồng.
+    const pile = group(), coinGeo = new THREE.CylinderGeometry(.5, .5, .14, 16), goldMat = mat('#f5c542'), edgeMat = mat('#e3a933');
+    [[0, 0, 1, 15], [.8, .2, 6, 12], [1.55, .5, 11, 8], [2.25, .9, 15, 4], [2.9, .3, 19, 2]].forEach(([r, phase, count, tall], ring) => {
+      for (let i = 0; i < count; i++) {
+        const a = phase + i * Math.PI * 2 / count, x = Math.cos(a) * r, z = Math.sin(a) * r * .8, h = tall + (i % 2);
+        for (let k = 0; k < h - 1; k++) pile.add(at(new THREE.Mesh(coinGeo, k % 2 ? goldMat : edgeMat), x + (k % 3 - 1) * .03, .07 + k * .15, z));
+        const top = at(pawCoin(), x, .07 + (h - 1) * .15, z); top.rotation.y = a + ring; pile.add(top);
+      }
     });
-    pile.add(at(standing(pawCoin()), 0, .55, .75));
-    return pile;
-  }
-  if (kind === 'hammer') {
-    const handle = at(cyl(.11, .11, 1.1, '#f07aa0'), 0, -.2, 0), cap = at(ball(.12, '#f07aa0'), 0, -.76, 0);
-    const head = at(rbox(.9, .34, .34, .1, '#c9d3dc'), 0, .45, 0), band = at(cyl(.13, .13, .12, '#9aa6b2'), 0, .25, 0);
-    const node = group(handle, cap, head, band); node.rotation.z = -.6; return node;
-  }
-  if (kind === 'moves') {
-    const green = '#6fd28a', node = group();
-    node.add(at(rbox(.5, .16, .16, .07, green), -.5, 0, 0), at(rbox(.16, .5, .16, .07, green), -.5, 0, 0));
-    // số 3 = hai cung 240° chồng nhau, cùng hở bên trái
-    const top = at(torusArc(.21, .09, Math.PI * 4 / 3, green), .3, .21, 0), bottom = at(torusArc(.23, .09, Math.PI * 4 / 3, green), .3, -.23, 0);
-    top.rotation.z = -Math.PI / 2; bottom.rotation.z = -Math.PI * 5 / 6;
-    node.add(top, bottom);
-    return node;
-  }
-  if (kind === 'swap') {
-    const blue = '#4aa3f0', node = group();
-    for (const turn of [0, Math.PI]) {
-      const arm = group(torusArc(.42, .1, Math.PI * .8, blue)), tip = cyl(0, .2, .3, blue);
-      tip.position.set(.42 * Math.cos(Math.PI * .8), .42 * Math.sin(Math.PI * .8), 0); tip.rotation.z = Math.PI * .8 + Math.PI;
-      arm.add(tip); arm.rotation.z = turn + .25; node.add(arm);
+    for (const [x, y, z, rx, rz] of [[-.6, 2.1, .7, .9, .3], [.7, 2, .8, 1.1, -.35], [-1.4, 1.4, .6, .7, .5], [1.5, 1.3, .7, .8, -.4], [.1, 2.4, 1.1, 1.25, 0], [-2.2, .7, .8, .6, .4], [2.3, .6, .6, .7, -.3], [-.9, .4, 2.3, 1.3, .2], [.9, .4, 2.2, 1.2, -.2], [0, 2.4, -.2, .4, .1]]) {
+      const coin = at(pawCoin(), x, y, z); coin.rotation.set(rx, 0, rz); pile.add(coin);
     }
-    return node;
+    // ~350 đồng xu: gộp thành vài lưới (màu nướng vào đỉnh) cho popup vẽ nhẹ khi lắc.
+    return plain(mergeStatic(pile, { bakeColors: true }));
   }
-  if (kind === 'gem') { const gem = mesh(new THREE.OctahedronGeometry(.3, 0), '#ff7fb0'); gem.scale.y = 1.25; gem.rotation.y = .4; return gem; }
+  if (BOOSTER_RIM[kind]) return boosterCoin(kind);
   // mèo bí ẩn: hộp quà kraft buộc nơ
   const gift = group(rbox(1, .8, 1, .08, '#e9b97a'), at(rbox(1.08, .2, 1.08, .06, '#d9a464'), 0, .45, 0));
   gift.add(at(box(.18, .82, 1.02, '#e8457e'), 0, 0, 0), at(box(1.02, .82, .18, '#e8457e'), 0, 0, 0), at(box(.2, .22, 1.1, '#e8457e'), 0, .45, 0), at(box(1.1, .22, .2, '#e8457e'), 0, .45, 0));
   for (const s of [-1, 1]) { const loop = at(squash(ball(.2, '#ff6f9f'), 1.2, .7, .6), s * .2, .68, 0); loop.rotation.z = s * .5; gift.add(loop); }
   return gift;
 }
+// Quà là món deco: đúng model trong phòng, đặt trong góc phòng khách (sàn Oak + tường Cream mặc định). Phòng rộng hơn khung hình nhiều lần
+// và camera chỉ ôm món (userData.frame), nên sàn + tường phủ kín ảnh, món to rõ ở giữa.
+function itemDiorama(item) {
+  const node = buildItem(item), bounds = new THREE.Box3().setFromObject(node), size = bounds.getSize(new THREE.Vector3()), c = bounds.getCenter(new THREE.Vector3());
+  const big = Math.max(size.x, size.y, size.z), span = big * 8, half = span / 2, wallH = span * .5;
+  // Tường không nhận sáng (màu cố định, tường hông tối hơn chút cho ra góc): tường toon đổi nấc sáng tối khi model lắc làm tường chớp mảng xám.
+  const cream = new THREE.Color(itemById('wall-cream').color), flat = color => new THREE.MeshBasicMaterial({ color });
+  const floor = itemById('floor-oak'), backWall = flat(cream), sideWall = flat(cream.clone().multiplyScalar(.93)), trim = flat('#ffffff');
+  // Góc tường ngay sau món (khung hình thấy góc phòng), sàn trải về phía camera.
+  // Sàn cận cảnh: texture nét gấp 4 + lặp 2 lần (ván nhỏ lại, mạch ván mảnh), không thì mạch ván phóng to thành vệt mờ đen.
+  const floorMap = floorTexture(floor, 4);
+  floorMap.wrapS = floorMap.wrapT = THREE.RepeatWrapping; floorMap.repeat.set(2, 2); floorMap.anisotropy = 8;
+  const room = at(group(slab(span, span, mat('#ffffff', { roughness: .9, map: floorMap })),
+    at(new THREE.Mesh(new THREE.BoxGeometry(span, wallH, .08), backWall), 0, wallH / 2, -half + .04), at(new THREE.Mesh(new THREE.BoxGeometry(.08, wallH, span), sideWall), -half + .04, wallH / 2, 0),
+    at(box(span, .1, .03, trim), 0, .05, -half + .095), at(box(.03, .1, span, trim), -half + .095, .05, 0)), c.x + half - big * 1.1, 0, c.z + half - big * 1.1);
+  room.userData.structure = true; // kết cấu phòng: không viền (toon.mjs isStructure)
+  const scene = group(room, node);
+  // Ảnh phủ cả trang (tiêu đề ở trên, tên quà ở dưới đè lên): chừa lề rộng để món nằm gọn ở giữa.
+  // Khung nhắm cao hơn món một chút: món rơi vào giữa phần trống giữa nhãn Day và tên quà.
+  scene.userData.frame = bounds.clone().expandByScalar(big * .12).translate(new THREE.Vector3(0, big * .2, 0));
+  return scene;
+}
 function thumbSubject(entry) {
   if (entry.reward) {
     // Quà dẹt (xu đứng, +3, mũi tên) quay thẳng mặt về camera thumbnail (THUMB_DIR) cho khỏi bị nhìn xiên.
-    if (!entry.item) { const node = rewardModel(entry.reward), face = ['coin', 'moves', 'swap'].includes(entry.reward); if (face) { node.rotation.y += Math.atan2(THUMB_DIR.x, THUMB_DIR.z); node.rotation.x -= Math.asin(THUMB_DIR.y) * .8; node.rotation.order = 'YXZ'; } return node; }
-    const node = buildItem(itemById(entry.item)), gem = rewardModel('gem'), size = new THREE.Box3().setFromObject(node).getSize(new THREE.Vector3());
-    const s = Math.max(size.x, size.z) * .16; gem.scale.multiplyScalar(s / .3); gem.position.set(size.x * .5 + s, s * 1.3, size.z * .1);
-    return group(node, gem);
+    if (!entry.item) { const node = rewardModel(entry.reward), face = ['coin', 'moves', 'swap', 'hammer'].includes(entry.reward); if (face) { node.rotation.y += Math.atan2(THUMB_DIR.x, THUMB_DIR.z); node.rotation.x -= Math.asin(THUMB_DIR.y) * .8; node.rotation.order = 'YXZ'; } return node; }
+    return itemDiorama(itemById(entry.item));
   }
   if (entry.cat === 'furniture') {
     // Món kép (kindergarten.mjs pair): hai bản đặt xa nhau, thumbnail kéo lại sát nhau, cùng quay mặt ra trước.
@@ -873,8 +903,10 @@ function thumbDistance(bounds, center, fov) {
   }
   return distance;
 }
+const SPIN_BACK = 1.1; // camera lùi thêm cho model quà lắc không chạm mép
 export function thumbnail(entry, size = 192) {
   if (thumbCache[entry.id]) return thumbCache[entry.id];
+  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth) return null;
   const { renderer, scene, camera } = thumbStudio();
   renderer.setSize(size, size, false);
   const subject = thumbSubject(entry);
@@ -882,16 +914,43 @@ export function thumbnail(entry, size = 192) {
   scene.add(subject);
   addOutlines(subject);
   subject.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(subject), center = bounds.getCenter(new THREE.Vector3());
-  camera.position.copy(center).add(THUMB_DIR.clone().multiplyScalar(thumbDistance(bounds, center, camera.fov)));
+  const bounds = subject.userData.frame?.clone() ?? new THREE.Box3().setFromObject(subject), center = bounds.getCenter(new THREE.Vector3());
+  // Quà 7 ngày: cùng khoảng lùi với thumbSpinner (SPIN_BACK) để ảnh tĩnh và model lắc khớp cỡ, đổi qua lại không nhảy.
+  camera.position.copy(center).add(THUMB_DIR.clone().multiplyScalar(thumbDistance(bounds, center, camera.fov) * (entry.reward ? SPIN_BACK : 1)));
   camera.lookAt(center);
   syncOutlineResolution(renderer);
   renderer.render(scene, camera);
   thumbCache[entry.id] = renderer.domElement.toDataURL('image/png');
   if (size !== 192) renderer.setSize(192, 192, false);
   scene.remove(subject);
-  subject.traverse(node => { if (node.isMesh) { node.geometry.dispose(); [].concat(node.material).forEach(m => { m.map?.dispose(); m.dispose(); }); } });
+  disposeSubject(subject);
   return thumbCache[entry.id];
+}
+
+// Model 3D sống cho popup (quà 7 ngày): dựng một lần như thumbnail(), draw(yaw) xoay quanh trục đứng qua tâm rồi vẽ thẳng lên canvas
+// chung `canvas` (một máy vẽ cho mọi model: người gọi gắn canvas vào trang đang xem). Camera lùi thêm chút để lắc không chạm mép. null = chưa dựng được.
+export function thumbSpinner(entry, size = 360) {
+  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth) return null;
+  const { renderer, scene, camera } = spinKit ||= makeStudio(size, false);
+  const subject = thumbSubject(entry), pivot = group(subject);
+  subject.userData.update?.(0);
+  addOutlines(subject);
+  pivot.updateMatrixWorld(true);
+  const bounds = subject.userData.frame?.clone() ?? new THREE.Box3().setFromObject(pivot), center = bounds.getCenter(new THREE.Vector3());
+  subject.position.sub(center); pivot.position.copy(center);
+  const eye = center.clone().add(THUMB_DIR.clone().multiplyScalar(thumbDistance(bounds, center, camera.fov) * SPIN_BACK));
+  return {
+    canvas: renderer.domElement,
+    draw(yaw) {
+      pivot.rotation.y = yaw;
+      scene.add(pivot);
+      camera.position.copy(eye); camera.lookAt(center);
+      syncOutlineResolution(renderer);
+      renderer.render(scene, camera);
+      scene.remove(pivot);
+    },
+    dispose() { disposeSubject(subject); },
+  };
 }
 
 export function createRoom() {

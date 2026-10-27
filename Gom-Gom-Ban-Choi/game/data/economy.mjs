@@ -121,8 +121,8 @@ export const LOGIN_CALENDAR = remote('LOGIN_CALENDAR', [
   { booster: 'moves', n: 1 },
   // 26/10: xu cố định. Ước theo nhịp người chơi: ngày 2 ~màn 6–12 (≈ 2 R ≈ 1 món vườn mở rộng), ngày 5 ~màn 15–30 (≈ 3 R ≈ 2 món phòng khách).
   { coins: 800 },
-  // art: ảnh ô quà (đường dẫn đầy đủ để build:html nhúng được): món chụp sẵn trong phòng thật cho nổi bật; bỏ trống thì dùng thumbnail món.
-  { item: 'catbed-heart', gems: 15, art: './assets/img/deco/gift-catbed-heart.jpg' },
+  // art (tuỳ chọn): ảnh ô quà thay cho model 3D (đường dẫn đầy đủ để build:html nhúng được); bỏ trống thì dùng model món trong game.
+  { item: 'catbed-heart', gems: 15 },
   { booster: 'hammer', n: 1 },
   { coins: 3000 },
   { booster: 'swap', n: 1 },
@@ -223,6 +223,38 @@ export const DECO = remote('DECO', {
   'ground-clover':       { price: 100 },              // Clover
   'ground-meadow':       { price: 100 },              // Meadow
   'ground-path':         { price: 100 },     // Stone path
+  // --- Vườn — bộ Vườn Nhật: bán bằng GEM (gems = giá gem cố định, không nhân hệ số khu, không mua bằng xu) ---
+  // Mỗi chỗ đồ của vườn gốc (10) + vườn mở rộng (10) thêm 1 kiểu Nhật (kiểu thứ 4, ngoại lệ có chủ ý của luật 3 món/chỗ) + 4 rào + 4 nền = 28 món.
+  // Tổng cả bộ 1,200 gem = gói $9.99 (GEM_PACKS gems_1200): đồ 30–70, rào / nền 20. Món rẻ mua được bằng gem miễn phí; đủ bộ thì cần gói.
+  'flowers-jp':          { gems: 30 },       // Hydrangea bed
+  'stump-jp':            { gems: 35 },       // Taiko drum
+  'catnip-jp':           { gems: 40 },       // Bamboo grove
+  'lantern-jp':          { gems: 45 },       // Stone lantern
+  'sandbox-jp':          { gems: 50 },       // Zen garden
+  'cathouse-jp':         { gems: 55 },       // Pagoda house
+  'birdbath-jp':         { gems: 60 },       // Stone basin (ống tre rót nước)
+  'pond-jp':             { gems: 65 },       // Koi bridge (hồ koi + cầu đỏ)
+  'bench-jp':            { gems: 70 },       // Engawa deck
+  'hammock-jp':          { gems: 70 },       // Sakura swing
+  // vườn mở rộng
+  'sunflowers-jp':       { gems: 30 },       // Iris bed
+  'birdhouse-jp':        { gems: 35 },       // Hokora shrine
+  'kite-jp':             { gems: 40 },       // Tako kite
+  'clothesline-jp':      { gems: 45 },       // Koinobori
+  'campfire-jp':         { gems: 50 },       // Irori hearth
+  'stream-jp':           { gems: 55 },       // Stone stream
+  'picnic-jp':           { gems: 60 },       // Tea parasol
+  'slide-jp':            { gems: 65 },       // Shrine slide
+  'windmill-jp':         { gems: 70 },       // Pagoda tower
+  'swingtree-jp':        { gems: 70 },       // Sakura tree (cây anh đào lớn, cánh hoa rơi)
+  'fence-bamboo':        { gems: 20 },       // Bamboo fence
+  'fence-yakisugi':      { gems: 20 },       // Charred cedar
+  'fence-tile':          { gems: 20 },       // Tiled wall
+  'fence-torii':         { gems: 20 },       // Vermilion rail
+  'ground-gravel':       { gems: 20 },       // Raked gravel
+  'ground-moss':         { gems: 20 },       // Moss
+  'ground-stepping':     { gems: 20 },       // Stepping stones
+  'ground-hinoki':       { gems: 20 },       // Hinoki deck
   // --- Phòng khách — đồ ---
   rug:                   { price: 0 },                // Pink rug
   armchair:              { price: 120 },              // Armchair

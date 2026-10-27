@@ -11,6 +11,7 @@ import { loadQuests, saveQuests, fillQuests, noteQuests, questsOpen } from '../c
 import { LEVELS } from '../data/levels.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
+import { openConfirmation } from '../ui/shared/confirmation-view.mjs';
 
 export const $ = id => document.getElementById(id);
 export const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -38,7 +39,10 @@ export function showToast(text) {
 // Hộp hỏi dùng chung (continue, mua booster, thiếu gem, ưu đãi, IAP / ads giả lập): mỗi lần tạo một <dialog> mới nên chồng
 // được lên nhau (continue → thiếu gem → mua gói). choices: [{ id, label (HTML), style ('ghost' | 'ad'), disabled }].
 // Trả về id của nút bấm; đóng bằng Esc = null.
-export function ask({ title, body = '', choices, className = '' }) {
+export function ask(options) {
+  const { title, body = '', choices, className = '' } = options;
+  // Pet rewards already have a bespoke art layout; other choices share the confirmation kit.
+  if (!className.split(/\s+/).includes('idle-claim')) return openConfirmation(options);
   return new Promise(resolve => {
     const dialog = document.createElement('dialog');
     dialog.className = `level-dialog store-dialog ${className}`;

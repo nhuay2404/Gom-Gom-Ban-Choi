@@ -1037,7 +1037,8 @@ export class Cat {
       this.kick(node, .15); // lốp treo (xích đu) nhún nhẹ khi mèo đáp vào
       // Võng vải: thân võng xuống theo lòng võng, vải quấn ép hai bên (kiểu "burrito").
       // Lốp xe: giữa thân lún xuống lòng lốp; dây treo tì vào thân tự ấn thành rãnh (ropesTouching).
-      this.contact = hangsFromBeam(kind) ? { sag: 1, squeeze: .45 } : { sag: .35, squeeze: .5 }; // võng vải: phần bó theo lòng vải do holdInTrough lo
+      // Ghế phẳng (xích đu anh đào): chỉ lún nhẹ trên nệm, không có lòng lốp / giỏ để thân võng xuống
+      this.contact = kind === 'hammock-jp' ? { sag: .2, spread: .3 } : hangsFromBeam(kind) ? { sag: 1, squeeze: .45 } : { sag: .35, squeeze: .5 }; // võng vải: phần bó theo lòng vải do holdInTrough lo
       this.jigV.y -= 1.2; // đáp vào chỗ mềm: lún xuống rồi rung rinh
       if (hangsFromBeam(kind)) yield* this.turnTo(this.heading + Math.PI * .9, 3);
       else { // võng vải: nằm dọc theo lòng võng (nằm ngang thì đầu / chân thò qua thành vải)

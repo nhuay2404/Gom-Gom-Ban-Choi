@@ -1,5 +1,5 @@
 // =====================================================================================================================
-//  ADS-SDK — REWARDED ADS ĐANG GIẢ LẬP (đếm ngược SIM_SECONDS giây, có nút Skip = không nhận thưởng)
+//  ADS-SDK — REWARDED ADS ĐANG GIẢ LẬP (phát video mẫu, nút Skip hiện sau 2/3 video)
 // =====================================================================================================================
 //  Bàn giao dev: chỉ cần thay thân hàm `playAd()` bên dưới bằng SDK quảng cáo thật (rewarded video). Mọi chỗ đặt ads đều đi qua
 //  showRewarded(placement) và đánh dấu bằng chú thích `ADS-SDK` — `grep -rn "ADS-SDK" game` ra đủ danh sách:
@@ -16,7 +16,8 @@ import { adsLeft, noteAd } from '../core/gems.mjs';
 import { loadProgress, levelsCleared } from '../core/progression.mjs';
 import { getWallet, setWallet, showToast } from './shared.js';
 
-const SIM_SECONDS = 5;
+const SIM_VIDEO = './assets/video/sample-ad.mp4';
+const SKIP_AT = 2 / 3;
 const PLACEMENT_NAMES = { continue: 'Extra moves', bonusCoins: 'Bonus coins', booster: 'Free booster', idle: 'Bonus cat coins', gems: 'Free gems' };
 
 // Chỗ đặt này hiện được không: đã tới màn có ads và hôm nay còn lượt.
@@ -34,21 +35,28 @@ export async function showRewarded(placement) {
 }
 
 // ADS-SDK: THAY HÀM NÀY bằng SDK. Trả về Promise<boolean>: true khi SDK báo "user earned reward", false khi đóng sớm / lỗi / không có ads.
+// Giả lập: phát SIM_VIDEO; đồng hồ đếm ngược tới lúc hiện nút Skip (sau SKIP_AT thời lượng). Skip hay xem hết đều được thưởng.
 function playAd(placement) {
   return new Promise(resolve => {
     const dialog = document.createElement('dialog');
     dialog.className = 'ad-sim';
-    dialog.innerHTML = `<small>AD · simulated</small><b>${SIM_SECONDS}</b><span>${PLACEMENT_NAMES[placement] ?? placement}</span><button class="pill-button ghost">Skip</button>`;
-    let left = SIM_SECONDS;
-    const timer = setInterval(() => {
-      left--;
-      dialog.querySelector('b').textContent = left;
-      if (left <= 0) dialog.close('done');
-    }, 1000);
-    dialog.querySelector('button').onclick = () => dialog.close('skip');
+    dialog.innerHTML = `<video src="${SIM_VIDEO}" playsinline></video><small>AD · ${PLACEMENT_NAMES[placement] ?? placement}</small>
+      <div class="ad-clock"><b></b></div><button class="pill-button ghost" hidden>Skip ›</button>`;
+    const video = dialog.querySelector('video'), clock = dialog.querySelector('.ad-clock'), skip = dialog.querySelector('button');
+    video.ontimeupdate = () => {
+      const skipAt = video.duration * SKIP_AT, left = Math.max(0, skipAt - video.currentTime);
+      clock.style.setProperty('--p', left / skipAt);
+      clock.querySelector('b').textContent = Math.ceil(left);
+      if (!left) { clock.hidden = true; skip.hidden = false; }
+    };
+    skip.onclick = () => dialog.close('done');
+    video.onended = () => dialog.close('done');
+    video.onerror = () => dialog.close('error');
     dialog.addEventListener('cancel', event => event.preventDefault()); // Esc không đóng ads
-    dialog.addEventListener('close', () => { clearInterval(timer); dialog.remove(); resolve(dialog.returnValue === 'done'); });
+    dialog.addEventListener('close', () => { video.pause(); dialog.remove(); resolve(dialog.returnValue === 'done'); });
     document.body.append(dialog);
     dialog.showModal();
+    // Trình duyệt chặn tự phát có tiếng thì phát không tiếng.
+    video.play().catch(() => { video.muted = true; return video.play(); }).catch(() => dialog.close('error'));
   });
 }

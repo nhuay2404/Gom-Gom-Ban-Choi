@@ -55,7 +55,7 @@ function flower(color, x, z, h = .28) {
 }
 
 // Mèo giẫm qua thì từng cây rạp ra hai bên rồi bật lại (room-cats.mjs ghi vị trí mèo vào userData.walkers).
-function bendOnWalk(bed, items, sway = .07) {
+export function bendOnWalk(bed, items, sway = .07) {
   items.forEach(item => { item.userData.bend = { x: 0, z: 0 }; });
   bed.userData.walkers = [];
   const local = new THREE.Vector3();
@@ -111,8 +111,8 @@ const glow = (color, emissive, intensity = 1) => mat(color, { emissive, emissive
 // Mặc định KHÔNG trong suốt: vật trong suốt bị sắp lại thứ tự vẽ mỗi khi xoay camera -> dễ chập chờn với viền.
 // Gọi waterTick(t) trong userData.update của món có nước để gợn chuyển động.
 const waterTime = { value: 0 };
-const waterTick = t => { waterTime.value = t; };
-function waterMat(color = '#8fd0ef', extra = {}) {
+export const waterTick = t => { waterTime.value = t; };
+export function waterMat(color = '#8fd0ef', extra = {}) {
   if (!TOON) return mat(color, { roughness: .15, ...extra });
   const material = toonMat({ color, ...extra });
   const toonCompile = material.onBeforeCompile;
@@ -133,14 +133,14 @@ function waterMat(color = '#8fd0ef', extra = {}) {
   return material;
 }
 // Mặt nước phẳng mỏng: không viền (viền toon quanh đĩa mỏng thành vệt tối ở mép bát).
-const waterDisc = (radius, y, material = waterMat()) => {
+export const waterDisc = (radius, y, material = waterMat()) => {
   const water = at(mesh(new THREE.CylinderGeometry(radius, radius, .01, radialSegments(radius)), material), 0, y, 0);
   water.castShadow = false;
   water.userData.noOutline = true;
   return water;
 };
 // Texture sọc xanh–trắng cho dòng nước: cuộn offset theo thời gian là thấy nước chảy dọc ống.
-function flowTexture() {
+export function flowTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 64; canvas.height = 4;
   const g = canvas.getContext('2d');
@@ -152,7 +152,7 @@ function flowTexture() {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   return texture;
 }
-const flowMat = texture => (TOON ? toonMat({ color: '#ffffff', map: texture }) : mat('#ffffff', { map: texture, roughness: .1 }));
+export const flowMat = texture => (TOON ? toonMat({ color: '#ffffff', map: texture }) : mat('#ffffff', { map: texture, roughness: .1 }));
 
 export const GARDEN_BUILD = {
   // Bồn hoa là mặt đất đi được (mép thấp, mèo không lún chân). Mèo giẫm qua thì hoa rạp ra hai bên rồi bật lại.
@@ -834,7 +834,61 @@ function paintFlagstones(g, rnd) {
   for (let i = 0; i < 90; i++) { g.fillStyle = '#6fae4a99'; g.beginPath(); g.arc(rnd() * SIZE, rnd() * SIZE, 2 + rnd() * 2, 0, TAU); g.fill(); }
 }
 
-// Nền cỏ vẽ bằng canvas: cỏ thường / cỏ ba lá / đồng hoa / lối đá.
+// Nền bộ Vườn Nhật (giá gem). Mọi hình vẽ lặp liền mạch 512 px: vật chạm mép thì vẽ thêm bản lệch ±512 (wrap).
+const wrapDraw = (x, y, r, draw) => { for (const dx of [-512, 0, 512]) for (const dy of [-512, 0, 512]) if (Math.abs(x + dx - 256) < 256 + r && Math.abs(y + dy - 256) < 256 + r) draw(x + dx, y + dy); };
+const JAPAN_GROUNDS = {
+  // Sỏi trắng cào: hạt sỏi nhiều sắc + rãnh sóng song song (rãnh tối + gờ sáng)
+  'ground-gravel'(g, rnd) {
+    g.fillStyle = '#e6e1d6'; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 7000; i++) { const v = rnd(); g.fillStyle = v < .4 ? '#d2ccbe' : v < .75 ? '#f6f3ec' : v < .92 ? '#c4bdae' : '#b3ab9b'; const s = rnd() < .85 ? 2 : 3; g.fillRect(rnd() * 512, rnd() * 512, s, s); }
+    for (let y = 8; y < 512; y += 16) [['#c9c2b2', 3.5, 0], ['#fbf9f3', 1.6, -3]].forEach(([color, width, dy]) => {
+      g.strokeStyle = color; g.lineWidth = width; g.beginPath();
+      for (let x = 0; x <= 512; x += 8) { const yy = y + dy + Math.sin(x / 512 * TAU * 2) * 5; x ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+      g.stroke();
+    });
+  },
+  // Thảm rêu: mảng rêu sẫm / sáng loang chồng nhau + đốm bào tử vàng xanh
+  'ground-moss'(g, rnd) {
+    for (let i = 0; i < 420; i++) {
+      const x = rnd() * 512, y = rnd() * 512, r = 6 + rnd() * 16, color = ['#6f9a3e', '#8fb556', '#5f8a36', '#9fc463'][i % 4];
+      wrapDraw(x, y, r, (px, py) => { g.fillStyle = color + 'b0'; g.beginPath(); g.arc(px, py, r, 0, TAU); g.fill(); });
+    }
+    for (let i = 0; i < 900; i++) { g.fillStyle = rnd() < .5 ? '#c9d97a' : '#4f7a2e'; g.fillRect(rnd() * 512, rnd() * 512, 2, 2); }
+  },
+  // Đá bước (tobi-ishi) trên cỏ rêu: đá dẹt bo tròn, mép tối, mặt sáng, rêu chen quanh
+  'ground-stepping'(g, rnd) {
+    for (let i = 0; i < 260; i++) { const x = rnd() * 512, y = rnd() * 512, r = 5 + rnd() * 10; wrapDraw(x, y, r, (px, py) => { g.fillStyle = (i % 2 ? '#7fa84a' : '#9fc463') + '90'; g.beginPath(); g.arc(px, py, r, 0, TAU); g.fill(); }); }
+    const stones = [];
+    for (let tries = 0; stones.length < 9 && tries < 400; tries++) {
+      const x = rnd() * 512, y = rnd() * 512, r = 30 + rnd() * 16;
+      if (stones.every(s => { const dx = Math.abs(s.x - x), dy = Math.abs(s.y - y); return Math.hypot(Math.min(dx, 512 - dx), Math.min(dy, 512 - dy)) > s.r + r + 22; })) stones.push({ x, y, r, sq: .75 + rnd() * .2, a: rnd() * Math.PI, tone: ['#cfc8bb', '#bdb6a6', '#d9d2c4'][stones.length % 3] });
+    }
+    stones.forEach(({ x, y, r, sq, a, tone }) => wrapDraw(x, y, r + 6, (px, py) => {
+      const blob = (k, color) => { g.fillStyle = color; g.beginPath(); g.ellipse(px, py, r * k, r * sq * k, a, 0, TAU); g.fill(); };
+      blob(1.12, '#5f8a3688'); blob(1, '#8f897c'); blob(.92, tone); blob(.55, '#ffffff22');
+    }));
+  },
+  // Sàn gỗ hinoki ngoài trời: ván ngang 64 px, vân gỗ lượn, khe ván tối, đinh ở hai đầu
+  'ground-hinoki'(g, rnd) {
+    const tones = ['#e8cf9f', '#e2c592', '#edd6aa', '#dfc08a'];
+    for (let row = 0; row < 8; row++) {
+      const y = row * 64;
+      g.fillStyle = tones[row % tones.length]; g.fillRect(0, y, 512, 64);
+      for (let k = 0; k < 6; k++) {
+        const base = y + 6 + rnd() * 52, amp = 2 + rnd() * 4, phase = rnd() * TAU;
+        g.strokeStyle = '#c9a87466'; g.lineWidth = 1.2; g.beginPath();
+        for (let x = 0; x <= 512; x += 8) { const yy = base + Math.sin(x / 512 * TAU * 2 + phase) * amp; x ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+        g.stroke();
+      }
+      g.fillStyle = '#8a6a4a'; g.fillRect(0, y, 512, 3);
+      const cut = (row % 2 ? 128 : 384);
+      g.fillRect(cut - 1, y, 3, 64);
+      g.fillStyle = '#6e5238'; [cut - 10, cut + 10].forEach(x => [y + 18, y + 46].forEach(yy => { g.beginPath(); g.arc(x, yy, 2.2, 0, TAU); g.fill(); }));
+    }
+  },
+};
+
+// Nền cỏ vẽ bằng canvas: cỏ thường / cỏ ba lá / đồng hoa / lối đá (+ 4 nền Nhật ở trên).
 export function groundTexture(entry) {
   const kind = entry.style || entry.id; // style: món dùng lại kiểu nền của món khác
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
@@ -845,6 +899,7 @@ export function groundTexture(entry) {
   if (kind === 'ground-clover') for (let i = 0; i < 160; i++) { g.fillStyle = '#5fa83e88'; const x = rnd() * 512, y = rnd() * 512; [0, 2.1, 4.2].forEach(a => { g.beginPath(); g.arc(x + Math.cos(a) * 5, y + Math.sin(a) * 5, 5, 0, TAU); g.fill(); }); }
   if (kind === 'ground-meadow') for (let i = 0; i < 220; i++) { g.fillStyle = FLOWER_COLORS[i % FLOWER_COLORS.length]; g.beginPath(); g.arc(rnd() * 512, rnd() * 512, 4, 0, TAU); g.fill(); }
   if (kind === 'ground-path') paintFlagstones(g, rnd);
+  if (JAPAN_GROUNDS[kind]) JAPAN_GROUNDS[kind](g, rnd);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping; // nền vườn mở rộng lặp texture theo chiều dài (không kéo giãn)
@@ -881,6 +936,49 @@ export function sandMat(tint = '#ffffff') { // tint nhân với texture: cát ư
 // cạnh đó trong toạ độ cục bộ của đoạn rào (cạnh 0: u = x, 1: u = -x, 2: u = -z, 3: u = z); hai bên cổng có cột.
 // `halfX`: nửa chiều dài theo x (vườn mở rộng là hình chữ nhật dài theo x); mặc định = half (hình vuông).
 const RAINBOW_POSTS = ['#ff6b6b', '#ff9a3c', '#ffd66b', '#7fc45a', '#5fb8e8', '#b48ee8'];
+// Màu cột cổng theo kiểu rào (kiểu không có trong bảng: màu của rào).
+const FENCE_POSTS = { 'fence-hedge': '#5fa83e', 'fence-stone': '#b5aea3', 'fence-bamboo': '#8a7a3a', 'fence-yakisugi': '#2a2522', 'fence-tile': '#4f5b66', 'fence-torii': '#d9452f' };
+// Rào bộ Vườn Nhật (giá gem): một đoạn chạy dọc trục x từ x0 tới x1 (như run() trong buildFence).
+const JAPAN_FENCES = {
+  // Rào tre kenninji: thân tre đứng sát nhau có đốt, hai thanh tre chẻ ngang buộc dây đen ở hai mặt, nẹp nóc
+  'fence-bamboo'(x0, x1, span, mid, extra) {
+    const g = group(), n = Math.max(1, Math.round(span / .075)), step = span / n;
+    for (let i = 0; i < n; i++) {
+      const x = x0 + step * (i + .5), h = .6 + (i % 3) * .015;
+      g.add(at(cyl(.034, .036, h, i % 2 ? '#c9b46a' : '#b9a45a', 7), x, h / 2, 0));
+      if (i % 2) g.add(at(cyl(.038, .038, .015, '#9a8a45', 7), x, .3 + (i % 4) * .03, 0));
+    }
+    for (const z of [.05, -.05]) for (const y of [.18, .44]) g.add(at(box(span + extra, .045, .025, '#8a7a3a'), mid, y, z));
+    for (let x = x0 + .3; x < x1; x += .6) for (const y of [.18, .44]) g.add(at(box(.03, .06, .13, '#2a2522'), x, y, 0));
+    g.add(at(box(span + extra, .04, .12, '#8a7a3a'), mid, .64, 0));
+    return g;
+  },
+  // Rào gỗ tuyết tùng hun đen (yakisugi): ván đứng so le hai lớp, nẹp ngang + mũ ván nóc
+  'fence-yakisugi'(x0, x1, span, mid, extra) {
+    const g = group(), n = Math.max(1, Math.round(span / .16)), step = span / n;
+    for (let i = 0; i < n; i++) g.add(at(box(step - .025, .62, .025, i % 2 ? '#3a3330' : '#4a403b'), x0 + step * (i + .5), .31, i % 2 ? .015 : -.015));
+    g.add(at(box(span + extra, .05, .1, '#2a2522'), mid, .645, 0), at(box(span + extra, .04, .08, '#2a2522'), mid, .14, 0));
+    return g;
+  },
+  // Tường trát vữa trắng chân đá, mái ngói ống xám trên nóc
+  'fence-tile'(x0, x1, span, mid, extra) {
+    const g = group(at(box(span + extra, .1, .24, '#a39b8f'), mid, .05, 0), at(box(span + extra, .42, .2, '#f1eadb'), mid, .31, 0),
+      at(box(span + extra, .05, .3, '#4f5b66'), mid, .545, 0));
+    const n = Math.max(1, Math.round(span / .1)), step = span / n;
+    for (let i = 0; i <= n; i++) g.add(at(cyl(.026, .026, .3, '#5f6b76', 8), x0 + i * step, .575, 0).rotateX(Math.PI / 2));
+    g.add(at(box(span + extra, .04, .06, '#3f4a54'), mid, .61, 0));
+    return g;
+  },
+  // Rào son kiểu đền (tamagaki): cột son mũ đen, hai thanh ngang son, nóc đen nhô
+  'fence-torii'(x0, x1, span, mid, extra) {
+    const g = group(at(box(span + extra, .06, .07, '#d9452f'), mid, .44, 0), at(box(span + extra, .05, .06, '#d9452f'), mid, .2, 0),
+      at(box(span + extra, .04, .12, '#2a2522'), mid, .6, 0));
+    const n = Math.max(1, Math.round(span / .9)), step = span / n;
+    for (let i = 0; i <= n; i++) { const x = x0 + i * step; g.add(at(box(.09, .58, .09, '#d9452f'), x, .29, 0), at(box(.13, .04, .13, '#2a2522'), x, .6, 0)); }
+    for (let i = 0; i < n * 3; i++) g.add(at(box(.025, .22, .025, '#c03a26'), x0 + (i + .5) * step / 3, .32, 0));
+    return g;
+  },
+};
 export function buildFence(entry, half = HALF, gates = [], halfX = half) {
   const kind = entry.style || entry.id;
   const fence = markOutlineUnit(new THREE.Group()); // cả hàng rào là một khối: chấn song đè lên cột không có nét trong
@@ -888,6 +986,7 @@ export function buildFence(entry, half = HALF, gates = [], halfX = half) {
   const run = (x0, x1, capped) => {
     const span = x1 - x0, mid = (x0 + x1) / 2, extra = capped ? .2 : 0;
     if (kind === 'fence-hedge') return group(at(rbox(span + extra, .6, .32, .14, entry.color), mid, .3, 0));
+    if (JAPAN_FENCES[kind]) return JAPAN_FENCES[kind](x0, x1, span, mid, extra);
     if (kind === 'fence-stone') {
       const g = group(), n = Math.max(1, Math.round(span / .675)), step = span / n;
       for (let i = 0; i < n; i++) g.add(at(rbox(step - .015, .34 + (i % 2) * .06, .3, .06, i % 2 ? '#c8c2b8' : '#b5aea3'), x0 + step * (i + .5), .18, 0));
@@ -908,7 +1007,7 @@ export function buildFence(entry, half = HALF, gates = [], halfX = half) {
     let side;
     const gate = gates.find(g => g.side === i), len = i < 2 ? halfX : half; // nửa chiều dài cạnh này
     if (gate) { // hai đoạn hai bên cổng + cột cổng
-      const a = gate.u - gate.w / 2, b = gate.u + gate.w / 2, post = kind === 'fence-hedge' ? '#5fa83e' : kind === 'fence-stone' ? '#b5aea3' : entry.color;
+      const a = gate.u - gate.w / 2, b = gate.u + gate.w / 2, post = FENCE_POSTS[kind] ?? entry.color;
       side = group(run(-len - .1, a, false), run(b, len + .1, false),
         at(rbox(.16, .78, .16, .04, post), a, .39, 0), at(rbox(.16, .78, .16, .04, post), b, .39, 0),
         at(ball(.09, post), a, .82, 0), at(ball(.09, post), b, .82, 0));
@@ -923,7 +1022,7 @@ export function buildFence(entry, half = HALF, gates = [], halfX = half) {
 // Bụi cây trang trí 4 góc vườn (ngoài lối đi của mèo).
 // Mỗi bụi: vài khối tán lá lổn nhổn (đỉnh cầu bị đẩy lồi lõm theo nhiễu, tối dưới sáng trên), lá rời mọc chìa ra khỏi
 // tán cho viền bụi lởm chởm, thêm hoa / quả mọng tuỳ góc, cỏ con + sỏi ở gốc. Ngẫu nhiên có seed: lần nào dựng cũng giống.
-function lumpyPuff(r, dark, light, rnd) {
+export function lumpyPuff(r, dark, light, rnd) {
   const geo = new THREE.SphereGeometry(r, 22, 16);
   const pos = geo.attributes.position, nor = geo.attributes.normal;
   const k1 = rnd(0, TAU), k2 = rnd(0, TAU), k3 = rnd(0, TAU), v = new THREE.Vector3();

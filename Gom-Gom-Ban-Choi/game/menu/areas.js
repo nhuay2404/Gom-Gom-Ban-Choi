@@ -63,13 +63,16 @@ export function dragScroll(bar) {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
     drag = { x: event.clientX, left: bar.scrollLeft, moved: false };
   });
+  // Ảnh thumbnail (<img>) bị trình duyệt kéo kiểu kéo-thả file: nuốt mất pointerup -> hàng thẻ "dính" theo chuột dù đã thả nút.
+  bar.addEventListener('dragstart', event => event.preventDefault());
   window.addEventListener('pointermove', event => {
     if (!drag) return;
+    if (!(event.buttons & 1)) { end(); return; } // đã thả nút ở chỗ không nhận được pointerup (ngoài cửa sổ, menu chuột phải...)
     const dx = event.clientX - drag.x;
     if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; bar.style.scrollBehavior = 'auto'; bar.style.scrollSnapType = 'none'; bar.classList.add('dragging'); }
     if (drag.moved) bar.scrollLeft = drag.left - dx;
   });
-  window.addEventListener('pointerup', () => {
+  const end = () => {
     if (!drag) return;
     if (drag.moved) {
       // chặn cú click ngay sau khi thả chuột (nếu có); gỡ ngay sau đó để không nuốt cú bấm thật kế tiếp
@@ -80,7 +83,9 @@ export function dragScroll(bar) {
     bar.style.scrollBehavior = bar.style.scrollSnapType = '';
     bar.classList.remove('dragging');
     drag = null;
-  });
+  };
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
 }
 dragScroll($('deco-zone'));
 dragScroll($('deco-cards'));

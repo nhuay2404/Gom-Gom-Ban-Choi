@@ -58,7 +58,7 @@ export async function ensureGems(cost) {
   const short = cost - getWallet().gems;
   if (short <= 0) return true;
   const choice = await ask({
-    title: 'Not enough gems',
+    title: 'Not enough gems', icon: './assets/img/shop/gem-packs/gems_200-modern.png',
     body: `<p class="level-feature">You need ${gemTag(short)} more.</p>`,
     choices: [{ id: 'buy', label: 'Buy gems' }, { id: 'no', label: 'Not now', style: 'ghost' }],
   });
@@ -83,7 +83,7 @@ export async function coverCoins(cost, what = 'this') {
   if (short <= 0) return true;
   const gems = gemsForCoins(short, currentReward());
   const choice = await ask({
-    title: 'Not enough coins',
+    title: 'Not enough coins', icon: './assets/img/idle-reward/coin-stack.png',
     body: `<p class="level-feature">You need <i class="ico-coin"></i>${short.toLocaleString('en-US')} more for ${what}. Use all your coins and pay the rest with gems?</p>`,
     choices: [{ id: 'pay', label: `Buy · ${gemTag(gems)}` }, { id: 'no', label: 'Not now', style: 'ghost' }],
   });
@@ -109,7 +109,7 @@ export async function offerBooster(id) {
     { id: 'pack', label: `+${PACK_SIZE} · ${priceTag(id, true)}` },
     { id: 'no', label: 'Not now', style: 'ghost' },
   ].filter(Boolean);
-  const choice = await ask({ title: BOOSTER_NAMES[id], body: `<p class="level-feature">None left! You have ${gemTag(getWallet().gems)}</p>`, choices });
+  const choice = await ask({ title: BOOSTER_NAMES[id], icon: `./assets/img/play/booster-${id}.png`, body: `<p class="level-feature">None left! You have ${gemTag(getWallet().gems)}</p>`, choices });
   if (choice === 'ad') {
     if (!(await showRewarded('booster'))) return false; // ADS-SDK: chỗ đặt "booster"
     storeBoosters({ ...getBoosters(), [id]: getBoosters()[id] + 1 });
@@ -152,7 +152,7 @@ export async function buyOffer(kind) {
 export async function showOffer(kind) {
   const offer = OFFERS[kind];
   const choice = await ask({
-    title: OFFER_NAMES[kind], className: 'offer',
+    title: OFFER_NAMES[kind], className: 'offer', icon: './assets/img/home/icon-starter-matte.png',
     body: `<p class="offer-contents">${contentsOf(offer)}</p><p class="level-feature">Ends in ${timeLeft(kind)}</p>`,
     choices: [{ id: 'buy', label: `$${offer.usd.toFixed(2)}` }, { id: 'no', label: 'Later', style: 'ghost' }],
   });

@@ -94,6 +94,15 @@ export const CATALOG = [
   { id: 'ground-clover', zone: 'garden', cat: 'floors', name: 'Clover', color: '#7fc45a' },
   { id: 'ground-meadow', zone: 'garden', cat: 'floors', name: 'Meadow', color: '#b5dd7a' },
   { id: 'ground-path', zone: 'garden', cat: 'floors', name: 'Stone path', color: '#d9d2c4' },
+  // bộ Vườn Nhật (giá gem, economy.mjs DECO)
+  { id: 'fence-bamboo', zone: 'garden', cat: 'walls', name: 'Bamboo fence', color: '#c9b46a' },
+  { id: 'fence-yakisugi', zone: 'garden', cat: 'walls', name: 'Charred cedar', color: '#3a3330' },
+  { id: 'fence-tile', zone: 'garden', cat: 'walls', name: 'Tiled wall', color: '#f1eadb' },
+  { id: 'fence-torii', zone: 'garden', cat: 'walls', name: 'Vermilion rail', color: '#d9452f' },
+  { id: 'ground-gravel', zone: 'garden', cat: 'floors', name: 'Raked gravel', color: '#e6e1d6' },
+  { id: 'ground-moss', zone: 'garden', cat: 'floors', name: 'Moss', color: '#7fa34a' },
+  { id: 'ground-stepping', zone: 'garden', cat: 'floors', name: 'Stepping stones', color: '#8fb85a' },
+  { id: 'ground-hinoki', zone: 'garden', cat: 'floors', name: 'Hinoki deck', color: '#e8cf9f' },
   // --- Phòng khách (mở cả khu khi thắng màn 10) ---
   { id: 'rug', zone: 'living', cat: 'furniture', name: 'Pink rug', color: '#f4a3b6' },
   { id: 'armchair', zone: 'living', cat: 'furniture', name: 'Armchair', color: '#e98b5a' },
@@ -288,6 +297,27 @@ const VARIANTS = [
   ['hammock', 'hammock-basket', 'Hanging basket', '#d9a36a'],
   ['birdbath', 'birdbath-mosaic', 'Mosaic bath', '#3a9aa0'],
   ['bench', 'bench-sofa', 'Wicker sofa', '#8fd4c4'],
+  // kiểu thứ 4: bộ Vườn Nhật, giá gem (economy.mjs DECO)
+  ['flowers', 'flowers-jp', 'Hydrangea bed', '#7f9cf0'],
+  ['stump', 'stump-jp', 'Taiko drum', '#a8452f'],
+  ['catnip', 'catnip-jp', 'Bamboo grove', '#7fb84a'],
+  ['lantern', 'lantern-jp', 'Stone lantern', '#bdb6a6'],
+  ['sandbox', 'sandbox-jp', 'Zen garden', '#e6e1d6'],
+  ['cathouse', 'cathouse-jp', 'Pagoda house', '#d9452f'],
+  ['pond', 'pond-jp', 'Koi bridge', '#d9452f'],
+  ['hammock', 'hammock-jp', 'Sakura swing', '#ffb7c9'],
+  ['birdbath', 'birdbath-jp', 'Stone basin', '#9fbf5a'],
+  ['bench', 'bench-jp', 'Engawa deck', '#e8cf9f'],
+  ['windmill', 'windmill-jp', 'Pagoda tower', '#d9452f'],
+  ['sunflowers', 'sunflowers-jp', 'Iris bed', '#7f6fd8'],
+  ['clothesline', 'clothesline-jp', 'Koinobori', '#3f6fd0'],
+  ['campfire', 'campfire-jp', 'Irori hearth', '#5a4a40'],
+  ['kite', 'kite-jp', 'Tako kite', '#e5483a'],
+  ['stream', 'stream-jp', 'Stone stream', '#bdb6a6'],
+  ['swingtree', 'swingtree-jp', 'Sakura tree', '#ffb7c9'],
+  ['slide', 'slide-jp', 'Shrine slide', '#d9452f'],
+  ['birdhouse', 'birdhouse-jp', 'Hokora shrine', '#a8452f'],
+  ['picnic', 'picnic-jp', 'Tea parasol', '#c9302c'],
   // --- Phòng khách ---
   ['rug', 'rug-quilt', 'Patchwork quilt', '#ec5b8c'],
   ['armchair', 'armchair-rocker', 'Rocking chair', '#b9854a'],
@@ -473,6 +503,8 @@ for (const entry of CATALOG) {
   const row = DECO[entry.id] || DECO[entry.slot] || {};
   entry.basePrice = row.price ?? 0;
   if (row.lock) entry.lock = row.lock;
+  // Món giá gem (bộ Vườn Nhật): không bán bằng xu, không nhân hệ số khu.
+  if (row.gems) entry.gems = row.gems;
 }
 // Hệ số giá mỗi khu (ZONE_PRICING): khu thứ n → tổng giá món gốc = k × R(10n), chia cho tổng giá gốc món gốc của khu trong bảng DECO.
 // Lọc món gốc tại chỗ (isBase khai ở dưới, chưa có lúc file chạy tới đây).
@@ -501,7 +533,7 @@ export function slotGroups(zone, cat) {
 }
 
 const zoneDefaults = zone => {
-  const free = CATALOG.filter(entry => entry.zone === zone && entry.price === 0);
+  const free = CATALOG.filter(entry => entry.zone === zone && isFree(entry));
   return {
     owned: free.map(entry => entry.id),
     placed: free.filter(entry => entry.cat === 'furniture' && !entry.slot).map(entry => entry.id),
@@ -546,7 +578,7 @@ export function loadDeco(startCoins) {
       }
       // Save có từ trước khi có phần mở rộng: đặt sẵn đồ miễn phí của nó (chỉ hiện khi vườn đã mở rộng), một lần.
       if (!saved.expansionSeeded) {
-        const free = CATALOG.filter(e => e.area === 'garden2' && e.price === 0 && !e.slot).map(e => e.id);
+        const free = CATALOG.filter(e => e.area === 'garden2' && isFree(e) && !e.slot).map(e => e.id);
         const taken = new Set(zones.garden.placed.map(id => slotOf(itemById(id) || { id })));
         zones.garden = { ...zones.garden, placed: [...zones.garden.placed, ...free.filter(id => !taken.has(id))] };
       }
@@ -586,7 +618,7 @@ export function itemStatus(deco, entry, unlockedLevel) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
   const zone = zoneState(deco, entry.zone);
   // Món giá 0 (kể cả phương án thay thế của món miễn phí) luôn coi như đã có, không cần "mua".
-  const owned = zone.owned.includes(entry.id) || entry.price === 0, affordable = deco.coins >= entry.price ? 'buy' : 'poor';
+  const owned = zone.owned.includes(entry.id) || isFree(entry), affordable = deco.coins >= entry.price ? 'buy' : 'poor';
   if (entry.cat === 'walls') return zone.wall === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (entry.cat === 'floors') return zone.floor === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (!owned) return affordable;
@@ -645,7 +677,9 @@ export function ownAllBase(deco) {
 }
 
 // Món đã có (đã mua, hoặc miễn phí) — chưa tính đang đặt hay không.
-export const isOwned = (deco, entry) => entry.price === 0 || (entry.cat === 'cats' ? true : zoneState(deco, entry.zone).owned.includes(entry.id));
+// Miễn phí = giá xu 0 và không có giá gem.
+export const isFree = entry => entry.price === 0 && !entry.gems;
+export const isOwned = (deco, entry) => isFree(entry) || (entry.cat === 'cats' ? true : zoneState(deco, entry.zone).owned.includes(entry.id));
 
 // Xem trước MỌI món đồ chưa mua của một khu cùng lúc: mỗi chỗ đặt còn món chưa mua thì hiện một món
 // (ưu tiên món gốc), thay món đang ở đó. Tường / sàn / mèo mỗi lúc chỉ một nên không gộp vào đây.
@@ -675,7 +709,7 @@ export const isBase = entry => entry.cat === 'furniture' && !entry.slot;
 // Món độc quyền (quà đăng nhập): không bán ở Shop / bảng đổi món, chỉ có được qua quà.
 const EXCLUSIVE = new Set(LOGIN_CALENDAR.map(cell => cell.item).filter(Boolean));
 export const isExclusive = entry => EXCLUSIVE.has(entry.id);
-export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && !isExclusive(entry) && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && entry.price > 0)));
+export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && !isExclusive(entry) && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && !isFree(entry))));
 // Tặng một món (quà): vào kho như mua ở Shop (chưa đặt, báo "món mới"), không trừ xu. Đã có thì trả null (người gọi đổi ra xu).
 export function giftItem(deco, entry) {
   if (isOwned(deco, entry)) return null;
@@ -683,20 +717,22 @@ export function giftItem(deco, entry) {
   return { ...withZone(deco, entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Trạng thái ở Shop: locked (chưa tới màn) / needBase (chưa xây chỗ ở Deco) / owned / buy / poor.
-export function shopStatus(deco, entry, unlockedLevel) {
+// gems = số gem trong ví (món giá gem so với ví gem, không so xu).
+export function shopStatus(deco, entry, unlockedLevel, gems = 0) {
   if (entry.lock && unlockedLevel < entry.lock) return 'locked';
   if (isOwned(deco, entry)) return 'owned';
   if (entry.slot && !isOwned(deco, itemById(entry.slot))) return 'needBase';
-  return deco.coins >= entry.price ? 'buy' : 'poor';
+  return (entry.gems ? gems >= entry.gems : deco.coins >= entry.price) ? 'buy' : 'poor';
 }
-export function buyToStock(deco, entry, unlockedLevel) {
-  const status = shopStatus(deco, entry, unlockedLevel);
+// Món giá gem: chỉ kiểm đủ gem + cho vào kho; người gọi tự trừ gem ở ví (core/gems.mjs spendGems).
+export function buyToStock(deco, entry, unlockedLevel, gems = 0) {
+  const status = shopStatus(deco, entry, unlockedLevel, gems);
   if (status === 'locked') return { error: `Unlocks at level ${entry.lock}` };
   if (status === 'needBase') return { error: `Build the ${itemById(entry.slot).name.toLowerCase()} in Deco first` };
   if (status === 'owned') return { error: 'Already owned' };
-  if (status === 'poor') return { error: 'Not enough coins' };
+  if (status === 'poor') return { error: entry.gems ? 'Not enough gems' : 'Not enough coins' };
   const zone = zoneState(deco, entry.zone);
-  return { ...withZone(pay(deco, entry.price), entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
+  return { ...withZone(pay(deco, entry.gems ? 0 : entry.price), entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
 export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))

@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="./ui/shop/shop.css">
   <link rel="stylesheet" href="./ui/shared/wallet.css">
   <link rel="stylesheet" href="./ui/shared/store.css">
+  <link rel="stylesheet" href="./ui/shared/confirmation.css">
   <link rel="stylesheet" href="./ui/deco/deco.css">
   <link rel="stylesheet" href="./ui/play/layout.css">
   <link rel="stylesheet" href="./ui/play/skin.css">
@@ -237,7 +238,7 @@
       <button role="tab" data-page="deco" aria-selected="false">Decoration</button>
     </div>
     <div id="shop-offers" class="shop-offers"></div>
-    <div class="coin-list"><button id="shop-free-gems" class="coin-pack ad-pack"><b></b><em></em></button></div>
+    <div class="coin-list"><button id="shop-free-gems" class="coin-pack ad-pack"><img class="rewarded-ad-art" src="./assets/img/shop/icon-rewarded-ad-gems.png" alt=""><b></b><em></em></button></div>
     <h3 class="shop-deco-title">Gems</h3>
     <div id="gem-packs" class="coin-list"></div>
     <h3 class="shop-deco-title">Boosters</h3>
@@ -343,14 +344,7 @@
     </div>
   </dialog>
   <!-- Rời / chơi lại ván đang dở: hỏi lại trước -->
-  <dialog id="quit-dialog" class="level-dialog">
-    <h2 id="quit-title">Leave this level?</h2>
-    <p class="level-feature">Moves used and boosters spent won't come back.</p>
-    <div class="level-actions">
-      <button id="quit-cancel" class="pill-button ghost">Keep playing</button>
-      <button id="quit-ok" class="pill-button">Leave</button>
-    </div>
-  </dialog>
+  <dialog id="quit-dialog" class="level-dialog store-dialog confirm-dialog" aria-labelledby="quit-title" aria-describedby="quit-description"></dialog>
   <!-- Dev: hỏi lại trước khi xoá tiến độ (không dùng confirm() của trình duyệt: webview / trình duyệt trong app chặn nó,
        trả về "Cancel" ngay nên nút reset không làm gì) -->
   <dialog id="dev-reset-dialog" class="level-dialog">

@@ -5,9 +5,10 @@ import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
 import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive } from '../deco/deco-data.mjs';
-import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
-import { coverCoins } from '../app/store.js';
-import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch } from './areas.js';
+import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent, getWallet, setWallet, gemTag } from '../app/shared.js';
+import { coverCoins, ensureGems } from '../app/store.js';
+import { spendGems } from '../core/gems.mjs';
+import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch, dragScroll } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
 import { startIdle, idleDot } from './idle-coins.js';
 
@@ -26,6 +27,8 @@ export const decoVisible = entry => entry.area !== 'garden2' || isGardenExpanded
 export const decoShown = () => previewDeco(getDeco(), decoPick);
 
 export const coin = amount => `<span class="amt"><i class="ico-coin"></i>${amount}</span>`; // xu + số không bị ngắt dòng
+// Giá của món: gem (bộ Vườn Nhật) hoặc xu.
+export const cost = entry => entry.gems ? `<span class="amt gem-amt">${gemTag(entry.gems)}</span>` : coin(entry.price);
 
 export const thumbOf = entry => entry.breed ? `<span class="thumb cat-thumb">${catMarkup[entry.breed]}</span>`
   : decoThumbnail ? `<img class="thumb thumb-3d" src="${decoThumbnail(entry)}" alt="">`
@@ -110,7 +113,7 @@ export function renderDeco() {
   const existing = new Map([...cards.children].map(card => [card.dataset.id, card]));
   const next = entries.map(entry => {
     const base = isBaseEntry(entry), shop = !base && entry.cat !== 'cats' && !isOwned(deco, entry);
-    const status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
+    const status = shop ? shopStatus(deco, entry, unlocked, getWallet().gems) : itemStatus(deco, entry, unlocked);
     const picked = base ? decoPick === entry : popPreview === entry;
     let card = existing.get(entry.id);
     if (!card) {
@@ -118,14 +121,14 @@ export function renderDeco() {
       card.dataset.id = entry.id;
       card.setAttribute('role', 'listitem');
     }
-    const className = `deco-card ${status}${picked ? ' picked' : ''}${decoNew.has(entry.id) || (!base && freshIds.has(entry.id)) ? ' is-new' : ''}`;
+    const className = `deco-card ${status}${entry.gems ? ' premium' : ''}${picked ? ' picked' : ''}${decoNew.has(entry.id) || (!base && freshIds.has(entry.id)) ? ' is-new' : ''}`;
     if (card.className !== className) card.className = className;
     const buyable = status === 'buy' && picked;
     const art = thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">${entry.cat === 'cats' ? 'Claim' : `Lv ${entry.lock}`}</em>`
-      : buyable ? `<em class="deco-card-price act" data-act="buy">Buy ${coin(entry.price)}</em>`
+      : buyable ? `<em class="deco-card-price act" data-act="buy">Buy ${cost(entry)}</em>`
       : status === 'using' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'In home' : '✓ In use'}</em>`
       : status === 'owned' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'Add' : 'Use'}</em>`
-      : `<em class="deco-card-price">${coin(entry.price)}</em>`;
+      : `<em class="deco-card-price">${cost(entry)}</em>`;
     if (card.artHtml !== art) { card.artHtml = art; card.innerHTML = `<span class="deco-card-art">${art}</span><span class="deco-card-name">${entry.name}</span>${foot}`; }
     else if (card.footHtml !== foot) card.lastElementChild.outerHTML = foot;
     card.footHtml = foot;
@@ -326,16 +329,16 @@ function renderDecoPop() {
   const title = { cats: `Pets · ${deco.cats.length}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
   $('deco-pop-title').textContent = title;
   $('deco-pop-items').replaceChildren(...options.map(entry => {
-    const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked) : itemStatus(deco, entry, unlocked);
+    const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked, getWallet().gems) : itemStatus(deco, entry, unlocked);
     const node = document.createElement('button');
     const previewing = popPreview === entry;
-    node.className = `deco-opt ${status}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}`;
+    node.className = `deco-opt ${status}${entry.gems ? ' premium' : ''}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}`;
     node.dataset.id = entry.id;
     node.setAttribute("aria-label", entry.name); node.title = entry.name; // tên hiện ở dòng tiêu đề bảng, không lặp trong thẻ
     const tag = status === 'using' && !popPreview ? '<b class="deco-opt-tag">✓</b>' : '';
     // Đang xem thử: nút giá thành nút mua (chạm để mua + đặt luôn)
     const price = !shop ? '' : status === 'locked' ? `<em class="deco-opt-price lock">Lv ${entry.lock}</em>`
-      : previewing ? `<em class="deco-opt-price buy-now">Buy ${coin(entry.price)}</em>` : `<em class="deco-opt-price">${coin(entry.price)}</em>`;
+      : previewing ? `<em class="deco-opt-price buy-now">Buy ${cost(entry)}</em>` : `<em class="deco-opt-price">${cost(entry)}</em>`;
     node.innerHTML = `${thumbOf(entry)}${tag}${price}`;
     return node;
   }));
@@ -351,6 +354,8 @@ function updatePopSwipeHint() {
 }
 
 $('deco-pop-items').addEventListener('scroll', updatePopSwipeHint, { passive: true });
+
+dragScroll($('deco-pop-items')); // PC: giữ chuột kéo ngang hàng kiểu trong bảng đổi món
 
 $('deco-pop-items').addEventListener('click', event => {
   const entry = itemById(event.target.closest('.deco-opt')?.dataset.id);
@@ -372,10 +377,12 @@ function chooseOption(entry, buyTap) {
     // Chạm lại chính món đang xem = thôi xem. Không chuyển sang Shop.
     const fxKey = entry.cat === 'furniture' ? slotOf(entry) : entry.cat;
     if (popPreview === entry && buyTap) {
-      const bought = buyToStock(deco, entry, unlocked);
-      // Thiếu xu: trả hết xu + bù gem rồi bấm lại đúng nút giá của món này (bảng có thể đã vẽ lại).
-      if (bought.error === 'Not enough coins') return coverCoins(entry.price, entry.name).then(ok => ok && $('deco-pop-items').querySelector(`.deco-opt[data-id="${entry.id}"] .deco-opt-price`)?.click());
+      const bought = buyToStock(deco, entry, unlocked, getWallet().gems), again = () => $('deco-pop-items').querySelector(`.deco-opt[data-id="${entry.id}"] .deco-opt-price`)?.click();
+      // Thiếu xu: trả hết xu + bù gem rồi bấm lại đúng nút giá của món này (bảng có thể đã vẽ lại). Thiếu gem: mời mua gem.
+      if (bought.error === 'Not enough coins') return coverCoins(entry.price, entry.name).then(ok => ok && again());
+      if (bought.error === 'Not enough gems') return ensureGems(entry.gems).then(ok => ok && again());
       if (bought.error) return showToast(bought.error);
+      if (entry.gems) setWallet(spendGems(getWallet(), entry.gems));
       noteEvent('style');
       const placed = useItem(bought, entry);
       popPreview = null;
@@ -388,7 +395,7 @@ function chooseOption(entry, buyTap) {
       room3d?.fx(fxKey, 'buy'); // pháo giấy + vòng sáng khi mua
       return renderDeco();
     }
-    const status = shopStatus(deco, entry, unlocked);
+    const status = shopStatus(deco, entry, unlocked, getWallet().gems);
     if (status === 'locked') return showToast(`Unlocks at level ${entry.lock}`);
     if (status === 'needBase') return showToast(`Build the ${itemById(entry.slot).name.toLowerCase()} first`);
     popPreview = popPreview === entry ? null : entry;
@@ -396,7 +403,7 @@ function chooseOption(entry, buyTap) {
     if (!room3d) buildFlatRooms();
     applyRoom(previewDeco(getDeco(), popPreview));
     if (popPreview) room3d?.fx(fxKey, 'preview'); // lấp lánh khi xem thử
-    if (popPreview && status === 'poor') showToast(`Need ${entry.price - deco.coins} more coins`);
+    if (popPreview && status === 'poor') showToast(entry.gems ? `Need ${entry.gems - getWallet().gems} more gems` : `Need ${entry.price - deco.coins} more coins`);
     return renderDeco();
   } else {
     const wasPreviewing = !!popPreview;
