@@ -110,6 +110,8 @@ function startCardDrag(event) {
     pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, ghost: null, anchor: null,
     grabX: event.clientX - rect.left, grabY: event.clientY - rect.top, width: rect.width, height: rect.height,
     grabbed: grabbedPiece(event.clientX, event.clientY), cells: null,
+    lift: event.pointerType === 'mouse' ? 0 : DRAG.TOUCH_LIFT,
+    tapTolerance: event.pointerType === 'mouse' ? DRAG.TAP_TOLERANCE : DRAG.TOUCH_TAP_TOLERANCE,
   };
   source.classList.add('dragging');
   // Đang giữ thẻ: tắt cử chỉ của trình duyệt (chụm phóng to / cuộn) để ngón thứ hai chạm = xoay thẻ.
@@ -123,7 +125,7 @@ function moveCardDrag(event) {
   if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
   if (event.pointerType === 'mouse' && !(event.buttons & 1)) return cancelCardDrag(); // đã nhả chuột trái mà không nhận pointerup
   cardDrag.lastX = event.clientX; cardDrag.lastY = event.clientY;
-  if (!cardDrag.ghost && Math.hypot(event.clientX - cardDrag.startX, event.clientY - cardDrag.startY) < 5) return;
+  if (!cardDrag.ghost && Math.hypot(event.clientX - cardDrag.startX, event.clientY - cardDrag.startY) < cardDrag.tapTolerance) return;
   if (!cardDrag.ghost && !tutorialAllows('drag')) return;
   document.body.classList.add('card-dragging');
   if (!cardDrag.ghost) {
@@ -145,18 +147,20 @@ function moveCardDrag(event) {
     cardDrag.holdRect = $('hold').getBoundingClientRect();
     cardDrag.physics = startDragPhysics(cardDrag.ghost);
   }
+  // Điểm cầm: cảm ứng thì nổi lên trên ngón tay (cardDrag.lift); mọi phép đo bên dưới theo điểm này.
+  const x = event.clientX, y = event.clientY - cardDrag.lift;
   // Xa bàn: mèo to DRAG_BOOST lần cho dễ nhìn; càng gần bàn càng co về đúng cỡ ô để không che grid + ô xem trước.
-  const board = cardDrag.boardRect, gapY = Math.max(0, event.clientY - board.bottom, board.top - event.clientY);
-  const gapX = Math.max(0, board.left - event.clientX, event.clientX - board.right);
+  const board = cardDrag.boardRect, gapY = Math.max(0, y - board.bottom, board.top - y);
+  const gapX = Math.max(0, board.left - x, x - board.right);
   const far = Math.min(1, Math.hypot(gapX, gapY) / DRAG_SHRINK_RANGE);
   cardDrag.ghost.style.transform = `scale(${(cardDrag.baseScale * (1 + (DRAG_BOOST - 1) * far)).toFixed(3)})`;
-  feedDragPhysics(cardDrag.physics, event.clientX);
-  cardDrag.ghost.style.left = `${event.clientX - cardDrag.grabX}px`;
-  cardDrag.ghost.style.top = `${event.clientY - cardDrag.grabY}px`;
+  feedDragPhysics(cardDrag.physics, x);
+  cardDrag.ghost.style.left = `${x - cardDrag.grabX}px`;
+  cardDrag.ghost.style.top = `${y - cardDrag.grabY}px`;
   // Kéo vào ô Gửi tạm: ưu tiên hơn bàn, sáng ô lên để báo thả được.
   const hold = cardDrag.holdRect;
-  cardDrag.overHold = state.holdOn && event.clientX >= hold.left - 8 && event.clientX <= hold.right + 8
-    && event.clientY >= hold.top - 8 && event.clientY <= hold.bottom + 8;
+  cardDrag.overHold = state.holdOn && x >= hold.left - 8 && x <= hold.right + 8
+    && y >= hold.top - 8 && y <= hold.bottom + 8;
   $('hold').classList.toggle('drop-target', cardDrag.overHold);
   if (cardDrag.overHold) {
     cardDrag.anchor = null; state.preview = null; state.previewAnchor = null;

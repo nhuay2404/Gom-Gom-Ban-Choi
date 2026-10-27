@@ -38,6 +38,8 @@ export const DRAG = remote('DRAG', {
   BOOST: 1.6,          // xa bàn thì bóng kéo phóng to gấp BOOST lần
   SHRINK_RANGE: 110,   // px: khoảng cách tới bàn mà bóng kéo co về đúng cỡ ô
   TAP_TOLERANCE: 5,    // px: dịch ít hơn thì là chạm (xoay thẻ) chứ không phải kéo
+  TOUCH_TAP_TOLERANCE: 10, // px: như trên, cho ngón tay (ngón run nhiều hơn chuột)
+  TOUCH_LIFT: 70,      // px: ngón tay kéo thẻ thì mèo nổi lên trên ngón bấy nhiêu, để ngón không che mèo + ô sắp đặt
   CARRY_TOLERANCE: 8,  // px: dịch quá mức này trước khi đủ giờ giữ thì là xoay phòng
 });
 

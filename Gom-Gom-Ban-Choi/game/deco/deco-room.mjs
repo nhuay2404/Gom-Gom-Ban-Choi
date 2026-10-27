@@ -2379,7 +2379,9 @@ export function createRoom() {
   ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(type => renderer.domElement.addEventListener(type, trackTouch));
   renderer.domElement.addEventListener('pointerdown', event => {
     if (event.button !== 0) return; // chỉ chuột trái / ngón tay mới nhấc mèo
-    down = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    // Ngón thứ hai = đang chụm / vặn camera: cả lượt chạm này không còn là chạm (cưng mèo, chọn món) hay giữ nhấc mèo.
+    if (!event.isPrimary) { clearTimeout(holdTimer); down = null; return; }
+    down ={ x: event.clientX, y: event.clientY, id: event.pointerId };
     clearTimeout(holdTimer);
     aim(event);
     const cat = cats.hit(raycaster);
@@ -2405,7 +2407,7 @@ export function createRoom() {
   const release = event => {
     clearTimeout(holdTimer);
     if (carrying && event.pointerId === carrying.id) { endCarry(); down = null; return; }
-    if (event.type === 'pointerup' && down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
+    if (event.type === 'pointerup' && down?.id === event.pointerId && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 6) {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
       if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (cat-brain.mjs pet)

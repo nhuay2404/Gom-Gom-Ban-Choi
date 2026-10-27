@@ -1640,13 +1640,17 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   }
   let drag = null;
   canvas.addEventListener('pointerdown', e => {
-    drag = { id: e.pointerId, y: e.clientY, x: e.clientX, moved: 0, t: performance.now() };
+    // Ngón thứ hai (chụm 2 ngón): bỏ qua, chỉ ngón đầu cuộn bản đồ; lượt chạm này không còn là chạm chọn.
+    if (drag && !e.isPrimary) { drag.moved = Infinity; return; }
+    // Đang trôi quán tính: chạm chỉ để dừng lại, không bấm trúng nút màn.
+    drag = { id: e.pointerId, y: e.clientY, x: e.clientX, moved: 0, t: performance.now(), coasting: Math.abs(velocity) > WORLD.STEP * .01 };
     velocity = 0;
     try { canvas.setPointerCapture(e.pointerId); } catch { /* sự kiện giả / con trỏ đã nhả */ }
   });
   canvas.addEventListener('pointermove', e => {
     // Đổi con trỏ khi rê chuột qua màn (chỉ chuột: cảm ứng không có hover, khỏi raycast mỗi lần chạm di chuyển).
     if (!drag) { if (e.pointerType === 'mouse') hover(e); return; }
+    if (e.pointerId !== drag.id) return;
     const dy = e.clientY - drag.y, now = performance.now(), dt = Math.max(1, now - drag.t);
     drag.moved += Math.abs(dy) + Math.abs(e.clientX - drag.x);
     drag.y = e.clientY; drag.x = e.clientX; drag.t = now;
@@ -1656,13 +1660,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     velocity = Math.max(-WORLD.STEP * .35, Math.min(WORLD.STEP * .35, delta / dt * 16));
   });
   const endDrag = e => {
-    if (!drag) return;
-    const tap = drag.moved < 8;
+    if (!drag || e.pointerId !== drag.id) return;
+    const tap = drag.moved < 8 && !drag.coasting;
     drag = null;
     if (tap) { velocity = 0; pick(e); }
   };
   canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', () => { drag = null; });
+  canvas.addEventListener('pointercancel', e => { if (drag?.id === e.pointerId) drag = null; });
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     target = clamp(target - e.deltaY / pxPerLevel * WORLD.STEP * .8);

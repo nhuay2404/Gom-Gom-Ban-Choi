@@ -119,7 +119,8 @@ export async function endLevel(win, reason = '') {
   const level = LEVELS[index];
   const gems = coinsEarned ? grantGems(`level:${index}`, level.paywall ? GEM_REWARDS.paywall : level.tier === 'boss' ? GEM_REWARDS.boss : 0) : 0;
   // Ưu đãi: starter khi thắng lần đầu màn mốc; gói giải cứu khi thua cùng màn OFFERS.rescue.afterLosses lần liền.
-  const offer = win ? (coinsEarned && index + 1 === OFFERS.starter.starterLevel && triggerOffer('starter') && 'starter')
+  // (bản HTML cho người chơi bật GOMGOM_NO_STARTER: không có Starter Pack)
+  const offer = win ? (!globalThis.GOMGOM_NO_STARTER && coinsEarned && index + 1 === OFFERS.starter.starterLevel && triggerOffer('starter') && 'starter')
     : (lossStreakHere(index) >= OFFERS.rescue.afterLosses && triggerOffer('rescue') && 'rescue');
   const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);

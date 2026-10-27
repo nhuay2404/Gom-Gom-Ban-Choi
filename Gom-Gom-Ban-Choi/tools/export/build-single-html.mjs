@@ -1,11 +1,11 @@
 // Gộp game thành MỘT file HTML (JS + Three.js + CSS + ảnh nhúng sẵn) để gửi qua điện thoại / máy khác chơi thử.
 // Chơi được không cần mạng; chỉ font (Google Fonts) cần mạng, offline thì dùng font dự phòng của máy.
-// Chạy: npm run build:html -> dist/gom-gom-rotate.html (có nút dev trong Settings; bản cho người chơi: npm run build:html -- --no-dev)
+// Chạy: npm run build:html -> dist/cube-cat-match3-deco.html (có nút dev trong Settings; bản cho người chơi: npm run build:html -- --no-dev)
 //
 // Three.js: dự án không cài thư viện (bản web nạp từ CDN qua importmap). Khi build, chép tạm game/ ra thư mục tạm của hệ
 // thống, cài three@<THREE_VERSION> ở đó rồi esbuild gộp luôn vào bundle — thư mục dự án không có node_modules.
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, cpSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, cpSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join, resolve, posix } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +32,8 @@ if (!existsSync(join(work, 'node_modules', 'three', 'package.json'))
 }
 rmSync(join(work, 'game'), { recursive: true, force: true });
 cpSync(game, join(work, 'game'), { recursive: true, filter: src => !/\.test\.mjs$/.test(src) });
-const js = execSync(
+const dynamicDirs = new Set();
+const bundle = execSync(
   'npx -y esbuild@0.24.0 game/app/main.js --bundle --format=esm --minify --log-level=warning',
   { cwd: work, encoding: 'utf8', maxBuffer: 128 << 20 },
 ).replace(/<\/script/gi, '<\\/script')
@@ -40,7 +41,19 @@ const js = execSync(
   .replace(/(["'])(assets\/(?:img|sfx)\/[^"']+\.(?:png|jpe?g|webp|mp3))\1/g, (_, q, file) => q + dataUri(file) + q)
   // Ảnh trong chuỗi HTML dựng bằng JS (vd. <img src="./assets/img/shop/coin-stack.png">): cũng nhúng thành data URI.
   // (đường dẫn ghép động như `${s}.png` thì bỏ qua: không biết trước file nào)
-  .replace(/\.\/(assets\/(?:img|sfx)\/[^"'`)\s]+\.(?:png|jpe?g|webp|mp3))/g, (all, file) => (file.includes('${') ? all : dataUri(file)));
+  .replace(/\.\/(assets\/(?:img|sfx)\/[^"'`)\s]+\.(?:png|jpe?g|webp|mp3))/g, (all, file) => (file.includes('${') ? all : dataUri(file)))
+  // Tên file ghép động trong template (vd. `./assets/img/login-gift/reward-day${i}.png`): nhúng MỘT lần các file trong thư mục có cùng phần tên đứng trước ${ (vd. reward-day*) vào bảng __A
+  // (đường dẫn -> data URI, khai ở đầu bundle), chỗ dùng đổi thành `${__A[`đường dẫn`]}`.
+  .replace(/(?:\.\/)?(assets\/img\/(?:[\w-]+\/)+)((?:[^`"'\s)$\\]|\$\{[^}]*\})*\$\{[^}]*\}(?:[^`"'\s)$\\]|\$\{[^}]*\})*)/g, (_, dir, name) => {
+    dynamicDirs.add(dir + name.split("${")[0]);
+    return `\${__A[\`${dir}${name}\`]}`;
+  });
+const assetTable = Object.fromEntries([...dynamicDirs].flatMap(prefix => {
+  const dir = prefix.slice(0, prefix.lastIndexOf("/") + 1);
+  return readdirSync(join(game, dir)).map(f => dir + f)
+    .filter(file => file.startsWith(prefix) && MIME[file.split(".").pop().toLowerCase()]).map(file => [file, dataUri(file)]);
+}));
+const js = `const __A=${JSON.stringify(assetTable)};\n${bundle}`;
 
 // CSS: nối theo đúng thứ tự trong index.html. Mỗi ảnh url('./...') (tính từ thư mục của file CSS) nhúng MỘT lần
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
@@ -54,17 +67,23 @@ const css = [...read('index.html').matchAll(/<link rel="stylesheet" href="\.\/([
   .join('\n');
 const imageVars = `:root{${[...images].map(([file, name]) => `${name}:url('${dataUri(file)}')`).join(';')}}`;
 
+// Bản cho người chơi (--no-dev): mỗi bản build mới chơi lại từ đầu (xoá save cũ một lần trên mỗi máy) và không có Starter Pack.
+const BUILD_ID = Date.now();
+const PLAYER_SETUP = `<style>#home-starter{display:none!important}</style>
+  <script>window.GOMGOM_NO_STARTER = true;
+  try { if (localStorage.getItem('cubecat-build') !== '${BUILD_ID}') { localStorage.clear(); localStorage.setItem('cubecat-build', '${BUILD_ID}'); } } catch {}</script>\n  `;
+
 // Ảnh trong HTML (<img src="./...">): nhúng thẳng; ảnh trùng nhau nhúng lại (ít, nhỏ).
 const html = read('index.html')
   .replace(/\s*<script type="importmap">[\s\S]*?<\/script>/, '')
   .replace(/\s*<link rel="stylesheet" href="\.\/[^"]+">/g, '')
   .replace('href="./favicon.svg"', `href="${dataUri('favicon.svg')}"`)
   .replace(/src="\.\/(?!app\/main\.js)([^"]+)"/g, (_, file) => `src="${dataUri(file)}"`)
-  .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : ''}<script type="module">\n${js}\n</script>`);
+  .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : PLAYER_SETUP}<script type="module">\n${js}\n</script>`);
 const leftover = /(?:src|href)="\.\/[^"]*"/.exec(html);
 if (leftover) throw new Error(`Còn đường dẫn ./ chưa nhúng trong HTML: ${leftover[0]}`);
 
 mkdirSync(join(root, 'dist'), { recursive: true });
-const out = join(root, 'dist', 'gom-gom-rotate.html');
+const out = join(root, 'dist', 'cube-cat-match3-deco.html');
 writeFileSync(out, html);
 console.log(`${out} (${(html.length / 1048576).toFixed(1)} MB)`);
