@@ -27,14 +27,6 @@
       "reusedFrom": "quests/close.svg"
     },
     {
-      "name": "banner",
-      "file": "banner.png",
-      "source": "painted/banner.png",
-      "width": 1200,
-      "height": 400,
-      "preserveAspectRatio": true
-    },
-    {
       "name": "button-claim",
       "file": "button-claim.svg",
       "png": "button-claim.png",

@@ -10,11 +10,11 @@ The close button and Escape dismiss without collecting. Completing the rewarded 
 
 ## Deliverables
 
-Revision 4 replaces the flat title ribbon with a painted PNG matching the existing glossy game icons: rounded honey-gold body, folded tails, cocoa/amber occlusion and ivory highlights. The saved source and exact imagegen prompt are in `painted/banner.png` and `painted/banner-prompt.json`. The header preserves the 3:1 canvas aspect ratio with `background-size:contain`; the title remains live text and uses smaller sizes to leave space inside the painted face. The old vector ribbon is archived under `output/idle-reward-kit/legacy-vector/` and excluded from the current package.
+Revision 5 removes the painted title ribbon. The dialog now uses a live cocoa heading with a thin honey-gold divider, matching the restrained Quest and Daily headers. The old painted ribbon remains only as historical source art; it is absent from the current asset manifest and package.
 
 - `game/menu/idle-reward-view.mjs`: presentation options consumed by the actual idle-coins controller and preview.
 - `game/ui/shared/idle-reward.css`: scoped styles, responsive at 320px, reduced-motion and visible keyboard focus.
-- `game/assets/img/idle-reward/`: 10 assets, PNG outputs with SVG sources for the buttons, close and bonus badge. The generated video icon and painted ribbon have high-resolution sources and exact prompts in `painted/`. Cat, coin, coin stack, panel and existing UI parts are reused from the game.
+- `game/assets/img/idle-reward/`: 9 assets, PNG outputs with SVG sources for the buttons, close and bonus badge. The generated video icon has a high-resolution source and prompt in `painted/`. Cat, coin, coin stack, panel and existing UI parts are reused from the game.
 - `game/idle-reward-kit.html`: interactive preview for 125 / 12,345 coins and +50% / +20%. Its five-second video preview never changes the game save.
 - `output/idle-reward-kit/`: overview and mobile screenshots; live-controller screenshot uses an isolated wallet.
 - `output/idle-reward-hud-kit.zip`: portable preview, sources and asset package. Serve its root through a local HTTP server to open idle-reward-kit.html.

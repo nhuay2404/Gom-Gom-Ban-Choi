@@ -111,3 +111,13 @@ test('nhiệm vụ tiến trình: chuỗi giữ ô tối đa QUESTS.keep mốc l
   q = noteQuests(q, 'style', 5);
   assert.equal(q.totals.style, 105, 'vẫn đếm ngầm khi không hiện');
 });
+
+test('nhiệm vụ tiến trình: quest tặng gem (mèo mới, dạy chơi) trả gem thay xu, lượng nhỏ, khoá trao gem khác nhau từng mốc', () => {
+  const gemTracks = QUEST_TRACKS.filter(t => t.gems);
+  assert.ok(gemTracks.length && gemTracks.every(t => t.gems <= 10 && !t.share), 'gem nhỏ, không kèm xu');
+  assert.ok(!track('area').gems, 'mở khu đã có gem riêng (GEM_REWARDS.area)');
+  let q = noteQuests(fillQuests({ order: ['pets', 'level', 'area'], tiers: {}, active: [] }, ctx), 'claimPet', 2);
+  const a = claimQuest(q, 0, ctx), b = claimQuest(a.quests, 0, ctx);
+  assert.deepEqual([a.coins, a.gems, b.gems], [0, track('pets').gems, track('pets').gems]);
+  assert.notEqual(a.key, b.key);
+});

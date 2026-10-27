@@ -8,3 +8,11 @@
 /* Xu 3D vừa bay vào thanh xu: thanh nảy nhẹ */
 .wallet-hud>.fh-coins.coin-hit{animation:coin-hit .28s ease-out}
 @keyframes coin-hit{0%{scale:1}35%{scale:1.1;filter:brightness(1.25)}100%{scale:1}}
+
+/* Xu / gem bay vào ví khi nhận thưởng (menu/reward-fly.js): lớp popover phủ cả màn hình, trên cả popup đang mở, không chặn chạm */
+.reward-fly{position:fixed;inset:0;width:auto;height:auto;margin:0;padding:0;border:0;background:none;overflow:visible;pointer-events:none}
+.reward-fly-icon{position:fixed;width:26px;height:26px;pointer-events:none;filter:drop-shadow(0 2px 2px #5b231655)}
+.wallet-hud>.fh-gems.coin-hit,.fh-gems.coin-hit{animation:coin-hit .28s ease-out}
+
+/* Bản sao thanh ví trên lớp mờ khi mở bảng Quests / Daily (menu/wallet-lift.js): đặt đúng chỗ ví thật, chỉ để nhìn (không bấm) */
+.wallet-hud.wallet-lift{position:fixed;inset:auto;margin:0;padding:0;border:0;background:none;overflow:visible;pointer-events:none}

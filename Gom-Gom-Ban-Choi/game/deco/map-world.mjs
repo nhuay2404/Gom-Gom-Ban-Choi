@@ -417,18 +417,24 @@ function butterfly(rnd) {
   return g;
 }
 
-// ---------- Vùng trong nhà: phòng khách (màn 20–29), phòng ngủ (từ màn 30) ----------
-// Ranh giới nằm giữa hai màn (t = chỉ số màn): màn 20 = index 19 nên phòng khách bắt đầu từ t = 18.5.
+// ---------- Vùng theo màn: mỗi 20 màn một theme ----------
+// Vườn (1–20), phòng khách (21–40), phòng ngủ (41–60), phòng tắm (61–80), sân sau: hồ bơi + vườn, ngoài trời (81–100), mẫu giáo (101–120 và sau đó).
+// Ranh giới nằm giữa hai màn (t = chỉ số màn): màn 21 = index 20 nên phòng khách bắt đầu từ t = 19.5.
 const ZONES = [
   { id: 'garden', from: -Infinity },
-  { id: 'living', from: 18.5, label: 'Living Room', fog: 0xf7dfc0, wall: 'repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 22px,transparent 22px 44px),linear-gradient(#fde9cc,#f3cfa3)' },
-  { id: 'bedroom', from: 28.5, label: 'Bedroom', fog: 0xe6d6f6, wall: 'radial-gradient(circle at 12px 12px,rgba(255,255,255,.5) 0 4px,transparent 5px) 0 0/32px 32px,linear-gradient(#efe4fd,#d8c4f1)' },
-  { id: 'kitchen', from: 38.5, label: 'Kitchen', fog: 0xdff1ea, wall: 'linear-gradient(90deg,rgba(255,255,255,.35) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(rgba(255,255,255,.35) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(#e8f7f0,#c9e8dc)' },
+  { id: 'living', from: 19.5, label: 'Living Room', fog: 0xf7dfc0, wall: 'repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 22px,transparent 22px 44px),linear-gradient(#fde9cc,#f3cfa3)' },
+  { id: 'bedroom', from: 39.5, label: 'Bedroom', fog: 0xe6d6f6, wall: 'radial-gradient(circle at 12px 12px,rgba(255,255,255,.5) 0 4px,transparent 5px) 0 0/32px 32px,linear-gradient(#efe4fd,#d8c4f1)' },
+  { id: 'bathroom', from: 59.5, label: 'Bathroom', fog: 0xd8eef8, wall: 'linear-gradient(90deg,rgba(255,255,255,.45) 2px,transparent 2px) 0 0/30px 30px,linear-gradient(rgba(255,255,255,.45) 2px,transparent 2px) 0 0/30px 30px,linear-gradient(#e6f5fc,#bfe2f2)' },
+  // Ngoài trời lại: sương về màu trời, không tường (tường phòng tắm mờ dần khi vùng này bắt đầu, updateZone).
+  { id: 'backyard', from: 79.5, label: 'Backyard', fog: SKY_FOG },
+  // Trường mẫu giáo (từ màn 101): sân chơi ngoài trời, sàn thảm xốp ghép màu.
+  { id: 'kinder', from: 99.5, label: 'Kindergarten' },
 ];
+const OUTDOOR = new Set(['garden', 'backyard', 'kinder']);
 const zoneAt = t => ZONES.reduce((z, next) => (t >= next.from ? next : z), ZONES[0]).id;
 function floorTexture(kind) {
   return canvasTexture(512, 512, (g, w, h) => {
-    let seed = kind === 'living' ? 31 : kind === 'kitchen' ? 73 : 57;
+    let seed = kind === 'living' ? 31 : kind === 'bathroom' ? 73 : 57;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     if (kind === 'living') {
       // Sàn gỗ: 8 hàng ván, mỗi ván lệch nhịp, vân gỗ mảnh.
@@ -445,11 +451,17 @@ function floorTexture(kind) {
         }
         g.fillStyle = '#a8713f'; g.fillRect(0, r * rh, w, 3);
       }
-    } else if (kind === 'kitchen') {
-      // Sàn bếp: gạch caro kem / bạc hà, ron trắng, vài viên lốm đốm.
-      const n = 8, s = w / n;
+    } else if (kind === 'kinder') {
+      // Thảm xốp sân chơi mẫu giáo: ô ghép bốn màu pastel, mép răng cưa nhẹ ở ron.
+      const n = 6, s = w / n, colors = ['#ffb3c8', '#ffe08a', '#9fd3ea', '#a8e08c'];
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) { g.fillStyle = colors[(r * 2 + c) % 4]; g.fillRect(c * s, r * s, s, s); }
+      g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3;
+      for (let k = 0; k <= n; k++) { g.beginPath(); g.moveTo(k * s, 0); g.lineTo(k * s, h); g.moveTo(0, k * s); g.lineTo(w, k * s); g.stroke(); }
+    } else if (kind === 'bathroom') {
+      // Sàn phòng tắm: gạch nhỏ trắng / xanh nước biển nhạt, ron trắng, vài viên ánh sáng.
+      const n = 10, s = w / n;
       for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
-        g.fillStyle = (r + c) % 2 ? '#fff4e2' : '#a9dcc8'; g.fillRect(c * s, r * s, s, s);
+        g.fillStyle = (r + c) % 2 ? '#f6fbfd' : '#9fd3ea'; g.fillRect(c * s, r * s, s, s);
         if (rnd() < .2) { g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(c * s + 8, r * s + 8, s * .3, s * .12); }
       }
       g.strokeStyle = '#f7fbf8'; g.lineWidth = 4;
@@ -483,15 +495,59 @@ const box = (w, h, d, mat, x = 0, y = 0, z = 0, ink = .06) => {
   m.position.set(x, y, z);
   return ink ? withInk(m, ink) : m;
 };
+// Khối bấm vô hình của mèo chờ nhận (toạ độ mèo, trước khi phóng 1.35): rộng hơn thùng một chút cho dễ chạm.
+const HITBOX_GEO = new THREE.BoxGeometry(1, 1.1, 1), HITBOX_MAT = new THREE.MeshBasicMaterial({ visible: false });
+// Thùng đóng bị chạm: lắc qua lại quanh đáy rồi tắt dần trong SHAKE_MS.
+const SHAKE_MS = 550;
+// Nhãn dán trên thùng các-tông: sticker viền trắng (dấu chân, tim, cá, sao) và tem "THIS SIDE UP" hai mũi tên.
+const STICKERS = {
+  paw: g => { g.fillStyle = '#8a5a3a'; g.beginPath(); g.ellipse(64, 78, 22, 18, 0, 0, Math.PI * 2); g.fill(); for (const [x, y] of [[38, 50], [54, 36], [74, 36], [90, 50]]) { g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill(); } },
+  heart: g => { g.fillStyle = '#ff7aa2'; g.beginPath(); g.moveTo(64, 100); g.bezierCurveTo(14, 66, 30, 22, 64, 46); g.bezierCurveTo(98, 22, 114, 66, 64, 100); g.fill(); },
+  fish: g => { g.fillStyle = '#5ab2f2'; g.beginPath(); g.ellipse(58, 64, 32, 20, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.moveTo(84, 64); g.lineTo(108, 44); g.lineTo(108, 84); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(42, 58, 5, 0, Math.PI * 2); g.fill(); },
+  star: g => { g.fillStyle = '#ffd23f'; g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 18 : 42; g.lineTo(64 + Math.cos(a) * r, 66 + Math.sin(a) * r); } g.fill(); },
+  up: g => { g.fillStyle = '#6b4226'; for (const x of [42, 86]) { g.fillRect(x - 6, 52, 12, 40); g.beginPath(); g.moveTo(x - 18, 56); g.lineTo(x, 30); g.lineTo(x + 18, 56); g.fill(); } g.font = '900 15px sans-serif'; g.textAlign = 'center'; g.fillText('THIS SIDE UP', 64, 112); },
+};
+const stickerMat = kind => cached(`sticker|${kind}`, () => new THREE.MeshBasicMaterial({ fog: true, transparent: true, depthWrite: false, map: canvasTexture(128, 128, (g, w, h) => {
+  if (kind === 'up') { g.fillStyle = '#f3dcb4'; g.fillRect(6, 14, w - 12, h - 20); }
+  else { g.fillStyle = '#fff'; g.beginPath(); g.arc(w / 2, h / 2, 58, 0, Math.PI * 2); g.fill(); }
+  STICKERS[kind](g);
+}) }));
+const STICKER_GEO = new THREE.PlaneGeometry(1, 1);
+// 2–3 nhãn ngẫu nhiên (theo rnd của từng thùng) ở mặt trước + mặt bên phải, tránh dải băng keo giữa mặt trước; cách vách 6 mm.
+function addStickers(g, rnd, w, d, h) {
+  // [vị trí ngang, mặt]: 0 = mặt trước (chừa giữa cho băng keo), 1 = bên phải, -1 = bên trái.
+  // Nhãn đầu luôn ở mặt trước (camera luôn thấy), các nhãn sau rải cả ba mặt.
+  const kinds = Object.keys(STICKERS), spots = [[-.22, 0], [.22, 0], ...[1, -1].flatMap(sd => [[-.2, sd], [.2, sd]])];
+  for (let k = 0, n = 3 + Math.floor(rnd() * 2); k < n; k++) {
+    const pool = k ? spots : spots.filter(p => !p[1]), pick = pool[Math.floor(rnd() * pool.length)];
+    spots.splice(spots.indexOf(pick), 1);
+    // Thùng mở thấp: nhãn nhỏ hơn cho vừa vách
+    const [u, side] = pick, s = (.22 + rnd() * .06) * (h < .5 ? .65 : 1), tilt = (rnd() - .5) * .8;
+    const m = new THREE.Mesh(STICKER_GEO, stickerMat(kinds[Math.floor(rnd() * kinds.length)]));
+    m.scale.set(s, s, 1);
+    m.renderOrder = 1;
+    // Thùng mở (thấp): dán thấp cho khỏi chạm nắp đang rủ xuống ngoài vách
+    const y = Math.max(s / 2 + .02, h < .5 ? h * (.3 + rnd() * .15) : h * (.35 + rnd() * .35));
+    if (side) { m.position.set(side * (w / 2 + .026), y, u); m.rotation.set(0, side * Math.PI / 2, tilt); }
+    else { m.position.set(u, y, d / 2 + .026); m.rotation.z = tilt; }
+    g.add(m);
+  }
+}
 // Thùng các-tông mèo chờ nhận đứng trong (toạ độ mèo: thân .6 × .62, chân .1): vách che chân + nửa dưới thân, bốn nắp mở chĩa ra ngoài.
-function petBox() {
-  const g = new THREE.Group(), card = matOf(0xd9a36a), dark = matOf(0xb9854a), w = .78, d = .8, h = .36, t = .04;
+// closed: chưa nhận được (màn chưa thắng / chưa tới): thùng cao trùm cả con, hai nắp gập phẳng khép kín, băng keo dán ngang khe.
+function petBox(closed = false, rnd = Math.random) {
+  const g = new THREE.Group(), card = matOf(0xd9a36a), dark = matOf(0xb9854a), tape = matOf(0xc9955e), w = .78, d = .8, h = closed ? .72 : .36, t = .04;
   g.add(box(w, h, t, card, 0, h / 2, d / 2), box(w, h, t, card, 0, h / 2, -d / 2), box(t, h, d, card, w / 2, h / 2, 0), box(t, h, d, card, -w / 2, h / 2, 0));
-  g.add(box(.09, .26, .01, matOf(0xc9955e), 0, h * .55, d / 2 + .025, 0)); // băng keo giữa mặt trước
-  for (const [x, z, rot, len, droop] of [[0, d / 2, 0, w, .8], [0, -d / 2, Math.PI, w, .95], [w / 2, 0, Math.PI / 2, d, 1.05], [-w / 2, 0, -Math.PI / 2, d, .85]]) {
+  g.add(box(.09, h * .72, .01, tape, 0, h * .55, d / 2 + .025, 0)); // băng keo giữa mặt trước
+  addStickers(g, rnd, w, d, h);
+  if (closed) g.add(box(w - .04, h - .04, d - .04, card, 0, h / 2, 0, 0), box(.09, .012, d + .02, tape, 0, h + .025, 0, 0)); // lõi kín + băng keo dọc nóc
+  const flaps = closed
+    ? [[0, d / 2, 0, w, Math.PI, d / 2 - .01], [0, -d / 2, Math.PI, w, Math.PI, d / 2 - .01]]
+    : [[0, d / 2, 0, w, .8, .26], [0, -d / 2, Math.PI, w, .95, .26], [w / 2, 0, Math.PI / 2, d, 1.05, .26], [-w / 2, 0, -Math.PI / 2, d, .85, .26]];
+  for (const [x, z, rot, len, droop, depth] of flaps) {
     const hinge = new THREE.Group(), fold = new THREE.Group();
     hinge.position.set(x, h, z); hinge.rotation.y = rot; fold.rotation.x = droop;
-    fold.add(box(len - .02, .025, .26, dark, 0, 0, .13));
+    fold.add(box(len - .02, .025, depth, dark, 0, 0, depth / 2));
     hinge.add(fold); g.add(hinge);
   }
   g.traverse(n => { if (n.isMesh && n.material !== inkMat) n.castShadow = true; });
@@ -533,15 +589,6 @@ function floorLamp() {
   foot.position.y = .025; g.add(withInk(foot, .08));
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(.14, .24, .26, 14), furnMats.shade);
   shade.position.y = .98; g.add(withInk(shade, .07));
-  return g;
-}
-// Tủ lạnh nhỏ (bản đồ khu bếp): thân trắng hai ngăn, tay nắm, nam châm màu.
-function fridge(rnd) {
-  const g = new THREE.Group();
-  g.add(box(.6, 1.15, .5, furnMats.white, 0, .575, 0, .04));
-  g.add(box(.56, .02, .02, furnMats.woodDark, 0, .8, .26, 0));
-  for (const y of [.55, .98]) g.add(box(.04, .2, .04, furnMats.woodDark, .22, y, .27, 0));
-  for (let k = 0; k < 2; k++) g.add(box(.07, .07, .02, choose(rnd, furnMats.books), -.16 + k * .12, .9 + rnd() * .15, .26, 0));
   return g;
 }
 function bookshelf(rnd) {
@@ -620,87 +667,101 @@ function catBed(rnd) {
   pad.position.y = .05; g.add(pad);
   return g;
 }
-// ---------- Đồ khu bếp (màn 40–50): tông bạc hà / trắng hợp tường gạch men bạc hà và sàn gạch của vùng bếp ----------
-const kitchenMats = {
-  mint: toonMat({ color: 0x8fd0c4 }), mintDark: toonMat({ color: 0x5fae9f }), top: toonMat({ color: 0xfbfaf4 }), stove: toonMat({ color: 0x5a5f66 }),
-  copper: toonMat({ color: 0xe08a4a }), bowl: [toonMat({ color: 0xf28fa8 }), toonMat({ color: 0x6aa8f0 }), toonMat({ color: 0xffd36e })],
-  fruit: [toonMat({ color: 0xf2605a }), toonMat({ color: 0xffb347 }), toonMat({ color: 0x8fd16a })], basket: toonMat({ color: 0xc89058 }),
-  kibble: toonMat({ color: 0xa8673a }), stripe: [toonMat({ color: 0x8fd0c4 }), toonMat({ color: 0xf6c8a0 })],
+// ---- Phòng tắm + sân sau (hồ bơi) ----
+const bathMats = {
+  tub: toonMat({ color: 0xfdfdfb }), water: new THREE.MeshBasicMaterial({ color: 0x8fd6f2, fog: true }), chrome: toonMat({ color: 0xc9d6de }),
+  foam: toonMat({ color: 0xffffff }), mat: [toonMat({ color: 0x8fd0e8 }), toonMat({ color: 0xffb3c8 })], towel: [toonMat({ color: 0xffc56b }), toonMat({ color: 0x9fdcc0 })],
+  pool: new THREE.MeshBasicMaterial({ color: 0x5cc8f0, fog: true }), rim: toonMat({ color: 0xf3ead8 }), ring: toonMat({ color: 0xff7a6b }),
 };
-const cylMesh = (rt, rb, h, mat, x, y, z, ink = .07, seg = 14) => {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
-  m.position.set(x, y, z);
-  return ink ? withInk(m, ink) : m;
-};
-// Tủ bếp có bếp nấu: thân bạc hà, mặt đá trắng, hai bếp tròn, một nồi đồng.
-function kitchenCounter(rnd) {
+function bathtub() {
   const g = new THREE.Group();
-  g.add(box(.95, .6, .5, kitchenMats.mint, 0, .3, 0, .04), box(1, .06, .55, kitchenMats.top, 0, .63, 0, .05));
-  g.add(box(.02, .5, .02, kitchenMats.mintDark, 0, .3, .26, 0));
-  for (const x of [-.06, .06]) g.add(box(.03, .1, .03, kitchenMats.top, x, .42, .27, 0));
-  for (const x of [-.24, .24]) g.add(cylMesh(.12, .12, .02, kitchenMats.stove, x, .67, 0, 0));
-  const side = rnd() < .5 ? -.24 : .24;
-  g.add(cylMesh(.13, .11, .16, kitchenMats.copper, side, .76, 0), cylMesh(.14, .14, .02, kitchenMats.copper, side, .85, 0, .1));
+  g.add(box(1.3, .5, .72, bathMats.tub, 0, .3, 0));
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .52), bathMats.water);
+  water.rotation.x = -Math.PI / 2; water.position.y = .56; g.add(water);
+  for (const [x, z, r] of [[-.3, .05, .13], [-.1, -.08, .1], [.15, .1, .12]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 7), bathMats.foam); b.position.set(x, .58, z); g.add(withInk(b, .08)); }
+  for (const x of [-.5, .5]) for (const z of [-.26, .26]) g.add(box(.08, .1, .08, bathMats.chrome, x, .05, z));
+  g.add(box(.06, .3, .06, bathMats.chrome, .58, .7, -.28));
   return g;
 }
-// Bàn ăn tròn nhỏ + hai ghế đối nhau.
-function diningTable(rnd) {
-  const g = new THREE.Group(), seat = rnd() < .5 ? kitchenMats.mint : furnMats.white;
-  g.add(cylMesh(.36, .36, .05, furnMats.wood, 0, .5, 0, .05, 24), cylMesh(.05, .06, .48, furnMats.woodDark, 0, .24, 0, .1));
-  g.add(cylMesh(.2, .22, .03, furnMats.woodDark, 0, .015, 0, 0));
-  for (const s of [-1, 1]) {
-    g.add(box(.32, .05, .3, seat, s * .58, .3, 0, .08), box(.05, .34, .3, seat, s * .74, .5, 0, .08));
-    for (const z of [-.11, .11]) g.add(box(.04, .28, .04, furnMats.woodDark, s * .58, .14, z, 0));
-  }
-  g.add(cylMesh(.09, .07, .05, furnMats.white, .08, .55, .05, .1));
+function sinkCabinet(rnd) {
+  const g = new THREE.Group();
+  g.add(box(.7, .62, .45, furnMats.white, 0, .31, 0), box(.5, .08, .36, bathMats.tub, 0, .66, .02));
+  g.add(box(.04, .16, .04, bathMats.chrome, 0, .76, -.12), box(.3, .26, .05, choose(rnd, bathMats.towel), -.42, .5, .1));
   return g;
 }
-function stool() {
+function laundryBasket(rnd) {
   const g = new THREE.Group();
-  g.add(cylMesh(.17, .17, .06, kitchenMats.mint, 0, .48, 0, .08));
-  for (let k = 0; k < 3; k++) {
-    const a = k / 3 * Math.PI * 2, leg = box(.04, .46, .04, furnMats.woodDark, Math.cos(a) * .1, .23, Math.sin(a) * .1, 0);
-    leg.rotation.set(Math.sin(a) * .12, 0, -Math.cos(a) * .12); g.add(leg);
-  }
+  g.add(box(.42, .44, .34, furnMats.wood, 0, .22, 0), box(.36, .1, .28, choose(rnd, bathMats.towel), 0, .46, 0, .08));
   return g;
 }
-// Hai bát ăn của mèo (một bát hạt, một bát nước).
-function foodBowls(rnd) {
-  const g = new THREE.Group();
-  for (const [x, fill] of [[-.13, kitchenMats.kibble], [.13, furnMats.shade]]) {
-    g.add(cylMesh(.11, .08, .07, choose(rnd, kitchenMats.bowl), x, .035, 0, .1));
-    g.add(cylMesh(.09, .09, .01, fill, x, .07, 0, 0));
-  }
+function bathMat(rnd) {
+  const m = new THREE.Mesh(roundedBox(1.1, .03, .7, 1, .015), choose(rnd, bathMats.mat));
+  m.position.y = .02; m.receiveShadow = true;
+  const g = new THREE.Group(); g.add(m);
   return g;
 }
-function fruitBasket(rnd) {
+// Hồ bơi sân sau (thay ao ở vườn): mặt nước chữ nhật bo góc, thành gạch kem, phao tròn nổi.
+function pool() {
   const g = new THREE.Group();
-  g.add(cylMesh(.2, .15, .14, kitchenMats.basket, 0, .07, 0, .08));
-  for (let k = 0; k < 4; k++) {
-    const a = k / 4 * Math.PI * 2 + rnd(), fruit = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), choose(rnd, kitchenMats.fruit));
-    fruit.position.set(Math.cos(a) * .08, .16 + (k === 3 ? .07 : 0), Math.sin(a) * .08); g.add(withInk(fruit, .1));
-  }
+  for (const [w, d, x, z] of [[2.1, .18, 0, .62], [2.1, .18, 0, -.62], [.18, 1.42, .96, 0], [.18, 1.42, -.96, 0]]) g.add(box(w, .1, d, bathMats.rim, x, .05, z, .05));
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 1.08), bathMats.pool);
+  water.rotation.x = -Math.PI / 2; water.position.y = .05; water.receiveShadow = true; g.add(water);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.17, .06, 8, 18), bathMats.ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(.4, .08, .1); g.add(withInk(ring, .06));
   return g;
 }
-// Ba chậu rau thơm nhỏ xếp hàng (thay chậu cây to ở trong bếp).
-function herbPots(rnd) {
+// ---- Mẫu giáo: đồ sân chơi tông kẹo ----
+const kidMats = { red: toonMat({ color: 0xff7a6b }), yellow: toonMat({ color: 0xffd23f }), blue: toonMat({ color: 0x5ab2f2 }), green: toonMat({ color: 0x7fcf6a }), sand: toonMat({ color: 0xf2d79a }), rope: toonMat({ color: 0x9a6a43 }) };
+const KID_COLORS = [kidMats.red, kidMats.yellow, kidMats.blue, kidMats.green];
+const rod = (r, len, mat, x, y, z, rx = 0, rz = 0) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), mat); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); return withInk(m, .1); };
+function slide(rnd) {
+  const g = new THREE.Group(), c = choose(rnd, KID_COLORS);
+  g.add(box(.5, .08, .5, kidMats.yellow, 0, .8, -.4), ...[[-.22, -.62], [.22, -.62], [-.22, -.18], [.22, -.18]].map(([x, z]) => rod(.035, .8, kidMats.blue, x, .4, z)));
+  for (let k = 0; k < 4; k++) g.add(box(.44, .04, .08, kidMats.blue, 0, .16 + k * .18, -.68 - k * .02, .05));
+  const chute = box(.42, .05, 1.1, c, 0, .44, .32);
+  chute.rotation.x = .72; g.add(chute);
+  g.add(box(.05, .12, 1.1, c, -.22, .5, .32), box(.05, .12, 1.1, c, .22, .5, .32));
+  g.children.slice(-2).forEach(m => { m.rotation.x = .72; });
+  return g;
+}
+function swingSet(rnd) {
   const g = new THREE.Group();
-  for (let k = -1; k <= 1; k++) {
-    g.add(cylMesh(.09, .07, .14, kitchenMats.copper, k * .2, .07, 0, .1));
-    for (let j = 0; j < 3; j++) {
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(.06 + rnd() * .03, 8, 6), furnMats.leaf);
-      leaf.position.set(k * .2 + (j - 1) * .04, .2 + (j % 2) * .05, (rnd() - .5) * .06); leaf.scale.y = 1.4; g.add(withInk(leaf, .1));
-    }
+  for (const x of [-.7, .7]) g.add(rod(.04, 1.25, kidMats.red, x, .6, -.25, .38), rod(.04, 1.25, kidMats.red, x, .6, .25, -.38));
+  g.add(rod(.04, 1.5, kidMats.red, 0, 1.18, 0, 0, Math.PI / 2));
+  for (const x of [-.32, .32]) {
+    g.add(rod(.012, .82, kidMats.rope, x - .13, .76, 0), rod(.012, .82, kidMats.rope, x + .13, .76, 0));
+    g.add(box(.34, .04, .16, choose(rnd, KID_COLORS), x, .35, 0, .06));
   }
   return g;
 }
-// Thảm bếp dài kẻ sọc (thay thảm tròn phòng khách).
-function kitchenMat() {
+function sandbox(rnd) {
   const g = new THREE.Group();
-  for (let k = 0; k < 5; k++) {
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.5, .02, .2), kitchenMats.stripe[k % 2]);
-    stripe.position.set(0, .02, (k - 2) * .2); stripe.receiveShadow = true; g.add(stripe);
-  }
+  for (const [w, d, x, z] of [[1.6, .12, 0, .55], [1.6, .12, 0, -.55], [.12, 1.22, .74, 0], [.12, 1.22, -.74, 0]]) g.add(box(w, .16, d, kidMats.green, x, .08, z, .05));
+  const sand = new THREE.Mesh(roundedBox(1.36, .08, 1, 1, .03), kidMats.sand);
+  sand.position.y = .06; sand.receiveShadow = true; g.add(sand);
+  const bucket = new THREE.Mesh(new THREE.CylinderGeometry(.09, .07, .14, 12), choose(rnd, KID_COLORS));
+  bucket.position.set(.35, .17, .15); g.add(withInk(bucket, .08));
+  g.add(box(.05, .03, .26, kidMats.yellow, -.3, .12, -.1, .08));
+  return g;
+}
+// Khối chữ ABC chồng lên nhau, mỗi khối một màu, chữ vẽ trên mặt trước.
+const letterMat = ch => cached(`letter|${ch}`, () => new THREE.MeshBasicMaterial({ fog: true, transparent: true, depthWrite: false, map: canvasTexture(64, 64, g => {
+  g.font = '900 46px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(ch, 32, 35);
+}) }));
+function abcBlocks(rnd) {
+  const g = new THREE.Group(), s = .26;
+  [[-.15, 0, 0], [.15, 0, .03], [0, 1, .4]].forEach(([x, row, turn], k) => {
+    const cube = new THREE.Group(), ch = 'ABC'[k];
+    cube.add(box(s, s, s, choose(rnd, KID_COLORS), 0, 0, 0, .06));
+    const face = new THREE.Mesh(STICKER_GEO, letterMat(ch));
+    face.scale.set(s * .8, s * .8, 1); face.position.z = s / 2 + .006; face.renderOrder = 1; cube.add(face);
+    cube.position.set(x, s / 2 + row * s, 0); cube.rotation.y = turn; g.add(cube);
+  });
+  return g;
+}
+function kidBall(rnd) {
+  const g = new THREE.Group(), ball = new THREE.Mesh(new THREE.SphereGeometry(.16, 14, 10), choose(rnd, KID_COLORS));
+  ball.position.y = .16; g.add(withInk(ball, .08));
   return g;
 }
 // Bảng rải đồ hai bên đường theo vùng (decorate()). Mỗi đoạn thử `tries` chỗ, đặt tối đa `max` món, cách đường tới ~`spread`
@@ -735,14 +796,29 @@ const SCATTER = {
     { kind: 'cushion', make: () => floorCushion, r: .32, w: 1, cap: 1, small: true },
     { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
   ] },
-  kitchen: { tries: 22, max: 5, spread: 2.8, kinds: [
-    { kind: 'fridge', make: () => fridge, r: .45, w: 2, cap: 1, minDist: 2.3, big: true },
-    { kind: 'counter', make: () => kitchenCounter, r: .65, w: 2, cap: 1, minDist: 2.3, big: true },
-    { kind: 'dining', make: () => diningTable, r: .8, w: 2, cap: 1, minDist: 1.6, big: true },
-    { kind: 'stool', make: () => stool, r: .25, w: 1.5, cap: 1 },
-    { kind: 'herbs', make: () => herbPots, r: .35, w: 1.5, cap: 1 },
-    { kind: 'bowls', make: () => foodBowls, r: .3, w: 1, cap: 1, small: true },
-    { kind: 'fruit', make: () => fruitBasket, r: .25, w: 1, cap: 1, small: true },
+  bathroom: { tries: 22, max: 5, spread: 2.8, kinds: [
+    { kind: 'bathtub', make: () => bathtub, r: .8, w: 2, cap: 1, minDist: 1.8, big: true },
+    { kind: 'sink', make: () => sinkCabinet, r: .5, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'laundry', make: () => laundryBasket, r: .3, w: 1.5, cap: 1 },
+    { kind: 'plant', make: (rnd, dist) => g => pottedPlant(g, dist > 2.3), r: .35, w: 1, cap: 1 },
+    { kind: 'yarn', make: () => yarnBall, r: .2, w: 1, cap: 1, small: true },
+  ] },
+  kinder: { tries: 24, max: 7, spread: 4.2, kinds: [
+    { kind: 'slide', make: () => slide, r: .75, w: 2, cap: 1, minDist: 2, big: true },
+    { kind: 'swing', make: () => swingSet, r: .85, w: 2, cap: 1, minDist: 2.3, big: true },
+    { kind: 'tree', make: () => tree, r: .7, w: 1, cap: 1, minDist: 2.6 },
+    { kind: 'blocks', make: () => abcBlocks, r: .3, w: 1.5, cap: 1 },
+    { kind: 'bush', make: () => bush, r: .5, w: 1, cap: 1 },
+    { kind: 'ball', make: () => kidBall, r: .2, w: 1, cap: 2, small: true },
+    { kind: 'flower', make: () => flower, r: .12, w: 1, cap: 2, small: true },
+  ] },
+  // Sân sau: cây cối như vườn (hồ bơi đặt riêng ở chỗ ao, decorate()).
+  backyard: { tries: 26, max: 12, spread: 5.2, kinds: [
+    { kind: 'tree', make: () => tree, r: .7, w: 3, cap: 3, minDist: 2.3 },
+    { kind: 'bush', make: () => bush, r: .5, w: 2, cap: 2 },
+    { kind: 'patch', make: () => flowerPatch, r: .45, w: 2, cap: 2, shadow: false },
+    { kind: 'flower', make: () => flower, r: .12, w: 2, cap: 3, small: true },
+    { kind: 'tuft', make: () => tuft, r: .1, w: 1, cap: 2, small: true },
   ] },
 };
 
@@ -943,6 +1019,14 @@ function claimBadgeTexture() {
     g.fillStyle = '#fff'; g.fillText('CLAIM', w / 2, h / 2 - 2);
   });
 }
+// Màn chưa mở: dấu "?" trắng to, viền nâu thật dày (không nền nút), nổi ngay trên nóc thùng đóng.
+function mysteryTexture() {
+  return canvasTexture(128, 128, (g, w, h) => {
+    g.font = '900 104px "Baloo 2", Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.strokeStyle = '#5b2e1c'; g.lineWidth = 22; g.strokeText('?', w / 2, h / 2 + 6);
+    g.fillStyle = '#fff6e6'; g.fillText('?', w / 2, h / 2 + 6);
+  });
+}
 // text: 'NEW!' (màn đã mở) hoặc '?' (mèo bí ẩn của màn chưa mở — cùng ô, chỉ đổi chữ).
 function newBadgeTexture(text = 'NEW!') {
   return canvasTexture(160, 64, (g, w, h) => {
@@ -1023,7 +1107,7 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   drum.add(content);
   // Sàn trong nhà: dải trống phủ ngay trên cỏ từng đoạn một màn (θ của CylinderGeometry = π/2 + góc trống).
   const floorMats = {};
-  for (const id of ['living', 'bedroom', 'kitchen']) {
+  for (const id of ['living', 'bedroom', 'bathroom', 'kinder']) {
     const tex = floorTexture(id);
     tex.repeat.set(LEVEL_GAP / 2.2, 40 / 2.2);
     floorMats[id] = toonMat({ color: 0xffffff, map: tex });
@@ -1208,9 +1292,21 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     newCats.forEach((breed, k) => {
       const cat = newCatModel(breed, { silhouette: locked, live: true }), [dx, dz, turn] = spots[k], body = cat.userData.cat;
       cat.scale.setScalar(1.35);
-      cat.add(petBox());
-      // Chờ được nhận: ngủ trong thùng các-tông (thở chậm, tai cụp, Zzz như mèo ngủ ở Deco).
-      Object.assign(body, { x: dx, z: dz, heading: turn, yaw: turn, eyes: 'sleep', sleeping: true });
+      // Nhãn dán ngẫu nhiên nhưng cố định theo màn + con (vẽ lại bản đồ không đổi nhãn).
+      let seed = 977 + index * 131 + k * 17;
+      const crate = petBox(!claimable, () => ((seed = (seed * 16807) % 2147483647) / 2147483647));
+      cat.add(crate);
+      // Vùng bấm trùm cả con + thùng (lưới mèo nhỏ, khó chạm trúng): đã thắng màn thì nhận, chưa thì thùng rung (pick()).
+      const hitbox = new THREE.Mesh(HITBOX_GEO, HITBOX_MAT);
+      hitbox.position.y = .5;
+      hitbox.userData = claimable ? { claim: breed, level: index } : { shake: cat };
+      cat.add(hitbox);
+      pickables.push(hitbox);
+      cat.userData.crate = crate;
+      cat.userData.closed = !claimable;
+      // Nhận được rồi: ngủ trong thùng mở (thở chậm, tai cụp, Zzz như mèo ngủ ở Deco). Chưa nhận được: thùng đóng, giấu mèo.
+      Object.assign(body, { x: dx, z: dz, heading: turn, yaw: turn, eyes: 'sleep', sleeping: !!claimable });
+      body.rig.hopper.visible = !!claimable;
       body.update(0, 0);
       cat.userData.spot = [dx, dz];
       catTilt.add(cat);
@@ -1218,11 +1314,12 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     });
     if (newCats.length) {
       const badge = new THREE.Sprite(claimable ? cached('badge|claim', () => new THREE.SpriteMaterial({ map: claimBadgeTexture() }))
-        : locked ? cached('badge|mystery', () => new THREE.SpriteMaterial({ map: newBadgeTexture('?') }))
+        : locked ? cached('badge|mystery', () => new THREE.SpriteMaterial({ map: mysteryTexture() }))
           : cached('badge|new', () => new THREE.SpriteMaterial({ map: newBadgeTexture() })));
       // Nút Claim to hơn, nổi cao hơn đầu mèo cho dễ bấm.
-      badge.scale.set(...(claimable ? [1.75, .63, 1] : [.78, .31, 1]));
-      badge.userData.baseY = claimable ? 2 : 1.25;
+      badge.scale.set(...(claimable ? [1.75, .63, 1] : locked ? [.62, .62, 1] : [.78, .31, 1]));
+      // Chưa nhận được: nhãn nổi trên nóc thùng đóng (cao ~1 m sau khi phóng 1.35).
+      badge.userData.baseY = claimable ? 2 : locked ? 1.4 : 1.5;
       badge.renderOrder = 5;
       // Chạm nút Claim hoặc chạm mèo đều nhận (nhận lần lượt từng con nếu màn có nhiều giống mới).
       if (claimable) {
@@ -1345,22 +1442,22 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
         placed.push({ x, t, r });
         if (kind) count[kind] = (count[kind] || 0) + 1;
       };
-      const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = zone !== 'garden';
-      if (indoor) floorPiece(i, zone);
-      // Đèn giữa hai màn, đổi bên mỗi đoạn (trong nhà: đèn cây cách một đoạn, bếp: ghế đẩu); hàng rào / chậu cây (bếp: chậu rau thơm) phía bên kia mỗi 3 đoạn.
+      const chunk = new THREE.Group(), mid = i + .5, onRoad = i >= -1 && i < end, zone = zoneAt(i), indoor = !OUTDOOR.has(zone);
+      if (floorMats[zone]) floorPiece(i, zone);
+      // Đèn giữa hai màn, đổi bên mỗi đoạn (trong nhà: đèn cây cách một đoạn); hàng rào / chậu cây phía bên kia mỗi 3 đoạn.
       const lampSide = i % 2 ? 1 : -1, edge = (WORLD.ROAD / 2 + WORLD.EDGE + .35) * Math.hypot(1, pathSlope(mid));
-      if (onRoad && (!indoor || i % 2 === 0) && free(pathX(mid) + lampSide * edge, mid, .2)) put(zone === 'kitchen' ? stool : indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
+      if (onRoad && (!indoor || i % 2 === 0) && free(pathX(mid) + lampSide * edge, mid, .2)) put(indoor ? floorLamp : lantern, pathX(mid) + lampSide * edge, mid, .2, 0);
       if (onRoad && i % 3 === 0 && free(pathX(mid) - lampSide * edge, mid, .5)) {
-        put(zone === 'kitchen' ? herbPots : indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)), { kind: zone === 'kitchen' ? 'herbs' : indoor ? 'plant' : '' });
+        put(indoor ? pottedPlant : () => fence(1.2), pathX(mid) - lampSide * edge, mid, .5, -Math.atan(pathSlope(mid)), { kind: indoor ? 'plant' : '' });
       }
-      // Biển chỉ đường mỗi 5 đoạn, ao nhỏ / thảm mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
+      // Biển chỉ đường mỗi 5 đoạn, ao nhỏ (sân sau: hồ bơi) / thảm (phòng tắm: thảm chùi chân) mỗi 4 đoạn ở phía rộng (phía đường đang uốn ra xa).
       if (onRoad && !indoor && i % 5 === 2) {
         const t = i + .25, x = pathX(t) - lampSide * edge;
         if (free(x, t, .3)) put(signpost, x, t, .3, -Math.atan(pathSlope(t)));
       }
       if (i % 4 === 1) {
         const t = mid + (rnd() - .5) * .3, wide = pathX(t) > 0 ? -1 : 1, x = pathX(t) + wide * (2.5 + rnd() * .8);
-        if (free(x, t, 1.15)) put(zone === 'kitchen' ? kitchenMat : indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, { shadow: false });
+        if (free(x, t, 1.15)) put(zone === 'bathroom' ? bathMat : zone === 'backyard' ? pool : zone === 'kinder' ? sandbox : indoor ? rug : pond, x, t, 1.15, (rnd() - .5) * .6, { shadow: false });
       }
       // Rải theo bảng SCATTER của vùng: chọn ngẫu nhiên có trọng số, mỗi loại có trần số lượng trong đoạn; loại đã có ở
       // đoạn trước bị giảm trọng số (món to không lặp ở hai đoạn liền nhau) để hai bên đường đa dạng mà không rối.
@@ -1577,12 +1674,15 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
     const r = canvas.getBoundingClientRect();
     ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    return ray.intersectObjects(pickables, false)[0]?.object.userData;
+    // Mèo / thùng chờ nhận ưu tiên hơn nút màn đứng chồng phía trước (vùng bấm mèo to, hay lấn sang đầu nút màn bên cạnh).
+    const hits = ray.intersectObjects(pickables, false);
+    return (hits.find(h => h.object.userData.claim || h.object.userData.shake) ?? hits[0])?.object.userData;
   }
-  function hover(e) { const h = hit(e); canvas.style.cursor = h && (h.claim || !h.locked) ? 'pointer' : 'grab'; }
+  function hover(e) { const h = hit(e); canvas.style.cursor = h && (h.claim || h.shake || !h.locked) ? 'pointer' : 'grab'; }
   function pick(e) {
     const h = hit(e);
     if (h?.claim) { onClaim?.(h.claim, h.level); return; }
+    if (h?.shake) { h.shake.userData.shakeAt = performance.now(); return; }
     if (!h || h.locked) return;
     const node = nodes[h.level];
     if (node) node.press = 1;
@@ -1617,11 +1717,13 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
   jump.onclick = () => { target = clamp(angleOf(claimIndex >= 0 ? claimIndex : curIndex)); velocity = 0; };
   function updateZone(t) {
     fogMix.copy(gardenFog);
-    for (const z of ZONES) if (z.wall) {
-      const k = Math.min(1, Math.max(0, (t - z.from + .6) / 1.2));
-      walls[z.id].style.opacity = String(k);
-      fogMix.lerp(zoneFog[z.id], k);
-    }
+    // Mỗi vùng hiện dần quanh ranh giới của nó; tường vùng trước mờ đi khi vùng sau bắt đầu (sân sau ngoài trời: hết tường).
+    const blend = z => Math.min(1, Math.max(0, (t - z.from + .6) / 1.2));
+    ZONES.forEach((z, i) => {
+      const k = blend(z), next = ZONES[i + 1];
+      if (z.wall) walls[z.id].style.opacity = String(k * (next ? 1 - blend(next) : 1));
+      if (z.fog) fogMix.lerp(zoneFog[z.id], k);
+    });
     scene.fog.color.copy(fogMix);
     // Còn chó mèo chờ nhận: luôn hiện nút Claim dẫn tới màn sớm nhất có mèo đó.
     // Không thì lướt xa màn đang chơi hơn JUMP_AWAY màn mới hiện nút ghim để trở về màn hiện tại.
@@ -1682,7 +1784,15 @@ export function createMapWorld(container, { onPick, onClaim } = {}) {
       if (!reduceMotion) node.cats.forEach(c => { if (c.isSprite) { c.position.y = c.userData.baseY + Math.sin(time * 2.6) * .06; if (node.claimable) c.material.rotation = Math.sin(time * 5) * .06; } });
       // Mèo đứng yên trong thùng; cử động tại chỗ (thở, đuôi, tai) do Cat.update của Deco lo.
       catWorld.dt = dt;
-      node.cats.forEach(c => c.userData.cat?.update(dt, time));
+      node.cats.forEach(c => {
+        c.userData.cat?.update(dt, time);
+        // Thùng đóng tự lắc lâu lâu một lần (như có con gì cựa quậy bên trong), lệch nhịp giữa các thùng.
+        if (c.userData.closed && !reduceMotion && now > (c.userData.nextShake ??= now + 800 + Math.random() * 4000)) {
+          c.userData.shakeAt = now; c.userData.nextShake = now + 2500 + Math.random() * 4000;
+        }
+        const crate = c.userData.crate, k = c.userData.shakeAt ? (now - c.userData.shakeAt) / SHAKE_MS : 1;
+        if (crate) { crate.rotation.z = k < 1 ? Math.sin(k * Math.PI * 7) * .12 * (1 - k) : 0; crate.position.y = k < 1 ? Math.abs(Math.sin(k * Math.PI * 7)) * .03 * (1 - k) : 0; }
+      });
     }
     for (const { fly, holder } of flyers) if (holder.visible) fly.visible = holder.userData.angle - scroll <= LOD_FAR;
     if (!reduceMotion) for (const { fly, holder, phase, radius } of flyers) {

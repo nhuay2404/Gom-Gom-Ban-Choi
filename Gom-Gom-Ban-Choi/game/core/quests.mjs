@@ -4,7 +4,7 @@
 // (tối đa QUESTS.keep mốc liên tiếp); rồi chuỗi nhường ô, ô được lấp bằng chuỗi đầu hàng còn làm được. Số liệu ở data/economy.mjs (QUESTS, QUEST_TRACKS).
 //
 // Save (SAVE_KEYS.quests): { order: [id chuỗi], tiers: { id: số mốc đã nhận }, totals: { sự kiện: tổng đếm ngầm },
-//   levelFrom: mốc màn lúc mở Quests (÷ step), active: [{ track, n, text, area?, reward, progress, run? }] }
+//   levelFrom: mốc màn lúc mở Quests (÷ step), active: [{ track, n, text, area?, reward (xu), gems?, progress, run? }] }
 // ctx (shared.js questCtx): { unlocked, cleared, maxLevel, nextArea, areaName, open: [khu đã mở],
 //   basesLeft (chỗ chưa xây ở mọi khu), petsLeft (mèo chưa nhận ở Map), stylesLeft (kiểu đồ / tường / sàn chưa mua ở Shop) }
 import { QUESTS, QUEST_TRACKS } from '../data/economy.mjs';
@@ -44,7 +44,7 @@ function spawn(track, tier, ctx, quests) {
     if (n <= prev) return null;
   }
   const text = track.text.replace('{n}', n.toLocaleString('en-US')).replace('{area}', ctx.areaName ?? '').replace('{s}', n > 1 ? 's' : '');
-  return { track: track.id, n, text, ...(area && { area }), reward: round10(track.share * dailyRate(ctx.unlocked)), progress: 0 };
+  return { track: track.id, n, text, ...(area && { area }), reward: track.share ? round10(track.share * dailyRate(ctx.unlocked)) : 0, ...(track.gems && { gems: track.gems }), progress: 0 };
 }
 
 // Tiến độ: màn đã thắng / khu đã mở đo theo trạng thái game; chuỗi đếm lấy từ tổng đếm ngầm.
@@ -108,7 +108,7 @@ export function claimQuest(quests, index, ctx) {
   // Mốc kế của chuỗi vừa nhận về đúng vị trí cũ (thấy thanh tiến độ "đẩy lên"); ô của chuỗi khác thì vào cuối danh sách.
   const active = [...base.active];
   if (stay && nextOf >= 0) { const [next] = active.splice(nextOf, 1); active.splice(index, 0, { ...next, run }); }
-  return { quests: { ...base, active }, coins: quest.reward };
+  return { quests: { ...base, active }, coins: quest.reward, gems: quest.gems ?? 0, key: `quest:${quest.track}:${quests.tiers[quest.track] ?? 0}` };
 }
 
 // Cấp nhà: mỗi QUESTS.rankEvery quest đã nhận thưởng = lên một bậc (danh hiệu QUESTS.ranks, bậc cuối giữ nguyên tên).

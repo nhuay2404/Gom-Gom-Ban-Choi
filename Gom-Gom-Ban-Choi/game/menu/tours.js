@@ -68,7 +68,8 @@ export function runDecoTour() {
   const card = () => $('deco-cards').querySelector(`[data-id="${base.id}"]`);
   const deco = getDeco();
   if (deco.zone !== 'garden') { setDeco({ ...deco, zone: 'garden' }); applyRoom(getDeco()); renderZoneSwitch(); }
-  if (TUTORIAL_TOP_UP && getDeco().coins < base.price) { setDeco({ ...getDeco(), coins: base.price }); refreshWallet(); }
+  const toppedUp = TUTORIAL_TOP_UP && getDeco().coins < base.price;
+  if (toppedUp) { setDeco({ ...getDeco(), coins: base.price }); refreshWallet(); }
   clearDecoPick();
   renderDeco();
   const gift = () => {
@@ -88,7 +89,7 @@ export function runDecoTour() {
         tray.scrollLeft += el.getBoundingClientRect().left - tray.getBoundingClientRect().left - 12;
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       } },
-    { target: () => card()?.querySelector('[data-act="buy"]'), text: 'Love it? Tap Buy to build it. We topped up your coins!', until: () => isOwned(getDeco(), base), after: gift },
+    { target: () => card()?.querySelector('[data-act="buy"]'), text: `Love it? Tap Buy to build it.${toppedUp ? ' We topped up your coins!' : ''}`, until: () => isOwned(getDeco(), base), after: gift },
     { target: () => room3d?.screenRectOf(slot), bubble: 'below', until: () => decoPop?.key === slot,
       text: `${base.name} is built! Tap it to swap its style. We gave you a new one.`,
       before: () => new Promise(resolve => setTimeout(resolve, 1100)) },

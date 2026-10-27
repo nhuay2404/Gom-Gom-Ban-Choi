@@ -1,11 +1,6 @@
 {
-  "version": 4,
+  "version": 5,
   "assets": [
-    {
-      "name": "banner",
-      "file": "banner.png",
-      "reusedFrom": "idle-reward/banner.png"
-    },
     {
       "name": "hero-cat",
       "file": "hero-cat.png",
@@ -42,11 +37,6 @@
       "reusedFrom": "deco/gift-catbed-heart.jpg"
     },
     {
-      "name": "mystery-cat",
-      "file": "mystery-cat.png",
-      "reusedFrom": "quests/icon-pets.png"
-    },
-    {
       "name": "check",
       "file": "check.png",
       "reusedFrom": "quests/check.png"
@@ -55,6 +45,51 @@
       "name": "close",
       "file": "close.svg",
       "reusedFrom": "quests/close.svg"
+    },
+    {
+      "name": "button-claim",
+      "file": "button-claim.svg",
+      "generated": true
+    },
+    {
+      "name": "button-later",
+      "file": "button-later.svg",
+      "generated": true
+    },
+    {
+      "name": "badge-premium",
+      "file": "badge-premium.svg",
+      "generated": true
+    },
+    {
+      "name": "Day 1 reward · 3D",
+      "file": "reward-day1.png",
+      "basedOn": "play/booster-moves.png"
+    },
+    {
+      "name": "Day 2 reward · 3D",
+      "file": "reward-day2.png",
+      "basedOn": "home/icon-coin.png"
+    },
+    {
+      "name": "Day 4 reward · 3D",
+      "file": "reward-day4.png",
+      "basedOn": "play/booster-hammer.png"
+    },
+    {
+      "name": "Day 5 reward · 3D",
+      "file": "reward-day5.png",
+      "basedOn": "home/icon-coin.png"
+    },
+    {
+      "name": "Day 6 reward · 3D",
+      "file": "reward-day6.png",
+      "basedOn": "play/booster-swap.png"
+    },
+    {
+      "name": "Day 7 reward · 3D",
+      "file": "reward-day7.png",
+      "basedOn": "user-reference/crowned-gray-cat.png"
     }
   ]
 }

@@ -134,15 +134,6 @@
       ]
     },
     {
-      "name": "banner",
-      "png": "banner.png",
-      "paintedSource": "painted/banner.png",
-      "width": 1200,
-      "height": 400,
-      "reusedFrom": "idle-reward/painted/banner.png",
-      "preserveAspectRatio": true
-    },
-    {
       "name": "close",
       "source": "close.svg",
       "png": "close.png",

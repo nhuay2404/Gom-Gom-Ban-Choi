@@ -80,3 +80,4 @@
 /* Tên mục kèm ghi chú nhỏ bên dưới (vd. Day / Night: chỉ áp dụng cho Deco) */
 .settings-name.with-note{display:flex;flex-direction:column;line-height:1.1}
 .settings-name.with-note small{font-family:var(--ui-font);font-size:12px;font-weight:800;color:#a07a62}
+.settings-feedback{display:none}

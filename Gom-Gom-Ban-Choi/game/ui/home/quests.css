@@ -1,11 +1,12 @@
 /* All selectors scoped to Quests; Daily keeps its own presentation. */
 .quests-dialog{--quest-ink:#66321e;box-sizing:border-box;width:min(470px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:15px 16px 17px;overflow:auto;border:4px solid #713518;border-radius:32px;background:linear-gradient(145deg,#fffdf1,#ffedc6);box-shadow:inset 0 0 0 3px #ffcf72,0 8px 0 #71351855,0 20px 65px #28140750;color:var(--quest-ink);font-family:var(--ui-font, Nunito,system-ui,sans-serif);text-align:center}
 .quests-dialog::backdrop{background:#382510a3;backdrop-filter:blur(5px)}
-/* Tiêu đề nằm đúng giữa dải ruy băng; icon cuộn giấy đè lên đuôi trái, không đẩy chữ */
-.quest-header{position:relative;display:flex;align-items:center;justify-content:center;min-height:0;aspect-ratio:3/1;margin:-6px -8px 0;background:url('../../assets/img/quests/banner.png') center/contain no-repeat}
-.quest-header h2{margin:0 0 6px;font-family:var(--display,'Baloo 2',system-ui);font-size:36px;letter-spacing:.2px;line-height:1;color:#fff9df;text-shadow:0 2px #9c461a,-1px 0 #9c461a,1px 0 #9c461a}
-.quest-emblem{position:absolute;left:10px;top:50%;translate:0 -50%;width:64px;height:64px;object-fit:contain;rotate:-9deg}
-.quest-close{position:absolute;right:0;top:0;width:46px;height:46px;padding:0;border:0;background:url('../../assets/img/quests/close.svg') center/contain no-repeat;cursor:pointer}
+/* Clean premium heading used by Quests and Daily, replacing the old ribbon banner. */
+.quest-header{position:relative;display:flex;align-items:center;justify-content:center;min-height:60px;margin:0 0 12px;padding:0 48px 11px;border-bottom:1px solid #e5d2a9;background:none}
+.quest-header::after{content:'';position:absolute;left:calc(50% - 18px);bottom:-2px;width:36px;height:3px;border-radius:99px;background:#d3a74e}
+.quest-header h2{margin:0;font-family:var(--display,'Baloo 2',system-ui);font-size:29px;font-weight:900;letter-spacing:.15px;line-height:1;color:#674626;text-shadow:none}
+.quest-emblem{position:absolute;left:2px;top:50%;translate:0 -50%;box-sizing:border-box;width:36px;height:36px;padding:5px;border:1px solid #e6d1a0;border-radius:12px;object-fit:contain;rotate:0;background:linear-gradient(#fff9e9,#f8e7be);box-shadow:inset 0 1px #fff}
+.quest-close{position:absolute;right:0;top:50%;translate:0 -50%;width:38px;height:38px;padding:0;border:0;background:url('../../assets/img/quests/close.svg') center/contain no-repeat;cursor:pointer}
 .quests-dialog .quest-subtitle{margin:3px 0 11px;color:#91623a;font-size:13px;font-weight:800;line-height:1.4}
 .quest-summary{display:inline-block;margin-bottom:13px;padding:5px 16px;background:#f3ddb1;border:1px solid #d9b46e;border-radius:20px;color:#7b4928;font-size:11px;font-weight:900;letter-spacing:.4px}
 .quest-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin:0;padding:0}
@@ -26,9 +27,20 @@
 .quest-close:focus-visible,.quest-claim:focus-visible{outline:3px solid #2586aa;outline-offset:3px}.quest-close:active{transform:translateY(2px)}
 .quest-footer{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:17px;color:#9b7248;font-size:10px;font-weight:800}.quest-footer img{width:18px;height:18px}
 .quest-empty{padding:8px 16px 20px}.quest-empty>img{width:145px;height:130px}.quest-empty h3{margin:4px 0;color:#527b32;font-size:21px}.quests-dialog .quest-empty p{font-size:13px;line-height:1.5;color:#8b6746}
-@media(max-width:360px){.quests-dialog{padding-inline:10px}.quest-card{grid-template-columns:42px minmax(0,1fr) 74px;gap:6px;padding-inline:8px}.quest-icon{width:42px;height:53px}.quest-icon>img{width:44px;height:44px}.quest-claim{width:74px}.quest-text{font-size:12px}.quest-emblem{left:8px;width:60px}.quest-header h2{font-size:31px}}
+@media(max-width:360px){.quests-dialog{padding-inline:10px}.quest-card{grid-template-columns:42px minmax(0,1fr) 74px;gap:6px;padding-inline:8px}.quest-icon{width:42px;height:53px}.quest-icon>img{width:44px;height:44px}.quest-claim{width:74px}.quest-text{font-size:12px}.quest-emblem{left:2px;width:32px;height:32px}.quest-header{min-height:54px}.quest-header h2{font-size:26px}.quest-close{width:34px;height:34px}}
 @media(prefers-reduced-motion:reduce){.quest-claim,.quest-progress i{transition:none}.quests-dialog{animation:none}}
 /* Nút thưởng gọn: không kéo dài theo chiều cao thẻ */
 .quest-claim{align-self:center;min-height:44px;height:auto;padding:5px 3px}
 /* Bỏ dòng hạng nhà + nhãn số quest (người chơi chọn) */
 .quests-dialog :is(.quest-subtitle,.quest-summary){display:none}
+/* Daily dùng chung bộ thẻ Quests (menu/daily.js): dòng giờ làm mới nhỏ dưới tiêu đề, nhiệm vụ đã nhận mờ đi */
+.quests-dialog.daily-dialog .daily-reset{margin:0 0 10px;text-align:center;color:#91623a;font-size:12px;font-weight:800}
+.quests-dialog .quest-card.claimed{opacity:.6}
+
+/* Thẻ chưa xong bấm được: đưa tới chỗ làm (menu/task-nav.js). Nhãn "Go ›" nhỏ cạnh loại quest. Quest tặng gem: icon gem trên nút. */
+.quest-card[data-go]{cursor:pointer}
+.quest-card[data-go]:hover{filter:brightness(1.03)}
+.quest-card[data-go]:active{translate:0 1px}
+.quest-card[data-go]:focus-visible{outline:3px solid #2586aa;outline-offset:2px}
+.quest-go{margin-left:6px;padding:0 6px;border-radius:999px;background:#f0a23a;color:#fff;font-size:9px;letter-spacing:.3px}
+.quest-claim .ico-gem{width:16px;height:16px;margin-right:2px}

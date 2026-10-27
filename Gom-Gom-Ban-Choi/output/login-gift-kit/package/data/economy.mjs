@@ -51,8 +51,8 @@ export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 export const IDLE_RATE = remote('IDLE_RATE', 0.015);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
-// 26/10: 60 (trước 30). Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
-export const IDLE_MIN_MINUTES = remote('IDLE_MIN_MINUTES', 60);
+// 26/10: 1 phút (trước 60, 30). Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
+export const IDLE_MIN_MINUTES = remote('IDLE_MIN_MINUTES', 1);
 
 // ----- GEM (tiền cứng) — thiết kế: docs/kinh-te-va-monetization.md -----
 // Gem có sẵn khi mới vào game.
@@ -89,23 +89,27 @@ export const DAILY_POOL = remote('DAILY_POOL', [
 // đó thôi, cuối game bảng có thể trống. Không có thưởng lớn khi làm hết. Mở từ màn fromLevel.
 // Thiết kế theo wiki: thưởng theo công sức (concept-economy-building-blocks), mục tiêu có trần để không thành cày (cozydive-bycer-relaxing-progression-curve).
 // rankEvery: mỗi N quest nhận thưởng = lên một bậc nhà (danh hiệu ranks) + rankGems gem (quà lớn theo mốc, wiki: peak-end + gem chỉ ở mốc).
-export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3, rankEvery: 5, rankGems: 20,
+// keep: một chuỗi giữ ô tối đa bấy nhiêu mốc liên tiếp rồi nhường ô cho chuỗi khác (xuống cuối hàng; vẫn đếm ngầm).
+export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3, keep: 3, rankEvery: 5, rankGems: 20,
   ranks: ['Cozy Newcomer', 'Cat Sitter', 'Home Maker', 'Cat Whisperer', 'Dream Decorator', 'Master of Purrfection'] });
 // Chuỗi nhiệm vụ. Xu = share × R (R như nhiệm vụ ngày, lấy lúc nhiệm vụ đẻ ra).
-// kind 'level': thắng tới màn bội số của step · 'area': mở khu kế tiếp · còn lại đếm sự kiện (event):
-// mục tiêu = min(base + grow × số lần đã xong chuỗi, max), và không vượt số còn lại trong game (cap: tên số đếm trong ctx của quests.mjs).
-// {n} = mục tiêu, {area} = tên khu, {s} = 's' khi n > 1.
+// Mọi chuỗi đếm TÍCH LUỸ và đếm NGẦM (cả lúc quest chưa hiện trong ô): mốc thứ k của chuỗi = steps[k] (tổng từ trước tới nay);
+// hết dãy steps thì mỗi mốc sau cộng thêm `then` (không có `then` = chuỗi kết thúc). Làm vượt nhiều mốc mà chưa nhận thì nhận xong
+// một mốc, mốc kế hiện ra đã đầy sẵn (nhận tiếp ngay). Mốc không vượt số còn lại trong game (cap: tên số đếm trong ctx của quests.mjs).
+// kind 'level': mốc = bội số của step tính từ lúc mở Quests · 'area': mở khu kế tiếp. {n} = mốc, {area} = tên khu, {s} = 's' khi n > 1.
+// gems (thay cho xu): chỉ vài mốc hiếm, lượng nhỏ (wiki: hard currency ít, chỉ ở mốc — council-topic-verdicts): quest dạy chơi một lần +
+// mỗi mèo mới (~11 con) × 5 gem ≈ 70 gem cả game. Mở khu KHÔNG thêm gem ở đây (đã có GEM_REWARDS.area lúc mở khu).
 export const QUEST_TRACKS = remote('QUEST_TRACKS', [
   // Thắng màn vốn đã có thưởng: quest này chỉ thưởng nhẹ (đừng trả hai lần cho cùng một việc).
   { id: 'level', kind: 'level', step: 5, share: .5, text: 'The cats are cheering you on. Beat level {n}!' },
   { id: 'area', kind: 'area', share: 2, text: 'Your home is growing. Open the {area} next!' },
-  { id: 'build', event: 'build', base: 3, grow: 1, max: 5, cap: 'basesLeft', share: 1.5, text: 'The cats need more cozy corners. Build {n} new spot{s}!' },
-  { id: 'pets', event: 'claimPet', base: 1, grow: 0, max: 1, cap: 'petsLeft', share: 1, text: 'A new friend is waiting on the map. Welcome them home!' },
-  { id: 'styles', event: 'style', base: 2, grow: 1, max: 4, cap: 'stylesLeft', share: 1, text: 'Fresh looks are in the Shop. Collect {n} new style{s}!' },
-  // Dạy chơi (once: chỉ một lần): chỉ cho người chơi những thứ dễ bỏ lỡ, thưởng nhẹ.
-  { id: 'carry', event: 'carry', base: 1, grow: 0, once: true, share: .5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },
-  { id: 'view', event: 'view', base: 1, grow: 0, once: true, share: .5, text: 'Take a moment. Hide the buttons and admire your home!' },
-  { id: 'surface', event: 'surface', base: 1, grow: 0, once: true, share: .5, text: 'Make it yours. Change the walls or floor of a room!' },
+  { id: 'build', event: 'build', steps: [4, 10, 20, 30, 40, 50], then: 10, cap: 'basesLeft', share: 1.5, text: 'The cats need more cozy corners. Build {n} spot{s}!' },
+  { id: 'pets', event: 'claimPet', steps: [1, 2, 3], then: 1, cap: 'petsLeft', gems: 5, text: 'New friends are waiting on the map. Welcome {n} pet{s} home!' },
+  { id: 'styles', event: 'style', steps: [2, 5, 10, 20, 30], then: 10, cap: 'stylesLeft', share: 1, text: 'Fresh looks are in the Shop. Collect {n} new style{s}!' },
+  // Dạy chơi (chỉ một mốc): chỉ cho người chơi những thứ dễ bỏ lỡ, thưởng nhẹ.
+  { id: 'carry', event: 'carry', steps: [1], gems: 5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },
+  { id: 'view', event: 'view', steps: [1], gems: 5, text: 'Take a moment. Hide the buttons and admire your home!' },
+  { id: 'surface', event: 'surface', steps: [1], gems: 5, text: 'Make it yours. Change the walls or floor of a room!' },
 ]);
 
 // ----- QUÀ ĐĂNG NHẬP 7 NGÀY (core/login.mjs, menu/login.js) — dạng lịch, KHÔNG streak: mỗi ngày đăng nhập mở một ô, nghỉ thì nhận
@@ -126,6 +130,8 @@ export const LOGIN_CALENDAR = remote('LOGIN_CALENDAR', [
 ]);
 // Mèo quà ngày 7. breed trống = mèo chưa làm: nhận thì vào "mèo chờ" (save login.pendingCats), tự vào nhà khi breed có trong danh mục mèo.
 // Có mèo thật: chỉ cần điền breed (+ tên), không đổi logic.
+// Quà đăng nhập chỉ hiện (nút + popup) khi đã xong hướng dẫn tân thủ VÀ đã thắng tới màn này; ô 1 nhận ngay lần đầu mở được.
+export const LOGIN_FROM_LEVEL = remote('LOGIN_FROM_LEVEL', 5);
 export const LOGIN_CATS = remote('LOGIN_CATS', { 'login-cat': { name: 'Mystery cat', breed: '' } });
 
 // Gói gem bán bằng tiền thật (IAP). usd = giá hiển thị, gems = gem nhận, tag = nhãn nổi bật (trống = không).
@@ -381,12 +387,12 @@ export const DECO = remote('DECO', {
   'cat-tabby':           { price: 0, lock: 14 },      // Calico cat
   'cat-siamese':         { price: 0, lock: 17 },      // Siamese cat
   'cat-tuxedo':          { price: 0, lock: 20 },      // Tuxedo cat
-  // --- Chó (như mèo; stage 3 + 4: màn 4, 7, 10 của stage) ---
-  'dog-shiba':           { price: 0, lock: 24 },      // Shiba dog
-  'dog-golden':          { price: 0, lock: 27 },      // Golden dog
-  'dog-pug':             { price: 0, lock: 30 },      // Pug dog
-  'dog-dalmatian':       { price: 0, lock: 34 },      // Dalmatian dog
-  'dog-malamute':        { price: 0, lock: 37 },      // Malamute dog
-  'dog-rottweiler':      { price: 0, lock: 40 },      // Rottweiler dog
+  // --- Chó (như mèo; rải đều màn 21–60, cứ ~7 màn một bé, bé cuối ở màn 60) ---
+  'dog-shiba':           { price: 0, lock: 26 },      // Shiba dog
+  'dog-golden':          { price: 0, lock: 33 },      // Golden dog
+  'dog-pug':             { price: 0, lock: 40 },      // Pug dog
+  'dog-dalmatian':       { price: 0, lock: 46 },      // Dalmatian dog
+  'dog-malamute':        { price: 0, lock: 53 },      // Malamute dog
+  'dog-rottweiler':      { price: 0, lock: 60 },      // Rottweiler dog
 
 });

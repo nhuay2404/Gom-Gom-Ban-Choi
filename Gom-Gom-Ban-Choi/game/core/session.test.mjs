@@ -30,7 +30,7 @@ function playTutorial(index) {
 }
 
 test('mọi màn: bàn chữ nhật 6×6 tới 8×8, không có sẵn cụm gom được, thẻ kịch bản hợp lệ, có tier hợp lệ', () => {
-  assert.equal(LEVELS.length, 100);
+  assert.equal(LEVELS.length, 150);
   LEVELS.forEach((level, i) => {
     const board = parseBoard(level.board, level.syrup), { W, H } = boardSize(level.board);
     assert.ok(level.board.every(row => row.length === W), `màn ${i + 1}: các hàng cùng độ dài`);

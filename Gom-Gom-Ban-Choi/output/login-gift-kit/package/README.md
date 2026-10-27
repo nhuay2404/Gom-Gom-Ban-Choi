@@ -2,9 +2,9 @@
 
 ## Design
 
-The login calendar uses a portrait event-board layout inspired by the supplied reference: a bold event title, a wide Gom Gom mascot panel, six compact reward cards in a 3-by-2 grid, and a featured full-width Day 7 reward. It uses the game's original panel, card and Claim button artwork, plus the meadow backdrop and cream, cocoa, honey-gold and leaf-green palette. This keeps the layout reference while using the game's own surface treatment. The full panel fits common 320–390px phone widths and scrolls on shorter screens.
+The login calendar is a portrait, one-day-at-a-time HUD. The selected reward image fills a large hero panel; the title, note, page controls and claim actions stay on the familiar cream HUD. The Claim and Later plates use the flat game-matched SVG button assets. No title gradients or ribbons are used.
 
-Day 3 stands out with a rose frame, the actual Heart cushion image, and +15 gems. Day 7 has a gold feature frame and the Mystery cat icon. Current, collected, next-day and locked states remain visible in the cards.
+Every selected reward fills the hero panel without cropping away the item. Day 5 uses a generous mound of paw coins; Day 7 uses a gray crowned cat based on the supplied reference. Day 3 reuses the exact Heart cushion image captured from the in-game model and places the game's gem icon beside it. Booster days carry a prominent “Premium Booster” label, and Day 3's Exclusive badge has a high-contrast solid rose treatment. Current, collected, next-day and locked states remain visible.
 
 ## Actual rewards
 
@@ -12,12 +12,12 @@ Rewards are read from LOGIN_CALENDAR, with no economy changes: +3 moves booster;
 
 ## Files
 
-- `game/menu/login-view.mjs`: shared event shell, reward cards and mystery-cat markup.
+- `game/menu/login-view.mjs`: shared event shell and reward card markup.
 - `game/menu/login.js`: existing reward controller; actual booster, coin, item, gem and pending-cat grant paths are preserved.
 - `game/ui/home/login-gift.css`: portrait board styling and compact-screen rules.
-- `game/assets/img/login-gift/`: 11 reused mascot, reward, close and event-banner assets. The interface also uses five original Quest panel/card/button skins and the meadow background from `game/assets/img/quests/` and `game/assets/img/play/`.
+- `game/assets/img/login-gift/`: source/HUD assets, six full-bleed generated reward images, the exact in-game Heart cushion render and three flat SVG buttons, all listed in `manifest.json`.
 - `game/login-gift-kit.html`: interactive preview for Day 1, Day 3, waiting, Day 7 and completion. Preview claims never change game saves.
-- `output/login-gift-kit/`: overview, mobile state previews and an isolated screenshot of the actual game dialog.
+- `output/login-gift-kit/`: overview and mobile state previews, including the live controller's HUD styling.
 
 ## Rebuild and verification
 

@@ -1,5 +1,5 @@
 // Sinh thêm màn cho game (chạy một lần, rồi chép thẳng vào game/data/levels.mjs như màn 21–50).
-// Chạy: node tools/levels/generate-levels.mjs [từ màn] [tới màn]   (mặc định 51 100)
+// Chạy: node tools/levels/generate-levels.mjs [từ màn] [tới màn]   (mặc định 51 100; màn 101–150: 101 150)
 //
 // Theo nhịp tier của levels.mjs: mỗi chương 10 màn — x1–x4 normal · x5 hard · x6 chill (nghỉ) · x7–x9 normal · x0 boss.
 // Mỗi cơ chế (thùng, kim loại, chuồng, cỏ, mèo béo, hộp thư, bình hoa, siro dâu) là một lớp độ khó; số lớp chồng lên tăng theo tier và
@@ -34,19 +34,26 @@ const THEMES = {
   8: { title: 'Bathroom', words: ['Bubble Bath', 'Rubber Duck', 'Towel Rack', 'Soap Slide', 'Steamy Mirror', 'Fluffy Mat', 'Tile Puzzle', 'Drip Drop', 'Shower Curtain', 'Bathroom Fortress'] },
   9: { title: 'Rooftop', words: ['Chimney Pots', 'Weather Vane', 'Roof Tiles', 'Pigeon Post', 'Gutter Run', 'Sunset Nap', 'Antenna Maze', 'Skylight', 'Starry Gable', 'Rooftop Fortress'] },
   10: { title: 'Moon Garden', words: ['Moon Path', 'Glow Worms', 'Night Blooms', 'Lantern Row', 'Owl Watch', 'Dream Meadow', 'Firefly Field', 'Midnight Maze', 'Comet Trail', 'Moon Fortress'] },
+  11: { title: 'Library', words: ['Reading Nook', 'Ink Pots', 'Paper Stacks', 'Love Letters', 'Locked Archive', 'Story Hour', 'Bookmark Trail', 'Dusty Atlas', 'Quiet Aisle', 'Library Fortress'] },
+  12: { title: 'Music Room', words: ['Piano Keys', 'Drum Roll', 'Violin Case', 'Vase Waltz', 'Grand Finale', 'Lullaby', 'Metronome', 'Music Box', 'Encore', 'Music Fortress'] },
+  13: { title: 'Greenhouse', words: ['Seed Trays', 'Watering Can', 'Fern Corner', 'Sprout Rows', 'Jungle Glass', 'Sunbeam Nap', 'Cactus Shelf', 'Mossy Path', 'Vine Tunnel', 'Greenhouse Fortress'] },
+  14: { title: 'Winter Porch', words: ['First Snow', 'Cozy Scarf', 'Mitten Pile', 'Hot Cocoa', 'Frozen Gate', 'Fireside Nap', 'Snow Boots', 'Icicle Row', 'Long Night', 'Winter Fortress'] },
+  15: { title: 'Cat Castle', words: ['Castle Gate', 'Royal Cushion', 'Jam Tarts', 'Tower Stairs', 'Throne Room', 'Royal Nap', 'Banquet Hall', 'Secret Passage', 'Crown Vault', 'Cat Castle Fortress'] },
 };
 const SHAPE_POOL = { normal: ['plain6', 'square7', 'octagon', 'diamond', 'hexagon', 'triangle', 'heart'], hard: ['square7', 'hexagon', 'heart', 'cross', 'octagon'], chill: ['plain6', 'heart', 'diamond', 'octagon'], boss: ['cross', 'ring', 'square8'] };
 const MECHS = ['crate', 'metal', 'cage', 'grass', 'fat'];
 // Cơ chế mới mở theo chương (màn giới thiệu là boss chương trước) và lớp chính của chương.
 const LATER_MECHS = { mail: 7, vase: 8, syrup: 9 };
-const MAIN_MECH = { 4: 'fat', 7: 'mail', 8: 'vase', 9: 'syrup' };
+// Chương 11+ không có cơ chế mới: mỗi chương lấy lại một cơ chế cũ làm lớp chính cho có bản sắc (phải nằm trong pool màn nghỉ).
+const MAIN_MECH = { 4: 'fat', 7: 'mail', 8: 'vase', 9: 'syrup', 11: 'mail', 12: 'vase', 13: 'grass', 14: 'fat', 15: 'syrup' };
 const GOALS = ['cage', 'grass', 'fat', 'mail', 'vase', 'syrup'], MAX_GOALS = 3;
 // Hệ số số lượng mỗi mục tiêu theo số loại mục tiêu của màn.
 const GOAL_SCALE = { 0: 1, 1: 1.35, 2: 1, 3: 0.7 };
 
 // Tỉ lệ thắng chuẩn của bot giỏi theo tier (cùng công thức tools/levels/level-editor/editor.mjs tierGoal, chương sau khó hơn chút).
 function tierGoal(tier, index) {
-  const chapter = Math.floor(index / 10) + 1, pos = index % 10, later = Math.max(0, chapter - 5) * 0.01;
+  // Độ khó thêm dừng ở chương 10 (5 điểm %): sau đó boss/hard giữ nguyên chuẩn, không dựng tường quá cao cho phần nội dung kéo dài.
+  const chapter = Math.floor(index / 10) + 1, pos = index % 10, later = Math.min(5, Math.max(0, chapter - 5)) * 0.01;
   if (tier === 'chill') return 0.96;
   if (tier === 'hard') return 0.33 - later;
   if (tier === 'boss') return 0.22 - later;

@@ -81,6 +81,26 @@ export function buildBackyardFence(entry) {
 }
 
 // ---------- Đồ cố định: lối đá từ cửa phòng tắm sang bể bơi, thảm chùi chân ngoài cửa ----------
+// Sân gạch quanh bể bơi (nửa phải, từ sau bù nhìn tới hàng rào): nền vữa + gạch vuông .8 m hai tông, chừa ron 3 cm. Nửa trái (vườn rau) giữ cỏ.
+// Mỏng 1.6 cm: đồ đặt trên chỉ chìm vào gạch chưa tới 2 cm, mèo đi qua như mặt đất. Kiểu gạch đi theo nền (Ground) đang dùng của sân sau.
+export const PATIO_LOOKS = {
+  'yground-grass': ['#cfc6b6', '#efe6d6', '#e4d9c6'],   // đá kem
+  'yground-clover': ['#c9a48a', '#e8a07a', '#d98a66'],  // gạch nung đỏ cam
+  'yground-meadow': ['#b8c9d6', '#f4f8fb', '#cfe6f2'],  // gạch men trắng xanh hồ bơi
+};
+export function buildPatio(groundId) {
+  const [grout, a, b] = PATIO_LOOKS[groundId] || PATIO_LOOKS['yground-grass'];
+  const g = group(), yb = backyardBounds(), px0 = 4.4, TILE = .8;
+  g.add(at(box(yb.x1 - px0, .006, yb.z1 - yb.z0, grout), (px0 + yb.x1) / 2, .003, (yb.z0 + yb.z1) / 2));
+  const nx = Math.round((yb.x1 - px0) / TILE), nz = Math.round((yb.z1 - yb.z0) / TILE), tw = (yb.x1 - px0) / nx, td = (yb.z1 - yb.z0) / nz;
+  const tileA = mat(a), tileB = mat(b);
+  for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++)
+    g.add(at(new THREE.Mesh(new THREE.BoxGeometry(tw - .03, .01, td - .03), (i + k) % 2 ? tileA : tileB), px0 + (i + .5) * tw, .011, yb.z0 + (k + .5) * td));
+  g.traverse(node => { if (node.isMesh) { node.castShadow = false; node.receiveShadow = true; } });
+  g.userData.pickSurface = { zone: 'backyard', key: 'floors' }; // chạm sân gạch = chọn nền như chạm cỏ
+  return mergeStatic(g);
+}
+
 export function backyardDecor() {
   const g = group();
   // Lối đá: phẳng sát mặt cỏ (mèo đi qua được), không viền.

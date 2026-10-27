@@ -1,71 +1,246 @@
-/* Portrait event board, using the cream, cocoa, honey and leaf palette from Gom Gom UI. */
-.login-dialog.store-dialog{box-sizing:border-box;width:min(440px,calc(100% - 20px));max-height:calc(100dvh - 20px);padding:12px 15px 15px;overflow:auto;border:3px solid #713518;border-radius:24px;background:linear-gradient(140deg,#fffdf1,#ffedc6);box-shadow:inset 0 0 0 3px #ffcf72,0 7px 0 #71351840,0 22px 55px #28140750;color:#66321e;font-family:var(--ui-font,Nunito,system-ui,sans-serif)}
-.login-dialog::backdrop{background:#38251099;backdrop-filter:blur(5px)}.login-dialog.store-dialog[open]{gap:0}
-.login-header{position:relative;display:flex;align-items:center;justify-content:center;align-self:stretch;min-height:54px;margin:0 0 2px}
-.login-header h2{margin:0;font-family:var(--display,'Baloo 2',system-ui);font-size:clamp(25px,7vw,34px);font-weight:1000;line-height:1;letter-spacing:.2px;text-transform:uppercase;color:#70401f;text-shadow:0 1px #fff1c4,0 2px #d1a15a}
-.login-emblem{position:absolute;left:4px;top:50%;translate:0 -50%;width:45px;height:45px;object-fit:contain;filter:drop-shadow(0 2px 2px #75451b35)}
-.login-close{position:absolute;right:-2px;top:50%;translate:0 -50%;width:38px;height:38px;margin:0;padding:0;border:0;background:url('../../assets/img/login-gift/close.svg') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 2px 2px #75451b35)}
-.login-dialog .login-note{margin:0 0 7px;color:#956438;font-size:11px;font-weight:800;line-height:1.3;text-align:center;letter-spacing:.2px}
-.login-scene{position:relative;isolation:isolate;display:flex;flex-direction:column;align-self:stretch;width:100%;margin:0 0 10px}
-.login-hero{position:relative;order:0;display:flex;align-items:center;justify-content:center;align-self:stretch;height:clamp(76px,24vw,108px);margin:0 0 7px;overflow:hidden;border:1px solid #ddb66c;border-radius:14px;background:linear-gradient(180deg,#fff6dc,#e5f0c9 64%,#c0dc98);box-shadow:inset 0 1px #fffdf3,0 2px 0 #b98e5035}
-.login-hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 52% 100%,#fff5c9a0,transparent 67%)}
-.login-hero-cat{position:relative;z-index:1;width:91%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 3px 2px #77451c25)}.login-hero-calendar,.login-hero-coin{display:none}
-.login-dialog .login-grid{position:relative;z-index:1;order:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;margin:0;padding:0;list-style:none}
-.login-dialog .login-cell{position:relative;display:grid;grid-template-rows:14px minmax(36px,1fr) auto 11px;grid-template-areas:'day' 'icon' 'name' 'status';align-items:center;justify-items:center;box-sizing:border-box;grid-column:auto;min-width:0;min-height:99px;padding:6px 4px 5px;overflow:hidden;border:1px solid #d5b277;border-radius:11px;background:linear-gradient(145deg,#fffaf0,#f7e7c7);box-shadow:inset 0 1px #fffef8,0 2px 0 #b8905535;text-align:center;animation:none;opacity:1}
-.login-dialog .login-cell .login-day{position:static;grid-area:day;display:flex;flex-direction:row;align-items:center;justify-self:start;gap:3px;margin:0;padding:0;border:0;border-radius:0;background:none;color:#81522c;font-family:var(--ui-font,Nunito,system-ui,sans-serif);font-size:11px;font-weight:1000;line-height:1;text-shadow:0 1px #fff9e8}
+/* 7-day login uses the same cream panel, gold edges and pill buttons as the current in-game HUD. */
+.login-dialog.store-dialog{box-sizing:border-box;width:min(600px,calc((var(--frame-w,100vw) - 28px)/var(--s,1)));max-width:calc((var(--frame-w,100vw) - 28px)/var(--s,1));max-height:calc((100dvh - 24px)/var(--s,1));margin-inline:auto;padding:28px 28px 26px;overflow-x:hidden;overflow-y:auto;border:1px solid #e2bd72;border-radius:32px;background:#fff8e4;box-shadow:0 8px 20px #6b452333;color:var(--cream-ink,#6b4523);font-family:var(--ui-font,Nunito,system-ui,sans-serif);text-align:center}
+.login-dialog::backdrop{background:#29491a80;backdrop-filter:blur(3px)}.login-dialog.store-dialog[open]{gap:0}
+.login-header{position:relative;display:flex;align-items:center;justify-content:center;align-self:stretch;min-width:0;width:100%;box-sizing:border-box;min-height:44px;margin:0 0 7px;background:none}
+.login-header h2{margin:0;font-family:var(--display,'Baloo 2',system-ui);font-size:32px;font-weight:900;line-height:1.1;letter-spacing:-.5px;text-transform:none;color:var(--cream-ink,#6b4523);text-shadow:none}
+.login-emblem{display:none}
+.login-close{position:absolute;right:0;top:50%;translate:0 -50%;width:36px;height:36px;margin:0;padding:0;border:0;background:url('../../assets/img/login-gift/close.svg') center/contain no-repeat;cursor:pointer}
+.login-dialog .login-note{box-sizing:border-box;width:100%;max-width:100%;margin:0 0 12px;padding-inline:4px;color:#8a6440;font-size:12px;font-weight:800;line-height:1.35;text-align:center;overflow-wrap:anywhere}
+.login-scene{position:relative;align-self:stretch;box-sizing:border-box;min-width:0;width:100%;margin:0 0 12px}
+.login-hero{display:none}
+.login-dialog .login-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;margin:0;padding:0;list-style:none}
+.login-dialog .login-cell{position:relative;display:grid;grid-template-rows:14px minmax(36px,1fr) auto 11px;grid-template-areas:'day' 'icon' 'name' 'status';align-items:center;justify-items:center;box-sizing:border-box;grid-column:auto;min-width:0;min-height:99px;padding:6px 4px 5px;overflow:hidden;border:2px solid var(--cream-edge,#e2bd72);border-image:none;border-radius:16px;background:#fff8e4;box-shadow:none;text-align:center;animation:none;opacity:1}
+.login-dialog .login-cell .login-day{position:static;grid-area:day;display:flex;flex-direction:row;align-items:center;justify-self:start;gap:3px;margin:0;padding:0;border:0;border-radius:0;background:none;color:var(--cream-ink,#6b4523);font-family:var(--ui-font,Nunito,system-ui,sans-serif);font-size:11px;font-weight:900;line-height:1;text-shadow:none}
 .login-day>span{font-size:8px;line-height:1;font-family:var(--ui-font,Nunito,system-ui);font-weight:800;text-transform:uppercase;opacity:.78}
-.login-dialog .login-cell .login-icon{grid-area:icon;display:grid;place-items:center;width:43px;height:43px;font-size:30px;line-height:1}
-.login-dialog .login-icon>img,.login-dialog .login-icon .thumb{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 1px #784d2430)}
-.login-dialog .login-cell .login-reward-name{grid-area:name;display:block;min-width:0;max-width:100%;color:#744728;font-size:10px;font-weight:900;line-height:1.1;text-shadow:0 1px #fff9e8;overflow-wrap:anywhere}
-.login-dialog .login-item-name{display:block}.login-dialog .login-gems{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;margin-top:2px;color:#815225;font-size:9px;font-weight:1000}.login-dialog .login-gems .ico-gem{width:8px;height:8px;margin-inline:1px;background:#f58cbc;border:1px solid #a4497d;rotate:45deg;vertical-align:-1px}
-.login-dialog .login-cell .login-status{position:static;grid-area:status;display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;margin:0;padding:0;color:#9b7750;font-size:7px;line-height:1;font-weight:1000;font-style:normal;text-transform:uppercase;text-shadow:none;white-space:nowrap}
+.login-dialog .login-cell .login-icon{grid-area:icon;display:grid;place-items:center;width:44px;height:44px;font-size:28px;line-height:1}
+.login-dialog .login-icon>img,.login-dialog .login-icon .thumb{width:100%;height:100%;object-fit:contain}
+.login-dialog .login-cell .login-reward-name{grid-area:name;display:block;min-width:0;max-width:100%;color:var(--cream-ink,#6b4523);font-size:10px;font-weight:900;line-height:1.1;text-shadow:none;overflow-wrap:anywhere}
+.login-dialog .login-item-name{display:block}.login-dialog .login-gems{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;margin-top:2px;color:var(--cream-ink,#6b4523);font-size:9px;font-weight:900}.login-dialog .login-gems .ico-gem{width:9px;height:9px;margin-inline:1px;rotate:45deg;vertical-align:-1px}
+.login-dialog .login-cell .login-status{position:static;grid-area:status;display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;margin:0;padding:0;color:#a0705a;font-size:7px;line-height:1;font-weight:900;font-style:normal;text-transform:uppercase;text-shadow:none;white-space:nowrap}
 .login-dialog .login-status img{width:10px;height:10px;object-fit:contain}
-.login-dialog .login-cell.today{border-color:#60913c;background:linear-gradient(145deg,#f2f9df,#dceebf);box-shadow:inset 0 0 0 1px #b5d48d,0 0 8px #a8c97980,0 2px 0 #7b9e5935}.login-dialog .login-cell.today .login-day,.login-dialog .login-cell.today .login-status{color:#4c8032}
-.login-dialog .login-cell.tomorrow{border-color:#d4aa61}.login-dialog .login-cell.claimed{border-color:#b7b99b;background:linear-gradient(145deg,#f1f1df,#e6e6d3)}.login-dialog .login-cell.claimed .login-icon{opacity:.68}.login-dialog .login-cell.claimed .login-status{color:#56823c}
-.login-dialog .login-cell.photo{border:2px solid #d77791;background:linear-gradient(145deg,#fff1e1,#ffdfd9);box-shadow:inset 0 0 0 1px #fff9e8,0 0 9px #e58ca050,0 2px 0 #a84f6325}
-.login-dialog .login-cell.photo::before,.login-dialog .login-cell.photo::after,.login-dialog .login-cell.photo .login-exclusive{display:none;content:none}
-.login-dialog .login-cell.photo .login-icon{width:46px;height:46px;padding:2px;border:1px solid #d9ac83;border-radius:8px;background:linear-gradient(#fff3d7,#ffdbbe);box-shadow:0 2px 5px #73451c30}
-.login-dialog .login-cell.photo .login-reward-name{color:#8b294a;font-size:9px}.login-dialog .login-cell.photo .login-gems{color:#815225}.login-dialog .login-cell.photo.today{border-color:#d77791;box-shadow:inset 0 0 0 1px #ffe4a4,0 0 0 1px #82b75b,0 0 10px #e58ca055,0 2px 0 #a84f6325}
-.login-dialog .login-cell.photo.today .login-status{color:#4c8032}
-.login-dialog .login-cell.big{grid-column:1/-1;display:grid;grid-template-columns:38px 61px minmax(0,1fr);grid-template-rows:1fr 1fr;grid-template-areas:'day icon name' 'day icon status';justify-items:start;column-gap:8px;min-height:78px;margin-top:1px;padding:6px 12px 6px 5px;border:2px solid #c58d51;border-radius:13px;background:linear-gradient(105deg,#ffe5a0,#ffd6bc);box-shadow:inset 0 0 0 1px #fff2c8,0 0 10px #dfb45b40,0 3px 0 #a9703d30;text-align:left}
-.login-dialog .login-cell.big .login-day{align-self:stretch;justify-self:stretch;flex-direction:column;justify-content:center;gap:3px;margin:0 -5px;padding:4px 2px;border-right:1px solid #d0a55a;border-radius:9px 0 0 9px;background:linear-gradient(#e6ae5b,#c57636);font-size:24px;color:#fff8e2}.login-dialog .login-cell.big .login-day>span{font-size:7px}
-.login-dialog .login-cell.big .login-icon{grid-row:1/3;width:57px;height:57px;justify-self:center;align-self:center;padding:3px;border:1px solid #e6bd65;border-radius:50%;background:linear-gradient(#fff5d2,#f8dfaa);box-shadow:0 0 0 3px #ffe9b6,0 2px 5px #70451f35}
-.login-dialog .login-cell.big .login-reward-name{grid-row:1;align-self:end;font-family:var(--display,'Baloo 2',system-ui);font-size:16px;color:#683b1b}.login-dialog .login-cell.big .login-status{grid-row:2;justify-self:start;align-self:start;margin-top:2px;color:#956438}
-.login-dialog .login-final-badge{position:absolute;right:10px;top:5px;padding:3px 7px;border:1px solid #fff1c7;border-radius:8px;background:linear-gradient(#efc766,#c9893b);box-shadow:0 1px 3px #70451f35;color:#71401f;font-size:7px;line-height:1;text-transform:uppercase;letter-spacing:.4px;font-weight:1000}
-.login-dialog .login-cell.big.today{border-color:#60913c;background:linear-gradient(105deg,#eaf7c7,#ffecb4);box-shadow:inset 0 0 0 1px #f5ffdd,0 0 9px #a8c97985,0 3px 0 #7b9e5935}.login-dialog .login-cell.big.today .login-day{background:linear-gradient(#91cf62,#61a542);color:#fff8e2}.login-dialog .login-cell.big.today .login-status{color:#4c8032}
-.login-mystery{position:relative;display:grid;place-items:center;width:100%;height:100%}.login-mystery img{width:100%;height:100%;object-fit:contain;filter:brightness(0) saturate(100%) invert(24%) sepia(29%) saturate(1111%) hue-rotate(338deg) brightness(92%) contrast(89%)}
-.login-mystery b{position:absolute;left:0;right:0;top:24%;color:#ffe8a9;font-family:var(--display,'Baloo 2',system-ui);font-size:27px;font-weight:900;line-height:1;text-align:center;text-shadow:0 2px #3a1b0c}
-.login-dialog .store-choices{display:flex;flex-direction:column;align-self:stretch;width:100%}
-.login-dialog .store-choices .pill-button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-width:0;width:100%;min-height:47px;padding:9px 16px;border:2px solid #397a32;border-radius:16px;background:linear-gradient(#a4e773,#6bc74e 52%,#43ac42);box-shadow:inset 0 0 0 2px #d6f7a5,inset 0 4px 0 #ffffff40,0 3px 0 #397a32;color:#fffde9;font-family:var(--display,'Baloo 2',system-ui);font-size:20px;font-weight:1000;line-height:1;text-shadow:0 1px 1px #2f6728;cursor:pointer;transition:transform .13s,filter .13s}
-.login-dialog .store-choices [hidden]{display:none}.login-dialog .pill-button:hover{filter:brightness(1.05)}.login-dialog .pill-button:active{transform:translateY(2px)}.login-dialog button:focus-visible{outline:3px solid #2586aa;outline-offset:3px}
-@media(max-width:360px){.login-dialog.store-dialog{padding:9px 10px 12px;border-radius:18px}.login-header{min-height:47px}.login-header h2{font-size:25px}.login-emblem{left:1px;width:39px;height:39px}.login-close{width:34px;height:34px}.login-dialog .login-note{font-size:10px;margin-bottom:6px}.login-hero{height:78px;margin-bottom:6px}.login-dialog .login-grid{gap:5px}.login-dialog .login-cell{min-height:93px;padding:5px 3px 4px;grid-template-rows:13px minmax(34px,1fr) auto 10px}.login-dialog .login-cell .login-icon{width:39px;height:39px}.login-dialog .login-cell.photo .login-icon{width:42px;height:42px}.login-dialog .login-cell .login-reward-name{font-size:9px}.login-dialog .login-cell.photo .login-reward-name{font-size:8px}.login-dialog .login-cell.big{grid-template-columns:32px 53px minmax(0,1fr);min-height:70px;column-gap:6px;padding-right:8px}.login-dialog .login-cell.big .login-icon{width:50px;height:50px}.login-dialog .login-cell.big .login-reward-name{font-size:14px}.login-dialog .login-final-badge{right:7px;top:4px;font-size:6px}}
-@media(max-height:720px){.login-dialog.store-dialog{padding-top:8px;padding-bottom:10px}.login-header{min-height:44px}.login-hero{height:70px;margin-bottom:5px}.login-dialog .login-grid{gap:5px}.login-dialog .login-cell{min-height:86px}.login-dialog .login-cell.big{min-height:66px}.login-dialog .store-choices .pill-button{min-height:43px}}
-@media(prefers-reduced-motion:reduce){.login-dialog.store-dialog[open]{animation:none}.login-dialog .pill-button{transition:none}}
-
-/* Reuse the game's painted panel, reward-card and Claim skins to keep the event board tactile. */
-.login-dialog.store-dialog{border:14px solid transparent;border-image-source:url('../../assets/img/quests/panel.png');border-image-slice:16 fill;border-image-width:14px;border-image-repeat:stretch;background:#fff2cd;box-shadow:0 9px 26px #51351b50}
-.login-header{min-height:68px;margin:-7px -8px 0;background:url('../../assets/img/login-gift/banner.png') center/100% 100% no-repeat}
-.login-hero{border:1px solid #d4aa61;background:url('../../assets/img/play/meadow-bg.jpg') center 17%/cover no-repeat;box-shadow:0 2px 0 #99723c35}
-.login-dialog .login-cell{border:7px solid transparent;border-image-source:url('../../assets/img/quests/card-active.png');border-image-slice:12 fill;border-image-width:7px;border-image-repeat:stretch;background:#fff7dc;box-shadow:none}
-.login-dialog .login-cell.today{border-image-source:url('../../assets/img/quests/card-ready.png');background:#eff4d9;filter:drop-shadow(0 2px 2px #78974745)}
-.login-dialog .login-cell.claimed{border-image-source:url('../../assets/img/quests/card-complete.png');background:#eee4c9}
-.login-dialog .login-cell.photo{border:7px solid transparent;border-image-source:url('../../assets/img/quests/card-active.png');border-image-slice:12;border-image-width:7px;border-image-repeat:stretch;background:linear-gradient(145deg,#fff1e1,#ffdfd9);filter:drop-shadow(0 2px 2px #bb6e7e45)}
-.login-dialog .login-cell.photo.today{border-image-source:url('../../assets/img/quests/card-ready.png');background:linear-gradient(145deg,#fff1e1,#ffdfd9)}
-.login-dialog .login-cell.photo::before,.login-dialog .login-cell.photo::after,.login-dialog .login-cell.photo .login-exclusive{display:none;content:none}
-.login-dialog .login-cell.big{border:10px solid transparent;border-image-source:url('../../assets/img/quests/card-active.png');border-image-slice:12 fill;border-image-width:10px;border-image-repeat:stretch;background:#fff0c8;box-shadow:0 3px 6px #b1783835}
-.login-dialog .login-cell.big.today{border-image-source:url('../../assets/img/quests/card-ready.png');background:#eff4d9}
-.login-dialog .store-choices .pill-button{padding:5px 16px;border:13px solid transparent;border-image-source:url('../../assets/img/quests/button-claim.png');border-image-slice:17 fill;border-image-width:13px;border-image-repeat:stretch;background:transparent;box-shadow:none;text-shadow:0 1px 1px #2f6728}
-@media(max-width:360px){.login-header{min-height:60px}.login-dialog.store-dialog{border-width:12px;border-image-width:12px}}
-
-/* Day 3 is a full-bleed reward photograph with its labels over the artwork. */
-.login-dialog .login-cell.photo,.login-dialog .login-cell.photo.today,.login-dialog .login-cell.photo.claimed{display:block;position:relative;min-height:99px;padding:0;overflow:hidden;border:2px solid #d77791;border-image:none;border-radius:12px;background:transparent;box-shadow:0 2px 5px #75451b40;filter:none}
-.login-dialog .login-cell.photo .login-icon{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;padding:0;border:0;border-radius:10px;background:transparent;box-shadow:none}
-.login-dialog .login-cell.photo .login-icon>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:10px;filter:none}
+.login-dialog .login-cell.today{border-color:#4f9a3f;background:#e9f9df;box-shadow:0 0 0 2px #b6e6a1}.login-dialog .login-cell.today .login-day,.login-dialog .login-cell.today .login-status{color:#2f7d3a}
+.login-dialog .login-cell.tomorrow{border-style:dashed}.login-dialog .login-cell.claimed{opacity:.6}.login-dialog .login-cell.claimed .login-icon{opacity:.7}.login-dialog .login-cell.claimed .login-status{color:#4f9a3f}
+.login-dialog .login-cell.photo,.login-dialog .login-cell.photo.today,.login-dialog .login-cell.photo.claimed{display:block;position:relative;min-height:99px;padding:0;overflow:hidden;border:2px solid #ff7fa8;border-image:none;border-radius:16px;background:transparent;box-shadow:0 0 0 2px #ffd1e1,0 3px 8px #d9467a35;filter:none}
+.login-dialog .login-cell.photo .login-icon{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;padding:0;border:0;border-radius:14px;background:transparent;box-shadow:none}
+.login-dialog .login-cell.photo .login-icon>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:14px;filter:none}
 .login-dialog .login-cell.photo::after{content:'';position:absolute;z-index:1;inset:48% 0 0;display:block;background:linear-gradient(transparent,#482017d9);pointer-events:none}
 .login-dialog .login-cell.photo .login-day{position:absolute;z-index:2;left:7px;top:7px;display:flex;align-items:center;gap:3px;margin:0;padding:3px 5px;border:1px solid #fff4d0;border-radius:7px;background:#fff8e8df;color:#78451f;font-size:10px;text-shadow:none;box-shadow:0 1px 3px #56341640}
 .login-dialog .login-cell.photo .login-reward-name{position:absolute;z-index:2;left:5px;right:5px;bottom:19px;display:block;max-width:none;color:#fff8e8;font-size:10px;line-height:1.05;text-align:center;text-shadow:0 1px 3px #3d180f,0 0 2px #3d180f}
 .login-dialog .login-cell.photo .login-item-name{display:block}.login-dialog .login-cell.photo .login-gems{margin-top:2px;color:#ffe38b;font-size:9px;text-shadow:0 1px 3px #3d180f,0 0 2px #3d180f}
 .login-dialog .login-cell.photo .login-status{position:absolute;z-index:2;right:5px;bottom:4px;display:flex;justify-content:flex-end;color:#fff3ce;font-size:7px;text-shadow:0 1px 2px #3d180f}
-.login-dialog .login-cell.photo .login-status img{filter:drop-shadow(0 1px 1px #3d180f)}
-.login-dialog .login-cell.photo .login-exclusive{display:none}.login-dialog .login-cell.photo.today{border-color:#60913c;box-shadow:0 0 0 2px #9fc977,0 2px 5px #75451b40}.login-dialog .login-cell.photo.claimed .login-icon{opacity:.78}
-@media(max-width:360px){.login-dialog .login-cell.photo,.login-dialog .login-cell.photo.today,.login-dialog .login-cell.photo.claimed{min-height:93px}.login-dialog .login-cell.photo .login-reward-name{font-size:9px}}
+.login-dialog .login-cell.photo .login-exclusive{display:none}.login-dialog .login-cell.photo.today{border-color:#4f9a3f;box-shadow:0 0 0 2px #b6e6a1,0 2px 5px #75451b40}.login-dialog .login-cell.photo.claimed .login-icon{opacity:.78}
+.login-dialog .login-cell.big{grid-column:1/-1;display:grid;grid-template-columns:38px 61px minmax(0,1fr);grid-template-rows:1fr 1fr;grid-template-areas:'day icon name' 'day icon status';justify-items:start;column-gap:8px;min-height:78px;margin-top:1px;padding:6px 12px 6px 5px;border:2px solid #e88aac;border-image:none;border-radius:16px;background:linear-gradient(#fff1c4,#ffd6e6);box-shadow:none;text-align:left}
+.login-dialog .login-cell.big .login-day{align-self:stretch;justify-self:stretch;flex-direction:column;justify-content:center;gap:3px;margin:0 -5px;padding:4px 2px;border:0;border-radius:12px 0 0 12px;background:#f0c66e;font-size:24px;color:#fff}
+.login-dialog .login-cell.big .login-day>span{font-size:7px}.login-dialog .login-cell.big .login-icon{grid-row:1/3;width:56px;height:56px;justify-self:center;align-self:center;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+.login-dialog .login-cell.big .login-reward-name{grid-row:1;align-self:end;font-family:var(--display,'Baloo 2',system-ui);font-size:16px;color:var(--cream-ink,#6b4523)}.login-dialog .login-cell.big .login-status{grid-row:2;justify-self:start;align-self:start;margin-top:2px;color:#956438}
+.login-dialog .login-final-badge{position:absolute;right:10px;top:5px;padding:3px 7px;border:0;border-radius:999px;background:#efc766;color:#71401f;font-size:7px;line-height:1;text-transform:uppercase;letter-spacing:.4px;font-weight:900}
+.login-dialog .login-cell.big.today{border-color:#4f9a3f;background:#e9f9df;box-shadow:0 0 0 2px #b6e6a1}.login-dialog .login-cell.big.today .login-day{background:#4f9a3f;color:#fff}.login-dialog .login-cell.big.today .login-status{color:#2f7d3a}
+.login-dialog .store-choices{display:flex;flex-direction:column;align-self:stretch;gap:10px;width:100%}
+.login-dialog .store-choices .pill-button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-width:0;width:100%;min-height:47px;padding:10px 18px;border:0;border-radius:999px;background:#5f9b3a;box-shadow:none;color:#fff;font-family:var(--display,'Baloo 2',system-ui);font-size:17px;font-weight:900;line-height:1;text-shadow:none;cursor:pointer;transition:transform .13s,filter .13s}
+.login-dialog .store-choices .pill-button.ghost{background:#fff3d1;color:var(--cream-ink,#6b4523)}
+.login-dialog .store-choices [hidden]{display:none}.login-dialog .pill-button:hover{filter:brightness(1.04)}.login-dialog .pill-button:active{transform:translateY(2px)}.login-dialog button:focus-visible{outline:3px solid #2586aa;outline-offset:3px}
+@media(max-width:360px){.login-dialog.store-dialog{padding:23px 17px 20px;border-radius:28px}.login-header{min-height:41px}.login-header h2{font-size:28px}.login-close{right:0;width:32px;height:32px}.login-dialog .login-note{font-size:11px;margin-bottom:10px}.login-dialog .login-grid{gap:6px}.login-dialog .login-cell{min-height:92px;padding:5px 3px 4px;grid-template-rows:13px minmax(32px,1fr) auto 10px}.login-dialog .login-cell .login-icon{width:39px;height:39px}.login-dialog .login-cell.photo,.login-dialog .login-cell.photo.today,.login-dialog .login-cell.photo.claimed{min-height:92px}.login-dialog .login-cell.photo .login-reward-name{font-size:9px}.login-dialog .login-cell.big{grid-template-columns:32px 52px minmax(0,1fr);min-height:70px;column-gap:6px;padding-right:8px}.login-dialog .login-cell.big .login-icon{width:48px;height:48px}.login-dialog .login-cell.big .login-reward-name{font-size:14px}.login-dialog .login-final-badge{right:7px;top:4px;font-size:6px}}
+@media(max-height:640px){.login-dialog.store-dialog{padding-top:19px;padding-bottom:17px}.login-header{min-height:38px}.login-dialog .login-grid{gap:5px}.login-dialog .login-cell{min-height:84px}.login-dialog .login-cell.big{min-height:64px}.login-dialog .store-choices .pill-button{min-height:42px}}
+@media(prefers-reduced-motion:reduce){.login-dialog.store-dialog[open]{animation:none}.login-dialog .pill-button{transition:none}}
+
+/* ===== Dạng lật trang (menu/login.js goPage): mỗi trang = quà một ngày, vuốt ngang (cuộn có điểm dừng) hoặc bấm mũi tên.
+   Đè lên kiểu lưới 7 ô phía trên; ô ngày 7 vẫn nổi nhất (nền hồng vàng). ===== */
+.login-dialog .login-scene{display:flex;align-items:center;gap:6px}
+.login-dialog .login-grid{display:flex;flex:1 1 0%;width:0;max-width:100%;min-width:0;gap:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;border-radius:20px}
+.login-dialog .login-grid::-webkit-scrollbar{display:none}
+.login-dialog .login-grid .login-cell,.login-dialog .login-grid .login-cell.big,.login-dialog .login-grid .login-cell.photo{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  box-sizing:border-box;min-height:250px;margin:0;padding:18px 14px 16px;border-radius:20px;text-align:center}
+.login-dialog .login-grid .login-cell .login-day{position:static;flex-direction:row;align-self:center;gap:5px;margin:0;padding:4px 12px;border:0;border-radius:999px;background:#f3ddb1;color:var(--cream-ink,#6b4523);font-family:var(--display,'Baloo 2',system-ui);font-size:18px;box-shadow:none}
+.login-dialog .login-grid .login-cell .login-day>span{font-size:12px}
+.login-dialog .login-grid .login-cell .login-icon{position:static;width:128px;height:128px;font-size:72px}
+.login-dialog .login-grid .login-cell .login-reward-name{position:static;font-family:var(--display,'Baloo 2',system-ui);font-size:20px;line-height:1.15;color:var(--cream-ink,#6b4523);text-shadow:none}
+.login-dialog .login-grid .login-cell .login-gems{font-size:15px}.login-dialog .login-grid .login-cell .login-gems .ico-gem{width:14px;height:14px}
+.login-dialog .login-grid .login-cell .login-status{position:static;font-size:11px;letter-spacing:.5px}
+.login-dialog .login-grid .login-cell .login-status img{width:14px;height:14px}
+.login-dialog .login-grid .login-cell.today{box-shadow:inset 0 0 0 3px #b6e6a1}
+/* Ngày 7: nền hồng vàng + nhãn "Day 7" như trước */
+.login-dialog .login-grid .login-cell.big{background:linear-gradient(#fff1c4,#ffd6e6);border-color:#e88aac}
+.login-dialog .login-grid .login-cell.big .login-day{background:#f0c66e;color:#fff}
+.login-dialog .login-grid .login-cell.big .login-icon{width:150px;height:150px}
+/* Trang có ảnh (Heart cushion): ảnh phủ kín cả trang, chữ trắng trên dải tối ở đáy */
+.login-dialog .login-grid .login-cell.photo{justify-content:space-between}
+.login-dialog .login-grid .login-cell.photo .login-icon{position:absolute;inset:0;width:100%;height:100%}
+.login-dialog .login-grid .login-cell.photo .login-icon>img{border-radius:18px}
+.login-dialog .login-grid .login-cell.photo .login-day{position:relative;z-index:2;align-self:flex-start}
+.login-dialog .login-grid .login-cell.photo .login-reward-name{position:relative;z-index:2;margin-top:auto;color:#fff8e8;text-shadow:0 1px 3px #3d180f,0 0 2px #3d180f}
+.login-dialog .login-grid .login-cell.photo .login-status{position:relative;z-index:2;color:#fff3ce}
+/* Mũi tên + chấm trang */
+.login-nav{flex:none;width:30px;height:30px;padding:0;border:2px solid var(--cream-edge,#e2bd72);border-radius:50%;background:#fff3d1;color:var(--cream-ink,#6b4523);font:900 16px/1 var(--ui-font,Nunito,system-ui);cursor:pointer}
+.login-nav.prev::before{content:'‹'}.login-nav.next::before{content:'›'}
+.login-nav:disabled{opacity:.3;cursor:default}
+.login-dots{display:flex;justify-content:center;gap:6px;margin:0 0 12px}
+.login-dots i{width:8px;height:8px;border-radius:50%;background:#ead6a6;transition:width .2s}
+.login-dots i.got{background:#9fd28a}
+.login-dots i.on{width:20px;border-radius:999px;background:#f0a23a}
+@media(max-width:360px){.login-dialog .login-grid .login-cell{min-height:220px}.login-dialog .login-grid .login-cell .login-icon{width:104px;height:104px}.login-nav{width:26px;height:26px}}
+@media(prefers-reduced-motion:reduce){.login-dots i{transition:none}}
+/* Kéo bằng chuột (login.js dragPages): con trỏ bàn tay, tắt điểm dừng + chọn chữ / kéo ảnh trong lúc kéo */
+.login-dialog .login-grid{cursor:grab;user-select:none}
+.login-dialog .login-grid img{-webkit-user-drag:none;pointer-events:none}
+.login-dialog .login-grid.dragging{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto}
+
+/* Every reward thumbnail fills its day card; keep its caption readable over the full image. */
+.login-dialog .login-grid .login-cell.art-fill{position:relative;display:block;min-height:250px;padding:0;overflow:hidden;border-radius:20px;background:#d7e8a8;box-shadow:0 3px 0 #7b542c40;text-align:center}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:18px;background:transparent;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-icon>img{display:block;width:100%;height:100%;border-radius:18px;object-fit:cover;object-position:center 40%}
+.login-dialog .login-grid .login-cell.art-fill::after{content:'';position:absolute;z-index:1;inset:42% 0 0;background:linear-gradient(transparent,#382616d9);pointer-events:none}
+.login-dialog .login-grid .login-cell.art-fill .login-day{position:absolute;z-index:2;top:10px;left:10px;align-self:auto;margin:0;padding:5px 11px;border:1px solid #fff1d2;border-radius:999px;background:#fff6dfed;color:#704a27;font-size:13px;box-shadow:0 2px 7px #43290f33}
+.login-dialog .login-grid .login-cell.art-fill .login-day>span{font-size:9px}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{position:absolute;z-index:2;left:12px;right:12px;bottom:31px;display:block;max-width:none;margin:0;color:#fffaf0;font-family:var(--display,'Baloo 2',system-ui);font-size:20px;font-weight:900;line-height:1.08;text-shadow:0 2px 4px #39200fe8;text-align:center;overflow-wrap:anywhere}
+.login-dialog .login-grid .login-cell.art-fill .login-item-name{display:block}
+.login-dialog .login-grid .login-cell.art-fill .login-gems{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:4px;color:#ffe8a1;font-size:15px;text-shadow:0 2px 4px #39200fe8}
+.login-dialog .login-grid .login-cell.art-fill .login-status{position:absolute;z-index:2;right:10px;bottom:8px;display:flex;justify-content:flex-end;color:#fff7dd;font-size:10px;letter-spacing:.4px;text-shadow:0 1px 3px #39200f}
+.login-dialog .login-grid .login-cell.art-fill .login-status img{width:14px;height:14px}
+.login-dialog .login-grid .login-cell.art-fill.today{border-color:#6aa94c;box-shadow:inset 0 0 0 2px #c7ed9d,0 3px 0 #4e7d3340}
+.login-dialog .login-grid .login-cell.art-fill.claimed .login-icon{opacity:.76}
+.login-dialog .login-grid .login-cell.art-fill.photo::before{display:none}
+.login-dialog .login-grid .login-cell.art-fill .login-exclusive{position:absolute;z-index:3;top:10px;right:10px;display:block;padding:5px 9px;border:1px solid #fff0cd;border-radius:999px;background:#fff4deed;color:#80542b;font-size:9px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;box-shadow:0 2px 7px #43290f30}
+@media(max-width:360px){.login-dialog .login-grid .login-cell.art-fill{min-height:220px}.login-dialog .login-grid .login-cell.art-fill .login-day{top:8px;left:8px;padding:4px 9px;font-size:12px}.login-dialog .login-grid .login-cell.art-fill .login-reward-name{bottom:28px;font-size:17px}.login-dialog .login-grid .login-cell.art-fill .login-status{right:8px;bottom:6px;font-size:9px}}
+
+/* Full-bleed login HUD: current reward art fills the panel; all labels sit on flat game-color plates. */
+.login-dialog.store-dialog{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:stretch;gap:0;width:min(600px,calc((var(--frame-w,100vw) - 24px)/var(--s,1)));max-width:calc((var(--frame-w,100vw) - 24px)/var(--s,1));height:min(700px,calc((100dvh - 20px)/var(--s,1)));max-height:calc((100dvh - 20px)/var(--s,1));padding:12px 13px 14px;overflow:hidden;border:2px solid #f1cc74;border-radius:30px;background:#513b2a;color:#fff8e6}
+.login-dialog .login-art-backdrop{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;background-image:var(--login-art);background-color:#78924c;background-position:center;background-size:cover;background-repeat:no-repeat}
+.login-dialog .login-art-backdrop::after{position:absolute;inset:0;content:'';background:#33271d38}
+.login-dialog>.login-header,.login-dialog>.login-note,.login-dialog>.login-scene,.login-dialog>.login-dots,.login-dialog>.store-choices{position:relative;z-index:1}
+.login-dialog .login-header{flex:0 0 49px;min-height:49px;margin:0 0 7px}
+.login-dialog .login-header h2{padding:3px 34px 2px;border:2px solid #efc96e;border-radius:16px;background:#704527;color:#fff4d7;font-size:28px;font-weight:900;letter-spacing:0;line-height:1.15;text-shadow:none;box-shadow:0 3px 0 #4c2d1d}
+.login-dialog .login-close{right:0;width:38px;height:38px}
+.login-dialog .login-note{flex:none;align-self:center;max-width:100%;margin:0 0 9px;padding:5px 10px;border:1px solid #fff0c8;border-radius:12px;background:#fff5dff2;color:#704b2d;font-size:12px;line-height:1.3;text-shadow:none}
+.login-dialog .login-scene{flex:1 1 0;min-height:0;align-items:stretch;gap:5px;margin:0}
+.login-dialog .login-grid{height:100%;border-radius:18px;background:transparent}
+.login-dialog .login-grid .login-cell.art-fill{height:100%;min-height:0;border:0;border-radius:18px;background:transparent;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill.today,.login-dialog .login-grid .login-cell.art-fill.claimed{border:0;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill::after{display:none}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{display:none}
+.login-dialog .login-grid .login-cell.art-fill .login-day{top:10px;left:10px;padding:6px 12px;border:2px solid #fff0c8;border-radius:12px;background:#fff4dc;color:#704827;font-size:14px;box-shadow:0 3px 0 #633d2540}
+.login-dialog .login-grid .login-cell.art-fill .login-exclusive{top:10px;right:10px;padding:6px 10px;border:2px solid #fff0dc;border-radius:11px;background:#e85e91;color:#fff9e9;font-size:12px;letter-spacing:.6px;box-shadow:0 3px 0 #74324c}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{position:absolute;top:62px;left:50%;width:min(78%,220px);height:44px;translate:-50% 0;display:flex;align-items:center;justify-content:center;padding:0 14px;background:#f1c65f;color:#56331d;font-size:11px;font-weight:1000;letter-spacing:.35px;text-shadow:0 1px #fff1b8;text-transform:uppercase;white-space:nowrap}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{left:7px;right:7px;bottom:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50px;padding:6px 12px;border:2px solid #fff0c8;border-radius:15px;background:#684127;color:#fff6dc;font-size:20px;text-shadow:none;box-shadow:0 4px 0 #43291d}
+.login-dialog .login-grid .login-cell.art-fill .login-gems{margin-top:2px;color:#fff0a8;font-size:15px;text-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-status{right:10px;bottom:8px;padding:3px 7px;border:1px solid #fff2d0;border-radius:8px;background:#fff4dfee;color:#704827;font-size:10px;text-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-status img{width:13px;height:13px}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{position:absolute;z-index:3;top:54%;left:calc(50% + 70px);display:grid;width:52px;height:52px;place-items:center;border:2px solid #fff0ce;border-radius:15px;background:#fff1d9;box-shadow:0 4px 0 #5a352b80}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem .ico-gem{width:34px;height:34px}
+.login-dialog .login-nav{width:31px;height:31px;border:2px solid #f2d07c;background:#fff4d9;color:#68452b}
+.login-dialog .login-dots{flex:none;min-height:13px;margin:7px 0 9px}
+.login-dialog .login-dots i{background:#fff4d9;border:1px solid #704827}
+.login-dialog .login-dots i.got{background:#8bc56c;border-color:#456b32}
+.login-dialog .login-dots i.on{background:#f1a640;border-color:#704827}
+.login-dialog .store-choices{flex:none;align-self:stretch;gap:5px;width:100%}
+.login-dialog .store-choices .pill-button{min-height:57px;padding:8px 20px;border:0;border-radius:999px;background:#67a84a;color:#fff9e8;font-size:18px;text-shadow:none}
+.login-dialog .store-choices .pill-button.ghost{background:#fff1c9;color:#67411f}
+.login-dialog .login-claim[hidden]{display:none}
+.login-dialog[data-reward="item"] .login-art-backdrop{background-color:#bd8447;background-size:100% auto;background-position:center 50%}
+@media(max-width:360px){.login-dialog.store-dialog{padding:9px 10px 11px;border-radius:26px}.login-dialog .login-header{flex-basis:45px;min-height:45px}.login-dialog .login-header h2{font-size:25px}.login-dialog .login-close{width:34px;height:34px}.login-dialog .login-note{font-size:11px;margin-bottom:6px}.login-dialog .login-grid .login-cell.art-fill .login-reward-name{bottom:26px;min-height:46px;font-size:17px}.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{top:56px;height:38px;font-size:9px}.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{left:calc(50% + 48px);width:44px;height:44px}.login-dialog .login-grid .login-cell.art-fill .login-reward-gem .ico-gem{width:28px;height:28px}.login-dialog .store-choices .pill-button{min-height:51px;font-size:16px}}
+/* Softer visual hierarchy: keep the reward fully visible and let the game item carry the screen. */
+.login-dialog.store-dialog{background:#829650}
+.login-dialog .login-art-backdrop{background-color:#829650;background-size:100% auto;background-position:center center}
+.login-dialog[data-reward="item"] .login-art-backdrop{background-color:#bd8447;background-size:100% auto;background-position:center center}
+.login-dialog .login-header h2{padding:4px 18px 3px;border:1px solid #e4c26f;border-radius:13px;background:#fff4dc;color:#6b4528;font-size:27px;line-height:1.08;text-shadow:none;box-shadow:0 2px 0 #68442955}
+.login-dialog .login-note{width:auto;max-width:calc(100% - 50px);padding:5px 13px;border:1px solid #e5c987;border-radius:10px;background:#fff6e8;color:#765235;font-size:11px;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{top:62px;width:auto;min-width:150px;max-width:78%;height:32px;padding:0 12px;border:1px solid #704827;border-radius:10px;background:#f1c65f;color:#684322;font-size:10px;letter-spacing:.25px;text-shadow:none;box-shadow:0 2px 0 #68442980}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{left:50%;right:auto;bottom:31px;translate:-50% 0;width:max-content;max-width:88%;min-height:39px;padding:4px 16px;border:1px solid #e6c879;border-radius:12px;background:#fff4dc;color:#684729;font-size:19px;text-shadow:none;box-shadow:0 2px 0 #51351f60}
+.login-dialog .login-grid .login-cell.art-fill .login-gems{color:#794927;text-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-gems .ico-gem{filter:drop-shadow(0 1px 0 #754f2f)}
+.login-dialog .login-grid .login-cell.art-fill .login-status{right:10px;bottom:8px;padding:3px 7px;border:1px solid #e5c987;border-radius:8px;background:#fff5e8;color:#6b4729}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{top:53%;left:calc(50% + 76px);width:44px;height:44px;border:1px solid #e5c987;border-radius:50%;background:#fff4dc;box-shadow:0 2px 0 #65432b80}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem .ico-gem{width:28px;height:28px}
+.login-dialog .store-choices .pill-button{min-height:54px;text-shadow:0 1px #315629}
+.login-dialog .store-choices .pill-button.ghost{min-height:50px}
+@media(max-width:360px){.login-dialog .login-header h2{font-size:24px}.login-dialog .login-grid .login-cell.art-fill .login-reward-name{bottom:28px;min-height:36px;font-size:17px}.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{top:55px;height:29px}.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{left:calc(50% + 48px);width:40px;height:40px}}
+/* Refined login card: full-bleed reward artwork in a generous hero frame, clean cream HUD around it. */
+.login-dialog.store-dialog{position:relative;isolation:isolate;width:min(600px,calc((var(--frame-w,100vw) - 24px)/var(--s,1)));max-width:calc((var(--frame-w,100vw) - 24px)/var(--s,1));height:auto;max-height:calc((100dvh - 20px)/var(--s,1));padding:20px 16px 18px;overflow-x:hidden;overflow-y:auto;border:1px solid #e2bd72;border-radius:28px;background:#fff8e4;color:#6b4523}
+.login-dialog .login-art-backdrop{display:none}
+.login-dialog .login-header{flex:0 0 43px;min-height:43px;margin:0 0 4px}
+.login-dialog .login-header h2{padding:0 34px 3px;border:0;border-bottom:3px solid #e2bd72;border-radius:0;background:transparent;color:#6b4523;font-size:30px;line-height:1.05;text-shadow:none;box-shadow:none}
+.login-dialog .login-note{width:auto;max-width:100%;margin:0 0 10px;padding:0;border:0;border-radius:0;background:transparent;color:#8a6440;font-size:12px;line-height:1.35;box-shadow:none}
+.login-dialog .login-scene{flex:0 0 auto;height:clamp(285px,44dvh,355px);min-height:0;align-items:center;gap:6px;margin:0}
+.login-dialog .login-grid{height:100%;border-radius:20px;background:transparent}
+.login-dialog .login-grid .login-cell.art-fill{position:relative;display:block;height:100%;min-height:0;padding:0;overflow:hidden;border:2px solid #e2bd72;border-radius:20px;background:#d6e4b0;box-shadow:0 3px 0 #68432250}
+.login-dialog .login-grid .login-cell.art-fill.today{border-color:#6aa94c;box-shadow:inset 0 0 0 2px #c7ed9d,0 3px 0 #4e7d3340}
+.login-dialog .login-grid .login-cell.art-fill.claimed{border-color:#e2bd72;box-shadow:0 3px 0 #68432250}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:18px;background:transparent;box-shadow:none;opacity:1}
+.login-dialog .login-grid .login-cell.art-fill .login-icon>img{display:block;width:100%;height:100%;border-radius:18px;object-fit:cover;object-position:center}
+.login-dialog .login-grid .login-cell.art-fill::after{position:absolute;z-index:1;inset:auto 0 0;display:block;height:70px;content:'';background:#4a3225b8;pointer-events:none}
+.login-dialog .login-grid .login-cell.art-fill .login-day{top:10px;left:10px;padding:5px 11px;border:1px solid #fff0c8;border-radius:999px;background:#fff4dc;color:#704827;font-size:13px;box-shadow:0 2px 0 #68432250}
+.login-dialog .login-grid .login-cell.art-fill .login-exclusive{top:10px;right:10px;padding:6px 10px;border:2px solid #fff2dc;border-radius:999px;background:#e85e91;color:#fff9e9;font-size:11px;letter-spacing:.45px;box-shadow:0 2px 0 #74324c}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{top:53px;width:auto;min-width:150px;max-width:75%;height:30px;padding:0 14px;border:0;border-radius:999px;background:url('../../assets/img/login-gift/badge-premium.svg') center/100% 100% no-repeat;color:#684322;font-size:10px;letter-spacing:.25px;text-shadow:none;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{left:10px;right:10px;bottom:21px;translate:0 0;display:block;width:auto;max-width:none;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#fff6dc;font-size:20px;line-height:1.1;text-align:center;text-shadow:0 1px 2px #342218;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-gems{margin-top:3px;color:#ffedb3;font-size:14px;text-shadow:0 1px 2px #342218}
+.login-dialog .login-grid .login-cell.art-fill .login-status{right:9px;bottom:5px;padding:0;border:0;border-radius:0;background:transparent;color:#fff4d8;font-size:9px;text-shadow:0 1px 2px #342218}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{top:53%;left:calc(50% + 78px);width:42px;height:42px;border:2px solid #fff4d8;border-radius:50%;background:#fff4dc;box-shadow:0 2px 0 #68432280}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem .ico-gem{width:26px;height:26px}
+.login-dialog .login-nav{width:30px;height:30px;border:2px solid #e2bd72;border-radius:50%;background:#fff4d9;color:#68452b}
+.login-dialog .login-dots{flex:none;min-height:13px;margin:8px 0 10px}
+.login-dialog .store-choices{flex:none;align-self:stretch;gap:6px;width:100%}
+.login-dialog .store-choices .pill-button{min-height:56px;padding:8px 20px;border:0;border-radius:999px;background-color:transparent;background-image:url('../../assets/img/login-gift/button-claim.svg');background-repeat:no-repeat;background-size:100% 100%;background-position:center;color:#fff9e8;font-size:17px;text-shadow:0 1px #315629}
+.login-dialog .store-choices .pill-button.ghost{min-height:51px;background-image:url('../../assets/img/login-gift/button-later.svg');color:#67411f;text-shadow:none}
+.login-dialog .store-choices .login-claim{background-color:#65a749;background-blend-mode:multiply}
+.login-dialog .store-choices .login-later{background-color:#fff1ca;background-blend-mode:multiply}
+@media(max-width:360px){.login-dialog.store-dialog{padding:17px 12px 14px}.login-dialog .login-header h2{font-size:27px}.login-dialog .login-note{font-size:11px}.login-dialog .login-scene{height:clamp(265px,42dvh,320px)}.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{left:calc(50% + 54px);width:38px;height:38px}.login-dialog .login-grid .login-cell.art-fill .login-reward-gem .ico-gem{width:23px;height:23px}.login-dialog .store-choices .pill-button{min-height:51px;font-size:15px}}
+/* Keep controls crisp: no generated raster sheen or button overlay. */
+.login-dialog .store-choices .pill-button{position:relative;isolation:auto;min-height:56px;border:0;border-radius:999px;background-color:transparent;background-image:url('../../assets/img/login-gift/button-claim.svg');background-repeat:no-repeat;background-position:center;background-size:100% 100%;box-shadow:none;color:#fff9e8;text-shadow:0 1px #315629}
+.login-dialog .store-choices .pill-button::before{content:none!important;display:none!important}
+.login-dialog .store-choices .pill-button.ghost{min-height:51px;background-color:transparent;background-image:url('../../assets/img/login-gift/button-later.svg');color:#67411f;text-shadow:none}
+.login-dialog .store-choices .login-claim,.login-dialog .store-choices .login-later{background-blend-mode:normal}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{background-image:url('../../assets/img/login-gift/badge-premium.svg');background-color:transparent;background-size:100% 100%;background-position:center;background-repeat:no-repeat;border:0;border-radius:0;box-shadow:none}
+/* dialog + inset:0 stretches on height:auto; ghost's older background shorthand outranks the size/repeat above. */
+.login-dialog.store-dialog{height:fit-content}
+.login-dialog .store-choices .pill-button.ghost{background-size:100% 100%;background-repeat:no-repeat;background-position:center}
+/* ===== Redesign 27/10: art của ngày đang xem (--login-art, login.js goPage) phủ kín cả popup; chữ / nút trên tấm màu phẳng, không gradient. ===== */
+.login-dialog.store-dialog{display:flex;flex-direction:column;height:min(640px,calc((100dvh - 24px)/var(--s,1)));padding:0;overflow:hidden;border:4px solid #6b4523;border-radius:30px;background:#d7e8a8 var(--login-art) center/cover no-repeat}
+.login-dialog .login-header{position:relative;z-index:3;flex:none;display:flex;justify-content:center;min-height:0;margin:12px 0 0}
+.login-dialog .login-header h2{display:grid;place-items:center;width:250px;height:66px;margin:0;padding:0 0 8px;border:0;background:url('../../assets/img/login-gift/title-banner.svg') center/100% 100% no-repeat;color:#fff;font-family:var(--display,'Baloo 2',system-ui);font-size:27px;font-weight:900;line-height:1;-webkit-text-stroke:5px #6b4523;paint-order:stroke fill;text-shadow:0 3px 0 #6b4523}
+.login-dialog .login-close{position:absolute;top:2px;right:10px}
+.login-dialog .login-note{position:relative;z-index:3;align-self:center;width:auto;max-width:calc(100% - 40px);margin:6px 0 0;padding:4px 12px;border:2px solid #6b4523;border-radius:999px;background:#fff8e4;color:#6b4523;font-size:11px}
+.login-dialog .login-scene{position:absolute;inset:0;z-index:1;height:auto;padding:0 6px}
+.login-dialog .login-grid{height:100%;border-radius:0}
+.login-dialog .login-grid .login-cell.art-fill,.login-dialog .login-grid .login-cell.art-fill.today,.login-dialog .login-grid .login-cell.art-fill.claimed{height:100%;border:0;border-radius:0;background:transparent;box-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-icon,.login-dialog .login-grid .login-cell.art-fill::after{display:none}
+.login-dialog .login-nav{position:relative;z-index:3;border:3px solid #6b4523;background:#fff8e4;color:#6b4523}
+.login-dialog .login-grid .login-cell.art-fill .login-day{top:128px;left:50%;translate:-50% 0;padding:4px 14px;border:3px solid #6b4523;background:#fff8e4;color:#6b4523;font-size:16px;box-shadow:0 3px 0 #6b4523}
+.login-dialog .login-grid .login-cell.art-fill .login-exclusive{top:170px;left:50%;right:auto;translate:-50% 0;width:150px;height:46px;padding:0 0 4px;display:grid;place-items:center;border:0;border-radius:0;background:url('../../assets/img/login-gift/badge-exclusive.svg') center/100% 100% no-repeat;box-shadow:none;color:#fff;font-size:15px;letter-spacing:1px;text-transform:uppercase;-webkit-text-stroke:3px #6b4523;paint-order:stroke fill;animation:login-pop 1.6s ease-in-out infinite}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-kind{position:absolute;z-index:2;top:170px;left:50%;translate:-50% 0;display:grid;place-items:center;width:220px;min-width:0;max-width:none;height:44px;padding:0 30px 5px;font-size:13px;background:url('../../assets/img/login-gift/badge-premium.svg') center/100% 100% no-repeat;color:#fff;letter-spacing:.6px;text-transform:uppercase;-webkit-text-stroke:3px #4a2f7a;paint-order:stroke fill;animation:login-pop 1.6s ease-in-out infinite}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{left:20px;right:20px;bottom:150px;padding:6px 10px;border:3px solid #6b4523;border-radius:16px;background:#fff8e4;color:#6b4523;font-size:21px;text-shadow:none;box-shadow:0 3px 0 #6b4523}
+.login-dialog .login-grid .login-cell.art-fill .login-gems{color:#2f86c9;text-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill .login-status{bottom:212px;right:22px;padding:2px 8px;border:2px solid #6b4523;border-radius:999px;background:#fff8e4;color:#6b4523;text-shadow:none}
+.login-dialog .login-grid .login-cell.art-fill.today .login-status{background:#6cb34a;color:#fff}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{position:absolute;z-index:2;top:auto;bottom:200px;left:auto;right:18px;width:96px;height:96px;border:0;border-radius:0;background:none;box-shadow:none;object-fit:contain;filter:drop-shadow(0 3px 0 #6b452380)}
+.login-dialog .login-grid .login-cell.art-fill:has(.login-reward-gem) .login-status{bottom:212px;right:auto;left:22px}
+.login-dialog .login-dots{position:relative;z-index:3;margin:auto 0 0;padding:10px 0 0;min-height:0;background:#fff8e4;border-top:4px solid #6b4523}
+.login-dialog .store-choices{position:relative;z-index:3;padding:8px 18px 16px;background:#fff8e4}
+.login-dialog .store-choices .pill-button,.login-dialog .store-choices .pill-button.ghost{min-height:58px;padding:0 20px 6px;background-color:transparent;background-size:100% 100%;background-repeat:no-repeat;font-size:20px;-webkit-text-stroke:4px #6b4523;paint-order:stroke fill;text-shadow:none}
+.login-dialog .store-choices .pill-button{background-image:url('../../assets/img/login-gift/button-claim.svg');color:#fff}
+.login-dialog .store-choices .pill-button.ghost{background-image:url('../../assets/img/login-gift/button-later.svg');color:#6b4523;-webkit-text-stroke:0}
+@keyframes login-pop{50%{scale:1.07}}
+@media(prefers-reduced-motion:reduce){.login-dialog .login-grid .login-cell.art-fill :is(.login-exclusive,.login-reward-kind){animation:none}}
+/* Vùng ảnh quà là hình vuông (người dùng 27/10): ảnh nằm ở .login-scene, tiêu đề đè lên mép trên, chân kem bên dưới. */
+.login-dialog.store-dialog{height:fit-content;background:#fff8e4}
+.login-dialog .login-header{position:absolute;top:0;left:0;right:0}
+.login-dialog .login-note{position:absolute;top:84px;left:50%;translate:-50% 0;max-width:calc(100% - 60px)}
+.login-dialog .login-scene{position:relative;inset:auto;flex:none;aspect-ratio:1;height:auto;background:#d7e8a8 var(--login-art) center/cover no-repeat}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{bottom:16px}
+.login-dialog .login-grid .login-cell.art-fill .login-status,.login-dialog .login-grid .login-cell.art-fill:has(.login-reward-gem) .login-status{bottom:84px}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{bottom:76px}
+.login-dialog .login-dots{margin:0}
+.login-dialog .login-note{left:28px;right:28px;translate:none;max-width:none;text-align:center}
+.login-dialog .login-grid .login-cell.art-fill .login-day{top:136px}
+.login-dialog .login-grid .login-cell.art-fill :is(.login-exclusive,.login-reward-kind){top:176px}
+/* Ảnh nằm trong từng trang để trượt theo khi vuốt (nền chung đổi phụt thì giật); nhãn Premium / Exclusive dời xuống ngay trên tên quà, không bị dòng nhắc che. */
+.login-dialog .login-scene{padding:0;background:#d7e8a8}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{display:block;border-radius:0}
+.login-dialog .login-grid .login-cell.art-fill .login-icon>img{border-radius:0}
+.login-dialog .login-grid .login-cell.art-fill :is(.login-exclusive,.login-reward-kind){top:auto;bottom:72px;z-index:4}
+.login-dialog .login-grid .login-cell.art-fill:has(:is(.login-exclusive,.login-reward-kind)) .login-status{bottom:122px}
+.login-dialog .login-nav{position:absolute;top:50%;translate:0 -50%;z-index:4}
+.login-dialog .login-nav.prev{left:6px}.login-dialog .login-nav.next{right:6px}
+/* Quà là model 3D chụp nền trong (login.js rewardArt): đặt gọn giữa dòng nhắc và tên quà trên nền cỏ phẳng; gem đã nằm trong model. */
+.login-dialog .login-scene{background:#cfe7a8}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{inset:118px 30px 58px;width:auto;height:auto}
+.login-dialog .login-grid .login-cell.art-fill .login-icon>img{object-fit:contain;filter:drop-shadow(0 6px 0 #6b452330)}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-gem{display:none}

@@ -1,9 +1,9 @@
 // ===== Onboarding người chơi mới: một dãy bước, mỗi bước mở khoá một phần của game =====
 //   L1     chơi màn 1                                  -> thắng: mở Garden (Deco)
-//   basics hướng dẫn Deco: kéo, chụm zoom, xoay        -> xong vào thẳng màn 2
-//   L2     chơi màn 2                                  -> thắng: vào thẳng màn 3 (không còn bước mèo)
+//   basics hướng dẫn Deco: kéo, chụm zoom, xoay        -> xong tắt hướng dẫn, người chơi tự về Home chọn màn 2
+//   L2     chơi màn 2                                  -> thắng: bảng kết quả có Next sang màn 3 (không còn bước mèo)
 //   free   chơi màn 3, 4 bình thường, màn 5            -> thắng màn 5: mở Decoration (mua đồ, đổi kiểu, Shop)
-//          Mèo đầu tiên nhận ở Map bằng nút Claim sau khi thắng màn 3 (menu/map-view.js mapLevels), có chấm đỏ ở tab Home.
+//          Mèo thưởng nhận ở Map bằng nút Claim (màn 7, 10…, deco-data.mjs catRewardsAt), có chấm đỏ ở tab Home.
 //   decor  hướng dẫn mua đồ / đổi kiểu / Shop          -> xong là hết onboarding
 //   done   người chơi cũ (đã có sao) hoặc đã xong onboarding
 // Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (main.js).

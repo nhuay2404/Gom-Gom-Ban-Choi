@@ -97,17 +97,19 @@ export const QUESTS = remote('QUESTS', { fromLevel: 6, slots: 3, keep: 3, rankEv
 // hết dãy steps thì mỗi mốc sau cộng thêm `then` (không có `then` = chuỗi kết thúc). Làm vượt nhiều mốc mà chưa nhận thì nhận xong
 // một mốc, mốc kế hiện ra đã đầy sẵn (nhận tiếp ngay). Mốc không vượt số còn lại trong game (cap: tên số đếm trong ctx của quests.mjs).
 // kind 'level': mốc = bội số của step tính từ lúc mở Quests · 'area': mở khu kế tiếp. {n} = mốc, {area} = tên khu, {s} = 's' khi n > 1.
+// gems (thay cho xu): chỉ vài mốc hiếm, lượng nhỏ (wiki: hard currency ít, chỉ ở mốc — council-topic-verdicts): quest dạy chơi một lần +
+// mỗi mèo mới (~11 con) × 5 gem ≈ 70 gem cả game. Mở khu KHÔNG thêm gem ở đây (đã có GEM_REWARDS.area lúc mở khu).
 export const QUEST_TRACKS = remote('QUEST_TRACKS', [
   // Thắng màn vốn đã có thưởng: quest này chỉ thưởng nhẹ (đừng trả hai lần cho cùng một việc).
   { id: 'level', kind: 'level', step: 5, share: .5, text: 'The cats are cheering you on. Beat level {n}!' },
   { id: 'area', kind: 'area', share: 2, text: 'Your home is growing. Open the {area} next!' },
   { id: 'build', event: 'build', steps: [4, 10, 20, 30, 40, 50], then: 10, cap: 'basesLeft', share: 1.5, text: 'The cats need more cozy corners. Build {n} spot{s}!' },
-  { id: 'pets', event: 'claimPet', steps: [1, 2, 3], then: 1, cap: 'petsLeft', share: 1, text: 'New friends are waiting on the map. Welcome {n} pet{s} home!' },
+  { id: 'pets', event: 'claimPet', steps: [1, 2, 3], then: 1, cap: 'petsLeft', gems: 5, text: 'New friends are waiting on the map. Welcome {n} pet{s} home!' },
   { id: 'styles', event: 'style', steps: [2, 5, 10, 20, 30], then: 10, cap: 'stylesLeft', share: 1, text: 'Fresh looks are in the Shop. Collect {n} new style{s}!' },
   // Dạy chơi (chỉ một mốc): chỉ cho người chơi những thứ dễ bỏ lỡ, thưởng nhẹ.
-  { id: 'carry', event: 'carry', steps: [1], share: .5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },
-  { id: 'view', event: 'view', steps: [1], share: .5, text: 'Take a moment. Hide the buttons and admire your home!' },
-  { id: 'surface', event: 'surface', steps: [1], share: .5, text: 'Make it yours. Change the walls or floor of a room!' },
+  { id: 'carry', event: 'carry', steps: [1], gems: 5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },
+  { id: 'view', event: 'view', steps: [1], gems: 5, text: 'Take a moment. Hide the buttons and admire your home!' },
+  { id: 'surface', event: 'surface', steps: [1], gems: 5, text: 'Make it yours. Change the walls or floor of a room!' },
 ]);
 
 // ----- QUÀ ĐĂNG NHẬP 7 NGÀY (core/login.mjs, menu/login.js) — dạng lịch, KHÔNG streak: mỗi ngày đăng nhập mở một ô, nghỉ thì nhận
@@ -385,12 +387,12 @@ export const DECO = remote('DECO', {
   'cat-tabby':           { price: 0, lock: 14 },      // Calico cat
   'cat-siamese':         { price: 0, lock: 17 },      // Siamese cat
   'cat-tuxedo':          { price: 0, lock: 20 },      // Tuxedo cat
-  // --- Chó (như mèo; stage 3 + 4: màn 4, 7, 10 của stage) ---
-  'dog-shiba':           { price: 0, lock: 24 },      // Shiba dog
-  'dog-golden':          { price: 0, lock: 27 },      // Golden dog
-  'dog-pug':             { price: 0, lock: 30 },      // Pug dog
-  'dog-dalmatian':       { price: 0, lock: 34 },      // Dalmatian dog
-  'dog-malamute':        { price: 0, lock: 37 },      // Malamute dog
-  'dog-rottweiler':      { price: 0, lock: 40 },      // Rottweiler dog
+  // --- Chó (như mèo; rải đều màn 21–60, cứ ~7 màn một bé, bé cuối ở màn 60) ---
+  'dog-shiba':           { price: 0, lock: 26 },      // Shiba dog
+  'dog-golden':          { price: 0, lock: 33 },      // Golden dog
+  'dog-pug':             { price: 0, lock: 40 },      // Pug dog
+  'dog-dalmatian':       { price: 0, lock: 46 },      // Dalmatian dog
+  'dog-malamute':        { price: 0, lock: 53 },      // Malamute dog
+  'dog-rottweiler':      { price: 0, lock: 60 },      // Rottweiler dog
 
 });

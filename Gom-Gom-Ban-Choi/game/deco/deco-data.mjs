@@ -253,7 +253,7 @@ export const CATALOG = [
   { id: 'cat-tabby', cat: 'cats', name: 'Calico cat', breed: 'tabby' },
   { id: 'cat-siamese', cat: 'cats', name: 'Siamese cat', breed: 'siamese' },
   { id: 'cat-tuxedo', cat: 'cats', name: 'Tuxedo cat', breed: 'tuxedo' },
-  // Chó: cùng mục 'cats' (thú cưng), cùng luật nhận thưởng ở Map (stage 3 + 4: màn 4, 7, 10 của stage)
+  // Chó: cùng mục 'cats' (thú cưng), cùng luật nhận thưởng ở Map (rải đều màn 21–60, mốc ở economy.mjs)
   { id: 'dog-shiba', cat: 'cats', name: 'Shiba dog', breed: 'shiba' },
   { id: 'dog-golden', cat: 'cats', name: 'Golden dog', breed: 'golden' },
   { id: 'dog-pug', cat: 'cats', name: 'Pug dog', breed: 'pug' },

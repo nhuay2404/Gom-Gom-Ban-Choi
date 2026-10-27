@@ -143,6 +143,8 @@ export function zFightIssues(shells, topsOnly = false) {
   shells.forEach((roots, group) => {
     for (const root of [].concat(roots)) {
       root.updateMatrixWorld(true);
+      // topsOnly: khung bao tính trong toạ độ của chính model (món đặt xoay theo chỗ đặt thì khung bao thế giới phình ra, báo nhầm)
+      const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert(), local = new THREE.Matrix4();
       root.traverse(n => {
         const type = n.geometry?.type;
         if (!n.isMesh || !n.visible || n.userData.outline || (type !== 'BoxGeometry' && !(topsOnly && type === 'CylinderGeometry'))) return;
@@ -150,7 +152,9 @@ export function zFightIssues(shells, topsOnly = false) {
         if (topsOnly && n.geometry.parameters?.thetaLength < Math.PI * 2 - 1e-6) return;
         // trụ / hộp nghiêng thì khung bao không phải mặt thật
         if (topsOnly && new THREE.Vector3().setFromMatrixColumn(n.matrixWorld, 1).normalize().y < .999) return;
-        boxes.push({ mesh: n, group: topsOnly ? boxes.length : group, b: new THREE.Box3().setFromObject(n) });
+        if (topsOnly && !n.geometry.boundingBox) n.geometry.computeBoundingBox();
+        const b = topsOnly ? n.geometry.boundingBox.clone().applyMatrix4(local.multiplyMatrices(toRoot, n.matrixWorld)) : new THREE.Box3().setFromObject(n);
+        boxes.push({ mesh: n, group: topsOnly ? boxes.length : group, b });
       });
     }
   });

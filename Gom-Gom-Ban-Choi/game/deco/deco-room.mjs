@@ -15,7 +15,7 @@ import { TIMING, DRAG } from '../data/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './scenes/bedroom.mjs';
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './scenes/kitchen.mjs';
 import { BATHROOM_BUILD, bathroomDecor, decorateBathroomWall } from './scenes/bathroom.mjs';
-import { BACKYARD_BUILD, buildBackyardFence, backyardDecor } from './scenes/backyard.mjs';
+import { BACKYARD_BUILD, buildBackyardFence, backyardDecor, buildPatio, PATIO_LOOKS } from './scenes/backyard.mjs';
 import { KINDER_BUILD, kinderDecor, CLASSROOM } from './scenes/kindergarten.mjs';
 import { buildMeadow } from './scenes/meadow.mjs';
 import { buildFlowerGarden, flowerObstacles } from './scenes/flower-garden.mjs';
@@ -773,7 +773,66 @@ const slab = (w, d, top, edge = '#c79a5f') => {
   return node;
 };
 const OUTDOOR = new Set(['garden', 'backyard', 'kinder']); // khu ngoài trời: nền cỏ + hàng rào thay cho sàn + tường
+// Quà 7 ngày (menu/login.js) dựng 3D toon, chụp bằng thumbnail() như đồ deco. Mặt trước quay về +z.
+const torusArc = (r, tube, arc, color) => mesh(new THREE.TorusGeometry(r, tube, 12, 28, arc), color);
+function pawCoin() {
+  const rim = at(new THREE.Mesh(new THREE.TorusGeometry(.47, .05, 10, 40), mat('#d9962b')), 0, .07, 0);
+  rim.rotation.x = Math.PI / 2;
+  const coin = group(cyl(.5, .5, .14, '#f5c542'), rim);
+  const pad = '#e0873a';
+  coin.add(at(squash(ball(.16, pad), 1.15, .35, 1), 0, .08, .08));
+  for (const [x, z] of [[-.2, -.13], [-.07, -.25], [.07, -.25], [.2, -.13]]) coin.add(at(squash(ball(.065, pad), 1, .4, 1.25), x, .08, z));
+  return coin;
+}
+const standing = node => { node.rotation.x = Math.PI / 2; return node; };
+function rewardModel(kind) {
+  if (kind === 'coin') return standing(pawCoin());
+  if (kind === 'coins') {
+    const pile = group();
+    [[0, 0, 0], [.55, 0, -.2], [-.55, 0, -.15], [.25, 0, .45], [-.3, 0, .4]].forEach(([x, , z], i) => {
+      for (let k = 0; k < 3 - i % 2; k++) pile.add(at(pawCoin(), x + k * .03, k * .15, z));
+    });
+    pile.add(at(standing(pawCoin()), 0, .55, .75));
+    return pile;
+  }
+  if (kind === 'hammer') {
+    const handle = at(cyl(.11, .11, 1.1, '#f07aa0'), 0, -.2, 0), cap = at(ball(.12, '#f07aa0'), 0, -.76, 0);
+    const head = at(rbox(.9, .34, .34, .1, '#c9d3dc'), 0, .45, 0), band = at(cyl(.13, .13, .12, '#9aa6b2'), 0, .25, 0);
+    const node = group(handle, cap, head, band); node.rotation.z = -.6; return node;
+  }
+  if (kind === 'moves') {
+    const green = '#6fd28a', node = group();
+    node.add(at(rbox(.5, .16, .16, .07, green), -.5, 0, 0), at(rbox(.16, .5, .16, .07, green), -.5, 0, 0));
+    // số 3 = hai cung 240° chồng nhau, cùng hở bên trái
+    const top = at(torusArc(.21, .09, Math.PI * 4 / 3, green), .3, .21, 0), bottom = at(torusArc(.23, .09, Math.PI * 4 / 3, green), .3, -.23, 0);
+    top.rotation.z = -Math.PI / 2; bottom.rotation.z = -Math.PI * 5 / 6;
+    node.add(top, bottom);
+    return node;
+  }
+  if (kind === 'swap') {
+    const blue = '#4aa3f0', node = group();
+    for (const turn of [0, Math.PI]) {
+      const arm = group(torusArc(.42, .1, Math.PI * .8, blue)), tip = cyl(0, .2, .3, blue);
+      tip.position.set(.42 * Math.cos(Math.PI * .8), .42 * Math.sin(Math.PI * .8), 0); tip.rotation.z = Math.PI * .8 + Math.PI;
+      arm.add(tip); arm.rotation.z = turn + .25; node.add(arm);
+    }
+    return node;
+  }
+  if (kind === 'gem') { const gem = mesh(new THREE.OctahedronGeometry(.3, 0), '#ff7fb0'); gem.scale.y = 1.25; gem.rotation.y = .4; return gem; }
+  // mèo bí ẩn: hộp quà kraft buộc nơ
+  const gift = group(rbox(1, .8, 1, .08, '#e9b97a'), at(rbox(1.08, .2, 1.08, .06, '#d9a464'), 0, .45, 0));
+  gift.add(at(box(.18, .82, 1.02, '#e8457e'), 0, 0, 0), at(box(1.02, .82, .18, '#e8457e'), 0, 0, 0), at(box(.2, .22, 1.1, '#e8457e'), 0, .45, 0), at(box(1.1, .22, .2, '#e8457e'), 0, .45, 0));
+  for (const s of [-1, 1]) { const loop = at(squash(ball(.2, '#ff6f9f'), 1.2, .7, .6), s * .2, .68, 0); loop.rotation.z = s * .5; gift.add(loop); }
+  return gift;
+}
 function thumbSubject(entry) {
+  if (entry.reward) {
+    // Quà dẹt (xu đứng, +3, mũi tên) quay thẳng mặt về camera thumbnail (THUMB_DIR) cho khỏi bị nhìn xiên.
+    if (!entry.item) { const node = rewardModel(entry.reward), face = ['coin', 'moves', 'swap'].includes(entry.reward); if (face) { node.rotation.y += Math.atan2(THUMB_DIR.x, THUMB_DIR.z); node.rotation.x -= Math.asin(THUMB_DIR.y) * .8; node.rotation.order = 'YXZ'; } return node; }
+    const node = buildItem(itemById(entry.item)), gem = rewardModel('gem'), size = new THREE.Box3().setFromObject(node).getSize(new THREE.Vector3());
+    const s = Math.max(size.x, size.z) * .16; gem.scale.multiplyScalar(s / .3); gem.position.set(size.x * .5 + s, s * 1.3, size.z * .1);
+    return group(node, gem);
+  }
   if (entry.cat === 'furniture') {
     // Món kép (kindergarten.mjs pair): hai bản đặt xa nhau, thumbnail kéo lại sát nhau, cùng quay mặt ra trước.
     const node = buildItem(entry), pair = node.userData.pair;
@@ -782,7 +841,11 @@ function thumbSubject(entry) {
   }
   if (entry.cat === 'floors') { // tấm sàn / nền đúng texture
     const top = mat('#ffffff', { roughness: .9, map: OUTDOOR.has(entry.zone) ? groundTexture(entry) : floorTexture(entry) });
-    return group(slab(1.6, 1.6, top));
+    const tile = group(slab(1.6, 1.6, top));
+    // sân sau: nửa phải lát gạch đúng kiểu sân quanh bể bơi đi theo nền này (buildPatio)
+    const patio = PATIO_LOOKS[entry.id];
+    if (patio) for (let i = 0; i < 2; i++) for (let k = 0; k < 4; k++) tile.add(at(box(.37, .02, .37, patio[1 + (i + k) % 2]), .2 + i * .4, .01, -.6 + k * .4));
+    return tile;
   }
   if (OUTDOOR.has(entry.zone)) { // khoảnh vườn nhỏ có đúng kiểu rào
     return group(slab(1.7, 1.7, mat('#9fd46a', { roughness: .95 }), '#8a6a45'), buildFence(entry, .75));
@@ -810,9 +873,10 @@ function thumbDistance(bounds, center, fov) {
   }
   return distance;
 }
-export function thumbnail(entry) {
+export function thumbnail(entry, size = 192) {
   if (thumbCache[entry.id]) return thumbCache[entry.id];
   const { renderer, scene, camera } = thumbStudio();
+  renderer.setSize(size, size, false);
   const subject = thumbSubject(entry);
   subject.userData.update?.(0);
   scene.add(subject);
@@ -824,6 +888,7 @@ export function thumbnail(entry) {
   syncOutlineResolution(renderer);
   renderer.render(scene, camera);
   thumbCache[entry.id] = renderer.domElement.toDataURL('image/png');
+  if (size !== 192) renderer.setSize(192, 192, false);
   scene.remove(subject);
   subject.traverse(node => { if (node.isMesh) { node.geometry.dispose(); [].concat(node.material).forEach(m => { m.map?.dispose(); m.dispose(); }); } });
   return thumbCache[entry.id];
@@ -1095,7 +1160,7 @@ export function createRoom() {
   const yardDecor = backyardDecor();
   yard.add(yardGround, yardDecor);
   fixedDecor.push(yardDecor);
-  let yardFence = null, yardFenceId = '', yardGroundId = '';
+  let yardFence = null, yardFenceId = '', yardGroundId = '', yardPatio = null;
   // Trường mẫu giáo (bên kia đường): mảnh nền chữ nhật như sân sau (kinderBounds), rào bao quanh có cổng trước (x = KINDER_GATE_X),
   // lớp học hở mái + lối qua đường nâng (kinderDecor). Ẩn tới khi mở khu.
   const kid = new THREE.Group(), kb2 = kinderBounds();
@@ -1722,6 +1787,8 @@ export function createRoom() {
       yardGroundId = yardGroundEntry.id;
       yardMat.map = groundTextures[yardGroundId] ||= groundTexture(yardGroundEntry);
       yardMat.color.copy(grassTint); yardMat.needsUpdate = true;
+      if (yardPatio) yard.remove(yardPatio);
+      yard.add(yardPatio = buildPatio(yardGroundId));
     }
     // Trường mẫu giáo: rào bao quanh (cổng trước đối diện cổng vườn) + nền theo món đang dùng của khu.
     const kidState = zoneState(deco, 'kinder'), kidFenceEntry = itemById(kidState.wall), kidGroundEntry = itemById(kidState.floor);

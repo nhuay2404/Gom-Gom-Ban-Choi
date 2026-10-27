@@ -24,8 +24,6 @@ surface('button-disabled',200,76,'muted','#a18a5c',30);
 surface('button-secondary',200,76,'gold','#713518',30);
 surface('progress-track',300,32,'muted','#a67c40',14);
 surface('progress-fill',300,32,'green','#477a2b',14);
-copyFileSync(out + '/painted/banner.png', out + '/banner.png');
-assets.push({name:'banner',png:'banner.png',paintedSource:'painted/banner.png',width:1200,height:400,reusedFrom:'idle-reward/painted/banner.png',preserveAspectRatio:true});
 save('close',80,80,'<circle cx="40" cy="43" r="34" fill="#a94427"/><circle cx="40" cy="37" r="33" fill="url(#red)"/><path d="M21 20Q26 12 38 12" stroke="#ffeacb" fill="none"/><path d="M29 26 51 48M51 26 29 48" stroke="#fff9df" stroke-width="8"/>');
 save('badge',64,64,'<circle cx="32" cy="33" r="27" fill="url(#red)"/><circle cx="32" cy="31" r="21" fill="none" stroke="#fff5ce" stroke-width="2"/>');
 // Painted replacements are versioned source art, preserved across rebuilds.

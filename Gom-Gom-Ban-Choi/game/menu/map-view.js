@@ -110,7 +110,7 @@ export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld
 function mapLevels() {
   const progress = loadProgress(), open = unlockedCount(progress), deco = getDeco();
   return LEVELS.map((level, index) => {
-    // Mèo thưởng của màn này (deco-data.mjs catRewardsAt: 3 bé / stage, rải đều, màn cuối stage luôn có): bản đồ dựng mèo 3D
+    // Mèo thưởng của màn này (deco-data.mjs catRewardsAt: mèo màn 7–20, chó rải màn 26–60; mốc ở economy.mjs): bản đồ dựng mèo 3D
     // cạnh màn (mèo đã nhận thì về nhà, không hiện nữa). Thắng màn rồi mà chưa nhận: nhãn NEW! thành nút Claim.
     const newCats = catRewardsAt(index).filter(breed => !isCatClaimed(deco, breed));
     const claimable = !!progress.stars[index];

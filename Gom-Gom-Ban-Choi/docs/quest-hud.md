@@ -10,22 +10,22 @@ Trước thay đổi: Quests dùng `.daily-*`, khung generic, chỉ có chữ + 
 
 Đối chiếu `home/btn-daily.png`, `home/icon-quest.png`, `result/panel.png`, `result/btn-next.png`: nền ivory, viền cocoa bo tròn, vàng cam bóng, xanh lá cho hành động tích cực. Giữ nguyên icon quest và coin gốc. Revision 2 thay 5 icon quest, check, sparkle và rương bằng art PNG tạo qua imagegen built-in với `home/icon-quest.png` làm tham chiếu trực tiếp: khối phồng bo mềm, viền cocoa dày, bóng amber, phản sáng ivory phía trên trái. Các mặt khung và nút vẫn là SVG chỉnh sửa được.
 
-Hierarchy: banner + icon quest → thông báo số thưởng sẵn sàng → 3 thẻ. Mỗi thẻ gồm icon loại, nhóm nhiệm vụ, mô tả, bar + số và reward. Thẻ hoàn thành có viền xanh, dấu check và nút Claim; thẻ chưa xong dùng nút Reward bị khóa. Hết nội dung hiển thị rương hoàn thành. Nội dung tiếng Anh theo game; mọi chữ tách khỏi art để có thể dịch.
+Hierarchy: huy hiệu icon nhỏ + tiêu đề chữ gọn, có đường nhấn vàng mảnh → thông báo số thưởng sẵn sàng → 3 thẻ. Mỗi thẻ gồm icon loại, nhóm nhiệm vụ, mô tả, bar + số và reward. Thẻ hoàn thành có viền xanh, dấu check và nút Claim; thẻ chưa xong dùng nút Reward bị khóa. Hết nội dung hiển thị rương hoàn thành. Nội dung tiếng Anh theo game; mọi chữ tách khỏi art để có thể dịch.
 
 ## Bàn giao
 
-Revision 4 áp dụng cùng ribbon painted vàng của HUD nhận xu thú cưng: `banner.png` với nguồn đầy đủ và prompt trong `painted/`. Header giữ tỉ lệ 3:1, dùng `contain` để không kéo méo; icon cuộn giấy được căn theo tâm ribbon. Ribbon SVG cũ lưu trong `output/quest-kit/legacy-vector/banner-v3.svg` và không đưa vào bộ bàn giao mới.
+Revision 5 bỏ ribbon painted khỏi tiêu đề Quest và Daily. Header dùng tiêu đề cocoa căn giữa, icon đặt trong huy hiệu vuông bo góc và đường kẻ vàng mảnh; không còn nền banner hay chữ nổi viền.
 
 Revision 3: Pets đổi sang đúng nhận diện mèo cam trong game (`cats/orange-body.png` + `cats/orange-happy.png`): dáng vuông bo góc, tai tam giác cao, ba sọc trán, mắt cười nhắm, miệng hồng, bụng ivory và hai chân nhỏ. Giữ chất liệu bóng và viền cocoa của HUD; nguồn PNG mới thay tại `painted/icon-pets.png`. Prompt tham chiếu được cập nhật trong `painted/prompts.json`.
 
-- `game/assets/img/quests/`: 23 asset PNG alpha; 12 thành phần surface/control có thêm SVG nguồn; 9 icon/hình/ribbon có ảnh nguồn độ phân giải cao trong `painted/`; quest/coin PNG được chép từ art sẵn có.
+- `game/assets/img/quests/`: 22 asset; 10 thành phần surface/control có SVG nguồn; 8 icon/hình painted; quest/coin PNG được chép từ art sẵn có. Ribbon cũ không còn trong manifest hoặc gói bàn giao.
 - `manifest.json`: tên, kích thước, nguồn và vùng gợi ý 9-slice của các surface. Các vùng slice tính theo top/right/bottom/left, đơn vị pixel của source.
-- Khung `panel`; ribbon `banner`; 3 thẻ `card-active`, `card-ready`, `card-complete`.
+- Khung `panel`; 3 thẻ `card-active`, `card-ready`, `card-complete`.
 - Nút `button-claim`, `button-pressed`, `button-disabled`, `button-secondary`; điều khiển `close`, `check`, `badge`.
 - Thanh `progress-track`, `progress-fill`; `sparkle`, `empty`.
 - 5 icon: `icon-level`, `icon-area`, `icon-build`, `icon-pets`, `icon-styles`; 2 icon kế thừa `icon-quest`, `icon-coin`.
 - Game dùng layout/CSS co giãn cho panel, card và bar; các surface xuất riêng phục vụ handoff sang engine khác. Chúng không phải tất cả đều là ảnh nền runtime.
-- `game/menu/quest-view.mjs`: renderer dùng chung game và preview. `game/ui/home/quests.css`: style riêng, không thay Daily.
+- `game/menu/quest-view.mjs`: renderer dùng chung game và preview. `game/ui/home/quests.css`: header dùng chung cho Quest/Daily, cùng kiểu thẻ tương ứng.
 - `game/quest-kit.html`: preview tương tác, gồm mixed, active, ready, empty, chữ dài; không đụng save.
 - `output/quest-kit/`: ảnh kiểm tra và gói ZIP bàn giao.
 
