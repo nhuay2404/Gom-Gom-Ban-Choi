@@ -1,0 +1,14 @@
+/* ---------- Màn hình ngang (nhánh landscape): bàn bên trái, HUD + booster + dock bên phải ----------
+   Các hub khác (Home / Deco / Shop) giữ khung dọc 393u ở giữa màn hình. */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .shell{width:min(100vw, 100dvh * 16 / 9);max-width:none;display:grid;column-gap:24px;
+    grid-template-columns:minmax(0,1fr) minmax(320px,400px);grid-template-rows:auto auto 1fr auto auto;
+    padding:max(12px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));
+    background-size:cover}
+  .shell>.board-wrap{grid-column:1;grid-row:1 / -1;align-items:center}
+  .shell>.board-wrap>.board{width:min(100cqw,100cqh)}
+  .shell>.hud{grid-column:2;grid-row:1}
+  .shell>.message-row{grid-column:2;grid-row:2}
+  .shell>.booster-bar{grid-column:2;grid-row:4}
+  .shell>.dock{grid-column:2;grid-row:5;margin-top:0}
+}
