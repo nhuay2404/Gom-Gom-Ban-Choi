@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-10-21T08:25:11.999Z",
         "reason": "user specified the Move-number gradient (stops #EE3F53 -> #FBA1B1) in chat"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "Gom-Gom-Ban-Choi/tools/economy/sim-timeline.html"
+        ],
+        "createdAt": "2026-10-28T07:10:45.843Z",
+        "reason": "Claude: internal dev tool deliberately reuses the game's own warm cream / brown UI palette (game UI cream #fff1d2, docs/art-style.md warm brown outlines)"
       }
     ]
   }
