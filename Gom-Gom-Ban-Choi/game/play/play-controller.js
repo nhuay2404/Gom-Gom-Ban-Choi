@@ -12,6 +12,7 @@ import { planLevel, elementCount, difficultyOf } from '../core/adaptive.mjs';
 import { $, noteEvent } from '../app/shared.js';
 import { state, now, look, setSession, refreshSkin, menus } from './context.js';
 import { render, nudgeGoals, lowMovesText } from './hud.js';
+import { setPlayBackground } from './board-view.js';
 import { track, endLevel, profile, startTracking, leaveResult, dropPendingRun } from './result.js';
 import { animateTurn, EFFECT_FX } from './match-fx.js';
 import { showNextTutorial, renderTutorial } from './tutorial.js';
@@ -83,6 +84,7 @@ function finishTurn(turn) {
 }
 
 export function newGame(levelIndex = state?.levelIndex ?? 0) {
+  setPlayBackground(levelIndex);
   // Màn không còn cố định: bật/tắt element theo profile người chơi (adaptive.mjs); màn có tutorial giữ bản gốc.
   const plan = planLevel(profile, levelIndex, { cleared: !!loadProgress().stars[levelIndex] }), { level } = plan;
   // Luật của ván nằm trong session; các trường còn lại (preview, animating...) chỉ phục vụ hiển thị.

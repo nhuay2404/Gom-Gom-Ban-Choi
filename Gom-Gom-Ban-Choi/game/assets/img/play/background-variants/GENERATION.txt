@@ -1,6 +1,6 @@
 Background variants generated using built-in image_gen.
 Style reference: ../meadow-bg.jpg
-New optional backgrounds; active game background unchanged.
+Active gameplay queue: switch every 10 levels, loop every 80 levels. Order is defined in game/ui/play-backgrounds.mjs. PNG files are source art; WebP files are runtime images.
 
 Shared prompt:
 Use case: illustration-story. A full-bleed portrait mobile puzzle game BACKGROUND, aspect ratio about 9:19.5, matching the provided game's meadow background hand-painted 2D art: simple rounded silhouettes, softly brushed color patches, matte pastel colors, gentle texture, friendly cozy children's illustration. Preserve composition: sky upper 23 percent, distant low horizon around 24 percent height, broad ground fills remaining 76 percent. Large central 65 percent width is quiet low-contrast open ground for overlaying game board and UI; decorations concentrated at far left/right edges and bottom corners, never large central objects. No characters, cats, UI, text, letters, logos, borders or watermarks. Opaque full image, not transparent. Not realistic, no 3D rendering, no dramatic perspective or hard shadows.
@@ -14,5 +14,5 @@ SUNSET MEADOW: warm peach, apricot and pale lavender sky with softly glowing cre
 autumn-garden.png
 AUTUMN GARDEN: soft pale turquoise sky and cream clouds, warm muted ochre-green open lawn, rounded amber, copper and peach autumn trees framing far outer edges near horizon. Small scattered maple leaves and tiny mushroom clusters only bottom side corners. Cozy autumn palette, open quiet central ground, no paths or structures.
 
-moonlit-garden.png
-MOONLIT GARDEN: gentle pastel periwinkle night sky, a small cream crescent moon in upper right and sparse tiny stars. Ground is readable muted blue-teal, not dark navy. Rounded lavender distant shrubs, tiny pale luminous flowers and a few firefly dots at side margins only. Cozy peaceful magical night, soft matte painting, keep central ground plain enough for bright puzzle board overlays.
+Five new daytime backgrounds: daisy-morning.png, lavender-day.png, sunflower-day.png, hydrangea-day.png, orchard-day.png.
+See GENERATION-DAYTIME.txt for their full prompt set.

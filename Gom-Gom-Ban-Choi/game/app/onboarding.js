@@ -1,41 +1,54 @@
 // ===== Onboarding người chơi mới: một dãy bước, mỗi bước mở khoá một phần của game =====
-//   L1     chơi màn 1                                  -> thắng: mở Garden (Deco)
-//   basics hướng dẫn Deco: kéo, chụm zoom, xoay        -> xong tắt hướng dẫn, người chơi tự về Home chọn màn 2
-//   L2     chơi màn 2                                  -> thắng: bảng kết quả có Next sang màn 3 (không còn bước mèo)
-//   free   chơi màn 3, 4 bình thường, màn 5            -> thắng màn 5: mở Decoration (mua đồ, đổi kiểu, Shop)
+// Vòng đầu "chơi -> được xu -> xây" khép kín ngay sau màn 1:
+//   L1     chơi màn 1 (vào thẳng, tutorial không chữ)  -> thắng: mở Garden (Deco), sang build
+//   build  hướng dẫn xây món đầu tiên (menu/tours.js runBuildTour): chạm Deco -> chạm thẻ món gốc rẻ nhất của vườn
+//          (firstBuild) -> gợi ý chụm / kéo camera tới chỗ đặt (không bắt buộc) -> Buy (thiếu xu thì bù đủ giá,
+//          economy.mjs TUTORIAL_TOP_UP) -> nút "Play Level 2" vào thẳng màn 2. Chỉ mua được đúng món đó.
+//   L2     chơi màn 2                                  -> thắng: bảng kết quả có Next sang màn 3
+//   free   chơi màn 3, 4 bình thường, màn 5            -> thắng màn 5: mở phần nâng cao (mua món khác, đổi kiểu, Shop)
 //          Mèo thưởng nhận ở Map bằng nút Claim (màn 7, 10…, deco-data.mjs catRewardsAt), có chấm đỏ ở tab Home.
-//   decor  hướng dẫn mua đồ / đổi kiểu / Shop          -> xong là hết onboarding
+//   decor  hướng dẫn đổi kiểu / tường rào / Shop       -> xong là hết onboarding
 //   done   người chơi cũ (đã có sao) hoặc đã xong onboarding
-// Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (main.js).
+// Bước được lưu ngay lúc thắng màn mở khoá, nên tắt game giữa chừng thì mở lại vẫn tiếp tục đúng chỗ (main.js); món đã xây
+// ở bước build là món gốc đã mua thật (tính vào luật mở khu), mở lại sau khi đã mua thì chỉ còn nút "Play Level 2".
+// Save cũ: 'cats' (bước mèo, đã bỏ) -> free; 'basics' (hướng dẫn cử chỉ camera, đã thay bằng build) -> build.
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 import { loadProgress } from '../core/progression.mjs';
+import { CATALOG, isBase } from '../deco/deco-data.mjs';
 
-const STAGES = ['L1', 'basics', 'L2', 'free', 'decor', 'done'];
-const UNLOCK_AT = { L1: { level: 0, kind: 'garden', next: 'basics' }, L2: { level: 1, kind: null, next: 'free' }, free: { level: 4, kind: 'decor', next: 'decor' } };
+const STAGES = ['L1', 'build', 'L2', 'free', 'decor', 'done'];
+const OLD = { cats: 'free', basics: 'build' };
+const UNLOCK_AT = { L1: { level: 0, kind: 'garden', next: 'build' }, L2: { level: 1, kind: null, next: 'free' }, free: { level: 4, kind: 'decor', next: 'decor' } };
 const at = name => STAGES.indexOf(name);
 let current = null;
 
+// Món xây đầu tiên ở bước build: món gốc (chỗ đặt) rẻ nhất của vườn gốc mà phải trả xu.
+export const firstBuild = () => CATALOG.filter(entry => isBase(entry) && entry.zone === 'garden' && !entry.area && entry.price > 0)
+  .sort((a, b) => a.price - b.price)[0];
+
 export function stage() {
   if (current) return current;
-  const saved = readText(SAVE_KEYS.onboarding) === 'cats' ? 'free' : readText(SAVE_KEYS.onboarding); // save cũ đang ở bước mèo (đã bỏ)
+  const raw = readText(SAVE_KEYS.onboarding), saved = OLD[raw] ?? raw;
   current = STAGES.includes(saved) ? saved : loadProgress().stars.some(Boolean) ? 'done' : 'L1';
   return current;
 }
+// Chỉ cho test: đọc lại bước từ save (mô phỏng mở lại game).
+export const reloadStage = () => { current = null; return stage(); };
 export function setStage(next) {
   current = next;
   writeText(SAVE_KEYS.onboarding, next);
-  document.body.classList.toggle('onboarding', next !== 'done');
-  document.body.classList.toggle('ob-no-build', at(next) < at('decor'));
+  globalThis.document?.body.classList.toggle('onboarding', next !== 'done');
+  globalThis.document?.body.classList.toggle('ob-no-build', at(next) < at('decor') && next !== 'build');
 }
 export const active = () => stage() !== 'done';
-// Mua / đổi đồ trang trí chỉ mở từ hướng dẫn Decoration (thắng màn 5); trước đó (kể cả sau hướng dẫn Garden) chỉ ngắm vườn.
-export const buildOpen = () => at(stage()) >= at('decor');
+// Mua / đổi đồ: từ hướng dẫn Decoration (thắng màn 5) mở hết; ở bước build chỉ mua được đúng món đầu tiên (firstBuild).
+export const buildOpen = entry => at(stage()) >= at('decor') || (stage() === 'build' && !!entry && entry.id === firstBuild()?.id);
 // Tab nào đã mở: Deco sau màn 1, Shop khi tới phần hướng dẫn Decoration.
-export const tabOpen = tab => tab === 'home' || (tab === 'deco' && at(stage()) >= at('basics')) || (tab === 'shop' && at(stage()) >= at('decor'));
+export const tabOpen = tab => tab === 'home' || (tab === 'deco' && at(stage()) >= at('build')) || (tab === 'shop' && at(stage()) >= at('decor'));
 // Chờ làm tiếp ngay khi vào game (đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn).
-export const pending = () => ['basics', 'decor'].includes(stage());
+export const pending = () => ['build', 'decor'].includes(stage());
 
-// Thắng màn `levelIndex`: trả về thứ vừa mở ('garden' | 'cats' | 'decor') và chuyển sang bước hướng dẫn tương ứng, không thì null.
+// Thắng màn `levelIndex`: trả về thứ vừa mở ('garden' | 'decor') và chuyển sang bước hướng dẫn tương ứng, không thì null.
 export function unlockOnWin(levelIndex) {
   // Màn 5 luôn mở Decoration nếu người chơi chưa xem hướng dẫn đó (kể cả save cũ / đi lệch các bước trước).
   if (levelIndex === UNLOCK_AT.free.level && stage() !== 'decor' && readText(SAVE_KEYS.decoTour) !== 'done') { setStage('decor'); return 'decor'; }

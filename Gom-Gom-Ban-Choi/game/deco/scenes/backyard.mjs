@@ -50,12 +50,74 @@ function tomatoPlant(x, z, seed, base = .3) {
   });
   return g;
 }
-// ---------- Hàng rau củ: cà rốt (lá xanh nhô lên khỏi đất + đỉnh củ cam), bắp cải, bí ngô ----------
-const carrot = (x, z) => group(at(cyl(.045, .038, .06, '#ff8a2a', 8), x, .16, z),
-  ...[-.45, 0, .45].map(a => at(cone(.032, .28, '#6fbf4a', 5), x + Math.sin(a) * .05, .32, z).rotateZ(a)));
-const cabbage = (x, z) => group(squash(at(ball(.2, '#a8d880'), x, .24, z), 1, .8, 1), squash(at(ball(.14, '#c9e8a0'), x, .3, z), 1, .8, 1));
-const pumpkin = (x, z) => group(...[-.09, 0, .09].map(dx => squash(at(ball(.18, '#ff9a3c'), x + dx, .27, z), .7, .85, 1)),
-  at(cyl(.02, .025, .1, '#6b8a3a', 6), x, .45, z));
+// Số ngẫu nhiên có seed: mỗi lần dựng ra cùng một luống / lối đá (thumbnail, QC, lần mở sau khớp nhau).
+const seeded = seed => () => (seed = seed * 16807 % 2147483647) / 2147483647;
+const pick = (rand, list) => list[Math.floor(rand() * list.length)];
+
+// ---------- Hàng rau củ: mỗi cây lệch chỗ, cỡ, hướng, màu theo rand; gốc cây đặt ở (x, y mặt đất, z) ----------
+// Cà rốt: đỉnh củ cam nhô khỏi đất, 3–5 lá nhọn ngả ra các phía, cao thấp khác nhau.
+function carrot(x, y, z, rand) {
+  const g = group(at(cyl(.035 + rand() * .015, .03, .07, pick(rand, ['#ff8a2a', '#f57a1f', '#ff9a3c']), 8), 0, .02, 0));
+  const n = 3 + Math.floor(rand() * 3), turn = rand() * Math.PI * 2;
+  for (let k = 0; k < n; k++) {
+    const a = turn + k / n * Math.PI * 2 + (rand() - .5) * .6, lean = .25 + rand() * .4, h = .18 + rand() * .16;
+    const leaf = cone(.026, h, pick(rand, ['#6fbf4a', '#5aa83c', '#7fcc55']), 5);
+    leaf.position.set(Math.cos(a) * (.015 + Math.sin(lean) * h / 2), .05 + Math.cos(lean) * h / 2, Math.sin(a) * (.015 + Math.sin(lean) * h / 2));
+    leaf.rotation.set(Math.sin(a) * lean, 0, -Math.cos(a) * lean);
+    g.add(leaf);
+  }
+  return at(g, x, y, z);
+}
+// Bắp cải: vòng 5–6 lá ngoài xoè dẹt + bắp tròn + lõi nhạt nhô lên.
+function cabbage(x, y, z, rand) {
+  const g = group(), n = 5 + Math.floor(rand() * 2), turn = rand() * 6;
+  for (let k = 0; k < n; k++) {
+    const a = turn + k / n * Math.PI * 2;
+    g.add(squash(at(ball(.12, k % 2 ? '#8fcc6a' : '#9fd477'), Math.cos(a) * .13, .035, Math.sin(a) * .13), 1.4, .4, 1).rotateY(-a));
+  }
+  g.add(squash(at(ball(.15, pick(rand, ['#b4dd8a', '#a8d880', '#bfe39a'])), 0, .1, 0), 1, .85, 1), squash(at(ball(.1, '#e2f3c4'), .02, .17, -.01), 1, .85, 1));
+  g.scale.setScalar(.8 + rand() * .35);
+  return at(g, x, y, z);
+}
+// Xà lách: hoa thị lá xoăn hai tông.
+function lettuce(x, y, z, rand) {
+  const g = group(), turn = rand() * 6;
+  for (let k = 0; k < 6; k++) {
+    const a = turn + k * 1.05;
+    g.add(squash(at(ball(.08, k % 2 ? '#a8d880' : '#c9e8a0'), Math.cos(a) * .07, .05, Math.sin(a) * .07), 1.3, .55, 1).rotateY(-a));
+  }
+  g.add(squash(at(ball(.07, '#e8f5c8'), 0, .08, 0), 1, .8, 1));
+  g.scale.setScalar(.8 + rand() * .4);
+  return at(g, x, y, z);
+}
+// Bí ngô: 6 múi tròn quanh tâm (không phẳng như 3 múi thẳng hàng), cuống xiên, 1–2 lá dẹt bò trên đất.
+function pumpkin(x, y, z, rand) {
+  const r = .13 + rand() * .08, color = pick(rand, ['#ff9a3c', '#ff8a2a', '#f7b04a']), g = group(at(ball(r * .6, color), 0, r * .72, 0));
+  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; g.add(at(ball(r * .62, color), Math.cos(a) * r * .42, r * .72, Math.sin(a) * r * .42)); }
+  g.add(at(cyl(.016, .026, .1, '#6b8a3a', 6), 0, r * 1.38, 0).rotateZ((rand() - .5) * .6));
+  for (let k = 0, n = 1 + Math.floor(rand() * 2); k < n; k++) {
+    const a = rand() * Math.PI * 2;
+    g.add(squash(at(ball(.1, k ? LEAF : '#6fbf4a'), Math.cos(a) * r * 1.3, .045, Math.sin(a) * r * 1.3), 1.3, .18, 1).rotateY(-a));
+  }
+  g.rotation.y = rand() * 6;
+  return at(g, x, y, z);
+}
+// Cụm cỏ dại nhỏ trên đất: 3 lá nhọn.
+const weed = (x, y, z, rand) => group(...[0, 2.1, 4.2].map(a => at(cone(.018, .1 + rand() * .06, '#7fcc55', 4), x + Math.cos(a) * .02, y + .05, z + Math.sin(a) * .02).rotateZ(Math.cos(a) * .4).rotateX(Math.sin(a) * .4)));
+
+// Phiến đá lót: trụ dẹt 16 cạnh, bán kính mép đổi theo vài sóng sin pha ngẫu nhiên -> mỗi phiến một hình méo tự nhiên, mép liền không hở;
+// biên độ nhỏ (3·a2 + 8·a3 + 24·a5 < 1) để mép luôn lồi, toon không vỡ đốm.
+function flagstone(r, h, color, rand) {
+  const geo = new THREE.CylinderGeometry(r, r * 1.05, h, 16), pos = geo.attributes.position;
+  const phase = [rand(), rand(), rand()].map(v => v * Math.PI * 2), amp = [.1 + rand() * .06, .02 + rand() * .02, .005];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), a = Math.atan2(z, x);
+    const k = 1 + amp[0] * Math.sin(2 * a + phase[0]) + amp[1] * Math.sin(3 * a + phase[1]) + amp[2] * Math.sin(5 * a + phase[2]);
+    pos.setX(i, x * k); pos.setZ(i, z * k);
+  }
+  // giữ pháp tuyến gốc của trụ (toả theo góc): computeVertexNormals làm mép trụ thành "lõm" dưới toon
+  return mesh(geo, color);
+}
 
 // ---------- Hàng rào hai cạnh ngoài của sân sau (cạnh sau -z + cạnh phải +x), kiểu theo món rào đang dùng ----------
 // Cạnh trước là tường sau phòng khách + bếp, cạnh trái là tường phải phòng tắm: không dựng rào (đè lên tường).
@@ -103,11 +165,21 @@ export function buildPatio(groundId) {
 
 export function backyardDecor() {
   const g = group();
-  // Lối đá: phẳng sát mặt cỏ (mèo đi qua được), không viền.
-  [[-3.5, 1], [-2.8, 1.25], [-2.05, 1.1], [-1.3, 1.35], [-.5, 1.2], [.3, 1.4], [1.1, 1.25], [1.9, 1.45], [2.7, 1.3]].forEach(([x, z], i) => {
-    const stone = squash(at(cyl(.24, .26, .04, i % 2 ? '#d9d2c4' : '#cfc7b8', 14), x, .02, z), 1, 1, .78);
-    stone.rotation.y = i * .7;
+  // Lối đá: phẳng sát mặt cỏ (mèo đi qua được), không viền. Mỗi phiến méo một kiểu, cỡ / màu / góc / chỗ lệch ngẫu nhiên,
+  // mép đá sẫm lót dưới cho rõ hình; thỉnh thoảng một phiến nhỏ hoặc vài viên sỏi nằm cạnh.
+  const rand = seeded(11);
+  [[-3.5, 1], [-2.8, 1.25], [-2.05, 1.1], [-1.3, 1.35], [-.5, 1.2], [.3, 1.4], [1.1, 1.25], [1.9, 1.45], [2.7, 1.3]].forEach(([x, z]) => {
+    const r = .2 + rand() * .08, top = flagstone(r, .04, pick(rand, ['#d9d2c4', '#cfc7b8', '#e2dbcd', '#c4bcad']), rand);
+    const edge = at(new THREE.Mesh(top.geometry, mat('#9a9384')), 0, -.008, 0);
+    edge.scale.set(1.07, .6, 1.07);
+    const stone = group(at(top, 0, .02, 0), edge);
+    stone.position.set(x + (rand() - .5) * .14, 0, z + (rand() - .5) * .16);
+    stone.rotation.y = rand() * Math.PI * 2;
+    stone.scale.set(1, 1, .75 + rand() * .2);
     g.add(stone);
+    const side = rand() < .5 ? -1 : 1;
+    if (rand() < .35) g.add(at(flagstone(.07 + rand() * .04, .03, '#cfc7b8', rand), x + (rand() - .5) * .2, .015, z + side * (r + .12)));
+    else if (rand() < .5) for (let k = 0; k < 3; k++) g.add(at(rock(.025 + rand() * .02, '#b5aea3', rand() * 1000), x + (rand() - .5) * .3, .01, z + side * (r + .06 + rand() * .08)));
   });
   const doormat = group(at(rbox(.42, .03, .9, .015, '#c9955e'), 0, .015, 0), at(box(.26, .04, .7, '#8fc9f2'), 0, .02, 0));
   doormat.position.set(-ROOM_HALF + .1, 0, BACKYARD_DOOR.z);
@@ -146,13 +218,15 @@ export const BACKYARD_BUILD = {
   // ===== Ghế nằm phơi nắng (dài 1.8 theo z, tựa lưng ở -z) =====
   lounger() {
     const frame = '#fffaf0', cushion = '#ff8fb8';
+    // chân sau cao tới mặt dưới tựa lưng
     const g = group(
-      ...[-.3, .3].flatMap(x => [-.75, .75].map(z => at(cyl(.025, .025, .25, frame, 8), x, .125, z))),
+      ...[-.3, .3].flatMap(x => [at(cyl(.025, .025, .25, frame, 8), x, .125, .75), at(cyl(.025, .025, .55, frame, 8), x, .275, -.75)]),
       at(rbox(.7, .06, 1.25, .025, frame), 0, .28, .25), at(rbox(.62, .08, 1.15, .04, cushion), 0, .35, .25),
       ...[-.1, .1, .3, .5, .7].map(z => at(box(.63, .085, .02, '#ffd9e6'), 0, .355, z)));
     const back = group(at(rbox(.7, .06, .65, .025, frame), 0, 0, 0), at(rbox(.62, .08, .58, .04, cushion), 0, .06, 0),
       squash(at(ball(.14, '#fffaf0'), 0, .16, -.18), 1.6, .6, 1));
-    back.position.set(0, .48, -.62); back.rotation.x = -.6;
+    // nghiêng ra sau: mép sát ghế thấp, đầu có gối cao
+    back.position.set(0, .5, -.64); back.rotation.x = .6;
     g.add(back, at(ring(.06, .02, '#ffd66b'), .38, .3, .5).rotateY(Math.PI / 2)); // khăn cuộn treo thành ghế
     g.userData.seat = [0, .4, .25];
     return g;
@@ -174,17 +248,42 @@ export const BACKYARD_BUILD = {
     return g;
   },
 
-  // ===== Bếp nướng: thân đỏ trên chân, nắp vòm, khay phụ, xiên thịt =====
+  // ===== Bếp nướng xe đẩy: thùng than đỏ trên 4 chân (2 bánh xe bên trái), nắp vòm mở ngửa ra sau, vỉ nướng có 3 xiên thịt rau,
+  //   kệ gỗ hai bên (phải: đĩa + kẹp gắp, trái: chai sốt), núm vặn mặt trước, bao than ở kệ dưới =====
   grill() {
-    const red = '#e8483a', dark = '#2f3238';
+    const red = '#e8483a', dark = '#2f3238', steel = '#c8ccd2', TOP = .85;
     const g = group(...[-.3, .3].flatMap(x => [-.15, .15].map(z => at(cyl(.025, .025, .55, dark, 8), x, .275, z))),
-      at(rbox(.72, .04, .34, .015, dark), 0, .25, 0), at(rbox(.8, .3, .44, .06, red), 0, .7, 0),
-      squash(at(mesh(new THREE.SphereGeometry(.4, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), red), 0, .85, -.06), 1, .5, .55),
-      at(rbox(.3, .04, .4, .015, WOOD), .58, .82, 0), at(cyl(.015, .015, .3, dark, 8), 0, 1.1, -.06).rotateZ(Math.PI / 2));
-    // vỉ nướng + xiên rau thịt phía trước
-    for (let i = 0; i < 3; i++) g.add(at(cyl(.01, .01, .34, '#c8ccd2', 6), -.2 + i * .2, .87, .14).rotateX(Math.PI / 2),
-      ...['#ff6b4a', '#ffd66b', '#6fbf4a'].map((c, k) => at(ball(.035, c), -.2 + i * .2, .9, .05 + k * .08)));
-    g.add(at(rbox(.7, .03, .14, .012, '#c8ccd2'), 0, .855, .12));
+      at(rbox(.72, .03, .34, .012, dark), 0, .2, 0), at(rbox(.8, .3, .44, .06, red), 0, .7, 0),
+      // lòng thùng sẫm + 7 thanh vỉ inox
+      at(box(.68, .02, .34, '#3a3d44'), 0, TOP + .005, 0));
+    for (let i = 0; i < 7; i++) g.add(at(cyl(.008, .008, .34, steel, 6), -.3 + i * .1, TOP + .022, 0).rotateX(Math.PI / 2));
+    // bánh xe hai chân trái
+    for (const z of [-.15, .15]) g.add(at(cyl(.07, .07, .04, dark, 16), -.355, .07, z).rotateZ(Math.PI / 2), at(cyl(.03, .03, .045, steel, 10), -.355, .07, z).rotateZ(Math.PI / 2));
+    // núm vặn + dải kem mặt trước
+    g.add(at(box(.6, .04, .01, '#fffaf0'), 0, .78, .222));
+    [-.2, 0, .2].forEach(x => g.add(at(cyl(.03, .03, .03, dark, 12), x, .64, .23).rotateX(Math.PI / 2)));
+    // nắp vòm bản lề ở mép sau, mở ngửa ra sau (mặt trong sẫm quay ra trước), tay cầm inox ở mép trước nắp
+    const dome = squash(mesh(new THREE.SphereGeometry(.4, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), red), 1, .45, .55);
+    const inside = mesh(new THREE.CircleGeometry(.4, 24), '#3a3d44');
+    inside.rotation.x = Math.PI / 2; inside.scale.set(1, .55, 1);
+    const lid = group(at(dome, 0, 0, .22), at(inside, 0, -.002, .22),
+      at(cyl(.012, .012, .3, steel, 8), 0, .075, .44).rotateZ(Math.PI / 2), ...[-.13, .13].map(x => at(cyl(.01, .01, .07, steel, 6), x, .04, .44)));
+    lid.position.set(0, TOP, -.23); lid.rotation.x = -1.9;
+    g.add(lid);
+    // 3 xiên: que inox, thịt nâu xen ớt đỏ / ớt vàng / hành xanh
+    [-.1, .03, .14].forEach((z, i) => {
+      g.add(at(cyl(.007, .007, .56, '#e9d8b4', 6), 0, TOP + .05, z).rotateZ(Math.PI / 2));
+      ['#a8553a', '#ff6b4a', '#a8553a', '#ffd66b', '#a8553a', '#6fbf4a'].forEach((c, k) => g.add(at(rbox(.05, .045, .05, .015, c), -.18 + k * .07 + (i % 2) * .02, TOP + .05, z)));
+    });
+    // kệ phải: đĩa + kẹp gắp; kệ trái: chai sốt cà + mù tạt
+    g.add(at(rbox(.3, .04, .4, .015, WOOD), .57, .82, 0), at(rbox(.3, .04, .4, .015, WOOD), -.57, .82, 0),
+      at(cyl(.12, .1, .02, '#fffaf0', 20), .58, .85, .04), at(rbox(.04, .015, .26, .006, steel), .6, .848, -.13),
+      at(cyl(.035, .04, .16, '#e8483a', 12), -.62, .92, -.05), at(cyl(.012, .025, .04, '#fffaf0', 8), -.62, 1.02, -.05),
+      at(cyl(.035, .04, .14, '#ffd23f', 12), -.52, .91, .07), at(cyl(.012, .025, .04, '#fffaf0', 8), -.52, 1.0, .07));
+    // thanh đỡ dưới hai kệ, gắn vào hông thùng
+    for (const s of [-1, 1]) for (const z of [-.15, .15]) g.add(at(box(.3, .03, .03, dark), s * .55, .785, z));
+    // bao than kệ dưới
+    g.add(at(rbox(.26, .22, .16, .05, '#7a5a3f'), .12, .325, 0), at(box(.16, .05, .005, '#fffaf0'), .12, .35, .083));
     return g;
   },
 
@@ -258,13 +357,23 @@ export const BACKYARD_BUILD = {
   // ===== Luống rau củ hai bên lối đá: gốc model nằm giữa lối, mỗi bên một luống đất xới 2.8 × 1.4 (lối đá ở giữa để trống) =====
   //   bên -z (phía vườn): 2 hàng cà rốt + hàng bắp cải; bên +z (phía tường nhà): hàng xà lách + cà rốt + bí ngô to.
   veggies() {
-    const g = group(), N = -1.2, S = 1.35;
+    // Mỗi hàng là một gờ đất vun sẫm; cây lệch hàng, thỉnh thoảng thiếu một cây; cỏ dại + sỏi rải trên mặt đất.
+    const g = group(), N = -1.2, S = 1.35, Y = .12, rand = seeded(7), jit = k => (rand() - .5) * 2 * k;
     for (const z of [N, S]) g.add(at(rbox(2.8, .12, 1.4, .05, SOIL), 0, .06, z));
-    for (const dz of [-.45, -.2]) for (let i = 0; i < 8; i++) g.add(carrot(-1.15 + i * .3 + (dz > -.3 ? .15 : 0), N + dz));
-    [-1.0, -.35, .3, .95].forEach(x => g.add(cabbage(x, N + .32)));
-    [-1.1, -.6, -.1, .4, .9].forEach(x => g.add(squash(at(ball(.12, '#c9e8a0'), x, .17, S - .38), 1, .7, 1), squash(at(ball(.08, '#e8f5c8'), x, .2, S - .38), 1, .7, 1)));
-    for (let i = 0; i < 5; i++) g.add(carrot(-1.15 + i * .3, S + .05));
-    g.add(pumpkin(.6, S + .1), pumpkin(1.05, S + .4), pumpkin(-.9, S + .4));
+    for (const z of [N - .45, N - .2, N + .32, S - .38, S + .05, S + .42])
+      g.add(squash(at(cyl(.1, .1, 2.45, '#5a3d26', 10), jit(.04), Y, z).rotateZ(Math.PI / 2), .35, 1, 1));
+    for (const dz of [-.45, -.2]) for (let i = 0; i < 8; i++) {
+      if (rand() < .12) continue;
+      g.add(carrot(-1.15 + i * .3 + (dz > -.3 ? .15 : 0) + jit(.06), Y, N + dz + jit(.04), rand));
+    }
+    [-1.0, -.35, .3, .95].forEach(x => g.add(cabbage(x + jit(.08), Y, N + .32 + jit(.05), rand)));
+    [-1.1, -.6, -.1, .4, .9].forEach(x => g.add(lettuce(x + jit(.06), Y, S - .38 + jit(.04), rand)));
+    for (let i = 0; i < 5; i++) if (rand() > .15) g.add(carrot(-1.15 + i * .3 + jit(.06), Y, S + .05 + jit(.04), rand));
+    [[.65, S + .12], [1.05, S + .45], [-.9, S + .42], [.2, S + .45]].forEach(([x, z]) => g.add(pumpkin(x + jit(.06), Y, z + jit(.05), rand)));
+    for (const z of [N, S]) for (let k = 0; k < 7; k++) {
+      const x = jit(1.3), dz = jit(.6);
+      g.add(rand() < .5 ? weed(x, Y, z + dz, rand) : at(rock(.025 + rand() * .02, '#8a6a4f', rand() * 1000), x, Y + .005, z + dz));
+    }
     return g;
   },
 
@@ -323,22 +432,47 @@ Object.assign(BACKYARD_BUILD, {
       squash(at(ball(.1, '#ffd23f'), -.2, T * 5 - .02, .35), 1.2, .8, 1), at(ball(.065, '#ffd23f'), -.12, T * 5 + .07, .35));
     return g;
   },
-  // ===== Ao sen: bờ đá tảng, mặt nước xanh, lá sen + hoa hồng, ếch xanh trên lá, lau sậy một góc =====
-  'pool-lily'() {
-    const RX = 2.1, RZ = 1.15;
-    const g = group(ovalDisk(RX, RZ, .04, .04, '#3f8f9e'), ovalDisk(RX - .05, RZ - .05, .03, .1, mat('#5fb8c8', { transparent: true, opacity: .85 })));
-    for (let k = 0; k < 26; k++) {
-      const a = k / 26 * Math.PI * 2, s = squash(rock(.17 + (k % 3) * .04, k % 2 ? '#b5aea3' : '#c8c2b8', k * 5.1 + 2), 1.3, .7, 1);
-      s.position.set(Math.cos(a) * (RX + .05), .06, Math.sin(a) * (RZ + .05)); s.rotation.y = -a; g.add(s);
+  // ===== Hồ bơi âm sàn 4.4 × 2.4: mặt nước ngang mặt sân (không có thành nổi), viền gạch kem sát đất bao quanh. Nền cảnh là mặt phẳng
+  //   nên không đào xuống thật: lòng hồ "sâu" bằng mảng thành hồ xanh sẫm lát gạch ở hai cạnh xa (−x, −z: phía camera thường nhìn thấy
+  //   vách trong) + đáy gạch nhạt nhìn qua nước trong + 3 bậc xuống nước ở đầu −x. Thang inox uốn qua viền ở đầu +x, phao + bóng nổi.
+  //   Lớp từ dưới lên (cách nhau ≥ 5 mm, trên gạch sân .016): đáy .025 · ron đáy .031 · nước .04 · thành / bậc .046 · viền .07. =====
+  'pool-sunken'() {
+    const W = 4.4, D = 2.4, C = .22, WALL = .36, cream = '#efe6d6', tile = '#e2d6c0';
+    const g = group(at(box(W, .01, D, '#9edcf0'), 0, .02, 0));
+    // ron gạch đáy hồ
+    for (let x = -W / 2 + .5; x < W / 2; x += .5) g.add(at(box(.012, .006, D - .02, '#7cc8e2'), x, .028, 0));
+    for (let z = -D / 2 + .5; z < D / 2; z += .5) g.add(at(box(W - .02, .006, .012, '#7cc8e2'), 0, .028, z));
+    // vách trong hai cạnh xa + ba bậc xuống nước (sáng dần lên mép)
+    g.add(at(box(W, .012, WALL, '#2a86b8'), 0, .04, -D / 2 + WALL / 2), at(box(WALL, .012, D - WALL, '#2a86b8'), -W / 2 + WALL / 2, .04, WALL / 2));
+    for (let x = -W / 2 + .1; x < W / 2; x += .4) g.add(at(box(.012, .004, WALL - .02, '#1f6e9a'), x, .049, -D / 2 + WALL / 2));
+    // vạch sáng mép nước chân vách xa: đường nước chạm thành hồ
+    g.add(at(box(W - WALL, .006, .035, '#c8f3fc'), WALL / 2, .043, -D / 2 + WALL + .0175));
+    ['#d9f2fa', '#bfe8f6', '#a6deef'].forEach((c, k) => g.add(at(box(.22, .012, .9, c), -W / 2 + WALL + .11 + k * .22, .04, .25)));
+    g.add(at(box(W, .02, D, mat('#5fc8e8', { transparent: true, opacity: .72 })), 0, .03, 0));
+    // viền gạch kem sát đất: từng viên .5 m, hai tông xen kẽ
+    for (const s of [-1, 1]) {
+      for (let x = -W / 2 - C, k = 0; x < W / 2 + C - .01; x += .5, k++) {
+        const len = Math.min(.48, W / 2 + C - x);
+        g.add(at(rbox(len, .05, C, .02, k % 2 ? cream : tile), x + len / 2, .045, s * (D / 2 + C / 2)));
+      }
+      for (let z = -D / 2, k = 0; z < D / 2 - .01; z += .5, k++) {
+        const len = Math.min(.48, D / 2 - z);
+        g.add(at(rbox(C, .05, len, .02, k % 2 ? tile : cream), s * (W / 2 + C / 2), .045, z + len / 2));
+      }
     }
-    [[-1.0, -.3, .26], [-.3, .4, .22], [.6, -.2, .28], [1.2, .35, .2], [.1, -.55, .18]].forEach(([x, z, r], k) => {
-      g.add(at(cyl(r, r, .015, k % 2 ? '#5fae46' : '#6fbf4a', 18), x, .115, z));
-      if (k % 2 === 0) g.add(...[0, 1, 2, 3, 4].map(p => at(cone(.04, .1, '#ff8fb8', 6), x + Math.cos(p * 1.26) * .04, .17, z + Math.sin(p * 1.26) * .04).rotateZ(Math.cos(p * 1.26) * -.5)), at(ball(.03, '#ffd66b'), x, .15, z));
-    });
-    // ếch trên lá sen giữa
-    g.add(squash(at(ball(.08, '#7fc45a'), -.3, .17, .4), 1.2, .8, 1), ...[-1, 1].map(s => at(ball(.03, '#7fc45a'), -.3 + s * .04, .23, .44)), ...[-1, 1].map(s => at(ball(.015, '#2b2f3a'), -.3 + s * .04, .24, .467)));
-    for (let k = 0; k < 7; k++) { const h = .55 + (k % 3) * .15; g.add(at(cone(.025, h, k % 2 ? '#5fa83e' : '#7cc256', 5), 1.75 + (k % 3) * .1, h / 2 + .06, -.6 + (k % 4) * .1).rotateZ((k % 3 - 1) * .12)); }
-    g.userData.sink = .02;
+    // gợn nước + phao hồng + bóng biển nổi
+    [[-.6, -.2, .3], [.9, .35, .22], [1.5, -.5, .16]].forEach(([x, z, r]) => g.add(squash(at(ring(r, .012, '#e8fbff'), x, .052, z).rotateX(Math.PI / 2), 1, 1, .7)));
+    // mọi mảng sát đất (đáy, nước, thành, viền, gợn): không viền toon, không đổ bóng; phao / bóng / thang vẫn có viền
+    g.traverse(node => { if (node.isMesh) { node.userData.noOutline = true; node.castShadow = false; } });
+    g.add(at(ring(.22, .07, '#ff8fb8'), .3, .075, -.25).rotateX(Math.PI / 2));
+    const beach = ball(.15, '#ffffff');
+    g.add(at(beach, 1.2, .18, .3), at(ring(.151, .025, '#e8483a'), 1.2, .18, .3), at(ring(.151, .025, '#ffd66b'), 1.2, .18, .3).rotateY(Math.PI / 2));
+    // thang inox đầu +x: hai tay vịn cong qua viền rồi cắm xuống nước
+    const chr = chrome();
+    for (const z of [-.25, .25]) {
+      const rail = new THREE.CatmullRomCurve3([new THREE.Vector3(W / 2 + .14, .07, z), new THREE.Vector3(W / 2 + .12, .5, z), new THREE.Vector3(W / 2 - .05, .62, z), new THREE.Vector3(W / 2 - .2, .4, z), new THREE.Vector3(W / 2 - .22, .04, z)]);
+      g.add(mesh(new THREE.TubeGeometry(rail, 20, .02, 8), chr));
+    }
     return g;
   },
 

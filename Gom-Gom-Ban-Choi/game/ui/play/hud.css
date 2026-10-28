@@ -246,3 +246,14 @@
 .shell>.dock.draw-area{margin-bottom:auto}
 /* Màn thấp: khung HUD (ảnh 137u) tràn 25u dưới hộp .fg-panel 112u, khung bàn lại nhô 12u trên bàn -> chừa sẵn 48u phía trên bàn để không bao giờ đè HUD */
 .shell .board-wrap{padding-top:calc(48 * var(--u));height:calc(var(--box-w) + 74 * var(--u))}
+/* Lỗ lộ nền đồng cỏ thật phía sau (board-view.js seeThrough đặt --see = vị trí / cỡ ảnh nền .shell tính từ ô lỗ). */
+.shell .board .cell.void::after{background:#a7d662 var(--play-background-image,url("../../assets/img/play/background-variants/spring-garden.webp")) var(--see, 0 0 / 0 0) no-repeat;background-origin:border-box}
+/* Vá góc lõm của lỗ (board-view.js --cne/--cnw/--cse/--csw): ô vuông nâu nối viền hai ô kề qua khe, nằm trên lòng lỗ. */
+.shell .board .cell.void::after{z-index:0}
+.shell .board .cell.void::before{content:'';position:absolute;z-index:1;visibility:visible;pointer-events:none;inset:calc(-1 * var(--gap));--k:#73392a;
+  --tw:calc(var(--gap) + var(--line));--th:calc(var(--gap) + var(--line) + var(--lip));--bh:calc(var(--gap) + var(--line));
+  background:
+    linear-gradient(var(--k),var(--k)) right top / calc(var(--cne,0) * var(--tw)) calc(var(--cne,0) * var(--th)) no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / calc(var(--cnw,0) * var(--tw)) calc(var(--cnw,0) * var(--th)) no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / calc(var(--cse,0) * var(--tw)) calc(var(--cse,0) * var(--bh)) no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / calc(var(--csw,0) * var(--tw)) calc(var(--csw,0) * var(--bh)) no-repeat}

@@ -8,6 +8,7 @@ import { W, H, state, look, addArt, fxLayer } from './context.js';
 import { spawnPuff } from './match-fx.js';
 import { hammerArmed, smashAt } from './booster-bar.js';
 import { syrupMaskAt, syrupAtlasStyle } from '../ui/syrup-autotile.mjs';
+import { playBackgroundForLevel } from '../ui/play-backgrounds.mjs';
 
 // Cùng một texture phủ toàn bàn: mỗi ô lấy đúng tọa độ để mép nối không đổi màu.
 const sheetTile = index => `--col:${index % W};--row:${Math.floor(index / W)}`;
@@ -72,6 +73,13 @@ export function renderBoard() {
     cell.dataset.alt = (Math.floor(index / W) + index % W) % 2; // ô xen kẽ hai tông (bàn kiểu bàn cờ)
     if (object?.void) {
       cell.className = 'cell void';
+      // Cạnh nào giáp ô lỗ khác thì bỏ viền (hud.css --vl/--vr/--vt/--vb). Tính theo hàng / cột thật: luật CSS "ô liền trước / sau"
+      // coi ô đầu hàng là kề ô cuối hàng trên, làm mất viền mép trái / phải của lỗ.
+      const col = index % W, hole = (r, c) => c >= 0 && c < W && !!state.board[r * W + c]?.void, row = Math.floor(index / W);
+      // Góc lõm (hai cạnh kề là lỗ, ô chéo thì không): viền hai ô bên cạnh không gặp nhau qua khe -> vá góc (--cne / --cnw / --cse / --csw).
+      const concave = (dr, dc) => +(hole(row + dr, col) && hole(row, col + dc) && !hole(row + dr, col + dc));
+      cell.style.cssText = `--vl:${+!hole(row, col - 1)};--vr:${+!hole(row, col + 1)};--vt:${+!hole(row - 1, col)};--vb:${+!hole(row + 1, col)};`
+        + `--cne:${concave(-1, 1)};--cnw:${concave(-1, -1)};--cse:${concave(1, 1)};--csw:${concave(1, -1)}`;
       cell.disabled = true;
       cell.setAttribute('aria-hidden', 'true');
       return;
@@ -127,7 +135,31 @@ export function renderBoard() {
   board.querySelectorAll(':scope > .cell').forEach((cell, index) => cell.classList.toggle('under-syrup', syrupAt(Math.floor(index / W) - 1, index % W)));
   state.previewKey = '';
   state.justPlaced = null;
+  requestAnimationFrame(seeThrough);
 }
+
+// Lỗ (ô ngoài bàn) lộ đúng mảng nền đồng cỏ của .shell phía sau khung kem: mỗi lỗ vẽ lại ảnh nền với cùng cỡ (cover) và
+// dời theo vị trí của lỗ trong .shell (hud.css dùng --see-*).
+const MEADOW = Object.assign(new Image(), { onload: () => seeThrough() });
+export function setPlayBackground(levelIndex) {
+  const background = playBackgroundForLevel(levelIndex);
+  const src = new URL(`../${background.src}`, import.meta.url).href;
+  document.documentElement.style.setProperty('--play-background-image', `url("${src}")`);
+  document.documentElement.dataset.playBackground = background.id;
+  if (MEADOW.src !== src) MEADOW.src = src;
+  requestAnimationFrame(seeThrough);
+}
+function seeThrough() {
+  const holes = $('board').querySelectorAll(':scope > .cell.void'), shell = $('board').closest('.shell');
+  if (!holes.length || !shell || !MEADOW.naturalWidth) return;
+  const box = shell.getBoundingClientRect(), k = Math.max(box.width / MEADOW.naturalWidth, box.height / MEADOW.naturalHeight);
+  const w = MEADOW.naturalWidth * k, h = MEADOW.naturalHeight * k, left = (box.width - w) / 2;
+  holes.forEach(hole => {
+    const at = hole.getBoundingClientRect();
+    hole.style.setProperty('--see', `${left - (at.left - box.left)}px ${-(at.top - box.top)}px / ${w}px ${h}px`);
+  });
+}
+addEventListener('resize', () => requestAnimationFrame(seeThrough));
 
 export function paintPreview() {
   document.querySelectorAll('.cell.preview,.cell.preview-invalid').forEach(cell => cell.classList.remove('preview', 'preview-invalid'));

@@ -1974,6 +1974,14 @@ export class Cat {
       this.deform(bx, H / 2, bz, v);
       node.position.set(home.x + (v.x - bx), home.y - (H - top) + (v.y - H / 2) * body.scale.y, home.z + (v.z - bz));
     }
+    // Ria: gốc chùm trên mặt trước, dời cùng phép biến dạng như mặt (thân co khi nằm thì gốc hạ theo). Cả chùm nghiêng trễ theo độ lắc
+    // của thân (bend: đỉnh thân lệch thì ngọn ria vẫy theo) + phập phồng chậm như đang thở -> ria mềm, không đứng cứng như que.
+    const breath = Math.sin(performance.now() / 1000 * 1.7 + (this.whiskerPhase ??= Math.random() * 6)) * .04;
+    for (const [node, home, s] of rig.whiskers) {
+      this.deform(home.x, home.y, home.z, v);
+      node.position.set(body.position.x + v.x, body.position.y + v.y * body.scale.y, body.position.z + v.z);
+      node.rotation.set(0, -this.bend.z * 3, s * (breath - this.bend.y * 4) - this.bend.x * 3);
+    }
   }
 
   // Một điểm của thân (hệ toạ độ thân, chưa biến dạng; y = -H/2 đáy .. H/2 đỉnh) -> vị trí sau biến dạng.

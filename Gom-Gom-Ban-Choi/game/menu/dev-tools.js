@@ -1,11 +1,13 @@
 // Nút cho game dev (chỉ máy dev): mở hết màn, cộng xu, reset, QC model, UI Studio, Level Editor. Không port sang bản phát hành.
 import * as ob from '../app/onboarding.js';
 import { LEVELS } from '../data/levels.mjs';
+import { OFFERS } from '../data/economy.mjs';
+import { openOffer } from '../core/gems.mjs';
 import { loadProgress, saveProgress } from '../core/progression.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 import { CATALOG, previewDeco, ownAllBase } from '../deco/deco-data.mjs';
-import { $, DEV_MODE, showToast, getDeco, setDeco, devMoney } from '../app/shared.js';
+import { $, DEV_MODE, showToast, getDeco, setDeco, devMoney, getWallet, setWallet } from '../app/shared.js';
 import { closeAllSettings } from './settings.js';
 import { DEV_ZONES_KEY } from './areas.js';
 import { showTab, TABS } from './tabs.js';
@@ -14,6 +16,7 @@ import { map3d } from './map-view.js';
 
 // ===== Nút cho game dev: mở hết màn (3 sao) → mở luôn phòng khách + mèo khoá theo màn, cộng xu để thử Deco/Shop =====
 const DEV_COINS = 99999;
+const DEV_GEMS = 99999;
 
 document.querySelectorAll('.dev-only').forEach(row => { row.hidden = !DEV_MODE; });
 
@@ -21,11 +24,14 @@ $('dev-unlock').onclick = () => {
   closeAllSettings();
   saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
   ob.setStage('done');
+  writeText(SAVE_KEYS.decoTour, 'done'); // bỏ luôn hướng dẫn Deco
   writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
   setDeco(ownAllBase({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) })); // + có sẵn mọi món mặc định
+  // Xoá trạng thái ưu đãi cũ (đã mua / đang hồi) rồi mở lại mọi gói để thử ở Shop.
+  setWallet(Object.keys(OFFERS).reduce((w, kind) => openOffer(w, kind, Date.now()), { ...getWallet(), gems: Math.max(getWallet().gems, DEV_GEMS), offers: {} }));
   playSound('reward');
   showTab('home');
-  showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · all default furniture owned · ${DEV_COINS.toLocaleString('en-US')} coins`);
+  showToast(`Dev: all ${LEVELS.length} levels + all areas unlocked · all default furniture owned · ${DEV_COINS.toLocaleString('en-US')} coins + gems · all shop packs open · tutorials skipped`);
 };
 
 const renderDevMoney = () => $('dev-money').setAttribute('aria-pressed', devMoney());

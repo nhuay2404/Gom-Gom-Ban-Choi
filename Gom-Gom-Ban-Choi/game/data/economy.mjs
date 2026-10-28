@@ -380,6 +380,10 @@ export const DECO = remote('DECO', {
   'kfence-rail':         { price: 100 },              // Rainbow rails
   'kfence-hedge':        { price: 100 },              // Hedge
   'kground-grass':       { price: 0 },                // Grass
+  // --- Trường mẫu giáo — tường lớp học (trong + ngoài) ---
+  'kfacade-sunny':       { price: 0 },                // Sunny cream
+  'kfacade-mint':        { price: 100 },              // Mint & coral
+  'kfacade-lilac':       { price: 100 },              // Lilac & sky
   'kground-clover':      { price: 100 },              // Clover
   'kground-path':        { price: 100 },              // Stone path
   // --- Phòng tắm (khu thứ 5; giá theo ZONE_PRICING) — đồ ---

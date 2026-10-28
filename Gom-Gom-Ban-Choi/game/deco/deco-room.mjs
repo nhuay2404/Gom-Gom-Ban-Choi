@@ -16,7 +16,7 @@ import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './scenes/bedro
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './scenes/kitchen.mjs';
 import { BATHROOM_BUILD, bathroomDecor, decorateBathroomWall } from './scenes/bathroom.mjs';
 import { BACKYARD_BUILD, buildBackyardFence, backyardDecor, buildPatio, PATIO_LOOKS } from './scenes/backyard.mjs';
-import { KINDER_BUILD, kinderDecor, CLASSROOM } from './scenes/kindergarten.mjs';
+import { KINDER_BUILD, kinderDecor, CLASSROOM, KINDER_FACADES } from './scenes/kindergarten.mjs';
 import { buildMeadow } from './scenes/meadow.mjs';
 import { buildFlowerGarden, flowerObstacles } from './scenes/flower-garden.mjs';
 import { buildHouseExterior, buildRoof } from './scenes/house-exterior.mjs';
@@ -877,6 +877,15 @@ function thumbSubject(entry) {
     if (patio) for (let i = 0; i < 2; i++) for (let k = 0; k < 4; k++) tile.add(at(box(.37, .02, .37, patio[1 + (i + k) % 2]), .2 + i * .4, .01, -.6 + k * .4));
     return tile;
   }
+  if (entry.cat === 'facade') { // góc lớp học mẫu giáo: hai mảng tường đúng màu, chân tường, dải dưới mái hiên, cánh cửa
+    const F = KINDER_FACADES[entry.id], trim = mat('#fffaf0');
+    return group(slab(1.6, 1.6, mat('#9fd46a', { roughness: .95 }), '#8a6a45'),
+      at(box(1.5, 1.1, .12, F.wall), 0, .55, -.69), at(box(.12, 1.1, 1.5, F.wall), -.69, .55, 0),
+      at(box(1.52, .2, .14, F.skirt), 0, .1, -.69), at(box(.14, .2, 1.52, F.skirt), -.69, .1, 0),
+      at(box(1.52, .1, .14, F.band), 0, .95, -.69), at(box(.14, .1, 1.52, F.band), -.69, .95, 0),
+      at(box(1.6, .06, .22, trim), 0, 1.13, -.69), at(box(.22, .06, 1.6, trim), -.69, 1.13, 0),
+      at(box(.46, .78, .04, F.frame), .3, .39, -.615), at(box(.36, .7, .04, F.door), .3, .37, -.59));
+  }
   if (OUTDOOR.has(entry.zone)) { // khoảnh vườn nhỏ có đúng kiểu rào
     return group(slab(1.7, 1.7, mat('#9fd46a', { roughness: .95 }), '#8a6a45'), buildFence(entry, .75));
   }
@@ -1231,8 +1240,9 @@ export function createRoom() {
   const kidGround = at(mesh(kidGeo, soil), (kb2.x0 + kb2.x1) / 2, -.15, (kb2.z0 + kb2.z1) / 2);
   kidGround.material = [soil, soil, kidMat, soil, soil, soil];
   kidGround.userData.pickSurface = { zone: 'kinder', key: 'floors' };
-  const kidDecor = kinderDecor();
-  kidDecor.userData.structure = true; // sàn lớp, tường lớp, lối qua đường: kết cấu, không viền
+  // sàn lớp, tường lớp, lối qua đường: kết cấu, không viền; dựng lại theo kiểu tường lớp học đang dùng (apply)
+  let kidDecor = kinderDecor(), kidFacadeId = 'kfacade-sunny';
+  kidDecor.userData.structure = true;
   kid.add(kidGround, kidDecor);
   fixedDecor.push(kidDecor);
   let kidFence = null, kidFenceId = '', kidGroundId = '';
@@ -1670,9 +1680,14 @@ export function createRoom() {
       if (child.isPointLight) lamps.push([child, 'intensity', child.intensity]);
       if (child.isMesh) for (const m of [].concat(child.material)) if (m?.emissive) lamps.push([m, 'emissiveIntensity', m.emissiveIntensity]);
     }));
+    // Tranh / cờ / nước... (nightDim, MeshBasic): nightArt đặt ngay màu đích -> nhớ màu đang có rồi chuyển dần cùng nhịp trời,
+    // không thì món đó tối / sáng phụt trước khi trời kịp đổi (lỗi cũ).
+    const arts = new Map();
+    scene.traverse(node => { for (const m of node.isMesh ? [].concat(node.material) : []) if (m?.color && (m.userData?.nightDim || m.isMeshBasicMaterial) && !arts.has(m)) arts.set(m, m.color.clone()); });
     butterflies.forEach(b => { b.node.visible = !night; });
     Object.values(furniture).forEach(lightUp);
     scene.traverse(nightArt);
+    const artFades = [...arts].filter(([m, was]) => !m.color.equals(was)).map(([m, was]) => { const to = m.color.clone(); m.color.copy(was); return [m.color, to]; });
     const lampFades = lamps.filter(([obj, key, now]) => obj[key] !== now).map(([obj, key, now]) => { const to = obj[key]; obj[key] = now; return [obj, key, to]; });
     fadeTo([
       [hemi.color, look.sky], [hemi.groundColor, look.ground], [sun.color, look.sun],
@@ -1680,6 +1695,7 @@ export function createRoom() {
       [inkNow, night ? NIGHT_INK : ambient === 'dusk' ? DUSK_INK : ambient === 'dawn' ? DAWN_INK : DAY_INK],
       ...windowGlass.map(m => [m.color, look.glass]),
       ...meadow.ambientTargets(ambient),
+      ...artFades,
     ], [
       [hemi, 'intensity', look.hemi * (TOON ? TOON_LIGHT.hemi : 1)], [sun, 'intensity', look.sunI * (TOON ? TOON_LIGHT.sun : 1)],
       [scene, 'environmentIntensity', look.env], [SUN_FROM, 'x', sx], [SUN_FROM, 'y', sy], [SUN_FROM, 'z', sz],
@@ -1851,6 +1867,15 @@ export function createRoom() {
     }
     // Trường mẫu giáo: rào bao quanh (cổng trước đối diện cổng vườn) + nền theo món đang dùng của khu.
     const kidState = zoneState(deco, 'kinder'), kidFenceEntry = itemById(kidState.wall), kidGroundEntry = itemById(kidState.floor);
+    if (kidState.facade && kidFacadeId !== kidState.facade) {
+      kidFacadeId = kidState.facade;
+      const next = kinderDecor(kidFacadeId);
+      next.userData.structure = true;
+      kid.remove(kidDecor); kid.add(next);
+      kidDecor.traverse(node => { if (node.isMesh) { node.geometry.dispose(); [].concat(node.material).forEach(m => m.dispose()); } });
+      fixedDecor[fixedDecor.indexOf(kidDecor)] = next;
+      kidDecor = next;
+    }
     if (kidFenceId !== kidFenceEntry.id) {
       kidFenceId = kidFenceEntry.id;
       if (kidFence) kid.remove(kidFence);
@@ -2190,10 +2215,33 @@ export function createRoom() {
   // ---------- Xu 3D bay từ mèo vào thanh xu (nhận xu idle) ----------
   // Mỗi đồng xu là mô hình 3D (đĩa vàng + mặt nổi sáng, đứng nghiêng quay tròn): bật lên khỏi lưng mèo toả ra một chút rồi bay vòng cung
   // thẳng tới ĐIỂM TRONG CẢNH nằm sau thanh xu trên màn hình (tính lại mỗi khung từ toạ độ px của thanh nên camera xoay / zoom vẫn đúng).
-  // Thanh xu là UI đè trên canvas nên đồng xu chui vào sau nó.
+  // Đồng xu vẽ trên canvas trong suốt riêng (coinLayer) đè lên cả HUD, cùng camera + cùng khung với canvas cảnh: bay qua và chạm
+  // lên trên thanh xu, không chui xuống dưới UI. Canvas phủ chỉ tạo lần đầu có xu bay, chỉ vẽ khi đang có xu, xong thì ẩn.
   const coinGroup = new THREE.Group();
   coinGroup.userData.structure = true;
-  scene.add(coinGroup);
+  let coinOverlay = null;
+  function coinLayer() {
+    if (coinOverlay) return coinOverlay;
+    const layer = new THREE.WebGLRenderer({ antialias: true, alpha: true }), coinScene = new THREE.Scene();
+    layer.setPixelRatio(renderer.getPixelRatio());
+    Object.assign(layer.domElement.style, { position: 'fixed', pointerEvents: 'none', zIndex: 100, display: 'none' });
+    document.body.append(layer.domElement);
+    const light = new THREE.DirectionalLight('#fff1d6', 1.7 * (TOON ? TOON_LIGHT.sun : 1));
+    light.position.set(4, 10, 6);
+    coinScene.add(new THREE.HemisphereLight('#fff8e8', '#e0b98a', 1.15 * (TOON ? TOON_LIGHT.hemi : 1)), light, coinGroup);
+    return (coinOverlay = { layer, coinScene, w: 0, h: 0 });
+  }
+  // Mỗi khung có xu bay: canvas phủ khớp đúng chỗ + cỡ canvas cảnh rồi vẽ riêng nhóm xu bằng camera cảnh.
+  function drawCoins() {
+    if (!coinOverlay) return;
+    const { layer, coinScene } = coinOverlay, canvas = layer.domElement;
+    if (!coinGroup.children.length) { canvas.style.display = 'none'; return; }
+    const rect = renderer.domElement.getBoundingClientRect();
+    Object.assign(canvas.style, { display: 'block', left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+    const size = renderer.getSize(new THREE.Vector2());
+    if (size.x !== coinOverlay.w || size.y !== coinOverlay.h) { layer.setSize(size.x, size.y, false); coinOverlay.w = size.x; coinOverlay.h = size.y; }
+    layer.render(coinScene, camera);
+  }
   const coinGeo = new THREE.CylinderGeometry(.24, .24, .06, 24).rotateX(Math.PI / 2), faceGeo = new THREE.CylinderGeometry(.165, .165, .07, 20).rotateX(Math.PI / 2);
   const coinBody = mat('#ffbe1f'), coinFace = mat('#ffe27a');
   const flying = [], coinRay = new THREE.Vector3(), coinTo = new THREE.Vector3(), coinCam = new THREE.Vector3();
@@ -2202,6 +2250,7 @@ export function createRoom() {
     const cat = cats.bodies().find(body => body.breed === breed);
     if (!cat || !container) { for (let i = 0; i < count; i++) onLand?.(i); return Promise.resolve(); }
     const origin = new THREE.Vector3(); cat.rig.root.getWorldPosition(origin); origin.y += .55;
+    coinLayer();
     return new Promise(done => {
       let left = count;
       for (let i = 0; i < count; i++) {
@@ -2651,6 +2700,7 @@ export function createRoom() {
       renderOutlineIds(renderer, scene, camera);
     }
     renderer.render(scene, camera);
+    drawCoins();
     restoreShadows?.();
     onFrame?.(); // UI bám theo cảnh (bảng đổi món, ghim NEW): đặt ngay sau khi vẽ, cùng khung hình, không trễ một nhịp
   }

@@ -262,8 +262,9 @@ export const GARDEN2_BUILD = {
     const smokeMat = new THREE.MeshBasicMaterial({ color: '#d9d2c4', transparent: true, opacity: .4, depthWrite: false });
     const smoke = [...Array(3)].map((_, k) => { const s = mesh(new THREE.SphereGeometry(.12, 10, 8), smokeMat.clone()); s.userData.phase = k / 3; s.castShadow = false; return s; });
     const light = new THREE.PointLight('#ff9a4a', 4, 5, 1.6); light.position.set(0, .6, 0);
+    // khúc gỗ ngồi nằm ngang (tâm cao .13, dài 1.1) + hai mặt cắt vân gỗ dán đúng hai đầu (cùng tâm, nhô .003)
     const seat = at(cyl(.13, .13, 1.1, '#9a6a45', 14), 0, .13, -.95); seat.rotation.z = Math.PI / 2;
-    const fire = group(...stones, ...logs, ...flames, ...embers, ...smoke, light, seat, at(cyl(.1, .1, .01, '#d9b07e', 14), .55, .26, -.95).rotateZ(Math.PI / 2), at(cyl(.1, .1, .01, '#d9b07e', 14), -.55, .26, -.95).rotateZ(Math.PI / 2));
+    const fire = group(...stones, ...logs, ...flames, ...embers, ...smoke, light, seat, ...[-1, 1].map(s => at(cyl(.1, .1, .01, '#d9b07e', 14), s * .553, .13, -.95).rotateZ(Math.PI / 2)));
     fire.userData.update = t => {
       const dt = tick(t), w = windAt(t);
       flames.forEach((f, k) => { const s = 1 + Math.sin(t * (9 + k * 2.3)) * .12 + Math.sin(t * 17 + k) * .06; f.scale.set(1 - (s - 1) * .5, s, 1 - (s - 1) * .5); f.rotation.z = Math.sin(t * 3 + k) * .1 * w; f.position.y = .16 + f.userData.h * s / 2; });

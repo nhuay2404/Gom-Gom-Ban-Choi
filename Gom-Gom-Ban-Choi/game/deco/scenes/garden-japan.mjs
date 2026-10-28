@@ -189,14 +189,15 @@ export const JAPAN_BUILD = {
     [TAU / 3, -TAU / 6].forEach(a => pane(new THREE.CircleGeometry(.04, 20), a));
     fire.position.y = .86;
     const light = new THREE.PointLight('#ffc070', 4, 5, 1.6); light.position.y = .86;
-    // Mái: chóp sáu cạnh dẹt + 6 móc cuộn (warabi) vểnh lên ở góc
+    // Mái: chóp sáu cạnh dẹt + 6 móc cuộn (warabi) vểnh lên ở góc, chân móc cắm vào mép mái (không lơ lửng)
     const roof = group(at(hex(.36, .09, STONE, .08), 0, 0, 0), at(hex(.09, .1, STONE, .05), 0, .09, 0));
     for (let i = 0; i < 6; i++) {
-      const a = i / 6 * TAU, curl = at(mesh(new THREE.TorusGeometry(.03, .014, 6, 12, Math.PI * 1.3), STONE), Math.sin(a) * .35, .05, Math.cos(a) * .35);
+      const a = i / 6 * TAU, curl = at(mesh(new THREE.TorusGeometry(.03, .014, 6, 12, Math.PI * 1.3), STONE), Math.sin(a) * .34, -.02, Math.cos(a) * .34);
       curl.rotation.y = a + Math.PI / 2; roof.add(curl);
     }
     const rnd = seeded(5);
-    for (let i = 0; i < 5; i++) { const m = at(ball(rnd(.04, .06), i % 2 ? MOSS : MOSS_DARK), Math.cos(i * 1.3) * .2, .04, Math.sin(i * 1.3) * .2); m.scale.y = .35; roof.add(m); }
+    // rêu nằm đúng mặt dốc mái: chóp từ bán kính .36 (y -.045) lên .08 (y .045), rêu ở bán kính .2
+    for (let i = 0; i < 5; i++) { const m = at(ball(rnd(.04, .06), i % 2 ? MOSS : MOSS_DARK), Math.cos(i * 1.3) * .2, -.045 + (.36 - .2) / .28 * .09, Math.sin(i * 1.3) * .2); m.scale.y = .35; roof.add(m); }
     roof.position.y = 1.0;
     const jewel = group(at(ball(.055, STONE), 0, 0, 0), at(cone(.03, .06, STONE, 10), 0, .06, 0));
     jewel.position.y = 1.2;

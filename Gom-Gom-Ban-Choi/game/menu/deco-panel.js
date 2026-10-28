@@ -4,7 +4,7 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
-import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive, isSurface } from '../deco/deco-data.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent, getWallet, setWallet, gemTag } from '../app/shared.js';
 import { coverCoins, ensureGems } from '../app/store.js';
 import { spendGems } from '../core/gems.mjs';
@@ -83,7 +83,7 @@ export function renderDeco() {
   room3d?.setHighlights(decoLocked ? new Set() : fresh);
   // Xây hết món gốc của khu thì tab Furniture không còn thẻ nào -> ẩn chip, nhảy sang Walls
   const built = builtCount(deco, deco.zone), allBuilt = built[0] === built[1];
-  if (allBuilt && decoTab === 'furniture') decoTab = 'walls';
+  if ((allBuilt && decoTab === 'furniture') || (decoTab === 'facade' && !ZONES[deco.zone].cats.facade)) decoTab = 'walls';
   $('deco-kinds').hidden = decoTab === 'cats';
   $('deco-pets').hidden = decoTab !== 'cats';
   $('deco-pets').querySelectorAll('[data-pet]').forEach(button => {
@@ -95,9 +95,12 @@ export function renderDeco() {
     button.classList.toggle('on', decoTab === button.dataset.key);
     button.setAttribute('aria-selected', decoTab === button.dataset.key);
     if (button.dataset.key === 'furniture') button.hidden = allBuilt;
+    // phòng trong nhà: chip Walls dùng biểu tượng bức tường (khu ngoài trời là Fences: hàng rào)
+    if (button.dataset.key === 'walls') button.classList.toggle('indoor', ZONES[deco.zone].cats.walls === 'Walls');
+    if (button.dataset.key === 'facade') button.hidden = !ZONES[deco.zone].cats.facade; // tường lớp học: chỉ khu mẫu giáo
   });
   // Ghim "NEW" trên các món có đồ mới thay được (chỉ đồ đạc; tường / sàn mới báo bằng toast ở Shop)
-  $('deco-pins').replaceChildren(...[...fresh].filter(key => key !== 'walls' && key !== 'floors').map(slot => {
+  $('deco-pins').replaceChildren(...[...fresh].filter(key => !isSurface(key)).map(slot => {
     const pin = document.createElement('span');
     pin.className = 'deco-pin';
     pin.dataset.slot = slot;
@@ -157,7 +160,7 @@ const isBaseEntry = entry => entry.cat === 'furniture' && !entry.slot;
 function stripEntries(deco) {
   const zone = deco.zone;
   if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats' && entry.id.startsWith('dog-') === (decoPet === 'dogs'));
-  if (decoTab === 'walls' || decoTab === 'floors') return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
+  if (isSurface(decoTab)) return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
   // Furniture: chỉ món gốc chưa xây (kiểu khác của món mua ở Shop → Decoration / chạm món trong cảnh)
   return decoBases(zone).filter(base => !isOwned(deco, base));
 }
@@ -206,7 +209,7 @@ $('deco-cards').addEventListener('click', event => {
   if (!base) return;
   if (!isBaseEntry(base)) { clearDecoPick(); return chooseOption(base, !!event.target.closest('[data-act="buy"]')); }
   clearPreview();
-  if (!ob.buildOpen()) return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(base)) return showToast(BUILD_LOCKED);
   if (event.target.closest('[data-act="buy"]')) return buildBase(base);
   playSound('pick');
   closeDecoPop(false);
@@ -227,7 +230,7 @@ function pickDeco(entry) {
 const BUILD_LOCKED = 'Beat level 5 to start decorating!';
 
 function buildBase(base) {
-  if (!ob.buildOpen()) return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(base)) return showToast(BUILD_LOCKED);
   const next = applyAction(getDeco(), base, decoUnlockedLevel());
   // Thiếu xu: trả hết xu + bù gem rồi xây lại.
   if (next.error === 'Not enough coins') return coverCoins(base.price, base.name).then(ok => ok && buildBase(base));
@@ -251,7 +254,7 @@ function buildBase(base) {
 // và chưa có bảng nào đang mở; đang mở bảng thì chạm chỗ khác = đóng.
 export function onScenePick(pick) {
   if (decoLocked) return;
-  const surface = pick.key === 'walls' || pick.key === 'floors';
+  const surface = isSurface(pick.key);
   if (!pick.key || (surface && (decoPop || ownedOptions(getDeco(), pick.zone, pick.key).length < 2))) return closeDecoPop();
   // Món ở phòng khác: chuyển Deco sang phòng đó (hàng thẻ, nút, hàng chọn khu) rồi mở bảng — camera lướt thẳng tới món.
   if (pick.zone !== getDeco().zone && isZoneOpen(pick.zone)) {
@@ -267,7 +270,7 @@ function openDecoPop(spec) {
   if (popPreview) { popPreview = null; applyRoom(getDeco()); } // đang xem thử ở bảng khác: bỏ xem
   decoPop = spec;
   // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
-  room3d?.lockView(!['cats', 'walls', 'floors'].includes(spec.key));
+  room3d?.lockView(spec.key !== 'cats' && !isSurface(spec.key));
   if (spec.key !== 'cats') setDeco(clearFresh(getDeco(), spec.zone, spec.key)); // đã xem món mới -> thôi sáng
   if (decoPick) { clearDecoPick(); applyRoom(getDeco()); }
   renderDeco();
@@ -277,7 +280,7 @@ function openDecoPop(spec) {
   void $('deco-pop').offsetWidth;
   $('deco-pop').classList.add('show');
   // Món ra giữa khung, hạ thấp nửa chiều cao bảng: bảng phía trên vừa khít, không phải trượt bù sau cú lướt.
-  if (spec.key !== 'cats' && spec.key !== 'walls' && spec.key !== 'floors') room3d?.focus(spec.key, false, ($('deco-pop').offsetHeight + 14) / 2 + 12);
+  if (spec.key !== 'cats' && !isSurface(spec.key)) room3d?.focus(spec.key, false, ($('deco-pop').offsetHeight + 14) / 2 + 12);
   placeDecoPop();
 }
 
@@ -303,7 +306,7 @@ function warmDecoThumbs(zone) {
   if (zone !== thumbZone) {
     thumbZone = zone;
     thumbQueue = [...CATALOG.filter(entry => entry.cat === 'furniture' && entry.zone === zone && decoVisible(entry)),
-      ...catalogFor(zone, 'walls'), ...catalogFor(zone, 'floors')];
+      ...catalogFor(zone, 'walls'), ...catalogFor(zone, 'floors'), ...catalogFor(zone, 'facade')];
   }
   if (thumbPending || !thumbQueue.length) return;
   thumbPending = true;
@@ -316,10 +319,11 @@ function warmDecoThumbs(zone) {
 
 function decoPopOptions(deco) {
   if (decoPop.key === 'cats') return CATALOG.filter(entry => entry.cat === 'cats');
-  const all = decoPop.key === 'walls' || decoPop.key === 'floors' ? catalogFor(decoPop.zone, decoPop.key) : CATALOG.filter(entry => entry.cat === 'furniture' && slotOf(entry) === decoPop.key);
-  // Đã có trước, kiểu bán ở Shop sau
+  const all = isSurface(decoPop.key) ? catalogFor(decoPop.zone, decoPop.key) : CATALOG.filter(entry => entry.cat === 'furniture' && slotOf(entry) === decoPop.key);
+  // Đã có trước, chưa có sau; trong mỗi nhóm món premium (gem, bộ Vườn Nhật) đứng đầu.
   // Món độc quyền (quà đăng nhập) chưa có thì không hiện để mua.
-  return all.filter(entry => decoVisible(entry) && (!isExclusive(entry) || isOwned(deco, entry))).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
+  return all.filter(entry => decoVisible(entry) && (!isExclusive(entry) || isOwned(deco, entry)))
+    .sort((a, b) => isOwned(deco, b) - isOwned(deco, a) || !!b.gems - !!a.gems);
 }
 
 function renderDecoPop() {
@@ -327,7 +331,7 @@ function renderDecoPop() {
   const deco = getDeco(), unlocked = decoUnlockedLevel(), names = ZONES[decoPop.zone].cats;
   const options = decoPopOptions(deco);
   const using = options.find(entry => itemStatus(deco, entry, unlocked) === 'using');
-  const title = { cats: `Pets · ${deco.cats.length}`, walls: names.walls, floors: names.floors }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
+  const title = { cats: `Pets · ${deco.cats.length}`, walls: names.walls, floors: names.floors, facade: names.facade }[decoPop.key] ?? (popPreview && options.includes(popPreview) ? popPreview.name : using?.name) ?? itemById(decoPop.key).name;
   $('deco-pop-title').textContent = title;
   $('deco-pop-items').replaceChildren(...options.map(entry => {
     const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked, getWallet().gems) : itemStatus(deco, entry, unlocked);
@@ -366,7 +370,7 @@ $('deco-pop-items').addEventListener('click', event => {
 // Chọn một kiểu (mèo / kiểu khác của món / tường / sàn): dùng chung cho thẻ ở khay đáy và bảng đổi món trong cảnh.
 // buyTap = chạm đúng nút giá của kiểu đang xem thử.
 function chooseOption(entry, buyTap) {
-  if (!ob.buildOpen() && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(entry) && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
   const deco = getDeco(), unlocked = decoUnlockedLevel(), status = itemStatus(deco, entry, unlocked);
   if (entry.cat === 'cats') {
     if (status === 'locked') return showToast(`Beat level ${entry.lock}, then claim it on the Map`);
@@ -415,7 +419,7 @@ function chooseOption(entry, buyTap) {
     if (next.error) return showToast(next.error);
     setDeco(next);
     noteEvent('place');
-    if (entry.cat === 'walls' || entry.cat === 'floors') noteEvent('surface');
+    if (isSurface(entry.cat)) noteEvent('surface');
   }
   playSound('pick');
   if (!room3d) buildFlatRooms();

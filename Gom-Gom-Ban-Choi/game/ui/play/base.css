@@ -385,10 +385,14 @@ body.card-dragging .tutorial-hand{visibility:hidden}
 .tutorial.deco-tour{z-index:60}
 .deco-tour-bubble{flex-wrap:wrap;padding:12px 14px}
 .deco-tour-bubble p{flex:1 1 0;min-width:0}
+/* Ảnh minh hoạ trong bong bóng (vd. ngôi nhà đủ đồ ở đầu hướng dẫn Deco): trọn bề ngang, trên lời thoại */
+.deco-tour-pic{flex-basis:100%;width:100%;aspect-ratio:900/610;border-radius:12px;border:2px solid #e2bd72;object-fit:cover}
 .deco-tour-foot{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .deco-tour-dots{font-style:normal;font-size:10px;letter-spacing:2px;color:#a9825f}
 .deco-tour-skip{border:0;background:none;font:inherit;font-size:13px;font-weight:800;color:#a9825f;padding:8px 4px;cursor:pointer}
 .deco-tour-next{min-width:96px;padding:9px 20px;font-size:15px}
+.deco-tour-bubble .deco-tour-foot{justify-content:center;margin-top:4px}
+.deco-tour-foot[hidden]{display:none}
 /* Lời thoại của mèo trong cảnh 3D: không ảnh mèo trong bóng, đuôi nhọn chỉ xuống mèo (tail-up: bóng nằm dưới, đuôi chỉ lên) */
 .deco-tour-bubble.speech .tutorial-avatar{display:none}
 .deco-tour.speaking :is(.tutorial-dim,.deco-tour-rings){display:none}

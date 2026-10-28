@@ -338,3 +338,17 @@ test('mỗi khu (kể cả vườn mở rộng) có đúng 10 món mặc định
   for (const a of ['garden', 'garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'])
     assert.equal(CATALOG.filter(e => e.cat === 'furniture' && !e.slot && area(e) === a).length, 10, a);
 });
+
+test('tường lớp học mẫu giáo (facade): mặc định Sunny, mua + dùng kiểu khác, save cũ thiếu facade tự lấy mặc định', async () => {
+  const { buyToStock, useItem } = await import('./deco-data.mjs');
+  setStorageBackend(memoryStore());
+  let deco = loadDeco(1e6);
+  assert.equal(deco.zones.kinder.facade, 'kfacade-sunny');
+  assert.equal(deco.zones.garden.facade, undefined, 'khu khác không có tường lớp học');
+  deco = useItem(buyToStock(deco, itemById('kfacade-mint'), 999), itemById('kfacade-mint'));
+  assert.equal(deco.zones.kinder.facade, 'kfacade-mint');
+  assert.equal(itemStatus(deco, itemById('kfacade-mint'), 999), 'using');
+  const { facade, ...old } = deco.zones.kinder;
+  writeJSON(SAVE_KEYS.deco, { ...deco, zones: { ...deco.zones, kinder: old } });
+  assert.equal(loadDeco(0).zones.kinder.facade, 'kfacade-sunny');
+});

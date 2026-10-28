@@ -6,10 +6,10 @@
    nhỏ lại theo chiều cao: HUD / dock / booster co cùng tỉ lệ, phần dôi ra dành cho bàn (bàn tự lấp chỗ trống còn lại),
    thay vì chỉ mình bàn bị bóp nhỏ còn khung thẻ mèo vẫn to. Điện thoại dọc cao (≥ 393 × 780) giữ nguyên. */
 .shell{--u:min(calc(var(--frame-w) / 393), calc(100dvh / 780));
-  background:#a7d662 url('../../assets/img/play/meadow-bg.jpg') 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
+  background:#a7d662 var(--play-background-image,url('../../assets/img/play/background-variants/spring-garden.webp')) 50% 0/cover no-repeat;padding-inline:calc(18 * var(--u))}
 /* Màn rộng hơn khung (màn ngang, tablet, desktop): hai bên khung là cùng ảnh đồng cỏ phóng to + làm mờ, thay cho dải màu trơn */
 body{background:none}
-body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 url('../../assets/img/play/meadow-bg.jpg') 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
+body::before{content:"";position:fixed;inset:-40px;z-index:-1;background:#a7d662 var(--play-background-image,url('../../assets/img/play/background-variants/spring-garden.webp')) 50% 70%/cover no-repeat;filter:blur(18px) saturate(.9);pointer-events:none}
 .shell>.topbar{display:none}
 /* Bỏ dòng thông báo (mục tiêu / cộng điểm) dưới bàn như bản Figma */
 .shell>.message-row{display:none}

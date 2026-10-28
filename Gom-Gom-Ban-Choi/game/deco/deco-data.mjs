@@ -23,7 +23,7 @@ export const ZONES = {
   kitchen: { name: 'Kitchen', unlockAfter: AREA_UNLOCK.kitchen.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
   bathroom: { name: 'Bathroom', unlockAfter: AREA_UNLOCK.bathroom.level, cats: { furniture: 'Furniture', walls: 'Walls', floors: 'Floors', cats: 'Pets' } },
   backyard: { name: 'Backyard', unlockAfter: AREA_UNLOCK.backyard.level, cats: { furniture: 'Pool & veggies', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
-  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', cats: 'Pets' } },
+  kinder: { name: 'Kindergarten', unlockAfter: AREA_UNLOCK.kinder.level, cats: { furniture: 'Class & play', walls: 'Fences', floors: 'Ground', facade: 'School', cats: 'Pets' } },
 };
 export const ZONE_IDS = Object.keys(ZONES);
 // Đã tới mốc màn của khu chưa (điều kiện 1 trong 2 để mở; điều kiện 2 là trả xu — xem areaState).
@@ -215,6 +215,10 @@ export const CATALOG = [
   { id: 'kfence-picket', zone: 'kinder', cat: 'walls', name: 'Yellow picket', color: '#ffd66b', style: 'fence-white' },
   { id: 'kfence-rail', zone: 'kinder', cat: 'walls', name: 'Rainbow rails', color: '#ff9a3c', style: 'fence-rainbow' },
   { id: 'kfence-hedge', zone: 'kinder', cat: 'walls', name: 'Hedge', color: '#6fbf4a', style: 'fence-hedge' },
+  // Tường lớp học (cả mặt trong lẫn mặt ngoài): bảng màu ở kindergarten.mjs KINDER_FACADES
+  { id: 'kfacade-sunny', zone: 'kinder', cat: 'facade', name: 'Sunny cream', color: '#fff0c2' },
+  { id: 'kfacade-mint', zone: 'kinder', cat: 'facade', name: 'Mint & coral', color: '#cdeee0' },
+  { id: 'kfacade-lilac', zone: 'kinder', cat: 'facade', name: 'Lilac & sky', color: '#e6dcff' },
   { id: 'kground-grass', zone: 'kinder', cat: 'floors', name: 'Grass', color: '#9fd46a', style: 'ground-grass' },
   { id: 'kground-clover', zone: 'kinder', cat: 'floors', name: 'Clover', color: '#7fc45a', style: 'ground-clover' },
   { id: 'kground-path', zone: 'kinder', cat: 'floors', name: 'Stone path', color: '#d9d2c4', style: 'ground-path' },
@@ -430,7 +434,7 @@ const VARIANTS = [
   ['bathshelf', 'bathshelf-baskets', 'Basket cubby', '#ffd66b'],
   // --- Sân sau ---
   ['pool', 'pool-inflatable', 'Inflatable pool', '#5fb8e8'],
-  ['pool', 'pool-lily', 'Lily pond', '#5fae46'],
+  ['pool', 'pool-sunken', 'In-ground pool', '#5fc8e8'],
   ['lounger', 'lounger-hammock', 'Hammock stand', '#ffb347'],
   ['lounger', 'lounger-deckchair', 'Deck chair', '#3b8fe0'],
   ['parasol', 'parasol-canopy', 'Canopy table', '#3b8fe0'],
@@ -482,7 +486,7 @@ export const RETIRED = Object.fromEntries(Object.entries({
   bakerack: ['bakerack-pink', 'bakerack-modern'], kplant: ['kplant-pink'],
   toilet: ['toilet-modern'], vanity: ['vanity-modern'], bathtub: ['bathtub-modern'], towel: ['towel-pink'], litter: ['litter-modern'], bathmat: ['bathmat-modern'],
   bathshelf: ['bathshelf-pink', 'bathshelf-modern'], jacuzzi: ['jacuzzi-pink'],
-  pool: ['pool-pink', 'pool-modern'], lounger: ['lounger-pink', 'lounger-modern'], parasol: ['parasol-pink', 'parasol-modern'], grill: ['grill-pink', 'grill-modern'],
+  pool: ['pool-pink', 'pool-modern', 'pool-lily'], lounger: ['lounger-pink', 'lounger-modern'], parasol: ['parasol-pink', 'parasol-modern'], grill: ['grill-pink', 'grill-modern'],
   deckbox: ['deckbox-pink', 'deckbox-modern'], greenhouse: ['greenhouse-pink', 'greenhouse-modern'], vegbed: ['vegbed-pink', 'vegbed-modern'],
   veggies: ['veggies-pink', 'veggies-modern'], scarecrow: ['scarecrow-pink', 'scarecrow-modern'], rainbarrel: ['rainbarrel-pink', 'rainbarrel-modern'],
   // Lựa chọn thứ 4 cũ (hiện đại tông đen ở phòng khách / phòng ngủ, châu Á ở bếp): mỗi chỗ chỉ giữ 3 món.
@@ -544,6 +548,7 @@ const zoneDefaults = zone => {
     placed: free.filter(entry => entry.cat === 'furniture' && !entry.slot).map(entry => entry.id),
     wall: free.find(entry => entry.cat === 'walls').id,
     floor: free.find(entry => entry.cat === 'floors').id,
+    facade: free.find(entry => entry.cat === 'facade')?.id, // chỉ khu có tường lớp học (mẫu giáo)
   };
 };
 // Mèo có sẵn từ đầu; các giống khác phải nhận ở Map (nút Claim cạnh màn giống đó xuất hiện lần đầu, sau khi thắng màn đó).
@@ -560,7 +565,8 @@ function clean(deco) {
   const zones = Object.fromEntries(Object.entries(deco.zones).filter(([zone]) => ZONES[zone]).map(([zone, state]) => {
     state.owned.filter(id => RETIRED[id]).forEach(id => { coins += itemById(RETIRED[id]).price; });
     const placed = state.placed.map(id => RETIRED[id] ?? id).filter((id, i, list) => known(id) && list.indexOf(id) === i);
-    return [zone, { ...state, owned: state.owned.filter(known), placed }];
+    // save có từ trước khi có tường lớp học: lấy kiểu mặc định
+    return [zone, { ...state, owned: state.owned.filter(known), placed, facade: known(state.facade) ? state.facade : zoneDefaults(zone).facade }];
   }));
   return { ...deco, coins, zones, fresh: (deco.fresh || []).filter(known) };
 }
@@ -611,6 +617,9 @@ export function saveDeco(deco) {
   writeJSON(SAVE_KEYS.deco, deco);
 }
 export const zoneState = (deco, zone = deco.zone) => deco.zones[zone];
+// Loại trang trí phủ cả khu (chọn một): danh mục -> trường lưu trong trạng thái khu. Tường lớp học (facade) chỉ khu mẫu giáo có.
+export const SURFACE_FIELD = { walls: 'wall', floors: 'floor', facade: 'facade' };
+export const isSurface = key => key in SURFACE_FIELD;
 const withZone = (deco, zone, change) => ({ ...deco, zones: { ...deco.zones, [zone]: { ...deco.zones[zone], ...change } } });
 
 // Trạng thái một món với người chơi hiện tại: locked / using / owned / buy / poor.
@@ -624,8 +633,7 @@ export function itemStatus(deco, entry, unlockedLevel) {
   const zone = zoneState(deco, entry.zone);
   // Món giá 0 (kể cả phương án thay thế của món miễn phí) luôn coi như đã có, không cần "mua".
   const owned = zone.owned.includes(entry.id) || isFree(entry), affordable = deco.coins >= entry.price ? 'buy' : 'poor';
-  if (entry.cat === 'walls') return zone.wall === entry.id ? 'using' : owned ? 'owned' : affordable;
-  if (entry.cat === 'floors') return zone.floor === entry.id ? 'using' : owned ? 'owned' : affordable;
+  if (isSurface(entry.cat)) return zone[SURFACE_FIELD[entry.cat]] === entry.id ? 'using' : owned ? 'owned' : affordable;
   if (!owned) return affordable;
   return zone.placed.includes(entry.id) ? 'using' : 'owned';
 }
@@ -662,8 +670,7 @@ export function applyAction(deco, entry, unlockedLevel) {
   const zone = zoneState(deco, entry.zone);
   let next = deco;
   if (status === 'buy') next = withZone(pay(deco, entry.price), entry.zone, { owned: [...zone.owned, entry.id] });
-  if (entry.cat === 'walls') return withZone(next, entry.zone, { wall: entry.id });
-  if (entry.cat === 'floors') return withZone(next, entry.zone, { floor: entry.id });
+  if (isSurface(entry.cat)) return withZone(next, entry.zone, { [SURFACE_FIELD[entry.cat]]: entry.id });
   // Đặt vào thì thay món khác đang ở cùng chỗ.
   const placed = status === 'using' ? zone.placed.filter(id => id !== entry.id) : [...withoutSlot(zone.placed, entry), entry.id];
   return withZone(next, entry.zone, { placed });
@@ -701,8 +708,7 @@ export function previewDeco(deco, entry) {
   if (!entry) return deco;
   if (entry.cat === 'cats') return deco.cats.includes(entry.breed) || deco.cats.length >= MAX_ROOM_CATS ? deco : { ...deco, cats: [...deco.cats, entry.breed] };
   const zone = zoneState(deco, entry.zone);
-  if (entry.cat === 'walls') return withZone(deco, entry.zone, { wall: entry.id });
-  if (entry.cat === 'floors') return withZone(deco, entry.zone, { floor: entry.id });
+  if (isSurface(entry.cat)) return withZone(deco, entry.zone, { [SURFACE_FIELD[entry.cat]]: entry.id });
   return zone.placed.includes(entry.id) ? deco : withZone(deco, entry.zone, { placed: [...withoutSlot(zone.placed, entry), entry.id] });
 }
 
@@ -714,7 +720,7 @@ export const isBase = entry => entry.cat === 'furniture' && !entry.slot;
 // Món độc quyền (quà đăng nhập): không bán ở Shop / bảng đổi món, chỉ có được qua quà.
 const EXCLUSIVE = new Set(LOGIN_CALENDAR.map(cell => cell.item).filter(Boolean));
 export const isExclusive = entry => EXCLUSIVE.has(entry.id);
-export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && !isExclusive(entry) && ((entry.cat === 'furniture' && entry.slot) || ((entry.cat === 'walls' || entry.cat === 'floors') && !isFree(entry))));
+export const shopCatalog = zone => CATALOG.filter(entry => entry.zone === zone && !isExclusive(entry) && ((entry.cat === 'furniture' && entry.slot) || (isSurface(entry.cat) && !isFree(entry))));
 // Tặng một món (quà): vào kho như mua ở Shop (chưa đặt, báo "món mới"), không trừ xu. Đã có thì trả null (người gọi đổi ra xu).
 export function giftItem(deco, entry) {
   if (isOwned(deco, entry)) return null;
@@ -740,14 +746,13 @@ export function buyToStock(deco, entry, unlockedLevel, gems = 0) {
   return { ...withZone(pay(deco, entry.gems ? 0 : entry.price), entry.zone, { owned: [...zone.owned, entry.id] }), fresh: [...(deco.fresh || []), entry.id] };
 }
 // Các món đã có của một chỗ đồ (món gốc + phương án đã mua) / của tường hoặc sàn một khu.
-export const ownedOptions = (deco, zone, key) => (key === 'walls' || key === 'floors' ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))
+export const ownedOptions = (deco, zone, key) => (isSurface(key) ? catalogFor(zone, key) : CATALOG.filter(entry => slotOf(entry) === key && entry.cat === 'furniture'))
   .filter(entry => isOwned(deco, entry));
 // Dùng một món đã có (đồ: thay món đang ở chỗ đó; tường / sàn: đổi cả khu). Món vừa dùng thôi là "món mới".
 export function useItem(deco, entry) {
   if (!isOwned(deco, entry)) return { error: 'Not owned yet' };
   const zone = zoneState(deco, entry.zone), fresh = (deco.fresh || []).filter(id => id !== entry.id);
-  if (entry.cat === 'walls') return { ...withZone(deco, entry.zone, { wall: entry.id }), fresh };
-  if (entry.cat === 'floors') return { ...withZone(deco, entry.zone, { floor: entry.id }), fresh };
+  if (isSurface(entry.cat)) return { ...withZone(deco, entry.zone, { [SURFACE_FIELD[entry.cat]]: entry.id }), fresh };
   return { ...withZone(deco, entry.zone, { placed: [...withoutSlot(zone.placed, entry), entry.id] }), fresh };
 }
 // Món mới mua ở Shop mà chưa xem: đánh dấu theo chỗ (đồ) hoặc 'walls' / 'floors' của từng khu.

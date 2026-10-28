@@ -215,6 +215,46 @@ function exprRect(breed) {
   return { x: (e.x - fx) / fw, y: (e.y - fy) / fh, w: e.w / fw, h: e.h / fh };
 }
 
+// Ria mèo 3D: mỗi bên má một chùm 3 que mảnh thon đầu, mọc từ mặt trước ngang tầm miệng, xoè lên / ngang / xuống và chìa
+// ra ngoài mép thân (hơi chếch về trước). Gốc chùm là `home` (toạ độ thân, trên mặt trước); Cat.jelly dời gốc theo thân mềm mỗi frame.
+// Mèo lông sẫm (tuxedo, mặt nạ Xiêm) dùng màu sáng lidInk cho khỏi chìm. Que quá mảnh nên không viền toon, không đổ bóng.
+// Mềm: que cong rũ xuống ở đầu ngọn, thon dần tới đầu nhọn, màu pha 30% màu lông cho dịu; Cat.jelly cho cả chùm đung đưa trễ theo thân.
+const whiskerGeo = {};
+function whiskerGeometry(s) {
+  if (whiskerGeo[s]) return whiskerGeo[s];
+  // que dựng theo +y trước khi xoay; local +x quay thành hướng xuống ở bên s = 1, hướng lên ở bên s = -1 -> rũ = s·x
+  const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(), new THREE.Vector3(0, .11, 0), new THREE.Vector3(s * .04, .2, 0));
+  const geo = new THREE.TubeGeometry(curve, 10, .0045, 5), pos = geo.attributes.position, p = new THREE.Vector3();
+  for (let i = 0; i <= 10; i++) {
+    const center = curve.getPointAt(i / 10), k = 1 - .75 * i / 10;
+    for (let j = 0; j <= 5; j++) {
+      const n = i * 6 + j;
+      p.fromBufferAttribute(pos, n).sub(center).multiplyScalar(k).add(center);
+      pos.setXYZ(n, p.x, p.y, p.z);
+    }
+  }
+  return (whiskerGeo[s] = geo);
+}
+function buildWhiskers(breed, look, pivot, body) {
+  const color = new THREE.Color(look.lidInk || look.ink).lerp(new THREE.Color(look.fur), .3);
+  const mat = TOON ? toonMat({ color }) : new THREE.MeshLambertMaterial({ color }), r = exprRect(breed);
+  return [-1, 1].map(s => {
+    const x = (r.x + r.w * (.5 + s * .36) - .5) * W, y = (.5 - r.y - r.h * .7) * H;
+    const home = new THREE.Vector3(x, y, frontSurface(x, y) - .005), tuft = new THREE.Group();
+    for (const a of [-.25, 0, .25]) {
+      const hair = new THREE.Mesh(whiskerGeometry(s), mat);
+      // que dựng theo +y: quay nằm ngang chĩa ra ngoài (quanh z), xoè lên / xuống theo a, chếch ra trước .35 rad (quanh y)
+      hair.rotation.set(0, -s * .35, -s * (Math.PI / 2 - a));
+      hair.castShadow = false;
+      hair.userData.noOutline = true;
+      tuft.add(hair);
+    }
+    tuft.position.copy(home).add(body.position);
+    pivot.add(tuft);
+    return [tuft, home, s];
+  });
+}
+
 export function expressionTexture(breed, expr) {
   const key = `expr:${breed}:${expr}`;
   if (textures[key]) return textures[key];
@@ -724,7 +764,8 @@ export function buildRig(breed) {
   // Thân mềm: giữ toạ độ gốc của từng đỉnh thân + vị trí gốc của mặt/tai để mỗi frame uốn lại theo độ lắc (Cat.jelly).
   const bodyBase = Float32Array.from(body.geometry.attributes.position.array);
   const rest = ears.map(node => [node, node.position.clone()]);
-  return { bodyBase, rest, root, hopper, roller, pivot, body, eyes, eyesMat, ears, tail, tailMesh, tailStyle: style, legs, z };
+  const whiskers = BODY_PX[breed].dogEar ? [] : buildWhiskers(breed, cat, pivot, body);
+  return { bodyBase, rest, root, hopper, roller, pivot, body, eyes, eyesMat, ears, tail, tailMesh, tailStyle: style, legs, z, whiskers };
 }
 
 // Lò xo thân mềm theo từng trục: [độ cứng, tỉ lệ tắt, độ nhạy với gia tốc (1 = khối thật: lệch ≈ gia tốc ÷ độ cứng), độ lệch tối đa (m)].

@@ -6,7 +6,7 @@ import { activeOffers, addGems, spendGems } from '../core/gems.mjs';
 import { buyGemPack, buyBooster, buyOffer, coverCoins, ensureGems, contentsOf, timeLeft, OFFER_NAMES } from '../app/store.js';
 import { showRewarded, adReady, adsLeftToday } from '../app/ads.js';
 import { playSound } from '../ui/sound.mjs';
-import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, itemById, previewDeco, slotOf, shopCatalog, shopStatus, buyToStock, isSurface } from '../deco/deco-data.mjs';
 import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, getBoosters, priceTag, gemTag, getWallet, setWallet, noteEvent } from '../app/shared.js';
 import { decoUnlockedLevel, isZoneOpen, dragScroll } from './areas.js';
 import { decoVisible, cost, thumbOf } from './deco-panel.js';
@@ -86,7 +86,7 @@ export function renderShopDeco() {
     const key = entry.slot || entry.cat;
     rows.set(key, [...(rows.get(key) || []), item]);
   });
-  const rank = key => (key === 'walls' ? -2 : key === 'floors' ? -1 : 0) + (rows.get(key).some(([, status]) => status === 'buy' || status === 'poor' || status === 'owned') ? 0 : 10);
+  const rank = key => (key === 'walls' ? -3 : key === 'floors' ? -2 : key === 'facade' ? -1 : 0) + (rows.get(key).some(([, status]) => status === 'buy' || status === 'poor' || status === 'owned') ? 0 : 10);
   const keys = [...rows.keys()].sort((a, b) => rank(a) - rank(b));
   const card = ([entry, status]) => {
     const node = document.createElement('button');
@@ -109,11 +109,11 @@ export function renderShopDeco() {
   premium.sort(([a], [b]) => (a.cat !== 'furniture') - (b.cat !== 'furniture')); // đồ (vườn gốc rồi mở rộng) trước, rào / nền sau
   const sections = premium.length ? [section(`<i class="premium-mark" aria-hidden="true"></i>Japanese Garden<small>${premium.filter(([, status]) => status === 'owned').length}/${premium.length} owned</small>`, premium, 'shop-deco-wrap')] : [];
   sections[0]?.classList.add('premium-set');
-  sections.push(...['walls', 'floors'].filter(key => rows.has(key)).map(key => {
+  sections.push(...['walls', 'floors', 'facade'].filter(key => rows.has(key)).map(key => {
     const items = rows.get(key), owned = items.filter(([, status]) => status === 'owned').length;
     return section(`${names[key]}<small>${owned}/${items.length} owned</small>`, items, 'shop-deco-strip');
   }));
-  const furniture = keys.filter(key => key !== 'walls' && key !== 'floors').flatMap(key => rows.get(key));
+  const furniture = keys.filter(key => !isSurface(key)).flatMap(key => rows.get(key));
   if (furniture.length) sections.push(section('Decoration', furniture, 'shop-deco-wrap'));
   $('shop-deco-grid').replaceChildren(...sections);
 }
@@ -146,7 +146,7 @@ function buyDeco(entry) {
   noteEvent('style');
   refreshWallet();
   playSound('reward');
-  showToast(entry.slot ? `Bought ${entry.name}! Tap the ${itemById(entry.slot).name.toLowerCase()} in Deco to swap` : `Bought ${entry.name}! Tap the ${entry.cat === 'walls' ? ZONES[entry.zone].cats.walls.toLowerCase() : ZONES[entry.zone].cats.floors.toLowerCase()} in Deco to use it`);
+  showToast(entry.slot ? `Bought ${entry.name}! Tap the ${itemById(entry.slot).name.toLowerCase()} in Deco to swap` : `Bought ${entry.name}! Tap the ${ZONES[entry.zone].cats[entry.cat].toLowerCase()} in Deco to use it`);
   renderShopDeco();
   renderShopBoosters();
   shopBurst($('shop-deco-grid').querySelector(`[data-id="${entry.id}"]`));

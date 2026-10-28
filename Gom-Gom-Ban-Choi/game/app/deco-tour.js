@@ -2,7 +2,7 @@
 // Chỉ vẽ và chạy bước; nội dung bước (chỗ cần sáng, lời thoại, chuyển tab, tặng quà) do menu/tours.js khai báo (runDecoTour).
 // Một bước: { target: () => Element | {left, top, width, height} | mảng các thứ đó | null, text: chuỗi | () => chuỗi,
 //   next?: nhãn nút (mặc định "Next"), before?: async () => void (chạy trước khi hiện bước), after?: () => void (khi qua bước),
-//   until?: () => boolean, bubble?: 'above' | 'below' | 'speech', gesture?: 'drag' | 'pinch' | 'twist' }.
+//   until?: () => boolean, bubble?: 'above' | 'below' | 'speech', gesture?: 'drag' | 'pinch' | 'twist', image?: đường dẫn ảnh hiện trong bong bóng }.
 // bubble 'speech': bong bóng lời thoại có đuôi, nằm sát cạnh chỗ sáng (vd. mèo đang nói), không có ảnh mèo trong bóng.
 // speaker?: () => rect — bong bóng lời thoại mọc từ người nói (mèo) thay vì theo chỗ sáng; đo không được (mèo khuất, đang ở Shop) thì về bóng thường.
 // Không có text = không hiện bong bóng, chỉ bàn tay minh hoạ cử chỉ (`gesture`) giữa chỗ sáng + nút Skip nhỏ.
@@ -27,8 +27,10 @@ function build() {
     <div class="tutorial-hand deco-tour-hand" aria-hidden="true">👆</div>
     <div class="deco-tour-gesture" aria-hidden="true" hidden><img alt=""></div>
     <div class="tutorial-bubble deco-tour-bubble" role="status">
+      <img class="deco-tour-pic" alt="" hidden>
       <span class="tutorial-avatar" aria-hidden="true">${catMarkup.orange}</span>
       <p></p>
+      <div class="deco-tour-foot" hidden><button class="pill-button deco-tour-next" type="button"></button></div>
     </div>`;
   document.body.append(layer);
   // Không có nút Skip / Next / chấm: chạm bất kỳ đâu (tấm chắn hoặc bong bóng) là qua bước — trừ bước thao tác đang chờ chạm đúng chỗ sáng.
@@ -87,6 +89,12 @@ export function startDecoTour(steps, onDone) {
     const label = (typeof step.text === 'function' ? step.text() : step.text) || '';
     if (text.textContent !== label) text.textContent = label;
     bubble.hidden = !label; // bước chỉ có hình: không bong bóng
+    const nextButton = bubble.querySelector('.deco-tour-next');
+    nextButton.parentElement.hidden = !step.next || tap;
+    if (step.next && nextButton.textContent !== step.next) nextButton.textContent = step.next;
+    const pic = bubble.querySelector('.deco-tour-pic');
+    pic.hidden = !step.image;
+    if (step.image && pic.getAttribute('src') !== step.image) pic.src = step.image;
     // bước thao tác mà không đo được chỗ sáng: chạm đâu cũng qua để khỏi kẹt (bước cử chỉ skippable: luôn cho qua)
     tappable = !(tap && !!box && !step.skippable);
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };
