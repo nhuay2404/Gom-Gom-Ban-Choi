@@ -162,10 +162,12 @@ export async function endLevel(win, reason = '') {
   box.hidden = !unlock;
   if (unlock) box.innerHTML = `<span class="ru-title">Unlocked:</span><div class="ru-items">${UNLOCK_ITEMS[unlock].map(item => `<figure><span class="ru-icon">${item.icon}</span><figcaption>${item.name}</figcaption></figure>`).join('')}</div>`;
   dialog.classList.toggle('has-unlock', !!unlock);
-  $('result-continue').hidden = !unlock;
-  $('result-next').hidden = !win || last || !!unlock;
-  $('result-replay').hidden = !win || !!unlock;
-  $('result-map').hidden = !!unlock;
+  // 5 màn đầu thắng: chỉ có nút Continue (sang màn kế) để người chơi quen nút này.
+  const onlyContinue = !!unlock || (win && !last && index < FORCED_CONTINUE_LEVELS);
+  $('result-continue').hidden = !onlyContinue;
+  $('result-next').hidden = !win || last || onlyContinue;
+  $('result-replay').hidden = !win || onlyContinue;
+  $('result-map').hidden = onlyContinue;
   $('result-retry').hidden = win;
   // Tiếng thắng phát đúng lúc bảng Level Complete hiện (sound.mjs: fade in).
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); if (win) playSound('complete'); }, win ? 0 : 700);
@@ -186,10 +188,16 @@ const DECO_ICON = '<img src="./assets/img/nav/icon-deco-matte.png" alt="">';
 const UNLOCK_ITEMS = {
   garden: [{ name: 'Garden', icon: DECO_ICON }],
   cats: [{ name: 'Orange cat', icon: catMarkup.orange }, { name: 'Gray cat', icon: catMarkup.gray }],
-  decor: [{ name: 'Decoration', icon: DECO_ICON }],
+  decor: [{ name: 'Deco', icon: DECO_ICON }],
 };
 
-$('result-continue').onclick = () => { leaveResult(); menus.runOnboarding(); };
+const FORCED_CONTINUE_LEVELS = 5;
+// Có mở khoá thì chạy onboarding; không thì (5 màn đầu) vào thẳng màn kế.
+$('result-continue').onclick = () => {
+  leaveResult();
+  if ($('result-dialog').classList.contains('has-unlock')) menus.runOnboarding();
+  else startLevel(state.levelIndex + 1);
+};
 
 $('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1); };
 
