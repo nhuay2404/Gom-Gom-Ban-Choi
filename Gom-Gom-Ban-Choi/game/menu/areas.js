@@ -5,7 +5,7 @@ import { GEM_REWARDS } from '../data/economy.mjs';
 import { grantGems, triggerOffer, showOffer, coverCoins } from '../app/store.js';
 import { playSound } from '../ui/sound.mjs';
 import { readText } from '../core/save.mjs';
-import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, areaBefore, areaBuilt, nextArea, nextAreas, unlockArea, AREA_UNLOCK } from '../deco/deco-data.mjs';
+import { ZONES, AREA_NAMES, AREA_ORDER, areaOpen, areaState, areaBefore, areaBuilt, nextArea, unlockArea, AREA_UNLOCK } from '../deco/deco-data.mjs';
 import { $, DEV_MODE, showToast, getDeco, setDeco, refreshWallet, ask } from '../app/shared.js';
 import { builtCount, decoLocked, coin, clearDecoPick, closeDecoPop, renderDeco, decoTab, setDecoTab, clearPreview } from './deco-panel.js';
 import { levelsCleared } from './context.js';
@@ -104,54 +104,48 @@ const areaInfo = area => {
   return { area, cost, before, built, total, coins: Math.min(deco.coins, cost), state: areaState(deco, area, cleared), name: AREA_NAMES[area] };
 };
 
-// Khu kế tiếp hiện thành mảnh đất mờ trong cảnh Deco (room3d.setGhost) + bong bóng giá bám trên đó (placeAreaMarker mỗi khung hình);
-// Đủ điều kiện thì bong bóng đổi xanh và nảy nhanh. Chưa xây đủ khu trước thì thêm dòng "đã xây / tổng".
+// Khu kế tiếp hiện thành mảnh đất mờ trong cảnh Deco + cọc gỗ có dấu "!" ở giữa (xanh lá khi đủ điều kiện mở) (room3d.setGhost). #area-next là vùng chạm
+// trong suốt đè lên cọc (placeAreaMarker mỗi khung hình), chạm mở bảng điều kiện.
 export function renderAreaNext() {
   const marker = $('area-next'), area = $('deco').hidden || devAllZones() || decoLocked ? null : nextArea(getDeco());
-  room3d?.setGhost(area); // tên khu trùng tên ô trong room-layout ZONE_OFFSET
+  room3d?.setGhost(area, !!area && areaInfo(area).state === 'ready'); // tên khu trùng tên ô trong room-layout ZONE_OFFSET
   marker.hidden = !area;
   if (!area) return;
   const info = areaInfo(area);
   marker.dataset.state = info.state;
   marker.setAttribute('aria-label', `${info.name}: how to unlock`);
-  marker.innerHTML = `<b aria-hidden="true">${coin(info.cost)}${info.state === 'build' ? `<small>Build ${info.built}/${info.total}</small>` : ''}</b>`;
 }
 
 export function placeAreaMarker() {
   const marker = $('area-next');
   if (!marker.dataset.state) return;
   const at = nextArea(getDeco()) && !devAllZones() && !decoLocked ? room3d?.screenOfGhost() : null;
-  // Lướt tới vị trí mới thay vì nhảy (neo đổi từ tâm khu sang mép khi khu ra khỏi khung); ra khỏi khung thì mờ dần, không tắt phụt.
+  // Cọc ra khỏi khung: vùng chạm tắt (không chặn chạm vào cảnh).
   marker.classList.toggle('away', !at);
   if (!at) return;
-  markerAt = markerAt && !marker.hidden ? { x: markerAt.x + (at.x - markerAt.x) * .2, y: markerAt.y + (at.y - markerAt.y) * .2 } : at;
   marker.hidden = false;
-  marker.style.transform = `translate3d(${markerAt.x.toFixed(1)}px, ${markerAt.y.toFixed(1)}px, 0)`;
+  marker.style.transform = `translate3d(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px, 0)`;
 }
-let markerAt = null;
 
-// Một dòng trong bảng mở khu: 2 bước (xây đủ khu trước, trả xu); khu thứ hai chỉ ghi "sau khu trước".
+// Một dòng trong bảng mở khu: 2 bước (xây đủ khu trước, trả xu).
 const STEP = (done, text) => `<li class="${done ? 'done' : ''}"><i aria-hidden="true">${done ? '✓' : ''}</i>${text}</li>`;
 function areaRow(info) {
-  const steps = info.state === 'soon' ? STEP(false, `Open the ${AREA_NAMES[info.before].toLowerCase()} first`)
-    : STEP(info.built >= info.total, `Build every spot in the ${AREA_NAMES[info.before].toLowerCase()} <b>${info.built}/${info.total}</b>`)
-      + STEP(info.state === 'ready', `Pay ${coin(info.cost)}`);
+  const steps = STEP(info.built >= info.total, `Build every spot in the ${AREA_NAMES[info.before].toLowerCase()} <b>${info.built}/${info.total}</b>`)
+    + STEP(info.state === 'ready', `Pay ${coin(info.cost)}`);
   return `<section class="area-row" data-state="${info.state}"><h3>${info.name}</h3><ul>${steps}</ul></section>`;
 }
 
-// Chạm bong bóng: bảng 2 khu kế tiếp. Đủ điều kiện thì nút mở; đã xây đủ mà thiếu xu thì bù gem (coverCoins).
+// Chạm cọc: bảng khu kế tiếp, một nút "Pay <giá>" (đóng bằng nút X). Chưa xây đủ thì báo; đã xây đủ mà thiếu xu thì bù gem (coverCoins).
 $('area-next').addEventListener('click', async () => {
   const area = nextArea(getDeco());
   if (!area) return;
   playSound('pick');
-  const infos = nextAreas(getDeco()).map(areaInfo), { state, cost, name } = infos[0];
-  const choices = state === 'ready' ? [{ id: 'open', label: `Open ${coin(cost)}` }]
-    : state === 'coins' ? [{ id: 'cover', label: `Open ${coin(cost)}` }]
-    : [{ id: 'build', label: 'Go build' }];
-  const choice = await ask({ title: 'Next areas', className: 'area-sheet', body: infos.map(areaRow).join(''), choices: [...choices, { id: 'close', style: 'ghost', label: 'Later' }] });
-  if (choice === 'open') return buyArea(area);
-  if (choice === 'cover') return coverCoins(cost, name).then(ok => ok && buyArea(area));
-  if (choice === 'build') { setDeco({ ...getDeco(), zone: zoneOfArea(infos[0].before) }); clearDecoPick(); closeDecoPop(false); renderZoneSwitch(); renderDeco(); applyRoom(getDeco()); }
+  const info = areaInfo(area), { state, cost, name } = info;
+  const choice = await ask({ title: 'Next area', className: 'area-sheet', body: areaRow(info), choices: [{ id: 'pay', label: `Pay ${coin(cost)}` }] });
+  if (choice !== 'pay') return;
+  if (state === 'build') return showToast(`Build every spot in the ${AREA_NAMES[info.before].toLowerCase()} first (${info.built}/${info.total})`);
+  if (state === 'ready') return buyArea(area);
+  if (state === 'coins') return coverCoins(cost, name).then(ok => ok && buyArea(area));
 });
 
 // Vườn mở rộng là phần của khu vườn.

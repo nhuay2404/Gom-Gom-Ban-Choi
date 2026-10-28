@@ -2333,26 +2333,52 @@ export function createRoom() {
     }
     ghost.traverse(node => { node.raycast = () => {}; node.userData.noOutline = true; });
   }
+  // Cọc gỗ đóng giữa mảnh đất + dấu "!" vàng nhún trên đầu (đủ điều kiện mở khu: "!" xanh lá, sáng nhấp nháy). Chạm cọc (nút trong suốt menu/areas.js đặt đè lên,
+  // vị trí từ screenOfGhost) mở bảng điều kiện mở khu. Là vật thể (có viền), nằm ngoài nhóm ghost (kết cấu, không viền).
+  const stake = new THREE.Group(), STAKE_SCALE = 1.6, STAKE_MARK = { wait: '#ffd23f', ready: '#5fd16a' };
+  stake.visible = false;
+  site.add(stake);
+  {
+    const wood = mat('#c98a4b'), ribbon = mat('#ff6b6b'), markMat = mat(STAKE_MARK.wait);
+    const post = new THREE.Mesh(roundedBox(.16, 1.05, .16, 2, .03), wood);
+    post.position.y = .525;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(.11, .16, 4), wood);
+    tip.rotation.y = Math.PI / 4; tip.position.y = 1.13;
+    // Dải vải đỏ buộc quanh đầu cọc (đánh dấu đất), cách mặt cọc 2 cm.
+    const band = new THREE.Mesh(roundedBox(.2, .1, .2, 2, .02), ribbon);
+    band.position.y = .86;
+    const flag = new THREE.Mesh(roundedBox(.3, .16, .03, 1, .01), ribbon);
+    flag.position.set(.24, .88, 0); flag.rotation.z = -.18;
+    const mark = new THREE.Group();
+    const bar = new THREE.Mesh(roundedBox(.18, .44, .18, 2, .07), markMat);
+    bar.position.y = .42;
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(.11, ...sphereSegments(.11)), markMat);
+    mark.add(bar, dot);
+    mark.position.y = 1.5;
+    stake.add(post, tip, band, flag, mark);
+    Object.assign(stake.userData, { mark, markMat });
+    // Camera Deco nhìn từ ~12 m: cỡ thật (cọc 1.1 m) chỉ còn vài chục px, phóng to cho dễ thấy / dễ chạm.
+    stake.scale.setScalar(STAKE_SCALE);
+    stake.traverse(node => { node.raycast = () => {}; });
+  }
   let ghostZone = null, ghostSize = '';
-  function setGhost(zone) {
+  // ready: đủ điều kiện mở khu (xây đủ + đủ xu) -> dấu "!" xanh lá sáng nhấp nháy.
+  function setGhost(zone, ready = false) {
     ghostZone = zone ?? null;
-    ghost.visible = !!ghostZone;
+    ghost.visible = stake.visible = !!ghostZone;
+    if (stake.userData.ready !== ready) { stake.userData.ready = ready; stake.userData.markMat.color.set(ready ? STAKE_MARK.ready : STAKE_MARK.wait); }
     if (!ghostZone) return;
     const [ox, oz] = ZONE_OFFSET[zone], r = zone === 'backyard' || zone === 'kinder' ? zoneRect(zone) : { x0: ox - HALF, x1: ox + HALF, z0: oz - HALF, z1: oz + HALF };
     const size = `${r.x1 - r.x0}x${r.z1 - r.z0}`;
     if (size !== ghostSize) { ghostSize = size; buildGhost((r.x1 - r.x0) / 2, (r.z1 - r.z0) / 2); }
     ghost.position.set((r.x0 + r.x1) / 2, 0, (r.z0 + r.z1) / 2);
+    stake.position.copy(ghost.position);
   }
+  // Điểm giữa cọc + mũi tên trên màn hình (chỗ đặt vùng chạm); cọc ra ngoài khung thì null.
   function screenOfGhost() {
     if (!ghostZone || !container) return null;
-    // Tâm mảnh đất nằm trong khung thì neo ở tâm; không thì neo ở mép phía khu đang xem (camera Deco khoá vào khu đang xem).
-    const inView = () => topPoint.z <= 1 && Math.abs(topPoint.x) < .85 && Math.abs(topPoint.y) < .85;
-    topPoint.set(ghost.position.x, 1.1, ghost.position.z).project(camera);
-    if (!inView()) {
-      const from = zoneCenter(zoneId), dx = from.x - ghost.position.x, dz = from.z - ghost.position.z, d = Math.hypot(dx, dz) || 1, k = Math.min(1, (HALF - 1.2) / d);
-      topPoint.set(ghost.position.x + dx * k, 1.1, ghost.position.z + dz * k).project(camera);
-      if (topPoint.z > 1 || Math.abs(topPoint.x) > 1.1 || Math.abs(topPoint.y) > 1.1) return null;
-    }
+    topPoint.set(stake.position.x, 1.1 * STAKE_SCALE, stake.position.z).project(camera);
+    if (topPoint.z > 1 || Math.abs(topPoint.x) > 1 || Math.abs(topPoint.y) > 1) return null;
     const rect = renderer.domElement.getBoundingClientRect();
     return { x: rect.left + (topPoint.x + 1) / 2 * rect.width, y: rect.top + (1 - topPoint.y) / 2 * rect.height };
   }
@@ -2652,6 +2678,11 @@ export function createRoom() {
     }
     // Deco: món có đồ mới mua (ở Shop) thay được thì sáng lên nhấp nháy; món đang mở bảng đổi sáng nhẹ đứng yên.
     const pulse = (Math.sin(t * 4) + 1) / 2;
+    if (stake.visible) {
+      const { mark, ready } = stake.userData;
+      mark.position.y = 1.5 + (ready ? (Math.sin(t * 8) + 1) / 2 : pulse) * .15;
+      glow(mark, ready ? .15 + pulse * .35 : 0);
+    }
     for (const [slot, node] of Object.entries(furniture)) {
       const here = decoMode && node.visible && itemById(node.userData.itemId)?.zone === zoneId;
       glow(node, !here ? 0 : highlights.has(slot) ? .12 + pulse * .28 : slot === selectedSlot ? .18 : 0);
