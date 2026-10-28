@@ -163,7 +163,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 | # | Chỗ đặt | Thưởng | Giới hạn / ngày | So với bản gem |
 |---|---|---|---|---|
 | 1 | Màn continue (hết lượt) | +3 lượt | 5, mỗi lần chơi tối đa 1, chỉ làm continue đầu tiên | Gem cho +5 và được continue tiếp |
-| 2 | Bảng thắng: nút "▶ +N" (ghi đúng số xu thêm) | Lần 1–2 trong ngày +50% xu màn, từ lần 3 +20% | **Không giới hạn** | — |
+| 2 | Bảng thắng: nút "▶ +N" (ghi đúng số xu thêm) | Lần 1–2 trong ngày +50% xu màn, lần 3–5 +20%, từ lần 6 +10% | **Không giới hạn** | — |
 | 3 | Popup booster hết kho | 1 booster loại đó | 3 (chung mọi loại) | Gem mua bao nhiêu cũng được, gói ×3 |
 | 4 | Nhận xu idle ở Deco: **vòng nhân** (kim chạy qua lại trên nửa vòng tròn, nút "Watch video" ghi số xu theo ô kim đang chỉ, bấm là kim dừng; 28/10, theo mẫu UI "Multiplier") | x1.2 (30% + 30% cung) · x1.5 (13% + 13%) · **x4 = +300%** (14%, giữa cung): trung bình +67%. x4 trúng tối đa 1 lần / ngày, trúng rồi ô đó thành x1.5 | 2 | `IDLE_RATE` giảm 0.015 → 0.011 để tổng xu idle một ngày ≈ như cũ (mô phỏng: người chơi trung bình mở khu lệch ≤ 2 màn) |
 | 5 | Shop: "Gem miễn phí" | 20 gem (tăng từ 10, 22/10) | 2 | 40 gem ≈ $0.40 |
@@ -178,7 +178,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 - **Interstitial**: tắt ở đầu bản test (`INTERSTITIAL_ON = false`). Bật cho nhóm A/B từ tuần 3: chỉ sau thắng, từ màn 20, mỗi 3 màn, cách nhau ≥ 180 s,
   không sau thua, không trong 60 s sau một RV. Mọi giao dịch IAP tắt interstitial vĩnh viễn.
 
-Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }`
+Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2, 0.2, 0.2, 0.1], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }`
 (`null` = không giới hạn). Interstitial: chưa làm.
 
 ---
@@ -246,22 +246,52 @@ Mô phỏng có ads: `simulatePlayer(..., { ads: { bonusCoins: lượt / ngày, 
 `tools/economy/economy-sim.mjs` (editor Kinh tế chưa có cột này).
 Mục tiêu: luỹ kế "đủ mua món gốc" nằm trong **85–110%** ở mọi mốc stage, với cả người không xem ads lẫn có xem.
 
-### 7.1 Giá khu theo công thức R (23/10)
+### 7.1 Giá khu theo công thức R (23/10; nhịp 15 màn từ 28/10)
 Mở khu không theo màn: xây đủ món gốc khu trước + trả xu; người chơi thấy trước giá ở bảng "2 khu kế tiếp". Giá mỗi khu **cố định**, tính một lần
-từ R (xu thắng màn, bỏ dao động) ở màn mốc thiết kế 10n, n = thứ tự khu (vườn 2 = 1 … nhà trẻ = 7). Màn mốc chỉ để tính giá, không khoá gì.
+từ R (xu thắng màn, bỏ dao động) ở **màn mốc thiết kế Lₙ**, n = thứ tự khu (vườn 2 = 1 … nhà trẻ = 7). Lₙ chỉ để tính giá (và nhịp cho tool mô phỏng),
+**không phải mốc mở khu**: ai kiếm xu nhanh (ads, nhiệm vụ, bù gem) mở sớm hơn, đó là phần thưởng cho sự chăm chỉ.
 
 ```
-giá mở khu        = 1.3 × R(10n)            (làm tròn 50 xu)
-tổng giá món gốc  = k × R(10n)              k = 13 cho 2 khu đầu, 30 từ khu thứ 3
+màn mốc thiết kế  Lₙ = 10n cho 2 khu đầu; từ khu thứ 3: 20 + 15 × (n − 2)      (10, 20, 35, 50, 65, 80, 95, …)
+giá mở khu        = 1.3 × R(Lₙ)             (làm tròn 50 xu)
+tổng giá món gốc  = k × R(Lₙ)               k = 1.3 / màn × số màn tới mốc khu kế (2 khu đầu), 30 / 15 màn từ khu thứ 3
+                                            → vườn 2: 13 · phòng khách (15 màn): 19.5 · từ phòng ngủ: 30
 giá một món       = tổng giá món gốc × giá gốc món / tổng giá gốc món gốc của khu (bảng DECO; tường / sàn / kiểu khác cùng hệ số)
 vườn gốc          = giá DECO × 1.6          (khu hướng dẫn)
 ```
 
-Hằng số: `economy.mjs` `ZONE_PRICING` (một bản, không qua Remote Config). Bảng đã tính: `deco-data.mjs` `AREA_UNLOCK` / `ZONE_PRICE_MULT`.
-k = 13 ở 2 khu đầu để 20 màn đầu vẫn vừa mua đủ món gốc (test kinh tế); k = 30 = mức trung bình các khu cũ đã dò tay (26–34 × R).
+**Vì sao giãn nhịp (28/10):** game có 150 màn mà 7 khu. Với nhịp 10, người chơi chăm nhất (ads mọi màn, đủ nhiệm vụ + Quests, idle luôn x4) mua hết
+món gốc ở ~màn 74 và mọi đồ ở ~màn 117, rồi hết thứ để mua. Tăng k đều thì chỉ đẩy lùi vài màn mà phạt người không xem ads (k = 42: mua đủ mọi đồ
+ngày 56). Giãn nhịp giữ đường cong "giá và thu cùng tăng" ([[cozydive-bycer-relaxing-progression-curve]]), không phạt người chơi miễn phí
+([[f2pdive-bycer-ethics-player-friendly-design]]), và là nhịp ra nội dung ([[liveops-vasiuk-content-lifecycle-and-sink-techniques]]).
+Thử nhịp 20 trước (món gốc xong ở màn 99–142, khu mới mỗi ~2–2.5 ngày); chốt **nhịp 15** vì khu mới có thể làm nhanh: khu tới sớm hơn (~1.5–2 ngày
+một khu), đội nội dung cần ra khu mới cứ ~15 màn. Kèm theo: ads cuối màn từ lần 6 trong ngày còn +10% (mục 5).
 
-| Khu | n | Mở khu (cũ) | Tổng món gốc (cũ) |
+Hằng số: `economy.mjs` `ZONE_PRICING` (một bản, không qua Remote Config). Bảng đã tính: `deco-data.mjs` `AREA_UNLOCK` / `ZONE_PRICE_MULT`.
+
+| Khu | n | Màn mốc thiết kế | Mở khu (nhịp 10 cũ) | Tổng món gốc (nhịp 10 cũ) |
+|---|---|---|---|---|
+| Vườn 2 | 1 | 10 | 650 (650) | 6,480 (6,480) |
+| Phòng khách | 2 | 20 | 1,350 (1,350) | 20,480 (13,660) |
+| Phòng ngủ | 3 | 35 | 2,600 (2,150) | 59,650 (49,660) |
+| Bếp | 4 | 50 | 3,950 (3,000) | 91,590 (69,640) |
+| Phòng tắm | 5 | 65 | 5,600 (3,950) | 129,020 (91,610) |
+| Sân sau | 6 | 80 | 7,450 (5,000) | 171,520 (115,740) |
+| Nhà trẻ | 7 | 95 | 9,600 (6,150) | 221,360 (142,320) |
+
+Mô phỏng 150 màn (người chơi trung bình 12 ván / ngày; bản tạm có tính nhiệm vụ ngày + Quests ước lượng):
+
+| Kiểu | Mở khu ở màn (vườn 2 → nhà trẻ) | Mua đủ món gốc | Mua đủ mọi đồ |
 |---|---|---|---|
+| Thực tế (ads ~6 màn / ngày, idle thường, nhiệm vụ + Quests) | 7, 12, 23, 39, 53, 67, 81 | màn 95 (ngày 11) | màn 150 (ngày 18) |
+| Tối đa (ads mọi màn, idle luôn x4, nhiệm vụ + Quests) | 7, 12, 22, 37, 49, 61, 76 | màn 87 (ngày 10) | màn 139 (ngày 17) |
+| Không ads, không nhiệm vụ | 11, 20, 34, 54, 73, 92, 109 | màn 126 (ngày 15) | màn 150 (ngày 58) |
+
+**Thêm khu mới:** thêm id vào `AREA_ORDER` (deco-data.mjs) + món ở `DECO`, giá tự ra theo vị trí (khu thứ 8: màn mốc 110, …). Kiểm bằng
+`npm run economy` và mô phỏng (`tools/economy/economy-sim.mjs`). Đổi nhịp cả game: `pace` / k / 1.3 trong `ZONE_PRICING`.
+Còn mở: chỗ tiêu xu lặp lại lúc chờ khu mới (bộ đồ xoay vòng / đồ cho mèo) cho người chơi đi trước nội dung.
+
+---|---|---|---|
 | Vườn 2 | 1 | 650 (550) | 6,480 (6,156) |
 | Phòng khách | 2 | 1,350 (1,550) | 13,660 (12,320) |
 | Phòng ngủ | 3 | 2,150 (2,550) | 49,660 (50,715) |
@@ -337,7 +367,7 @@ Wiki không có benchmark cho các chỉ số này ([[concept-analytics-and-kpis
 | `GEM_PACKS` | 6 gói mục 8.1, kèm `id` sản phẩm store |
 | `COIN_TOP_UP` | `{ gemsPerLevel: 20, minGems: 1 }` (thay `COIN_BAGS`: bù xu khi thiếu, không có túi xu) |
 | `OFFERS` | `starter` / `rescue` / `builder` như mục 8 (Builder: xu = 12 × thưởng màn thay cho "2 món gốc") |
-| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }` |
+| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2, 0.2, 0.2, 0.1], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }` |
 | `REWARD_FLAT_FROM` | 0 = thưởng tăng mãi (đặt > 0 để dừng tăng từ màn đó) |
 | bỏ | `BOOSTER_PRICE` (xu), `COIN_PACKS`, `STARTER_PACK` |
 
@@ -362,7 +392,7 @@ grep -rn "ADS-SDK\|IAP-SDK" game
 | Chỗ đặt | File | Khi nào hiện | Thưởng |
 |---|---|---|---|
 | `continue` | `game/play/continue.js` | Màn "So close!" khi thua (đạt ≥ 70% mục tiêu), chỉ ở lần continue đầu của ván | +3 lượt (thua vì hết chỗ: +1 búa + 2 lượt) |
-| `bonusCoins` | `game/play/result.js` | Nút "▶ +N" dưới dòng xu ở bảng thắng (khi màn có xu), mọi lần thắng | Lần 1–2 trong ngày +50% xu màn, sau đó +20% |
+| `bonusCoins` | `game/play/result.js` | Nút "▶ +N" dưới dòng xu ở bảng thắng (khi màn có xu), mọi lần thắng | Lần 1–2 trong ngày +50% xu màn, lần 3–5 +20%, từ lần 6 +10% |
 | `booster` | `game/app/store.js` (`offerBooster`) | Popup khi chạm booster đã hết trong ván | 1 booster loại đó |
 | `idle` | `game/menu/idle-coins.js` | Nút "▶ +N" hiện 8 giây sau khi nhận xu idle ở Deco, 1 lần / ngày | +50% số xu vừa nhận |
 | `gems` | `game/menu/shop.js` | Dòng "▶ Free 💎20" đầu Shop | 20 gem |
