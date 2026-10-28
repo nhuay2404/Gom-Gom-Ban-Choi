@@ -108,10 +108,25 @@ function attachWheel(pending) {
     }
     if (locked === null && dialog.open) frame = requestAnimationFrame(step);
   };
-  frame = requestAnimationFrame(step);
-  // capture: chốt ô trước khi ask() đóng dialog
+  // Vẽ khung đầu ngay (nút có số + hệ số từ đầu, bấm sớm vẫn chốt được ô), các khung sau theo requestAnimationFrame
+  step(start);
+  // Bấm lần 1: kim dừng, số xu đã nhân hiện vàng + nút toả sáng (giữ dialog mở). Bấm lần 2 mới cho ask() đóng dialog → xem ads.
+  // capture: chặn trước listener đóng dialog của ask()
   dialog.addEventListener('click', event => {
-    if (event.target.closest('[data-choice="ad"]')) { locked = shown; cancelAnimationFrame(frame); }
+    if (!event.target.closest('[data-choice="ad"]') || locked !== null) return;
+    locked = shown; cancelAnimationFrame(frame);
+    adButton.classList.add('locked');
+    // Lớp sáng riêng nằm ngay sau nút (cùng chỗ, nhô ra ngoài): pseudo của chính nút không thể vừa sau mặt nút vừa trên nền popup
+    const glow = document.createElement('span');
+    glow.className = 'idle-ad-glow';
+    adButton.before(glow);
+    adButton.querySelector('.idle-video-copy > span').textContent = 'Watch video to claim';
+    // Đo sau khi đổi chữ (nút có thể đổi cỡ); popup có zoom (base.css --s) nên quy toạ độ màn hình về toạ độ CSS của khung chứa.
+    requestAnimationFrame(() => {
+      const box = glow.offsetParent ?? dialog, at = adButton.getBoundingClientRect(), from = box.getBoundingClientRect(), k = from.width / box.offsetWidth || 1;
+      Object.assign(glow.style, { left: `${(at.left - from.left) / k - box.clientLeft}px`, top: `${(at.top - from.top) / k - box.clientTop + box.scrollTop}px`, width: `${at.width / k}px`, height: `${at.height / k}px` });
+    });
+    event.stopPropagation();
   }, true);
   return () => locked;
 }
