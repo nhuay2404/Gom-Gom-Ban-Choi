@@ -48,7 +48,8 @@ export const COMEBACK_GIFT_MOVES = remote('COMEBACK_GIFT_MOVES', 1);
 //   Nhiều mèo = nhiều xu (tối đa MAX_ROOM_CATS con trong nhà). Giữ tổng nhỏ (~5–15% xu cả game của người chơi trung bình, đủ 6 mèo)
 //   để không thay gói xu / không làm người chơi bớt chơi màn.
 //   0.015 (trước 0.44): mô phỏng economy-sim cho xu idle chiếm ~12% tổng xu (trung bình), 14% (casual), 7% (chơi nhiều); 0.44 là ~80%.
-export const IDLE_RATE = remote('IDLE_RATE', 0.015);
+// 28/10: 0.011 (trước 0.015) để bù vòng nhân khi nhận (REWARDED_ADS.idleWheel, thưởng thêm trung bình +67%, 2 lần / ngày): tổng xu idle một ngày ≈ như cũ.
+export const IDLE_RATE = remote('IDLE_RATE', 0.011);
 export const IDLE_CAP_HOURS = remote('IDLE_CAP_HOURS', 8);
 export const IDLE_FROM_LEVEL = remote('IDLE_FROM_LEVEL', 10);
 // 26/10: 1 phút (trước 60, 30). Phải tích ít nhất bấy nhiêu phút mới nhận được (bong bóng xu chỉ hiện khi đủ): không nhận lắt nhắt liên tục. Xu vẫn tính từ đầu, không mất phần đã tích.
@@ -161,9 +162,12 @@ export const OFFERS = remote('OFFERS', {
 // caps = số lần tối đa MỖI NGÀY cho từng chỗ đặt (null = không giới hạn): continue (+lượt khi thua) · bonusCoins (thêm xu ở bảng thắng) ·
 // booster (1 booster khi hết kho) · idle (thêm xu idle) · gems (gem miễn phí ở Shop). gems = gem mỗi lần xem ở Shop.
 // coinBonus = xu thêm ở bảng thắng theo lần xem thứ 1, 2, … trong ngày (tỉ lệ xu của màn; hết danh sách thì giữ số cuối):
-//   2 lần đầu +50%, từ lần 3 +20%, xem bao nhiêu cũng được. idleBonus = xu thêm khi xem ads lúc nhận xu idle (tỉ lệ số vừa nhận).
+//   2 lần đầu +50%, từ lần 3 +20%, xem bao nhiêu cũng được. idleWheel = vòng nhân lúc nhận xu idle
+//   (kim chạy qua lại trên cung, chạm nút xem ads là kim dừng): mỗi ô { bonus: xu thêm theo tỉ lệ số vừa nhận, share: bề rộng ô trên cung = tỉ lệ
+//   rơi vào ô }. Thưởng thêm trung bình = Σ share × bonus = +67%. Ô +300% chỉ trúng được jackpotPerDay lần mỗi ngày, trúng rồi thì ô đó hiện +50%.
 //   Mô phỏng (tools/economy/economy-sim.mjs, ads.bonus): người xem mọi màn vẫn chỉ đủ ~90–100% giá món gốc ở màn 20–70.
-export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 });
+export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2],
+  idleWheel: [{ bonus: 0.2, share: 0.3 }, { bonus: 0.5, share: 0.13 }, { bonus: 3, share: 0.14 }, { bonus: 0.5, share: 0.13 }, { bonus: 0.2, share: 0.3 }], jackpotPerDay: 1 });
 
 // Continue khi thua: giá gem tăng dần trong CÙNG một lần chơi (hết danh sách = không continue nữa).
 //   moves = lượt cộng khi trả gem · adMoves = lượt cộng khi xem ads (chỉ ở lần continue đầu) · stuckMoves = lượt cộng khi thua vì hết chỗ
