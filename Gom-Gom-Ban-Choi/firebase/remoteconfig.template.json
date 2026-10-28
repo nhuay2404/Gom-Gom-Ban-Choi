@@ -149,7 +149,7 @@
         },
         "REWARDED_ADS": {
           "defaultValue": {
-            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":2,\"gems\":2},\"gems\":20,\"coinBonus\":[0.5,0.5,0.2],\"idleWheel\":[{\"bonus\":0.2,\"share\":0.3},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":3,\"share\":0.14},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":0.2,\"share\":0.3}],\"jackpotPerDay\":1}"
+            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":2,\"gems\":2},\"gems\":20,\"coinBonus\":[0.5,0.5,0.2,0.2,0.2,0.1],\"idleWheel\":[{\"bonus\":0.2,\"share\":0.3},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":3,\"share\":0.14},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":0.2,\"share\":0.3}],\"jackpotPerDay\":1}"
           },
           "valueType": "JSON"
         },
