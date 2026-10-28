@@ -24,6 +24,31 @@ function flyOne(layer, kind, from, to, delay) {
   ], { duration: FLY_MS, delay, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'both' }).finished.then(() => icon.remove());
 }
 
+// Ảnh quà (booster, món deco, mèo) bay nguyên con từ ô quà vào nút đích (nút Play / tab Deco), thu nhỏ dần; đích nảy khi chạm.
+export function flyArt(from, src, target) {
+  if (reduceMotion.matches || !from?.width || !src || !target?.getClientRects().length) return Promise.resolve();
+  const layer = document.createElement('div');
+  layer.className = 'reward-fly';
+  layer.popover = 'manual';
+  document.body.append(layer);
+  layer.showPopover();
+  const icon = document.createElement('img');
+  icon.className = 'reward-fly-art';
+  icon.src = src; icon.alt = '';
+  icon.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px`;
+  layer.append(icon);
+  const box = target.getBoundingClientRect();
+  const dx = box.left + box.width / 2 - (from.left + from.width / 2), dy = box.top + box.height / 2 - (from.top + from.height / 2);
+  const end = Math.max(.15, Math.min(1, box.height / from.height));
+  return icon.animate([
+    { transform: 'none' },
+    { transform: 'translateY(-30px) scale(1.08)', offset: .2 },
+    { transform: `translate(${dx}px,${dy}px) scale(${end})`, opacity: .9 },
+  ], { duration: 800, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'both' }).finished
+    .then(() => { target.classList.remove('coin-hit'); void target.offsetWidth; target.classList.add('coin-hit'); })
+    .finally(() => layer.remove());
+}
+
 // from: chỗ bắt đầu (DOMRect của nút nhận, đo TRƯỚC khi cập nhật dữ liệu: bảng vẽ lại ngay sau đó); reward: { coins, gems }.
 export function flyReward(from, { coins = 0, gems = 0 } = {}) {
   if (reduceMotion.matches || !from?.width) return Promise.resolve();

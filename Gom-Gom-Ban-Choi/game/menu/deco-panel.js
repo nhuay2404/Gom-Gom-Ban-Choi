@@ -4,13 +4,14 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { readText, writeText } from '../core/save.mjs';
-import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive, isSurface } from '../deco/deco-data.mjs';
+import { ZONES, ZONE_IDS, CATALOG, slotGroups, itemById, itemStatus, applyAction, previewDeco, isOwned, catalogFor, slotOf, shopStatus, buyToStock, ownedOptions, useItem, freshKeys, clearFresh, isExclusive, isSurface, nextArea, areaState } from '../deco/deco-data.mjs';
 import { $, showToast, getDeco, setDeco, refreshWallet, noteEvent, getWallet, setWallet, gemTag } from '../app/shared.js';
 import { coverCoins, ensureGems } from '../app/store.js';
 import { spendGems } from '../core/gems.mjs';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch, dragScroll } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
 import { startIdle, idleDot } from './idle-coins.js';
+import { levelsCleared } from './context.js';
 
 export let decoPick = null; // món gốc đang xem trước (thẻ chưa xây vừa chạm)
 
@@ -45,7 +46,7 @@ let popPreview = null; // kiểu chưa mua đang xem thử trong bảng (chạm 
 
 let lastCardZone = '';
 
-// Chấm đỏ tab Deco: món đồ (thẻ chưa xây) vừa mở khoá + đủ xu mua mà người chơi chưa thấy. Vào Deco là tính đã thấy (chấm tắt,
+// Chấm đỏ tab Deco: món đồ (thẻ chưa xây) vừa mở khoá + đủ xu mua, hoặc khu kế tiếp vừa đủ điều kiện mở, mà người chơi chưa thấy. Vào Deco là tính đã thấy (chấm tắt,
 // lưu máy); các thẻ đó gắn nhãn NEW tới khi rời Deco. Save chưa có danh sách (máy mới / bản cũ): coi mọi món hiện có là đã thấy.
 const DECO_SEEN_KEY = 'gomgom-deco-seen';
 
@@ -55,7 +56,8 @@ export function clearDecoNew() { decoNew = new Set(); }
 
 const buyableIds = () => {
   const deco = getDeco(), unlocked = decoUnlockedLevel();
-  return ZONE_IDS.filter(zone => isZoneOpen(zone)).flatMap(decoBases).filter(base => !isOwned(deco, base) && itemStatus(deco, base, unlocked) === 'buy').map(base => base.id);
+  const area = nextArea(deco), areaReady = area && areaState(deco, area, levelsCleared()) === 'ready' ? [`area:${area}`] : [];
+  return ZONE_IDS.filter(zone => isZoneOpen(zone)).flatMap(decoBases).filter(base => !isOwned(deco, base) && itemStatus(deco, base, unlocked) === 'buy').map(base => base.id).concat(areaReady);
 };
 
 function seenIds() {

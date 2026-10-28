@@ -11,6 +11,8 @@ import { $, showToast, getDeco, setDeco, refreshWallet, getBoosters, storeBooste
 import { grantGems } from '../app/store.js';
 import { loginShell, loginGrid } from './login-view.mjs';
 import { decoThumbnail, decoSpinner } from './room.js';
+import { flyReward, flyArt } from './reward-fly.js';
+import { liftWallet } from './wallet-lift.js';
 
 const fmt = n => n.toLocaleString('en-US');
 // Ảnh thưởng 3D theo đúng thứ tự LOGIN_CALENDAR, dựa trên booster và vật phẩm gốc trong game.
@@ -192,12 +194,24 @@ function renderPanel(page, from) {
   dialog.querySelector('.login-note').hidden = true;
 }
 
+// Quà vừa nhận bay vào chỗ của nó: booster -> nút Play, xu / gem -> ví, món deco / mèo -> tab Deco.
+// from / src đo TRƯỚC khi vẽ lại bảng (ảnh của trang đang xem, model 3D đang lắc thì đo canvas).
+function flyCell(cell, from, src) {
+  const wallet = flyReward(from, { coins: cell.coins ? loginCoins(cell) : 0, gems: cell.gems ?? 0 });
+  const target = cell.booster ? $('home-play') : (cell.item || cell.cat) ? $('tabbar').querySelector('[data-tab="deco"]') : null;
+  return Promise.all([wallet, target && flyArt(from, src, target)]);
+}
+
 function claimToday() {
   const got = claimLogin(loadLogin(), Date.now());
   if (got.error) return showToast(got.error);
   saveLogin(got.state);
-  const note = grantCell(LOGIN_CALENDAR[got.index], got.index);
-  refreshWallet();
+  const cell = LOGIN_CALENDAR[got.index], img = dialog?.querySelectorAll('.login-cell')[got.index - first]?.querySelector('.login-icon>img');
+  const from = (spin?.page === got.index ? spin.model.canvas : img)?.getBoundingClientRect(), before = { ...getDeco() };
+  const note = grantCell(cell, got.index);
+  // Ví giữ số cũ tới khi xu / gem bay tới.
+  if (from?.width && !reduceMotion.matches) { $('map-coins').textContent = fmt(before.coins); flyCell(cell, from, img?.src).then(refreshWallet); }
+  else refreshWallet();
   playSound('reward');
   showToast(`Day ${got.index + 1} gift: ${note}!`);
   // Nhận xong: ô vừa nhận hiện dấu tích một lúc rồi biến mất, quà ngày mai thành trang đầu.
@@ -219,10 +233,12 @@ export function openLogin() {
     else if (event.target.closest('[data-nav]')) goPage(pageNow() + Number(event.target.closest('[data-nav]').dataset.nav));
   });
   // Biến riêng của hộp này: sự kiện close tới trễ không được xoá hộp mới mở lại ngay sau đó.
-  box.addEventListener('close', () => { if (dialog === box) { dropModels(); dialog = null; } box.remove(); });
+  box.addEventListener('close', () => { if (dialog === box) { dropModels(); dialog = null; } dropWallet(); box.remove(); });
   document.body.append(box);
   dialog = box;
   box.showModal();
+  // Ví nằm trên lớp mờ của popup để xu / gem bay vào thấy rõ.
+  const dropWallet = liftWallet();
   // Đo bề ngang trang sau khi popup đã hiện (trước đó clientWidth = 0).
   renderPanel();
   grid().addEventListener('scroll', onScroll, { passive: true });
