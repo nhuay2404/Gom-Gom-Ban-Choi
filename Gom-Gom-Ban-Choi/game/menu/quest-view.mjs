@@ -11,7 +11,7 @@ export function questRow(q, index) {
   const pct = q.n > 0 ? Math.round(progress / q.n * 100) : 0;
   const track = Object.hasOwn(labels, q.track) ? q.track : 'level';
   // Quest tặng gem hiện gem thay đồng xu. Chưa xong: chạm thẻ = đi tới chỗ làm (data-go, menu/quests.js).
-  const prize = q.gems ? `<i class="ico-gem"></i>${fmt(q.gems)}` : `<img src="${art}icon-coin.png" alt="">${fmt(q.reward)}`, unit = q.gems ? `${fmt(q.gems)} gems` : `${fmt(q.reward)} coins`;
+  const prize = q.gems ? `<i class="ico-gem"></i>${fmt(q.gems)}` : `<img src="./assets/img/home/coin-glossy.png" alt="">${fmt(q.reward)}`, unit = q.gems ? `${fmt(q.gems)} gems` : `${fmt(q.reward)} coins`;
   return `<li class="quest-card${done ? ' is-ready' : ''}"${done ? '' : ` data-go="${index}" role="button" tabindex="0"`}>
     <div class="quest-icon"><img src="${art}icon-${icons[track] ?? track}.png" alt="">${done ? `<img class="quest-check" src="${art}check.png" alt="">` : ''}</div>
     <div class="quest-info"><span class="quest-category">${labels[track]}${done ? ' · Complete!' : '<span class="quest-go">Go ›</span>'}</span><b class="quest-text">${escape(q.text)}</b>

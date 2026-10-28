@@ -63,7 +63,7 @@ export function renderSkinButton() {
   const button = $('home-skin'), skin = pieceSkin();
   button.hidden = !dogSkinOpen();
   if (button.hidden) return;
-  button.querySelector('.fh-skin-art').innerHTML = catMarkup[skin === 'dogs' ? 'shiba' : 'orange'];
+  button.querySelector('.fh-skin-art').innerHTML = catMarkup[skin === 'dogs' ? 'golden' : 'orange'];
   button.querySelector('span').textContent = skin === 'dogs' ? 'Dogs' : 'Cats';
 }
 

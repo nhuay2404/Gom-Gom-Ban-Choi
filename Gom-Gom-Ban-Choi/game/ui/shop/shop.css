@@ -44,7 +44,7 @@
 .screen.shop .booster em{display:flex;align-items:center;justify-content:center;gap:calc(5 * var(--u));width:100%;margin-top:calc(5 * var(--u));padding:calc(3 * var(--u)) 0;
   border:calc(2 * var(--u)) solid #2f7d3a;border-radius:999px;background:linear-gradient(#93df82,#5fbe57);box-shadow:inset 0 calc(2 * var(--u)) 0 #ffffff55;
   font-family:var(--display);font-size:calc(17 * var(--u));font-weight:800;font-style:normal;line-height:1;color:#fff;-webkit-text-stroke:calc(3.5 * var(--u)) #2f6f35;paint-order:stroke fill}
-.screen.shop .booster em .ico-coin,.screen.shop .coin-pack .ico-coin{width:calc(22 * var(--u));height:calc(22 * var(--u));box-shadow:none;background:url('../../assets/img/shop/coin.png') center/contain no-repeat}
+.screen.shop .booster em .ico-coin,.screen.shop .coin-pack .ico-coin{width:calc(22 * var(--u));height:calc(22 * var(--u));box-shadow:none;background:url('../../assets/img/home/coin-glossy.png') center/contain no-repeat}
 .screen.shop .booster.poor em{border-color:#8b7a63;background:linear-gradient(#cdbfa6,#ad9d80);-webkit-text-stroke-color:#6f604c}
 .screen.shop .booster:active{translate:0 calc(2 * var(--u))}
 /* Dòng gói xu: kem viền nâu, chồng xu + tia hồng, số xu, nút giá xanh bên phải */
@@ -178,11 +178,15 @@
 #shop :is(.booster em,.coin-pack em,.shop-deco-item em){box-sizing:border-box;border:calc(1.6 * var(--u)) solid var(--pl-ink);color:var(--pl-text);-webkit-text-stroke:0;
   background:var(--pl-paw) 0 50%/calc(18 * var(--u)) calc(18 * var(--u)),var(--pl-fill);
   box-shadow:inset 0 0 0 calc(1.1 * var(--u)) var(--pl-cream),inset 0 0 0 calc(2.7 * var(--u)) var(--pl-ring)}
+/* Viên giá đậm màu ngang nút PLAY ở lobby (home.css: saturate(1.6)): màu đã nhân sẵn độ bão hoà đó, không dùng filter để chữ / icon xu giữ nguyên */
+#shop :is(.booster em,.coin-pack em,.shop-deco-item em){--pl-fill:linear-gradient(#ffd924,#ffe278 55%,#ffeab7);--pl-cream:#ffd964;--pl-ring:#ff9c00}
 #shop :is(.booster.poor em,.shop-deco-item.poor em){background:linear-gradient(#f1ebe0,#e3d9c6);box-shadow:inset 0 0 0 calc(1.1 * var(--u)) #faf6ef,inset 0 0 0 calc(2.7 * var(--u)) #cdbfa6;color:#7b7166}
 #shop .shop-deco-item.owned em{background:#fff7e4;box-shadow:inset 0 0 0 calc(1.1 * var(--u)) #fffaf0,inset 0 0 0 calc(2.7 * var(--u)) #efcd86;color:#7a4a2a}
 #shop :is(.shop-deco-item.locked em,.shop-deco-item.needBase em){border-color:#d8cbb6;background:#f1ebe0;box-shadow:none;color:#7b7166}
-#shop :is(.booster em,.coin-pack em,.shop-deco-item em) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/icon-coin.png') center/contain no-repeat}
+#shop :is(.booster em,.coin-pack em,.shop-deco-item em) .ico-coin{border-radius:0;box-shadow:none;background:url('../../assets/img/home/coin-glossy.png') center/contain no-repeat}
 
+/* Viên "N left today" của gem miễn phí: cùng kiểu viên giá (viền nâu, dấu chân, chữ nâu) nhưng tông hồng gradient; hết lượt (.poor) giữ màu be xám */
+#shop #shop-free-gems:not(.poor) em{--pl-fill:linear-gradient(#ff91c6,#ffbcdc 55%,#ffddee);--pl-cream:#ffcde5;--pl-ring:#ff53a5}
 /* Rewarded video art shares the row with the live gem amount and daily limit. */
 #shop #shop-free-gems .rewarded-ad-art{display:block;flex:0 0 calc(66 * var(--u));width:calc(66 * var(--u));height:calc(44 * var(--u));object-fit:contain}
 #shop #shop-free-gems b{min-width:0;gap:calc(4 * var(--u));white-space:nowrap;font-size:calc(17 * var(--u))}
@@ -217,3 +221,7 @@
 .shop-deco-item.premium.poor em{border-color:#8b7a63;background:linear-gradient(#cdbfa6,#ad9d80)}
 .shop-deco-item.premium.owned em{border-color:#a9d48a;background:#eef8e4;color:#4f8a34}
 #shop-preview-buy .gem-amt .ico-gem{width:1.1em;height:1.1em}
+/* Icon gem (giá booster, "Free 💎 20") dùng gem bóng giống bộ icon mới (home/gem-glossy.png) thay SVG chung của store.css */
+#shop .ico-gem{background:url('../../assets/img/home/gem-glossy.png') center/contain no-repeat;scale:1.19}
+/* Gem bằng xu theo pixel thấy được: khung gem = khung xu cùng chỗ (xu ở viên giá booster 22u, dòng 47), scale 1.19 = căn(diện tích xu / diện tích gem) của hai ảnh (gem dẹt ngang, chừa lề trên dưới) */
+#shop :is(.coin-pack em,.booster em,#shop-free-gems b) .ico-gem{width:calc(22 * var(--u));height:calc(22 * var(--u))}

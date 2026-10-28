@@ -10,6 +10,15 @@
       ],
       "port": 4400,
       "autoPort": true
+    },
+    {
+      "name": "main-view",
+      "runtimeExecutable": "C:\\Users\\CPU13403\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "runtimeArgs": [
+        "C:\\Users\\CPU13403\\gg-main\\Gom-Gom-Ban-Choi\\server.mjs"
+      ],
+      "env": { "PORT": "4500" },
+      "port": 4500
     }
   ]
 }

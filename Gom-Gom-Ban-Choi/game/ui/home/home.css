@@ -166,6 +166,16 @@
 .fh-layer>.fh-tile.fh-tile{padding:0;gap:0;justify-content:flex-start;border:0!important;border-radius:0;background:none!important;box-shadow:none;filter:none}
 .fh-layer>.fh-tile.fh-tile::before{display:none}
 .fh-layer>.fh-tile.fh-tile .fh-tile-ico,.fh-layer>.fh-tile.fh-tile .fh-skin-art,.fh-layer>.fh-starter.fh-tile .fh-tile-ico{width:calc(44 * var(--u));height:calc(44 * var(--u));margin:0}
+/* Icon ảnh to bằng Daily theo PHẦN HÌNH THẬT (pixel không trong suốt), không theo khung ảnh (phóng trong UI Studio chỉ phóng khung):
+   cùng DIỆN TÍCH hình với Daily (icon-daily.png kín sát mép, hộp 44u -> hình ~1618u²) và cùng độ dày viền nâu #4a1a08 (~2,4u trên màn).
+   Hộp ảnh = cạnh ảnh × sqrt(1618 / số pixel hình): Starter 45,62u; Quests (icon-quest-glossy.png 512 px, hình 175 248 px) 49,2u;
+   7 Days (icon-login-glossy.png 512 px, hình 199 101 px) 46,15u. Hai ảnh này cắt từ bộ icon mẫu (viền nâu sẵn trong art).
+   Lề âm giữ chỗ chiếm 44u (chữ, chấm "!" không xê dịch); dịch bù tâm hình lệch trong ảnh.
+   Mèo / chó (hình vẽ svg, nút đổi bộ quân): cùng một hộp 51,07u (hình mèo cao bằng hình Daily 42,6u; chó golden dùng đúng cỡ mèo theo yêu cầu). */
+.fh-layer>.fh-starter.fh-tile .fh-tile-ico{width:calc(45.62 * var(--u));height:calc(45.62 * var(--u));margin:calc(-.81 * var(--u))}
+.fh-layer>.fh-quests.fh-tile .fh-tile-ico{width:calc(49.2 * var(--u));height:calc(49.2 * var(--u));margin:calc(-2.6 * var(--u));translate:calc(1.35 * var(--u)) calc(-1.43 * var(--u))}
+.fh-layer>.fh-login.fh-tile .fh-tile-ico{width:calc(46.15 * var(--u));height:calc(46.15 * var(--u));margin:calc(-1.08 * var(--u));translate:calc(.62 * var(--u)) calc(.3 * var(--u))}
+.fh-layer>.fh-skin.fh-tile .fh-skin-art{width:calc(51.07 * var(--u));height:calc(51.07 * var(--u));margin:calc(-3.54 * var(--u))}
 .fh-layer>.fh-tile.fh-tile>span{font-size:calc(11 * var(--u));line-height:.92;-webkit-text-stroke:calc(3 * var(--u)) #fff7e4;margin-top:calc(-2 * var(--u))}
 .fh-layer>.fh-starter.fh-tile>span{font-size:calc(9.5 * var(--u));margin-top:calc(-4 * var(--u))}
 .fh-layer>.fh-tile.fh-tile .fh-badge{right:calc(5 * var(--u));top:calc(-4 * var(--u))}

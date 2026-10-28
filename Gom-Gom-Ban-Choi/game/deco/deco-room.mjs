@@ -785,15 +785,6 @@ const slab = (w, d, top, edge = '#c79a5f') => {
 };
 const OUTDOOR = new Set(['garden', 'backyard', 'kinder']); // khu ngoài trời: nền cỏ + hàng rào thay cho sàn + tường
 // Quà 7 ngày (menu/login.js) dựng 3D toon, chụp bằng thumbnail() như đồ deco. Mặt trước quay về +z.
-function pawCoin() {
-  const rim = at(new THREE.Mesh(new THREE.TorusGeometry(.47, .05, 10, 40), mat('#d9962b')), 0, .07, 0);
-  rim.rotation.x = Math.PI / 2;
-  const coin = group(cyl(.5, .5, .14, '#f5c542'), rim);
-  const pad = '#e0873a';
-  coin.add(at(squash(ball(.16, pad), 1.15, .35, 1), 0, .08, .08));
-  for (const [x, z] of [[-.2, -.13], [-.07, -.25], [.07, -.25], [.2, -.13]]) coin.add(at(squash(ball(.065, pad), 1, .4, 1.25), x, .08, z));
-  return coin;
-}
 const standing = node => { node.rotation.x = Math.PI / 2; return node; };
 // Booster = đồng xu dày, mặt trước dán đúng ảnh booster (assets/img/play/booster-*.png; ảnh tròn kín khung nên khớp UV nắp trụ).
 // Nạp sẵn ảnh lúc nạp module: thumbnail chụp đồng bộ, ảnh chưa xong thì thumbnail() trả null (người gọi dùng ảnh PNG).
@@ -807,26 +798,45 @@ function boosterCoin(id) {
   const rim = mat(BOOSTER_RIM[id]), coin = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .16, 48), [rim, new THREE.MeshBasicMaterial({ map, transparent: true }), rim]);
   return standing(group(coin));
 }
+// Quà 1 đồng xu (7 ngày): cùng kiểu đồng xu booster, mặt trước dán đúng ảnh xu tiền tệ (assets/img/home/coin-glossy.png, cùng icon xu ở Shop / Daily / Quests).
+// Ảnh 256 × 256 có lề trong suốt: cắt sát hình tròn vào canvas vuông để khớp UV nắp trụ. Thành xu cam như vòng cam của ảnh.
+const COIN_IMG = Object.assign(new Image(), { src: './assets/img/home/coin-glossy.png' });
+const COIN_BOX = [1, 4, 254, 248];
+const COIN_RIM = '#e8901a', COIN_GOLD = '#fdd451';
+// Chất liệu [thành, mặt trên, mặt dưới] của đồng xu dán ảnh; bothFaces: mặt dưới cũng dán ảnh (xu rải nghiêng trong núi xu lộ cả mặt dưới).
+function coinMats(bothFaces = false) {
+  const canvas = document.createElement('canvas'), [x, y, w, h] = COIN_BOX;
+  canvas.width = canvas.height = 256;
+  canvas.getContext('2d').drawImage(COIN_IMG, x, y, w, h, 0, 0, 256, 256);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace; map.center.set(.5, .5); map.rotation = Math.PI / 2; map.anisotropy = 4;
+  const rim = mat(COIN_RIM), face = new THREE.MeshBasicMaterial({ map, transparent: true });
+  return [rim, face, bothFaces ? face : rim];
+}
+const iconCoin = () => standing(group(new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .16, 48), coinMats())));
 function rewardModel(kind) {
   // Xu quà (1 đồng, núi xu): không viền toon (người chơi bỏ). Cờ structure: addOutlines bỏ qua cả cụm.
   const plain = node => { node.userData.structure = true; return node; };
-  if (kind === 'coin') return plain(standing(pawCoin()));
+  if (kind === 'coin') return plain(iconCoin());
   if (kind === 'coins') {
     // Núi xu: tháp xu giữa cao nhất, các vòng ngoài thấp dần; chỉ đồng trên cùng mỗi tháp có dấu chân, rải thêm xu nằm nghiêng / dựng đứng.
     // Xu thân tháp dùng chung một lưới 16 cạnh + 2 chất liệu (nhỏ trên màn hình): dựng + gộp nhanh hơn nhiều so với lưới riêng từng đồng.
-    const pile = group(), coinGeo = new THREE.CylinderGeometry(.5, .5, .14, 16), goldMat = mat('#f5c542'), edgeMat = mat('#e3a933');
+    // Đồng có dấu chân = đồng xu dán ảnh xu tiền tệ như quà 1 đồng, vẽ chung một InstancedMesh (~60 đồng, 3 lệnh vẽ). Thân tháp theo bảng màu ảnh xu.
+    const pile = group(), coinGeo = new THREE.CylinderGeometry(.5, .5, .14, 16), goldMat = mat(COIN_GOLD), edgeMat = mat(COIN_RIM), faces = [];
     [[0, 0, 1, 15], [.8, .2, 6, 12], [1.55, .5, 11, 8], [2.25, .9, 15, 4], [2.9, .3, 19, 2]].forEach(([r, phase, count, tall], ring) => {
       for (let i = 0; i < count; i++) {
         const a = phase + i * Math.PI * 2 / count, x = Math.cos(a) * r, z = Math.sin(a) * r * .8, h = tall + (i % 2);
         for (let k = 0; k < h - 1; k++) pile.add(at(new THREE.Mesh(coinGeo, k % 2 ? goldMat : edgeMat), x + (k % 3 - 1) * .03, .07 + k * .15, z));
-        const top = at(pawCoin(), x, .07 + (h - 1) * .15, z); top.rotation.y = a + ring; pile.add(top);
+        const top = at(group(), x, .07 + (h - 1) * .15, z); top.rotation.y = a + ring; faces.push(top);
       }
     });
     for (const [x, y, z, rx, rz] of [[-.6, 2.1, .7, .9, .3], [.7, 2, .8, 1.1, -.35], [-1.4, 1.4, .6, .7, .5], [1.5, 1.3, .7, .8, -.4], [.1, 2.4, 1.1, 1.25, 0], [-2.2, .7, .8, .6, .4], [2.3, .6, .6, .7, -.3], [-.9, .4, 2.3, 1.3, .2], [.9, .4, 2.2, 1.2, -.2], [0, 2.4, -.2, .4, .1]]) {
-      const coin = at(pawCoin(), x, y, z); coin.rotation.set(rx, 0, rz); pile.add(coin);
+      const coin = at(group(), x, y, z); coin.rotation.set(rx, 0, rz); faces.push(coin);
     }
-    // ~350 đồng xu: gộp thành vài lưới (màu nướng vào đỉnh) cho popup vẽ nhẹ khi lắc.
-    return plain(mergeStatic(pile, { bakeColors: true }));
+    const faceCoins = new THREE.InstancedMesh(new THREE.CylinderGeometry(.5, .5, .14, 32), coinMats(true), faces.length);
+    faces.forEach((node, i) => { node.updateMatrix(); faceCoins.setMatrixAt(i, node.matrix); });
+    // ~300 đồng thân tháp: gộp thành vài lưới (màu nướng vào đỉnh) cho popup vẽ nhẹ khi lắc.
+    return plain(group(mergeStatic(pile, { bakeColors: true }), faceCoins));
   }
   if (BOOSTER_RIM[kind]) return boosterCoin(kind);
   // mèo bí ẩn: hộp quà kraft buộc nơ
@@ -906,7 +916,7 @@ function thumbDistance(bounds, center, fov) {
 const SPIN_BACK = 1.1; // camera lùi thêm cho model quà lắc không chạm mép
 export function thumbnail(entry, size = 192) {
   if (thumbCache[entry.id]) return thumbCache[entry.id];
-  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth) return null;
+  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth || ['coin', 'coins'].includes(entry.reward) && !COIN_IMG.naturalWidth) return null;
   const { renderer, scene, camera } = thumbStudio();
   renderer.setSize(size, size, false);
   const subject = thumbSubject(entry);
@@ -930,7 +940,7 @@ export function thumbnail(entry, size = 192) {
 // Model 3D sống cho popup (quà 7 ngày): dựng một lần như thumbnail(), draw(yaw) xoay quanh trục đứng qua tâm rồi vẽ thẳng lên canvas
 // chung `canvas` (một máy vẽ cho mọi model: người gọi gắn canvas vào trang đang xem). Camera lùi thêm chút để lắc không chạm mép. null = chưa dựng được.
 export function thumbSpinner(entry, size = 360) {
-  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth) return null;
+  if (BOOSTER_IMG[entry.reward] && !BOOSTER_IMG[entry.reward].naturalWidth || ['coin', 'coins'].includes(entry.reward) && !COIN_IMG.naturalWidth) return null;
   const { renderer, scene, camera } = spinKit ||= makeStudio(size, false);
   const subject = thumbSubject(entry), pivot = group(subject);
   subject.userData.update?.(0);

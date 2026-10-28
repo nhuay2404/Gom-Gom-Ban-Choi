@@ -297,3 +297,36 @@
 @media(prefers-reduced-motion:reduce){.login-dialog .login-cell.gold :is(.login-rays,.login-fx i){animation:none}.login-dialog .login-cell.gold .login-fx{display:none}}
 /* Bề ngang chấm trang do login.js paintDots đặt theo vị trí cuộn từng khung: bỏ transition width (trễ nhịp so với ngón tay), chỉ chuyển màu. */
 .login-dialog .login-dots i{border-radius:999px;transition:background-color .15s,border-color .15s}
+/* 7-Day Gift: icon gem bóng (home/gem-glossy.png), cùng bộ với đồng xu 3D (mặt dán home/coin-glossy.png) */
+/* scale 1.19 = căn(diện tích xu / diện tích gem): gem hiện to bằng đồng xu cùng khung */
+.login-dialog .ico-gem{background:url('../../assets/img/home/gem-glossy.png') center/contain no-repeat;scale:1.19}
+/* ===== 7-Day Gift: skin = các mảnh cắt nguyên từ art mẫu (assets/img/login-gift/gift-*.png, giữ đúng màu gốc, không vẽ lại).
+   Cỡ / chỗ đặt / bố cục giữ như code cũ; mỗi mảnh nằm trong khung cũ của nó (contain, không kéo méo).
+   - gift-sky.png (990 × 990, cùng bề ngang + viền kem hai bên với gift-footer.png nên sóng / viền / dấu chân nối liền; tâm quầng sáng trùng tâm quà): nền trời trống (băng tiêu đề, nhãn Day, đồng xu, mũi tên, tên quà, chấm trang đã gỡ và lấp bằng nền xung quanh) cho .login-scene.
+   - gift-footer.png: chân kem có dấu chân góc (nút đã gỡ), trải dưới chấm trang + hai nút bằng border-image của .store-choices
+     (border-image-outset lên đúng bề cao dải chấm 26px, không đổi bố cục; lát cắt 1 px ảnh = .3646 px trên khung 361 px).
+   - Claim / Later cùng một tỉ lệ thu (.3537) như trong ảnh mẫu: Claim 295 × 58, Later 304 × 54, giữa khung nút.
+   - Nhãn Day và tên quà: viên trống, chữ do game ghi. Băng tiêu đề, Claim, Later là ảnh có sẵn chữ (chữ thật giữ cho trình đọc màn hình). */
+.login-dialog.store-dialog{border-color:#6a2404;background:#fbebcd}
+.login-dialog .login-scene{background:url('../../assets/img/login-gift/gift-sky.png') center/cover no-repeat;
+  box-shadow:inset 0 4.4px 0 #fce3b5}
+.login-dialog .login-header h2{width:262px;height:90px;padding:0;background:url('../../assets/img/login-gift/gift-banner.png') center/contain no-repeat;
+  color:transparent;-webkit-text-stroke:0;text-shadow:none}
+.login-dialog .login-close{background:url('../../assets/img/login-gift/gift-close.png') center/contain no-repeat}
+.login-dialog .login-grid .login-cell.art-fill .login-day{display:flex;align-items:center;justify-content:center;gap:4px;width:76px;height:31px;padding:0;border:0;border-radius:0;
+  background:url('../../assets/img/login-gift/gift-day.png') center/contain no-repeat;box-shadow:none;color:#4a1a08;font-family:var(--display,'Baloo 2',system-ui);font-size:17px;font-weight:900}
+.login-dialog .login-grid .login-cell.art-fill .login-day>span{font-size:11px;opacity:1}
+.login-dialog .login-nav{border:0;border-radius:0;background:url('../../assets/img/login-gift/gift-prev.png') center/contain no-repeat;box-shadow:none;font-size:0}
+.login-dialog .login-nav.next{background-image:url('../../assets/img/login-gift/gift-next.png')}
+.login-dialog .login-nav::before{content:none}
+/* Tên quà: viên có dấu chân hai đầu; hai đầu giữ đúng tỉ lệ ảnh, khúc giữa (kem trơn) giãn theo bề ngang (border-image) */
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{box-sizing:border-box;height:44px;display:grid;place-items:center;padding:0 40px;border:0;border-radius:0;
+  border-image:url('../../assets/img/login-gift/gift-name.png') 0 300 fill / 0 88px / 0 stretch;background:none;box-shadow:none;color:#4a1a08}
+.login-dialog .login-dots{z-index:4;border-top-color:transparent;background:none}
+.login-dialog .login-dots i{width:12px!important;height:12px;border:0;border-radius:50%;background:url('../../assets/img/login-gift/gift-dots.png') -13.6px 0/94.7px 12px no-repeat}
+.login-dialog .login-dots i.on,.login-dialog .login-dots i.got{background:url('../../assets/img/login-gift/gift-dots.png') 0 0/94.7px 12px no-repeat;border:0}
+.login-dialog .store-choices{background:none;border-image:url('../../assets/img/login-gift/gift-footer.png') 130 50 70 50 fill / 47.4px 18.2px 25.5px 18.2px / 26px 0 0 0 stretch}
+.login-dialog .store-choices .pill-button,.login-dialog .store-choices .pill-button.ghost{border:0;border-radius:0;box-shadow:none;color:transparent;-webkit-text-stroke:0;text-shadow:none;
+  background:url('../../assets/img/login-gift/gift-claim.png') center/295px 58px no-repeat}
+.login-dialog .store-choices .pill-button.ghost{background-image:url('../../assets/img/login-gift/gift-later.png');background-size:304px 54px}
+.login-dialog .store-choices .pill-button:active{translate:0 2px}
