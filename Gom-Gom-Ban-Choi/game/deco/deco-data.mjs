@@ -6,13 +6,14 @@ import { rewardFor } from '../core/reward.mjs';
 import { SAVE_KEYS, readJSON, writeJSON } from '../core/save.mjs';
 export const { MAX_ROOM_CATS } = ECONOMY;
 
-// Thứ tự mở khu sau vườn gốc. Khu thứ n (vị trí trong danh sách + 1) có giá cố định theo R(10n) — economy.mjs ZONE_PRICING.
+// Thứ tự mở khu sau vườn gốc. Khu thứ n (vị trí trong danh sách + 1) có giá cố định theo R ở màn mốc thiết kế Lₙ — economy.mjs ZONE_PRICING.
 export const AREA_ORDER = ['garden2', 'living', 'bedroom', 'kitchen', 'bathroom', 'backyard', 'kinder'];
 // R của màn L, bỏ dao động (giá khu không lệch theo từng màn).
 const paceReward = L => rewardFor(L - 1, { REWARD_BASE, REWARD_STEP, REWARD_GROWTH });
-// Giá mở từng khu: { level: màn mốc thiết kế 10n (chỉ là nhịp cho tool mô phỏng, game không khoá theo màn), cost: unlockR × R(10n) làm tròn 50 }.
+// Giá mở từng khu: { level: màn mốc thiết kế Lₙ (chỉ để tính giá + nhịp cho tool mô phỏng, KHÔNG phải mốc mở khu), cost: unlockR × R(Lₙ) làm tròn 50 }.
 export const AREA_UNLOCK = Object.fromEntries(AREA_ORDER.map((area, i) => {
-  const level = ZONE_PRICING.pace * (i + 1);
+  const { early, earlyPace, pace } = ZONE_PRICING, n = i + 1;
+  const level = n <= early ? earlyPace * n : earlyPace * early + pace * (n - early);
   return [area, { level, cost: Math.round(ZONE_PRICING.unlockR * paceReward(level) / 50) * 50 }];
 }));
 export const ZONES = {
@@ -512,7 +513,11 @@ const rawBaseSum = area => CATALOG.filter(e => e.cat === 'furniture' && !e.slot 
 export const ZONE_PRICE_MULT = {
   garden: ZONE_PRICING.gardenMult,
   ...Object.fromEntries(AREA_ORDER.map((area, i) => {
-    const k = i < ZONE_PRICING.early ? ZONE_PRICING.kEarly : ZONE_PRICING.kLate;
+    // k theo số màn người chơi ở khu này (tới màn mốc khu kế): khu cuối nhóm đầu (phòng khách) kéo dài pace màn nên giá theo tỉ lệ đó,
+    // không thì cả pace màn tiêu cho một khu giá 10 màn (nhịp 20: xu dư ~1.8 lần giá món gốc ở màn mốc).
+    const { early, earlyPace, pace, kEarly, kLate } = ZONE_PRICING, next = AREA_ORDER[i + 1];
+    const span = (next ? AREA_UNLOCK[next].level : AREA_UNLOCK[area].level + pace) - AREA_UNLOCK[area].level;
+    const k = (i < early ? kEarly / earlyPace : kLate / pace) * span;
     return [area, k * paceReward(AREA_UNLOCK[area].level) / rawBaseSum(area)];
   })),
 };

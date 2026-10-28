@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../core/save.mjs';
 import { levelReward } from '../core/progression.mjs';
-import { loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, nextAreas, areaBases, unlockArea } from './deco-data.mjs';
+import { AREA_UNLOCK, loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, nextAreas, areaBases, unlockArea } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -69,11 +69,11 @@ test('save có trước phòng ngủ: thêm khu phòng ngủ mặc định, gi�
   assert.equal(deco.zones.bedroom.floor, 'bfloor-oak', 'phòng ngủ mặc định sàn Oak');
   assert.equal(deco.zones.living.floor, 'floor-oak', 'phòng khách mặc định sàn Oak');
   assert.equal(itemById('bfloor-oak').price, 0);
-  assert.equal(zoneOpen('bedroom', 29), false);
-  assert.equal(zoneOpen('bedroom', 30), true);
+  assert.equal(zoneOpen('bedroom', AREA_UNLOCK.bedroom.level - 1), false);
+  assert.equal(zoneOpen('bedroom', AREA_UNLOCK.bedroom.level), true);
 });
 
-test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; mỗi chỗ có đúng 4 lựa chọn (món gốc + 2 phương án + 1 phương án châu Á)', () => {
+test('bếp: màn mốc thiết kế theo AREA_UNLOCK; save cũ có khu bếp mặc định; mỗi chỗ có đúng 4 lựa chọn (món gốc + 2 phương án + 1 phương án châu Á)', () => {
   setStorageBackend(memoryStore());
   const old = loadDeco(5);
   const { kitchen, ...zones } = old.zones;
@@ -82,8 +82,8 @@ test('bếp: mở khi thắng màn 40; save cũ có khu bếp mặc định; m�
   assert.deepEqual(deco.zones.kitchen.placed, ['sink', 'dining']);
   assert.equal(deco.zones.kitchen.floor, 'kfloor-oak', 'bếp mặc định sàn Oak');
   assert.equal(deco.zones.kitchen.wall, 'kwall-butter');
-  assert.equal(zoneOpen('kitchen', 39), false);
-  assert.equal(zoneOpen('kitchen', 40), true);
+  assert.equal(zoneOpen('kitchen', AREA_UNLOCK.kitchen.level - 1), false);
+  assert.equal(zoneOpen('kitchen', AREA_UNLOCK.kitchen.level), true);
   const bases = CATALOG.filter(e => e.zone === 'kitchen' && e.cat === 'furniture' && !e.slot);
   assert.equal(bases.length, 10);
   assert.equal(slotGroups('kitchen', 'furniture').every(group => group.length === 3), true);
@@ -254,20 +254,20 @@ test('bộ Vườn Nhật: 28 món giá gem ở vườn (gốc + mở rộng), t
   assert.equal(shopStatus(deco, lantern, 99, 999), 'needBase', 'kiểu Nhật cần xây chỗ trước như kiểu khác');
 });
 
-test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ kế đã trừ tiền mở khu / giá món gốc đã mở giảm dần qua từng lô 10 màn tới khu cuối (khu sau khó mua đủ hơn)', async () => {
-  const { AREA_UNLOCK } = await import('./deco-data.mjs');
+test('kinh tế: thưởng không giảm giữa các màn thường; xu luỹ kế đã trừ tiền mở khu / giá món gốc đã mở giảm dần qua từng lô tới màn mốc khu kế (khu sau khó mua đủ hơn)', async () => {
   const sum = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => levelReward(from - 1 + i)).reduce((a, b) => a + b, 0);
   const base = (zone, area) => CATALOG.filter(e => e.zone === zone && e.cat === 'furniture' && !e.slot && e.area === area).reduce((a, e) => a + e.price, 0);
   for (let n = 1; n < 100; n++) assert.ok(levelReward(n) >= levelReward(n - 1), `màn ${n + 1} không thấp hơn màn ${n}`);
   let cost = 0, paid = 0, prev = Infinity;
-  for (const [to, zone, area] of [[10, 'garden'], [20, 'garden', 'garden2'], [30, 'living'], [40, 'bedroom'], [50, 'kitchen'], [60, 'bathroom']]) {
+  const at = area => AREA_UNLOCK[area].level;
+  for (const [to, zone, area] of [[at('garden2'), 'garden'], [at('living'), 'garden', 'garden2'], [at('bedroom'), 'living'], [at('kitchen'), 'bedroom'], [at('bathroom'), 'kitchen'], [at('backyard'), 'bathroom']]) {
     cost += base(zone, area);
     // Khu có mốc màn trong lô này đã được mua (trừ xu) trước khi hết lô.
-    paid += Object.values(AREA_UNLOCK).filter(({ level }) => level > to - 10 && level <= to).reduce((t, { cost: c }) => t + c, 0);
+    paid = Object.values(AREA_UNLOCK).filter(({ level }) => level <= to).reduce((t, { cost: c }) => t + c, 0);
     const ratio = (sum(1, to) - paid) / cost;
-    // Hai lô đầu (vườn, vườn mở rộng) mua đủ ~100%; từ khu thứ ba giảm dần nhưng không dưới 35%: phần còn lại đến từ xu nhiệm vụ ngày +
-    // Quests (≈ +50% xu cả game, giá phòng ngủ → nhà trẻ đã tăng để bù — economy.mjs ZONE_PRICE_MULT) và xu idle.
-    const ok = to <= 20 ? Math.abs(ratio - 1) <= .05 : ratio >= .35 && ratio < prev;
+    // Chỉ tính xu thắng màn: hai lô đầu (vườn, vườn mở rộng) mua đủ ~100%; phòng khách ≤ 120%; từ phòng ngủ giảm dần nhưng không dưới 50%:
+    // phần còn lại đến từ xu nhiệm vụ ngày + Quests, ads và idle (economy.mjs ZONE_PRICING, nhịp khu từ khu thứ 3).
+    const ok = to <= 20 ? Math.abs(ratio - 1) <= .05 : area === 'living' || zone === 'living' ? ratio <= 1.2 : ratio >= .5 && ratio < prev;
     assert.ok(ok, `hết màn ${to}: còn ${ratio.toFixed(2)} giá món gốc tới ${area || zone} sau khi trả tiền mở khu (lô trước ${prev.toFixed(2)})`);
     prev = ratio;
   }
