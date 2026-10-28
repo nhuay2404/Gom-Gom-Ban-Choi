@@ -11,6 +11,7 @@ import { rewardFor } from '../../game/core/progression.mjs';
 import { CATALOG, AREA_ORDER, MAX_ROOM_CATS, areaBefore, areaBases, zonePrice } from '../../game/deco/deco-data.mjs';
 import { mulberry32 } from '../levels/bot.mjs';
 import { idlePerHour } from '../../game/core/idle.mjs';
+import { REWARDED_ADS } from '../../game/data/economy.mjs';
 
 // Tham số economy mà tab Economy được sửa + lưu (economy-save.mjs chỉ cho ghi đúng các tên này).
 export const EDITABLE = ['START_COINS', 'REWARD_BASE', 'REWARD_STEP', 'REWARD_GROWTH', 'REWARD_JITTER', 'REWARD_FLAT_FROM', 'IDLE_RATE', 'IDLE_CAP_HOURS', 'IDLE_FROM_LEVEL', 'DECO'];
@@ -62,7 +63,7 @@ export function simulatePlayer(cfg, profile, winRates, { seed = 1, levels = 100,
     for (let a = 0; a < profile.attempts; a++) {
       if (a % Math.ceil(profile.attempts / claims) === 0 && cfg.IDLE_RATE) {
         // Mỗi mèo trong nhà sinh xu riêng: số mèo = mèo đã nhận được ở Map tới màn này (tối đa MAX_ROOM_CATS con trong nhà).
-        const idle = Math.floor(idleHours * idlePerHour(cleared, cfg) * catsAt(cleared)), bonus = adIdle-- > 0 ? Math.round(idle * (ads.idleBonus ?? bonusAt(0))) : 0;
+        const idle = Math.floor(idleHours * idlePerHour(cleared, cfg) * catsAt(cleared)), bonus = adIdle-- > 0 ? Math.round(idle * (ads.idleBonus ?? REWARDED_ADS.idleWheel.reduce((sum, slot) => sum + slot.share * slot.bonus, 0))) : 0;
         deco = { ...deco, coins: deco.coins + idle + bonus };
         earned += idle + bonus; idleEarned += idle; adEarned += bonus;
       }

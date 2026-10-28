@@ -53,7 +53,7 @@
         },
         "IDLE_RATE": {
           "defaultValue": {
-            "value": "0.015"
+            "value": "0.011"
           },
           "valueType": "NUMBER"
         },
@@ -149,7 +149,7 @@
         },
         "REWARDED_ADS": {
           "defaultValue": {
-            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":1,\"gems\":2},\"gems\":20,\"coinBonus\":[0.5,0.5,0.2],\"idleBonus\":0.5}"
+            "value": "{\"from\":6,\"caps\":{\"continue\":5,\"bonusCoins\":null,\"booster\":3,\"idle\":2,\"gems\":2},\"gems\":20,\"coinBonus\":[0.5,0.5,0.2],\"idleWheel\":[{\"bonus\":0.2,\"share\":0.3},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":3,\"share\":0.14},{\"bonus\":0.5,\"share\":0.13},{\"bonus\":0.2,\"share\":0.3}],\"jackpotPerDay\":1}"
           },
           "valueType": "JSON"
         },
@@ -232,7 +232,7 @@
         },
         "DRAG": {
           "defaultValue": {
-            "value": "{\"BOOST\":1.6,\"SHRINK_RANGE\":110,\"TAP_TOLERANCE\":5,\"CARRY_TOLERANCE\":8}"
+            "value": "{\"BOOST\":1.6,\"SHRINK_RANGE\":110,\"TAP_TOLERANCE\":5,\"TOUCH_TAP_TOLERANCE\":10,\"TOUCH_LIFT\":70,\"CARRY_TOLERANCE\":8}"
           },
           "valueType": "JSON"
         },
