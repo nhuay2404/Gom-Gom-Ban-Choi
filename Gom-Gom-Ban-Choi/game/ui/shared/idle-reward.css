@@ -28,3 +28,10 @@
 @media(max-width:360px){.idle-claim.store-dialog{padding:17px 14px 18px}.idle-claim.store-dialog>h2{font-size:19px;min-height:0;margin-inline:0}.idle-reward-hero{width:180px;height:111px}.idle-reward-pet{width:104px;height:104px}.idle-reward-stack{width:96px;height:62px}.idle-claim.store-dialog .idle-claim-total{font-size:36px}.idle-claim .store-choices>.pill-button.ad{font-size:15px;gap:9px}.idle-video-icon{width:46px;height:46px}.idle-btn-amount{font-size:22px}}
 @media(max-height:560px){.idle-claim.store-dialog{padding-block:12px}.idle-reward-hero{height:83px;width:150px;margin-top:0}.idle-reward-pet{width:82px;height:82px}.idle-reward-stack{width:85px;height:55px}.idle-claim.store-dialog .idle-reward-caption{margin-bottom:14px}.idle-claim.store-dialog>h2{min-height:0;font-size:20px}}
 @media(prefers-reduced-motion:reduce){.idle-claim.store-dialog[open]{animation:none}.idle-claim .store-choices>.pill-button{transition:none}}
+
+/* Vòng nhân lúc nhận xu idle (menu/idle-coins.js wheelSvg): nửa vòng tròn, kim chạy qua lại, nút xem ads ghi số xu theo ô kim chỉ */
+.idle-wheel{display:block;width:min(250px,78%);margin:-6px auto 14px;overflow:visible}
+.idle-wheel path{stroke:#87451e;stroke-width:3;stroke-linejoin:round}
+.idle-wheel text{fill:#fffaf0;font-family:var(--display,'Baloo 2',system-ui,sans-serif);font-weight:900;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:#87451e;stroke-width:3px}
+.idle-wheel-needle{transform-origin:100px 100px;transform-box:view-box}
+.idle-wheel-needle path,.idle-wheel-needle circle{fill:#5b2a16;stroke:#fff0b2;stroke-width:2}

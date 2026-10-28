@@ -1,7 +1,8 @@
 // Xu tự sinh (core/idle.mjs): bong bóng xu trên đầu từng con mèo trong nhà, chạm để nhận. Sang Unity: IdleCoinView.
 import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../core/idle.mjs';
 import { playSound } from '../ui/sound.mjs';
-import { $, ask, showToast, getDeco, setDeco, refreshWallet, noteEvent } from '../app/shared.js';
+import { $, ask, showToast, getDeco, setDeco, getWallet, setWallet, refreshWallet, noteEvent } from '../app/shared.js';
+import { adsUsed, noteAd } from '../core/gems.mjs';
 import { showRewarded, adReady } from '../app/ads.js';
 import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
@@ -58,8 +59,65 @@ export function placeIdleCoin() {
   }
 }
 
+// ---------- Vòng nhân lúc nhận (REWARDED_ADS.idleWheel): kim chạy qua lại trên nửa vòng tròn, nút xem ads ghi số xu theo ô kim đang chỉ ----------
+// Kim chạy đều nên xác suất dừng ở mỗi ô = bề rộng ô (share). Ô lớn nhất (+300%) chỉ trúng jackpotPerDay lần / ngày; trúng rồi thì hiện +50%.
+const SWEEP_MS = 900; // một lượt từ trái sang phải
+const jackpotLeft = () => adsUsed(getWallet(), 'idleJackpot', Date.now()) < REWARDED_ADS.jackpotPerDay;
+function wheelSlots() {
+  const top = Math.max(...REWARDED_ADS.idleWheel.map(slot => slot.bonus)), open = jackpotLeft();
+  return REWARDED_ADS.idleWheel.map(slot => ({ ...slot, jackpot: slot.bonus === top && open, bonus: slot.bonus === top && !open ? .5 : slot.bonus }));
+}
+// Ô kim đang chỉ, p = 0 (trái) … 1 (phải).
+function slotAt(slots, p) {
+  let edge = 0;
+  for (const slot of slots) { edge += slot.share; if (p <= edge) return slot; }
+  return slots[slots.length - 1];
+}
+// Nhãn hệ số như mẫu UI (x1.2 / x1.5 / x4): ngắn, vừa ô hẹp trên cung.
+const mult = bonus => `x${+(1 + bonus).toFixed(1)}`;
+const wheelColor = bonus => (bonus >= 1 ? '#ffd23f' : bonus >= .5 ? '#ffa63d' : '#ff7eb6');
+function wheelSvg(slots) {
+  const pt = (deg, r) => [100 + r * Math.cos(deg * Math.PI / 180), 100 - r * Math.sin(deg * Math.PI / 180)].map(v => v.toFixed(2));
+  let from = 180;
+  const parts = slots.map(slot => {
+    const to = from - slot.share * 180, [lx, ly] = pt((from + to) / 2, 71);
+    const arc = `<path d="M${pt(from, 96).join(' ')} A96 96 0 0 1 ${pt(to, 96).join(' ')} L${pt(to, 46).join(' ')} A46 46 0 0 0 ${pt(from, 46).join(' ')}Z" fill="${wheelColor(slot.bonus)}"/>`;
+    from = to;
+    return `${arc}<text x="${lx}" y="${ly}" font-size="${slot.share < .12 ? 15 : 17}">${mult(slot.bonus)}</text>`;
+  }).join('');
+  return `<svg class="idle-wheel" viewBox="0 0 200 108" role="img" aria-label="Bonus meter: tap Watch video to stop the needle">${parts}
+    <g class="idle-wheel-needle"><path d="M100 100 L95 42 L100 24 L105 42Z"/><circle cx="100" cy="100" r="9"/></g></svg>`;
+}
+// Gắn vòng vào popup vừa mở (ask dựng dialog ngay lúc gọi). Kim chạy tới khi bấm nút xem ads; trả về hàm đọc ô đã chốt (null = chưa chốt).
+function attachWheel(pending) {
+  const dialog = document.querySelector('dialog.idle-claim'), slots = wheelSlots();
+  if (!dialog) return () => null;
+  dialog.querySelector('.idle-reward-caption')?.insertAdjacentHTML('afterend', wheelSvg(slots));
+  const needle = dialog.querySelector('.idle-wheel-needle'), adButton = dialog.querySelector('[data-choice="ad"]');
+  const amount = adButton.querySelector('.idle-btn-amount span'), badge = adButton.querySelector('.idle-bonus');
+  let locked = null, shown = null, frame = 0;
+  const start = performance.now();
+  const step = now => {
+    const t = ((now - start) / SWEEP_MS) % 2, p = t < 1 ? t : 2 - t;
+    needle.style.transform = `rotate(${(p * 180 - 90).toFixed(1)}deg)`;
+    const slot = slotAt(slots, p);
+    if (slot !== shown) {
+      shown = slot;
+      amount.textContent = (pending + Math.round(pending * slot.bonus)).toLocaleString('en-US');
+      badge.textContent = mult(slot.bonus);
+    }
+    if (locked === null && dialog.open) frame = requestAnimationFrame(step);
+  };
+  frame = requestAnimationFrame(step);
+  // capture: chốt ô trước khi ask() đóng dialog
+  dialog.addEventListener('click', event => {
+    if (event.target.closest('[data-choice="ad"]')) { locked = shown; cancelAnimationFrame(frame); }
+  }, true);
+  return () => locked;
+}
+
 // Chạm bong bóng của BẤT KỲ con nào = nhận xu của TẤT CẢ mèo trong nhà một lượt (mỗi bong bóng đang hiện nổ một đợt xu).
-// ADS-SDK: chỗ đặt "idle" — trước khi nhận, popup hỏi "Nhận N" hay "▶ Nhận N + REWARDED_ADS.idleBonus × N" (1 lần/ngày, REWARDED_ADS.caps.idle).
+// ADS-SDK: chỗ đặt "idle" — trước khi nhận, popup hỏi "Nhận N" hay "▶ xem ads, nhận N × (1 + ô kim dừng)" (REWARDED_ADS.caps.idle lần / ngày).
 let idleAsking = false;
 document.addEventListener('click', async event => {
   if (!event.target.closest('.idle-coin[data-breed]') || idleAsking) return;
@@ -67,17 +125,22 @@ document.addEventListener('click', async event => {
   const pending = preview.cats.reduce((sum, breed) => sum + idlePending(preview, cleared, Date.now(), breed), 0);
   if (!pending) return;
   let bonus = 0;
-  if (adReady('idle') && Math.round(pending * REWARDED_ADS.idleBonus)) {
+  if (adReady('idle')) {
     idleAsking = true;
-    const choice = await ask(idleRewardOptions(pending, REWARDED_ADS.idleBonus));
-    if (choice === 'ad' && await showRewarded('idle')) bonus = 1;
+    const asked = ask(idleRewardOptions(pending, REWARDED_ADS.idleWheel[0].bonus)), lockedSlot = attachWheel(pending);
+    const choice = await asked, slot = lockedSlot();
+    if (choice === 'ad' && slot && await showRewarded('idle')) {
+      bonus = slot.bonus;
+      if (slot.jackpot) setWallet(noteAd(getWallet(), 'idleJackpot', Date.now()));
+    }
     idleAsking = false;
     if (!choice) return;
   }
   claimAll(bonus);
 });
 
-function claimAll(withBonus) {
+// bonusRate: xu thêm theo tỉ lệ tổng vừa nhận (ô vòng nhân đã chốt), 0 = nhận thường.
+function claimAll(bonusRate) {
   let deco = getDeco(), total = 0;
   const now = Date.now(), cleared = levelsCleared(), claimedBreeds = [];
   for (const breed of deco.cats) {
@@ -90,7 +153,7 @@ function claimAll(withBonus) {
     if (button) button.dataset.amount = '';
   }
   if (!total) return;
-  const bonus = withBonus ? Math.round(total * REWARDED_ADS.idleBonus) : 0;
+  const bonus = Math.round(total * bonusRate);
   const before = getDeco().coins;
   setDeco({ ...deco, coins: deco.coins + bonus });
   playSound('reward');
@@ -103,7 +166,7 @@ function claimAll(withBonus) {
   const pill = $('deco-coins').closest('.fh-coins'), box = pill.getBoundingClientRect(), target = { x: box.left + box.width * .22, y: box.top + box.height / 2 };
   $('deco-coins').textContent = before.toLocaleString('en-US');
   // Số xu 3D theo số xu nhận được so với trần tích của một con (idleCap): đầy trần = 12 đồng, ít thì ít, tối thiểu 1.
-  const cap = Math.max(1, idleCap(cleared)), coinsFor = amount => Math.max(1, Math.min(12, Math.ceil(amount * (1 + (withBonus ? REWARDED_ADS.idleBonus : 0)) / cap * 12)));
+  const cap = Math.max(1, idleCap(cleared)), coinsFor = amount => Math.max(1, Math.min(12, Math.ceil(amount * (1 + bonusRate) / cap * 12)));
   const flights = claimedBreeds.map(([breed, amount]) => room3d?.flyCoins(breed, target, coinsFor(amount), () => {
     pill.classList.remove('coin-hit'); void pill.offsetWidth; pill.classList.add('coin-hit');
     playSound('fill', 5);
