@@ -165,7 +165,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 | 1 | Màn continue (hết lượt) | +3 lượt | 5, mỗi lần chơi tối đa 1, chỉ làm continue đầu tiên | Gem cho +5 và được continue tiếp |
 | 2 | Bảng thắng: nút "▶ +N" (ghi đúng số xu thêm) | Lần 1–2 trong ngày +50% xu màn, từ lần 3 +20% | **Không giới hạn** | — |
 | 3 | Popup booster hết kho | 1 booster loại đó | 3 (chung mọi loại) | Gem mua bao nhiêu cũng được, gói ×3 |
-| 4 | Sau khi nhận xu idle ở Deco: nút "▶ +N" (8 giây) | +50% số vừa nhận | 1 | — |
+| 4 | Nhận xu idle ở Deco: **vòng nhân** (kim chạy qua lại trên nửa vòng tròn, nút "Watch video" ghi số xu theo ô kim đang chỉ, bấm là kim dừng; 28/10, theo mẫu UI "Multiplier") | x1.2 (30% + 30% cung) · x1.5 (13% + 13%) · **x4 = +300%** (14%, giữa cung): trung bình +67%. x4 trúng tối đa 1 lần / ngày, trúng rồi ô đó thành x1.5 | 2 | `IDLE_RATE` giảm 0.015 → 0.011 để tổng xu idle một ngày ≈ như cũ (mô phỏng: người chơi trung bình mở khu lệch ≤ 2 màn) |
 | 5 | Shop: "Gem miễn phí" | 20 gem (tăng từ 10, 22/10) | 2 | 40 gem ≈ $0.40 |
 | | **Tổng** | | 11 lượt có trần + bảng thắng không giới hạn | |
 
@@ -178,7 +178,7 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 - **Interstitial**: tắt ở đầu bản test (`INTERSTITIAL_ON = false`). Bật cho nhóm A/B từ tuần 3: chỉ sau thắng, từ màn 20, mỗi 3 màn, cách nhau ≥ 180 s,
   không sau thua, không trong 60 s sau một RV. Mọi giao dịch IAP tắt interstitial vĩnh viễn.
 
-Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }`
+Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }`
 (`null` = không giới hạn). Interstitial: chưa làm.
 
 ---
@@ -238,7 +238,7 @@ Không có tỉ giá cố định 1 gem = N xu, và người chơi không thấy
 | RV thêm xu ở bảng thắng (không giới hạn, +50% / +50% / rồi +20%) | Người xem mọi màn: +~20–28% xu. Lấp khúc chật: người chơi trung bình 70% → ~90% ở màn 40–70, không vượt 100% trước màn 80. **Giữ nguyên thưởng gốc màn 1–80** |
 | **Thưởng tăng mãi** (`REWARD_FLAT_FROM = 0`; quyết định 22/10, thay cho bản dừng ở màn 80) | Game còn thêm màn + khu sau màn 100 và giá khu sau đắt hơn khu trước (hệ số ×1.6 → ×60), nên thưởng phải tăng theo, không thì mỗi khu mới phải chơi lâu hơn khu trước. Màn 81–100 tạm dư xu (luỹ kế ~121% giá món gốc) vì chưa có khu sau mẫu giáo: xu dư vẫn có chỗ tiêu ở kiểu khác + tường / sàn (981K tổng). Game cùng thể loại (Homescapes: 1 sao / màn) giữ thưởng cố định và lấy cảm giác tiến bộ từ nội dung mới; Gom Gom chọn thưởng tăng vì giá đồ tăng theo khu |
 | Vườn hoa Đà Lạt (quà khi mở hết khu) + khu mới tiếp theo từ màn 81 qua live ops | Bù nội dung, không cần thêm số |
-| Idle giữ 0.015; nhận được sau ≥ 1 phút tích (`IDLE_MIN_MINUTES` 1; 26/10, trước là 30 phút rồi 1 giờ); khi một con mèo tích ≥ 80% trần thì tab Deco có chấm đỏ mời vào nhận (`menu/idle-coins.js` idleDot) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
+| Idle 0.011 (28/10, trước 0.015: bù vòng nhân x1.2 / x1.5 / x4 khi nhận); nhận được sau ≥ 1 phút tích (`IDLE_MIN_MINUTES` 1; 26/10, trước là 30 phút rồi 1 giờ); khi một con mèo tích ≥ 80% trần thì tab Deco có chấm đỏ mời vào nhận (`menu/idle-coins.js` idleDot) | RV idle +50%, 1 lần / ngày: đã tính trong số trên |
 | **Giá khu theo công thức R** (23/10, thay `ZONE_PRICE_MULT` chỉnh tay ×1.6 → ×111 và `AREA_UNLOCK` 550 → 6,550) | Xem mục 7.1. Mô phỏng (thắng 70%): người chơi trung bình / ít chơi mở các khu ở gần đúng màn cũ (lệch ≤ 2 màn) |
 | **Đồ deco không khoá theo màn** (23/10) | Khu mở là mua được mọi món, chỉ cần đủ xu. Chỉ thú cưng còn theo màn (quà nhận ở Map) |
 
@@ -337,7 +337,7 @@ Wiki không có benchmark cho các chỉ số này ([[concept-analytics-and-kpis
 | `GEM_PACKS` | 6 gói mục 8.1, kèm `id` sản phẩm store |
 | `COIN_TOP_UP` | `{ gemsPerLevel: 20, minGems: 1 }` (thay `COIN_BAGS`: bù xu khi thiếu, không có túi xu) |
 | `OFFERS` | `starter` / `rescue` / `builder` như mục 8 (Builder: xu = 12 × thưởng màn thay cho "2 món gốc") |
-| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 1, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleBonus: 0.5 }` |
+| `REWARDED_ADS` | `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }` |
 | `REWARD_FLAT_FROM` | 0 = thưởng tăng mãi (đặt > 0 để dừng tăng từ màn đó) |
 | bỏ | `BOOSTER_PRICE` (xu), `COIN_PACKS`, `STARTER_PACK` |
 
