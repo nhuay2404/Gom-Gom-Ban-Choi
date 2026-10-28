@@ -126,7 +126,7 @@ export async function endLevel(win, reason = '') {
   if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
-  // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, sau đó +20%; REWARDED_ADS.coinBonus), không giới hạn.
+  // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, lần 3–5 +20%, từ lần 6 +10%; REWARDED_ADS.coinBonus), không giới hạn.
   // Nút ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
   $('result-coins').parentElement.querySelector('.ad-double')?.remove();
   if (coinsEarned && adReady('bonusCoins')) {

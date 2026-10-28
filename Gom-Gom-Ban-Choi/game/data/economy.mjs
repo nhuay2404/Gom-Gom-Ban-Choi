@@ -162,11 +162,11 @@ export const OFFERS = remote('OFFERS', {
 // caps = số lần tối đa MỖI NGÀY cho từng chỗ đặt (null = không giới hạn): continue (+lượt khi thua) · bonusCoins (thêm xu ở bảng thắng) ·
 // booster (1 booster khi hết kho) · idle (thêm xu idle) · gems (gem miễn phí ở Shop). gems = gem mỗi lần xem ở Shop.
 // coinBonus = xu thêm ở bảng thắng theo lần xem thứ 1, 2, … trong ngày (tỉ lệ xu của màn; hết danh sách thì giữ số cuối):
-//   2 lần đầu +50%, từ lần 3 +20%, xem bao nhiêu cũng được. idleWheel = vòng nhân lúc nhận xu idle
+//   2 lần đầu +50%, lần 3–5 +20%, từ lần 6 +10% (28/10: người xem mọi màn chiếm ~1/3 xu từ đây), xem bao nhiêu cũng được. idleWheel = vòng nhân lúc nhận xu idle
 //   (kim chạy qua lại trên cung, chạm nút xem ads là kim dừng): mỗi ô { bonus: xu thêm theo tỉ lệ số vừa nhận, share: bề rộng ô trên cung = tỉ lệ
 //   rơi vào ô }. Thưởng thêm trung bình = Σ share × bonus = +67%. Ô +300% chỉ trúng được jackpotPerDay lần mỗi ngày, trúng rồi thì ô đó hiện +50%.
 //   Mô phỏng (tools/economy/economy-sim.mjs, ads.bonus): người xem mọi màn vẫn chỉ đủ ~90–100% giá món gốc ở màn 20–70.
-export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2],
+export const REWARDED_ADS = remote('REWARDED_ADS', { from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2, 0.2, 0.2, 0.1],
   idleWheel: [{ bonus: 0.2, share: 0.3 }, { bonus: 0.5, share: 0.13 }, { bonus: 3, share: 0.14 }, { bonus: 0.5, share: 0.13 }, { bonus: 0.2, share: 0.3 }], jackpotPerDay: 1 });
 
 // Continue khi thua: giá gem tăng dần trong CÙNG một lần chơi (hết danh sách = không continue nữa).
@@ -197,13 +197,17 @@ export const BOOSTER_EXTRA_MOVES = remote('BOOSTER_EXTRA_MOVES', 3); // booster 
 //  (id kiểu khác xem VARIANTS trong game/deco/deco-data.mjs). Thêm / bớt món mới: phải có dòng ở đây (npm test kiểm).
 // Giá khu theo công thức (23/10, một bản, không qua Remote Config). Mở khu KHÔNG theo màn: xây đủ món gốc khu trước + trả xu (deco-data.mjs
 // unlockArea); người chơi thấy trước giá ở bảng "2 khu kế tiếp". Khu thứ n (vườn 2 = 1, phòng khách = 2 … theo AREA_ORDER ở deco-data.mjs) có giá
-// CỐ ĐỊNH tính từ R(10n) = xu thắng màn 10n (bỏ dao động). 10n chỉ là nhịp thiết kế (mỗi khu ~pace màn) và nhịp cho tool mô phỏng, game không khoá:
-//   giá mở khu        = unlockR × R(10n), làm tròn 50 xu
-//   tổng giá món gốc  = k × R(10n): k = kEarly cho `early` khu đầu (mở nhanh, làm quen deco), kLate từ khu sau. Từng món (và tường / sàn của khu)
+// CỐ ĐỊNH tính từ R(Lₙ) = xu thắng màn Lₙ (bỏ dao động). Lₙ = màn mốc THIẾT KẾ, chỉ để tính giá + nhịp cho tool mô phỏng, game không khoá theo màn:
+//   `early` khu đầu mỗi khu earlyPace màn (Lₙ = earlyPace × n), từ khu sau mỗi khu pace màn (Lₙ = earlyPace × early + pace × (n − early)).
+//   28/10: pace 10 → 15 (thử 20 trước). Game có 150 màn mà 7 khu: nhịp 10 làm người chơi mua hết món gốc ở ~màn 75–110 rồi hết thứ để mua; nhịp 15 = nhịp ra
+//   khu mới của đội nội dung (khu mới / màn mới thêm sau cứ ~15 màn một khu). Mô phỏng: mua đủ món gốc ở ~màn 87 (chơi chăm nhất) – 126 (không ads).
+//   giá mở khu        = unlockR × R(Lₙ), làm tròn 50 xu
+//   tổng giá món gốc  = k × R(Lₙ): k = kEarly cho mỗi earlyPace màn ở `early` khu đầu (mở nhanh, làm quen deco), kLate cho mỗi pace màn
+//                       từ khu sau, nhân theo số màn tới màn mốc khu kế (phòng khách kéo dài 15 màn nên k = 13 × 1.5 = 19.5). Từng món (và tường / sàn của khu)
 //                       nhân cùng hệ số nên giữ tỉ lệ giá trong bảng DECO.
 //   Vườn gốc (khu hướng dẫn) = giá DECO × gardenMult.
 // Thêm khu mới: thêm id vào AREA_ORDER + món ở DECO, giá tự ra. Bảng giá đã tính: deco-data.mjs AREA_UNLOCK / ZONE_PRICE_MULT, `npm run economy`.
-export const ZONE_PRICING = { pace: 10, unlockR: 1.3, kEarly: 13, early: 2, kLate: 30, gardenMult: 1.6 };
+export const ZONE_PRICING = { earlyPace: 10, pace: 15, unlockR: 1.3, kEarly: 13, early: 2, kLate: 30, gardenMult: 1.6 };
 
 export const DECO = remote('DECO', {
   // --- Vườn — đồ ---
