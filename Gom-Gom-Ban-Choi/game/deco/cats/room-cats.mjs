@@ -399,7 +399,8 @@ export function createCatLife(ctx) {
       if (near) {
         const side = Math.sin(away + Math.PI / 2) * (h.x - near.x) + Math.cos(away + Math.PI / 2) * (h.z - near.z) >= 0 ? 1 : -1;
         const a = away + side * Math.PI / 2;
-        ({ x: cat.x, z: cat.z } = world.reachable(near.x + Math.sin(a) * 1.1, near.z + Math.cos(a) * 1.1));
+        // 1.7 m: gần hơn thì khung sáng của món (hướng dẫn Deco) cắt ngang người mèo.
+        ({ x: cat.x, z: cat.z } = world.reachable(near.x + Math.sin(a) * 1.7, near.z + Math.cos(a) * 1.7));
       } else ({ x: cat.x, z: cat.z } = world.reachable(h.x + Math.sin(away) * ROOM * .45, h.z + Math.cos(away) * ROOM * .45));
       cat.y = world.groundAt(cat.x, cat.z); cat.surface = null;
       cat.interrupt(cat.holdStill());
