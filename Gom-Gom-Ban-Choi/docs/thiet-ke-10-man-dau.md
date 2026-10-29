@@ -42,16 +42,22 @@ Trong bước ép nước, các thao tác khác bị khoá (không xoay, không 
 
 ## 4. Luồng màn hình
 
+(Cập nhật 29/10 theo build `c15241b`; bản cũ có màn "Giới thiệu màn" và bản đồ 2D mở bằng nút ☰, nay đã bỏ.)
+
 ```
-Mở game lần đầu ──► Giới thiệu màn 1 ──► Chơi (tutorial) ──► Qua màn (sao) ──► Màn tiếp ...
-Đã từng chơi   ──► Bản đồ ──► chọn màn ──► Giới thiệu màn ──► Chơi
-Thua (hết lượt / hết chỗ) ──► Chơi lại | Bản đồ
+Mở game lần đầu ──► vào thẳng màn 1 (tutorial) ──► Thắng ──► Continue ──► thưởng mở khoá (thùng mèo / hộp quà) ──► Deco ──► Home ──► PLAY ──► màn kế
+Đã từng chơi   ──► Home (bản đồ màn 3D) ──► PLAY (vào thẳng màn đang mở) | chạm nút màn trên bản đồ ──► Chơi
+Thua (hết lượt / hết chỗ) ──► [đạt ≥ 70% mục tiêu: "So close!" continue] ──► bảng thua: Chơi lại | Home
 ```
 
-- **Bản đồ** (nút ☰ góc trái): 10 nút zigzag, mở khoá lần lượt, hiện sao tốt nhất, màn đang tới nhún nhảy, màn 10 màu đỏ "Khó".
-- **Giới thiệu màn**: số màn, tên, cơ chế mới, mục tiêu điểm và số lượt.
-- **Kết quả**: thắng thì sao bật lần lượt và có nút *Màn tiếp*; thua thì có nút *Chơi lại*. Cả hai đều có nút *Bản đồ*.
-- Nút ↻ (góc phải) chơi lại màn hiện tại từ đầu (kể cả tutorial).
+- **Home / bản đồ màn 3D**: các nút màn đầu mèo trên đường cỏ, mỗi 20 màn một theme; màn đang tới nổi bật, màn chưa mở có khoá. Nút **PLAY** vào thẳng màn đang mở;
+  chạm một nút màn đã mở để chơi lại màn đó. Không còn bảng giới thiệu màn: vào là chơi ngay.
+- **Onboarding sau màn 1–3**: thắng màn 1 nhận thùng mèo ("You got a new box", thùng bay vào tab Deco, mở thùng ra mèo cam, mèo cam nói chuyện rồi về Home chơi tiếp);
+  thắng màn 2, 3 mỗi màn một hộp quà ở Deco (món đồ đầu tiên, rồi xu + hướng dẫn mua). Còn thùng chưa mở thì PLAY bị chặn, nhắc mở thùng trước.
+- **Kết quả**: thắng thì hiện điểm, xu nhận, thứ vừa mở khoá. Màn 1–4 chỉ có nút *Continue* (sang màn kế hoặc màn quà); từ màn 5 có *Home*, *Màn tiếp*, *Chơi lại*
+  và nút ads nhận thêm xu. Thua: nếu đã đạt ≥ 70% mục tiêu thì hiện "So close!" mời continue (+lượt bằng gem / xem ads), không thì vào thẳng bảng thua
+  (*Chơi lại*, *Home*).
+- Trong màn: nút Settings có *Restart* (chơi lại màn từ đầu); rời màn giữa chừng có hộp hỏi lại "Leave this level?".
 - **Tiến độ** lưu trong trình duyệt (`localStorage`, khoá `gomgom-rotate-progress-v1`): sao tốt nhất của từng màn. Màn N mở khi đã qua màn N-1.
 
 **Sao** tính theo lượt còn dư lúc thắng: còn ≥ 30% lượt được 3 sao, còn ≥ 12% được 2 sao, còn lại 1 sao.

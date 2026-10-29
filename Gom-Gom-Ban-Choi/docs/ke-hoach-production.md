@@ -8,7 +8,7 @@ Theo dõi trực tiếp (nguồn chính, file này là bản chép): https://cla
 - Phạm vi các sprint còn lại: chỉ phần thiết kế game. Setup, tối ưu, build, tích hợp SDK là việc của team kỹ thuật.
 
 ## Nội dung bản production đầu tiên
-- **Gameplay**: bàn Rotate (kéo thả, xoay thẻ, Hold, gom 3), thắng theo điểm + mục tiêu (cỏ, lồng, hộp, mèo béo), 100 màn theo chương, màn boss 40 / 60 / 70 / 100, độ khó thích ứng (DDA), paywall màn 10.
+- **Gameplay**: bàn Rotate (kéo thả, xoay thẻ, Hold, gom 3), thắng theo điểm + mục tiêu (cỏ, lồng, hộp, mèo béo), 150 màn theo chương 10 màn, màn boss ở mọi màn x0 (10, 20, 30… 150), độ khó thích ứng (DDA), paywall màn 10.
 - **Cơ chế / booster**: búa 3×3, đổi thẻ may mắn, +lượt, hiệu ứng cụm (Cat Drop, Claw Cross, Call the Herd, gom dây chuyền), Bonus Time.
 - **Meta**: bản đồ màn 3D, Deco 3D 8 khu (vườn, phòng khách, phòng ngủ, bếp, phòng tắm, sân sau, mẫu giáo, vườn hoa), mỗi chỗ 3 món, mở khu bằng xu, xu idle.
 - **Thú cưng**: 6 mèo + 6 chó (2D trên bàn, 3D trong nhà), đổi bộ quân, mèo tương tác với đồ.

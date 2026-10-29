@@ -71,7 +71,7 @@ Chia ba nhóm để commit thiết kế UI và gameplay tách riêng (quy ước
 | `core/level-rules.mjs`, `board-shapes.mjs` | Đọc dữ liệu màn (bàn, cỏ, thẻ viết gọn), bộ chia thẻ, sao; hình bàn |
 | `core/adaptive.mjs`, `progression.mjs`, `boosters.mjs`, `idle.mjs`, `save.mjs`, `remote-config.mjs` | Độ khó thích ứng, tiến độ, kho booster, xu tự sinh, lưu trữ, config từ xa |
 | **`data/`** | **Dữ liệu chơi** — sang Unity thành ScriptableObject / JSON (`npm run export:data`) |
-| `data/levels.mjs`, `level-layouts.mjs`, `cat-layouts.mjs` | 100 màn; bố trí theo độ khó thích ứng (sinh bằng tool) |
+| `data/levels.mjs`, `level-layouts.mjs`, `cat-layouts.mjs` | 150 màn; bố trí theo độ khó thích ứng (sinh bằng tool) |
 | `data/tuning.mjs`, `economy.mjs` | Hằng số cảm giác chơi; kinh tế (xu, giá) — chỉnh được từ Firebase Remote Config |
 | `core/*.test.mjs` | Kiểm thử, chạy tất cả bằng `npm test` |
 | **`deco/`** | **Cảnh 3D Home / Deco**: `deco-room.mjs` (phòng + camera), `scenes/` (từng khu), `cats/` (mèo 3D: khung `cat-rig`, não `cat-brain`, cả đàn `room-cats`), `render/` (toon, viền), `map-world.mjs` (bản đồ màn 3D), QC model, danh mục đồ |
@@ -82,7 +82,7 @@ Bàn 6×6 tới 8×8, hình dạng tuỳ màn (vuông, tim, tam giác, kim cươ
 
 Thùng gỗ chặn ô (không đặt mèo lên được), vỡ khi gom mèo sát bên.
 
-Có 100 màn, mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `docs/thiet-ke-10-man-dau.md`.
+Có 150 màn chia chương 10 màn (màn x0 là boss: 10, 20, 30…), mỗi màn một mục tiêu điểm trong số lượt giới hạn; hết lượt hoặc hết chỗ đặt là thua. Màn 1–4 có tutorial. Sao (1–3) tính theo lượt còn dư. Chi tiết ở `docs/thiet-ke-10-man-dau.md`.
 
 Ô gửi tạm dùng không giới hạn số lần: kéo thẻ vào để cất (hoặc đổi với thẻ đang cất), chạm vào ô để lấy thẻ đã cất về.
 
