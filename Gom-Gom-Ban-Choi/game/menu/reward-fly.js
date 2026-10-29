@@ -25,6 +25,7 @@ function flyOne(layer, kind, from, to, delay) {
 }
 
 // Ảnh quà (booster, món deco, mèo) bay nguyên con từ ô quà vào nút đích (nút Play / tab Deco), thu nhỏ dần; đích nảy khi chạm.
+// src: đường dẫn ảnh, hoặc markup SVG (bắt đầu bằng '<', vd. mèo của cat-art.mjs).
 export function flyArt(from, src, target) {
   if (reduceMotion.matches || !from?.width || !src || !target?.getClientRects().length) return Promise.resolve();
   const layer = document.createElement('div');
@@ -32,19 +33,22 @@ export function flyArt(from, src, target) {
   layer.popover = 'manual';
   document.body.append(layer);
   layer.showPopover();
-  const icon = document.createElement('img');
+  const markup = src.startsWith('<'), icon = document.createElement(markup ? 'span' : 'img');
   icon.className = 'reward-fly-art';
-  icon.src = src; icon.alt = '';
+  if (markup) icon.innerHTML = src;
+  else { icon.src = src; icon.alt = ''; }
   icon.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px`;
   layer.append(icon);
   const box = target.getBoundingClientRect();
   const dx = box.left + box.width / 2 - (from.left + from.width / 2), dy = box.top + box.height / 2 - (from.top + from.height / 2);
   const end = Math.max(.15, Math.min(1, box.height / from.height));
-  return icon.animate([
+  const flight = icon.animate([
     { transform: 'none' },
     { transform: 'translateY(-30px) scale(1.08)', offset: .2 },
     { transform: `translate(${dx}px,${dy}px) scale(${end})`, opacity: .9 },
-  ], { duration: 800, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'both' }).finished
+  ], { duration: 800, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'both' }).finished;
+  // Chốt an toàn như flyReward: app chạy nền thì hiệu ứng đứng yên, quá hạn vẫn gỡ ảnh để không kẹt giữa màn hình.
+  return Promise.race([flight, new Promise(resolve => setTimeout(resolve, 1300))])
     .then(() => { target.classList.remove('coin-hit'); void target.offsetWidth; target.classList.add('coin-hit'); })
     .finally(() => layer.remove());
 }

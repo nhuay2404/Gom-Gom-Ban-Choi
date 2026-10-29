@@ -1892,3 +1892,53 @@ export function catShowcase(container, breed, { reduceMotion = false } = {}) {
     stop() { renderer.setAnimationLoop(null); observer.disconnect(); renderer.dispose(); renderer.domElement.remove(); },
   };
 }
+
+// Màn "You got a new box" (onboarding sau màn 1, menu/map-view.js showBoxReward): đúng model thùng các-tông đóng kín của mèo chờ nhận
+// ở Home hub (petBox(true)), xoay một vòng khi hiện ra rồi lắc lư nhẹ như có gì cựa quậy bên trong.
+export function boxShowcase(container, { reduceMotion = false } = {}) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  container.append(renderer.domElement);
+  const scene = new THREE.Scene();
+  toonLook(renderer, scene);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xffd9c4, TOON_LIGHT.hemi));
+  const sun = new THREE.DirectionalLight(0xffffff, TOON_LIGHT.sun);
+  sun.position.set(-2, 4, 5);
+  scene.add(sun);
+  const crate = petBox(true, () => .37), turn = new THREE.Group();
+  const box3 = new THREE.Box3().setFromObject(crate), size = box3.getSize(new THREE.Vector3()), center = box3.getCenter(new THREE.Vector3());
+  crate.position.sub(center);
+  turn.add(crate);
+  scene.add(turn);
+  const camera = new THREE.PerspectiveCamera(30, 1, .1, 100), radius = Math.max(size.x, size.y, size.z) * .75;
+  // Lùi đủ xa cho cả thùng nằm gọn trong khung kể cả lúc xoay chéo (đường chéo đáy ~1.4 lần cạnh) + lắc.
+  camera.position.set(0, radius * 1.1, radius / Math.tan(15 * Math.PI / 180) * 1.7);
+  camera.lookAt(0, 0, 0);
+  function resize() {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  const observer = new ResizeObserver(resize);
+  observer.observe(container);
+  resize();
+  const start = performance.now();
+  renderer.setAnimationLoop(now => {
+    const t = (now - start) / 1000, spin = Math.min(1, t / 1.1), ease = 1 - Math.pow(1 - spin, 3);
+    if (reduceMotion) turn.rotation.y = -.5;
+    else {
+      // Xoay một vòng khi xuất hiện, rồi cứ ~1.6 s lắc qua lại + nảy nhẹ (như mèo bên trong đang cựa).
+      const wob = Math.max(0, t - 1.1) % 1.6, shake = wob < .5 ? Math.sin(wob * 25) * (1 - wob / .5) : 0;
+      turn.rotation.y = -.5 + (1 - ease) * Math.PI * 2;
+      turn.rotation.z = shake * .08;
+      turn.position.y = Math.abs(shake) * size.y * .05;
+    }
+    renderer.render(scene, camera);
+  });
+  return {
+    stop() { renderer.setAnimationLoop(null); observer.disconnect(); renderer.dispose(); renderer.domElement.remove(); },
+  };
+}

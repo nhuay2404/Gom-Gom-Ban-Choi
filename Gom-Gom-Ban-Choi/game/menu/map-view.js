@@ -5,16 +5,15 @@ import { LEVELS } from '../data/levels.mjs';
 import { loadProgress, unlockedCount, levelTier } from '../core/progression.mjs';
 import { playSound, playMeow } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText } from '../core/save.mjs';
-import { claimCat, isCatClaimed, catRewardsAt } from '../deco/deco-data.mjs';
-import { GEM_REWARDS } from '../data/economy.mjs';
-import { grantGems } from '../app/store.js';
-import { $, reduceMotion, showToast, getDeco, setDeco, refreshWallet, setPieceSkin, dogSkinOpen, noteEvent } from '../app/shared.js';
+import { isCatClaimed, catRewardsAt } from '../deco/deco-data.mjs';
+import { $, reduceMotion, showToast, getDeco, refreshWallet, setPieceSkin, dogSkinOpen } from '../app/shared.js';
 import { play } from './context.js';
 import { hideMenus, renderSkinButton } from './tabs.js';
 import { renderDailyButton } from './daily.js';
 import { renderQuestButtons } from './quests.js';
 import { showLoginOnHome } from './login.js';
 import { clearDecoNew } from './deco-panel.js';
+import { BOX_ART } from '../ui/gift-box-art.mjs';
 import { markTab } from './settings.js';
 
 // Bản đồ saga: màn 1 ở đáy, các nút nằm trên một con đường uốn hình sin đi lên (như Candy Crush).
@@ -88,80 +87,92 @@ function renderMap() {
 }
 
 // Bản đồ 3D (deco/map-world.mjs: trống cỏ lăn như Animal Crossing). Máy không có WebGL / lỗi nạp thì dùng bản đồ 2D ở trên.
-export let map3d = null, map3dFailed = false, catShowcase = null;
+export let map3d = null, map3dFailed = false, boxShowcase = null, catShowcase = null;
 
-export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld, catShowcase: showcase }) => {
-  catShowcase = showcase;
+export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld, boxShowcase: boxShow, catShowcase: catShow }) => {
+  catShowcase = catShow;
+  boxShowcase = boxShow;
   map3d = createMapWorld($('map-3d'), {
     avatarSvg: catMarkup.orange,
     onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
-    onClaim: (breed, index) => showCatReward(breed, () => {
-      setDeco(claimCat(getDeco(), breed));
-      noteEvent('claimPet');
-      const gems = grantGems(`pet:${breed}`, GEM_REWARDS.pet);
-      if (gems) showToast(`New friend! +${gems} gems`);
-      map3d.render(mapLevels());
-      map3d.focus(index, false);
-      refreshClaimDot();
-    }),
   });
 }).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
 
 function mapLevels() {
   const progress = loadProgress(), open = unlockedCount(progress), deco = getDeco();
   return LEVELS.map((level, index) => {
-    // Mèo thưởng của màn này (deco-data.mjs catRewardsAt: mèo màn 7–20, chó rải màn 26–60; mốc ở economy.mjs): bản đồ dựng mèo 3D
-    // cạnh màn (mèo đã nhận thì về nhà, không hiện nữa). Thắng màn rồi mà chưa nhận: nhãn NEW! thành nút Claim.
+    // Mèo thưởng của màn này (deco-data.mjs catRewardsAt: mèo màn 7–20, chó rải màn 26–60; mốc ở economy.mjs): bản đồ dựng thùng
+    // đóng cạnh màn chưa thắng (nhá trước). Không còn nút Claim: thắng màn là nhận thùng luôn (play/result.js), mở thùng ở Deco.
     const newCats = catRewardsAt(index).filter(breed => !isCatClaimed(deco, breed));
-    const claimable = !!progress.stars[index];
-    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats, claimable };
+    return { locked: index >= open, current: index === open - 1, tier: play.mapTier(index, index === open - 1).style, newCats, claimable: false };
   });
 }
 
-// Chấm đỏ ở tab Home khi còn mèo đã mở khoá mà chưa nhận (nút CLAIM trên Map).
-const hasUnclaimedCat = () => mapLevels().some(level => level.claimable && level.newCats.length > 0);
 
-export function refreshClaimDot() {
-  $('tabbar').querySelector('[data-tab="home"]')?.classList.toggle('has-dot', hasUnclaimedCat());
-}
-
-// Màn hình nhận thưởng mèo (kiểu "You got" của game mobile): tia sáng xoay, mèo bật ra, độ hiếm + tên, "Tap to claim".
-// Chạm (sau khi hiện xong) thì mèo bay đi, gọi onClaimed, báo toast mèo đã về nhà.
-// Mọi chó mèo nhận ở Home đều là Common (thiết kế chọn; CSS r-rare / r-epic / r-legendary còn giữ nếu sau này cần lại).
-const CAT_RARITY = 'Common';
-
-// `keep`: sắp có màn thưởng kế tiếp nên giữ nền khi đóng (không mờ ra); `chained`: màn kế của một cặp, hiện luôn không mờ vào.
-function showCatReward(breed, onClaimed, { keep = false, chained = false } = {}) {
-  const rarity = CAT_RARITY, name = categories[breed].name;
-  const screen = document.createElement('div');
-  screen.className = `cat-reward${chained ? ' chained' : ''}`;
+// Màn "You got <tên>" khi chạm mở thùng thú cưng ở Deco (gift-boxes.js openPetBox): tia sáng xoay, con vật 3D (cùng model trên Map)
+// bật ra, độ hiếm + tên, "Tap to continue". Chạm (sau khi hiện xong) thì đóng; xong Promise thì con vật nhảy ra khỏi thùng.
+// Mọi chó mèo đều là Common (thiết kế chọn; CSS r-rare / r-epic / r-legendary còn giữ nếu sau này cần lại).
+export function showPetReward(breed) {
+  const name = categories[breed].name, screen = document.createElement('div');
+  screen.className = 'cat-reward';
   screen.setAttribute('role', 'dialog');
   screen.setAttribute('aria-label', `You got ${name}`);
   screen.innerHTML = `<div class="cr-rays"></div><div class="cr-glow"></div>
     <p class="cr-title">You got</p>
     <div class="cr-cat cr-3d"><i class="cr-spark s1"></i><i class="cr-spark s2"></i><i class="cr-spark s3"></i><i class="cr-spark s4"></i></div>
-    <p class="cr-rarity r-${rarity.toLowerCase()}">${rarity}</p>
+    <p class="cr-rarity r-common">Common</p>
     <p class="cr-name">${name}</p>
-    <p class="cr-tap">Tap to claim</p>`;
+    <p class="cr-tap">Tap to continue</p>`;
   document.body.append(screen);
-  // Mèo 3D (cùng model trên Map); máy không dựng được 3D thì dùng art 2D.
   let showcase = null;
   try { showcase = catShowcase?.(screen.querySelector('.cr-cat'), breed, { reduceMotion: reduceMotion.matches }); } catch (error) { console.warn('Cat showcase off:', error); }
   if (!showcase) screen.querySelector('.cr-cat').insertAdjacentHTML('afterbegin', catMarkup[breed]);
   playSound('reward');
-  // Mèo mới chào bằng giọng riêng của giống (sound.mjs VOICE), sau tiếng thưởng một nhịp.
-  setTimeout(() => playMeow(breed), 450);
-  let ready = false, done = false;
-  setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion.matches ? 0 : 900);
-  screen.addEventListener('click', () => {
-    if (!ready || done) return;
-    done = true;
-    playSound('pick');
-    onClaimed();
-    screen.classList.add('closing');
-    if (keep) screen.classList.add('keep');
-    const roomy = getDeco().cats.includes(breed);
-    setTimeout(() => { showcase?.stop(); screen.remove(); showToast(roomy ? `${name} moved into your home!` : `${name} is waiting in Deco (room is full)`); }, reduceMotion.matches ? 0 : 450);
+  setTimeout(() => playMeow(breed), 450); // con mới chào bằng giọng riêng của giống (sound.mjs VOICE)
+  return new Promise(resolve => {
+    let ready = false;
+    setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion.matches ? 0 : 900);
+    screen.addEventListener('click', () => {
+      if (!ready) return;
+      ready = false;
+      playSound('pick');
+      screen.classList.add('closing');
+      setTimeout(() => { showcase?.stop(); screen.remove(); resolve(); }, reduceMotion.matches ? 0 : 450);
+    });
+  });
+}
+
+// Màn "You got a new box" (sau màn 1: tours.js runOnboarding; mốc nhận mèo / chó ở Map: onClaim), model thùng các-tông 3D của
+// Home hub (map-world.mjs boxShowcase); không dựng được 3D thì dùng ảnh thùng. Chạm (sau khi hiện xong) thì đóng, trả về khung
+// thùng trên màn hình (DOMRect) để thùng bay tiếp vào tab Deco.
+export function showBoxReward() {
+  const screen = document.createElement('div');
+  screen.className = 'cat-reward box-reward';
+  screen.setAttribute('role', 'dialog');
+  screen.setAttribute('aria-label', 'You got a new box');
+  screen.innerHTML = `<div class="cr-rays"></div><div class="cr-glow"></div>
+    <p class="cr-title">You got</p>
+    <div class="cr-cat cr-3d"><i class="cr-spark s1"></i><i class="cr-spark s2"></i><i class="cr-spark s3"></i><i class="cr-spark s4"></i></div>
+    <p class="cr-name">A new box!</p>
+    <p class="cr-tap">Tap to continue</p>`;
+  document.body.append(screen);
+  const holder = screen.querySelector('.cr-cat');
+  let showcase = null;
+  try { showcase = boxShowcase?.(holder, { reduceMotion: reduceMotion.matches }); } catch (error) { console.warn('Box showcase off:', error); }
+  if (!showcase) holder.insertAdjacentHTML('afterbegin', `<img src="${BOX_ART}" alt="">`);
+  playSound('reward');
+  return new Promise(resolve => {
+    let ready = false;
+    setTimeout(() => { ready = true; screen.classList.add('ready'); }, reduceMotion.matches ? 0 : 900);
+    screen.addEventListener('click', () => {
+      if (!ready) return;
+      ready = false;
+      playSound('pick');
+      const rect = holder.getBoundingClientRect();
+      screen.classList.add('closing');
+      setTimeout(() => { showcase?.stop(); screen.remove(); }, reduceMotion.matches ? 0 : 450);
+      resolve(rect);
+    });
   });
 }
 

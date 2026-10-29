@@ -6,9 +6,9 @@
     {
       "level": 1,
       "name": "Hello, Kitty",
-      "board": "6×6 36ô",
+      "board": "7×7 49ô",
       "tier": "normal",
-      "moves": 4,
+      "moves": 10,
       "target": 60,
       "winRate": 1,
       "stuckRate": 0,
@@ -19,7 +19,7 @@
       "secWin": {
         "weak": 9,
         "mid": 7.1,
-        "good": 5.3
+        "good": 5.2
       },
       "secLoss": {
         "weak": null,
@@ -32,7 +32,7 @@
       "name": "Round and Round",
       "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 6,
+      "moves": 10,
       "target": 90,
       "winRate": 1,
       "stuckRate": 0,
@@ -56,23 +56,23 @@
       "name": "Go Big",
       "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 10,
-      "target": 170,
-      "winRate": 0.9,
+      "moves": 14,
+      "target": 80,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.96,
-      "avgScore": 187,
-      "movesUsedWin": 7.8,
-      "movesUsedLoss": 10,
+      "avgStars": 3,
+      "avgScore": 104,
+      "movesUsedWin": 4.2,
+      "movesUsedLoss": null,
       "secWin": {
-        "weak": 50.3,
-        "mid": 37.5,
-        "good": 26
+        "weak": 26.4,
+        "mid": 19.8,
+        "good": 13.8
       },
       "secLoss": {
-        "weak": 69.3,
-        "mid": 51.2,
-        "good": 35
+        "weak": null,
+        "mid": null,
+        "good": null
       }
     },
     {
@@ -80,23 +80,23 @@
       "name": "Triple Cards",
       "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 12,
-      "target": 280,
-      "winRate": 0.882,
+      "moves": 15,
+      "target": 120,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.99,
-      "avgScore": 300,
-      "movesUsedWin": 9.4,
-      "movesUsedLoss": 12,
+      "avgStars": 3,
+      "avgScore": 157,
+      "movesUsedWin": 4.5,
+      "movesUsedLoss": null,
       "secWin": {
-        "weak": 57.3,
-        "mid": 43.1,
-        "good": 30.2
+        "weak": 26.7,
+        "mid": 20.1,
+        "good": 14.2
       },
       "secLoss": {
-        "weak": 77.1,
-        "mid": 57.5,
-        "good": 39.9
+        "weak": null,
+        "mid": null,
+        "good": null
       }
     },
     {
@@ -104,23 +104,23 @@
       "name": "Crates",
       "board": "6×6 36ô",
       "tier": "normal",
-      "moves": 12,
-      "target": 240,
-      "winRate": 0.785,
+      "moves": 15,
+      "target": 100,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.68,
-      "avgScore": 252,
-      "movesUsedWin": 10.2,
-      "movesUsedLoss": 12,
+      "avgStars": 3,
+      "avgScore": 125,
+      "movesUsedWin": 4.3,
+      "movesUsedLoss": null,
       "secWin": {
-        "weak": 66.4,
-        "mid": 49.4,
-        "good": 34.1
+        "weak": 25.7,
+        "mid": 19.3,
+        "good": 13.5
       },
       "secLoss": {
-        "weak": 83.9,
-        "mid": 61.9,
-        "good": 42.3
+        "weak": null,
+        "mid": null,
+        "good": null
       }
     },
     {
@@ -128,23 +128,23 @@
       "name": "Crate Garden",
       "board": "7×7 45ô",
       "tier": "normal",
-      "moves": 14,
-      "target": 320,
-      "winRate": 0.805,
+      "moves": 16,
+      "target": 200,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.83,
-      "avgScore": 333,
-      "movesUsedWin": 11.4,
-      "movesUsedLoss": 14,
+      "avgStars": 2.99,
+      "avgScore": 227,
+      "movesUsedWin": 7.4,
+      "movesUsedLoss": null,
       "secWin": {
-        "weak": 74.3,
-        "mid": 55.4,
-        "good": 38.4
+        "weak": 48.3,
+        "mid": 36,
+        "good": 24.9
       },
       "secLoss": {
-        "weak": 96.8,
-        "mid": 71.6,
-        "good": 49.1
+        "weak": null,
+        "mid": null,
+        "good": null
       }
     },
     {
@@ -152,23 +152,23 @@
       "name": "Tight Crates",
       "board": "6×6 36ô",
       "tier": "hard",
-      "moves": 12,
-      "target": 360,
-      "winRate": 0.42,
+      "moves": 16,
+      "target": 220,
+      "winRate": 0.988,
       "stuckRate": 0.013,
-      "avgStars": 1.71,
-      "avgScore": 339,
-      "movesUsedWin": 10.1,
-      "movesUsedLoss": 11.8,
+      "avgStars": 2.98,
+      "avgScore": 255,
+      "movesUsedWin": 7.8,
+      "movesUsedLoss": 4.6,
       "secWin": {
-        "weak": 60.1,
-        "mid": 45.2,
-        "good": 31.6
+        "weak": 46.4,
+        "mid": 34.9,
+        "good": 24.4
       },
       "secLoss": {
-        "weak": 73.4,
-        "mid": 54.9,
-        "good": 38.2
+        "weak": 28.2,
+        "mid": 20.9,
+        "good": 14.2
       }
     },
     {
@@ -177,22 +177,22 @@
       "board": "8×7 40ô",
       "tier": "chill",
       "moves": 18,
-      "target": 240,
-      "winRate": 0.953,
+      "target": 160,
+      "winRate": 0.998,
       "stuckRate": 0,
-      "avgStars": 1.96,
-      "avgScore": 254,
-      "movesUsedWin": 14.1,
+      "avgStars": 2.87,
+      "avgScore": 179,
+      "movesUsedWin": 9.6,
       "movesUsedLoss": 18,
       "secWin": {
-        "weak": 95.6,
-        "mid": 70.7,
-        "good": 48.5
+        "weak": 64.7,
+        "mid": 47.9,
+        "good": 32.9
       },
       "secLoss": {
-        "weak": 130.4,
-        "mid": 95.6,
-        "good": 64.7
+        "weak": 130.2,
+        "mid": 94.9,
+        "good": 63.8
       }
     },
     {
@@ -200,23 +200,23 @@
       "name": "Iron & Oak",
       "board": "7×7 49ô",
       "tier": "hard",
-      "moves": 16,
-      "target": 360,
-      "winRate": 0.443,
+      "moves": 18,
+      "target": 220,
+      "winRate": 1,
       "stuckRate": 0,
-      "avgStars": 1.74,
-      "avgScore": 344,
-      "movesUsedWin": 13.6,
-      "movesUsedLoss": 16,
+      "avgStars": 2.85,
+      "avgScore": 245,
+      "movesUsedWin": 10.1,
+      "movesUsedLoss": null,
       "secWin": {
-        "weak": 89.1,
-        "mid": 66.3,
-        "good": 45.8
+        "weak": 65.6,
+        "mid": 48.8,
+        "good": 33.7
       },
       "secLoss": {
-        "weak": 107.3,
-        "mid": 79.5,
-        "good": 54.6
+        "weak": null,
+        "mid": null,
+        "good": null
       }
     },
     {

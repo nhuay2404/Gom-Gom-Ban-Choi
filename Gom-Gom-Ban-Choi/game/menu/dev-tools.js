@@ -6,7 +6,7 @@ import { openOffer } from '../core/gems.mjs';
 import { loadProgress, saveProgress } from '../core/progression.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
-import { CATALOG, previewDeco, ownAllBase } from '../deco/deco-data.mjs';
+import { CATALOG, previewDeco, ownAllBase, claimCat } from '../deco/deco-data.mjs';
 import { $, DEV_MODE, showToast, getDeco, setDeco, devMoney, getWallet, setWallet } from '../app/shared.js';
 import { closeAllSettings } from './settings.js';
 import { DEV_ZONES_KEY } from './areas.js';
@@ -27,6 +27,8 @@ $('dev-unlock').onclick = () => {
   writeText(SAVE_KEYS.decoTour, 'done'); // bỏ luôn hướng dẫn Deco
   writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
   setDeco(ownAllBase({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) })); // + có sẵn mọi món mặc định
+  // Nhận sẵn mọi mèo / chó (không xếp hàng chục thùng chờ mở ở Deco: room.js startRoom chỉ đóng thùng cho con chưa nhận).
+  setDeco(CATALOG.filter(entry => entry.cat === 'cats').reduce((deco, entry) => claimCat(deco, entry.breed), getDeco()));
   // Xoá trạng thái ưu đãi cũ (đã mua / đang hồi) rồi mở lại mọi gói để thử ở Shop.
   setWallet(Object.keys(OFFERS).reduce((w, kind) => openOffer(w, kind, Date.now()), { ...getWallet(), gems: Math.max(getWallet().gems, DEV_GEMS), offers: {} }));
   playSound('reward');
@@ -55,7 +57,7 @@ $('dev-reset').onclick = () => {
 $('dev-reset-cancel').onclick = () => $('dev-reset-dialog').close();
 
 $('dev-reset-ok').onclick = () => {
-  ['progress', 'deco', 'boosters', 'profile', 'decoTour', 'onboarding'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
+  ['progress', 'deco', 'boosters', 'profile', 'decoTour', 'onboarding', 'gifts', 'petBoxes'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
   try { localStorage.removeItem(DEV_ZONES_KEY); } catch {}
   location.reload();
 };

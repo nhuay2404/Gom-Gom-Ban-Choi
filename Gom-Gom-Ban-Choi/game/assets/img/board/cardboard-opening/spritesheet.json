@@ -1,0 +1,30 @@
+{
+  "image": "spritesheet.png",
+  "width": 2048,
+  "height": 512,
+  "frameWidth": 512,
+  "frameHeight": 512,
+  "frames": [
+    {
+      "file": "frame-0.png",
+      "state": "closed",
+      "duration": 400
+    },
+    {
+      "file": "frame-1.png",
+      "state": "peel-start",
+      "duration": 180
+    },
+    {
+      "file": "frame-2.png",
+      "state": "peel-lid",
+      "duration": 180
+    },
+    {
+      "file": "frame-3.png",
+      "state": "open",
+      "duration": 650
+    }
+  ],
+  "loop": false
+}

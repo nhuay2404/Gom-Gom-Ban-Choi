@@ -665,6 +665,19 @@ body.bonus-time .fg-score .progress-fill{box-shadow:inset 0 3px 0 #fff7,inset 0 
 .fat-cat{position:absolute;left:0;top:0;width:calc(200% + var(--gap, 6px));height:calc(200% + var(--gap, 6px));display:grid;place-items:center;pointer-events:none;
   border-radius:var(--rad, 12px);background:#f3dfb4;box-shadow:inset 0 calc(var(--c, 60px) * .06) 0 #e2c48c,inset 0 0 0 1px #ead29f}
 .cell.grass .fat-cat{background:none;box-shadow:none}
+/* Hộp các-tông 2×2 (màn 1, board-view.js): một ảnh phủ cả khối, lắc nhẹ định kỳ; thắng màn thì đổi khung mở hộp + mèo cam ló ra */
+.board .cell.carton{background:none!important;box-shadow:none;padding:0}
+.board .cell.carton-anchor{z-index:3;overflow:visible;transform:translateZ(10px)}
+.carton-box{position:absolute;left:0;top:0;width:calc(200% + var(--gap, 6px));height:calc(200% + var(--gap, 6px));pointer-events:none;transform-origin:50% 95%;animation:carton-wiggle 3.6s ease-in-out infinite}
+.carton-box>img{position:absolute;left:-4%;top:-4%;width:108%;height:108%;max-width:none}
+.carton-box.opening{animation:none}
+@keyframes carton-wiggle{0%,80%,100%{transform:none}84%{transform:rotate(-4deg)}88%{transform:rotate(3.5deg)}92%{transform:rotate(-2deg)}96%{transform:rotate(1deg)}}
+/* Khung chứa mèo: đáy = mép trên mặt trước của hộp mở (khung 3 ở ~37% chiều cao), mèo trồi lên từ dưới đáy khung */
+.carton-cat{position:absolute;left:24%;width:52%;top:-14%;height:51%;overflow:hidden}
+.carton-cat>span{position:absolute;inset:0;transform:translateY(100%);animation:carton-peek .55s cubic-bezier(.3,1.5,.5,1) forwards}
+.carton-cat svg{width:100%;height:100%}
+@keyframes carton-peek{to{transform:translateY(18%)}}
+@media (prefers-reduced-motion: reduce){.carton-box{animation:none}.carton-cat>span{animation:none;transform:translateY(18%)}}
 .fat-bob{position:absolute;inset:0;transform-origin:50% 92%}
 /* Ảnh 384² có lề trong suốt (thân ở x 22–361, y 48–342): phóng ảnh để thân phủ kín đủ 2×2 ô */
 .fat-bob>img{position:absolute;left:-6.5%;top:-16.3%;width:112.9%;height:130.2%;max-width:none;object-fit:fill}

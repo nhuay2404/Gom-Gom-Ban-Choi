@@ -405,6 +405,41 @@ export function createCatLife(ctx) {
       cat.y = world.groundAt(cat.x, cat.z); cat.surface = null;
       cat.interrupt(cat.holdStill());
     },
+    // Onboarding (thùng mèo sau màn 1, deco-room.mjs openCatBox): mèo `breed` nằm giấu trong thùng ở (x, z), đứng yên tới khi thùng mở.
+    hideIn(breed, x, z) {
+      const cat = world.cats.find(c => c.breed === breed);
+      if (!cat) return;
+      cat.release();
+      Object.assign(cat, { x, z, y: 0, surface: null });
+      cat.rig.root.visible = false;
+      cat.interrupt((function* stayHidden() { cat.setPose('sit'); for (;;) yield; })());
+    },
+    // Thùng vừa mở: mèo hiện ra ở miệng thùng `from` {x, y, z}, nhảy vòng cung đáp xuống đất ở `to` {x, z}, ngồi một nhịp rồi sống bình thường.
+    popOut(breed, from, to) {
+      const cat = world.cats.find(c => c.breed === breed);
+      if (!cat) return;
+      cat.rig.root.visible = true;
+      cat.release();
+      cat.interrupt((function* hop() {
+        // Nhảy xa (từ thùng ở lề đường qua rào vào vườn) thì bay lâu + cao hơn.
+        const land = world.reachable(to.x, to.z), y1 = world.groundAt(land.x, land.z), far = Math.hypot(land.x - from.x, land.z - from.z);
+        const JUMP = Math.max(.7, far * .28), HIGH = Math.max(.8, far * .4);
+        Object.assign(cat, { x: from.x, y: from.y, z: from.z, surface: null });
+        cat.heading = cat.yaw = cat.facing(land.x, land.z);
+        cat.setPose('stand'); cat.face('happy');
+        for (let t = 0; t < JUMP; t += world.dt) {
+          const k = t / JUMP;
+          cat.x = from.x + (land.x - from.x) * k; cat.z = from.z + (land.z - from.z) * k;
+          cat.y = from.y + (y1 - from.y) * k + Math.sin(k * Math.PI) * HIGH;
+          yield;
+        }
+        Object.assign(cat, { x: land.x, y: y1, z: land.z, squash: 1 });
+        cat.setPose('sit');
+        yield* cat.wait(1);
+        cat.setPose('stand');
+        yield* cat.life();
+      })());
+    },
     setCats(breeds) {
       const keep = [];
       breeds.forEach(breed => {
@@ -472,7 +507,8 @@ export function createCatLife(ctx) {
       separate();
     },
     hit(raycaster) {
-      const hit = raycaster.intersectObjects(world.cats.map(cat => cat.rig.root), true)[0];
+      // Bỏ con đang ẩn (nằm trong thùng thú cưng, hideIn): raycast không xét `visible`, không lọc thì nó chặn cú chạm vào thùng.
+      const hit = raycaster.intersectObjects(world.cats.filter(cat => cat.rig.root.visible).map(cat => cat.rig.root), true)[0];
       return hit?.object.userData.catRoot?.userData.cat || null;
     },
   };

@@ -5,7 +5,6 @@
 import * as play from '../play/play-controller.js';
 import * as menus from '../menu/menu-controller.js';
 import { loadProgress, unlockedCount } from '../core/progression.mjs';
-import * as ob from './onboarding.js';
 import { DEV_MODE } from './shared.js';
 
 play.connectMenus(menus);
@@ -24,8 +23,6 @@ if (new URLSearchParams(location.search).has('embed')) document.getElementById('
 // ?bot=weak|mid|good (chỉ dev): bot tự chơi ván hiện tại ngay trên giao diện game.
 const botProfile = new URLSearchParams(location.search).get('bot');
 if (DEV_MODE && botProfile) import('./dev-bot.js').then(m => m.startBot(botProfile));
-// Đã thắng màn mở khoá nhưng chưa xem xong hướng dẫn (tắt game giữa chừng): làm tiếp ngay.
-if (ob.pending()) menus.sceneReady.then(() => menus.runOnboarding());
 
 // Màn loading (index.html #loading): JS game đã chạy = 45%, font = 60%, cảnh 3D = 100% rồi mờ dần. Hiện tối thiểu ~1 s
 // cho khỏi chớp; quá 8 s (mạng chậm) thì vào game luôn, cảnh 3D tự hiện khi nạp xong.

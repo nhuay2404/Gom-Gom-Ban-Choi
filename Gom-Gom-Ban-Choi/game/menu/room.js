@@ -3,7 +3,8 @@
 import * as ob from '../app/onboarding.js';
 import { categories, addArt as addCatArt } from '../ui/cat-art.mjs';
 import { playMeow } from '../ui/sound.mjs';
-import { claimCat, isCatClaimed } from '../deco/deco-data.mjs';
+import { claimCat, isCatClaimed, itemById, slotOf, catRewardsAt } from '../deco/deco-data.mjs';
+import { loadProgress } from '../core/progression.mjs';
 import { $, reduceMotion, DEV_MODE, getDeco, setDeco, noteEvent } from '../app/shared.js';
 import { isZoneOpen, isGardenExpanded, placeAreaMarker, renderZoneSwitch } from './areas.js';
 import { decoShown, onScenePick, placeDecoPop, placeDecoPins, clearDecoPick, closeDecoPop, renderDeco } from './deco-panel.js';
@@ -111,6 +112,17 @@ export function startRoom() {
   if (ob.stage() === 'L1' && getDeco().cats.join() !== GUIDE_CAT) setDeco({ ...getDeco(), cats: [GUIDE_CAT], claimedCats: [GUIDE_CAT] });
   // Save cũ (trước khi mèo cam mở sẵn) chưa nhận mèo cam: tặng luôn.
   else if (!isCatClaimed(getDeco(), GUIDE_CAT)) setDeco(claimCat(getDeco(), GUIDE_CAT));
+  // Save cũ (trước khi bỏ nút Claim ở Map): mèo / chó của màn đã thắng mà chưa nhận -> nhận luôn, vào thùng chờ mở ở Deco.
+  const stars = loadProgress().stars;
+  stars.forEach((won, index) => {
+    if (!won) return;
+    for (const breed of catRewardsAt(index).filter(other => !isCatClaimed(getDeco(), other))) { setDeco(claimCat(getDeco(), breed)); ob.addPetBox(breed); }
+  });
+  // Onboarding chưa mở hộp quà nào: vườn chưa có bồn hoa, bồn hoa là quà hộp đầu tiên (nhảy từ hộp ra, gift-boxes.js).
+  if (ob.active() && ob.opened() === 0 && ob.giftPlaced(getDeco())) {
+    const garden = getDeco().zones.garden;
+    setDeco({ ...getDeco(), zones: { ...getDeco().zones, garden: { ...garden, placed: garden.placed.filter(id => slotOf(itemById(id) ?? { id }) !== ob.ITEM_GIFT) } } });
+  }
   buildFlatRooms();
 }
 

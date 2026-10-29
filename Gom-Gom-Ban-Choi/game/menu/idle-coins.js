@@ -1,4 +1,5 @@
 // Xu tự sinh (core/idle.mjs): bong bóng xu trên đầu từng con mèo trong nhà, chạm để nhận. Sang Unity: IdleCoinView.
+import * as ob from '../app/onboarding.js';
 import { idlePending, idleFull, idleCap, tickIdle, claimIdle } from '../core/idle.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, ask, showToast, getDeco, setDeco, getWallet, setWallet, refreshWallet, noteEvent } from '../app/shared.js';
@@ -16,7 +17,7 @@ let idleCleared = 0;
 
 export function startIdle() {
   idleCleared = levelsCleared();
-  const deco = getDeco(), next = tickIdle(deco, idleCleared, Date.now());
+  const deco = getDeco(), next = tickIdle(deco, idleCleared, Date.now(), ob.petBoxes()); // con còn trong thùng chưa mở: không tích
   if (next !== deco) setDeco(next);
 }
 

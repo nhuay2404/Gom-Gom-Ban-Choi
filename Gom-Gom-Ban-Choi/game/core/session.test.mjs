@@ -93,7 +93,7 @@ test('tutorial màn 11 (mở Hold) chạy hết bằng session', () => {
 
 test('tutorial màn 1 (một lần kéo) và 2 (chỉ xoay) chạy hết bằng session, phần còn lại tự chơi vẫn thắng màn', () => {
   // Các ô gom còn lại sau tutorial (trước đây là các bước tutorial cuối).
-  for (const [index, anchors] of [[0, [27]], [1, [6, 27, 5]]]) {
+  for (const [index, anchors] of [[0, [5, 18, 23, 30]], [1, [6, 27, 5, 11, 32]]]) {
     const { s } = playTutorial(index);
     assert.equal(game.tutorialStep(s), null, `màn ${index + 1} kẹt ở bước tutorial`);
     assert.ok(!s.over, `màn ${index + 1}: tutorial xong chưa thắng`);
@@ -101,6 +101,17 @@ test('tutorial màn 1 (một lần kéo) và 2 (chỉ xoay) chạy hết bằng 
     assert.ok(s.over && s.outcome.win, `màn ${index + 1} phải thắng`);
     assert.equal(s.score, s.level.target);
   }
+});
+
+test('hộp các-tông 2×2 (màn 1): một khối, không đặt được lên, gom sát bên không vỡ', () => {
+  const { s } = playTutorial(0);
+  const carton = s.board.flatMap((o, i) => (o?.carton ? [i] : []));
+  assert.equal(carton.length, 4);
+  assert.ok(carton.every(i => s.board[i].cartonId === carton[0]));
+  assert.ok(!game.place(s, carton[0]).ok, 'không đặt mèo lên hộp');
+  assert.ok(game.place(s, 18).match.clusters.length, 'gom 3 mèo xám (cột trái)');
+  assert.deepEqual(s.board.flatMap((o, i) => (o?.carton ? [i] : [])), carton, 'hộp vẫn nguyên');
+  assert.throws(() => parseBoard(['B.', '..']), /2×2/);
 });
 
 test('bước giới thiệu thùng gỗ (màn 5): gom sát thùng thì thùng vỡ, thùng vỡ cũng ra điểm', () => {

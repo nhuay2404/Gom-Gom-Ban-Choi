@@ -35,68 +35,72 @@ export const SHAPES = {
   line: [[0, 0], [0, 1], [0, 2]], lineV: [[0, 0], [1, 0], [2, 0]], elbow: [[0, 0], [1, 0], [1, 1]],
 };
 
+// Màn 1–5: mục tiêu cần 4–6 lần gom (mèo lẻ phải đặt 2 lượt mới gom được), tăng dần 120 → 200, vẫn dư 4–6 lượt; màn 6–9 vẫn dễ (bot ~100%), dư ~6–8 lượt cho Bonus Time (xả lượt, finale.js) nổ thật đã ngay từ đầu game.
 export const LEVELS = [
   // ===== Chương 1: vườn =====
   {
-    // Tutorial bằng hình, chỉ MỘT lần kéo (không chữ); các lượt sau người chơi tự chơi (ô 27 gom 3 mèo xám).
+    // Tutorial bằng hình, chỉ MỘT lần kéo (không chữ, ô 2 gom 3 mèo cam); bàn dày: 6 cặp mèo + 2 mèo lẻ quanh hộp các-tông giữa
+    // bàn. Tự chơi: ô 5 xám, 18 xám, 23 cam, 30 xám (33 cam dư) — 5 lần gom / 10 lượt. Chỉ thẻ đơn (chưa dạy xoay).
+    // Hộp các-tông 2×2 ('B', chỉ màn này): vật cản không vỡ, thắng thì hộp mở và mèo cam ló ra (onboarding.js).
     name: 'Hello, Kitty', feature: 'Drag & match 3', tier: 'normal',
-    moves: 4, target: 60, cats: 'OG',
-    board: ['......', '......', '..OO..', '......', '.GG...', '......'],
-    deck: ['O', 'G', 'O', 'G'],
-    tutorial: [{ type: 'drag', anchor: 16 }],
+    moves: 10, target: 150, cats: 'OG', shapes: { single: 1 },
+    board: ['OO.GG.', 'G....O', 'G.BB.O', '..BB..', 'O....G', '.GG.OO'],
+    deck: ['O', 'G', 'G', 'O', 'G', 'O'],
+    tutorial: [{ type: 'drag', anchor: 2 }],
   },
   {
     // Tutorial cuối phần mở đầu: xoay thẻ -> mẹo gom to. Chưa có ô Hold (mở ở màn 11).
     name: 'Round and Round', feature: 'Rotate cards', tier: 'normal',
-    moves: 6, target: 90, cats: 'OGW',
-    board: ['...GG.', '.W....', '.G....', 'OW....', '....WW', '......'],
-    deck: ['OO', 'W', 'G'],
+    moves: 12, target: 150, cats: 'OGW',
+    board: ['...GG.', '.W....', '.G...O', 'OW...O', '....WW', 'GG....'],
+    deck: ['OO', 'W', 'G', 'O', 'G', 'WW'],
     tutorial: [
-      // Chỉ dạy xoay; còn lại tự chơi (ô 6 gom cam, 27 gom trắng, 5 gom xám).
+      // Chỉ dạy xoay; còn lại tự chơi: ô 6 gom cam (thẻ đôi dọc), 27 gom trắng, 5 gom xám, 11 gom cam, 32 gom xám, 20 gom trắng
+      // (thẻ đôi ngang) — 6 lần gom / 6 lượt, mục tiêu cần 5, dư 6 lượt.
       { type: 'rotate', offsets: SHAPES.dominoV },
     ],
   },
   {
     name: 'Go Big', feature: 'Free play', tier: 'normal',
-    moves: 10, target: 170, cats: 'OGW', assist: 0.5,
-    board: ['......', '.O..G.', '......', '..WW..', '......', '.G..O.'],
+    moves: 14, target: 150, cats: 'OGW', assist: 0.5,
+    board: ['G.....', '.O..G.', '.O....', '..WW..', '....G.', '.G..OO'],
     deck: [],
   },
   {
     name: 'Triple Cards', feature: 'More 3-cat cards', tier: 'normal',
-    moves: 12, target: 280, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
+    moves: 15, target: 180, cats: 'OGW', assist: 0.4, shapes: { single: 4, domino: 5, triple: 2 },
     board: ['O....W', '..GG..', '......', '.W..O.', '..OW..', 'G....G'],
     deck: [],
   },
   {
     name: 'Crates', feature: 'Crates block cells', tier: 'normal', introduces: 'crate',
-    moves: 12, target: 240, cats: 'OGW', assist: 0.45,
+    moves: 15, target: 200, cats: 'OGW', assist: 0.45,
     board: ['......', '.X....', '..G.X.', 'X.G...', '...X.O', 'W.X..O'],
     deck: ['G'],
     tutorial: [{ type: 'drag', anchor: 8, free: true }],
   },
   {
     name: 'Crate Garden', feature: 'Crates + tabby cat', tier: 'normal',
-    moves: 14, target: 320, cats: 'OGWT', assist: 0.4,
+    moves: 16, target: 200, cats: 'OGWT', assist: 0.4,
     board: ['#X..O.#', '.GG...X', '..X.W..', 'W...X..', '.X.T..T', 'T..X..O', '#..O..#'],
     deck: [],
   },
   {
     name: 'Tight Crates', feature: 'Crowded + crates', tier: 'hard',
-    moves: 12, target: 360, cats: 'OGWT', assist: 0.35,
+    moves: 16, target: 220, cats: 'OGWT', assist: 0.35,
     board: ['OGX.TO', 'G..WX.', 'X.OG.W', '.TX.O.', 'W.GX.T', '.T..XO'],
     deck: [],
   },
   {
     name: 'Steel Nap', feature: 'Heart board + metal', tier: 'chill', introduces: 'metal',
-    moves: 18, target: 240, cats: 'OGWT', assist: 0.5,
+    moves: 18, target: 160, cats: 'OGWT', assist: 0.5,
     board: ['#..##..#', '...MM...', '.M.OO.M.', '.M.WW.M.', '#..MM..#', '##....##', '###..###'],
     deck: [],
     tutorial: [{ type: 'info', text: 'Metal blocks never break!' }],
   },
   {
     name: 'Iron & Oak', feature: 'Metal + crates', tier: 'hard',
-    moves: 16, target: 360, cats: 'OGWTS', assist: 0.4,
+    moves: 18, target: 220, cats: 'OGWTS', assist: 0.4,
     board: ['X..M..X', '.O.M.O.', '.XGG..S', 'MM.W.MM', '.O..T..', 'X..M.X.', '..SM.T.'],
     deck: [],
   },

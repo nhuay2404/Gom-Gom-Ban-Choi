@@ -22,6 +22,8 @@ export const SAVE_KEYS = {
   profile: 'gomgom-rotate-profile-v1',
   decoTour: 'gomgom-rotate-deco-tour-v1',
   onboarding: 'gomgom-rotate-onboarding-v1',
+  gifts: 'gomgom-rotate-gifts-v1', // số hộp quà onboarding đã mở trong Deco (app/onboarding.js)
+  petBoxes: 'gomgom-rotate-pet-boxes-v1', // giống mèo / chó vừa nhận, còn nằm trong thùng chờ mở ở Deco (app/onboarding.js petBoxes)
   gems: 'gomgom-rotate-gems-v1', // ví gem + đếm ads theo ngày + quà gem đã nhận + ưu đãi (core/gems.mjs)
   daily: 'gomgom-rotate-daily-v1', // nhiệm vụ ngày (core/daily.mjs)
   quests: 'gomgom-rotate-quests-v1', // nhiệm vụ tiến trình (core/quests.mjs)

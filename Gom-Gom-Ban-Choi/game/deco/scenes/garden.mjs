@@ -1129,3 +1129,79 @@ export function makeButterflies(scene) {
     return self;
   });
 }
+
+// Hộp quà onboarding (menu/gift-boxes.js, đặt ở vườn qua deco-room.mjs setGiftBoxes), theo bảng màu art (docs/art-style.md): thân
+// hồng phấn rỗng (4 vách + đáy tối, nắp bật ra là thấy lòng hộp), ruy băng vàng kem dọc giữa mỗi vách, dấu chân mèo kem trên hai
+// mặt; nắp rời (userData.lid: nắp + ruy băng + nơ hai vòng + đuôi nơ, bật lên lúc mở). Mặt trước +z.
+// Ruy băng / dấu chân là khối cắm vào vách (không phải tấm dán): nhô ra 1–1.5 cm, phần cắm vào < vách 4 cm nên không lộ vào lòng hộp.
+export function giftBoxModel() {
+  const S = .5, H = .34, T = .04, LID = .085, root = new THREE.Group(), lid = new THREE.Group();
+  const BODY = '#f6b3c4', LID_C = '#fac6d3', RIBBON = '#ffd57a', BOW = '#ffc95c', PAW = '#fff4e4';
+  root.add(at(rbox(S - .02, .04, S - .02, .02, '#b8687d'), 0, .02, 0)); // đáy lòng hộp tối hơn: nhìn từ trên thấy rõ là hộp rỗng
+  for (const side of [-1, 1]) {
+    root.add(at(rbox(S, H, T, .02, BODY), 0, H / 2, side * (S - T) / 2)); // vách trước / sau
+    root.add(at(rbox(T, H, S - 2 * T, .02, BODY), side * (S - T) / 2, H / 2, 0)); // vách trái / phải, kẹp giữa hai vách kia
+    root.add(at(box(.08, H - .02, .03, RIBBON), 0, H / 2, side * S / 2), at(box(.03, H - .02, .08, RIBBON), side * S / 2, H / 2, 0));
+  }
+  // Dấu chân mèo: đệm to + 3 ngón, khối cầu dẹt cắm nửa vào vách (mặt trước bên trái, mặt phải bên phải).
+  const paw = () => {
+    const group = new THREE.Group(), pad = ball(.045, PAW);
+    pad.scale.set(1.1, .9, .3);
+    group.add(pad);
+    for (const [x, y] of [[-.042, .05], [0, .066], [.042, .05]]) { const toe = at(ball(.019, PAW), x, y, 0); toe.scale.z = .45; group.add(toe); }
+    return group;
+  };
+  const front = at(paw(), -.14, .13, S / 2);
+  const right = at(paw(), S / 2, .13, -.14);
+  right.rotation.y = Math.PI / 2;
+  root.add(front, right);
+  // Nắp: chìa ra 3 cm mỗi bên, dải ruy băng vắt qua (nhô 6 mm trên / dưới mặt nắp).
+  lid.add(at(rbox(S + .06, LID, S + .06, .035, LID_C), 0, LID / 2, 0));
+  lid.add(at(box(.09, LID + .012, S + .075, RIBBON), 0, LID / 2, 0), at(box(S + .075, LID + .012, .09, RIBBON), 0, LID / 2, 0));
+  // Nơ: hai vòng (xuyến dẹt) nghiêng ra hai bên, nút thắt giữa, hai đuôi ruy băng chéo về phía trước trên mặt nắp.
+  for (const side of [-1, 1]) {
+    const loop = at(mesh(new THREE.TorusGeometry(.075, .026, 10, 24), BOW), side * .072, LID + .075, 0);
+    loop.scale.set(1.15, 1, .6);
+    loop.rotation.z = side * -.55;
+    lid.add(loop);
+    const tail = at(rbox(.05, .012, .15, .006, BOW), side * .05, LID + .012, .07);
+    tail.rotation.y = side * .45;
+    lid.add(tail);
+  }
+  const knot = at(ball(.042, BOW), 0, LID + .045, 0);
+  knot.scale.set(1, .85, .9);
+  lid.add(knot);
+  lid.position.y = H - .01;
+  root.add(lid);
+  root.userData.lid = lid;
+  root.userData.lidY = lid.position.y; // chỗ nắp đậy (deco-room.mjs bật nắp từ đây)
+  return root;
+}
+
+// Thùng các-tông thú cưng (menu/gift-boxes.js: mèo / chó mới nhận nằm trong, người chơi chạm thì thùng mở và con vật nhảy ra —
+// deco-room.mjs showPetBox / openPetBox). Cùng dáng thùng đóng của mèo chờ nhận ở Home hub (map-world.mjs petBox(true)): thùng cao,
+// băng keo dọc mặt trước + ngang nóc. Gọn, không lồi lõm: vách là khối vuông ghép khít rồi gộp một lưới (mergeStatic) nên không có
+// rãnh / nét viền ở chỗ nối; băng keo chỉ nhô 8 mm (khối cắm nửa vào vách, không phải tấm dán). Thân rỗng (lúc mở thấy lòng thùng);
+// hai nắp gắn bản lề (userData.flaps: nhóm gập, rotation.x = π lúc đóng nằm phẳng, ~.9 lúc mở rủ ra ngoài). Băng keo nóc
+// (userData.topTape) mất khi mở. Mặt trước +z.
+export function catBoxModel() {
+  const w = .78, d = .8, h = .64, t = .04, root = new THREE.Group(), body = new THREE.Group();
+  const CARD = '#d9a36a', FLAP = '#cf9a60', TAPE = '#c48a52';
+  body.add(at(box(w - 2 * t, .03, d - 2 * t, '#7d5130'), 0, .015, 0)); // đáy lòng thùng tối hơn
+  for (const side of [-1, 1]) {
+    body.add(at(box(w, h, t, CARD), 0, h / 2, side * (d - t) / 2), at(box(t, h, d - 2 * t, CARD), side * (w - t) / 2, h / 2, 0));
+  }
+  body.add(at(box(.1, h - .04, .016, TAPE), 0, h / 2, d / 2)); // băng keo giữa mặt trước
+  root.add(mergeStatic(body));
+  const flaps = [];
+  for (const [z, rot] of [[d / 2, 0], [-d / 2, Math.PI]]) {
+    const hinge = new THREE.Group(), fold = new THREE.Group(), len = d / 2;
+    hinge.position.set(0, h + .01, z); hinge.rotation.y = rot; fold.rotation.x = Math.PI;
+    fold.add(at(box(w, .02, len, FLAP), 0, 0, len / 2));
+    hinge.add(fold); root.add(hinge); flaps.push(fold);
+  }
+  const topTape = at(box(.1, .032, d + .016, TAPE), 0, h + .01, 0); // ôm khe hai nắp (nắp dày 2 cm, băng dày 3.2 cm: nhô 6 mm mỗi mặt)
+  root.add(topTape);
+  Object.assign(root.userData, { flaps, topTape, mouthY: h });
+  return root;
+}

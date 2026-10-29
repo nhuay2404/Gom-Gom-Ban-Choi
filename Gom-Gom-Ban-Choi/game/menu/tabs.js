@@ -4,15 +4,14 @@ import * as ob from '../app/onboarding.js';
 import { catMarkup } from '../ui/cat-art.mjs';
 import { loadProgress, unlockedCount } from '../core/progression.mjs';
 import { playSound } from '../ui/sound.mjs';
-import { SAVE_KEYS, readText } from '../core/save.mjs';
 import { $, showToast, getDeco, refreshWallet, pieceSkin, setPieceSkin, dogSkinOpen } from '../app/shared.js';
-import { setDecoLock, clearDecoPick, closeDecoPop, noticeDeco, clearDecoNew, renderDeco, decoLocked } from './deco-panel.js';
+import { setDecoLock, clearDecoPick, closeDecoPop, noticeDeco, clearDecoNew, renderDeco } from './deco-panel.js';
 import { room3d, mountRoom } from './room.js';
 import { map3d, showMap } from './map-view.js';
 import { markTab } from './settings.js';
 import { renderShopBoosters, renderShopDeco, setShopPage, shopZone } from './shop.js';
 import { renderZoneSwitch } from './areas.js';
-import { runDecoTour } from './tours.js';
+import { enterDeco } from './gift-boxes.js';
 import { play } from './context.js';
 
 // ===== Deco / Shop: các tab dùng chung thanh điều hướng nổi (cùng Home = bản đồ), chỉ hiện ngoài màn chơi =====
@@ -51,7 +50,7 @@ export function showTab(tab) {
   renderZoneSwitch();
   mountRoom(tab);
   $(tab).scrollTop = 0;
-  if (tab === 'deco' && !ob.active() && readText(SAVE_KEYS.decoTour) !== 'done') setTimeout(() => { if (!$('deco').hidden && !decoLocked) runDecoTour(); }, 600);
+  if (tab === 'deco') enterDeco();
 }
 
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).

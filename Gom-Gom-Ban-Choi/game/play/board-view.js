@@ -1,6 +1,6 @@
 // Vẽ bàn: lưới ô theo hình bàn, mèo / thùng / kim loại / lồng / cỏ, xem trước chỗ thả, chạm vuốt mèo (tim, mèo bực).
 // Sang Unity: BoardView (MonoBehaviour) + prefab CellView.
-import { categories } from '../ui/cat-art.mjs';
+import { categories, catMarkup } from '../ui/cat-art.mjs';
 import { CRATE_SVG, METAL_SVG, MAILBOX_SVG, vaseSvg, SYRUP_TILE, cageSvg, GRASS_SVG } from '../ui/board-art.mjs';
 import { playMeow } from '../ui/sound.mjs';
 import { $, reduceMotion } from '../app/shared.js';
@@ -94,6 +94,12 @@ export function renderBoard() {
       cell.className = `cell block vase${grass ? ' grass' : ''}`;
       cell.setAttribute('aria-label', object.vase > 1 ? 'Vase, match cats next to it twice to break it' : 'Cracked vase, one more match next to it breaks it');
       cell.innerHTML = vaseSvg(object.vase === 1);
+      return;
+    }
+    if (object?.carton) {
+      cell.className = `cell block carton${object.cartonId === index ? ' carton-anchor' : ''}`;
+      cell.setAttribute('aria-label', 'Cardboard box, it never breaks');
+      if (object.cartonId === index) cell.innerHTML = '<span class="carton-box"><img src="./assets/img/board/cardboard-front.png" alt=""></span>';
       return;
     }
     if (object?.block) {
@@ -282,3 +288,23 @@ function paintFatCat(cell, object, index, grass) {
   cell.append(big);
 }
 
+
+// ===== Hộp các-tông (màn 1, level-rules.mjs 'B'): thắng màn thì hộp mở (4 khung bóc keo -> mở nắp), mèo cam ló đầu ra =====
+// Đường dẫn khung viết đủ (không ghép chuỗi) để build:html nhúng được ảnh.
+const CARTON_FRAMES = ['./assets/img/board/cardboard-opening/frame-0.png', './assets/img/board/cardboard-opening/frame-1.png',
+  './assets/img/board/cardboard-opening/frame-2.png', './assets/img/board/cardboard-opening/frame-3.png'];
+const CARTON_FRAME_MS = 220, CAT_PEEK_MS = 900;
+export function openCartons() {
+  const boxes = [...document.querySelectorAll('#board .carton-box')];
+  if (!boxes.length) return Promise.resolve();
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  return Promise.all(boxes.map(async box => {
+    const img = box.querySelector('img');
+    box.classList.add('opening');
+    for (const src of CARTON_FRAMES) { img.src = src; await wait(reduceMotion.matches ? 0 : CARTON_FRAME_MS); }
+    // Mèo nằm sau mặt trước của hộp: khung cắt ngang mép trên mặt trước, mèo trồi lên trong khung đó.
+    box.insertAdjacentHTML('beforeend', `<span class="carton-cat"><span>${catMarkup.orange}</span></span>`);
+    playMeow('orange');
+    await wait(reduceMotion.matches ? 0 : CAT_PEEK_MS);
+  }));
+}

@@ -4,7 +4,6 @@ import * as ob from '../app/onboarding.js';
 import { playSound, soundOn, setSound, setMusic } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText, writeText } from '../core/save.mjs';
 import { $ } from '../app/shared.js';
-import { refreshClaimDot } from './map-view.js';
 import { refreshDecoDot } from './deco-panel.js';
 import { room3d } from './room.js';
 
@@ -13,7 +12,7 @@ import { room3d } from './room.js';
 const SETTINGS_TABS = ['home', 'deco', 'shop'];
 
 export function markTab(tab) {
-  // Onboarding: tab chưa mở thì ẩn — riêng Shop luôn hiện từ đầu nhưng khoá (mờ, không nhấn được) tới hướng dẫn Decoration.
+  // Onboarding: tab chưa mở thì ẩn — riêng Shop luôn hiện từ đầu nhưng khoá (mờ, không nhấn được) tới khi thắng màn 5.
   $('tabbar').querySelectorAll('.tab').forEach(button => {
     const open = ob.tabOpen(button.dataset.tab), shop = button.dataset.tab === 'shop';
     button.hidden = !open && !shop;
@@ -22,7 +21,6 @@ export function markTab(tab) {
   });
   $('tabbar').hidden = false;
   $('hub-settings').hidden = !SETTINGS_TABS.includes(tab);
-  refreshClaimDot();
   refreshDecoDot();
   $('tabbar').querySelectorAll('.tab').forEach(button => {
     if (button.dataset.tab === tab) button.setAttribute('aria-current', 'page');

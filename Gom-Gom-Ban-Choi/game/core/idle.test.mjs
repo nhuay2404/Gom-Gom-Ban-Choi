@@ -50,3 +50,13 @@ test('idle: chỉnh giờ máy lùi lại thì không cộng, tích lại từ b
   assert.equal(claimIdle(deco, at, T, 'orange').amount, 0);
   assert.equal(tickIdle(deco, at, T).idleAt.orange, T);
 });
+
+test('con còn trong thùng thú cưng không tích xu; mở thùng thì tích từ lúc mở', () => {
+  const deco = tickIdle({ coins: 0, cats: ['orange', 'gray'], idleAt: { gray: T - HOUR } }, at, T, ['gray']);
+  assert.equal(deco.idleAt.orange, T);
+  assert.ok(!('gray' in deco.idleAt), 'trong thùng: bỏ mốc, không tích');
+  assert.equal(idlePending(deco, at, T + 3 * HOUR, 'gray'), 0);
+  const opened = tickIdle(deco, at, T + 3 * HOUR, []);
+  assert.equal(opened.idleAt.gray, T + 3 * HOUR, 'mở thùng: bắt đầu tích từ lúc mở');
+  assert.equal(opened.idleAt.orange, T);
+});

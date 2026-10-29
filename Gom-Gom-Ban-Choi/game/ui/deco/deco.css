@@ -303,8 +303,11 @@ body.deco-locked .hub-settings{opacity:.5}
 .zone-switch[hidden],.zone-switch button[hidden]{display:none}
 
 /* Onboarding trước phần Decoration (tutorial Garden): nút trang trí vẫn hiện nhưng mờ, xám, không bấm được */
-body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"],.deco-help){opacity:.45;filter:grayscale(.7);pointer-events:none}
-body.onboarding:not(.ob-no-build) #deco .deco-help{display:none}
+body.ob-no-build #deco :is(.deco-dock,.deco-side [data-key="walls"],.deco-side [data-key="floors"]){opacity:.45;filter:grayscale(.7);pointer-events:none}
+/* Onboarding: vào Deco sau màn 1 chỉ ngắm vườn + mèo cam, panel Deco (khay thẻ, cột trái) hiện từ hộp quà món đồ đầu tiên */
+body.ob-no-panel #deco :is(.deco-dock,.deco-side){display:none}
+/* Nút "?" (hướng dẫn đọc lại, có nói Shop) chỉ hiện khi đã xong onboarding */
+body.onboarding #deco .deco-help{display:none}
 /* ===== Mở khu bằng xu: vùng chạm trong suốt đè lên cọc gỗ + mũi tên (3D, deco-room.mjs setGhost) giữa mảnh đất của khu kế tiếp ===== */
 /* Vị trí do menu/areas.js placeAreaMarker đặt (điểm giữa cọc); chạm mở bảng điều kiện. */
 .area-next{position:absolute;left:0;top:0;z-index:5;width:84px;height:150px;margin:-75px 0 0 -42px;padding:0;border:0;background:none;cursor:pointer;will-change:transform}

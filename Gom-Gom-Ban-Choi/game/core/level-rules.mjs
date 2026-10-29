@@ -20,6 +20,8 @@ export const grassCount = level => (parseGrass(level) || []).filter(Boolean).len
 // Chữ số '1'–'9' = ô của mèo béo 2×2 đang ngủ (board-rules.mjs wakeFatCats), số = số lần phải đánh thức; mỗi khối 2×2 chữ số liền
 // nhau là một con: { fat, fatId: ô góc trên-trái, breed }.
 // '@' = hộp thư: chặn ô như kim loại, không bao giờ vỡ (cả búa / herd); gom sát bên thì bay thư vào Goal (board-rules.mjs `mail`).
+// 'B' = hộp các-tông 2×2 (chỉ màn 1, mèo cam nằm trong): chặn ô như kim loại, không bao giờ vỡ; mỗi khối 2×2 'B' là một hộp
+//   { block, metal, carton: true, cartonId: ô góc trên-trái }. Thắng màn thì hộp mở (play/board-view.js openCartons).
 // '%' = bình hoa: { vase: số lần trúng còn lại } (tuning.mjs VASE), lần gom sát đầu chỉ nứt, hết lượt trúng thì vỡ (board-rules.mjs `cracked` / `shattered`).
 // `syrup` (tuỳ chọn): lớp siro dâu phủ lên mèo, các hàng chuỗi cùng cỡ với bàn ('~' = mèo ở ô đó bị phủ; ô không phải mèo thường thì bỏ qua).
 // Mèo phủ siro = chuồng 1 khoá có cờ `syrup` ({ group, cage: 1, syrup: true }): không vào cụm, gom sát bên là siro vỡ (board-rules.mjs `syrup`).
@@ -29,14 +31,16 @@ export function parseBoard(rows, syrup) {
     : ch === '#' ? { block: true, metal: true, void: true }
       : ch === '@' ? { block: true, metal: true, mail: true }
       : ch === '%' ? { vase: VASE.HITS }
+      : ch === 'B' ? { block: true, metal: true, carton: true, cartonId: -1 }
       : /[1-9]/.test(ch) ? { fat: Number(ch), fatMax: Number(ch), fatId: -1, breed: FAT_BREED }
         : ch !== ch.toUpperCase() ? { group: LETTERS[ch.toUpperCase()], locked: true, starting: true, cage: CAGE.LOCKS }
           : { group: LETTERS[ch], locked: true, starting: true }));
-  board.forEach((cell, i) => {
-    if (!cell?.fat || cell.fatId >= 0) return;
+  // Mèo béo / hộp các-tông: gán ô góc trên-trái cho cả khối 2×2.
+  for (const [kind, id] of [['fat', 'fatId'], ['carton', 'cartonId']]) board.forEach((cell, i) => {
+    if (!cell?.[kind] || cell[id] >= 0) return;
     const block = [i, i + 1, i + width, i + width + 1];
-    if (i % width === width - 1 || !block.every(k => board[k]?.fat && board[k].fatId < 0)) throw new Error(`Mèo béo ở ô ${i} không đủ khối 2×2`);
-    block.forEach(k => { board[k] = { ...board[k], fatId: i }; });
+    if (i % width === width - 1 || !block.every(k => board[k]?.[kind] && board[k][id] < 0)) throw new Error(`${kind} ở ô ${i} không đủ khối 2×2`);
+    block.forEach(k => { board[k] = { ...board[k], [id]: i }; });
   });
   if (syrup) [...syrup.join('')].forEach((ch, i) => { if (ch === '~' && board[i]?.group && !board[i].cage) board[i] = { ...board[i], cage: 1, syrup: true }; });
   return board;

@@ -98,6 +98,8 @@ function fitZoneSwitch() {
   if (left < bar.scrollLeft || left + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = left - 12;
 }
 
+const AREA_NEXT_LEVEL = 6;
+
 // ===== Mở khu: bong bóng "khu kế tiếp" ở Deco + bảng 2 khu kế tiếp (xây đủ món gốc khu trước → đủ xu → khánh thành) =====
 const areaInfo = area => {
   const deco = getDeco(), cleared = levelsCleared(), { cost } = AREA_UNLOCK[area], before = areaBefore(area), [built, total] = areaBuilt(deco, before);
@@ -107,7 +109,8 @@ const areaInfo = area => {
 // Khu kế tiếp hiện thành mảnh đất mờ trong cảnh Deco + cọc gỗ có dấu "!" ở giữa (xanh lá khi đủ điều kiện mở) (room3d.setGhost). #area-next là vùng chạm
 // trong suốt đè lên cọc (placeAreaMarker mỗi khung hình), chạm mở bảng điều kiện.
 export function renderAreaNext() {
-  const marker = $('area-next'), area = $('deco').hidden || devAllZones() || decoLocked ? null : nextArea(getDeco());
+  // Mảnh đất khu kế tiếp chỉ hiện từ khi thắng màn AREA_NEXT_LEVEL (người mới chưa bị phân tâm khỏi vườn).
+  const marker = $('area-next'), area = $('deco').hidden || devAllZones() || decoLocked || levelsCleared() < AREA_NEXT_LEVEL ? null : nextArea(getDeco());
   room3d?.setGhost(area, !!area && areaInfo(area).state === 'ready'); // tên khu trùng tên ô trong room-layout ZONE_OFFSET
   marker.hidden = !area;
   if (!area) return;
@@ -130,8 +133,7 @@ export function placeAreaMarker() {
 // Một dòng trong bảng mở khu: 2 bước (xây đủ khu trước, trả xu).
 const STEP = (done, text) => `<li class="${done ? 'done' : ''}"><i aria-hidden="true">${done ? '✓' : ''}</i>${text}</li>`;
 function areaRow(info) {
-  const steps = STEP(info.built >= info.total, `Build every spot in the ${AREA_NAMES[info.before].toLowerCase()} <b>${info.built}/${info.total}</b>`)
-    + STEP(info.state === 'ready', `Pay ${coin(info.cost)}`);
+  const steps = STEP(info.built >= info.total, `Build every spot in the ${AREA_NAMES[info.before].toLowerCase()} <b>${info.built}/${info.total}</b>`);
   return `<section class="area-row" data-state="${info.state}"><h3>${info.name}</h3><ul>${steps}</ul></section>`;
 }
 

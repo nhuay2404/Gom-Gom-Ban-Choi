@@ -128,7 +128,7 @@
 .wallet-hud>.fh-pill.fh-coins{width:calc(38.6 * var(--u) * 432 / 116);height:calc(38.6 * var(--u));top:calc(5 * var(--u))}
 .wallet-hud>.fh-pill.fh-gems{left:calc(154 * var(--u));width:calc(38.6 * var(--u) * 405 / 118);height:calc(38.6 * var(--u));top:calc(5 * var(--u))}
 .wallet-hud>.fh-coins b{left:calc(50.3 * var(--u));width:calc(66 * var(--u))}
-.wallet-hud>.fh-gems b{left:calc(60.5 * var(--u));width:calc(41 * var(--u))}
+.wallet-hud>.fh-gems b{left:calc(54 * var(--u));width:calc(66 * var(--u))}
 .wallet-hud>.fh-pill b{font-size:calc(19 * var(--u));color:#3d1408}
 .fh-round.fh-gear::before{display:none}
 .fh-round.fh-gear::after{background-size:contain}
@@ -211,3 +211,5 @@
 .login-cell.big .login-icon{font-size:40px}
 .login-cell.big small{font-size:13px}
 @media (prefers-reduced-motion: no-preference){.login-cell.today{animation:daily-ready 1.2s ease-in-out infinite}}
+/* Onboarding (app/onboarding.js): Daily, Quests, quà 7 ngày, Starter Pack (mở Shop) ẩn tới khi thắng màn 5 */
+body.ob-no-features :is(#home-daily,#home-quests,#home-login,#home-starter,#deco-quests){display:none!important}

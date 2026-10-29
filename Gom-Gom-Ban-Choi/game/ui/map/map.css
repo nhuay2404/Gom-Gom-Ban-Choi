@@ -76,6 +76,9 @@
 .cr-tap{position:absolute;bottom:max(64px,10vh);left:0;right:0;margin:0;font-size:16px;font-weight:700;opacity:0;transition:opacity .3s}
 .cat-reward.ready .cr-tap{opacity:.9;animation:cr-pulse 1.2s ease-in-out infinite}
 .cat-reward.closing .cr-cat{animation:cr-fly .45s ease-in both}
+/* Màn "You got a new box" (map-view.js showBoxReward): thùng không bay lên như mèo — tours.js cho ảnh thùng bay vào tab Deco */
+.box-reward.closing .cr-cat{animation:none;opacity:0}
+.box-reward .cr-cat img{width:100%;height:100%;object-fit:contain;display:block}
 .cat-reward.chained{animation:none}
 .cat-reward.closing.keep{animation:none}
 .cat-reward.keep .cr-title,.cat-reward.keep .cr-rarity,.cat-reward.keep .cr-name,.cat-reward.keep .cr-tap{transition:opacity .2s}

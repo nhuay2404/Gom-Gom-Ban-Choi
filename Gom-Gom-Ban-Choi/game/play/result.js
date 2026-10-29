@@ -11,12 +11,15 @@ import { playSound } from '../ui/sound.mjs';
 import { loadProfile, saveProfile, startVisit, recordAttempt, noteDwell, boosterTip } from '../core/adaptive.mjs';
 import { $, getDeco, setDeco, getBoosters, storeBoosters, BOOSTER_NAMES, refreshWallet, getWallet, noteEvent } from '../app/shared.js';
 import { grantGems, triggerOffer, showOffer } from '../app/store.js';
+import { catRewardsAt, isCatClaimed, claimCat } from '../deco/deco-data.mjs';
+import { BOX_ART, GIFT_BOX_SVG } from '../ui/gift-box-art.mjs';
 import { showRewarded, adReady } from '../app/ads.js';
 import { bonusCoins } from '../core/gems.mjs';
 import { offerContinue } from './continue.js';
 import { now, state, menus } from './context.js';
 import { render } from './hud.js';
 import { renderTutorial } from './tutorial.js';
+import { openCartons } from './board-view.js';
 import { startLevel } from './play-controller.js';
 import { confirmationMarkup } from '../ui/shared/confirmation-view.mjs';
 
@@ -108,13 +111,18 @@ export async function endLevel(win, reason = '') {
   // Nhiệm vụ: chơi xong 1 màn (thắng / thua), thắng không booster (chỉ tính khi đã mở booster).
   noteEvent('play');
   if (win && track && !track.boosters && boostersUnlocked(index)) noteEvent('cleanWin');
-  let coinsEarned = 0;
+  let coinsEarned = 0, firstWin = false;
+  // Onboarding: xu màn 1–3 dồn vào hộp xu trong Deco (app/onboarding.js), không cộng lúc thắng; màn 1–2 không hiện dòng xu.
+  const deferred = win && ob.coinsDeferred(index);
   if (win) {
     const record = recordWin(loadProgress(), index, stars); // chỉ sao mới (vượt kỷ lục cũ) mới ra xu
     saveProgress(record.progress);
     coinsEarned = record.coins;
-    if (coinsEarned) setDeco({ ...getDeco(), coins: getDeco().coins + coinsEarned });
+    firstWin = record.before === 0;
+    if (coinsEarned && !deferred) setDeco({ ...getDeco(), coins: getDeco().coins + coinsEarned });
   }
+  $('result-coins').hidden = deferred && index < 2;
+  $('result-dialog').classList.toggle('no-coins', $('result-coins').hidden);
   // Gem thưởng lần thắng đầu: màn paywall (sau bài học continue) / màn boss.
   const level = LEVELS[index];
   const gems = coinsEarned ? grantGems(`level:${index}`, level.paywall ? GEM_REWARDS.paywall : level.tier === 'boss' ? GEM_REWARDS.boss : 0) : 0;
@@ -122,14 +130,20 @@ export async function endLevel(win, reason = '') {
   // (bản HTML cho người chơi bật GOMGOM_NO_STARTER: không có Starter Pack)
   const offer = win ? (!globalThis.GOMGOM_NO_STARTER && coinsEarned && index + 1 === OFFERS.starter.starterLevel && triggerOffer('starter') && 'starter')
     : (lossStreakHere(index) >= OFFERS.rescue.afterLosses && triggerOffer('rescue') && 'rescue');
-  const unlock = win ? ob.unlockOnWin(index) : null; // onboarding: màn này vừa mở khoá thứ gì ('garden' | 'cats' | 'decor')
-  if (coinsEarned || gift) setTimeout(() => playSound('reward'), 450);
+  unlock = win ? ob.unlockOnWin(index, firstWin) : null; // onboarding: màn này vừa mở khoá thứ gì ('cat' | 'gift' | 'features')
+  // Mốc nhận mèo / chó (deco-data.mjs catRewardsAt): thắng lần đầu là nhận luôn, vào thùng chờ mở ở Deco (cùng flow mèo cam sau màn 1:
+  // Continue -> "You got a new box" -> thùng bay vào Deco -> chạm thùng -> "You got <tên>" -> con vật nhảy ra). Ghi save ngay.
+  const pets = firstWin ? catRewardsAt(index).filter(breed => !isCatClaimed(getDeco(), breed)) : [];
+  let petGems = 0;
+  pets.forEach(breed => { setDeco(claimCat(getDeco(), breed)); ob.addPetBox(breed); noteEvent('claimPet'); petGems += grantGems(`pet:${breed}`, GEM_REWARDS.pet); });
+  unlock ||= pets.length ? 'pet' : null;
+  if ((coinsEarned && !deferred) || gift) setTimeout(() => playSound('reward'), 450);
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
   // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, lần 3–5 +20%, từ lần 6 +10%; REWARDED_ADS.coinBonus), không giới hạn.
   // Nút ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
   $('result-coins').parentElement.querySelector('.ad-double')?.remove();
-  if (coinsEarned && adReady('bonusCoins')) {
+  if (coinsEarned && !deferred && adReady('bonusCoins')) {
     const bonus = bonusCoins(getWallet(), coinsEarned, Date.now());
     const button = document.createElement('button');
     button.className = 'ad-double';
@@ -146,7 +160,7 @@ export async function endLevel(win, reason = '') {
     };
     $('result-coins').after(button);
   }
-  const notes = [gems && `+${gems} gems`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
+  const notes = [(gems + petGems) && `+${gems + petGems} gems`, gift && `Gift: ${BOOSTER_NAMES.moves} booster`,
     tip && `So close! Try ${BOOSTER_NAMES.moves} next time.`, !win && !tip && reason].filter(Boolean);
   $('result-note').hidden = !notes.length;
   $('result-note').textContent = notes.join(' · ');
@@ -169,6 +183,8 @@ export async function endLevel(win, reason = '') {
   $('result-replay').hidden = !win || onlyContinue;
   $('result-map').hidden = onlyContinue;
   $('result-retry').hidden = win;
+  // Màn 1: hộp các-tông mở, mèo cam ló ra rồi mới hiện bảng (board-view.js openCartons).
+  if (win) await openCartons();
   // Tiếng thắng phát đúng lúc bảng Level Complete hiện (sound.mjs: fade in).
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); if (win) playSound('complete'); }, win ? 0 : 700);
   // Ưu đãi vừa bật: popup đè lên bảng kết quả một lần (sau đó vẫn ở đầu Shop tới khi hết giờ).
@@ -185,17 +201,23 @@ function lossStreakHere(index) {
 // Thứ được mở khoá ở các màn onboarding (onboarding.js), hiện dưới "Unlocked:" ở bảng kết quả.
 // Mở khu / mở Deco dùng chung icon Deco của thanh tab.
 const DECO_ICON = '<img src="./assets/img/nav/icon-deco-matte.png" alt="">';
+const icon = src => `<img src="${src}" alt="">`;
 const UNLOCK_ITEMS = {
-  garden: [{ name: 'Garden', icon: DECO_ICON }],
-  cats: [{ name: 'Orange cat', icon: catMarkup.orange }, { name: 'Gray cat', icon: catMarkup.gray }],
-  decor: [{ name: 'Deco', icon: DECO_ICON }],
+  cat: [{ name: 'Garden', icon: DECO_ICON }], // mèo cam là bất ngờ: thùng các-tông nhận ở Home, mở trong Deco
+  gift: [{ name: 'Gift box', icon: GIFT_BOX_SVG }],
+  pet: [{ name: 'New box', icon: `<img src="${BOX_ART}" alt="">` }],
+  // Đường dẫn ảnh viết đủ để build:html nhúng được.
+  features: [{ name: 'Shop', icon: icon('./assets/img/nav/icon-shop-matte.png') }, { name: 'Quests', icon: icon('./assets/img/home/icon-quest-matte.png') },
+    { name: 'Daily', icon: icon('./assets/img/home/icon-daily-matte.png') }, { name: '7 Days', icon: icon('./assets/img/home/icon-login-matte.png') }],
 };
+// Thứ vừa mở ở ván vừa xong (bảng kết quả đang hiện), cho nút Continue.
+let unlock = null;
 
 const FORCED_CONTINUE_LEVELS = 5;
 // Có mở khoá thì chạy onboarding; không thì (5 màn đầu) vào thẳng màn kế.
 $('result-continue').onclick = () => {
   leaveResult();
-  if ($('result-dialog').classList.contains('has-unlock')) menus.runOnboarding();
+  if (unlock) menus.runOnboarding(unlock);
   else startLevel(state.levelIndex + 1);
 };
 

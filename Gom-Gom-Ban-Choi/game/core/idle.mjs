@@ -30,19 +30,22 @@ export function idlePending(deco, cleared, now, breed, cfg = GAME) {
 export const idleFull = (deco, cleared, now, breed, cfg = GAME) => idleOpen(cleared, cfg) && idlePending(deco, cleared, now, breed, cfg) >= idleCap(cleared, cfg);
 
 // Gọi khi mở game / vào Deco: mỗi con trong nhà (deco.cats) chưa tích thì bắt đầu tích, giờ máy lùi thì đặt lại; save cũ đổi sang mốc riêng từng con.
-// Không đổi gì thì trả lại đúng deco cũ.
-export function tickIdle(deco, cleared, now) {
+// boxed: con còn nằm trong thùng thú cưng chưa mở (app/onboarding.js petBoxes) — không tích, bỏ mốc cũ nếu có; mở thùng rồi gọi lại
+// thì con đó bắt đầu tích từ lúc mở (không trả bù thời gian nằm trong thùng). Không đổi gì thì trả lại đúng deco cũ.
+export function tickIdle(deco, cleared, now, boxed = []) {
   if (!idleOpen(cleared)) return deco;
   let changed = typeof deco.idleAt !== 'object' || deco.idleAt === null;
   const idleAt = {};
-  for (const breed of deco.cats ?? []) {
+  const kept = typeof deco.idleAt === 'object' && deco.idleAt ? { ...deco.idleAt } : {};
+  for (const breed of boxed) if (breed in kept) { delete kept[breed]; changed = true; }
+  for (const breed of (deco.cats ?? []).filter(other => !boxed.includes(other))) {
     const from = startOf(deco, breed);
     idleAt[breed] = from == null || now < from ? now : from;
     if (idleAt[breed] !== from) changed = true;
   }
   // Giữ mốc của mèo đang ở ngoài nhà (vào lại nhà thì tích tiếp, vẫn chặn ở trần).
   if (!changed) return deco;
-  return { ...deco, idleAt: { ...(typeof deco.idleAt === 'object' ? deco.idleAt : {}), ...idleAt } };
+  return { ...deco, idleAt: { ...kept, ...idleAt } };
 }
 
 // Nhận xu của một con: cộng vào ví, con đó tích lại từ bây giờ. Trả về { deco, amount }.

@@ -69,8 +69,8 @@ function bonusBanner() {
 $('board').addEventListener('pointerdown', () => { if (state.outcome?.win && state.animating) finaleFast = true; });
 
 // Thắng (sau khi xả lượt đã dọn sạch mèo): chờ anim gom + điểm bay xong, ẩn UI chơi, thùng còn lại vỡ, bàn trống trơn.
-// Bàn trống sau khi thắng: giữ ô ngoài bàn ('#') để lưới không bị dựng lại thành hình chữ nhật.
-const emptiedBoard = () => state.board.map(cell => (cell?.void ? cell : null));
+// Bàn trống sau khi thắng: giữ ô ngoài bàn ('#') để lưới không bị dựng lại thành hình chữ nhật, giữ hộp các-tông (màn 1) để còn mở.
+const emptiedBoard = () => state.board.map(cell => (cell?.void || cell?.carton ? cell : null));
 
 export async function celebrateWin(message) {
   state.animating = true;

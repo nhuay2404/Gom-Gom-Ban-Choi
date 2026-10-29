@@ -90,6 +90,9 @@
 /* Ô điểm (chỉ khi thắng): ảnh có chữ "Score" + đồng xu + tia; điểm ghi vào rãnh giữa, số xu cạnh đồng xu */
 .result-dialog .result-box{left:calc(35.5 * var(--u));top:calc(194.5 * var(--u));width:calc(236 * var(--u));height:calc(119 * var(--u));display:block;padding:0;border:0;border-radius:0;background:url('../../assets/img/result/win-score.png') center/100% 100% no-repeat}
 .result-dialog .result-label{display:none}
+/* Màn 1–2 (onboarding) không cho xu: chỉ giữ nửa trên ảnh (chữ Score + rãnh điểm), bỏ phần đồng xu */
+.result-dialog.no-coins .result-box{height:calc(54 * var(--u));background-size:100% calc(119 * var(--u));background-position:top}
+.result-dialog.no-coins .result-score{top:48.5%;height:43%}
 .result-dialog .result-score{position:absolute;left:31.8%;width:36.7%;top:22%;height:19.6%;min-width:0;padding:0;display:grid;place-items:center;
   background:none;font-family:var(--display);font-size:calc(25 * var(--u));font-weight:800;line-height:1;color:#6b1f12}
 .result-dialog .result-coins{position:absolute;left:47.5%;top:57%;width:auto;margin:0;padding:0;border:0;

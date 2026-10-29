@@ -11,6 +11,7 @@ import { spendGems } from '../core/gems.mjs';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch, dragScroll } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
 import { startIdle, idleDot } from './idle-coins.js';
+import { openGiftBox, openPetBox } from './gift-boxes.js';
 import { levelsCleared } from './context.js';
 
 export let decoPick = null; // món gốc đang xem trước (thẻ chưa xây vừa chạm)
@@ -68,7 +69,8 @@ function seenIds() {
 
 export function refreshDecoDot() {
   const seen = seenIds();
-  $('tabbar').querySelector('[data-tab="deco"]')?.classList.toggle('has-dot', buyableIds().some(id => !seen.has(id)) || idleDot());
+  // Onboarding: mèo cam mới về vườn (chưa vào Deco lần nào) / hộp quà chưa mở cũng có chấm.
+  $('tabbar').querySelector('[data-tab="deco"]')?.classList.toggle('has-dot', buyableIds().some(id => !seen.has(id)) || idleDot() || ob.giftsWaiting() > 0 || ob.petBoxes().length > 0);
 }
 
 export function noticeDeco() {
@@ -211,7 +213,7 @@ $('deco-cards').addEventListener('click', event => {
   if (!base) return;
   if (!isBaseEntry(base)) { clearDecoPick(); return chooseOption(base, !!event.target.closest('[data-act="buy"]')); }
   clearPreview();
-  if (!ob.buildOpen(base)) return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(base, getDeco())) return showToast(BUILD_LOCKED);
   if (event.target.closest('[data-act="buy"]')) return buildBase(base);
   playSound('pick');
   closeDecoPop(false);
@@ -229,10 +231,10 @@ function pickDeco(entry) {
   renderDeco();
 }
 
-const BUILD_LOCKED = 'Beat level 5 to start decorating!';
+const BUILD_LOCKED = 'Keep winning levels to unlock this!';
 
 function buildBase(base) {
-  if (!ob.buildOpen(base)) return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(base, getDeco())) return showToast(BUILD_LOCKED);
   const next = applyAction(getDeco(), base, decoUnlockedLevel());
   // Thiếu xu: trả hết xu + bù gem rồi xây lại.
   if (next.error === 'Not enough coins') return coverCoins(base.price, base.name).then(ok => ok && buildBase(base));
@@ -255,6 +257,9 @@ function buildBase(base) {
 // Chạm trong cảnh: món = bảng đổi món cạnh nó. Sàn / tường (chạm cỏ trống là chuyện thường) chỉ mở khi đã có kiểu khác mua ở Shop
 // và chưa có bảng nào đang mở; đang mở bảng thì chạm chỗ khác = đóng.
 export function onScenePick(pick) {
+  if (pick.gift != null) return openGiftBox(pick.gift); // hộp quà onboarding (gift-boxes.js)
+  if (pick.petBox) return openPetBox(); // thùng mèo / chó mới nhận (gift-boxes.js)
+  if (document.body.classList.contains('ob-no-panel')) return; // onboarding chưa mở panel Deco (trước hộp xu): chạm món chưa mở bảng đổi món
   if (decoLocked) return;
   const surface = isSurface(pick.key);
   if (!pick.key || (surface && (decoPop || ownedOptions(getDeco(), pick.zone, pick.key).length < 2))) return closeDecoPop();
@@ -372,7 +377,7 @@ $('deco-pop-items').addEventListener('click', event => {
 // Chọn một kiểu (mèo / kiểu khác của món / tường / sàn): dùng chung cho thẻ ở khay đáy và bảng đổi món trong cảnh.
 // buyTap = chạm đúng nút giá của kiểu đang xem thử.
 function chooseOption(entry, buyTap) {
-  if (!ob.buildOpen(entry) && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
+  if (!ob.buildOpen(entry, getDeco()) && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
   const deco = getDeco(), unlocked = decoUnlockedLevel(), status = itemStatus(deco, entry, unlocked);
   if (entry.cat === 'cats') {
     if (status === 'locked') return showToast(`Beat level ${entry.lock}, then claim it on the Map`);
