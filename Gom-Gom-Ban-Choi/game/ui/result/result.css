@@ -196,6 +196,9 @@
 #result-dialog.win .result-coins{left:calc(168.1 * var(--u));top:calc(277.5 * var(--u))}
 #result-dialog.win .result-coins b{font-size:calc(29 * var(--u));color:#4a1a08;letter-spacing:-.01em}
 #result-dialog.win .result-coins small{margin-top:calc(2 * var(--u));font-size:calc(16 * var(--u));color:#8f6b58}
+/* Không có xu (màn đầu: xu để dành cho onboarding, play/result.js no-coins): che đồng xu in sẵn trong win2-panel.png bằng đúng màu nền kem quanh nó
+   (ảnh px 359–531 × 898–1074 -> 110,7–163,8u × 276,9–331,2u, nới 3u mỗi bên) */
+#result-dialog.win.no-coins::after{content:'';position:absolute;left:calc(107.7 * var(--u));top:calc(273.9 * var(--u));width:calc(59 * var(--u));height:calc(60.3 * var(--u));background:#fbf1db;pointer-events:none}
 #result-dialog.win .result-note{top:calc(438 * var(--u))}
 #result-dialog.win .result-unlock{top:calc(436 * var(--u))}
 /* Nút: Home / Next / xem quảng cáo (nút .ad-double tạo trong play/result.js, nằm trong ô điểm nên đặt theo khung nhờ display:contents ở trên) */
