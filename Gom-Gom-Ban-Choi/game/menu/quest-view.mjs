@@ -22,4 +22,4 @@ export function questBody(quests) {
   return quests.active.length ? `<ul class="quest-list">${quests.active.map(questRow).join('')}</ul>`
     : `<div class="quest-empty"><img src="${art}empty.png" alt=""><h3>You're all caught up!</h3><p>New quests arrive with new levels and areas.</p></div>`;
 }
-export const questShell = () => `<header class="quest-header"><img class="quest-emblem" src="./assets/img/home/icon-quest-matte.png" alt=""><h2 id="quests-title">Quests</h2><button class="quest-close" data-close aria-label="Close quests" autofocus></button></header><p class="quest-subtitle">Little steps, lovely rewards</p><div class="quest-summary" role="status" aria-live="polite"></div><div class="quest-body"></div>`;
+export const questShell = () => `<header class="quest-header"><img class="quest-emblem" src="./assets/img/quests/icon-quest.png" alt=""><h2 id="quests-title">Quests</h2><button class="quest-close" data-close aria-label="Close quests" autofocus></button></header><p class="quest-subtitle">Little steps, lovely rewards</p><div class="quest-summary" role="status" aria-live="polite"></div><div class="quest-body"></div>`;

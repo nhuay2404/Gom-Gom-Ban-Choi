@@ -7,7 +7,7 @@ import { REWARDED_ADS } from '../data/economy.mjs';
 import { levelsCleared } from './context.js';
 import { decoLocked, decoPop, renderDeco, refreshDecoDot } from './deco-panel.js';
 import { room3d } from './room.js';
-import { idleRewardOptions } from './idle-reward-view.mjs';
+import { idleRewardOptions, startIdleMeter } from './idle-reward-view.mjs';
 
 // ---------- Xu tự sinh (idle, core/idle.mjs): mỗi con mèo trong nhà có bong bóng xu riêng bám trên đầu, chạm để nhận ----------
 // Số màn đã thắng đọc một lần mỗi lần vẽ Deco (không đọc save mỗi khung hình).
@@ -90,7 +90,7 @@ function claimAll(withBonus) {
     if (button) button.dataset.amount = '';
   }
   if (!total) return;
-  const bonus = withBonus ? Math.round(total * REWARDED_ADS.idleBonus) : 0;
+  const bonus = withBonus ? Math.round(total * withBonus) : 0;
   const before = getDeco().coins;
   setDeco({ ...deco, coins: deco.coins + bonus });
   playSound('reward');
@@ -103,7 +103,7 @@ function claimAll(withBonus) {
   const pill = $('deco-coins').closest('.fh-coins'), box = pill.getBoundingClientRect(), target = { x: box.left + box.width * .22, y: box.top + box.height / 2 };
   $('deco-coins').textContent = before.toLocaleString('en-US');
   // Số xu 3D theo số xu nhận được so với trần tích của một con (idleCap): đầy trần = 12 đồng, ít thì ít, tối thiểu 1.
-  const cap = Math.max(1, idleCap(cleared)), coinsFor = amount => Math.max(1, Math.min(12, Math.ceil(amount * (1 + (withBonus ? REWARDED_ADS.idleBonus : 0)) / cap * 12)));
+  const cap = Math.max(1, idleCap(cleared)), coinsFor = amount => Math.max(1, Math.min(12, Math.ceil(amount * (1 + withBonus) / cap * 12)));
   const flights = claimedBreeds.map(([breed, amount]) => room3d?.flyCoins(breed, target, coinsFor(amount), () => {
     pill.classList.remove('coin-hit'); void pill.offsetWidth; pill.classList.add('coin-hit');
     playSound('fill', 5);

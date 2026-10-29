@@ -1,20 +1,5 @@
-// Shared by the live idle-coins prompt and the standalone art preview.
-const art = './assets/img/idle-reward/';
-const fmt = n => n.toLocaleString('en-US');
-const coins = n => `<img class="idle-coin-icon" src="${art}icon-coin.png" alt=""><span>${fmt(n)}</span>`;
-export function idleRewardOptions(pending, bonusRate) {
-  const extra = Math.round(pending * bonusRate);
-  const percent = Math.round(bonusRate * 100);
-  return {
-    title: 'Pets collected coins!',
-    className: 'idle-claim',
-    body: `<button class="idle-reward-close" data-choice="" aria-label="Close without claiming"></button>
-      <div class="idle-reward-hero" aria-hidden="true"><span class="idle-reward-glow"></span><img class="idle-reward-pet" src="${art}icon-pet.png" alt=""><img class="idle-reward-stack" src="${art}coin-stack.png" alt=""></div>
-      <p class="idle-claim-total" aria-label="${fmt(pending)} coins collected">${coins(pending)}</p>
-      <p class="idle-reward-caption">A little gift from your pets</p>`,
-    choices: [
-      { id: 'ad', style: 'ad', label: `<img class="idle-video-icon" src="${art}icon-video.png" alt=""><span class="idle-video-copy"><span>Watch video</span><strong class="idle-btn-amount">${coins(pending + extra)}</strong></span><em class="idle-bonus">+${percent}%</em>` },
-      { id: 'claim', style: 'ghost', label: `<span>Claim</span><strong class="idle-btn-amount">${coins(pending)}</strong>` },
-    ],
-  };
-}
+// Proportional painted meter UI, shared by game and preview.
+const fmt=n=>n.toLocaleString('en-US');
+export function meterMultiplier(angle){const a=Math.abs(angle);return a<=18?4:a<=54?1.5:1.2;}
+export function idleRewardOptions(pending){return {title:'Pets collected coins!',className:'idle-claim idle-meter',body:`<button class="idle-reward-close" data-choice="" aria-label="Close without claiming"></button><span class="meter-total">${fmt(pending)}</span><img class="meter-needle" src="./assets/img/idle-reward/meter-needle.png" alt=""><span class="meter-factor">x1.2</span>`,choices:[{id:'ad',style:'ad',label:`<span class="meter-video-amount">${fmt(Math.round(pending*1.2))}</span><span class="meter-sr">Watch video for bonus coins</span>`},{id:'claim',style:'ghost',label:`<span class="meter-claim-amount">${fmt(pending)}</span><span class="meter-sr">Claim collected coins</span>`}]};}
+export function startIdleMeter(dialog,pending){let frame=0,factor=1.2,stopped=false;const start=performance.now(),needle=dialog.querySelector('.meter-needle');function update(now){const angle=-90+180*((Math.sin((now-start)/850-Math.PI/2)+1)/2);factor=meterMultiplier(angle);needle.style.rotate=`${angle-90}deg`;dialog.querySelector('.meter-factor').textContent=`x${factor}`;dialog.querySelector('.meter-video-amount').textContent=fmt(Math.round(pending*factor));if(!stopped)frame=requestAnimationFrame(update);}update(start);dialog.addEventListener('click',event=>{if(!event.target.closest('[data-choice]'))return;stopped=true;cancelAnimationFrame(frame);},{capture:true});dialog.addEventListener('close',()=>{stopped=true;cancelAnimationFrame(frame);},{once:true});return ()=>factor;}

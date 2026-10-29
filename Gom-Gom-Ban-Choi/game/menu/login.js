@@ -109,7 +109,7 @@ function syncPage(page = pageNow()) {
 // deco-room.mjs thumbSpinner gắn vào trang đó, vẽ ~30 lần / giây. Trang khác giữ ảnh tĩnh. Chưa có 3D / giảm chuyển động: ảnh tĩnh.
 // Chống giật khi lật trang: model dựng một lần mỗi ô rồi giữ tới khi đóng popup (dựng sẵn lúc rảnh); đang cuộn thì không vẽ,
 // cuộn xong (SETTLE_MS không có sự kiện cuộn) mới gắn model của trang mới.
-const SWAY = .35, SWAY_MS = 3200, SPIN_SIZE = 360, SETTLE_MS = 120;
+const SWAY = .35, SWAY_MS = 3200, SPIN_SIZE = 560, SETTLE_MS = 120;
 const models = new Map();
 let spin = null, settle = 0, prebuild = 0, scrolling = false;
 const modelOf = page => {
@@ -146,8 +146,15 @@ function spinPage(page) {
   spin.raf = requestAnimationFrame(tick);
 }
 // Chấm trang chạy theo vị trí cuộn (ngón tay kéo tới đâu chấm dài ra tới đó), không nhảy cóc giữa hai trang.
+// Claim luôn hiện; chỉ bấm được ở trang đầu (ngày đang nhận được hôm nay), các ngày khác xám = chưa mở.
+let claimable = false;
+function syncClaim(pos) {
+  const button = dialog?.querySelector('[data-claim]');
+  if (button) button.disabled = !(claimable && Math.round(pos) === 0);
+}
 function paintDots() {
   const pos = grid().scrollLeft / grid().clientWidth;
+  syncClaim(pos);
   dialog.querySelectorAll('.login-dots i').forEach((dot, i) => {
     const k = Math.max(0, 1 - Math.abs(pos - i));
     dot.style.width = `${8 + 12 * k}px`;
@@ -186,7 +193,9 @@ function renderPanel(page, from) {
   dialog.querySelector('.login-grid').innerHTML = loginGrid(LOGIN_CALENDAR, state, today, cellArt, first);
   goPage(page ?? state.claimed, false);
   paintDots();
-  dialog.querySelector('[data-claim]').hidden = !today;
+  claimable = today;
+  dialog.querySelector('[data-claim]').hidden = false;
+  syncClaim(grid().scrollLeft / grid().clientWidth);
   dialog.querySelector('[data-claim]').textContent = 'Claim';
   // Không dòng nhắc: nhãn Day X đứng ở chỗ đó (login-gift.css), có Claim hay không đã đủ nói.
   dialog.querySelector('.login-note').hidden = true;
