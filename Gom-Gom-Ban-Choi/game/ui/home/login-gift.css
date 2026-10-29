@@ -334,3 +334,7 @@
 .login-dialog .login-scene{-webkit-mask:url('../../assets/img/login-gift/gift2-frame-mask.png') 50% 15.06%/105.49% auto no-repeat;mask:url('../../assets/img/login-gift/gift2-frame-mask.png') 50% 15.06%/105.49% auto no-repeat}
 /* Crop the painted outline without stretching the artwork. Fade only the pill, not its text. */
 .login-dialog .login-grid .login-cell.art-fill .login-reward-name::before{content:'';position:absolute;inset:0;z-index:-1;background:url('../../assets/img/login-gift/gift2-name.png') center/contain no-repeat;clip-path:inset(9% 1.5% round 999px);opacity:1;pointer-events:none}
+/* Quà kèm gem (ngày 3): nhãn "+15 gem" nằm ngay trên nhãn tên (nhãn tên ~15% bề ngang ô, cao 45–56px) thay vì bị nhãn tên đè; tên chừa lề hẹp hơn để vừa một dòng. */
+.login-dialog .login-grid .login-cell.art-fill .login-bonus{bottom:calc(9% + 62px)}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{padding:0 8%;white-space:nowrap}
+.login-dialog .login-grid .login-cell.art-fill.furniture .login-reward-name{font-size:17px}
