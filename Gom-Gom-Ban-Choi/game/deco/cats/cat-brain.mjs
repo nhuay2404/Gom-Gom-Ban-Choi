@@ -344,13 +344,14 @@ export class Cat {
       if (this.y > .01) yield* this.getDown();
       if (spot) yield* this.walkTo(spot.x, spot.z, { run: Math.hypot(spot.x - this.x, spot.z - this.z) > 2.5, near: .15 });
       this.setPose('sit'); this.face('happy');
+      this.settled = true; // đã tới chỗ ngồi: hướng dẫn mới hiện bong bóng (room-cats.mjs settled)
       while (this.held) {
         const cam = this.world.cameraPos?.();
         if (cam) this.turnToward(this.facing(cam.x, cam.z), 6);
         this.lookGoal = 0;
         yield;
       }
-    } finally { this.release(); this.setPose('stand'); this.face('open'); }
+    } finally { this.settled = false; this.release(); this.setPose('stand'); this.face('open'); }
     yield* this.life();
   }
 

@@ -61,7 +61,7 @@ $('dev-reset').onclick = () => {
 $('dev-reset-cancel').onclick = () => $('dev-reset-dialog').close();
 
 $('dev-reset-ok').onclick = () => {
-  ['progress', 'deco', 'boosters', 'profile', 'decoTour', 'onboarding', 'gifts', 'petBoxes'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
+  ['progress', 'deco', 'boosters', 'profile', 'decoTour', 'onboarding', 'gifts', 'petBoxes', 'catTalk'].forEach(key => { try { localStorage.removeItem(SAVE_KEYS[key]); } catch {} });
   try { localStorage.removeItem(DEV_ZONES_KEY); } catch {}
   location.reload();
 };

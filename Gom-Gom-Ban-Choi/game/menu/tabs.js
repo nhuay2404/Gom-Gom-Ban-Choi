@@ -11,7 +11,7 @@ import { map3d, showMap } from './map-view.js';
 import { markTab } from './settings.js';
 import { renderShopBoosters, renderShopDeco, setShopPage, shopZone } from './shop.js';
 import { renderZoneSwitch } from './areas.js';
-import { enterDeco } from './gift-boxes.js';
+import { enterDeco, boxBlocksPlay } from './gift-boxes.js';
 import { play } from './context.js';
 
 // ===== Deco / Shop: các tab dùng chung thanh điều hướng nổi (cùng Home = bản đồ), chỉ hiện ngoài màn chơi =====
@@ -54,7 +54,7 @@ export function showTab(tab) {
 }
 
 // PLAY ở Home hub: vào màn đang mở (màn cao nhất chưa qua; qua hết thì chơi lại màn cuối).
-$('home-play').onclick = () => { playSound('pick'); play.startLevel(unlockedCount(loadProgress()) - 1); };
+$('home-play').onclick = () => { playSound('pick'); if (boxBlocksPlay()) return; play.startLevel(unlockedCount(loadProgress()) - 1); };
 
 // Gói khởi đầu nằm đầu tab Shop; Shop còn khoá (onboarding) thì chỉ báo.
 // Nút đổi bộ quân trên bàn (mèo <-> chó), chỉ hiện khi đã mở bộ chó (màn 30). Hình + chữ theo bộ đang dùng.

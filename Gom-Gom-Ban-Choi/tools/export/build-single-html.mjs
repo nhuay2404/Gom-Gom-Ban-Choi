@@ -45,13 +45,14 @@ const bundle = execSync(
   // Tên file ghép động trong template (vd. `./assets/img/login-gift/reward-day${i}.png`): nhúng MỘT lần các file trong thư mục có cùng phần tên đứng trước ${ (vd. reward-day*) vào bảng __A
   // (đường dẫn -> data URI, khai ở đầu bundle), chỗ dùng đổi thành `${__A[`đường dẫn`]}`.
   .replace(/(?:\.\/)?(assets\/img\/(?:[\w-]+\/)+)((?:[^`"'\s)$\\]|\$\{[^}]*\})*\$\{[^}]*\}(?:[^`"'\s)$\\]|\$\{[^}]*\})*)/g, (_, dir, name) => {
-    dynamicDirs.add(dir + name.split("${")[0]);
+    // Phần đuôi sau ${...} cuối (vd. ".webp"): chỉ nhúng file khớp đuôi đó (thư mục nền màn chơi có cả .png gốc lẫn .webp).
+    dynamicDirs.add(`${dir}${name.split("${")[0]}|${name.slice(name.lastIndexOf('}') + 1)}`);
     return `\${__A[\`${dir}${name}\`]}`;
   });
-const assetTable = Object.fromEntries([...dynamicDirs].flatMap(prefix => {
-  const dir = prefix.slice(0, prefix.lastIndexOf("/") + 1);
+const assetTable = Object.fromEntries([...dynamicDirs].flatMap(key => {
+  const [prefix, suffix] = key.split('|'), dir = prefix.slice(0, prefix.lastIndexOf("/") + 1);
   return readdirSync(join(game, dir)).map(f => dir + f)
-    .filter(file => file.startsWith(prefix) && MIME[file.split(".").pop().toLowerCase()]).map(file => [file, dataUri(file)]);
+    .filter(file => file.startsWith(prefix) && file.endsWith(suffix) && MIME[file.split(".").pop().toLowerCase()]).map(file => [file, dataUri(file)]);
 }));
 const js = `const __A=${JSON.stringify(assetTable)};\n${bundle}`;
 
@@ -59,7 +60,8 @@ const js = `const __A=${JSON.stringify(assetTable)};\n${bundle}`;
 // vào biến CSS (cùng ảnh dùng nhiều chỗ thì không bị nhân đôi dung lượng).
 const images = new Map();
 const css = [...read('index.html').matchAll(/<link rel="stylesheet" href="\.\/([^"]+)">/g)]
-  .map(([, sheet]) => read(sheet).replace(/url\('(\.{1,2}\/[^']+)'\)/g, (_, file) => {
+  // url('…'), url("…") và url(…) không nháy đều nhúng (lỗi cũ: chỉ nhận nháy đơn -> nền màn chơi ở hud.css viết nháy kép bị mất).
+  .map(([, sheet]) => read(sheet).replace(/url\((['"]?)(\.{1,2}\/[^'")]+)\1\)/g, (_, q, file) => {
     const path = posix.join(posix.dirname(sheet), file);
     if (!images.has(path)) images.set(path, `--img-${images.size}`);
     return `var(${images.get(path)})`;
@@ -67,11 +69,12 @@ const css = [...read('index.html').matchAll(/<link rel="stylesheet" href="\.\/([
   .join('\n');
 const imageVars = `:root{${[...images].map(([file, name]) => `${name}:url('${dataUri(file)}')`).join(';')}}`;
 
-// Bản cho người chơi (--no-dev): mỗi bản build mới chơi lại từ đầu (xoá save cũ một lần trên mỗi máy) và không có Starter Pack.
+// Mỗi bản build mới chơi lại từ đầu ở màn onboarding (xoá save cũ một lần trên mỗi máy), cả bản dev lẫn bản người chơi.
+// Bản cho người chơi (--no-dev) còn không có Starter Pack.
 const BUILD_ID = Date.now();
+const FRESH_START = `<script>try { if (localStorage.getItem('cubecat-build') !== '${BUILD_ID}') { localStorage.clear(); localStorage.setItem('cubecat-build', '${BUILD_ID}'); } } catch {}</script>\n  `;
 const PLAYER_SETUP = `<style>#home-starter{display:none!important}</style>
-  <script>window.GOMGOM_NO_STARTER = true;
-  try { if (localStorage.getItem('cubecat-build') !== '${BUILD_ID}') { localStorage.clear(); localStorage.setItem('cubecat-build', '${BUILD_ID}'); } } catch {}</script>\n  `;
+  <script>window.GOMGOM_NO_STARTER = true;</script>\n  `;
 
 // Ảnh trong HTML (<img src="./...">): nhúng thẳng; ảnh trùng nhau nhúng lại (ít, nhỏ).
 const html = read('index.html')
@@ -79,7 +82,7 @@ const html = read('index.html')
   .replace(/\s*<link rel="stylesheet" href="\.\/[^"]+">/g, '')
   .replace('href="./favicon.svg"', `href="${dataUri('favicon.svg')}"`)
   .replace(/src="\.\/(?!app\/main\.js)([^"]+)"/g, (_, file) => `src="${dataUri(file)}"`)
-  .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : PLAYER_SETUP}<script type="module">\n${js}\n</script>`);
+  .replace(/<script type="module" src="\.\/app\/main\.js"><\/script>/, () => `<style>\n${imageVars}\n${css}\n</style>\n  ${FRESH_START}${DEV_BUILD ? '<script>window.GOMGOM_DEV = true;</script>\n  ' : PLAYER_SETUP}<script type="module">\n${js}\n</script>`);
 const leftover = /(?:src|href)="\.\/[^"]*"/.exec(html);
 if (leftover) throw new Error(`Còn đường dẫn ./ chưa nhúng trong HTML: ${leftover[0]}`);
 

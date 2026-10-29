@@ -80,7 +80,9 @@ function recordQuit() {
 
 let resultShownAt = 0;
 
+let dropWallet = () => {};
 export function leaveResult() {
+  dropWallet(); dropWallet = () => {};
   profile = noteDwell(profile, Math.round(now() - resultShownAt));
   saveProfile(profile);
   $('result-dialog').close();
@@ -138,12 +140,16 @@ export async function endLevel(win, reason = '') {
   pets.forEach(breed => { setDeco(claimCat(getDeco(), breed)); ob.addPetBox(breed); noteEvent('claimPet'); petGems += grantGems(`pet:${breed}`, GEM_REWARDS.pet); });
   unlock ||= pets.length ? 'pet' : null;
   if ((coinsEarned && !deferred) || gift) setTimeout(() => playSound('reward'), 450);
+  ob.applyClasses(); // thắng màn 4 chưa mở hộp quà: ví hiện luôn (onboarding.js walletShown)
+  const walletBefore = { coins: getDeco().coins - (coinsEarned && !deferred ? coinsEarned : 0), gems: getWallet().gems - gems - petGems };
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
   // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, lần 3–5 +20%, từ lần 6 +10%; REWARDED_ADS.coinBonus), không giới hạn.
   // Nút (art bảng thắng) ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
   $('result-coins').parentElement.querySelector('.ad-double')?.remove();
-  if (coinsEarned && !deferred && adReady('bonusCoins')) {
+  // 4 màn đầu thắng: chỉ có nút Continue (nút ads bị Continue đè lên, lỗi cũ) -> không mời xem ads.
+  const onlyContinue = win && !last && index < FORCED_CONTINUE_LEVELS;
+  if (coinsEarned && !deferred && !onlyContinue && adReady('bonusCoins')) {
     const bonus = bonusCoins(getWallet(), coinsEarned, Date.now());
     const button = document.createElement('button');
     button.className = 'ad-double';
@@ -177,8 +183,7 @@ export async function endLevel(win, reason = '') {
   box.hidden = !unlock;
   if (unlock) box.innerHTML = `<span class="ru-title">Unlocked:</span><div class="ru-items">${UNLOCK_ITEMS[unlock].map(item => `<figure><span class="ru-icon">${item.icon}</span><figcaption>${item.name}</figcaption></figure>`).join('')}</div>`;
   dialog.classList.toggle('has-unlock', !!unlock);
-  // 5 màn đầu thắng: chỉ có nút Continue (sang màn kế) để người chơi quen nút này.
-  const onlyContinue = !!unlock || (win && !last && index < FORCED_CONTINUE_LEVELS);
+  // 4 màn đầu thắng: chỉ có nút Continue (sang màn kế) để người chơi quen nút này.
   $('result-continue').hidden = !onlyContinue;
   $('result-next').hidden = !win || last || onlyContinue;
   $('result-replay').hidden = !win || onlyContinue;
@@ -188,6 +193,14 @@ export async function endLevel(win, reason = '') {
   if (win) await openCartons();
   // Tiếng thắng phát đúng lúc bảng Level Complete hiện (sound.mjs: fade in).
   setTimeout(() => { dialog.showModal(); resultShownAt = now(); if (win) playSound('complete'); }, win ? 0 : 700);
+  // Xu (+ gem) thắng màn bay từ dòng xu vào ví (menu/reward-fly.js), ví hiện trên lớp mờ của bảng tới khi rời bảng.
+  if (win && ((coinsEarned && !deferred) || gems + petGems)) setTimeout(() => {
+    if (!dialog.open) return refreshWallet(); // đã rời bảng trước khi xu kịp bay
+    // Đồng xu trên bảng là art vẽ sẵn (ô .ico-coin ẩn, rộng 0): bay ra từ cả dòng xu "+248 coins".
+    const coinIcon = $('result-coins').querySelector('.ico-coin')?.getBoundingClientRect();
+    dropWallet = menus.flyLevelReward(coinIcon?.width ? coinIcon : $('result-coins').getBoundingClientRect(),
+      { coins: deferred ? 0 : coinsEarned, gems: gems + petGems }, walletBefore);
+  }, 650);
   // Ưu đãi vừa bật: popup đè lên bảng kết quả một lần (sau đó vẫn ở đầu Shop tới khi hết giờ).
   if (offer) setTimeout(() => showOffer(offer), 1600);
 }
@@ -214,19 +227,23 @@ const UNLOCK_ITEMS = {
 // Thứ vừa mở ở ván vừa xong (bảng kết quả đang hiện), cho nút Continue.
 let unlock = null;
 
-const FORCED_CONTINUE_LEVELS = 5;
-// Có mở khoá thì chạy onboarding; không thì (5 màn đầu) vào thẳng màn kế.
+// Chỉ 4 màn đầu thắng mới chỉ có nút Continue; từ màn 5 luôn đủ Home / Next / ads, kể cả màn có mở khoá (thùng thú cưng, Shop...).
+const FORCED_CONTINUE_LEVELS = 4;
+// Mở khoá cần màn quà ở Home (thùng mèo / thú cưng, hộp quà): nút nào rời bảng cũng về Home chạy màn quà (thùng chưa mở thì chưa
+// vào màn được, gift-boxes.js boxBlocksPlay). Mở Shop / Quest (features) không có màn quà: các nút làm đúng việc của nó.
+const showsReward = () => ['cat', 'gift', 'pet'].includes(unlock);
+// Có mở khoá thì chạy onboarding; không thì (4 màn đầu) vào thẳng màn kế.
 $('result-continue').onclick = () => {
   leaveResult();
   if (unlock) menus.runOnboarding(unlock);
   else startLevel(state.levelIndex + 1);
 };
 
-$('result-next').onclick = () => { leaveResult(); startLevel(state.levelIndex + 1); };
+$('result-next').onclick = () => { leaveResult(); if (showsReward()) menus.runOnboarding(unlock); else startLevel(state.levelIndex + 1); };
 
-$('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); startLevel(state.levelIndex); };
+$('result-retry').onclick = $('result-replay').onclick = () => { leaveResult(); if (showsReward()) menus.runOnboarding(unlock); else startLevel(state.levelIndex); };
 
-$('result-map').onclick = () => { leaveResult(); menus.showTab('home'); };
+$('result-map').onclick = () => { leaveResult(); if (unlock) menus.runOnboarding(unlock); else menus.showTab('home'); };
 
 // Rời ván đang chơi dở (đã đặt ít nhất một thẻ): hỏi lại trước để không mất lượt vì bấm nhầm.
 let quitAction = null;

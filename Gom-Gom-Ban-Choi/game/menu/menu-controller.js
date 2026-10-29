@@ -13,6 +13,7 @@ import { startIdleDot } from './idle-coins.js';
 export { connectPlay } from './context.js';
 export { showTab, hideMenus, menuOpen } from './tabs.js';
 export { runOnboarding } from './tours.js';
+export { flyLevelReward } from './reward-fly.js';
 
 // Khởi động theo đúng thứ tự cũ (khi còn một file). Chạy ở đây, sau khi mọi module menu đã nạp xong: các module import vòng
 // tròn nhau nên lệnh chạy ngay lúc nạp có thể chạm biến của module chưa nạp. Sang Unity: Start() của từng component.

@@ -6,6 +6,7 @@ import { loadProgress, unlockedCount, levelTier } from '../core/progression.mjs'
 import { playSound, playMeow } from '../ui/sound.mjs';
 import { SAVE_KEYS, readText } from '../core/save.mjs';
 import { isCatClaimed, catRewardsAt } from '../deco/deco-data.mjs';
+import { boxBlocksPlay } from './gift-boxes.js';
 import { $, reduceMotion, showToast, getDeco, refreshWallet, setPieceSkin, dogSkinOpen } from '../app/shared.js';
 import { play } from './context.js';
 import { hideMenus, renderSkinButton } from './tabs.js';
@@ -74,7 +75,7 @@ function renderMap() {
     node.innerHTML = `${EAR_SVG.replace('<svg', '<svg class="ear l"')}${EAR_SVG.replace('<svg', '<svg class="ear r"')}<b>${index + 1}${locked ? LOCK_SVG : ''}</b>`
       + (tier === 'boss' ? '<span class="map-crown" aria-hidden="true">👑</span>' : '')
       + (current ? `<span class="map-avatar" aria-hidden="true">${catMarkup.orange}</span>` : '');
-    node.onclick = () => { $('map').hidden = true; play.startLevel(index); };
+    node.onclick = () => { if (boxBlocksPlay()) return; $('map').hidden = true; play.startLevel(index); };
     return node;
   }));
   // Cuối đường: biển báo hết màn để người chơi biết đã tới đỉnh, không phải bản đồ bị cắt.
@@ -94,7 +95,7 @@ export const map3dReady = import('../deco/map-world.mjs').then(({ createMapWorld
   boxShowcase = boxShow;
   map3d = createMapWorld($('map-3d'), {
     avatarSvg: catMarkup.orange,
-    onPick: index => { map3d.stop(); $('map').hidden = true; play.startLevel(index); },
+    onPick: index => { if (boxBlocksPlay()) return; map3d.stop(); $('map').hidden = true; play.startLevel(index); },
   });
 }).catch(error => { map3dFailed = true; console.warn('Map 3D off:', error); });
 

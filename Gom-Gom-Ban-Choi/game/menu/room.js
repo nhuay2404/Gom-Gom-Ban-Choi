@@ -24,7 +24,7 @@ export let decoSpinner = null; // model 3D quay được cho popup (deco-room.mj
 // Vườn và phòng khách nối liền thành một khu nhà; phòng khách chỉ có khi đã mở (thắng màn 10). Chỉ Deco dựng cảnh này.
 // Mèo cam dẫn đường của các hướng dẫn Deco (Garden, Decoration): trong lúc hướng dẫn luôn có mặt trong vườn (chưa nhận thì ở TẠM,
 // không ghi vào save), ngồi yên nhìn camera và "nói" bằng bong bóng lời thoại. Xong hướng dẫn thì đi lại tự do.
-const GUIDE_CAT = 'orange';
+export const GUIDE_CAT = 'orange';
 
 let guiding = false;
 

@@ -101,24 +101,24 @@ export function startDecoTour(steps, onDone) {
     tappable = !(tap && (!!box || step.strict) && !step.skippable);
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };
     // Người nói (speaker, vd. mèo cam trong vườn): bong bóng lời thoại mọc từ nó, nó cũng được khoét sáng (không viền) để không chìm trong lớp mờ.
-    // Khung người nói giữ cố định: cỡ đo một lần khi vào bước, chỉ dời theo khi tâm mèo trôi xa > 10 px (camera lướt), không co giãn
-    // / rung theo dáng thở, quay đầu của mèo.
+    // Khung người nói giữ cỡ cố định (đo một lần khi vào bước, không co giãn / rung theo dáng thở, quay đầu của mèo) nhưng bám theo
+    // tâm mèo mượt từng khung hình (lỗi cũ: chỉ dời khi lệch > 10 px, 150 ms một lần -> bong bóng giật cục khi mèo / camera di chuyển).
     const said = step.speaker && rectOf(step.speaker());
     let speaker = null;
     if (said) {
       const cx = said.left + said.width / 2, cy = said.top + said.height / 2;
       if (!speakerBox || speakerBox.index !== index) speakerBox = { index, w: Math.round(said.width + 12), h: Math.round(said.height + 12), cx, cy };
-      else if (Math.hypot(cx - speakerBox.cx, cy - speakerBox.cy) > 10) Object.assign(speakerBox, { cx, cy });
+      else Object.assign(speakerBox, { cx: speakerBox.cx + (cx - speakerBox.cx) * .5, cy: speakerBox.cy + (cy - speakerBox.cy) * .5 });
       speaker = { x: Math.round(speakerBox.cx - speakerBox.w / 2), y: Math.round(speakerBox.cy - speakerBox.h / 2), width: speakerBox.w, height: speakerBox.h };
     }
-    const key = `${index}|${rect ? Object.values(rect) : ''}|${speaker ? Object.values(speaker) : ''}`;
+    // Lỗ khoét: cập nhật thuộc tính tại chỗ mỗi khung (không dựng lại phần tử); vòng sáng / tấm chắn / bàn tay chỉ dựng lại khi chỗ sáng đổi.
+    const shapes = [rect, speaker].filter(Boolean);
+    while (holes.children.length < shapes.length) holes.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
+    while (holes.children.length > shapes.length) holes.lastChild.remove();
+    shapes.forEach((r, k) => Object.entries({ ...r, rx: 16 }).forEach(([name, value]) => holes.children[k].setAttribute(name, value)));
+    const key = `${index}|${rect ? Object.values(rect) : ''}`;
     if (key !== drawn) {
       drawn = key;
-      holes.replaceChildren(...[rect, speaker].filter(Boolean).map(r => {
-        const hole = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        Object.entries({ ...r, rx: 16 }).forEach(([name, value]) => hole.setAttribute(name, value));
-        return hole;
-      }));
       rings.replaceChildren(...(rect ? [rect] : []).map(r => div('tutorial-ring', `left:${r.x}px;top:${r.y}px;width:${r.width}px;height:${r.height}px`)));
       // Bước thao tác: bốn tấm chắn quanh chỗ sáng, chỗ sáng để trống cho ngón tay chạm xuống nút thật. Bước đọc: một tấm chắn kín.
       const r = rect, right = r && r.x + r.width, bottom = r && r.y + r.height;
@@ -187,9 +187,11 @@ export function startDecoTour(steps, onDone) {
       else bubble.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'ease-out' });
       poll = setInterval(() => {
         if (mine !== token) return stopPoll();
-        render();
         if (steps[index].until?.()) { playSound('pick'); advance(); }
       }, POLL);
+      // Vẽ lại theo từng khung hình (mèo / camera / thẻ đang trượt): bong bóng và chỗ sáng bám theo mượt.
+      const follow = () => { if (mine !== token || layer.hidden) return; render(); requestAnimationFrame(follow); };
+      requestAnimationFrame(follow);
     }));
   };
   const finish = () => { token++; stopPoll(); running = null; layer.hidden = true; onDone?.(); };

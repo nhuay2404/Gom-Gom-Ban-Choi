@@ -7,7 +7,7 @@ import { startDecoTour, waitFor } from '../app/deco-tour.js';
 import { $, getDeco, setDeco } from '../app/shared.js';
 import { renderZoneSwitch } from './areas.js';
 import { setDecoLock, closeDecoPop, clearDecoPick, renderDeco, decoPick, setDecoTab, clearPreview, refreshDecoDot, setTourHold } from './deco-panel.js';
-import { guideRect, setGuide, applyRoom, room3d } from './room.js';
+import { guideRect, setGuide, applyRoom, room3d, GUIDE_CAT } from './room.js';
 import { switchTab } from './tabs.js';
 import { setShopPage } from './shop.js';
 import { flyArt } from './reward-fly.js';
@@ -17,6 +17,8 @@ import { GIFT_BOX_SVG, BOX_ART } from '../ui/gift-box-art.mjs';
 // Mèo cam ngồi trong vườn, mọi lời hướng dẫn là bong bóng thoại mọc từ nó (speaker); mèo khuất (Shop) thì bóng thường.
 // Giọng: mèo cam là một thành viên của bầy mèo, gọi người chơi là "Owner" (người nuôi cả bầy), nói "our home / our garden / the crew".
 const say = steps => steps.map(step => (step.text ? { speaker: guideRect, ...step } : step));
+// Chờ mèo cam đi tới chỗ ngồi và ngồi yên rồi mới hiện bong bóng (lỗi cũ: mèo còn đang chạy, bong bóng nhảy chỗ liên tục).
+const guideSeated = () => waitFor(() => room3d?.catSettled(GUIDE_CAT) ?? true, 6000);
 
 // Kết hướng dẫn Deco (nút "?"): ảnh cả ngôi nhà khi đã xây đủ món gốc mọi phòng (không có mẫu giáo) để người chơi có cái mong chờ.
 // Ảnh chụp từ cảnh thật (đủ món gốc, ban ngày); đổi đồ gốc / thêm phòng thì chụp lại. Đường dẫn viết đủ để build:html nhúng được.
@@ -38,7 +40,7 @@ export function runDecoTour() {
   };
   setGuide(true);
   startDecoTour([...say([
-    { target: () => $('deco-cards').hidden ? $('deco').querySelector('.deco-dock') : $('deco-cards'),
+    { target: () => $('deco-cards').hidden ? $('deco').querySelector('.deco-dock') : $('deco-cards'), before: guideSeated,
       text: 'Swipe the tray and tap something to see it in our home, Owner. Tap Buy and it’s ours!' },
     { target: () => $('deco-kinds'), before: () => closeDecoPop(false),
       text: () => `${names().walls} and ${names().floors} come in other styles too! Tap a type here, try a style, then buy it for us.` },
@@ -52,11 +54,11 @@ export function runDecoTour() {
 
 // Mèo cam vừa ra khỏi thùng lần đầu có dấu "!" trên đầu (gift-boxes.js); chạm vào thì nó than vườn còn trống, rủ chủ chơi tiếp.
 export function runCatTalk() {
-  setGuide(true);
+  setGuide(true, 'here'); // ngồi yên tại chỗ vừa được chạm: bong bóng không phải chạy theo mèo
   startDecoTour(say([
     { target: () => null, next: 'Okay!',
       text: 'Mrrow… it’s so empty out here. Nothing to climb, nothing to nap on! Owner, keep playing levels so we can fill our home with cozy things!' },
-  ]), () => { setGuide(false); ob.catTalkDone(); room3d?.markCat(null); });
+  ]), () => { setGuide(false); ob.catTalkDone(); room3d?.markCat(null); switchTab('home'); }); // đọc xong: mở lại tab Home và về Home chơi tiếp
 }
 
 $('deco-help').onclick = () => { playSound('pick'); runDecoTour(); };
@@ -88,7 +90,8 @@ export function runItemTour(base) {
   const slot = slotOf(base);
   setGuide(true, slot);
   startDecoTour(say([
-    { target: () => room3d?.screenRectOf(slot), bubble: 'below', next: 'Yay!', before: () => new Promise(resolve => setTimeout(resolve, 600)),
+    // Lời thoại thuần (bubble 'speech'): không làm tối màn hình, không khoét sáng bồn hoa, chỉ bong bóng mọc từ mèo cam.
+    { target: () => null, bubble: 'speech', next: 'Yay!', before: () => Promise.all([new Promise(resolve => setTimeout(resolve, 600)), guideSeated()]),
       text: `A gift for our garden: a ${base.name}! The crew loves it already. Win more levels, Owner, and there’ll be another gift!` },
   ]), () => { setGuide(false); writeText(SAVE_KEYS.decoTour, 'styles'); renderDeco(); });
 }
@@ -116,12 +119,15 @@ export function runBuyTour(base) {
 
 // Bảng kết quả bấm Continue sau màn mở khoá (result.js): về Home. Màn 1: thùng mèo / màn 2–3: hộp quà bay vào tab Deco (chấm đỏ ở đó).
 export async function runOnboarding(unlock) {
+  // Màn "You got a new box" dựng TRƯỚC khi chuyển sang Home: nó nằm dưới màn loading (z-index thấp hơn) và đã phủ kín màn hình lúc
+  // loading mờ đi, nên Home không lộ ra một thoáng giữa bảng kết quả và màn quà (lỗi cũ).
+  const boxReward = unlock === 'cat' || unlock === 'pet' ? showBoxReward() : null;
   await switchTab('home');
   refreshDecoDot();
   const tab = $('tabbar').querySelector('[data-tab="deco"]');
   // Màn 1: màn "You got a new box" (thùng các-tông 3D của Home hub), chạm thì thùng bay vào tab Deco — mở Deco là thùng mở ra, mèo
   // cam nhảy ra (gift-boxes.js enterDeco).
-  if (unlock === 'cat' || unlock === 'pet') await flyArt(await showBoxReward(), BOX_ART, tab);
+  if (boxReward) await flyArt(await boxReward, BOX_ART, tab);
   if (unlock === 'gift') {
     const size = 120, from = { left: innerWidth / 2 - size / 2, top: innerHeight / 2 - size / 2, width: size, height: size };
     await flyArt(from, GIFT_BOX_SVG, tab);

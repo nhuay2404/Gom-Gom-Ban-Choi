@@ -149,7 +149,8 @@ export function renderBoard() {
 const MEADOW = Object.assign(new Image(), { onload: () => seeThrough() });
 export function setPlayBackground(levelIndex) {
   const background = playBackgroundForLevel(levelIndex);
-  const src = new URL(`../${background.src}`, import.meta.url).href;
+  // Bản HTML một file (build:html) đã thay đường dẫn bằng data URI: dùng thẳng, ghép "../" vào là hỏng -> mất nền màn chơi (lỗi cũ).
+  const src = background.src.startsWith('data:') ? background.src : new URL(`../${background.src}`, import.meta.url).href;
   document.documentElement.style.setProperty('--play-background-image', `url("${src}")`);
   document.documentElement.dataset.playBackground = background.id;
   if (MEADOW.src !== src) MEADOW.src = src;

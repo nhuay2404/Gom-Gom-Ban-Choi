@@ -12,9 +12,10 @@ import { room3d } from './room.js';
 const SETTINGS_TABS = ['home', 'deco', 'shop'];
 
 export function markTab(tab) {
-  // Onboarding: tab chưa mở thì ẩn — riêng Shop luôn hiện từ đầu nhưng khoá (mờ, không nhấn được) tới khi thắng màn 5.
+  // Onboarding: tab chưa mở thì ẩn — riêng Shop luôn hiện từ đầu nhưng khoá (mờ, không nhấn được) tới khi thắng màn 5;
+  // Home cũng chỉ khoá (không ẩn) lúc mèo cam có dấu "!" chờ chạm.
   $('tabbar').querySelectorAll('.tab').forEach(button => {
-    const open = ob.tabOpen(button.dataset.tab), shop = button.dataset.tab === 'shop';
+    const open = ob.tabOpen(button.dataset.tab), shop = ['shop', 'home'].includes(button.dataset.tab);
     button.hidden = !open && !shop;
     button.disabled = !open;
     button.classList.toggle('locked', !open);

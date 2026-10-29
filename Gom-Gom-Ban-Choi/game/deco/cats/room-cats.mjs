@@ -389,20 +389,27 @@ export function createCatLife(ctx) {
     // Lúc bắt đầu giữ, mèo chạy / đi tới (không dịch chuyển tức thời) chỗ mặc định của hướng dẫn: giữa vườn, lùi về phía xa camera (sau bồn hoa giữa vườn) để
     // khi camera lướt / zoom tới món ở giữa vườn mèo vẫn nằm trong khung, không tụt xuống sau thanh UI dưới đáy.
     // near {x, z}: món hướng dẫn sắp chỉ tới — mèo ngồi ngay bên cạnh (ngang theo màn hình, về phía giữa vườn) thay vì sau bồn hoa.
-    hold(breed, on, near = null) {
+    // avoid [{x, z}]: chỗ có vật tạm (hộp quà onboarding) — chỗ ngồi bên nào sát nó < 1 m thì ngồi bên kia.
+    hold(breed, on, near = null, avoid = []) {
       const cat = world.cats.find(c => c.breed === breed);
       if (!cat || !!cat.held === on) return;
       cat.held = on;
+      cat.settled = false;
       if (!on) return;
+      if (near === 'here') return cat.interrupt(cat.holdStill());
       const h = zoneHome('garden'), cam = world.cameraPos?.();
       const away = cam ? Math.atan2(h.x - cam.x, h.z - cam.z) : 0;
       if (near) {
         const side = Math.sin(away + Math.PI / 2) * (h.x - near.x) + Math.cos(away + Math.PI / 2) * (h.z - near.z) >= 0 ? 1 : -1;
-        const a = away + side * Math.PI / 2;
         // 1.7 m: gần hơn thì khung sáng của món (hướng dẫn Deco) cắt ngang người mèo.
-        cat.interrupt(cat.holdStill(world.reachable(near.x + Math.sin(a) * 1.7, near.z + Math.cos(a) * 1.7)));
+        const spotAt = s => { const a = away + s * Math.PI / 2; return world.reachable(near.x + Math.sin(a) * 1.7, near.z + Math.cos(a) * 1.7); };
+        const blocked = p => avoid.some(o => Math.hypot(o.x - p.x, o.z - p.z) < 1);
+        const spot = blocked(spotAt(side)) && !blocked(spotAt(-side)) ? spotAt(-side) : spotAt(side);
+        cat.interrupt(cat.holdStill(spot));
       } else cat.interrupt(cat.holdStill(world.reachable(h.x + Math.sin(away) * ROOM * .45, h.z + Math.cos(away) * ROOM * .45)));
     },
+    // Mèo đang được giữ (hold) đã đi tới chỗ ngồi và ngồi yên chưa (hướng dẫn chờ cái này rồi mới hiện bong bóng mọc từ mèo).
+    settled(breed) { return !!world.cats.find(c => c.breed === breed)?.settled; },
     // Onboarding (thùng mèo sau màn 1, deco-room.mjs openCatBox): mèo `breed` nằm giấu trong thùng ở (x, z), đứng yên tới khi thùng mở.
     hideIn(breed, x, z) {
       const cat = world.cats.find(c => c.breed === breed);

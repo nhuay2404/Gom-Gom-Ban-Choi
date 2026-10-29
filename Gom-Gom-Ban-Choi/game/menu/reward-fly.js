@@ -1,6 +1,7 @@
 // Xu / gem bay từ nút nhận thưởng vào ô ví đang hiện (Home, Deco hoặc Shop). Chạy trên một lớp popover (top layer) để nằm
 // trên cả popup <dialog> đang mở. Trả về Promise xong khi đồng cuối chạm ví (người gọi cập nhật số trong ví lúc đó).
-import { reduceMotion } from '../app/shared.js';
+import { reduceMotion, refreshWallet } from '../app/shared.js';
+import { liftWallet } from './wallet-lift.js';
 
 const COIN_IMG = './assets/img/home/icon-coin.png';
 const FLY_MS = 650, STAGGER_MS = 60, MAX_ICONS = 8;
@@ -51,6 +52,18 @@ export function flyArt(from, src, target) {
   return Promise.race([flight, new Promise(resolve => setTimeout(resolve, 1300))])
     .then(() => { target.classList.remove('coin-hit'); void target.offsetWidth; target.classList.add('coin-hit'); })
     .finally(() => layer.remove());
+}
+
+// Bảng kết màn (play/result.js): ví hiện trên lớp mờ của bảng, xu / gem vừa thắng bay từ dòng xu vào ví rồi số đếm dần lên.
+// Ví đang ẩn (onboarding chưa mở ví) thì chỉ cập nhật số. Trả về hàm cất ví (gọi lúc rời bảng).
+export function flyLevelReward(from, reward, before) {
+  if (document.body.classList.contains('ob-no-wallet')) { refreshWallet(); return () => {}; }
+  const drop = liftWallet({ floating: true });
+  // Số trong ví đứng ở số cũ tới khi xu bay tới (setDeco đã cộng trước khi bảng hiện).
+  ['map-coins', 'deco-coins', 'shop-coins'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = before.coins.toLocaleString('en-US'); });
+  document.querySelectorAll('.fh-gems b').forEach(el => { el.textContent = before.gems.toLocaleString('en-US'); });
+  flyReward(from, reward).then(refreshWallet);
+  return drop;
 }
 
 // from: chỗ bắt đầu (DOMRect của nút nhận, đo TRƯỚC khi cập nhật dữ liệu: bảng vẽ lại ngay sau đó); reward: { coins, gems }.

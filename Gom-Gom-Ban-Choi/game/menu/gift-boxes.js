@@ -5,6 +5,7 @@
 import * as ob from '../app/onboarding.js';
 import { applyAction, itemById, ownedOptions, boxedWaiting, openBoxed } from '../deco/deco-data.mjs';
 import { playSound } from '../ui/sound.mjs';
+import { markTab } from './settings.js';
 import { $, getDeco, setDeco, refreshWallet, showToast } from '../app/shared.js';
 import { categories } from '../ui/cat-art.mjs';
 import { renderZoneSwitch } from './areas.js';
@@ -15,6 +16,16 @@ import { applyRoom, room3d } from './room.js';
 import { runItemTour, runBuyTour } from './tours.js';
 
 let busy = false;
+
+// Còn thùng thú cưng chờ mở ở Deco ("You got a new box" vừa bay vào tab Deco): chưa cho vào màn, nhắc mở thùng trước.
+// Trả về true nếu đã chặn (người gọi dừng lại).
+export function boxBlocksPlay() {
+  if (!ob.petBoxes().length) return false;
+  showToast('A new box is waiting in Deco! Open it first.');
+  const tab = $('tabbar').querySelector('[data-tab="deco"]');
+  tab?.classList.remove('coin-hit'); void tab?.offsetWidth; tab?.classList.add('coin-hit'); // tab Deco nảy lên chỉ chỗ
+  return true;
+}
 
 // Vẽ lại các hộp đang chờ (gọi khi vào Deco / sau mỗi lần mở).
 export const renderGiftBoxes = () => { if (!busy) { room3d?.setGiftBoxes(ob.giftsWaiting()); room3d?.setAreaGifts(boxedWaiting(getDeco())); } };
@@ -64,6 +75,7 @@ export async function openPetBox() {
   await room3d?.releasePet();
   ob.catOutOfBox(breed);
   room3d?.markCat(ob.catTalkWaiting() ? 'orange' : null);
+  markTab('deco'); // mèo cam có dấu "!": khoá tạm tab Home
   petBusy = false;
   if (!getDeco().cats.includes(breed)) showToast(`${categories[breed].name} is waiting in Deco (room is full)`);
   showNextPet();
@@ -106,16 +118,23 @@ async function giveCoins(index) {
   setDeco({ ...getDeco(), coins: before + amount });
   $('deco-coins').textContent = before.toLocaleString('en-US');
   const pill = $('deco-coins').closest('.fh-coins');
+  // Hướng dẫn mua chạy CÙNG LÚC xu bay vào thanh (lúc panel vừa hiện), không đợi xu bay xong (lỗi cũ: trễ một nhịp).
+  let toured = false;
+  const startTour = () => {
+    if (toured) return;
+    toured = true;
+    reveal();
+    // Các kiểu khác của bồn hoa (quà hộp đầu) giờ mới đổi được: ghim NEW trên bồn hoa, chạm vào là thấy kiểu mới.
+    const deco = getDeco(), flowerStyles = ownedOptions(deco, 'garden', ob.ITEM_GIFT).map(entry => entry.id).filter(id => !deco.zones.garden.placed.includes(id));
+    setDeco({ ...deco, fresh: [...new Set([...(deco.fresh || []), ...flowerStyles])] });
+    renderDeco();
+    runBuyTour(ob.nextBase(getDeco()));
+  };
   await new Promise(resolve => room3d ? room3d.openGift(index, null, mouth => {
-    setTimeout(reveal, 700);
+    setTimeout(startTour, 700);
     const box = pill.getBoundingClientRect(), target = { x: box.left + box.width * .22, y: box.top + box.height / 2 + 14 }; // +14: thanh đang trượt xuống từ trên
     room3d.dropCoins(mouth, target, 12, () => { pill.classList.remove('coin-hit'); void pill.offsetWidth; pill.classList.add('coin-hit'); playSound('fill', 5); }).then(resolve);
   }) : resolve());
-  reveal();
+  startTour();
   refreshWallet();
-  // Các kiểu khác của bồn hoa (quà hộp đầu) giờ mới đổi được: ghim NEW trên bồn hoa, chạm vào là thấy kiểu mới.
-  const deco = getDeco(), flowerStyles = ownedOptions(deco, 'garden', ob.ITEM_GIFT).map(entry => entry.id).filter(id => !deco.zones.garden.placed.includes(id));
-  setDeco({ ...deco, fresh: [...new Set([...(deco.fresh || []), ...flowerStyles])] });
-  renderDeco();
-  runBuyTour(ob.nextBase(getDeco()));
 }

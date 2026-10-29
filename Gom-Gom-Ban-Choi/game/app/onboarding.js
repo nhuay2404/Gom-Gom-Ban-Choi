@@ -86,10 +86,14 @@ export function catOutOfBox(breed) { if (breed === 'orange' && readText(SAVE_KEY
 export const catTalkDone = () => writeText(SAVE_KEYS.catTalk, 'done');
 export const removePetBox = breed => writeText(SAVE_KEYS.petBoxes, JSON.stringify(petBoxes().filter(other => other !== breed)));
 // Thắng màn 5 mà chưa mở hộp xu: vẫn hiện ví (màn 4–5 đã cộng xu thật).
-export const walletShown = () => featuresOpen() || opened() >= 2;
+// Thắng màn 4 mà vẫn chưa mở hộp quà: ví cũng hiện (xu màn 4 cộng thật, có ví để xu bay vào).
+export const walletShown = () => featuresOpen() || opened() >= 2 || won(3);
 export const featuresOpen = () => stage() === 'done';
 // Tab nào đã mở: Deco sau màn 1, Shop sau màn 5.
-export const tabOpen = tab => tab === 'home' || (tab === 'deco' && stage() !== 'L1') || (tab === 'shop' && featuresOpen());
+// Home khoá tạm (mờ, không nhấn được) từ lúc thùng mèo cam đầu tiên còn chờ mở (vào Deco là khoá ngay) tới khi người chơi đọc xong
+// lời mèo cam có dấu "!": mở thùng, nghe mèo nói rồi mới quay về chơi tiếp.
+const homeLocked = () => catTalkWaiting() || (readText(SAVE_KEYS.catTalk) === null && petBoxes().includes('orange'));
+export const tabOpen = tab => (tab === 'home' && !homeLocked()) || (tab === 'deco' && stage() !== 'L1') || (tab === 'shop' && featuresOpen());
 // Được chạm / mua món này trong Deco chưa: sau màn 5 mọi thứ; có hộp món đồ thì đổi được kiểu đã có; có hộp xu thì mua được món gốc.
 export const buildOpen = (entry, deco) => featuresOpen() || (!!entry && ((opened() >= 1 && !!deco && isOwned(deco, entry)) || (opened() >= 2 && isBase(entry))));
 // Màn 1–3 trong onboarding: xu thưởng dồn vào hộp xu, không cộng lúc thắng.
@@ -113,8 +117,10 @@ export function applyClasses() {
   const body = globalThis.document?.body;
   if (!body) return;
   body.classList.toggle('onboarding', active());
-  body.classList.toggle('ob-no-build', !featuresOpen() && opened() < 2);
-  body.classList.toggle('ob-no-panel', !featuresOpen() && opened() < 2);
+  // Panel Deco chỉ hiện khi đã mở hộp quà hồng thứ hai (hộp xu), kể cả khi đã thắng màn 5 (mở Shop / Quest) mà chưa chịu mở hộp
+  // (lỗi cũ: thắng màn 5 là panel hiện luôn, bỏ qua hộp xu + hướng dẫn mua). Save cũ đã có xu được tính là đã mở đủ 2 hộp (stage()).
+  body.classList.toggle('ob-no-build', opened() < 2);
+  body.classList.toggle('ob-no-panel', opened() < 2);
   body.classList.toggle('ob-no-wallet', !walletShown());
   body.classList.toggle('ob-no-features', !featuresOpen());
 }

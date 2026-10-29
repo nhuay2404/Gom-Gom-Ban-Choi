@@ -3242,10 +3242,13 @@ export function createRoom() {
     dropCoins,
     // Hướng dẫn: giữ mèo giống `breed` ngồi yên nhìn camera (on = true) / thả ra (false). nearSlot: chỗ đặt (vườn) mà hướng dẫn
     // sắp chỉ tới — mèo ngồi sẵn cạnh đó để camera lướt tới món thì mèo vẫn trong khung.
+    // nearSlot 'here': ngồi luôn tại chỗ đang đứng (mèo cam có dấu "!" vừa được chạm), không đi đâu.
     holdCat: (breed, on, nearSlot) => {
       const place = nearSlot && PLACES[nearSlot], [ox, oz] = ZONE_OFFSET.garden;
-      cats.hold(breed, on, place ? { x: ox + place[0], z: oz + place[1] } : null);
+      const boxes = giftBoxes.filter(node => node.visible).map(node => node.getWorldPosition(new THREE.Vector3()));
+      cats.hold(breed, on, nearSlot === 'here' ? 'here' : place ? { x: ox + place[0], z: oz + place[1] } : null, boxes);
     },
+    catSettled: breed => cats.settled(breed),
     nudge,
     // ms > 0: khung nhìn trượt dần theo phần UI che mới (panel Deco vừa hiện), không nhảy.
     refit,

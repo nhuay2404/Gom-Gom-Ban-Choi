@@ -20,6 +20,8 @@
 
 /* Bản sao thanh ví trên lớp mờ khi mở bảng Quests / Daily (menu/wallet-lift.js): đặt đúng chỗ ví thật, chỉ để nhìn (không bấm) */
 .wallet-hud.wallet-lift{position:fixed;inset:auto;margin:0;padding:0;border:0;background:none;overflow:visible;pointer-events:none}
+/* Bảng kết màn (đang ở màn chơi, không có ví nào hiện): bản sao ví Home đặt đúng chỗ ví Home, xu thưởng bay vào đây */
+.wallet-hud.wallet-lift.wallet-float{left:calc(var(--frame-l) + var(--edge-l));top:var(--edge-top);width:calc(393 * var(--u));height:calc(50 * var(--u))}
 /* Onboarding (app/onboarding.js): thanh xu + gem ẩn tới khi mở hộp quà xu trong Deco; hiện ra bằng một nhịp trượt xuống */
 .wallet-hud{transition:opacity .45s ease,transform .45s cubic-bezier(.3,1.4,.5,1)}
 body.ob-no-wallet .wallet-hud{opacity:0;transform:translateY(-14px);pointer-events:none}
