@@ -46,7 +46,6 @@
     drop-shadow(0 calc(var(--ink) * .4142 * var(--u)) 0 #4a1a0c) drop-shadow(0 calc(var(--ink) * -.4142 * var(--u)) 0 #4a1a0c)
     drop-shadow(calc(var(--ink) * .2929 * var(--u)) calc(var(--ink) * .2929 * var(--u)) 0 #4a1a0c) drop-shadow(calc(var(--ink) * -.2929 * var(--u)) calc(var(--ink) * -.2929 * var(--u)) 0 #4a1a0c)
     drop-shadow(calc(var(--ink) * .2929 * var(--u)) calc(var(--ink) * -.2929 * var(--u)) 0 #4a1a0c) drop-shadow(calc(var(--ink) * -.2929 * var(--u)) calc(var(--ink) * .2929 * var(--u)) 0 #4a1a0c)
-    drop-shadow(0 calc(1.6 * var(--u)) 0 #4a1a0c)}
 .fg-panel .fg-moves strong::before,.fg-panel .fg-moves strong::after{content:attr(data-n);position:absolute;inset:0;padding:inherit;text-shadow:none;pointer-events:none}
 .fg-panel .fg-moves strong::before{-webkit-text-fill-color:#fcefe4;-webkit-text-stroke:calc(2 * var(--ring) * var(--u)) transparent;paint-order:stroke fill;
   background:linear-gradient(var(--r-top) 22%,var(--r-mid) 50%,var(--r-bot) 78%);-webkit-background-clip:text;background-clip:text}

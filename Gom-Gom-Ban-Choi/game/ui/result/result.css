@@ -178,3 +178,78 @@
 .result-unlock figcaption{font-size:calc(12 * var(--u));font-weight:900}
 .result-dialog .result-actions>.result-continue{left:calc(49 * var(--u));top:calc(325 * var(--u));width:calc(206 * var(--u));height:calc(56 * var(--u));border:calc(3 * var(--u)) solid #2f7d3a;border-radius:calc(28 * var(--u));
   background:linear-gradient(#93df82,#5fbe57);box-shadow:inset 0 calc(3 * var(--u)) 0 #ffffff66,0 calc(3 * var(--u)) 0 #2f7d3a;color:#fff;font-family:var(--display);font-size:calc(24 * var(--u));font-weight:800;text-shadow:0 calc(2 * var(--u)) 0 #2f7d3a;cursor:pointer}
+
+/* ===== Bảng THẮNG theo bộ art mới (ảnh mẫu "Level Complete!": 3 mèo ló đầu, bụi cỏ hoa, tiêu đề vàng hồng, ô điểm + đồng xu,
+   nút Home tròn kem / Next tròn xanh / nút dài vàng xem quảng cáo). Thua giữ bảng cũ ở trên.
+   Khung = cả ảnh win2-panel.png (1122 × 1402 px -> 346 × 432,3u, 1 px = .3084u); chữ động (level, điểm, xu, số xu thêm) đã xoá khỏi ảnh,
+   play/result.js ghi vào phần tử cũ đặt đúng chỗ. Ba nút là ảnh riêng (win2-btn-*.png) để bấm / ẩn được. Tiêu đề in sẵn trong ảnh
+   (kể cả màn cuối: "Journey Complete!" vẫn hiện ảnh "Level Complete!", chữ thật giữ cho trình đọc màn hình). Không có nút chơi lại. */
+#result-dialog.win{width:calc(346 * var(--u));height:calc(432.3 * var(--u));background-image:url('../../assets/img/result/win2-panel.png');
+  margin-top:min(calc(176 * var(--u)), calc(100dvh - 440 * var(--u)))}
+#result-dialog.win :is(.result-peek,.result-hero){display:none}
+#result-dialog.win .result-title{background:none}
+#result-dialog.win .result-sub{left:calc(73 * var(--u));top:calc(180 * var(--u));width:calc(200 * var(--u));height:calc(25 * var(--u));padding:0;background:none;
+  font-size:calc(16 * var(--u));line-height:1.2;color:#805139}
+#result-dialog.win .result-box{display:contents}
+#result-dialog.win .result-score{left:calc(117.2 * var(--u));top:calc(235.9 * var(--u));width:calc(112.6 * var(--u));height:calc(29.3 * var(--u));
+  font-size:calc(34 * var(--u));color:#4a1a08}
+#result-dialog.win .result-coins{left:calc(168.1 * var(--u));top:calc(277.5 * var(--u))}
+#result-dialog.win .result-coins b{font-size:calc(29 * var(--u));color:#4a1a08;letter-spacing:-.01em}
+#result-dialog.win .result-coins small{margin-top:calc(2 * var(--u));font-size:calc(16 * var(--u));color:#8f6b58}
+#result-dialog.win .result-note{top:calc(438 * var(--u))}
+#result-dialog.win .result-unlock{top:calc(436 * var(--u))}
+/* Nút: Home / Next / xem quảng cáo (nút .ad-double tạo trong play/result.js, nằm trong ô điểm nên đặt theo khung nhờ display:contents ở trên) */
+#result-dialog.win #result-replay{display:none}
+#result-dialog.win #result-map{left:calc(34.5 * var(--u));top:calc(340.4 * var(--u));width:calc(59.5 * var(--u));height:calc(63.8 * var(--u));background-image:url('../../assets/img/result/win2-btn-home.png')}
+#result-dialog.win #result-next{left:calc(92.5 * var(--u));top:calc(340.4 * var(--u));width:calc(60.8 * var(--u));height:calc(63.8 * var(--u));background-image:url('../../assets/img/result/win2-btn-next.png')}
+#result-dialog.win .ad-double{position:absolute;z-index:4;left:calc(153 * var(--u));top:calc(340.4 * var(--u));bottom:auto;translate:none;width:calc(158.8 * var(--u));height:calc(63.8 * var(--u));
+  display:block;padding:0;border-radius:0;background:url('../../assets/img/result/win2-btn-reward.png') center/100% 100% no-repeat;font-family:var(--display);line-height:1}
+#result-dialog.win .ad-double>*{position:absolute;left:calc(71.9 * var(--u));width:calc(66.6 * var(--u));text-align:center;-webkit-text-stroke:calc(4 * var(--u)) #fff;paint-order:stroke fill}
+/* Số xu thêm dài (+1,500) thì chữ nhỏ lại cho vừa ô chữ trên art */
+#result-dialog.win .ad-double b{top:calc(5 * var(--u));font-size:calc(min(27, 110 / var(--len, 3)) * var(--u));white-space:nowrap;font-weight:800;color:#f2305f}
+#result-dialog.win .ad-double small{top:calc(33 * var(--u));font-size:calc(15 * var(--u));font-weight:800;color:#4a1a08}
+#result-dialog.win .ad-double:active{translate:0 calc(2 * var(--u))}
+/* Không có quảng cáo: Home + Next ra giữa khung */
+#result-dialog.win:not(:has(.ad-double)) :is(#result-map,#result-next){translate:calc(79.7 * var(--u)) 0}
+#result-dialog.win .result-actions>.result-continue{left:calc(70 * var(--u));top:calc(343 * var(--u))}
+#result-dialog.win:not(:has(.ad-double)) :is(#result-map,#result-next):active{translate:calc(79.7 * var(--u)) calc(2 * var(--u))}
+
+/* ===== Bảng THUA theo bộ art mới (ảnh mẫu "Try Again!": 3 mèo khóc, tim vỡ + tia, tiêu đề nâu, nút Home tròn kem / nút dài hồng chơi lại).
+   Khung = cả ảnh lose2-panel.png (1122 × 1402 px -> 346 × 432,3u, 1 px = .3084u), cùng cỡ bảng thắng. Dòng lý do ("Out of moves!",
+   mẹo booster) đã xoá khỏi ảnh: play/result.js ghi vào .result-note đặt đúng chỗ. Hai nút là ảnh riêng (lose2-btn-*.png). */
+#result-dialog.lose{width:calc(346 * var(--u));height:calc(432.3 * var(--u));background-image:url('../../assets/img/result/lose2-panel.png');
+  margin-top:min(calc(176 * var(--u)), calc(100dvh - 440 * var(--u)))}
+#result-dialog.lose :is(.result-peek,.result-hero){display:none}
+#result-dialog.lose .result-title{background:none}
+#result-dialog.lose .result-note{left:calc(40 * var(--u));right:auto;width:calc(266 * var(--u));top:calc(309 * var(--u));height:calc(18.5 * var(--u));
+  display:grid;place-items:center;font-family:var(--display);font-size:calc(16.5 * var(--u));font-weight:800;line-height:1.1;color:#5a1408}
+#result-dialog.lose #result-map{left:calc(35.2 * var(--u));top:calc(330 * var(--u));width:calc(71.9 * var(--u));height:calc(69.4 * var(--u));background-image:url('../../assets/img/result/lose2-btn-home.png')}
+#result-dialog.lose #result-retry{left:calc(106.7 * var(--u));top:calc(330 * var(--u));width:calc(204.5 * var(--u));height:calc(69.4 * var(--u));background-image:url('../../assets/img/result/lose2-btn-retry.png')}
+
+/* Shared mobile result layout: equal top edge, full proportional art and aligned actions. */
+#result-dialog:is(.win,.lose){zoom:.92;translate:none;margin-top:max(12px,min(calc(130 * var(--u)),calc(100dvh / .92 - 460 * var(--u))));margin-bottom:0;width:calc(346 * var(--u));height:calc(432.3 * var(--u));background-size:contain;background-position:center;background-repeat:no-repeat}
+#result-dialog:is(.win,.lose) .result-actions{top:0;height:100%;margin:0;overflow:visible}
+#result-dialog.win :is(#result-map,#result-next),
+#result-dialog.lose :is(#result-map,#result-retry){top:calc(370.4 * var(--u));height:calc(63.8 * var(--u));background-size:contain}
+#result-dialog.win .ad-double{top:calc(370.4 * var(--u));background-size:contain}
+#result-dialog.win .result-actions>.result-continue{top:calc(373 * var(--u))}
+/* Without an ad offer, anchor the actions to the painted board edges. */
+#result-dialog.win:not(:has(.ad-double)) #result-map{left:calc(18 * var(--u));translate:none}
+#result-dialog.win:not(:has(.ad-double)) #result-next{left:calc(86 * var(--u));width:calc(242 * var(--u));translate:none;border:0;border-radius:0;background:url('../../assets/img/result/btn-next.png') center/contain no-repeat;box-shadow:none}
+#result-dialog.win:not(:has(.ad-double)) #result-next svg{display:none}
+#result-dialog.lose #result-map{left:calc(18 * var(--u));width:calc(59.5 * var(--u));height:calc(63.8 * var(--u));background:url('../../assets/img/result/win2-btn-home.png') center/contain no-repeat;translate:none}
+#result-dialog.lose #result-retry{left:calc(86 * var(--u));width:calc(242 * var(--u));height:calc(63.8 * var(--u));background:url('../../assets/img/result/btn-retry.png') center/cover no-repeat;translate:none}
+#result-dialog.win:not(:has(.ad-double)) #result-next{height:auto;aspect-ratio:606/168;background-size:contain}
+#result-dialog.lose #result-retry{height:auto;aspect-ratio:618/183;background-size:contain}
+/* Square Home matches the proportional pill height; preserve an 8u minimum gap. */
+#result-dialog.win:not(:has(.ad-double)) #result-map{width:calc(63.7624 * var(--u));height:calc(63.7624 * var(--u))}
+#result-dialog.lose #result-map{width:calc(68.1068 * var(--u));height:calc(68.1068 * var(--u))}
+#result-dialog.win:not(:has(.ad-double)) #result-next,
+#result-dialog.lose #result-retry{left:calc(88 * var(--u));width:calc(230 * var(--u))}
+#result-dialog.win:not(:has(.ad-double)) :is(#result-map,#result-next):active{translate:0 calc(2 * var(--u))}
+/* Nút Continue (hiện khi thắng màn mở khoá thứ mới): cùng ảnh nút xanh gốc với Claim của 7-Day, đã xoá chữ (login-gift/gift2-claim-blank.png), chữ Continue do game ghi:
+   trắng viền xanh đậm như chữ Claim. Đặt giữa ở chỗ Home / Next thường nằm. */
+.result-dialog .result-actions>.result-continue{width:calc(200 * var(--u));height:calc(43 * var(--u));border:0;border-radius:0;box-shadow:none;text-shadow:none;
+  background:url('../../assets/img/login-gift/gift2-claim-blank.png') center/100% 100% no-repeat;color:#fff;font-size:calc(22 * var(--u));-webkit-text-stroke:calc(4 * var(--u)) #1f6b1a;paint-order:stroke fill}
+#result-dialog.win .result-actions>.result-continue{left:50%;translate:-50% 0;top:calc(372 * var(--u))}
+#result-dialog.win .result-actions>.result-continue:active{translate:-50% calc(2 * var(--u))}

@@ -44,3 +44,50 @@
 .quest-card[data-go]:focus-visible{outline:3px solid #2586aa;outline-offset:2px}
 .quest-go{margin-left:6px;padding:0 6px;border-radius:999px;background:#f0a23a;color:#fff;font-size:9px;letter-spacing:.3px}
 .quest-claim .ico-gem{width:16px;height:16px;margin-right:2px}
+/* Daily + Quests: icon gem bóng (home/gem-glossy.png), cùng bộ với icon xu home/coin-glossy.png */
+/* Gem bằng xu theo pixel thấy được: khung = ảnh xu nút nhận (21px), scale 1.19 = căn(diện tích xu / diện tích gem) */
+.quests-dialog .ico-gem{background:url('../../assets/img/home/gem-glossy.png') center/contain no-repeat;scale:1.19}
+.quests-dialog .quest-claim .ico-gem{width:21px;height:21px}
+/* Daily + Quests: thanh tiến độ giống thanh điểm màn chơi (ui/play/hud.css .fg-score): rãnh nâu, viền kem + nâu, ruột xanh bóng có vệt sáng trên, chữ trắng viền nâu.
+   Sọc kẹo đứng yên (không trôi), chỉ một viền nâu ngoài (bỏ vòng kem). Giữ cỡ thanh 18px như cũ; ruột lùi vào 2.5px như thanh điểm. */
+.quests-dialog .quest-progress{border:0;border-radius:999px;background:#4b2820;box-shadow:0 0 0 1.5px #5a2a22,inset 0 2px 0 #00000040}
+.quests-dialog .quest-progress i{inset:2.5px auto 2.5px 2.5px;max-width:calc(100% - 5px);overflow:hidden;border-radius:999px;background:linear-gradient(135deg,#ffffff2e 25%,transparent 25% 50%,#ffffff2e 50% 75%,transparent 75%) 0 0/16px 16px,linear-gradient(#d9f873,#79d233 55%,#4fb52a);box-shadow:inset 0 -2px 0 #2f8a1f66}
+.quests-dialog .quest-progress i::after{content:'';position:absolute;left:5px;right:5px;top:2px;height:30%;border-radius:999px;background:#ffffff70}
+.quests-dialog .quest-progress em{line-height:18px;font-family:var(--display);font-size:12px;font-weight:800;color:#fff;-webkit-text-stroke:3px #3a1a14;paint-order:stroke fill;text-shadow:none}
+/* ===== Quests: skin theo bộ art mẫu (thẻ kem viền cam, ô icon vàng bóng, nhãn GO cam, nút thưởng kem viền nâu / xanh bóng khi nhận được,
+   thẻ xong = nền xanh nhạt viền xanh, nút đóng đỏ bóng). Chỉ đổi màu / viền / nền: cỡ, lưới, chữ, khoảng cách giữ như code gốc. Dùng chung cho Daily. */
+.quests-dialog .quest-close{background-image:url('../../assets/img/quests/close-glossy.png')}
+.quests-dialog .quest-card{border-color:#d98a2b;background:linear-gradient(#fffaf0,#fdf0d6);box-shadow:inset 0 0 0 2px #fffaf2,0 3px 0 #c9761f40}
+.quests-dialog .quest-card.is-ready{border-color:#5fae3a;background:linear-gradient(#f4fdea,#e2f5d0);box-shadow:inset 0 0 0 2px #fbfff4,0 3px 0 #4f9a2e40}
+.quests-dialog .quest-icon{background:linear-gradient(#ffe9ae,#f8cf78);box-shadow:inset 0 0 0 2px #fff4d2,inset 0 3px 0 #fffbe9,0 0 0 1px #efc06b}
+.quests-dialog .is-ready .quest-icon{background:linear-gradient(#c3f3a6,#7fd45e);box-shadow:inset 0 0 0 2px #e6fbd8,inset 0 3px 0 #f3ffe9,0 0 0 1px #6cbf4a}
+.quests-dialog .quest-category{color:#5a2a10}
+.quests-dialog .is-ready .quest-category{color:#1e6b1a}
+.quests-dialog .quest-text{color:#4a1a08}
+.quests-dialog .quest-go{background:linear-gradient(#ffa443,#f26a12);box-shadow:inset 0 1px 0 #ffd3a4,0 0 0 1px #d9560b}
+/* Nút thưởng: chưa xong = viên kem viền nâu, chữ nâu đậm (không mờ); nhận được = viên xanh bóng viền xanh đậm, số trắng viền xanh */
+.quests-dialog .quest-claim{box-sizing:border-box;border:2px solid #1f5a14;border-radius:16px;background:linear-gradient(#a3ec68,#56c437 55%,#3ba52a);
+  box-shadow:inset 0 2px 0 #e2ffc4,inset 0 -3px 0 #2f8a1f80,0 3px 0 #1f5a1466;color:#fff;text-shadow:none}
+.quests-dialog .quest-claim strong{font-family:var(--display);font-weight:800;-webkit-text-stroke:3px #1f6b1a;paint-order:stroke fill}
+.quests-dialog .quest-claim:disabled{opacity:1;border-color:#b98a4f;background:linear-gradient(#fff7e2,#f3ddb0);box-shadow:inset 0 2px 0 #fffcf2,inset 0 -3px 0 #d9b77a80,0 3px 0 #b98a4f55;color:#4a1a08}
+.quests-dialog .quest-claim:disabled strong{-webkit-text-stroke:3px #fff6e2}
+.quests-dialog .quest-claim:not(:disabled):active{background:linear-gradient(#56c437,#3ba52a)}
+/* Quests + Daily: nền bảng theo art mẫu: viền ngoài nâu đậm, vành kem vàng dày bên trong (mép trong vàng sẫm nhẹ), lòng kem sáng. Cỡ / bo góc / padding giữ nguyên. */
+.quests-dialog{border-color:#5e2c14;background:linear-gradient(#fffbf1,#fdf2da);
+  box-shadow:inset 0 0 0 6px #fff1c8,inset 0 0 0 8px #efd394,inset 0 10px 14px -6px #fffef8,0 8px 0 #5e2c1455,0 20px 65px #28140750}
+/* Quests + Daily: nền bảng theo art mẫu (lần 2, đậm hơn): viền nâu đậm, vành VÀNG #ffe08a bên trong, lòng kem có vệt bóng góc trái trên;
+   tiêu đề có dấu chân hai bên, vạch ngang nâu nhạt có viên cam ở giữa; thẻ viền cam mảnh + vệt bóng góc trái trên (thẻ xong: viền xanh). Cỡ giữ nguyên. */
+.quests-dialog{border-color:#6a2e10;
+  background:radial-gradient(ellipse 22px 9px at 30px 26px,#ffffffd0 60%,transparent 100%),linear-gradient(#fffaf0,#fcf0d8);
+  box-shadow:inset 0 0 0 6px #ffe08a,inset 0 0 0 7.5px #f0c766,0 8px 0 #6a2e1055,0 20px 65px #28140750}
+.quests-dialog .quest-header{border-bottom-color:#e2b77a}
+.quests-dialog .quest-header::after{left:calc(50% - 24px);bottom:-3px;width:48px;height:5px;background:#eaa22e;box-shadow:0 0 0 1.5px #fffaf0}
+.quests-dialog .quest-header h2{color:#5a2410}
+.quests-dialog .quest-header h2::before,.quests-dialog .quest-header h2::after{content:'';display:inline-block;width:18px;height:18px;margin:0 12px;vertical-align:middle;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f0c48a'%3E%3Cellipse cx='12' cy='16' rx='5.5' ry='4.6'/%3E%3Ccircle cx='5.6' cy='10' r='2.4'/%3E%3Ccircle cx='9.6' cy='6.2' r='2.5'/%3E%3Ccircle cx='14.4' cy='6.2' r='2.5'/%3E%3Ccircle cx='18.4' cy='10' r='2.4'/%3E%3C/svg%3E") center/contain no-repeat}
+.quests-dialog .quest-card{border-color:#e89a2c;background:radial-gradient(ellipse 14px 7px at 20px 16px,#ffffffd8 60%,transparent 100%),linear-gradient(#fffaf0,#fcecd0)}
+.quests-dialog .quest-card.is-ready{border-color:#5fae3a;background:radial-gradient(ellipse 14px 7px at 20px 16px,#ffffffd8 60%,transparent 100%),linear-gradient(#f4fdea,#e0f6cc)}
+/* Quests + Daily: nền bảng = ảnh assets/img/quests/panel.png (480 × 640, người dùng cập nhật) dùng làm border-image 9 mảnh: 4 góc (có dấu chân) giữ nguyên,
+   cạnh / lòng giãn theo nội dung (Quests 3 thẻ, Daily 5 thẻ cao khác nhau). Viền layout giữ 4px; ảnh khung vẽ rộng 32px và nhô ra ngoài 12px (border-image-outset)
+   để lòng khung bắt đầu cách mép hộp ~20px, vừa với padding cũ. Thay panel.png là bảng đổi theo. */
+.quests-dialog{border:4px solid transparent;border-image:url('../../assets/img/quests/panel.png') 70 fill/32px/12px stretch;border-radius:0;background:none;box-shadow:none}

@@ -297,3 +297,40 @@
 @media(prefers-reduced-motion:reduce){.login-dialog .login-cell.gold :is(.login-rays,.login-fx i){animation:none}.login-dialog .login-cell.gold .login-fx{display:none}}
 /* Bề ngang chấm trang do login.js paintDots đặt theo vị trí cuộn từng khung: bỏ transition width (trễ nhịp so với ngón tay), chỉ chuyển màu. */
 .login-dialog .login-dots i{border-radius:999px;transition:background-color .15s,border-color .15s}
+/* 7-Day Gift: icon gem bóng (home/gem-glossy.png), cùng bộ với đồng xu 3D (mặt dán home/coin-glossy.png) */
+/* scale 1.19 = căn(diện tích xu / diện tích gem): gem hiện to bằng đồng xu cùng khung */
+.login-dialog .ico-gem{background:url('../../assets/img/home/gem-glossy.png') center/contain no-repeat;scale:1.19}
+/* ===== 7-Day Gift: skin = ảnh gốc người dùng gửi (assets/img/login-gift/gift2-*.png, cắt nguyên, màu gốc; chữ Day / tên quà đã xoá để game ghi).
+   Cấu trúc: nền xanh dịu không pattern nằm dưới, khung kem (gift2-frame, ô giữa trong suốt) phủ lên làm viền + chân popup. Khung tỉ lệ 662 × 1031 nên cả popup
+   giữ tỉ lệ đó; mọi phần tử đặt theo % của khung (ô trời: x 4,23 %, y 3,78 %, 91,4 × 81,2 %). Không có nút Later (đóng bằng nút X). Nút X nhô ra ngoài khung, không bị cắt. */
+.login-dialog.store-dialog{height:auto;max-height:none;aspect-ratio:662/1031;padding:0;overflow:visible;border:0;border-radius:0;background:none;box-shadow:none}
+.login-dialog.store-dialog::before{content:'';position:absolute;inset:0;z-index:2;background:url('../../assets/img/login-gift/gift2-frame.png') center/contain no-repeat;pointer-events:none}
+.login-dialog .login-scene{position:absolute;inset:auto;left:2.6%;top:2.2%;width:94.8%;height:85.4%;aspect-ratio:auto;z-index:1;overflow:hidden;border-radius:0;
+  background:url('../../assets/img/login-gift/gift2-sky.png') center bottom/cover no-repeat;box-shadow:none}
+.login-dialog .login-header{position:absolute;top:-5%;left:0;right:0;z-index:5;margin:0}
+.login-dialog .login-header h2{width:86%;aspect-ratio:1858/566;height:auto;padding:0;background:url('../../assets/img/login-gift/gift2-banner.png') center/contain no-repeat;
+  color:transparent;-webkit-text-stroke:0;text-shadow:none;font-size:0}
+.login-dialog .login-close{position:absolute;top:49%;right:2%;translate:0 -50%;width:14%;aspect-ratio:1;height:auto;z-index:6;background:url('../../assets/img/login-gift/gift-close.png') center/contain no-repeat}
+.login-dialog .login-grid .login-cell.art-fill .login-day{top:15.5%;display:flex;align-items:center;justify-content:center;width:42%;height:auto;aspect-ratio:1140/448;padding:0;
+  box-sizing:border-box;border:0;border-radius:0;background:url('../../assets/img/login-gift/gift2-day.png') center/contain no-repeat;box-shadow:none;color:#4a1a08;font-family:var(--display,'Baloo 2',system-ui);font-size:32px;font-weight:900;line-height:1;gap:8px}
+.login-dialog .login-grid .login-cell.art-fill .login-day>span{font:inherit;opacity:1}
+.login-dialog .login-grid .login-cell.art-fill .login-icon{inset:17% 0 19%}
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name{box-sizing:border-box;left:50%;right:auto;translate:-50% 0;bottom:9%;width:92%;aspect-ratio:1894/306;height:auto;display:grid;place-items:center;padding:0 12%;
+  border:0;border-radius:0;background:none;box-shadow:none;isolation:isolate;color:#582814;overflow:hidden;text-shadow:0 1px #fff2cc;-webkit-text-stroke:0;font-family:var(--display,'Baloo 2',system-ui)}
+.login-dialog .login-nav{border:0;border-radius:0;background:url('../../assets/img/login-gift/gift-prev.png') center/contain no-repeat;box-shadow:none;font-size:0}
+.login-dialog .login-nav.next{background-image:url('../../assets/img/login-gift/gift-next.png')}
+.login-dialog .login-nav::before{content:none}
+.login-dialog .login-dots{position:absolute;left:0;right:0;top:82%;z-index:4;display:flex;justify-content:center;align-items:center;gap:3.4%;height:12px;min-height:0;margin:0;padding:0;border:0;background:none}
+.login-dialog .login-dots i{width:12px!important;height:12px;border:0;border-radius:50%;background:url('../../assets/img/login-gift/gift2-dot-off.png') center/contain no-repeat}
+.login-dialog .login-dots i.on,.login-dialog .login-dots i.got{background-image:url('../../assets/img/login-gift/gift2-dot-on.png');border:0}
+.login-dialog .store-choices{position:absolute;left:15%;right:auto;width:70%;top:87.2%;z-index:4;padding:0;margin:0;background:none;border:0}
+.login-dialog .store-choices .pill-button{width:100%;height:auto;min-height:0;aspect-ratio:1851/399;padding:0;border:0;border-radius:0;box-shadow:none;color:transparent;-webkit-text-stroke:0;text-shadow:none;
+  background:url('../../assets/img/login-gift/gift2-claim.png') center/contain no-repeat}
+.login-dialog .store-choices .pill-button:active{translate:0 2px}
+.login-dialog .store-choices .pill-button:disabled{opacity:1;filter:grayscale(1) brightness(.92);translate:none;cursor:default}
+.login-dialog .store-choices .login-later{display:none}
+/* Nền trời nhô ra hơn ô trống (để không hở khe) nên phải cắt theo hình ngoài của khung (gift2-frame-mask.png = bóng khung đặc), không thì góc trên hai bên thò ra ngoài khung.
+   Mặt nạ cùng toạ độ với cả popup: ảnh mặt nạ phủ đúng khung popup, dời / phóng theo ô trời (rộng 94,8 %, cao 85,4 %, lệch 2,6 % / 2,2 %). */
+.login-dialog .login-scene{-webkit-mask:url('../../assets/img/login-gift/gift2-frame-mask.png') 50% 15.06%/105.49% auto no-repeat;mask:url('../../assets/img/login-gift/gift2-frame-mask.png') 50% 15.06%/105.49% auto no-repeat}
+/* Crop the painted outline without stretching the artwork. Fade only the pill, not its text. */
+.login-dialog .login-grid .login-cell.art-fill .login-reward-name::before{content:'';position:absolute;inset:0;z-index:-1;background:url('../../assets/img/login-gift/gift2-name.png') center/contain no-repeat;clip-path:inset(9% 1.5% round 999px);opacity:1;pointer-events:none}

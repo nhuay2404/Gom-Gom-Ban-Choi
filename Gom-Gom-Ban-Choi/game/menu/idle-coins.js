@@ -68,40 +68,30 @@ function wheelSlots() {
   const top = Math.max(...REWARDED_ADS.idleWheel.map(slot => slot.bonus)), open = jackpotLeft();
   return REWARDED_ADS.idleWheel.map(slot => ({ ...slot, jackpot: slot.bonus === top && open, bonus: slot.bonus === top && !open ? .5 : slot.bonus }));
 }
-// Ô kim đang chỉ, p = 0 (trái) … 1 (phải).
-function slotAt(slots, p) {
-  let edge = 0;
-  for (const slot of slots) { edge += slot.share; if (p <= edge) return slot; }
-  return slots[slots.length - 1];
-}
-// Nhãn hệ số như mẫu UI (x1.2 / x1.5 / x4): ngắn, vừa ô hẹp trên cung.
+// Nhãn hệ số như art (x1.2 / x1.5 / x4).
 const mult = bonus => `x${+(1 + bonus).toFixed(1)}`;
-const wheelColor = bonus => (bonus >= 1 ? '#ffd23f' : bonus >= .5 ? '#ffa63d' : '#ff7eb6');
-function wheelSvg(slots) {
-  const pt = (deg, r) => [100 + r * Math.cos(deg * Math.PI / 180), 100 - r * Math.sin(deg * Math.PI / 180)].map(v => v.toFixed(2));
-  let from = 180;
-  const parts = slots.map(slot => {
-    const to = from - slot.share * 180, [lx, ly] = pt((from + to) / 2, 71);
-    const arc = `<path d="M${pt(from, 96).join(' ')} A96 96 0 0 1 ${pt(to, 96).join(' ')} L${pt(to, 46).join(' ')} A46 46 0 0 0 ${pt(from, 46).join(' ')}Z" fill="${wheelColor(slot.bonus)}"/>`;
-    from = to;
-    return `${arc}<text x="${lx}" y="${ly}" font-size="${slot.share < .12 ? 15 : 17}">${mult(slot.bonus)}</text>`;
-  }).join('');
-  return `<svg class="idle-wheel" viewBox="0 0 200 108" role="img" aria-label="Bonus meter: tap Watch video to stop the needle">${parts}
-    <g class="idle-wheel-needle"><path d="M100 100 L95 42 L100 24 L105 42Z"/><circle cx="100" cy="100" r="9"/></g></svg>`;
-}
+// Mép các ô vẽ sẵn trên art đồng hồ (assets/img/idle-reward/meter-panel.png), đo ngay ngoài đầu kim, độ ngược chiều kim đồng hồ quanh trục kim, trái -> phải.
+// Mỗi ô config trải hết ô vẽ của nó: kim chạy nhanh / chậm theo ô để thời gian ở ô = share (giữ xác suất kinh tế) mà kim vẫn chỉ đúng ô vẽ.
+// shortcut: art vẽ cứng 5 ô x1.2 / x1.5 / x4 / x1.5 / x1.2, đổi số ô hoặc hệ số idleWheel thì phải vẽ lại art (hoặc vẽ ô bằng code).
+const PAINTED = [178, 149, 117.5, 69.5, 37.5, 3];
 // Gắn vòng vào popup vừa mở (ask dựng dialog ngay lúc gọi). Kim chạy tới khi bấm nút xem ads; trả về hàm đọc ô đã chốt (null = chưa chốt).
 function attachWheel(pending) {
   const dialog = document.querySelector('dialog.idle-claim'), slots = wheelSlots();
   if (!dialog) return () => null;
-  dialog.querySelector('.idle-reward-caption')?.insertAdjacentHTML('afterend', wheelSvg(slots));
-  const needle = dialog.querySelector('.idle-wheel-needle'), adButton = dialog.querySelector('[data-choice="ad"]');
-  const amount = adButton.querySelector('.idle-btn-amount span'), badge = adButton.querySelector('.idle-bonus');
+  // Hết lượt trúng +300% hôm nay: ô x4 vẽ sẵn bị che bằng nhãn hệ số thật của ô đó
+  const middle = slots[Math.floor(slots.length / 2)];
+  if (!jackpotLeft()) dialog.querySelector('.meter-needle').insertAdjacentHTML('beforebegin', `<span class="meter-jackpot-off">${mult(middle.bonus)}</span>`);
+  const needle = dialog.querySelector('.meter-needle'), adButton = dialog.querySelector('[data-choice="ad"]');
+  const amount = adButton.querySelector('.meter-video-amount'), badge = dialog.querySelector('.meter-factor');
   let locked = null, shown = null, frame = 0;
   const start = performance.now();
   const step = now => {
     const t = ((now - start) / SWEEP_MS) % 2, p = t < 1 ? t : 2 - t;
-    needle.style.transform = `rotate(${(p * 180 - 90).toFixed(1)}deg)`;
-    const slot = slotAt(slots, p);
+    let i = 0, edge = 0;
+    while (i < slots.length - 1 && p > edge + slots[i].share) edge += slots[i++].share;
+    const k = Math.min(1, (p - edge) / slots[i].share), slot = slots[i];
+    // Ảnh kim chĩa sang phải (0°): xoay âm = ngược chiều kim đồng hồ. Chỉ chạy 80% giữa ô: kim không bao giờ dừng ngay trên vạch chia
+    needle.style.rotate = `${-(PAINTED[i] + (PAINTED[i + 1] - PAINTED[i]) * (.1 + .8 * k)).toFixed(1)}deg`;
     if (slot !== shown) {
       shown = slot;
       amount.textContent = (pending + Math.round(pending * slot.bonus)).toLocaleString('en-US');
@@ -121,7 +111,6 @@ function attachWheel(pending) {
     const glow = document.createElement('span');
     glow.className = 'idle-ad-glow';
     adButton.before(glow);
-    adButton.querySelector('.idle-video-copy > span').textContent = 'Watch video to claim';
     // Đo sau khi đổi chữ (nút có thể đổi cỡ); popup có zoom (base.css --s) nên quy toạ độ màn hình về toạ độ CSS của khung chứa.
     requestAnimationFrame(() => {
       const box = glow.offsetParent ?? dialog, at = adButton.getBoundingClientRect(), from = box.getBoundingClientRect(), k = from.width / box.offsetWidth || 1;

@@ -79,18 +79,9 @@
   top:calc(var(--edge-top) + 24.4 * var(--hub-u) + 24 * var(--hub-u) + 10 * var(--hub-u));gap:calc(10 * var(--hub-u))}
 .screen.deco>.deco-side .deco-help{margin-top:0}
 
-/* Màn rộng hơn khung (tablet, PC, xoay ngang): ví + cột nút trái bám MÉP TRÁI cửa sổ, nút cài đặt + cột nút phải bám MÉP PHẢI
-   (người chơi chọn) — cộng / trừ --gutter (0 trên điện thoại dọc nên điện thoại không đổi). */
-:root{--col-l:calc(var(--edge-l) + 24 * var(--hub-u) - var(--gutter));--col-r:calc(var(--frame-w) - var(--edge-r) - 24 * var(--hub-u) + var(--gutter))}
-.map>.fh-layer>.wallet-hud{left:calc(var(--edge-l) - var(--gutter))}
-.screen.deco>.wallet-hud{left:var(--edge-l)}
-.screen.shop>.wallet-hud{margin-left:var(--edge-l)}
-.hub-settings{left:calc(100% - var(--edge-r) - 48 * var(--hub-u))}
-
-/* Xếp cột nút Home theo chức năng (wiki: Brewer p.84 — không tách thông tin liên quan ra hai phía; HUD bảo thủ, ít nút):
-   - Cột trái = quà / tiến độ người chơi tự tìm: Daily -> Quests -> 7 Days (cùng một vệt mắt, đọc từ trên xuống theo tần suất).
-   - Cột phải = lựa chọn tuỳ thích: Starter Pack (ưu đãi, sát nút cài đặt) -> Cats / Dogs.
-   - Feedback đã có trong popup Settings -> bỏ nút trùng trên Home. */
+/* Home: thứ tự nút theo nhánh main (xếp theo chức năng), icon bóng của bản UI; nút rìa vẫn bám MÉP KHUNG 393u (--col-l / --col-r không cộng --gutter).
+   - Cột trái = quà / tiến độ: Daily -> Quests -> 7 Days. Cột phải = Starter Pack -> Cats / Dogs (hiện từ màn 30).
+   - Không có nút Feedback trên Home (đã có trong popup Settings). Mỗi hàng cách nhau 62,1u (khoảng trống dọc đều 10u). */
 :root{--row-1:calc(var(--edge-top) + 40.4 * var(--hub-u) + var(--gap) + 10 * var(--hub-u));--row-2:calc(var(--row-1) + 62.1 * var(--hub-u));--row-3:calc(var(--row-1) + 124.2 * var(--hub-u))}
 .fh-layer>.fh-daily{left:calc(var(--col-l) - 31 * var(--u));top:var(--row-1)}
 .fh-layer>.fh-quests{left:calc(var(--col-l) - 31 * var(--u));top:var(--row-2)}

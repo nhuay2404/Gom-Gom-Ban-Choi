@@ -172,7 +172,7 @@
     <!-- Ambient (ngày / chiều / đêm): một nút, chạm để đổi vòng; nằm dưới nút cài đặt, trên nút ngắm nhà (menu-controller.js applyAmbient) -->
     <button id="ambient-toggle" class="deco-ambient" data-ambient="day" aria-label="Ambient: Day" title="Day"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
     <div class="deco-side">
-      <button id="deco-quests" class="deco-quests" aria-label="Quests"><img class="deco-quest-ico" src="./assets/img/home/icon-quest-matte.png" alt="" width="256" height="256"><span>Quests</span></button>
+      <button id="deco-quests" class="deco-quests" aria-label="Quests"><img class="deco-quest-ico" src="./assets/img/quests/icon-quest.png" alt="" width="256" height="256"><span>Quests</span></button>
       <!-- Khoá giao diện: ẩn ví, thẻ mua, chọn khu, thanh tab...; chỉ còn nút này + cài đặt (mờ đi). Chạm lại để hiện. -->
       <button id="deco-lock" class="deco-lock" aria-pressed="false" aria-label="Hide buttons to view your home" title="Hide UI"><img class="deco-lock-ico" src="./assets/img/deco/icon-eye.png" alt=""><svg viewBox="0 0 24 24"><g class="eye-open"><path d="M2.8 12s3.4-6 9.2-6 9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.8"/></g><g class="eye-shut"><path d="M3.2 10.5s3.2 4.3 8.8 4.3 8.8-4.3 8.8-4.3"/><path d="M6.2 13.6l-1.4 2M12 14.8v2.4M17.8 13.6l1.4 2"/></g></svg></button>
       <button id="deco-help" class="deco-help" aria-label="How Deco works" title="Guide"><img class="deco-help-ico" src="./assets/img/deco/icon-help.png" alt=""></button>
@@ -281,12 +281,12 @@
       </div>
       <!-- Cột trái: nhiệm vụ ngày (sắp có), gói khởi đầu (mở Shop), góp ý (form khảo sát, cùng link với dòng Feedback trong Settings) -->
       <!-- Các ô vuông (Daily, Starter Pack, Feedback, Quests, đổi Cats / Dogs) dựng bằng CSS (.fh-tile, home.css): nền gradient #FFDA89 -> #F4E0B6, icon ảnh, chữ, chấm "!" -->
-      <button id="home-daily" class="fh-btn fh-daily fh-tile" aria-label="Daily tasks"><img class="fh-tile-ico" src="./assets/img/home/icon-daily-matte.png" alt=""><span>Daily</span><i class="fh-badge" aria-hidden="true">!</i></button>
-      <button id="home-starter" class="fh-btn fh-starter fh-tile" aria-label="Starter pack"><img class="fh-tile-ico" src="./assets/img/home/icon-starter-matte.png" alt=""><span>Starter<br>Pack</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <button id="home-daily" class="fh-btn fh-daily fh-tile" aria-label="Daily tasks"><img class="fh-tile-ico" src="./assets/img/home/icon-daily-glossy.png" alt=""><span>Daily</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <button id="home-starter" class="fh-btn fh-starter fh-tile" aria-label="Starter pack"><img class="fh-tile-ico" src="./assets/img/home/icon-starter.png" alt=""><span>Starter<br>Pack</span><i class="fh-badge" aria-hidden="true">!</i></button>
       <a id="home-feedback" class="fh-btn fh-feedback fh-tile" href="https://forms.gle/ZcdJjYwEH6BCFHCHA" target="_blank" rel="noopener noreferrer" aria-label="Feedback survey"><img class="fh-tile-ico" src="./assets/img/home/icon-feedback.png" alt=""><span>Feedback</span></a>
-      <button id="home-quests" class="fh-btn fh-feedback fh-quests fh-tile" aria-label="Quests"><img class="fh-tile-ico" src="./assets/img/home/icon-quest-matte.png" alt="" width="256" height="256"><span>Quests</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <button id="home-quests" class="fh-btn fh-feedback fh-quests fh-tile" aria-label="Quests"><img class="fh-tile-ico" src="./assets/img/home/icon-quest-glossy.png" alt="" width="256" height="256"><span>Quests</span><i class="fh-badge" aria-hidden="true">!</i></button>
       <!-- Quà đăng nhập 7 ngày (menu/login.js): hàng 3 cột trái, ẩn khi nhận đủ 7 ô -->
-      <button id="home-login" class="fh-btn fh-login fh-tile" aria-label="7-day gift"><img class="fh-tile-ico" src="./assets/img/home/icon-login-matte.png" alt=""><span>7 Days</span><i class="fh-badge" aria-hidden="true">!</i></button>
+      <button id="home-login" class="fh-btn fh-login fh-tile" aria-label="7-day gift"><img class="fh-tile-ico" src="./assets/img/home/icon-login-glossy.png" alt=""><span>7 Days</span><i class="fh-badge" aria-hidden="true">!</i></button>
       <!-- Bộ quân trên bàn (mèo / chó): hiện khi chơi tới màn 30 (shared.js DOG_SKIN_LEVEL); chạm để đổi bộ -->
       <button id="home-skin" class="fh-btn fh-feedback fh-skin fh-tile" hidden aria-label="Switch board pieces"><i class="fh-skin-art"></i><span>Cats</span></button>
       <!-- PLAY: vào thẳng màn đang mở (màn cao nhất chưa qua), nằm ngay trên thanh tab -->

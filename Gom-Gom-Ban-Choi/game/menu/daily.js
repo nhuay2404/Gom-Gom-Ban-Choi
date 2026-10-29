@@ -31,10 +31,10 @@ function missionRow(m, index) {
   // Chưa xong: chạm thẻ = đi tới chỗ làm (task-nav.js).
   const go = !done && !m.claimed;
   return `<li class="quest-card${ready ? ' is-ready' : ''}${m.claimed ? ' claimed' : ''}"${go ? ` data-go="${index}" role="button" tabindex="0"` : ''}>
-    <div class="quest-icon"><img src="./assets/img/home/icon-daily-matte.png" alt="">${m.claimed ? `<img class="quest-check" src="${art}check.png" alt="">` : ''}</div>
+    <div class="quest-icon"><img src="./assets/img/home/icon-daily-glossy.png" alt="">${m.claimed ? `<img class="quest-check" src="${art}check.png" alt="">` : ''}</div>
     <div class="quest-info"><span class="quest-category">Daily${m.claimed ? ' · Claimed' : ready ? ' · Complete!' : '<span class="quest-go">Go ›</span>'}</span><b class="quest-text">${m.text}</b>
     <span class="quest-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${m.n}" aria-valuenow="${m.progress}"><i style="width:${pct}%"></i><em>${fmt(m.progress)} / ${fmt(m.n)}</em></span></div>
-    <button class="quest-claim daily-claim" data-claim="${index}" aria-label="${m.claimed ? 'Claimed' : ready ? 'Claim' : 'Reward'} ${fmt(m.reward)} coins: ${m.text}"${ready ? '' : ' disabled'}><strong><img src="${art}icon-coin.png" alt="">${fmt(m.reward)}</strong></button></li>`;
+    <button class="quest-claim daily-claim" data-claim="${index}" aria-label="${m.claimed ? 'Claimed' : ready ? 'Claim' : 'Reward'} ${fmt(m.reward)} coins: ${m.text}"${ready ? '' : ' disabled'}><strong><img src="./assets/img/home/coin-glossy.png" alt="">${fmt(m.reward)}</strong></button></li>`;
 }
 
 let dialog = null;
@@ -64,7 +64,7 @@ export function openDaily() {
   const box = document.createElement('dialog');
   box.className = 'quests-dialog daily-dialog';
   box.setAttribute('aria-labelledby', 'daily-title');
-  box.innerHTML = `<header class="quest-header"><img class="quest-emblem" src="./assets/img/home/icon-daily-matte.png" alt=""><h2 id="daily-title">Daily</h2><button class="quest-close" data-close aria-label="Close daily tasks" autofocus></button></header><p class="daily-reset"></p><div class="daily-body"></div>`;
+  box.innerHTML = `<header class="quest-header"><img class="quest-emblem" src="./assets/img/home/icon-daily-glossy.png" alt=""><h2 id="daily-title">Daily</h2><button class="quest-close" data-close aria-label="Close daily tasks" autofocus></button></header><p class="daily-reset"></p><div class="daily-body"></div>`;
   box.addEventListener('click', event => {
     if (event.target.closest('[data-close]')) return box.close();
     if (event.target.closest('.daily-claim')) return onClaim(event);

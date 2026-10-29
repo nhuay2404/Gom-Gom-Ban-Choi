@@ -141,13 +141,14 @@ export async function endLevel(win, reason = '') {
   // Bảng kết quả (Figma): xu thưởng là dòng to có đồng xu; các ghi chú khác (mở khu, quà, mẹo, lý do thua) là dòng nhỏ.
   $('result-coins').innerHTML = `<i class="ico-coin"></i><b>+${coinsEarned}</b><small>coins</small>`;
   // ADS-SDK: chỗ đặt "bonusCoins" — xem ads nhận thêm xu (lần 1–2 trong ngày +50%, lần 3–5 +20%, từ lần 6 +10%; REWARDED_ADS.coinBonus), không giới hạn.
-  // Nút ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
+  // Nút (art bảng thắng) ghi đúng số xu thêm (không ghi "x2" / "%"), tính theo số lần đã xem hôm nay.
   $('result-coins').parentElement.querySelector('.ad-double')?.remove();
   if (coinsEarned && !deferred && adReady('bonusCoins')) {
     const bonus = bonusCoins(getWallet(), coinsEarned, Date.now());
     const button = document.createElement('button');
     button.className = 'ad-double';
-    button.innerHTML = `▶ +${bonus.toLocaleString('en-US')}`;
+    const label = `+${bonus.toLocaleString('en-US')}`;
+    button.innerHTML = `<b style="--len:${label.length}">${label}</b><small>coins</small>`;
     button.setAttribute('aria-label', `Watch an ad for ${bonus} more coins`);
     button.onclick = async () => {
       button.disabled = true;
@@ -259,7 +260,7 @@ $('open-map').onclick = () => confirmQuit('Leave this level?', () => menus.showT
 
 // Ảnh bảng kết quả (Figma 3×, panel ~850 KB): giải mã sẵn lúc rảnh, để lần đầu bảng bật lên không phải giải mã giữa anim (giật).
 (function preloadResultArt() {
-  const names = ['panel', 'win-cat', 'win-stars', 'win-title', 'win-score', 'win-cleared', 'fail-cat', 'fail-heart', 'fail-title', 'btn-next', 'btn-retry', 'btn-home-round', 'btn-retry-round'];
+  const names = ['panel', 'win-cat', 'win-stars', 'win-title', 'win-score', 'win-cleared', 'fail-cat', 'fail-heart', 'fail-title', 'btn-next', 'btn-retry', 'btn-home-round', 'btn-retry-round', 'win2-panel', 'win2-btn-home', 'win2-btn-next', 'win2-btn-reward', 'lose2-panel', 'lose2-btn-home', 'lose2-btn-retry'];
   const keep = [];
   const load = () => names.forEach(name => {
     const img = new Image();

@@ -1,20 +1,13 @@
-// Shared by the live idle-coins prompt and the standalone art preview.
-const art = './assets/img/idle-reward/';
+// Popup nhận xu idle trên art đồng hồ vẽ sẵn (meter-panel.png); kim + số xu do menu/idle-coins.js attachWheel chạy. Dùng chung cho game và idle-reward-kit.html.
 const fmt = n => n.toLocaleString('en-US');
-const coins = n => `<img class="idle-coin-icon" src="${art}icon-coin.png" alt=""><span>${fmt(n)}</span>`;
 export function idleRewardOptions(pending, bonusRate) {
-  const extra = Math.round(pending * bonusRate);
-  const percent = Math.round(bonusRate * 100);
   return {
     title: 'Pets collected coins!',
-    className: 'idle-claim',
-    body: `<button class="idle-reward-close" data-choice="" aria-label="Close without claiming"></button>
-      <div class="idle-reward-hero" aria-hidden="true"><span class="idle-reward-glow"></span><img class="idle-reward-pet" src="${art}icon-pet.png" alt=""><img class="idle-reward-stack" src="${art}coin-stack.png" alt=""></div>
-      <p class="idle-claim-total" aria-label="${fmt(pending)} coins collected">${coins(pending)}</p>
-      <p class="idle-reward-caption">A little gift from your pets</p>`,
+    className: 'idle-claim idle-meter',
+    body: `<button class="idle-reward-close" data-choice="" aria-label="Close without claiming"></button><span class="meter-total">${fmt(pending)}</span><img class="meter-needle" src="./assets/img/idle-reward/meter-needle.png" alt=""><span class="meter-factor">x${+(1 + bonusRate).toFixed(1)}</span>`,
     choices: [
-      { id: 'ad', style: 'ad', label: `<img class="idle-video-icon" src="${art}icon-video.png" alt=""><span class="idle-video-copy"><span>Watch video</span><strong class="idle-btn-amount">${coins(pending + extra)}</strong></span><em class="idle-bonus">+${percent}%</em>` },
-      { id: 'claim', style: 'ghost', label: `<span>Claim</span><strong class="idle-btn-amount">${coins(pending)}</strong>` },
+      { id: 'ad', style: 'ad', label: `<span class="meter-video-amount">${fmt(pending + Math.round(pending * bonusRate))}</span><span class="meter-sr">Watch video for bonus coins</span>` },
+      { id: 'claim', style: 'ghost', label: `<span class="meter-claim-amount">${fmt(pending)}</span><span class="meter-sr">Claim collected coins</span>` },
     ],
   };
 }
