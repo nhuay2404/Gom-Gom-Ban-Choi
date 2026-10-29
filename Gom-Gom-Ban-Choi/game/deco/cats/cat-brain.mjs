@@ -337,10 +337,12 @@ export class Cat {
   }
 
   // Hướng dẫn mở vườn: ngồi yên, mặt nhìn thẳng camera (bong bóng lời thoại hiện cạnh). Hết `held` thì về sống bình thường.
-  *holdStill() {
+  // spot {x, z}: chỗ ngồi của hướng dẫn — xa thì chạy tới, gần thì đi bộ (không dịch chuyển tức thời).
+  *holdStill(spot = null) {
     this.release(); this.occupy('tutorial'); // con khác không rủ chơi cắt ngang
     try {
       if (this.y > .01) yield* this.getDown();
+      if (spot) yield* this.walkTo(spot.x, spot.z, { run: Math.hypot(spot.x - this.x, spot.z - this.z) > 2.5, near: .15 });
       this.setPose('sit'); this.face('happy');
       while (this.held) {
         const cam = this.world.cameraPos?.();

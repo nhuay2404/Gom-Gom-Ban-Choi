@@ -23,6 +23,7 @@ export const SAVE_KEYS = {
   decoTour: 'gomgom-rotate-deco-tour-v1',
   onboarding: 'gomgom-rotate-onboarding-v1',
   gifts: 'gomgom-rotate-gifts-v1', // số hộp quà onboarding đã mở trong Deco (app/onboarding.js)
+  catTalk: 'gomgom-rotate-cat-talk-v1', // mèo cam vừa ra khỏi thùng lần đầu: 'wait' = dấu "!" trên đầu chờ chạm, 'done' = đã nói (app/onboarding.js)
   petBoxes: 'gomgom-rotate-pet-boxes-v1', // giống mèo / chó vừa nhận, còn nằm trong thùng chờ mở ở Deco (app/onboarding.js petBoxes)
   gems: 'gomgom-rotate-gems-v1', // ví gem + đếm ads theo ngày + quà gem đã nhận + ưu đãi (core/gems.mjs)
   daily: 'gomgom-rotate-daily-v1', // nhiệm vụ ngày (core/daily.mjs)

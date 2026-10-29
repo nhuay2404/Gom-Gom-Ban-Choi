@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { sphereSegments, radialSegments, mergeStatic } from '../render/mesh-detail.mjs';
 import { TOON, toonMat, DECAL_LAYER } from '../render/toon.mjs';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ROAD, ROAD_NEAR, KINDER_GATE_X } from '../room-layout.mjs';
+import { ROAD, ROAD_NEAR, KINDER_GATE_X, ROOM_HALF } from '../room-layout.mjs';
 
 const TAU = Math.PI * 2;
 const mat = (color, extra = {}) => TOON ? toonMat({ color, ...extra })
@@ -184,9 +184,10 @@ function buildRoad(zNear) {
   // Ghế dài và chậu cây xen giữa các cây đèn.
   for (let x = X0 + 8.5; x < X1; x += ROAD.lampEvery * 2) {
     if (Math.abs(x - crossX) < 3) continue;
-    const bench = group();
-    bench.add(slab(-.55, .55, -.2, .2, .22, .28, m.bench), slab(-.55, .55, -.22, -.17, .28, .62, m.bench), slab(-.5, -.42, -.18, .18, 0, .22, m.pole), slab(.42, .5, -.18, .18, 0, .22, m.pole));
-    bench.position.set(x, base + .1, lampZ + .15); group_.add(bench);
+    // Trước vườn nhà không đặt ghế (chỗ xe van giao thùng mèo, người chơi bỏ).
+    const bench = Math.abs(x) < ROOM_HALF ? null : group();
+    if (bench) bench.add(slab(-.55, .55, -.2, .2, .22, .28, m.bench), slab(-.55, .55, -.22, -.17, .28, .62, m.bench), slab(-.5, -.42, -.18, .18, 0, .22, m.pole), slab(.42, .5, -.18, .18, 0, .22, m.pole));
+    if (bench) { bench.position.set(x, base + .1, lampZ + .15); group_.add(bench); }
     const planter = group();
     planter.add(at(cyl(.2, .16, .32, m.pot, 10), 0, .16, 0), at(ball(.3, m.plant), 0, .6, 0));
     planter.position.set(x + ROAD.lampEvery, base + .1, lampZ + .15); group_.add(planter);

@@ -68,8 +68,22 @@ export function setDeco(next) {
   deco = next; saveDeco(deco);
 }
 export function refreshWallet() {
-  ['map-coins', 'deco-coins', 'shop-coins'].forEach(id => { $(id).textContent = deco.coins.toLocaleString('en-US'); });
-  document.querySelectorAll('.fh-gems b').forEach(node => { node.textContent = wallet.gems.toLocaleString('en-US'); });
+  ['map-coins', 'deco-coins', 'shop-coins'].forEach(id => countTo($(id), deco.coins));
+  document.querySelectorAll('.fh-gems b').forEach(node => countTo(node, wallet.gems));
+}
+// Số trên ví: tăng thì đếm dần lên (nhanh lúc đầu, chậm dần, ≤ .9 s), giảm (tiêu) thì đổi ngay.
+const counting = new WeakMap();
+function countTo(node, value) {
+  const from = Number(node.textContent.replace(/[^0-9]/g, '')) || 0, show = n => { node.textContent = Math.round(n).toLocaleString('en-US'); };
+  cancelAnimationFrame(counting.get(node));
+  if (value <= from || reduceMotion.matches || !node.isConnected) return show(value);
+  const start = performance.now(), duration = Math.min(900, 350 + (value - from) * 4);
+  const step = now => {
+    const k = Math.min(1, (now - start) / duration);
+    show(from + (value - from) * (1 - (1 - k) ** 3));
+    if (k < 1) counting.set(node, requestAnimationFrame(step));
+  };
+  counting.set(node, requestAnimationFrame(step));
 }
 
 // ===== Ví gem (core/gems.mjs): gem + đếm rewarded ads theo ngày + quà gem đã nhận + ưu đãi. Mua / tiêu qua app/store.js =====

@@ -11,12 +11,19 @@ import { spendGems } from '../core/gems.mjs';
 import { isGardenExpanded, decoUnlockedLevel, isZoneOpen, renderAreaNext, renderZoneSwitch, dragScroll } from './areas.js';
 import { decoThumbnail, room3d, applyRoom, buildFlatRooms } from './room.js';
 import { startIdle, idleDot } from './idle-coins.js';
-import { openGiftBox, openPetBox } from './gift-boxes.js';
+import { openGiftBox, openPetBox, openAreaGift } from './gift-boxes.js';
 import { levelsCleared } from './context.js';
 
 export let decoPick = null; // món gốc đang xem trước (thẻ chưa xây vừa chạm)
 
 export function clearDecoPick() { decoPick = null; }
+// Hướng dẫn mua (tours.js runBuyTour) đang chạy: không cho thu gọn thanh đồ, chạm lại thẻ đang xem không bỏ xem (không làm mất nút Buy).
+let tourHold = false;
+// Bắt đầu giữ thì mở lại thanh đồ nếu người chơi đã thu gọn từ trước (lỗi cũ: thanh thu gọn -> không có thẻ để chạm, kẹt hướng dẫn).
+export function setTourHold(on) {
+  tourHold = on;
+  if (on) setTrayCollapsed(false);
+}
 
 // ===== Deco kiểu "xây chỗ" (như Monopoly Go) =====
 // Hàng thẻ dưới màn hình = món gốc của từng chỗ đặt trong khu (một hàng, vuốt ngang). Chạm thẻ chưa xây: xem trước món ngay
@@ -132,7 +139,7 @@ export function renderDeco() {
     if (card.className !== className) card.className = className;
     const buyable = status === 'buy' && picked;
     // Pet chưa nhận ở bản đồ: giấu mặt sau dấu "?" như thùng các-tông trên bản đồ.
-    const art = status === 'locked' && entry.cat === 'cats' ? '<span class="thumb cat-mystery" aria-hidden="true">?</span>' : thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">${entry.cat === 'cats' ? 'Claim' : `Lv ${entry.lock}`}</em>`
+    const art = status === 'locked' && entry.cat === 'cats' ? '<span class="thumb cat-mystery" aria-hidden="true">?</span>' : thumbOf(entry), foot = status === 'locked' ? `<em class="deco-card-price lock">Lv ${entry.lock}</em>`
       : buyable ? `<em class="deco-card-price act" data-act="buy">Buy ${cost(entry)}</em>`
       : status === 'using' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'In home' : '✓ In use'}</em>`
       : status === 'owned' ? `<em class="deco-card-price own">${entry.cat === 'cats' ? 'Add' : 'Use'}</em>`
@@ -164,9 +171,11 @@ const isBaseEntry = entry => entry.cat === 'furniture' && !entry.slot;
 function stripEntries(deco) {
   const zone = deco.zone;
   if (decoTab === 'cats') return CATALOG.filter(entry => entry.cat === 'cats' && entry.id.startsWith('dog-') === (decoPet === 'dogs'));
-  if (isSurface(decoTab)) return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a));
+  // Món còn khoá theo màn (thẻ "Lv …") xếp cuối hàng, món mua được lên trước (lỗi cũ: thẻ khoá đứng đầu che món mua được). sort ổn định.
+  const locked = entry => itemStatus(deco, entry, decoUnlockedLevel()) === 'locked';
+  if (isSurface(decoTab)) return catalogFor(zone, decoTab).filter(decoVisible).sort((a, b) => isOwned(deco, b) - isOwned(deco, a) || locked(a) - locked(b));
   // Furniture: chỉ món gốc chưa xây (kiểu khác của món mua ở Shop → Decoration / chạm món trong cảnh)
-  return decoBases(zone).filter(base => !isOwned(deco, base));
+  return decoBases(zone).filter(base => !isOwned(deco, base)).sort((a, b) => locked(a) - locked(b));
 }
 // Thẻ bị cắt ở mép nào thì mép đó có dải mờ phủ lên (CSS .deco-cards-wrap.more-left / .more-right)
 // Chỉ hiện khi đã kéo qua (đứng yên ở đầu hàng thì không có dải mờ).
@@ -177,12 +186,16 @@ function updateCardsFade() {
 }
 // Thu gọn khay: chỉ còn hàng tab
 $('deco-collapse').addEventListener('click', () => {
+  if (tourHold) return;
   playSound('pick');
-  const tray = document.querySelector('.deco-tray'), collapsed = tray.classList.toggle('collapsed');
+  setTrayCollapsed(!document.querySelector('.deco-tray').classList.contains('collapsed'));
+});
+function setTrayCollapsed(collapsed) {
+  document.querySelector('.deco-tray').classList.toggle('collapsed', collapsed);
   $('deco-collapse').setAttribute('aria-expanded', !collapsed);
   $('deco-collapse').setAttribute('aria-label', collapsed ? 'Expand item bar' : 'Collapse item bar');
   $('deco-collapse').title = collapsed ? 'Expand' : 'Collapse';
-});
+}
 $('deco-cards').addEventListener('scroll', updateCardsFade, { passive: true });
 export function clearPreview() {
   if (!popPreview) return;
@@ -219,6 +232,7 @@ $('deco-cards').addEventListener('click', event => {
   closeDecoPop(false);
   const status = itemStatus(getDeco(), base, decoUnlockedLevel());
   if (status === 'locked') return showToast(`Unlocks at level ${base.lock}`);
+  if (tourHold && decoPick === base) return;
   pickDeco(decoPick === base ? null : base); // chạm lại thẻ đang xem = bỏ xem
   if (decoPick && status === 'poor') showToast(`Need ${base.price - getDeco().coins} more coins`);
 });
@@ -259,6 +273,7 @@ function buildBase(base) {
 export function onScenePick(pick) {
   if (pick.gift != null) return openGiftBox(pick.gift); // hộp quà onboarding (gift-boxes.js)
   if (pick.petBox) return openPetBox(); // thùng mèo / chó mới nhận (gift-boxes.js)
+  if (pick.areaGift) return openAreaGift(pick.areaGift); // hộp quà món miễn phí của khu vừa mở (gift-boxes.js)
   if (document.body.classList.contains('ob-no-panel')) return; // onboarding chưa mở panel Deco (trước hộp xu): chạm món chưa mở bảng đổi món
   if (decoLocked) return;
   const surface = isSurface(pick.key);
@@ -273,11 +288,14 @@ export function onScenePick(pick) {
   openDecoPop(pick);
 }
 
+let popNew = new Set();
 function openDecoPop(spec) {
   if (popPreview) { popPreview = null; applyRoom(getDeco()); } // đang xem thử ở bảng khác: bỏ xem
   decoPop = spec;
   // Bảng đổi kiểu một món: camera khoá ở góc đã căn tới khi bảng đóng (bảng mèo / tường / sàn thì không)
   room3d?.lockView(spec.key !== 'cats' && !isSurface(spec.key));
+  // Kiểu mới (deco.fresh) của chỗ này: ghim NEW trên từng kiểu suốt lúc bảng mở; mở bảng là đã xem -> thôi sáng ở cảnh / lần mở sau.
+  popNew = new Set((getDeco().fresh || []).filter(id => { const entry = itemById(id); return entry && entry.zone === spec.zone && (entry.cat === 'furniture' ? slotOf(entry) : entry.cat) === spec.key; }));
   if (spec.key !== 'cats') setDeco(clearFresh(getDeco(), spec.zone, spec.key)); // đã xem món mới -> thôi sáng
   if (decoPick) { clearDecoPick(); applyRoom(getDeco()); }
   renderDeco();
@@ -294,6 +312,7 @@ function openDecoPop(spec) {
 export function closeDecoPop(render = true) {
   if (!decoPop) return;
   decoPop = null;
+  popNew = new Set();
   // Đóng bảng khi đang xem thử một kiểu chưa mua: phòng trở về đồ đang dùng.
   if (popPreview) { popPreview = null; applyRoom(getDeco()); }
   $('deco-pop').hidden = true;
@@ -344,7 +363,7 @@ function renderDecoPop() {
     const shop = entry.cat !== 'cats' && !isOwned(deco, entry), status = shop ? shopStatus(deco, entry, unlocked, getWallet().gems) : itemStatus(deco, entry, unlocked);
     const node = document.createElement('button');
     const previewing = popPreview === entry;
-    node.className = `deco-opt ${status}${entry.gems ? ' premium' : ''}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}`;
+    node.className = `deco-opt ${status}${entry.gems ? ' premium' : ''}${shop ? ' in-shop' : ''}${previewing ? ' previewing' : ''}${popNew.has(entry.id) ? ' is-new' : ''}`;
     node.dataset.id = entry.id;
     node.setAttribute("aria-label", entry.name); node.title = entry.name; // tên hiện ở dòng tiêu đề bảng, không lặp trong thẻ
     const tag = status === 'using' && !popPreview ? '<b class="deco-opt-tag">✓</b>' : '';
@@ -380,7 +399,7 @@ function chooseOption(entry, buyTap) {
   if (!ob.buildOpen(entry, getDeco()) && entry.cat !== 'cats') return showToast(BUILD_LOCKED);
   const deco = getDeco(), unlocked = decoUnlockedLevel(), status = itemStatus(deco, entry, unlocked);
   if (entry.cat === 'cats') {
-    if (status === 'locked') return showToast(`Beat level ${entry.lock}, then claim it on the Map`);
+    if (status === 'locked') return showToast(`Beat level ${entry.lock} and it comes home in a box!`);
     const next = applyAction(deco, entry, unlocked);
     if (next.error) return showToast(next.error);
     setDeco(next);

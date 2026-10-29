@@ -7,6 +7,8 @@
 // speaker?: () => rect — bong bóng lời thoại mọc từ người nói (mèo) thay vì theo chỗ sáng; đo không được (mèo khuất, đang ở Shop) thì về bóng thường.
 // Không có text = không hiện bong bóng, chỉ bàn tay minh hoạ cử chỉ (`gesture`) giữa chỗ sáng + nút Skip nhỏ.
 // Có `until` = bước thao tác: chỉ chỗ sáng chạm được (ngoài chỗ sáng bị chắn), không có nút Next, tự qua bước khi until() đúng.
+// strict: bước thao tác không bao giờ cho chạm-chỗ-khác-để-qua, kể cả khi không đo được chỗ sáng (chặn kín màn hình) — lỗi cũ: bỏ chọn
+//   thẻ Tree stump rồi chạm chỗ khác là qua bước như đã mua.
 // Không có `until` = bước đọc: cả màn hình bị chắn, bấm Next để qua.
 import { catMarkup } from '../ui/cat-art.mjs';
 import { playSound } from '../ui/sound.mjs';
@@ -96,7 +98,7 @@ export function startDecoTour(steps, onDone) {
     pic.hidden = !step.image;
     if (step.image && pic.getAttribute('src') !== step.image) pic.src = step.image;
     // bước thao tác mà không đo được chỗ sáng: chạm đâu cũng qua để khỏi kẹt (bước cử chỉ skippable: luôn cho qua)
-    tappable = !(tap && !!box && !step.skippable);
+    tappable = !(tap && (!!box || step.strict) && !step.skippable);
     const rect = box && { x: Math.round(box.left - PAD), y: Math.round(box.top - PAD), width: Math.round(box.width + PAD * 2), height: Math.round(box.height + PAD * 2) };
     // Người nói (speaker, vd. mèo cam trong vườn): bong bóng lời thoại mọc từ nó, nó cũng được khoét sáng (không viền) để không chìm trong lớp mờ.
     // Khung người nói giữ cố định: cỡ đo một lần khi vào bước, chỉ dời theo khi tâm mèo trôi xa > 10 px (camera lướt), không co giãn

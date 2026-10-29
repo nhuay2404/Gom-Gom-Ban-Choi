@@ -105,7 +105,7 @@ export const QUEST_TRACKS = remote('QUEST_TRACKS', [
   { id: 'level', kind: 'level', step: 5, share: .5, text: 'The cats are cheering you on. Beat level {n}!' },
   { id: 'area', kind: 'area', share: 2, text: 'Your home is growing. Open the {area} next!' },
   { id: 'build', event: 'build', steps: [4, 10, 20, 30, 40, 50], then: 10, cap: 'basesLeft', share: 1.5, text: 'The cats need more cozy corners. Build {n} spot{s}!' },
-  { id: 'pets', event: 'claimPet', steps: [1, 2, 3], then: 1, cap: 'petsLeft', gems: 5, text: 'New friends are waiting on the map. Welcome {n} pet{s} home!' },
+  { id: 'pets', event: 'claimPet', steps: [1, 2, 3], then: 1, cap: 'petsLeft', gems: 5, text: 'New friends are on the way. Beat levels to welcome {n} pet{s} home!' },
   { id: 'styles', event: 'style', steps: [2, 5, 10, 20, 30], then: 10, cap: 'stylesLeft', share: 1, text: 'Fresh looks are in the Shop. Collect {n} new style{s}!' },
   // Dạy chơi (chỉ một mốc): chỉ cho người chơi những thứ dễ bỏ lỡ, thưởng nhẹ.
   { id: 'carry', event: 'carry', steps: [1], gems: 5, text: 'A cat wants a ride. Hold and carry a cat in Deco!' },

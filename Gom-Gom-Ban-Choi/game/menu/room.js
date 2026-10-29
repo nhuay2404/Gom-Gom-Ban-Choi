@@ -14,6 +14,7 @@ import { placeIdleCoin } from './idle-coins.js';
 import { TABS } from './tabs.js';
 import { renderShopDeco } from './shop.js';
 import { map3dReady } from './map-view.js';
+import { runCatTalk } from './tours.js';
 
 export let room3d = null; // phòng 3D, có sau khi nạp xong Three.js; null thì dùng phòng CSS phẳng
 
@@ -134,7 +135,11 @@ export const roomReady = import('../deco/deco-room.mjs').then(({ createRoom, thu
   decoThumbnail = thumbnail;
   decoSpinner = thumbSpinner;
   room3d.onPick(onScenePick);
-  room3d.onCatEvent(kind => noteEvent(kind)); // nhiệm vụ "vuốt mèo" (pet) / "bế mèo" (carry)
+  room3d.onCatEvent((kind, breed) => {
+    noteEvent(kind); // nhiệm vụ "vuốt mèo" (pet) / "bế mèo" (carry)
+    if (kind === 'pet' && breed === 'orange' && ob.catTalkWaiting() && !$('deco').hidden) runCatTalk(); // mèo cam có dấu "!" (tours.js)
+  });
+  room3d.markCat(ob.catTalkWaiting() ? 'orange' : null);
   // Bảng đổi món + ghim NEW đặt lại ngay sau mỗi lần vẽ cảnh (cùng khung hình với camera, không trễ / rung).
   room3d.onFrame(() => { if (!$('deco').hidden) { placeDecoPop(); placeDecoPins(); placeIdleCoin(); placeAreaMarker(); } });
   // Deco: kéo cảnh sang phòng khác thì hàng thẻ, nút cột trái và hàng chọn khu đổi theo phòng đang ở giữa (camera không lướt lại).

@@ -43,13 +43,17 @@ function spawn(track, tier, ctx, quests) {
     n = track.cap ? Math.min(goal, (quests.totals[track.event] ?? 0) + (ctx[track.cap] ?? 0)) : goal;
     if (n <= prev) return null;
   }
-  const text = track.text.replace('{n}', n.toLocaleString('en-US')).replace('{area}', ctx.areaName ?? '').replace('{s}', n > 1 ? 's' : '');
+  const text = questText(track, n, ctx.areaName);
   return { track: track.id, n, text, ...(area && { area }), reward: track.share ? round10(track.share * dailyRate(ctx.unlocked)) : 0, ...(track.gems && { gems: track.gems }), progress: 0 };
 }
+
+const questText = (track, n, areaName = '') => track.text.replace('{n}', n.toLocaleString('en-US')).replace('{area}', areaName).replace('{s}', n > 1 ? 's' : '');
 
 // Tiến độ: màn đã thắng / khu đã mở đo theo trạng thái game; chuỗi đếm lấy từ tổng đếm ngầm.
 function measure(quest, ctx, totals) {
   const track = trackOf(quest.track);
+  // Lời nhiệm vụ lấy lại từ bảng (đổi lời ở economy.mjs thì save cũ cũng thấy lời mới); nhiệm vụ mở khu giữ tên khu đã ghi.
+  if (track && track.kind !== 'area') quest = { ...quest, text: questText(track, quest.n) };
   if (track?.kind === 'level') return { ...quest, progress: Math.min(quest.n, ctx.cleared) };
   if (track?.kind === 'area') return { ...quest, progress: ctx.open.includes(quest.area) ? 1 : 0 };
   return { ...quest, progress: Math.min(quest.n, totals[track.event] ?? 0) };

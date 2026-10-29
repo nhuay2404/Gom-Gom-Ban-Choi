@@ -71,7 +71,28 @@ export function unlockArea(deco, area, cleared, table = AREA_UNLOCK) {
   if (state === 'soon') return { error: `Open the ${AREA_NAMES[areaBefore(area)].toLowerCase()} first` };
   if (state === 'build') return { error: `Build every spot in the ${AREA_NAMES[areaBefore(area)].toLowerCase()} first` };
   if (state === 'coins') return { error: `Need ${table[area].cost - deco.coins} more coins` };
-  return { ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] };
+  return boxAreaGifts({ ...pay(deco, table[area].cost), unlocked: [...(deco.unlocked ?? []), area] }, area);
+}
+
+// Món miễn phí đặt sẵn của khu (vườn mở rộng: món area 'garden2' của vườn).
+export const areaGifts = area => CATALOG.filter(entry => isFree(entry) && entry.cat === 'furniture' && !entry.slot
+  && (area === 'garden2' ? entry.area === 'garden2' : entry.zone === area && !entry.area));
+// Vừa mở khu: món miễn phí đặt sẵn nằm trong hộp quà (deco.boxed, menu/gift-boxes.js) tới khi người chơi chạm mở; vẫn là đồ đã có.
+function boxAreaGifts(deco, area) {
+  const ids = areaGifts(area).filter(entry => zoneState(deco, entry.zone).placed.includes(entry.id)).map(entry => entry.id);
+  const next = ids.reduce((d, id) => withZone(d, itemById(id).zone, { placed: zoneState(d, itemById(id).zone).placed.filter(other => other !== id) }), deco);
+  return { ...next, boxed: [...(deco.boxed ?? []), ...ids] };
+}
+// Hộp còn chờ mở: bỏ hộp mà chỗ đặt đã có món khác (người chơi tự đặt kiểu khác từ panel trước khi mở hộp).
+export const boxedWaiting = deco => (deco.boxed ?? []).filter(id => {
+  const entry = itemById(id);
+  return entry && withoutSlot(zoneState(deco, entry.zone).placed, entry).length === zoneState(deco, entry.zone).placed.length;
+});
+// Mở hộp: món vào chỗ đặt của nó.
+export function openBoxed(deco, id) {
+  const entry = itemById(id), boxed = (deco.boxed ?? []).filter(other => other !== id);
+  if (!entry || !boxedWaiting(deco).includes(id)) return { ...deco, boxed };
+  return { ...withZone(deco, entry.zone, { placed: [...zoneState(deco, entry.zone).placed, id] }), boxed };
 }
 
 // Giá (price) và màn mở khoá (lock) của từng món KHÔNG khai ở đây: sửa ở data/economy.mjs (bảng DECO), áp vào cuối danh mục.
@@ -551,7 +572,7 @@ const zoneDefaults = zone => {
     facade: free.find(entry => entry.cat === 'facade')?.id, // chỉ khu có tường lớp học (mẫu giáo)
   };
 };
-// Mèo có sẵn từ đầu; các giống khác phải nhận ở Map (nút Claim cạnh màn giống đó xuất hiện lần đầu, sau khi thắng màn đó).
+// Mèo có sẵn từ đầu; các giống khác tự về khi thắng lần đầu màn mốc của nó (play/result.js: vào thùng, xe van giao tới Deco).
 export const STARTER_CATS = ['gray', 'orange', 'white'];
 function defaults(startCoins) {
   return { coins: startCoins, cats: [...STARTER_CATS], claimedCats: [...STARTER_CATS], zone: 'garden', unlocked: [], expansionSeeded: true, zones: Object.fromEntries(ZONE_IDS.map(zone => [zone, zoneDefaults(zone)])) };

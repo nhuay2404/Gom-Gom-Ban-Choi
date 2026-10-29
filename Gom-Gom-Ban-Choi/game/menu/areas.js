@@ -11,6 +11,7 @@ import { builtCount, decoLocked, coin, clearDecoPick, closeDecoPop, renderDeco, 
 import { levelsCleared } from './context.js';
 import { room3d, applyRoom } from './room.js';
 import { shopBurst } from './shop.js';
+import { renderGiftBoxes } from './gift-boxes.js';
 import { renderQuestButtons } from './quests.js';
 
 // Dev "mở hết khu" (nút Dev: Unlock all): xem được cả phần / món khoá ở màn game chưa có (vườn mở rộng: màn 30+). Lưu trong máy.
@@ -163,6 +164,7 @@ function buyArea(area) {
   closeDecoPop(false);
   refreshWallet();
   applyRoom(getDeco());
+  renderGiftBoxes(); // món miễn phí của khu mới nằm trong hộp quà, chạm để mở
   renderZoneSwitch();
   renderDeco();
   room3d?.openFx(area);

@@ -10,7 +10,7 @@ import { createCatLife } from './cats/room-cats.mjs';
 import { TOON, TOON_LIGHT, TOON_FOV, toonMat, toonLook, addOutlines, syncOutlineResolution, setOutlineTint, setOutlineZoom, renderOutlineIds, markOutlineUnit, OUTLINE_LAYER, DECAL_LAYER, FLOOR_OFFSET } from './render/toon.mjs';
 import { playMeow } from '../ui/sound.mjs';
 import { CATALOG, itemById, zoneState, slotOf } from './deco-data.mjs';
-import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U, BATHROOM_DOOR, BATHROOM_WINDOW_X, BACKYARD_DOOR, BACKYARD_EXT_X, backyardBounds, KINDER_GATE_X, kinderBounds, FLOWER_OFFSET, FLOWER_GATE_Z, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, crossingHeight, GARDEN_EXT_X, gardenBounds, SIDEWALK_Y, ROAD_Z } from './room-layout.mjs';
+import { PLACES, WALL_H, ROOM_HALF, ZONE_OFFSET, DOOR, BEDROOM_DOOR, KITCHEN_DOOR, KITCHEN_WINDOW_X, KITCHEN_FRONT_WINDOW_U, BATHROOM_DOOR, BATHROOM_WINDOW_X, BACKYARD_DOOR, BACKYARD_EXT_X, backyardBounds, KINDER_GATE_X, kinderBounds, FLOWER_OFFSET, FLOWER_GATE_Z, OBSTACLE_RADIUS, HILL, HILL_OBSTACLE_R, groundHeight, crossingHeight, GARDEN_EXT_X, gardenBounds, SIDEWALK_Y, ROAD_Z, ROAD_Y } from './room-layout.mjs';
 import { TIMING, DRAG } from '../data/tuning.mjs';
 import { BEDROOM_BUILD, bedroomDecor, decorateBedroomWall } from './scenes/bedroom.mjs';
 import { KITCHEN_BUILD, kitchenDecor, decorateKitchenWall } from './scenes/kitchen.mjs';
@@ -24,7 +24,7 @@ import { GARDEN2_BUILD, buildHill, garden2Decor, SHADOW_ONLY_LAYER } from './sce
 import { runModelQC } from './qc.mjs';
 import { createDecoFx } from './render/deco-fx.mjs';
 import { fitToWall, fitToFloor } from './render/wall-theme.mjs';
-import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum, giftBoxModel, catBoxModel } from './scenes/garden.mjs';
+import { GARDEN_BUILD, groundTexture, buildFence, gardenCorners, makeButterflies, ropeBetween, pendulum, giftBoxModel, catBoxModel, deliveryVanModel, parachuteModel, VAN_WHEEL_R } from './scenes/garden.mjs';
 import { JAPAN_BUILD } from './scenes/garden-japan.mjs';
 
 const HALF = ROOM_HALF, TAU = Math.PI * 2;
@@ -1347,18 +1347,34 @@ export function createRoom() {
   crateHit.userData.noOutline = true;
   catCrate.add(crateHit);
   // Dấu "!" vàng nổi trên thùng chưa mở (cùng kiểu dấu trên cọc khu kế tiếp), nhún lên xuống mời chạm; mở thùng thì ẩn.
-  const crateMark = new THREE.Group(), crateMarkMat = mat('#ffd23f');
+  // Dấu "!" mời chạm (thùng mèo, cọc khu kế tiếp): vàng chói tự phát sáng (không tối theo bóng / đêm), to và đậm hơn đồ thường.
+  // Ban đêm (setAmbient) tự sáng hẳn lên (MARK_GLOW.night), chỉ sáng chính nó, không rọi ra xung quanh.
+  const MARK_GLOW = { day: .45, night: 1.1 };
+  let markGlow = MARK_GLOW.day;
+  const markMat = (color, glow) => mat(color, { emissive: glow, emissiveIntensity: markGlow });
+  const MARK_YELLOW = ['#ffbf00', '#ff8a00'];
+  const crateMark = new THREE.Group(), crateMarkMat = markMat(...MARK_YELLOW);
   {
     const bar = new THREE.Mesh(roundedBox(.16, .38, .16, 2, .06), crateMarkMat);
     bar.position.y = .36;
     const dot = new THREE.Mesh(new THREE.SphereGeometry(.095, ...sphereSegments(.095)), crateMarkMat);
     crateMark.add(bar, dot);
+    crateMark.scale.setScalar(1.35);
+    crateMark.userData.outlineStyle = 'mark';
     crateMark.traverse(node => { node.raycast = () => {}; });
   }
   const CRATE_MARK_Y = catCrate.userData.mouthY + .35;
   crateMark.position.y = CRATE_MARK_Y;
   catCrate.add(crateMark);
+  // Xe van giao thùng mèo: có thùng mới thì chạy vào đỗ ở làn gần (mũi xe dừng trước thùng, phía trái nên không che thùng
+  // khỏi camera mặc định đặt bên +x), mèo ra khỏi thùng thì chạy tiếp ra khỏi cảnh.
+  const van = deliveryVanModel();
+  const VAN_PARK_X = catCrate.position.x - 2.6, VAN_IN = 3.2, VAN_OUT = 3;
+  van.position.set(VAN_PARK_X, ROAD_Y, ROAD_Z.c1 + (ROAD_Z.r1 - ROAD_Z.c1) / 4);
+  van.visible = false;
+  garden.add(van);
   const flowerCenter = new THREE.Vector3();
+  let butterflyNight = false;
 
   // ---------- Phòng trong nhà: sàn + 4 bức tường (cửa ra vào, cửa sổ vòm) + đồ trang trí cố định ----------
   // 4 bức tường; `normal` hướng vào trong phòng. Tường nào camera đứng sau thì mờ đi (xem frame()).
@@ -1727,7 +1743,8 @@ export function createRoom() {
     // không thì món đó tối / sáng phụt trước khi trời kịp đổi (lỗi cũ).
     const arts = new Map();
     scene.traverse(node => { for (const m of node.isMesh ? [].concat(node.material) : []) if (m?.color && (m.userData?.nightDim || m.isMeshBasicMaterial) && !arts.has(m)) arts.set(m, m.color.clone()); });
-    butterflies.forEach(b => { b.node.visible = !night; });
+    butterflyNight = night;
+    markGlow = night ? MARK_GLOW.night : MARK_GLOW.day;
     Object.values(furniture).forEach(lightUp);
     scene.traverse(nightArt);
     const artFades = [...arts].filter(([m, was]) => !m.color.equals(was)).map(([m, was]) => { const to = m.color.clone(); m.color.copy(was); return [m.color, to]; });
@@ -2197,6 +2214,7 @@ export function createRoom() {
       if (!shown(hitInfo.object)) continue;
       for (let node = hitInfo.object; node; node = node.parent) {
         if (node.userData.pickGift) return { gift: node.userData.pickGift - 1 };
+        if (node.userData.pickAreaGift) return { areaGift: node.userData.pickAreaGift };
         if (node.userData.pickPetBox) return { petBox: true };
         if (node.userData.pickSlot) return { zone: itemById(node.userData.itemId)?.zone, key: node.userData.pickSlot };
         if (node.userData.pickSurface) return node.userData.pickSurface.zone === zoneId ? { ...node.userData.pickSurface } : null;
@@ -2338,24 +2356,122 @@ export function createRoom() {
   const LID_POP = .45, JUMP = .85, giftFrom = new THREE.Vector3();
   function setGiftBoxes(count) {
     giftBoxes.forEach((node, i) => {
+      if (i < count && !node.visible) dropGift(node);
       node.visible = i < count;
       node.scale.setScalar(1);
       node.userData.lid.position.y = node.userData.lidY; node.userData.lid.rotation.set(0, 0, 0);
     });
   }
+  // Hộp quà món miễn phí của khu vừa mở (menu/gift-boxes.js, deco-data boxedWaiting): mỗi món một hộp đứng ngay chỗ đặt của món.
+  const areaBoxes = new Map();
+  function setAreaGifts(ids) {
+    for (const [id, node] of areaBoxes) if (!ids.includes(id) && giftAnim?.box !== node) { garden.remove(node); areaBoxes.delete(id); }
+    for (const id of ids) {
+      if (areaBoxes.has(id)) continue;
+      const entry = itemById(id), place = PLACES[slotOf(entry)], [ox, oz] = ZONE_OFFSET[entry.zone];
+      if (!place) continue;
+      const node = giftBoxModel(), x = ox + place[0], z = oz + place[1];
+      node.position.set(x, 0, z);
+      // Đáp đúng mặt đất (món vườn mở rộng đứng trên đồi): lỗi cũ hộp rơi xuyên đồi xuống y = 0.
+      node.userData.baseY = entry.zone === 'garden' ? groundHeight('garden', x, z) : 0;
+      node.rotation.y = .35;
+      node.userData.pickAreaGift = id;
+      garden.add(node);
+      dropGift(node);
+      areaBoxes.set(id, node);
+    }
+  }
+  const openAreaGift = id => (areaBoxes.has(id) ? openGift(areaBoxes.get(id), slotOf(itemById(id))) : Promise.resolve());
   // Trả về Promise xong khi món đã đáp xuống chỗ (hoặc nắp đã bật xong nếu không có món). onOpen(điểm miệng hộp) gọi lúc nắp vừa bật.
+  // index: số thứ tự hộp onboarding, hoặc chính node hộp (hộp quà khu mới).
   function openGift(index, slot = null, onOpen = null) {
     if (giftAnim) giftAnim.box.visible = false; // hộp trước còn đang đứng mở: cất luôn
-    const box = giftBoxes[index] ?? giftBoxes.find(node => node.visible);
+    const box = index?.isObject3D ? index : giftBoxes[index] ?? giftBoxes.find(node => node.visible);
     if (!box) return Promise.resolve();
+    landGift(box);
+    box.userData.mark.visible = false;
     const item = slot && furniture[slot];
-    box.getWorldPosition(giftFrom).setY(.45);
+    box.getWorldPosition(giftFrom).setY((box.userData.baseY ?? 0) + .45);
     if (item) { // món giữ nguyên chỗ / hướng; trong lúc nhảy không nảy (pop) và bắt đầu từ cỡ nhỏ trong hộp
       item.userData.pop = 1;
       item.userData.home = item.position.clone();
       item.scale.setScalar(.01);
     }
     return new Promise(done => { giftAnim = { box, item, slot, t: 0, opened: false, onOpen, done, mouth: giftFrom.clone() }; });
+  }
+  // Hộp quà mới hiện: mắc dù từ trên cao lắc lư rơi chậm xuống chỗ, đáp đất thì nảy nhẹ, dù xẹp rồi biến mất, dấu "!" vàng hiện trên hộp
+  // (nhún lên xuống tới khi mở). Chạm hộp lúc đang rơi: đáp ngay rồi mở.
+  const DROP_H = 6, DROP_T = 3.4, CHUTE_FOLD = .5, GIFT_MARK_Y = 1;
+  const drops = new Set();
+  function dropGift(node) {
+    if (!node.userData.chute) {
+      const chute = parachuteModel(), mark = new THREE.Group();
+      mark.add(at(new THREE.Mesh(roundedBox(.14, .32, .14, 2, .05), crateMarkMat), 0, .3, 0), new THREE.Mesh(new THREE.SphereGeometry(.08, ...sphereSegments(.08)), crateMarkMat));
+      mark.userData.outlineStyle = 'mark';
+      node.add(chute, mark);
+      Object.assign(node.userData, { chute, mark });
+    }
+    Object.assign(node.userData, { dropT: 0, landT: null });
+    node.userData.chute.visible = true;
+    node.userData.chute.scale.setScalar(1);
+    node.userData.chute.position.set(0, 0, 0);
+    node.userData.mark.visible = false;
+    node.position.y = (node.userData.baseY ?? 0) + DROP_H;
+    drops.add(node);
+  }
+  function landGift(node) {
+    if (!drops.has(node)) return;
+    drops.delete(node);
+    node.position.y = node.userData.baseY ?? 0; node.rotation.x = node.rotation.z = 0;
+    node.userData.chute.visible = false;
+    node.scale.setScalar(1);
+  }
+  function updateDrops(dt, t) {
+    for (const node of drops) {
+      const u = node.userData;
+      if (u.landT == null) {
+        u.dropT += dt;
+        const k = Math.min(1, u.dropT / DROP_T);
+        node.position.y = (u.baseY ?? 0) + DROP_H * (1 - k) * (1 - k * .25); // rơi chậm dần khi gần đất
+        node.rotation.z = Math.sin(u.dropT * 2.2) * .14 * (1 - k);
+        node.rotation.x = Math.sin(u.dropT * 1.7 + 1) * .08 * (1 - k);
+        if (k >= 1) { u.landT = 0; node.position.y = u.baseY ?? 0; node.rotation.x = node.rotation.z = 0; }
+        continue;
+      }
+      u.landT += dt;
+      const f = Math.min(1, u.landT / CHUTE_FOLD), squash = Math.sin(Math.min(1, u.landT / .3) * Math.PI) * .15;
+      node.scale.set(1 + squash, 1 - squash, 1 + squash); // đáp đất: nảy bẹp nhẹ
+      u.chute.scale.set(1, 1 - f * .95, 1); // dù xẹp xuống, trôi sang bên rồi biến mất
+      u.chute.position.set(f * .6, -f * .9, 0);
+      if (f >= 1) { landGift(node); u.mark.visible = true; }
+    }
+    for (const node of [...giftBoxes, ...areaBoxes.values()]) {
+      const mark = node.userData.mark;
+      if (mark?.visible) { mark.position.y = GIFT_MARK_Y + (Math.sin(t * 4) + 1) / 2 * .12; mark.rotation.y = t * 1.2; }
+    }
+  }
+  // Dấu "!" vàng lơ lửng trên đầu một con mèo (menu: mèo cam vừa ra khỏi thùng lần đầu, chạm để nghe nó nói). null = cất.
+  let catMarkBreed = null, catMark = null;
+  function markCat(breed) {
+    catMarkBreed = breed;
+    if (!catMark) {
+      catMark = new THREE.Group();
+      catMark.add(at(new THREE.Mesh(roundedBox(.12, .28, .12, 2, .045), crateMarkMat), 0, .26, 0), new THREE.Mesh(new THREE.SphereGeometry(.07, ...sphereSegments(.07)), crateMarkMat));
+      catMark.userData.outlineStyle = 'mark';
+      catMark.traverse(node => { node.raycast = () => {}; });
+      scene.add(catMark);
+    }
+    catMark.visible = false;
+  }
+  const catMarkBox = new THREE.Box3();
+  function updateCatMark(t) {
+    if (!catMark) return;
+    const cat = catMarkBreed && cats.bodies().find(body => body.breed === catMarkBreed);
+    catMark.visible = !!cat && cat.rig.root.visible;
+    if (!catMark.visible) return;
+    catMarkBox.setFromObject(cat.rig.root);
+    catMark.position.set((catMarkBox.min.x + catMarkBox.max.x) / 2, catMarkBox.max.y + .15 + (Math.sin(t * 4) + 1) / 2 * .1, (catMarkBox.min.z + catMarkBox.max.z) / 2);
+    catMark.rotation.y = t * 1.2;
   }
   function updateGift(dt) {
     const g = giftAnim;
@@ -2392,55 +2508,121 @@ export function createRoom() {
   // Thùng thú cưng: showPetBox(breeds) = thùng đóng ở vườn, mọi con trong `breeds` (hàng chờ thùng) giấu bên trong, con đầu ra trước;
   // cứ ~2.4 s lắc nhẹ mời chạm ([] = cất thùng).
   // openPetBox() (người chơi chạm thùng): lắc mạnh, nắp bật mở, con vật nhảy ra đáp trước thùng, thùng thu nhỏ biến mất.
+  // Trình tự (menu/gift-boxes.js): vào Deco -> xe van chạy tới đỗ -> thùng nhảy từ cửa hông xe xuống lề đường, lắc mời chạm ->
+  // chạm: openPetBox() lắc mạnh, nắp bật (xong thì Promise xong: menu hiện "You got") -> releasePet(): con vật nhảy vào vườn,
+  // thùng thu nhỏ biến mất (Promise xong) -> menu gọi showPetBox(hàng chờ còn lại): còn con khác thì thùng kế nhảy từ xe xuống,
+  // hết thì xe chạy đi.
+  // phase: 'van' chờ xe đỗ, 'jump' thùng đang nhảy từ xe, 'idle' chờ chạm, 'open' đang mở, 'opened' chờ menu, 'release' con vật ra.
   let petBox = null;
+  const CRATE_HOME = catCrate.position.clone(), crateFrom = new THREE.Vector3();
   function showPetBox(breeds) {
     const breed = breeds[0];
-    catCrate.visible = !!breed;
-    petBox = breed ? { breed, t: 0, opening: false, out: false, done: null } : null;
+    if (petBox && petBox.breed === breed) return; // vào lại Deco: thùng đang chờ giữ nguyên
+    driveVan(breed ? 'in' : 'out');
+    catCrate.visible = false;
+    petBox = breed ? { breed, phase: 'van', t: 0 } : null;
     if (!breed) return;
+    catCrate.position.copy(CRATE_HOME);
     catCrate.scale.setScalar(1);
     catCrate.rotation.z = 0;
     catCrate.userData.flaps.forEach(fold => { fold.rotation.x = Math.PI; });
     catCrate.userData.topTape.visible = true;
-    crateMark.visible = true;
+    crateMark.visible = false;
     const at = catCrate.getWorldPosition(new THREE.Vector3());
     breeds.forEach(other => cats.hideIn(other, at.x, at.z));
-    // Thùng ở lề đường nằm ngoài khung mặc định (sau panel Deco): camera lướt tới giữa thùng và rào trước cho thấy cả hai.
-    if (decoMode) glideTo(new THREE.Vector3(at.x, .5, (at.z + HALF) / 2), 900);
+    // Thùng + xe ở lề đường nằm ngoài khung mặc định (sau panel Deco): camera lướt tới giữa thùng và rào trước cho thấy cả hai.
+    if (decoMode) glideTo(new THREE.Vector3(at.x - .8, .5, (at.z + HALF) / 2), 900);
   }
+  // Chạm thùng: Promise xong khi nắp đã bật (thùng còn đang nhảy từ xe thì mở ngay khi đáp).
   function openPetBox() {
-    if (!petBox || petBox.opening) return Promise.resolve();
-    Object.assign(petBox, { opening: true, t: 0 });
+    const a = petBox;
+    if (!a || a.opened) return Promise.resolve();
     crateMark.visible = false;
-    return new Promise(done => { petBox.done = done; });
+    if (a.phase === 'idle') Object.assign(a, { phase: 'open', t: 0 });
+    return new Promise(done => { a.opened = done; });
   }
-  const SHAKE = .45, FLAPS = .35, IDLE_WIGGLE = 2.4;
+  // Sau "You got": con vật nhảy ra vào vườn, thùng biến mất; Promise xong khi thùng đã biến mất.
+  function releasePet() {
+    const a = petBox;
+    if (!a || a.phase !== 'opened') return Promise.resolve();
+    Object.assign(a, { phase: 'release', t: 0 });
+    return new Promise(done => { a.done = done; });
+  }
+  const SHAKE = .45, FLAPS = .35, IDLE_WIGGLE = 2.4, CRATE_JUMP = .75;
   function updatePetBox(dt) {
     const a = petBox;
     if (!a) return;
     a.t += dt;
-    if (!a.opening) { // chờ chạm: lắc nhẹ hai nhịp mỗi IDLE_WIGGLE giây
+    if (a.phase === 'van') { // xe đỗ hẳn rồi thùng mới nhảy ra (từ cửa hông phía vỉa hè, cao ngang sàn xe)
+      if (vanTrip || !van.visible) return;
+      crateFrom.set(van.position.x + .3, van.position.y + .7, van.position.z - .75);
+      Object.assign(a, { phase: 'jump', t: 0 });
+      catCrate.visible = true;
+    }
+    if (a.phase === 'jump') {
+      const j = Math.min(1, a.t / CRATE_JUMP), e = j * (2 - j);
+      catCrate.position.lerpVectors(crateFrom, CRATE_HOME, e);
+      catCrate.position.y += Math.sin(j * Math.PI) * 1.1;
+      catCrate.rotation.z = (1 - j) * .6; // lộn nhẹ trên không, đáp thẳng
+      if (j >= 1) {
+        catCrate.position.copy(CRATE_HOME); catCrate.rotation.z = 0;
+        Object.assign(a, { phase: a.opened ? 'open' : 'idle', t: 0 });
+        crateMark.visible = !a.opened;
+      }
+      return;
+    }
+    if (a.phase === 'idle') { // chờ chạm: lắc nhẹ hai nhịp mỗi IDLE_WIGGLE giây
       const u = a.t % IDLE_WIGGLE;
       catCrate.rotation.z = u < .5 ? Math.sin(u * 25) * .05 * (1 - u / .5) : 0;
       crateMark.position.y = CRATE_MARK_Y + (Math.sin(a.t * 4) + 1) / 2 * .12;
       crateMark.rotation.y = a.t * 1.2;
       return;
     }
-    const shake = Math.min(1, a.t / SHAKE);
-    catCrate.rotation.z = a.t < SHAKE ? Math.sin(a.t * 38) * .07 * (1 - shake) : 0;
-    const open = Math.min(1, Math.max(0, (a.t - SHAKE) / FLAPS)), e = 1 - (1 - open) ** 3;
-    catCrate.userData.topTape.visible = open === 0;
-    catCrate.userData.flaps.forEach((fold, i) => { fold.rotation.x = Math.PI + (.9 - Math.PI) * e + (i ? .1 : 0) * e; });
+    if (a.phase === 'open') {
+      const shake = Math.min(1, a.t / SHAKE);
+      catCrate.rotation.z = a.t < SHAKE ? Math.sin(a.t * 38) * .07 * (1 - shake) : 0;
+      const open = Math.min(1, Math.max(0, (a.t - SHAKE) / FLAPS)), e = 1 - (1 - open) ** 3;
+      catCrate.userData.topTape.visible = open === 0;
+      catCrate.userData.flaps.forEach((fold, i) => { fold.rotation.x = Math.PI + (.9 - Math.PI) * e + (i ? .1 : 0) * e; });
+      if (open >= 1) { a.phase = 'opened'; a.opened(); }
+      return;
+    }
+    if (a.phase !== 'release') return;
     const at = catCrate.getWorldPosition(new THREE.Vector3());
-    if (open >= 1 && !a.out) {
+    if (!a.out) {
       a.out = true;
       // Nhảy qua rào vào vườn, đáp ngay sau rào trước.
       cats.popOut(a.breed, { x: at.x, y: at.y + catCrate.userData.mouthY - .2, z: at.z }, { x: at.x, z: HALF - 1 });
       playMeow(a.breed);
     }
-    const gone = a.t - SHAKE - FLAPS - 1.4; // con vật đáp xong một nhịp thì thùng thu nhỏ biến mất
+    const gone = a.t - 1.4; // con vật đáp xong một nhịp thì thùng thu nhỏ biến mất
     if (gone > 0) catCrate.scale.setScalar(Math.max(.01, 1 - gone / .35));
     if (gone > .35) { catCrate.visible = false; petBox = null; a.done(); }
+  }
+  let vanTrip = null;
+  function driveVan(dir) {
+    const shown = van.visible && vanTrip?.dir !== 'out';
+    if ((dir === 'in') === shown) return; // đã đỗ / đang tới, hoặc đã đi / chưa từng tới
+    vanTrip = { dir, t: 0 };
+    van.visible = true;
+  }
+  function updateVan(dt) {
+    const trip = vanTrip;
+    if (!trip) return;
+    trip.t += dt;
+    const lastX = van.position.x;
+    if (trip.dir === 'in') { // từ xa bên trái chạy tới, phanh dần
+      const u = Math.min(1, trip.t / VAN_IN);
+      van.position.x = VAN_PARK_X - 24 * (1 - u) ** 3;
+      if (u >= 1) vanTrip = null;
+    } else { // tăng tốc dần rồi chạy khuất về bên phải
+      const u = Math.min(1, trip.t / VAN_OUT);
+      van.position.x = VAN_PARK_X + 30 * u * u;
+      if (u >= 1) { van.visible = false; vanTrip = null; }
+    }
+    const step = van.position.x - lastX;
+    van.userData.wheels.forEach(wheel => { wheel.rotation.z -= step / VAN_WHEEL_R; });
+    van.rotation.z = Math.abs(step) > 1e-4 ? Math.sin(trip.t * 18) * .006 : 0; // rung nhẹ khi đang chạy
   }
   function updateCoins(dt) {
     if (!flying.length) return;
@@ -2517,11 +2699,11 @@ export function createRoom() {
   }
   // Cọc gỗ đóng giữa mảnh đất + dấu "!" vàng nhún trên đầu (đủ điều kiện mở khu: "!" xanh lá, sáng nhấp nháy). Chạm cọc (nút trong suốt menu/areas.js đặt đè lên,
   // vị trí từ screenOfGhost) mở bảng điều kiện mở khu. Là vật thể (có viền), nằm ngoài nhóm ghost (kết cấu, không viền).
-  const stake = new THREE.Group(), STAKE_SCALE = 1.6, STAKE_MARK = { wait: '#ffd23f', ready: '#5fd16a' };
+  const stake = new THREE.Group(), STAKE_SCALE = 1.6, STAKE_MARK = { wait: MARK_YELLOW, ready: ['#5fd16a', '#2fb84a'] };
   stake.visible = false;
   site.add(stake);
   {
-    const wood = mat('#c98a4b'), ribbon = mat('#ff6b6b'), markMat = mat(STAKE_MARK.wait);
+    const wood = mat('#c98a4b'), ribbon = mat('#ff6b6b'), stakeMarkMat = markMat(...STAKE_MARK.wait);
     const post = new THREE.Mesh(roundedBox(.16, 1.05, .16, 2, .03), wood);
     post.position.y = .525;
     const tip = new THREE.Mesh(new THREE.ConeGeometry(.11, .16, 4), wood);
@@ -2532,13 +2714,15 @@ export function createRoom() {
     const flag = new THREE.Mesh(roundedBox(.3, .16, .03, 1, .01), ribbon);
     flag.position.set(.24, .88, 0); flag.rotation.z = -.18;
     const mark = new THREE.Group();
-    const bar = new THREE.Mesh(roundedBox(.18, .44, .18, 2, .07), markMat);
+    const bar = new THREE.Mesh(roundedBox(.18, .44, .18, 2, .07), stakeMarkMat);
     bar.position.y = .42;
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(.11, ...sphereSegments(.11)), markMat);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(.11, ...sphereSegments(.11)), stakeMarkMat);
     mark.add(bar, dot);
+    mark.scale.setScalar(1.25);
+    mark.userData.outlineStyle = 'mark';
     mark.position.y = 1.5;
     stake.add(post, tip, band, flag, mark);
-    Object.assign(stake.userData, { mark, markMat });
+    Object.assign(stake.userData, { mark, markMat: stakeMarkMat });
     // Camera Deco nhìn từ ~12 m: cỡ thật (cọc 1.1 m) chỉ còn vài chục px, phóng to cho dễ thấy / dễ chạm.
     stake.scale.setScalar(STAKE_SCALE);
     stake.traverse(node => { node.raycast = () => {}; });
@@ -2548,7 +2732,7 @@ export function createRoom() {
   function setGhost(zone, ready = false) {
     ghostZone = zone ?? null;
     ghost.visible = stake.visible = !!ghostZone;
-    if (stake.userData.ready !== ready) { stake.userData.ready = ready; stake.userData.markMat.color.set(ready ? STAKE_MARK.ready : STAKE_MARK.wait); }
+    if (stake.userData.ready !== ready) { stake.userData.ready = ready; const [color, glow] = ready ? STAKE_MARK.ready : STAKE_MARK.wait; stake.userData.markMat.color.set(color); stake.userData.markMat.emissive.set(glow); stake.userData.markMat.emissiveIntensity = markGlow; }
     if (!ghostZone) return;
     const [ox, oz] = ZONE_OFFSET[zone], r = zone === 'backyard' || zone === 'kinder' ? zoneRect(zone) : { x0: ox - HALF, x1: ox + HALF, z0: oz - HALF, z1: oz + HALF };
     const size = `${r.x1 - r.x0}x${r.z1 - r.z0}`;
@@ -2668,7 +2852,7 @@ export function createRoom() {
       const rect = aim(event);
       const cat = cats.hit(raycaster);
       if (cat) { // chạm vui thì tim; chạm dồn dập thì mèo cáu dần rồi nổi giận (cat-brain.mjs pet)
-        onCatEvent?.('pet');
+        onCatEvent?.('pet', cat.breed);
         const mood = cat.pet(), x = event.clientX - rect.left, y = event.clientY - rect.top;
         if (mood !== 'sleepy') playMeow(cat.breed, mood === 'grumpy' ? 'grumpy' : 'call');
         if (mood === 'grumpy') spawnHearts(x, y, '💢', 1, 'angry');
@@ -2861,10 +3045,12 @@ export function createRoom() {
     }
     // Deco: món có đồ mới mua (ở Shop) thay được thì sáng lên nhấp nháy; món đang mở bảng đổi sáng nhẹ đứng yên.
     const pulse = (Math.sin(t * 4) + 1) / 2;
+    crateMarkMat.emissiveIntensity = markGlow;
     if (stake.visible) {
       const { mark, ready } = stake.userData;
       mark.position.y = 1.5 + (ready ? (Math.sin(t * 8) + 1) / 2 : pulse) * .15;
-      glow(mark, ready ? .15 + pulse * .35 : 0);
+      // chờ: giữ màu tự sáng vàng của markMat theo ngày / đêm (glow 0 sẽ tắt emissive)
+      if (ready) glow(mark, .15 + pulse * .35); else stake.userData.markMat.emissiveIntensity = markGlow;
     }
     for (const [slot, node] of Object.entries(furniture)) {
       const here = decoMode && node.visible && itemById(node.userData.itemId)?.zone === zoneId;
@@ -2884,8 +3070,14 @@ export function createRoom() {
     updateCoins(Math.min(.05, (now - (lastFrame || now)) / 1000));
     updateGift(Math.min(.05, (now - (lastFrame || now)) / 1000));
     updatePetBox(Math.min(.05, (now - (lastFrame || now)) / 1000));
+    updateVan(Math.min(.05, (now - (lastFrame || now)) / 1000));
+    updateDrops(Math.min(.05, (now - (lastFrame || now)) / 1000), t);
+    updateCatMark(t);
     // Bướm bay trong nhóm vườn: toạ độ theo tâm vườn, giống vị trí bồn hoa.
-    if (furniture.flowers?.visible) flowerCenter.set(furniture.flowers.position.x, 0, furniture.flowers.position.z); else flowerCenter.set(0, 0, 0);
+    // Bướm vườn gốc chỉ bay khi đã có bồn hoa (quà hộp đầu onboarding) và trời không tối.
+    const hasFlowers = !!furniture.flowers?.visible;
+    butterflies.forEach(b => { b.node.visible = hasFlowers && !butterflyNight; });
+    if (hasFlowers) flowerCenter.set(furniture.flowers.position.x, 0, furniture.flowers.position.z);
     butterflies.forEach(b => b.update(t, Math.min(.05, (now - (lastFrame || now)) / 1000), flowerCenter));
     if (gardenExt.visible) { // vườn mở rộng: bướm quanh khóm hướng dương (toạ độ vườn)
       if (furniture.sunflowers?.visible) sunCenter.set(PLACES.sunflowers[0], 0, PLACES.sunflowers[1]); else sunCenter.set(GARDEN_EXT_X - 1, 0, 1.5);
@@ -2893,7 +3085,7 @@ export function createRoom() {
     }
     // Bướm vườn mở rộng chỉ bay khi phần mở rộng hiện + trời không tối (bướm vườn gốc tắt theo đêm ở setAmbient); không thì đứng im
     // ở gốc toạ độ, nằm bẹp trên cỏ giữa vườn như bướm chết (lỗi cũ).
-    butterflies2.forEach(b => { b.node.visible = gardenExt.visible && butterflies[0].node.visible; });
+    butterflies2.forEach(b => { b.node.visible = gardenExt.visible && !butterflyNight; });
     stepFade(Math.min(.05, (now - (lastFrame || now)) / 1000));
     cats.update((now - (lastFrame || now)) / 1000, t, document.body.classList.contains('afk'));
     rideAlong();
@@ -3030,8 +3222,12 @@ export function createRoom() {
     flyCoins,
     // Onboarding (menu/gift-boxes.js): hộp quà trong vườn — số hộp đang hiện, mở hộp (món nhảy ra / nắp bật), xu rơi ra đất rồi bay vào thanh.
     setGiftBoxes,
+    setAreaGifts,
+    openAreaGift,
+    markCat,
     showPetBox,
     openPetBox,
+    releasePet,
     openGift,
     dropCoins,
     // Hướng dẫn: giữ mèo giống `breed` ngồi yên nhìn camera (on = true) / thả ra (false). nearSlot: chỗ đặt (vườn) mà hướng dẫn

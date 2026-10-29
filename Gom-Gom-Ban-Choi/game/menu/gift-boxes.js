@@ -3,7 +3,7 @@
 // là xu (xu rơi ra đất quanh hộp rồi bay vào thanh xu vừa hiện + hướng dẫn mua). Quà ghi vào save TRƯỚC khi diễn, tắt game
 // giữa chừng không mất. Sang Unity: GiftBoxView.
 import * as ob from '../app/onboarding.js';
-import { applyAction, itemById, ownedOptions } from '../deco/deco-data.mjs';
+import { applyAction, itemById, ownedOptions, boxedWaiting, openBoxed } from '../deco/deco-data.mjs';
 import { playSound } from '../ui/sound.mjs';
 import { $, getDeco, setDeco, refreshWallet, showToast } from '../app/shared.js';
 import { categories } from '../ui/cat-art.mjs';
@@ -17,7 +17,20 @@ import { runItemTour, runBuyTour } from './tours.js';
 let busy = false;
 
 // Vẽ lại các hộp đang chờ (gọi khi vào Deco / sau mỗi lần mở).
-export const renderGiftBoxes = () => { if (!busy) room3d?.setGiftBoxes(ob.giftsWaiting()); };
+export const renderGiftBoxes = () => { if (!busy) { room3d?.setGiftBoxes(ob.giftsWaiting()); room3d?.setAreaGifts(boxedWaiting(getDeco())); } };
+
+// Hộp quà món miễn phí của khu vừa mở (deco-data.mjs boxAreaGifts): chạm thì nắp bật, món nhảy ra vào chỗ đặt (ghi save trước khi diễn).
+export async function openAreaGift(id) {
+  if (busy) return;
+  busy = true;
+  playSound('reward');
+  setDeco(openBoxed(getDeco(), id));
+  applyRoom(getDeco());
+  try { await room3d?.openAreaGift(id); } finally { busy = false; }
+  renderDeco();
+  refreshDecoDot();
+  renderGiftBoxes();
+}
 
 // Vào Deco: hiện thùng thú cưng đang chờ (mèo / chó vừa nhận nằm trong, chạm để mở), hộp quà, chạy lại hướng dẫn còn dở
 // (tắt game giữa chừng).
@@ -46,8 +59,11 @@ export async function openPetBox() {
   ob.removePetBox(breed); // ghi ngay: tắt game giữa lúc mở thì con vật đã ở trong nhà
   startIdle(); // ra khỏi thùng mới bắt đầu tích xu idle (core/idle.mjs tickIdle)
   refreshDecoDot();
-  await showPetReward(breed); // "You got <tên>", đóng xong thì thùng mở và con vật nhảy ra
-  await room3d?.openPetBox();
+  await room3d?.openPetBox(); // thùng lắc, nắp bật
+  await showPetReward(breed); // "You got <tên>", đóng xong thì con vật nhảy vào vườn, thùng biến mất
+  await room3d?.releasePet();
+  ob.catOutOfBox(breed);
+  room3d?.markCat(ob.catTalkWaiting() ? 'orange' : null);
   petBusy = false;
   if (!getDeco().cats.includes(breed)) showToast(`${categories[breed].name} is waiting in Deco (room is full)`);
   showNextPet();

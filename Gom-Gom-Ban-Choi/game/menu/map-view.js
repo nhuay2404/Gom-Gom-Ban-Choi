@@ -142,7 +142,7 @@ export function showPetReward(breed) {
   });
 }
 
-// Màn "You got a new box" (sau màn 1: tours.js runOnboarding; mốc nhận mèo / chó ở Map: onClaim), model thùng các-tông 3D của
+// Màn "You got a new box" (sau màn 1: tours.js runOnboarding), model thùng các-tông 3D của
 // Home hub (map-world.mjs boxShowcase); không dựng được 3D thì dùng ảnh thùng. Chạm (sau khi hiện xong) thì đóng, trả về khung
 // thùng trên màn hình (DOMRect) để thùng bay tiếp vào tab Deco.
 export function showBoxReward() {

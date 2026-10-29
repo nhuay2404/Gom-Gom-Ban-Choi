@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setStorageBackend, SAVE_KEYS, writeJSON } from '../core/save.mjs';
 import { levelReward } from '../core/progression.mjs';
-import { AREA_UNLOCK, loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, nextAreas, areaBases, unlockArea } from './deco-data.mjs';
+import { AREA_UNLOCK, loadDeco, itemById, itemStatus, applyAction, previewDeco, zoneOpen, gardenExpanded, catalogFor, CATALOG, slotGroups, previewAllNew, claimCat, areaOpen, areaState, nextArea, nextAreas, areaBases, unlockArea, areaGifts, boxedWaiting, openBoxed, zoneState } from './deco-data.mjs';
 
 const memoryStore = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
 
@@ -294,6 +294,14 @@ test('mở khu: theo thứ tự, cần xây đủ món gốc khu trước + đ�
   assert.equal(opened.coins, 0, 'mở khu trừ đúng giá');
   assert.equal(areaOpen(opened, 'garden2'), true);
   assert.equal(areaState(opened, 'living', 0), areaBases('garden2').some(entry => entry.price > 0) ? 'build' : 'coins');
+  // Món miễn phí của khu mới nằm trong hộp quà, chưa đặt; mở hộp thì món vào chỗ.
+  const gifts = areaGifts('garden2').map(entry => entry.id);
+  assert.ok(gifts.length > 0);
+  assert.deepEqual(boxedWaiting(opened), gifts);
+  assert.ok(gifts.every(id => !zoneState(opened, 'garden').placed.includes(id) && zoneState(opened, 'garden').owned.includes(id)));
+  const unboxed = openBoxed(opened, gifts[0]);
+  assert.ok(zoneState(unboxed, 'garden').placed.includes(gifts[0]));
+  assert.deepEqual(boxedWaiting(unboxed), gifts.slice(1));
 });
 
 test('khu KHÔNG BAO GIỜ tự mở khi nạp save (chỉ mở bằng trả xu), dù đã qua màn mốc', () => {

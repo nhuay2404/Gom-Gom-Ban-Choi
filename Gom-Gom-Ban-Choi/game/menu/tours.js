@@ -6,7 +6,7 @@ import { ZONES, isOwned, slotOf } from '../deco/deco-data.mjs';
 import { startDecoTour, waitFor } from '../app/deco-tour.js';
 import { $, getDeco, setDeco } from '../app/shared.js';
 import { renderZoneSwitch } from './areas.js';
-import { setDecoLock, closeDecoPop, clearDecoPick, renderDeco, decoPick, setDecoTab, clearPreview, refreshDecoDot } from './deco-panel.js';
+import { setDecoLock, closeDecoPop, clearDecoPick, renderDeco, decoPick, setDecoTab, clearPreview, refreshDecoDot, setTourHold } from './deco-panel.js';
 import { guideRect, setGuide, applyRoom, room3d } from './room.js';
 import { switchTab } from './tabs.js';
 import { setShopPage } from './shop.js';
@@ -15,13 +15,14 @@ import { showBoxReward } from './map-view.js';
 import { GIFT_BOX_SVG, BOX_ART } from '../ui/gift-box-art.mjs';
 
 // Mèo cam ngồi trong vườn, mọi lời hướng dẫn là bong bóng thoại mọc từ nó (speaker); mèo khuất (Shop) thì bóng thường.
+// Giọng: mèo cam là một thành viên của bầy mèo, gọi người chơi là "Owner" (người nuôi cả bầy), nói "our home / our garden / the crew".
 const say = steps => steps.map(step => (step.text ? { speaker: guideRect, ...step } : step));
 
 // Kết hướng dẫn Deco (nút "?"): ảnh cả ngôi nhà khi đã xây đủ món gốc mọi phòng (không có mẫu giáo) để người chơi có cái mong chờ.
 // Ảnh chụp từ cảnh thật (đủ món gốc, ban ngày); đổi đồ gốc / thêm phòng thì chụp lại. Đường dẫn viết đủ để build:html nhúng được.
 const dreamHome = {
   target: () => null, image: './assets/img/tutorial/house-complete.webp',
-  text: 'This is your dream home! Build every spot in each room to make it just like this. Win levels to earn coins. Have fun!',
+  text: 'Meow! This is the home our whole crew dreams of! Fill every spot in every room, Owner, and ours will look just like it. Win levels for coins!',
 };
 
 // ---------- Hướng dẫn Deco đọc lại (nút "?" ở cột trái, chỉ hiện khi đã xong onboarding): chỉ các bước đọc, không tặng gì ----------
@@ -38,15 +39,24 @@ export function runDecoTour() {
   setGuide(true);
   startDecoTour([...say([
     { target: () => $('deco-cards').hidden ? $('deco').querySelector('.deco-dock') : $('deco-cards'),
-      text: 'Swipe the tray and tap an item to preview it in your home. Tap Buy to build it!' },
+      text: 'Swipe the tray and tap something to see it in our home, Owner. Tap Buy and it’s ours!' },
     { target: () => $('deco-kinds'), before: () => closeDecoPop(false),
-      text: () => `${names().walls} and ${names().floors} come in other styles too. Tap a type here, preview a style, then buy it.` },
-    { target: middle, text: 'Tap any item in your home to swap its style. A NEW tag means a style you bought is waiting!' },
+      text: () => `${names().walls} and ${names().floors} come in other styles too! Tap a type here, try a style, then buy it for us.` },
+    { target: middle, text: 'Tap anything in our home to swap its style. A NEW tag means a style you got us is waiting!' },
     { target: () => $('tabbar').querySelector('[data-tab="shop"]'), before: () => closeDecoPop(false),
-      text: 'More styles for every item live in the Shop. Let’s take a look!', next: 'Open Shop', after: () => { if ($('shop').hidden) switchTab('shop'); } },
+      text: 'The Shop has even more styles for us. Come look, Owner!', next: 'Open Shop', after: () => { if ($('shop').hidden) switchTab('shop'); } },
     { target: () => [$('shop-pages'), $('shop-deco-grid')], before: async () => { await waitFor(() => !$('shop').hidden); setShopPage('deco'); },
-      text: 'Decoration: pick an area, tap a style to preview it, then buy. Back in Deco, tap the item to use it.' },
+      text: 'Pick an area, tap a style to try it, then buy. Back home in Deco, tap the item to put it out for us.' },
   ]), dreamHome], () => setGuide(false));
+}
+
+// Mèo cam vừa ra khỏi thùng lần đầu có dấu "!" trên đầu (gift-boxes.js); chạm vào thì nó than vườn còn trống, rủ chủ chơi tiếp.
+export function runCatTalk() {
+  setGuide(true);
+  startDecoTour(say([
+    { target: () => null, next: 'Okay!',
+      text: 'Mrrow… it’s so empty out here. Nothing to climb, nothing to nap on! Owner, keep playing levels so we can fill our home with cozy things!' },
+  ]), () => { setGuide(false); ob.catTalkDone(); room3d?.markCat(null); });
 }
 
 $('deco-help').onclick = () => { playSound('pick'); runDecoTour(); };
@@ -79,7 +89,7 @@ export function runItemTour(base) {
   setGuide(true, slot);
   startDecoTour(say([
     { target: () => room3d?.screenRectOf(slot), bubble: 'below', next: 'Yay!', before: () => new Promise(resolve => setTimeout(resolve, 600)),
-      text: `A gift for your garden: a ${base.name}! Your cat loves it. Win more levels to get another gift!` },
+      text: `A gift for our garden: a ${base.name}! The crew loves it already. Win more levels, Owner, and there’ll be another gift!` },
   ]), () => { setGuide(false); writeText(SAVE_KEYS.decoTour, 'styles'); renderDeco(); });
 }
 
@@ -89,16 +99,19 @@ export function runBuyTour(base) {
   if (!base) return writeText(SAVE_KEYS.decoTour, 'done');
   const card = () => $('deco-cards').querySelector(`[data-id="${base.id}"]`);
   setGuide(true);
+  setTourHold(true); // mở lại thanh đồ nếu đang thu gọn; trong lúc hướng dẫn: không thu gọn được, chạm lại thẻ đang xem không bỏ xem
   // Bong bóng thường (không mọc từ mèo): panel Deco vừa mở, mèo trong vườn có thể nằm sau panel, khoét sáng chỗ mèo sẽ đè lên panel.
   const plain = { speaker: () => null };
   startDecoTour(say([
-    { ...plain, target: card, text: `You have coins now! Tap ${base.name} to see it in your garden.`, until: () => decoPick === base, before: () => scrollToCard(card()) },
-    { ...plain, target: () => card()?.querySelector('[data-act="buy"]'), until: () => isOwned(getDeco(), base), text: 'Tap Buy to build it!',
+    { ...plain, strict: true, target: card, text: `You have coins now, Owner! Tap the ${base.name} so we can see it in our garden.`, until: () => decoPick === base, before: () => scrollToCard(card()) },
+    { ...plain, strict: true, target: () => card()?.querySelector('[data-act="buy"]'), until: () => isOwned(getDeco(), base), text: 'Tap Buy and build it for us!',
       // Lỡ chạm cảnh làm bỏ xem món: chọn lại để thẻ còn nút Buy.
       before: async () => { if (decoPick !== base) card()?.click(); await scrollToCard(card()); } },
     { ...plain, target: () => null, next: 'Got it!', before: () => new Promise(resolve => setTimeout(resolve, 900)),
-      text: `Your cat loves the new ${base.name}! Win levels to earn coins and build more.` },
-  ]), () => { setGuide(false); writeText(SAVE_KEYS.decoTour, 'done'); refreshDecoDot(); });
+      text: `Purrfect, we love the new ${base.name}! Keep winning levels for coins, Owner, and one day our home will look like this!` },
+    // Kết: ảnh cả ngôi nhà đủ món (dreamHome) cho người chơi thấy cái đích để xây.
+    { ...plain, ...dreamHome, next: 'Let’s go!' },
+  ]), () => { setGuide(false); setTourHold(false); writeText(SAVE_KEYS.decoTour, 'done'); refreshDecoDot(); });
 }
 
 // Bảng kết quả bấm Continue sau màn mở khoá (result.js): về Home. Màn 1: thùng mèo / màn 2–3: hộp quà bay vào tab Deco (chấm đỏ ở đó).

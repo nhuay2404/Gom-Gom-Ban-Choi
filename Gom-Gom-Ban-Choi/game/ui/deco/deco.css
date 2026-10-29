@@ -221,8 +221,8 @@ body.deco-locked .hub-settings{opacity:.5}
 .deco-card.using{border-color:#4f8a34;background:#f3faec}
 .deco-card.locked{opacity:.7}
 /* Món vừa mở khoá + đủ xu (menu/deco-panel.js noticeDeco): nhãn NEW ở góc trên thẻ */
-.deco-card.is-new::before{content:"NEW";position:absolute;z-index:1;top:4px;left:50%;translate:-50% 0;padding:1px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;font-size:10px;font-weight:900;line-height:1.3;box-shadow:0 2px 0 #0002}
-@media(prefers-reduced-motion:no-preference){.deco-card.is-new::before{animation:deco-pin-bob 1s ease-in-out infinite alternate}}
+.deco-card.is-new::before,.deco-opt.is-new::before{content:"NEW";position:absolute;z-index:1;top:4px;left:50%;translate:-50% 0;padding:1px 7px;border-radius:999px;border:2px solid #fff;background:#ff5a7a;color:#fff;font-size:10px;font-weight:900;line-height:1.3;box-shadow:0 2px 0 #0002}
+@media(prefers-reduced-motion:no-preference){.deco-card.is-new::before,.deco-opt.is-new::before{animation:deco-pin-bob 1s ease-in-out infinite alternate}}
 .deco-card.locked .thumb{filter:grayscale(.8)}
 .deco-card.picked{transform:translateY(-6px);border-color:#f2a93c;box-shadow:0 0 0 3px #ffd97a,0 6px 0 #73392a33}
 /* Bảng đổi món: nổi cạnh món, đuôi chỉ vào món (--tail = toạ độ ngang của món trong bảng) */

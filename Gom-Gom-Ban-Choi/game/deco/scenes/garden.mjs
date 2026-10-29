@@ -1137,12 +1137,17 @@ export function makeButterflies(scene) {
 export function giftBoxModel() {
   const S = .5, H = .34, T = .04, LID = .085, root = new THREE.Group(), lid = new THREE.Group();
   const BODY = '#f6b3c4', LID_C = '#fac6d3', RIBBON = '#ffd57a', BOW = '#ffc95c', PAW = '#fff4e4';
-  root.add(at(rbox(S - .02, .04, S - .02, .02, '#b8687d'), 0, .02, 0)); // đáy lòng hộp tối hơn: nhìn từ trên thấy rõ là hộp rỗng
+  // Thân: vách + đáy + ruy băng gộp một lưới mỗi màu (mergeStatic) và chỉ vẽ nét ngoài (outlineStyle 'outer'): không còn đường viền
+  // ở chỗ nối các vách / ruy băng (trông gồ ghề, lỗi cũ); ruy băng bo tròn mép.
+  const body = new THREE.Group();
+  body.add(at(rbox(S - .02, .04, S - .02, .02, '#b8687d'), 0, .02, 0)); // đáy lòng hộp tối hơn: nhìn từ trên thấy rõ là hộp rỗng
   for (const side of [-1, 1]) {
-    root.add(at(rbox(S, H, T, .02, BODY), 0, H / 2, side * (S - T) / 2)); // vách trước / sau
-    root.add(at(rbox(T, H, S - 2 * T, .02, BODY), side * (S - T) / 2, H / 2, 0)); // vách trái / phải, kẹp giữa hai vách kia
-    root.add(at(box(.08, H - .02, .03, RIBBON), 0, H / 2, side * S / 2), at(box(.03, H - .02, .08, RIBBON), side * S / 2, H / 2, 0));
+    body.add(at(rbox(S, H, T, .02, BODY), 0, H / 2, side * (S - T) / 2)); // vách trước / sau
+    body.add(at(rbox(T, H, S - 2 * T, .02, BODY), side * (S - T) / 2, H / 2, 0)); // vách trái / phải, kẹp giữa hai vách kia
+    body.add(at(rbox(.08, H - .02, .03, .015, RIBBON), 0, H / 2, side * S / 2), at(rbox(.03, H - .02, .08, .015, RIBBON), side * S / 2, H / 2, 0));
   }
+  root.add(mergeStatic(body));
+  root.userData.outlineStyle = 'outer';
   // Dấu chân mèo: đệm to + 3 ngón, khối cầu dẹt cắm nửa vào vách (mặt trước bên trái, mặt phải bên phải).
   const paw = () => {
     const group = new THREE.Group(), pad = ball(.045, PAW);
@@ -1156,11 +1161,11 @@ export function giftBoxModel() {
   right.rotation.y = Math.PI / 2;
   root.add(front, right);
   // Nắp: chìa ra 3 cm mỗi bên, dải ruy băng vắt qua (nhô 6 mm trên / dưới mặt nắp).
-  lid.add(at(rbox(S + .06, LID, S + .06, .035, LID_C), 0, LID / 2, 0));
-  lid.add(at(box(.09, LID + .012, S + .075, RIBBON), 0, LID / 2, 0), at(box(S + .075, LID + .012, .09, RIBBON), 0, LID / 2, 0));
+  lid.add(at(rbox(S + .06, LID, S + .06, .04, LID_C), 0, LID / 2, 0));
+  lid.add(at(rbox(.09, LID + .012, S + .075, .03, RIBBON), 0, LID / 2, 0), at(rbox(S + .075, LID + .012, .09, .03, RIBBON), 0, LID / 2, 0));
   // Nơ: hai vòng (xuyến dẹt) nghiêng ra hai bên, nút thắt giữa, hai đuôi ruy băng chéo về phía trước trên mặt nắp.
   for (const side of [-1, 1]) {
-    const loop = at(mesh(new THREE.TorusGeometry(.075, .026, 10, 24), BOW), side * .072, LID + .075, 0);
+    const loop = at(mesh(new THREE.TorusGeometry(.075, .026, 16, 40), BOW), side * .072, LID + .075, 0);
     loop.scale.set(1.15, 1, .6);
     loop.rotation.z = side * -.55;
     lid.add(loop);
@@ -1175,6 +1180,30 @@ export function giftBoxModel() {
   root.add(lid);
   root.userData.lid = lid;
   root.userData.lidY = lid.position.y; // chỗ nắp đậy (deco-room.mjs bật nắp từ đây)
+  return root;
+}
+
+// Dù thả hộp quà (deco-room.mjs dropGift): vòm dù hồng sọc kem trên cao, 4 dây xuống 4 góc nắp hộp quà (giftBoxModel). Gốc = đáy hộp.
+export function parachuteModel() {
+  const root = new THREE.Group(), Y = 1.45, R = .55, CORNER = .25, TOP = .43;
+  const dome = ball(R, '#ff8fb6');
+  dome.scale.set(1, .5, 1);
+  // Sọc kem: 4 múi cầu mỏng nhô 1 cm khỏi vòm (khối liền, không phải tấm dán).
+  for (let k = 0; k < 4; k++) {
+    const stripe = mesh(new THREE.SphereGeometry(R + .01, 24, 12, k * Math.PI / 2, Math.PI / 8, 0, Math.PI / 2), '#fff1d2');
+    stripe.userData.noOutline = true;
+    dome.add(stripe);
+  }
+  root.add(at(dome, 0, Y, 0), at(ball(.06, '#fff1d2'), 0, Y + R * .5, 0));
+  const rope = (a, b) => {
+    const dir = new THREE.Vector3().subVectors(b, a), line = cyl(.008, .008, dir.length(), '#8a5a44', 6);
+    line.position.copy(a).add(b).multiplyScalar(.5);
+    line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    return line;
+  };
+  for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    root.add(rope(new THREE.Vector3(x * R * .68, Y + .02, z * R * .68), new THREE.Vector3(x * CORNER, TOP, z * CORNER)));
+  }
   return root;
 }
 
@@ -1203,5 +1232,44 @@ export function catBoxModel() {
   const topTape = at(box(.1, .032, d + .016, TAPE), 0, h + .01, 0); // ôm khe hai nắp (nắp dày 2 cm, băng dày 3.2 cm: nhô 6 mm mỗi mặt)
   root.add(topTape);
   Object.assign(root.userData, { flaps, topTape, mouthY: h });
+  return root;
+}
+// Xe van giao hàng điện xanh ngọc (chở thùng mèo tới lề đường, deco-room.mjs): mũi xe hướng +x, gốc ở mặt đường.
+// userData.wheels: các bánh (xoay quanh trục z local) để xe lăn bánh khi chạy; WHEEL_R = bán kính bánh.
+export const VAN_WHEEL_R = .3;
+export function deliveryVanModel() {
+  const L = 2.4, W = 1.4, Y0 = .28, H = 1.32, root = new THREE.Group(), body = new THREE.Group();
+  const TEAL = '#1fbcc6', WHITE = '#f4fbfc', GLASS = '#2c4a63', DARK = '#3b4650';
+  const side = W / 2;
+  body.add(at(rbox(L, H, W, .14, TEAL), -.2, Y0 + H / 2, 0)); // thùng xe + cabin liền khối (x -1.4..1.0)
+  body.add(at(rbox(.5, .57, W, .12, TEAL), 1.15, Y0 + .285, 0)); // nắp ca-pô thấp phía trước (x .9..1.4)
+  body.add(at(box(.03, .55, W - .24, GLASS), 1.005, 1.18, 0)); // kính chắn gió phẳng trên mặt trước cabin
+  body.add(at(box(.03, .08, .5, DARK), 1.405, .5, 0)); // lưới tản nhiệt
+  for (const s of [-1, 1]) {
+    body.add(at(box(.5, .42, .03, GLASS), .66, 1.18, s * side)); // kính cửa cabin
+    body.add(at(box(1.9, .14, .03, WHITE), -.45, .78, s * side)); // sọc trắng dọc thân
+    body.add(at(rbox(.04, .12, .26, .02, '#fff6c8'), 1.405, .7, s * .45)); // đèn pha
+    body.add(at(rbox(.03, .24, .12, .015, '#e2493c'), -1.405, .78, s * .55)); // đèn hậu
+    body.add(at(rbox(.06, .12, .14, .02, DARK), .98, 1.02, s * (side + .07))); // gương chiếu hậu, áp sát hông cabin
+    // Logo bàn chân mèo trắng trên hông thùng xe (đĩa trắng, chân xanh nổi lên 1.5 cm: không chập mặt).
+    const logo = new THREE.Group();
+    logo.add(at(cyl(.27, .27, .02, WHITE), 0, 0, 0), at(cyl(.1, .1, .02, TEAL), 0, -.04, .015));
+    for (const a of [-.75, -.25, .25, .75]) logo.add(at(cyl(.045, .045, .02, TEAL), Math.sin(a) * .15, Math.cos(a) * .15 - .02, .015));
+    logo.children.forEach(disc => { disc.rotation.x = Math.PI / 2; });
+    logo.position.set(-.5, 1.2, s * (side + .01)); logo.rotation.y = s > 0 ? 0 : Math.PI;
+    body.add(logo);
+  }
+  body.add(at(box(.02, 1.0, .02, DARK), -1.405, .95, 0)); // khe hai cánh cửa sau
+  for (const x of [1.42, -1.42]) body.add(at(rbox(.12, .14, W - .1, .04, DARK), x, .36, 0)); // cản trước / sau
+  root.add(mergeStatic(body));
+  const wheels = [];
+  for (const x of [.95, -.9]) for (const s of [-1, 1]) {
+    const wheel = new THREE.Group();
+    wheel.add(cyl(VAN_WHEEL_R, VAN_WHEEL_R, .22, '#2a2f35'), cyl(.13, .13, .24, '#cfd6dc'));
+    wheel.children.forEach(part => { part.rotation.x = Math.PI / 2; });
+    wheel.position.set(x, VAN_WHEEL_R, s * (side - .08)); // lốp lòi ra khỏi hông xe 3 cm
+    root.add(wheel); wheels.push(wheel);
+  }
+  root.userData.wheels = wheels;
   return root;
 }

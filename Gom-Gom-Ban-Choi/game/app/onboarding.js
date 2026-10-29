@@ -80,6 +80,10 @@ export function petBoxes() {
   try { return JSON.parse(readText(SAVE_KEYS.petBoxes) || '[]'); } catch { return []; }
 }
 export const addPetBox = breed => { if (!petBoxes().includes(breed)) writeText(SAVE_KEYS.petBoxes, JSON.stringify([...petBoxes(), breed])); };
+// Mèo cam ra khỏi thùng lần đầu: dấu "!" trên đầu, chạm thì nó than vườn trống và rủ chủ chơi tiếp (menu/tours.js runCatTalk).
+export const catTalkWaiting = () => readText(SAVE_KEYS.catTalk) === 'wait';
+export function catOutOfBox(breed) { if (breed === 'orange' && readText(SAVE_KEYS.catTalk) === null) writeText(SAVE_KEYS.catTalk, 'wait'); }
+export const catTalkDone = () => writeText(SAVE_KEYS.catTalk, 'done');
 export const removePetBox = breed => writeText(SAVE_KEYS.petBoxes, JSON.stringify(petBoxes().filter(other => other !== breed)));
 // Thắng màn 5 mà chưa mở hộp xu: vẫn hiện ví (màn 4–5 đã cộng xu thật).
 export const walletShown = () => featuresOpen() || opened() >= 2;

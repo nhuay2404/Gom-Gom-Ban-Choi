@@ -25,8 +25,12 @@ $('dev-unlock').onclick = () => {
   saveProgress({ ...loadProgress(), stars: LEVELS.map(() => 3) });
   ob.setStage('done');
   writeText(SAVE_KEYS.decoTour, 'done'); // bỏ luôn hướng dẫn Deco
+  writeText(SAVE_KEYS.gifts, '2'); // bỏ qua hộp quà onboarding (hộp món + hộp xu)
+  writeText(SAVE_KEYS.petBoxes, '[]');
+  writeText(SAVE_KEYS.catTalk, 'done'); // không còn dấu "!" trên mèo cam
+  room3d?.markCat(null); // không còn thùng mèo chờ mở (mèo nhận sẵn ngay dưới)
   writeText(DEV_ZONES_KEY, 'on'); // mở cả phần / món khoá ở màn chưa có (vườn mở rộng)
-  setDeco(ownAllBase({ ...getDeco(), coins: Math.max(getDeco().coins, DEV_COINS) })); // + có sẵn mọi món mặc định
+  setDeco(ownAllBase({ ...getDeco(), boxed: [], coins: Math.max(getDeco().coins, DEV_COINS) })); // hộp quà khu mới: đặt luôn món // + có sẵn mọi món mặc định
   // Nhận sẵn mọi mèo / chó (không xếp hàng chục thùng chờ mở ở Deco: room.js startRoom chỉ đóng thùng cho con chưa nhận).
   setDeco(CATALOG.filter(entry => entry.cat === 'cats').reduce((deco, entry) => claimCat(deco, entry.breed), getDeco()));
   // Xoá trạng thái ưu đãi cũ (đã mua / đang hồi) rồi mở lại mọi gói để thử ở Shop.

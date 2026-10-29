@@ -265,6 +265,8 @@ export const OUTLINE_STYLES = {
   cat: { px: 4.6, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 }, // mèo: nét dày, đậm đặc, không có nét trong
   // tai mèo: khối nhỏ nên cùng số px trông mảnh hơn thân, dày hơn chút cho cân
   catEar: { px: 5.3, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },
+  // dấu "!" mời chạm (thùng mèo, cọc khu kế tiếp, deco-room.mjs): nét nâu rất dày, đều, cho nổi bật như sticker
+  mark: { px: 6.5, ink: MAP_INK, wobble: 0, tone: 0, inner: 0 },
 };
 function outlineStyleOf(node) {
   for (let n = node; n; n = n.parent) if (n.userData.outlineStyle) return n.userData.outlineStyle;
