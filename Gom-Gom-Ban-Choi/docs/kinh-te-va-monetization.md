@@ -7,6 +7,12 @@ mọi con số đề xuất bên dưới là giả định ban đầu của thi�
 
 > `docs/economy-overview.md` (12/10) đã cũ: công thức thưởng (`120 × 1.01^n`), idle 4%, bảng khu đều không còn đúng code. Đọc file này + `docs/economy-report.md`.
 
+> **Định hướng monetization hiện tại (cập nhật 29/10, ưu tiên hơn mọi chỗ khác trong file khi mâu thuẫn)**
+> - Hybrid IAA + IAP, tỉ lệ doanh thu **IAA 40% / IAP 60%**.
+> - **IAA**: 100% rewarded ads (không interstitial, không gói No Ads). Chỗ đặt: retry màn chơi, nhận thêm xu, nhận booster, nhận ticket sự kiện live ops.
+> - **IAP**: gói tài nguyên limited time, gói offer đồ trang trí (Decoration), Battle Pass, live ops monetization theo mùa (seasonal).
+> - Mục 1 (Hiện trạng) và mục 12 (Đã làm / chưa làm) mô tả build lúc viết, giữ nguyên.
+
 ---
 
 ## 1. Hiện trạng
@@ -72,8 +78,12 @@ Lý do: wiki khuyên một kho trung tâm hard currency cho mọi giao dịch ti
 ([[concept-monetization-strategies]]). Booster là consumable nên là **sink vô hạn** của gem, không bao giờ "mua hết" như đồ deco
 ([[concept-live-ops-and-inflation]]). Xu tách khỏi tiền thật thì được phép lạm phát theo tiến độ mà không làm hỏng giá IAP.
 
-Mô hình doanh thu bản test: **continue + booster (IAP) là chính, rewarded ads là đường đi của người không trả tiền**, interstitial nhẹ hoặc tắt.
-Giữ **không có mạng / năng lượng** ở bản test (đã cắt; vừa bảo vệ D1 vừa đỡ một biến số); pinch point dồn hết vào continue.
+Mô hình doanh thu (cập nhật 29/10): **Hybrid IAA 40% / IAP 60%**.
+- **IAA = 100% rewarded ads**, không interstitial: retry màn chơi, nhận thêm xu, nhận booster, nhận ticket sự kiện live ops (cùng các chỗ đặt ở mục 5).
+- **IAP**: gói tài nguyên limited time, offer đồ trang trí (Decoration), Battle Pass, live ops monetization theo mùa (seasonal); gói gem / booster / continue
+  (mục 4, 6, 8) là nền của các gói này.
+
+Giữ **không có mạng / năng lượng** ở bản test (đã cắt; vừa bảo vệ D1 vừa đỡ một biến số).
 
 ---
 
@@ -167,7 +177,9 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
 | 3 | Popup booster hết kho | 1 booster loại đó | 3 (chung mọi loại) | Gem mua bao nhiêu cũng được, gói ×3 |
 | 4 | Nhận xu idle ở Deco: **vòng nhân** (kim chạy qua lại trên nửa vòng tròn, nút "Watch video" ghi số xu theo ô kim đang chỉ, bấm là kim dừng; 28/10, theo mẫu UI "Multiplier") | x1.2 (30% + 30% cung) · x1.5 (13% + 13%) · **x4 = +300%** (14%, giữa cung): trung bình +67%. x4 trúng tối đa 1 lần / ngày, trúng rồi ô đó thành x1.5 | 2 | `IDLE_RATE` giảm 0.015 → 0.011 để tổng xu idle một ngày ≈ như cũ (mô phỏng: người chơi trung bình mở khu lệch ≤ 2 màn) |
 | 5 | Shop: "Gem miễn phí" | 20 gem (tăng từ 10, 22/10) | 2 | 40 gem ≈ $0.40 |
-| | **Tổng** | | 11 lượt có trần + bảng thắng không giới hạn | |
+| 6 | Retry màn chơi (thêm 29/10) | Chơi lại màn vừa thua | *chưa chốt* | — |
+| 7 | Ticket sự kiện live ops (thêm 29/10) | Ticket vào / chơi sự kiện | *chưa chốt* | — |
+| | **Tổng** | | 11 lượt có trần (chưa tính 6, 7) + bảng thắng không giới hạn | |
 
 - Lần xem thứ N trong ngày hết → nút đổi thành "Come back tomorrow" (không ẩn hẳn, để người chơi biết mai có).
 - Vì sao bảng thắng giảm dần chứ không x2: mô phỏng (40 người ảo / kiểu, xem ads ở mọi màn được phép) cho thấy x2 không giới hạn làm người chơi
@@ -175,11 +187,10 @@ Không hiện RV trước màn 6 (FTUE). Riêng bảng thắng: người chơi *
   Lịch +50%, +50%, rồi +20%: người chơi trung bình 87–93% ở màn 20–70, người chơi ít 83–100%, mua đủ món gốc ở màn 74–83.
   Cách giảm dần theo lượt là gợi ý của hướng dẫn rewarded ads CrazyGames; giới hạn cứng 3–8 lần / ngày là mức các nhà cung cấp ads hay khuyên.
 - Không làm "x3 / spin may rủi" ở bản test: một mức thưởng rõ ràng dễ đọc dữ liệu hơn.
-- **Interstitial**: tắt ở đầu bản test (`INTERSTITIAL_ON = false`). Bật cho nhóm A/B từ tuần 3: chỉ sau thắng, từ màn 20, mỗi 3 màn, cách nhau ≥ 180 s,
-  không sau thua, không trong 60 s sau một RV. Mọi giao dịch IAP tắt interstitial vĩnh viễn.
+- **Interstitial**: không dùng (cập nhật 29/10: IAA 100% rewarded). `INTERSTITIAL_ON` giữ `false`.
 
 Remote Config: `REWARDED_ADS` `{ from: 6, caps: { continue: 5, bonusCoins: null, booster: 3, idle: 2, gems: 2 }, gems: 20, coinBonus: [0.5, 0.5, 0.2, 0.2, 0.2, 0.1], idleWheel: [x1.2 30%, x1.5 13%, x4 14%, x1.5 13%, x1.2 30%], jackpotPerDay: 1 }`
-(`null` = không giới hạn). Interstitial: chưa làm.
+(`null` = không giới hạn). Interstitial: không dùng.
 
 ---
 
@@ -335,10 +346,18 @@ Bản test ở chợ giá thấp (VN / PH / ID…) dùng bảng giá theo vùng 
 |---|---|---|---|
 | Gói giải cứu | Thua cùng một màn 3 lần liên tiếp | $2.99 | 3 +lượt, 3 búa, 3 thẻ mới, 200 gem |
 | Gói thợ xây | Vừa mở khu mới | $4.99 | 500 gem + xu = 2 món gốc của khu mới |
-| No Ads | Chỉ khi interstitial bật | $3.99 | Tắt interstitial + 300 gem (RV vẫn còn, vì đó là phần thưởng) |
 
-### 8.4 Để sau bản test
-Cat Pass theo sự kiện 28 ngày ($4.99, thang free + trả phí, Sprint 9 *có thể cắt*); đồ deco premium mỗi khu; gói đăng ký.
+(Gói No Ads đã bỏ 29/10: không có interstitial.)
+
+### 8.4 Gói theo định hướng 29/10 (chưa có số, chưa làm trong game)
+| Gói | Vai trò |
+|---|---|
+| Gói tài nguyên limited time | Gem / booster / xu bán có hạn giờ (mở rộng từ starter / rescue / builder pack ở 8.2, 8.3) |
+| Offer Decoration | Gói đồ trang trí (deco premium mỗi khu, đồ độc quyền) |
+| Battle Pass | Thang free + trả phí theo mùa (bản trước gọi là Cat Pass sự kiện 28 ngày, $4.99) |
+| Live ops theo mùa | Sự kiện có hạn giờ theo mùa + gói bán kèm; ticket sự kiện nhận được bằng rewarded ads (mục 5) |
+
+Để sau: gói đăng ký.
 
 ---
 
